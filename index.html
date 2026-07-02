@@ -1,0 +1,3908 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Project Shelter — 생존 기지 꾸미기 (Web MVP v0.3)</title>
+<style>
+  @font-face {
+    font-family: 'DungGeunMo';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.3.1/DungGeunMo.woff') format('woff');
+    font-weight: normal; font-style: normal; font-display: swap;
+  }
+  :root {
+    --panel-bg: rgba(16, 18, 23, 0.93);
+    --panel-border: #3a3f4d;
+    --accent: #e8a86c;
+    --good: #8fbb7a;
+    --bad: #c96a5f;
+    --text: #d8d5cc;
+    --text-dim: #8a8d99;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0e1014; }
+  body { font-family: 'DungGeunMo', 'Malgun Gothic', sans-serif; color: var(--text); user-select: none; }
+  #c { display: block; width: 100%; height: 100%; }
+
+  .panel {
+    position: absolute; background: var(--panel-bg);
+    border: 2px solid var(--panel-border); border-radius: 4px;
+    padding: 10px 12px;
+  }
+  button.pixel-btn {
+    font-family: inherit; font-size: 11px; color: var(--text);
+    background: #262a35; border: 2px solid var(--panel-border); border-radius: 3px;
+    padding: 6px 9px; cursor: pointer;
+  }
+  button.pixel-btn:hover { border-color: var(--accent); color: var(--accent); }
+  button.pixel-btn.danger:hover { border-color: var(--bad); color: var(--bad); }
+  button.pixel-btn.primary { border-color: #6b5a40; color: var(--accent); }
+  button.pixel-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* ── 좌상단 상태 패널 ── */
+  #hud { top: 12px; left: 12px; width: 240px; }
+  #hud .shelter-name { font-size: 14px; color: var(--accent); margin-bottom: 4px; }
+  #hud .stat { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+  #hud .btn-row { display: flex; gap: 5px; }
+  #hud .btn-row .pixel-btn { flex: 1; padding: 6px 2px; }
+
+  /* ── 탐험 패널 ── */
+  #exp-panel { top: 118px; left: 12px; width: 240px; display: none; max-height: calc(100vh - 140px); overflow-y: auto; }
+  #exp-panel.show { display: block; }
+  #exp-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
+  .region-card {
+    border: 2px solid var(--panel-border); border-radius: 3px;
+    padding: 7px 8px; margin-bottom: 7px; background: #1c1f28;
+  }
+  .region-card .r-head { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
+  .region-card .r-rate { color: var(--good); }
+  .region-card .r-rate.low { color: var(--bad); }
+  .region-card .r-info { font-size: 10px; color: var(--text-dim); margin-bottom: 6px; line-height: 1.5; }
+  .region-card .pixel-btn { width: 100%; }
+  #exp-progress { text-align: center; }
+  #exp-progress .bar-wrap { border: 2px solid var(--panel-border); height: 14px; margin: 8px 0; background: #14161d; }
+  #exp-progress .bar { height: 100%; background: var(--accent); width: 0%; }
+  #exp-progress .eta { font-size: 11px; color: var(--text-dim); }
+  #injury-note { font-size: 11px; color: var(--bad); text-align: center; padding: 4px 0; }
+
+  /* ── 우상단 렌더링/설정 ── */
+  #render-panel { top: 12px; right: 12px; width: 185px; }
+  #render-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
+  #render-panel label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin: 7px 0; cursor: pointer; }
+  #render-panel input[type=range] { width: 85px; accent-color: var(--accent); }
+  #render-panel input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
+  #render-panel .btn-row { display: flex; gap: 6px; margin-top: 10px; }
+  #render-panel .btn-row .pixel-btn { flex: 1; }
+
+  /* ── 하단 인벤토리 바 ── */
+  #toolbar {
+    bottom: 12px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; padding: 8px; max-width: calc(100vw - 40px);
+    overflow-x: auto;
+  }
+  .tool-item {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    min-width: 60px; padding: 7px 4px 5px; cursor: pointer;
+    background: #262a35; border: 2px solid var(--panel-border); border-radius: 4px;
+    font-size: 10px; color: var(--text);
+  }
+  .tool-item:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .tool-item .emoji { font-size: 20px; line-height: 1; }
+  .tool-item .cnt {
+    position: absolute; top: -7px; right: -5px;
+    background: var(--accent); color: #1a1408; font-size: 10px;
+    border-radius: 8px; padding: 1px 5px; border: 1px solid #1a1408;
+  }
+  .tool-item.empty { opacity: 0.38; }
+  .tool-item.empty:hover { border-color: var(--bad); transform: none; }
+  .tool-item.empty .cnt { background: #3a3f4d; color: var(--text-dim); }
+
+  /* ── 선택 패널 ── */
+  #sel-panel { bottom: 100px; left: 50%; transform: translateX(-50%); display: none; text-align: center; }
+  #sel-panel.show { display: block; }
+  #sel-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
+  #sel-panel .swatches { display: flex; gap: 8px; justify-content: center; margin-bottom: 9px; }
+  .swatch { width: 22px; height: 22px; border-radius: 3px; cursor: pointer; border: 2px solid #555b6b; }
+  .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  #sel-panel .btn-row { display: flex; gap: 6px; }
+
+  /* ── 모달 (이주 / 전리품 / 도움말) ── */
+  #modal-back {
+    position: absolute; inset: 0; background: rgba(8, 9, 12, 0.72);
+    display: none; align-items: center; justify-content: center; z-index: 20;
+  }
+  #modal-back.show { display: flex; }
+  #modal { max-width: 560px; width: calc(100vw - 60px); max-height: 80vh; overflow-y: auto; }
+  #modal h2 { font-size: 14px; color: var(--accent); margin-bottom: 10px; }
+  #modal .modal-body { font-size: 12px; line-height: 1.8; }
+  #modal .close-row { text-align: right; margin-top: 12px; }
+  .shelter-card {
+    display: flex; gap: 10px; align-items: center;
+    border: 2px solid var(--panel-border); border-radius: 4px;
+    padding: 9px 10px; margin-bottom: 8px; background: #1c1f28;
+  }
+  .shelter-card .s-emoji { font-size: 26px; }
+  .shelter-card .s-body { flex: 1; }
+  .shelter-card .s-name { font-size: 13px; }
+  .shelter-card .s-desc { font-size: 10px; color: var(--text-dim); line-height: 1.5; }
+  .shelter-card.current { border-color: var(--accent); }
+  .shelter-card.locked { opacity: 0.5; }
+  .loot-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .loot-item {
+    border: 2px solid var(--panel-border); border-radius: 4px;
+    padding: 6px 10px; font-size: 12px; background: #1c1f28;
+  }
+
+  /* ── 자원 바 ── */
+  #res-bar {
+    top: 12px; left: 50%; transform: translateX(-50%);
+    padding: 6px 8px; max-width: calc(100vw - 480px);
+  }
+  #res-chips { display: flex; gap: 3px; overflow-x: auto; }
+  .res-chip {
+    display: flex; align-items: center; gap: 3px;
+    font-size: 11px; padding: 2px 6px; border-radius: 3px;
+    background: #1c1f28; white-space: nowrap;
+  }
+  .res-chip.zero { color: var(--bad); background: #2a1c1c; }
+  .res-chip .rn { color: var(--text-dim); font-size: 10px; }
+
+  /* ── 부상 카드 ── */
+  .injury-card {
+    border: 2px solid #5c3a38; border-radius: 3px; background: #241c1c;
+    padding: 8px; margin-bottom: 8px; font-size: 11px; line-height: 1.6;
+  }
+  .injury-card .i-name { color: var(--bad); font-size: 12px; }
+  .injury-card .btn-row { display: flex; gap: 5px; margin-top: 6px; }
+  .injury-card .pixel-btn { flex: 1; padding: 4px 4px; font-size: 10px; }
+
+  /* ── 탐험 준비 모달 ── */
+  .prep-row {
+    display: flex; align-items: center; gap: 8px;
+    border: 2px solid var(--panel-border); border-radius: 3px;
+    padding: 6px 8px; margin-bottom: 6px; background: #1c1f28;
+    cursor: pointer; font-size: 11px;
+  }
+  .prep-row.sel { border-color: var(--accent); }
+  .prep-row.no { opacity: 0.4; cursor: not-allowed; }
+  .prep-row .p-eff { color: var(--good); }
+  .prep-row .p-cost { color: var(--text-dim); margin-left: auto; white-space: nowrap; }
+  .rate-line { font-size: 11px; line-height: 1.8; margin-bottom: 8px; color: var(--text-dim); }
+  .rate-line b { color: var(--accent); font-size: 14px; }
+
+  /* ── 일일 리포트 ── */
+  .report-sec { margin-bottom: 8px; font-size: 11px; line-height: 1.7; }
+  .report-sec .r-title { color: var(--accent); font-size: 12px; }
+  .report-warn { color: var(--bad); }
+  .report-tip { color: var(--good); }
+  kbd { background:#262a35; border:1px solid var(--panel-border); border-radius:3px; padding:0 5px; font-family: inherit; }
+
+  #toast {
+    position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+    background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 4px;
+    padding: 7px 16px; font-size: 12px; color: var(--accent);
+    opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 30;
+    text-align: center;
+  }
+  #toast.show { opacity: 1; }
+
+  #loading {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: #0e1014; color: var(--text-dim); font-size: 14px; z-index: 40; letter-spacing: 2px;
+  }
+
+  /* ── 이동/접기 가능한 패널 ── */
+  #c { touch-action: none; }
+  .p-head {
+    display: flex; align-items: center; gap: 6px;
+    margin: -10px -12px 8px; padding: 5px 8px;
+    background: #20242e; border-bottom: 2px solid var(--panel-border);
+    border-radius: 2px 2px 0 0;
+    cursor: grab; user-select: none; touch-action: none;
+    font-size: 10px; color: var(--text-dim); letter-spacing: 1px;
+  }
+  .p-head:active { cursor: grabbing; }
+  .p-head .p-title { flex: 1; overflow: hidden; white-space: nowrap; }
+  .p-head .p-min {
+    background: #2c3140; border: 1px solid var(--panel-border); border-radius: 2px;
+    color: var(--text); font-family: inherit; font-size: 11px; line-height: 1;
+    width: 20px; height: 18px; cursor: pointer; padding: 0;
+  }
+  .p-head .p-min:hover { border-color: var(--accent); color: var(--accent); }
+  .panel.collapsed { padding-bottom: 0; }
+  .panel.collapsed > :not(.p-head) { display: none !important; }
+  .panel.collapsed .p-head { margin-bottom: -10px; border-bottom: none; }
+  .panel.dragging { opacity: 0.85; z-index: 15; }
+
+  /* ── 전자시계 (LCD) ── */
+  #clock-panel { top: 12px; right: 210px; padding: 8px 10px; }
+  #lcd {
+    background: #0c1408; border: 2px solid #1e2a18; border-radius: 3px;
+    padding: 6px 12px; text-align: center; min-width: 108px;
+  }
+  #lcd-day { font-size: 10px; color: #6a9a5f; letter-spacing: 2px; }
+  #lcd-time {
+    font-size: 26px; color: #b8f0a0; letter-spacing: 3px; line-height: 1.1;
+    text-shadow: 0 0 6px rgba(140, 240, 120, 0.55), 0 0 1px #b8f0a0;
+    font-variant-numeric: tabular-nums;
+  }
+  #lcd-colon { animation: colonblink 1s steps(1) infinite; }
+  @keyframes colonblink { 50% { opacity: 0.15; } }
+  #lcd-sub { font-size: 10px; color: #5f8a55; margin-top: 2px; }
+
+  /* ── 온스크린 카메라 컨트롤 ── */
+  #cam-ctrl {
+    position: absolute; right: 12px; bottom: 12px; z-index: 5;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .cam-btn {
+    width: 40px; height: 40px; font-size: 17px; line-height: 1;
+    background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 4px;
+    color: var(--text); cursor: pointer; font-family: inherit;
+    touch-action: manipulation;
+  }
+  .cam-btn:hover, .cam-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  #btn-cancel-place {
+    position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
+    display: none; z-index: 6; padding: 9px 18px; font-size: 12px;
+  }
+  #btn-cancel-place.show { display: block; }
+
+  /* ── 모바일 ── */
+  @media (max-width: 760px) {
+    #hud { width: 190px; padding: 8px; }
+    #hud .shelter-name { font-size: 12px; }
+    #hud .stat { font-size: 10px; }
+    #hud .btn-row .pixel-btn { padding: 7px 1px; font-size: 10px; }
+    #res-bar { top: auto; bottom: 88px; left: 8px; right: 8px; transform: none; max-width: none; }
+    #clock-panel { right: 8px; top: 8px; }
+    #lcd-time { font-size: 20px; }
+    #render-panel { top: 118px; right: 8px; width: 160px; }
+    #exp-panel { width: 210px; left: 8px; max-height: calc(100vh - 220px); }
+    .tool-item { min-width: 52px; font-size: 9px; padding: 6px 3px 4px; }
+    .tool-item .emoji { font-size: 17px; }
+    #toolbar { bottom: 8px; padding: 6px; }
+    #sel-panel { bottom: 150px; max-width: calc(100vw - 20px); }
+    #cam-ctrl { bottom: 150px; }
+    .cam-btn { width: 44px; height: 44px; }
+    #modal { max-height: 72vh; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="loading">SHELTER LOADING . . .</div>
+
+<div class="panel" id="hud">
+  <div class="shelter-name" id="hud-shelter">🏚️ 셸터</div>
+  <div class="stat" id="hud-stat">성공한 탐험 0회</div>
+  <div class="btn-row">
+    <button class="pixel-btn primary" id="btn-exp">🎒 탐험</button>
+    <button class="pixel-btn" id="btn-move">🏠 이주</button>
+    <button class="pixel-btn" id="btn-craft">🔨 제작</button>
+    <button class="pixel-btn" id="btn-clean" title="깨끗한 물 1 소비, 청결 +20">🧹 청소</button>
+    <button class="pixel-btn" id="btn-help">❓</button>
+  </div>
+</div>
+
+<div class="panel" id="res-bar"><div id="res-chips"></div></div>
+
+<div class="panel" id="clock-panel">
+  <div id="lcd">
+    <div id="lcd-day">DAY 01</div>
+    <div id="lcd-time">08<span id="lcd-colon">:</span>00</div>
+    <div id="lcd-sub">🌅 아침 · 🌤️</div>
+  </div>
+</div>
+
+<div id="cam-ctrl">
+  <button class="cam-btn" id="cam-rotl" title="시점 좌회전 (Q)">⟲</button>
+  <button class="cam-btn" id="cam-rotr" title="시점 우회전 (E)">⟳</button>
+  <button class="cam-btn" id="cam-zin" title="줌 인">＋</button>
+  <button class="cam-btn" id="cam-zout" title="줌 아웃">－</button>
+  <button class="cam-btn" id="cam-home" title="시점 초기화">⌂</button>
+</div>
+
+<button class="pixel-btn danger" id="btn-cancel-place">✖ 배치 취소</button>
+
+<div class="panel" id="exp-panel">
+  <h2>■ 지역 탐험</h2>
+  <div id="exp-content"></div>
+</div>
+
+<div class="panel" id="render-panel">
+  <h2>■ 설정</h2>
+  <label>픽셀 크기 <input type="range" id="opt-pixel" min="1" max="6" step="1" value="3"></label>
+  <label>색상 양자화 <input type="checkbox" id="opt-quant" checked></label>
+  <label>디더링 <input type="checkbox" id="opt-dither" checked></label>
+  <label>실내 조명 <input type="checkbox" id="opt-ceil" checked></label>
+  <label id="bgm-row" style="display:none">BGM <input type="checkbox" id="opt-bgm"></label>
+  <div class="btn-row">
+    <button class="pixel-btn danger" id="btn-reset">처음부터</button>
+  </div>
+</div>
+
+<div class="panel" id="sel-panel">
+  <h2 id="sel-name">아이템</h2>
+  <div class="swatches" id="sel-swatches"></div>
+  <div class="btn-row">
+    <button class="pixel-btn" id="btn-rotate">회전 (R)</button>
+    <button class="pixel-btn danger" id="btn-delete">회수 (Del)</button>
+  </div>
+</div>
+
+<div class="panel" id="toolbar"></div>
+
+<div id="modal-back">
+  <div class="panel" id="modal">
+    <h2 id="modal-title"></h2>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="close-row"><button class="pixel-btn" id="modal-close">닫기</button></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+/* ============================================================
+   기본 설정
+============================================================ */
+const GRID = 0.25;
+const SAVE_KEY = 'project-shelter-web-v2';
+const OLD_SAVE_KEY = 'project-shelter-web-v1';
+const GAME_MIN_PER_SEC = 1.5;   // 실제 1초 = 게임 1.5분 (하루 = 16분)
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.shadowMap.autoUpdate = false; // 정적 씬: 변경 시에만 갱신
+function shadowDirty() { renderer.shadowMap.needsUpdate = true; }
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x1a2233, 24, 58);
+
+/* ============================================================
+   카메라 (이소메트릭 직교 + 궤도 회전/줌)
+============================================================ */
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
+const camState = { yaw: Math.PI / 4, elev: THREE.MathUtils.degToRad(33), dist: 24, zoom: 0.6, targetYaw: Math.PI / 4 };
+const camCenter = new THREE.Vector3(0, 0.9, 0);
+
+function updateCamera() {
+  camState.yaw += (camState.targetYaw - camState.yaw) * 0.15;
+  const { yaw, elev, dist } = camState;
+  camera.position.set(
+    camCenter.x + dist * Math.cos(elev) * Math.cos(yaw),
+    camCenter.y + dist * Math.sin(elev),
+    camCenter.z + dist * Math.cos(elev) * Math.sin(yaw)
+  );
+  camera.lookAt(camCenter);
+  const aspect = innerWidth / innerHeight;
+  const h = 9 / camState.zoom;
+  camera.left = -h * aspect / 2; camera.right = h * aspect / 2;
+  camera.top = h / 2; camera.bottom = -h / 2;
+  camera.updateProjectionMatrix();
+}
+function fitZoomForShelter() {
+  const aspect = innerWidth / innerHeight;
+  const base = SHELTERS[state.current].viewH;
+  const needH = Math.max(base, (base + 3) / Math.max(aspect, 0.4));
+  camState.zoom = THREE.MathUtils.clamp(9 / needH, 0.2, 1);
+}
+
+/* ============================================================
+   조명 (환경별로 색/세기 조정)
+============================================================ */
+const hemi = new THREE.HemisphereLight(0x8a98bd, 0x46403a, 0.7);
+scene.add(hemi);
+
+const moon = new THREE.DirectionalLight(0x9db4d8, 0.75);
+moon.position.set(-6, 12, -4);
+moon.castShadow = true;
+moon.shadow.mapSize.set(1024, 1024);
+moon.shadow.camera.left = -16; moon.shadow.camera.right = 16;
+moon.shadow.camera.top = 16; moon.shadow.camera.bottom = -16;
+moon.shadow.camera.far = 60;
+scene.add(moon);
+
+const ceilLight = new THREE.PointLight(0xffd9a0, 25, 16, 1.6);
+ceilLight.castShadow = true;
+ceilLight.shadow.mapSize.set(512, 512);
+scene.add(ceilLight);
+
+/* ============================================================
+   절차적 텍스처
+============================================================ */
+function makeCanvasTex(draw, w = 128, h = 128, repX = 1, repY = 1) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  draw(cv.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(cv);
+  t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repX, repY);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const floorWoodTex = makeCanvasTex((g, w, h) => {
+  g.fillStyle = '#8a6a48'; g.fillRect(0, 0, w, h);
+  const plank = h / 4;
+  for (let r = 0; r < 4; r++) {
+    g.fillStyle = ['#8f6f4c', '#846544', '#967551', '#7e6040'][r % 4];
+    g.fillRect(0, r * plank, w, plank);
+    g.fillStyle = '#5d452c'; g.fillRect(0, r * plank, w, 2);
+    const off = (r * 53) % w;
+    g.fillRect(off, r * plank, 2, plank);
+    g.fillStyle = 'rgba(0,0,0,0.08)';
+    for (let i = 0; i < 14; i++) g.fillRect((off + i * 31) % w, r * plank + (i * 13) % plank, 5, 1);
+  }
+}, 128, 128, 5, 4);
+const wallWoodTex = makeCanvasTex((g, w, h) => {
+  g.fillStyle = '#a08258'; g.fillRect(0, 0, w, h);
+  const plank = w / 5;
+  for (let c = 0; c < 5; c++) {
+    g.fillStyle = ['#a5875c', '#9a7c52', '#ab8d63', '#94774e', '#a1835a'][c];
+    g.fillRect(c * plank, 0, plank, h);
+    g.fillStyle = '#6e5636'; g.fillRect(c * plank, 0, 2, h);
+    g.fillStyle = 'rgba(0,0,0,0.07)';
+    for (let i = 0; i < 10; i++) g.fillRect(c * plank + 4 + (i * 7) % (plank - 6), (c * 37 + i * 29) % h, 2, 6);
+  }
+}, 128, 128, 3, 1);
+const metalTex = makeCanvasTex((g, w, h) => {
+  g.fillStyle = '#5c6670'; g.fillRect(0, 0, w, h);
+  const rib = w / 8;
+  for (let c = 0; c < 8; c++) {
+    g.fillStyle = c % 2 ? '#525b64' : '#616b76';
+    g.fillRect(c * rib, 0, rib, h);
+    g.fillStyle = '#3d444c'; g.fillRect(c * rib, 0, 2, h);
+  }
+  // 녹 얼룩
+  g.fillStyle = 'rgba(140,84,52,0.55)';
+  for (let i = 0; i < 9; i++) {
+    const x = (i * 41 + 13) % w, y = (i * 67 + 30) % h;
+    g.fillRect(x, y, 5 + (i * 7) % 12, 3 + (i * 5) % 9);
+  }
+  g.fillStyle = 'rgba(110,62,38,0.5)';
+  for (let i = 0; i < 6; i++) g.fillRect((i * 53 + 5) % w, h - 14 - (i * 11) % 10, 4 + (i * 9) % 14, 6);
+}, 128, 128, 3, 1);
+const plywoodTex = makeCanvasTex((g, w, h) => {
+  g.fillStyle = '#9c8563'; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#7a6749'; g.lineWidth = 2;
+  g.strokeRect(1, 1, w / 2 - 2, h - 2); g.strokeRect(w / 2 + 1, 1, w / 2 - 2, h - 2);
+  g.fillStyle = 'rgba(0,0,0,0.06)';
+  for (let i = 0; i < 22; i++) g.fillRect((i * 29 + 7) % w, (i * 17 + 3) % h, 8, 1);
+  g.fillStyle = 'rgba(90,60,40,0.35)';
+  for (let i = 0; i < 4; i++) g.fillRect((i * 47 + 20) % w, (i * 61 + 12) % h, 10, 7);
+}, 128, 128, 3, 2);
+const brickTex = makeCanvasTex((g, w, h) => {
+  g.fillStyle = '#8a5138'; g.fillRect(0, 0, w, h);
+  const bh = h / 8, bw = w / 4;
+  for (let r = 0; r < 8; r++) {
+    for (let c = -1; c < 5; c++) {
+      const off = r % 2 ? bw / 2 : 0;
+      g.fillStyle = ['#94583c', '#84492f', '#9c6244', '#7d452c'][(r * 3 + c + 4) % 4];
+      g.fillRect(c * bw + off + 1, r * bh + 1, bw - 2, bh - 2);
+    }
+  }
+  g.fillStyle = 'rgba(40,28,20,0.5)';
+  for (let i = 0; i < 12; i++) g.fillRect((i * 43 + 11) % w, (i * 29 + 5) % h, 6 + (i * 5) % 10, 3);
+}, 128, 128, 3, 2);
+const subwayTileTex = makeCanvasTex((g, w, h) => {
+  g.fillStyle = '#7a8a7e'; g.fillRect(0, 0, w, h);
+  const tw = w / 6, th = h / 8;
+  for (let r = 0; r < 8; r++) {
+    for (let c = -1; c < 7; c++) {
+      const off = r % 2 ? tw / 2 : 0;
+      g.fillStyle = ['#84948a', '#7c8c80', '#8d9c90', '#75857a'][(r * 5 + c + 8) % 4];
+      g.fillRect(c * tw + off + 1, r * th + 1, tw - 2, th - 2);
+    }
+  }
+  g.fillStyle = 'rgba(30,35,30,0.4)';
+  for (let i = 0; i < 10; i++) g.fillRect((i * 47 + 9) % w, (i * 31 + 4) % h, 5 + (i * 3) % 8, 3);
+}, 128, 128, 3, 1);
+const concreteTex = makeCanvasTex((g, w, h) => {
+  g.fillStyle = '#6a6a68'; g.fillRect(0, 0, w, h);
+  const tile = w / 2;
+  g.strokeStyle = '#4e4e4c'; g.lineWidth = 2;
+  g.strokeRect(1, 1, tile - 2, tile - 2); g.strokeRect(tile + 1, 1, tile - 2, tile - 2);
+  g.strokeRect(1, tile + 1, tile - 2, tile - 2); g.strokeRect(tile + 1, tile + 1, tile - 2, tile - 2);
+  g.fillStyle = 'rgba(0,0,0,0.1)';
+  for (let i = 0; i < 26; i++) g.fillRect((i * 37 + 5) % w, (i * 23 + 9) % h, 3 + (i % 4), 1);
+  // 균열
+  g.strokeStyle = 'rgba(30,30,30,0.5)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(10, 20); g.lineTo(34, 44); g.lineTo(30, 70); g.stroke();
+  g.beginPath(); g.moveTo(90, 100); g.lineTo(74, 82); g.lineTo(84, 60); g.stroke();
+}, 128, 128, 4, 3);
+
+/* ============================================================
+   공용 빌더 유틸
+============================================================ */
+function lamb(c, opts = {}) { return new THREE.MeshLambertMaterial({ color: c, ...opts }); }
+function B(parent, w, h, d, c, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), lamb(c));
+  m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
+  parent.add(m); return m;
+}
+function Cyl(parent, rT, rB, h, c, x = 0, y = 0, z = 0, seg = 10) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rT, rB, h, seg), lamb(c));
+  m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
+  parent.add(m); return m;
+}
+function shade(hex, f) { const c = new THREE.Color(hex); c.multiplyScalar(f); return c.getHex(); }
+function seededRand(seed) {
+  let s = seed;
+  return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+}
+function paintGeo(geo, hex) {
+  const c = new THREE.Color(hex);
+  const n = geo.attributes.position.count;
+  const arr = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) arr.set([c.r, c.g, c.b], i * 3);
+  geo.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+  return geo;
+}
+const vcLambert = new THREE.MeshLambertMaterial({ vertexColors: true });
+vcLambert.userData.shared = true;
+function disposeDeep(root) {
+  root.traverse(o => {
+    if (o.isMesh || o.isPoints) {
+      o.geometry.dispose();
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) if (!m.userData.shared && !m.map) m.dispose();
+    }
+  });
+}
+
+/* ============================================================
+   가구 정의 (12종 × 색상 4종)
+============================================================ */
+const WOODS = { names: ['오크', '월넛', '화이트워시', '블랙우드'], colors: [0xa07850, 0x64452e, 0xcfc8ba, 0x3c3a38] };
+
+const DEFS = {
+  bed: {
+    name: '침대', emoji: '🛏️', fp: { w: 1.8, d: 2.3 },
+    colorNames: ['와인레드', '포레스트', '네이비', '크림'],
+    colors: [0xa84a4a, 0x5a7d5a, 0x46557a, 0xd6c9ab],
+    build(c) {
+      const g = new THREE.Group();
+      const wood = 0x77543a;
+      B(g, 1.7, 0.28, 2.2, wood, 0, 0.24, 0);
+      B(g, 1.7, 0.9, 0.12, wood, 0, 0.55, -1.04);
+      B(g, 0.1, 0.35, 0.1, wood, -0.78, 0.17, 1.02); B(g, 0.1, 0.35, 0.1, wood, 0.78, 0.17, 1.02);
+      B(g, 0.1, 0.35, 0.1, wood, -0.78, 0.17, -1.02); B(g, 0.1, 0.35, 0.1, wood, 0.78, 0.17, -1.02);
+      B(g, 1.58, 0.22, 2.05, 0xe3ddcf, 0, 0.49, 0);
+      B(g, 1.62, 0.24, 1.45, c, 0, 0.52, 0.33);
+      B(g, 1.62, 0.08, 0.3, shade(c, 1.25), 0, 0.62, 0.37);
+      B(g, 0.62, 0.16, 0.4, 0xf0ece0, -0.35, 0.66, -0.72);
+      B(g, 0.62, 0.16, 0.4, 0xf0ece0, 0.38, 0.66, -0.72);
+      return g;
+    }
+  },
+  sofa: {
+    name: '소파', emoji: '🛋️', fp: { w: 2.0, d: 0.95 },
+    colorNames: ['베이지', '그레이', '올리브', '테라코타'],
+    colors: [0xc4b295, 0x84878e, 0x7d7f5a, 0xb0644d],
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 1.9, 0.35, 0.85, shade(c, 0.85), 0, 0.3, 0);
+      B(g, 1.9, 0.62, 0.2, shade(c, 0.9), 0, 0.72, -0.32);
+      B(g, 0.18, 0.55, 0.85, shade(c, 0.9), -0.86, 0.55, 0);
+      B(g, 0.18, 0.55, 0.85, shade(c, 0.9), 0.86, 0.55, 0);
+      B(g, 0.75, 0.16, 0.6, c, -0.39, 0.55, 0.05);
+      B(g, 0.75, 0.16, 0.6, c, 0.39, 0.55, 0.05);
+      B(g, 0.1, 0.14, 0.1, 0x4a3826, -0.8, 0.07, 0.32); B(g, 0.1, 0.14, 0.1, 0x4a3826, 0.8, 0.07, 0.32);
+      B(g, 0.1, 0.14, 0.1, 0x4a3826, -0.8, 0.07, -0.32); B(g, 0.1, 0.14, 0.1, 0x4a3826, 0.8, 0.07, -0.32);
+      return g;
+    }
+  },
+  chair: {
+    name: '의자', emoji: '🪑', fp: { w: 0.6, d: 0.6 },
+    colorNames: WOODS.names, colors: WOODS.colors,
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 0.5, 0.07, 0.5, c, 0, 0.46, 0);
+      B(g, 0.5, 0.55, 0.07, c, 0, 0.82, -0.22);
+      for (const [x, z] of [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]])
+        B(g, 0.07, 0.45, 0.07, shade(c, 0.85), x, 0.22, z);
+      return g;
+    }
+  },
+  table: {
+    name: '테이블', emoji: '🪵', fp: { w: 1.5, d: 0.9 },
+    colorNames: WOODS.names, colors: WOODS.colors,
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 1.4, 0.09, 0.8, c, 0, 0.72, 0);
+      for (const [x, z] of [[-0.6, -0.3], [0.6, -0.3], [-0.6, 0.3], [0.6, 0.3]])
+        B(g, 0.09, 0.7, 0.09, shade(c, 0.85), x, 0.35, z);
+      return g;
+    }
+  },
+  dresser: {
+    name: '서랍장', emoji: '🗄️', fp: { w: 1.2, d: 0.55 },
+    colorNames: ['내추럴', '다크브라운', '화이트', '그레이'],
+    colors: [0xa9825c, 0x5f452f, 0xd4cfc2, 0x7c7f86],
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 1.1, 1.0, 0.45, c, 0, 0.58, 0);
+      B(g, 1.16, 0.06, 0.5, shade(c, 1.15), 0, 1.1, 0);
+      for (let i = 0; i < 3; i++) {
+        B(g, 0.95, 0.22, 0.04, shade(c, 1.12), 0, 0.32 + i * 0.28, 0.235);
+        B(g, 0.16, 0.05, 0.03, 0x3f342a, 0, 0.32 + i * 0.28, 0.26);
+      }
+      for (const x of [-0.48, 0.48]) B(g, 0.08, 0.1, 0.4, shade(c, 0.8), x, 0.05, 0);
+      return g;
+    }
+  },
+  bookshelf: {
+    name: '책장', emoji: '📚', fp: { w: 1.0, d: 0.4 },
+    colorNames: WOODS.names, colors: WOODS.colors,
+    build(c, colorIdx = 0) {
+      const g = new THREE.Group();
+      B(g, 0.06, 1.8, 0.32, c, -0.47, 0.9, 0); B(g, 0.06, 1.8, 0.32, c, 0.47, 0.9, 0);
+      B(g, 1.0, 0.06, 0.32, c, 0, 1.8, 0);
+      B(g, 0.94, 0.05, 0.3, c, 0, 0.05, 0);
+      B(g, 0.94, 0.04, 0.28, shade(c, 0.9), 0, 0.62, 0);
+      B(g, 0.94, 0.04, 0.28, shade(c, 0.9), 0, 1.2, 0);
+      B(g, 0.94, 1.75, 0.05, shade(c, 0.7), 0, 0.92, -0.14);
+      const bookColors = [0xa8524e, 0x54688a, 0x6a7f5b, 0xc4a35b, 0x8a5a7a, 0xb5764a];
+      const rand = seededRand(7 + colorIdx * 13);
+      for (let sh = 0; sh < 3; sh++) {
+        let x = -0.42;
+        const yBase = [0.075, 0.64, 1.22][sh];
+        while (x < 0.36) {
+          const bw = 0.06 + rand() * 0.05, bh = 0.3 + rand() * 0.16;
+          if (rand() > 0.16) B(g, bw, bh, 0.2, bookColors[Math.floor(rand() * bookColors.length)], x + bw / 2, yBase + bh / 2, 0.01);
+          x += bw + 0.012;
+        }
+      }
+      return g;
+    }
+  },
+  rug: {
+    name: '러그', emoji: '🧶', fp: { w: 2.2, d: 1.5 }, noCollide: true,
+    colorNames: ['레드', '블루', '그린', '베이지'],
+    colors: [0x9e524e, 0x54688a, 0x6a7f5b, 0xc4b295],
+    build(c) {
+      const g = new THREE.Group();
+      const m1 = B(g, 2.2, 0.04, 1.5, shade(c, 0.8), 0, 0.02, 0);
+      B(g, 1.9, 0.045, 1.2, c, 0, 0.022, 0);
+      B(g, 1.3, 0.05, 0.7, shade(c, 1.2), 0, 0.024, 0);
+      m1.castShadow = false;
+      return g;
+    }
+  },
+  lamp: {
+    name: '스탠드 조명', emoji: '💡', fp: { w: 0.45, d: 0.45 },
+    colorNames: ['웜화이트', '세이지', '로즈', '스카이'],
+    colors: [0xe8d9b0, 0x9aa88a, 0xc79a9a, 0x93a8bb],
+    light: { color: 0xffb670, intensity: 7, dist: 7, y: 1.45, fuel: 'battery', comfort: 8 },
+    build(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.16, 0.2, 0.06, 0x3f3a33, 0, 0.03, 0);
+      Cyl(g, 0.025, 0.025, 1.25, 0x565049, 0, 0.68, 0);
+      const sh = Cyl(g, 0.16, 0.24, 0.4, c, 0, 1.5, 0);
+      sh.material.emissive = new THREE.Color(c);
+      sh.material.emissiveIntensity = 0.25;
+      sh.userData.glow = true;
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6),
+        new THREE.MeshLambertMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 1 }));
+      bulb.position.set(0, 1.36, 0); bulb.userData.glow = true;
+      g.add(bulb);
+      return g;
+    }
+  },
+  plant: {
+    name: '화분', emoji: '🪴', fp: { w: 0.55, d: 0.55 },
+    colorNames: ['테라코타', '화이트', '블랙', '민트'],
+    colors: [0xb3674d, 0xd8d3c7, 0x46484a, 0x9dbcae],
+    build(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.2, 0.15, 0.3, c, 0, 0.15, 0, 8);
+      Cyl(g, 0.16, 0.16, 0.04, 0x4a3a28, 0, 0.31, 0, 8);
+      Cyl(g, 0.035, 0.045, 0.5, 0x6a4f33, 0, 0.55, 0, 6);
+      const leaf = (x, y, z, s) => {
+        const m = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), lamb(0x5f8a52));
+        m.position.set(x, y, z); m.castShadow = true; g.add(m);
+      };
+      leaf(0, 1.0, 0, 0.3); leaf(0.2, 0.82, 0.1, 0.2); leaf(-0.18, 0.86, -0.08, 0.22); leaf(0.05, 0.78, -0.18, 0.17);
+      return g;
+    }
+  },
+  crate: {
+    name: '나무상자', emoji: '📦', fp: { w: 0.8, d: 0.8 },
+    colorNames: WOODS.names, colors: WOODS.colors,
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 0.75, 0.6, 0.75, c, 0, 0.3, 0);
+      B(g, 0.79, 0.08, 0.79, shade(c, 0.85), 0, 0.06, 0);
+      B(g, 0.79, 0.08, 0.79, shade(c, 0.85), 0, 0.56, 0);
+      B(g, 0.08, 0.62, 0.78, shade(c, 0.8), -0.34, 0.3, 0);
+      B(g, 0.08, 0.62, 0.78, shade(c, 0.8), 0.34, 0.3, 0);
+      return g;
+    }
+  },
+  radio: {
+    name: '라디오', emoji: '📻', fp: { w: 0.6, d: 0.35 },
+    colorNames: ['체리레드', '크림', '민트', '브라운'],
+    colors: [0xa8433f, 0xd9cdb2, 0x93b5a5, 0x6f4f38],
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 0.55, 0.34, 0.24, c, 0, 0.2, 0);
+      B(g, 0.2, 0.2, 0.02, shade(c, 0.65), -0.12, 0.2, 0.13);
+      const dial = B(g, 0.16, 0.1, 0.02, 0xf5e3b0, 0.13, 0.24, 0.13);
+      dial.material.emissive = new THREE.Color(0xd9b96a);
+      dial.material.emissiveIntensity = 0.7; dial.userData.glow = true;
+      Cyl(g, 0.03, 0.03, 0.04, 0x2f2a24, 0.13, 0.1, 0.14, 8).rotation.x = Math.PI / 2;
+      Cyl(g, 0.008, 0.008, 0.5, 0x8b8b8b, -0.2, 0.55, -0.05, 5).rotation.z = 0.4;
+      B(g, 0.1, 0.03, 0.2, shade(c, 0.8), -0.18, 0.025, 0); B(g, 0.1, 0.03, 0.2, shade(c, 0.8), 0.18, 0.025, 0);
+      return g;
+    }
+  },
+  candle: {
+    name: '캔들 스툴', emoji: '🕯️', fp: { w: 0.5, d: 0.5 },
+    colorNames: ['우드', '화이트', '블랙', '라벤더'],
+    colors: [0x8a6a48, 0xd4cfc2, 0x46484a, 0x9a8aa8],
+    light: { color: 0xffa050, intensity: 3, dist: 4, y: 0.75, flicker: true, fuel: 'candle', comfort: 6 },
+    build(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.2, 0.22, 0.05, c, 0, 0.42, 0, 10);
+      Cyl(g, 0.04, 0.05, 0.4, shade(c, 0.85), 0, 0.2, 0, 8);
+      Cyl(g, 0.14, 0.16, 0.03, shade(c, 0.7), 0, 0.02, 0, 10);
+      Cyl(g, 0.05, 0.05, 0.16, 0xf0e8d0, 0, 0.53, 0, 8);
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.09, 6),
+        new THREE.MeshLambertMaterial({ color: 0xffd080, emissive: 0xffaa40, emissiveIntensity: 1.4 }));
+      flame.position.set(0, 0.66, 0); flame.userData.glow = true;
+      g.add(flame);
+      return g;
+    }
+  },
+  fridge: {
+    name: '냉장고', emoji: '🧊', fp: { w: 0.78, d: 0.68 },
+    colorNames: ['체리레드', '민트', '크림', '화이트'],
+    colors: [0xa8433f, 0x93b5a5, 0xd9cdb2, 0xd8d8d4],
+    appliance: { fuel: 'battery', effect: 'fridge', label: '음식 부패 방지' },
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 0.7, 1.35, 0.6, c, 0, 0.72, 0);
+      B(g, 0.64, 0.12, 0.55, shade(c, 1.1), 0, 1.44, 0);          // 둥근 상단 느낌
+      B(g, 0.58, 0.06, 0.5, shade(c, 1.15), 0, 1.52, 0);
+      B(g, 0.72, 0.03, 0.62, shade(c, 0.8), 0, 0.98, 0.01);       // 도어 라인
+      B(g, 0.05, 0.5, 0.05, 0xd8d3c8, 0.28, 1.2, 0.33);           // 손잡이
+      B(g, 0.05, 0.3, 0.05, 0xd8d3c8, 0.28, 0.6, 0.33);
+      const ind = B(g, 0.06, 0.04, 0.02, 0x88ff88, -0.24, 1.35, 0.31);
+      ind.material.emissive = new THREE.Color(0x44cc44);
+      ind.material.emissiveIntensity = 0.9; ind.userData.glow = true;
+      B(g, 0.6, 0.06, 0.5, shade(c, 0.7), 0, 0.03, 0);
+      return g;
+    }
+  },
+  purifier: {
+    name: '정수기', emoji: '🚰', fp: { w: 0.6, d: 0.6 },
+    colorNames: ['스틸', '화이트', '올리브', '네이비'],
+    colors: [0x8a8f96, 0xd4cfc2, 0x7d7f5a, 0x46557a],
+    appliance: { fuel: 'battery', effect: 'water', label: '매일 깨끗한 물 +1' },
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 0.5, 0.5, 0.5, shade(c, 0.85), 0, 0.25, 0);            // 받침 캐비닛
+      const tank = Cyl(g, 0.2, 0.2, 0.6, c, 0, 0.82, 0, 10);
+      const wat = Cyl(g, 0.16, 0.16, 0.3, 0x5a8ab0, 0, 0.78, 0, 10);
+      wat.material.emissive = new THREE.Color(0x2a4a66);
+      wat.material.emissiveIntensity = 0.4; wat.userData.glow = true;
+      Cyl(g, 0.05, 0.05, 0.12, 0x3f3a33, 0.2, 0.6, 0.14, 6).rotation.z = Math.PI / 2;
+      B(g, 0.16, 0.12, 0.16, 0xd4cfc2, 0.24, 0.31, 0.14);         // 컵
+      Cyl(g, 0.12, 0.14, 0.08, 0x3f3a33, 0, 1.16, 0, 8);          // 뚜껑
+      return g;
+    }
+  },
+  generator: {
+    name: '발전기', emoji: '⚡', fp: { w: 0.95, d: 0.7 },
+    colorNames: ['레드', '옐로우', '올리브', '그레이'],
+    colors: [0x9e4a3a, 0xb08a3a, 0x6a7047, 0x7c7f86],
+    appliance: { fuel: 'fuel', effect: 'power', label: '가동 중엔 배터리 소비 무료 (연료 1/일)' },
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 0.85, 0.5, 0.55, c, 0, 0.35, 0);                       // 엔진 본체
+      B(g, 0.9, 0.06, 0.6, shade(c, 0.8), 0, 0.07, 0);            // 프레임
+      B(g, 0.06, 0.35, 0.5, shade(c, 0.75), -0.42, 0.35, 0);
+      B(g, 0.06, 0.35, 0.5, shade(c, 0.75), 0.42, 0.35, 0);
+      B(g, 0.3, 0.16, 0.3, 0x3a3733, -0.2, 0.68, 0);              // 연료 탱크 캡
+      Cyl(g, 0.05, 0.05, 0.3, 0x55504a, 0.3, 0.75, -0.15, 6);     // 배기관
+      Cyl(g, 0.14, 0.14, 0.1, 0x2f2a24, 0.24, 0.35, 0.3, 8).rotation.x = Math.PI / 2; // 풀리
+      const ind = B(g, 0.07, 0.05, 0.02, 0xffcc66, -0.3, 0.52, 0.29);
+      ind.material.emissive = new THREE.Color(0xcc8822);
+      ind.material.emissiveIntensity = 1; ind.userData.glow = true;
+      return g;
+    }
+  },
+};
+
+/* ============================================================
+   환경 공통 요소 (하늘 돔 / 별 / 달) — 셸터별로 색만 바꿈
+============================================================ */
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: {
+    cHorizon: { value: new THREE.Color(0x1a2233) },
+    cZenith: { value: new THREE.Color(0x0a0f1a) },
+  },
+  vertexShader: `varying float vY; void main(){ vY = position.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: `varying float vY; uniform vec3 cHorizon, cZenith;
+    void main(){ gl_FragColor = vec4(mix(cHorizon, cZenith, smoothstep(-5.0, 60.0, vY)), 1.0); }`,
+});
+skyMat.userData.shared = true;
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(140, 24, 12), skyMat));
+
+const stars = (() => {
+  const geo = new THREE.BufferGeometry();
+  const pos = [];
+  const srand = seededRand(2026);
+  for (let i = 0; i < 350; i++) {
+    const a = srand() * Math.PI * 2, e = Math.asin(srand() * 0.92 + 0.06);
+    pos.push(120 * Math.cos(e) * Math.cos(a), 120 * Math.sin(e), 120 * Math.cos(e) * Math.sin(a));
+  }
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const p = new THREE.Points(geo, new THREE.PointsMaterial({
+    color: 0xcfe0f5, size: 2, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.85,
+  }));
+  scene.add(p); return p;
+})();
+const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(3.2, 16, 12),
+  new THREE.MeshBasicMaterial({ color: 0xe8eef7, fog: false }));
+moonMesh.position.copy(moon.position.clone().normalize().multiplyScalar(115));
+scene.add(moonMesh);
+
+let currentMood = { stars: 0.85 };
+function applyMood(m) {
+  currentMood = m;
+  scene.fog.color.setHex(m.fog); scene.fog.near = m.fogNear; scene.fog.far = m.fogFar;
+  skyMat.uniforms.cHorizon.value.setHex(m.skyH);
+  skyMat.uniforms.cZenith.value.setHex(m.skyZ);
+  hemi.color.setHex(m.hemiSky); hemi.groundColor.setHex(m.hemiGround); hemi.intensity = m.hemiInt;
+  moon.color.setHex(m.moonC); moon.intensity = m.moonInt;
+  stars.material.opacity = m.stars;
+  moonMesh.visible = m.moonVisible !== false;
+}
+
+/* ============================================================
+   시간대 시스템 (아침~밤~새벽, 하늘/조명이 실시간으로 변함)
+============================================================ */
+// 밤은 셸터 고유 무드를 그대로 사용, 나머지는 전역 팔레트
+const DAY_PHASES = {
+  dawn: { fog: 0x4a4238, skyH: 0x8a5f4a, skyZ: 0x2a3045, sunC: 0xffb27a, sunInt: 0.55, hemiC: 0x9a8f88, hemiG: 0x4a423a, hemiInt: 0.8, stars: 0.25 },
+  day:  { fog: 0x878e9a, skyH: 0xa2b0bc, skyZ: 0x5f7488, sunC: 0xfff0d0, sunInt: 1.15, hemiC: 0xc8d2de, hemiG: 0x6a625a, hemiInt: 1.05, stars: 0 },
+  dusk: { fog: 0x50403c, skyH: 0xa05a38, skyZ: 0x2f2c4c, sunC: 0xff9a5a, sunInt: 0.6, hemiC: 0xa08a80, hemiG: 0x4a3f38, hemiInt: 0.8, stars: 0.2 },
+};
+const DAY_KEYS = [[0, 'night'], [4.5, 'night'], [6.5, 'dawn'], [9, 'day'], [16.5, 'day'], [19, 'dusk'], [21, 'night'], [24, 'night']];
+function phaseValues(name) {
+  if (name !== 'night') return DAY_PHASES[name];
+  const m = currentMood;
+  return { fog: m.fog, skyH: m.skyH, skyZ: m.skyZ, sunC: m.moonC, sunInt: m.moonInt, hemiC: m.hemiSky, hemiG: m.hemiGround, hemiInt: m.hemiInt, stars: m.stars };
+}
+const _tc = { a: new THREE.Color(), b: new THREE.Color() };
+function lerpHex(h1, h2, f, target) {
+  _tc.a.setHex(h1); _tc.b.setHex(h2);
+  return target.copy(_tc.a).lerp(_tc.b, f);
+}
+let dayness = 0;
+function gameHour() { return (state.gameMin % 1440) / 60; }
+function applyTimeLighting() {
+  // 지하 셸터: 시간대와 무관하게 고유 무드 고정
+  if (SHELTERS[state.current]?.indoor) {
+    const A = phaseValues('night');
+    scene.fog.color.setHex(A.fog);
+    skyMat.uniforms.cHorizon.value.setHex(A.skyH);
+    skyMat.uniforms.cZenith.value.setHex(A.skyZ);
+    moon.color.setHex(A.sunC); moon.intensity = A.sunInt;
+    hemi.color.setHex(A.hemiC); hemi.groundColor.setHex(A.hemiG); hemi.intensity = A.hemiInt;
+    stars.material.opacity = 0;
+    dayness = 0;
+    moonMesh.visible = false;
+    return;
+  }
+  const h = gameHour();
+  let i = 0;
+  while (i < DAY_KEYS.length - 1 && DAY_KEYS[i + 1][0] <= h) i++;
+  const [h0, k0] = DAY_KEYS[i], [h1, k1] = DAY_KEYS[Math.min(i + 1, DAY_KEYS.length - 1)];
+  const f = h1 > h0 ? (h - h0) / (h1 - h0) : 0;
+  const A = phaseValues(k0), B = phaseValues(k1);
+  lerpHex(A.fog, B.fog, f, scene.fog.color);
+  lerpHex(A.skyH, B.skyH, f, skyMat.uniforms.cHorizon.value);
+  lerpHex(A.skyZ, B.skyZ, f, skyMat.uniforms.cZenith.value);
+  lerpHex(A.sunC, B.sunC, f, moon.color);
+  moon.intensity = A.sunInt + (B.sunInt - A.sunInt) * f;
+  lerpHex(A.hemiC, B.hemiC, f, hemi.color);
+  lerpHex(A.hemiG, B.hemiG, f, hemi.groundColor);
+  hemi.intensity = A.hemiInt + (B.hemiInt - A.hemiInt) * f;
+  const starsBase = A.stars + (B.stars - A.stars) * f;
+  stars.material.opacity = starsBase * (weather.type === 'clear' ? 1 : 0.25);
+  dayness = THREE.MathUtils.clamp((hemi.intensity - 0.7) / 0.35, 0, 1);
+  moonMesh.visible = dayness < 0.35;
+}
+function timeLabel() {
+  const h = gameHour();
+  if (h < 4.5) return ['🌙', '밤'];
+  if (h < 7) return ['🌄', '새벽'];
+  if (h < 11) return ['🌅', '아침'];
+  if (h < 16.5) return ['☀️', '낮'];
+  if (h < 19) return ['🌆', '저녁'];
+  if (h < 21) return ['🌇', '황혼'];
+  return ['🌙', '밤'];
+}
+function clockText() {
+  const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
+  const [icon, label] = timeLabel();
+  return `Day ${state.day} · ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${icon} ${label}`;
+}
+
+/* ============================================================
+   동적 날씨 (기획서: 날씨가 게임플레이에 직접 영향)
+============================================================ */
+const WEATHERS = {
+  clear: { name: '맑음', icon: '🌤️', penalty: 0 },
+  snow:  { name: '눈',   icon: '🌨️', penalty: 0.15, count: 850, color: 0xdde8f0, size: 3, fall: 1.6, sway: 0.7 },
+  rain:  { name: '비',   icon: '🌧️', penalty: 0.10, count: 1100, color: 0x8fa8c8, size: 2, fall: 10, sway: 0.12 },
+  ash:   { name: '재',   icon: '🌫️', penalty: 0.05, count: 380, color: 0x9a938a, size: 2.5, fall: 0.45, sway: 1.3 },
+};
+const weather = { type: 'clear', nextChange: 0, pts: null, seedY: [], seedS: [] };
+{
+  const MAXN = 1100, SPAN = 23, TOP = 17;
+  const arr = new Float32Array(MAXN * 3);
+  const wrand = seededRand(4242);
+  for (let i = 0; i < MAXN; i++) {
+    arr.set([(wrand() * 2 - 1) * SPAN, wrand() * TOP, (wrand() * 2 - 1) * SPAN], i * 3);
+    weather.seedY.push(0.7 + wrand() * 0.6);
+    weather.seedS.push(wrand() * Math.PI * 2);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+  weather.pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    color: 0xffffff, size: 3, sizeAttenuation: false, transparent: true, opacity: 0.75,
+  }));
+  weather.pts.visible = false;
+  weather.SPAN = SPAN; weather.TOP = TOP;
+  scene.add(weather.pts);
+}
+function setWeather(type) {
+  weather.type = type;
+  state.weatherType = type;
+  const W = WEATHERS[type];
+  if (!W.count) {
+    weather.pts.visible = false;
+  } else {
+    weather.pts.visible = true;
+    weather.pts.material.color.setHex(W.color);
+    weather.pts.material.size = W.size;
+    weather.pts.geometry.setDrawRange(0, W.count);
+  }
+  updateHud();
+  if (!state.exp) renderExpPanel();
+}
+function rollWeather() {
+  const pool = SHELTERS[state.current].weatherPool || ['clear'];
+  const next = pool[Math.floor(Math.random() * pool.length)];
+  if (next !== weather.type) state.dayLog.notes.push(`날씨가 ${WEATHERS[next].name}(으)로 바뀌었습니다.`);
+  setWeather(next);
+  // 날씨는 하루~이틀 유지 (기획: 리얼타임 감각)
+  state.weatherUntil = state.gameMin + 1440 + Math.random() * 1440;
+}
+function ensureWeather() {
+  const pool = SHELTERS[state.current].weatherPool || ['clear'];
+  if (state.weatherUntil > state.gameMin && pool.includes(state.weatherType)) setWeather(state.weatherType);
+  else rollWeather();
+}
+function updateWeather(dt, t) {
+  if (state.gameMin > state.weatherUntil) rollWeather();
+  const W = WEATHERS[weather.type];
+  if (!W.count) return;
+  const p = weather.pts.geometry.attributes.position;
+  const { SPAN, TOP } = weather;
+  const rx = ROOM.w / 2 + 0.6, rz = ROOM.d / 2 + 0.6, roofY = ROOM.h + 1.6;
+  for (let i = 0; i < W.count; i++) {
+    let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    y -= W.fall * weather.seedY[i] * dt;
+    x += Math.sin(t * 1.4 + weather.seedS[i]) * W.sway * dt;
+    // 지붕 아래(실내)로는 떨어지지 않음
+    const inRoom = Math.abs(x) < rx && Math.abs(z) < rz && y < roofY;
+    if (y < -0.5 || inRoom) { y = TOP; x = (Math.random() * 2 - 1) * SPAN; z = (Math.random() * 2 - 1) * SPAN; }
+    if (x > SPAN) x -= SPAN * 2; else if (x < -SPAN) x += SPAN * 2;
+    p.setXYZ(i, x, y, z);
+  }
+  p.needsUpdate = true;
+}
+
+/* ============================================================
+   쾌적함 (기획서: Shelter 꾸미기 품질 → 실질 효과)
+============================================================ */
+function comfortDetail() {
+  const types = new Set(items.map(i => i.defId));
+  const furn = Math.min(45, items.length * 3 + types.size * 3);
+  let light = 0;
+  for (const it of items) {
+    const L = DEFS[it.defId].light;
+    if (L && it.on !== false) light += L.comfort ?? 5;
+  }
+  const lm = SHELTERS[state.current].perk?.lightMult || 1;
+  light = Math.min(24 * lm, light * lm);
+  const clean = state.cleanBy[state.current] ?? 70;
+  const cleanMod = clean >= 80 ? 5 : clean >= 50 ? 0 : clean >= 20 ? -5 : -10;
+  const shelterMod = state.upkeepOk ? (SHELTERS[state.current].baseComfort || 0) : 0;
+  const injuryMod = state.injury ? -5 : 0;
+  const score = THREE.MathUtils.clamp(18 + furn + light + cleanMod + shelterMod + injuryMod, 0, 100);
+  return { furn, light, cleanMod, shelterMod, injuryMod, clean, score };
+}
+function comfortLevel() { return Math.min(5, Math.round(comfortDetail().score / 20)); }
+// 기획서 쾌적함 티어: 50+ → +3%, 75+ → +6%, 90+ → +10%
+function comfortExpBonus() {
+  const s = comfortDetail().score;
+  const base = s >= 90 ? 0.10 : s >= 75 ? 0.06 : s >= 50 ? 0.03 : 0;
+  return base * (SHELTERS[state.current].perk?.cozyMult || 1);
+}
+// 쾌적함이 높으면 부상 회복도 빨라짐
+function recoveryMult() {
+  const s = comfortDetail().score;
+  return s >= 90 ? 0.8 : s >= 75 ? 0.9 : 1;
+}
+function rateParts(regionId, prep = []) {
+  const r = REGIONS[regionId];
+  const sh = SHELTERS[state.current];
+  const comfort = comfortExpBonus();
+  const shelter = sh.perk?.expBonus || 0;
+  let weatherPen = WEATHERS[weather.type].penalty || 0;
+  if (prep.includes('raincoat')) weatherPen *= 0.3;
+  let gear = 0;
+  for (const p of prep) {
+    const b = PREPS[p].bonus;
+    if (b && b[regionId]) gear += b[regionId];
+  }
+  const injuryPen = state.injury ? INJURIES[state.injury.type].pen : 0;
+  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + gear - weatherPen - injuryPen, 0.05, 0.95);
+  return { base: r.rate, comfort, shelter, gear, weatherPen, injuryPen, eff };
+}
+
+/* ============================================================
+   환경 조각 빌더 (아포칼립스 소품)
+============================================================ */
+function pineGeo(rand, s, dark) {
+  const trunkC = dark ? 0x2a2119 : 0x4a3826;
+  const leafC = dark ? 0x1d2b26 : (rand() > 0.5 ? 0x2e4034 : 0x35493a);
+  const parts = [];
+  const trunk = new THREE.CylinderGeometry(0.08 * s, 0.12 * s, 0.7 * s, 6);
+  trunk.translate(0, 0.35 * s, 0);
+  parts.push(paintGeo(trunk, trunkC));
+  for (const [ry, rr, hh] of [[1.15, 0.72, 1.3], [1.85, 0.55, 1.1], [2.45, 0.36, 0.9]]) {
+    const c = new THREE.ConeGeometry(rr * s, hh * s, 7);
+    c.translate(0, ry * s, 0);
+    parts.push(paintGeo(c, leafC));
+  }
+  return mergeGeometries(parts);
+}
+function deadTreeGeo(rand, s, c = 0x3a332c) {
+  const parts = [];
+  const trunk = new THREE.CylinderGeometry(0.06 * s, 0.14 * s, 2.2 * s, 5);
+  trunk.translate(0, 1.1 * s, 0);
+  parts.push(paintGeo(trunk, c));
+  for (let i = 0; i < 3; i++) {
+    const br = new THREE.CylinderGeometry(0.015 * s, 0.05 * s, (0.7 + rand() * 0.5) * s, 4);
+    br.translate(0, (0.35 + rand() * 0.2) * s, 0);
+    br.rotateZ(0.6 + rand() * 0.7);
+    br.rotateY(rand() * Math.PI * 2);
+    br.translate(0, (1.1 + rand() * 0.8) * s, 0);
+    parts.push(paintGeo(br, shade(c, 0.85)));
+  }
+  return mergeGeometries(parts);
+}
+function buildCarWreck(parent, x, z, rotY, rand) {
+  const g = new THREE.Group();
+  const body = 0x5f4a3a, rust = 0x6e3e28, dark = 0x2a2622;
+  B(g, 2.6, 0.5, 1.2, body, 0, 0.55, 0);
+  B(g, 1.4, 0.45, 1.1, shade(body, 0.85), -0.15, 1.0, 0);
+  B(g, 0.5, 0.2, 1.15, rust, 1.0, 0.62, 0);      // 녹슨 본닛
+  B(g, 0.4, 0.28, 1.0, dark, -0.15, 1.0, 0.06);  // 깨진 창
+  const wheel = (wx, wz, missing) => {
+    if (missing) { B(g, 0.3, 0.12, 0.3, dark, wx, 0.12, wz); return; }
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.2, 8), lamb(0x24211e));
+    m.rotation.x = Math.PI / 2; m.position.set(wx, 0.28, wz);
+    m.castShadow = true; g.add(m);
+  };
+  wheel(0.85, 0.62); wheel(-0.85, 0.62); wheel(0.85, -0.62, true); wheel(-0.85, -0.62);
+  g.rotation.y = rotY;
+  g.rotation.z = 0.03;
+  g.position.set(x, 0, z);
+  parent.add(g);
+}
+function buildPowerPole(parent, x, z, tilt, groundY) {
+  const g = new THREE.Group();
+  Cyl(g, 0.07, 0.1, 5.4, 0x3d362e, 0, 2.7, 0, 6);
+  B(g, 1.5, 0.08, 0.08, 0x3d362e, 0, 4.9, 0);
+  B(g, 0.06, 0.14, 0.06, 0x55504a, -0.6, 5.0, 0); B(g, 0.06, 0.14, 0.06, 0x55504a, 0.6, 5.0, 0);
+  g.rotation.z = tilt;
+  g.position.set(x, groundY, z);
+  parent.add(g);
+}
+function buildRuinCity(parent, rand, opt) {
+  // 폐허 빌딩(개별 그룹) — 무너진 상층부 + 드문 불빛. 반환값으로 시야 컬링 가능.
+  const list = [];
+  for (let i = 0; i < opt.count; i++) {
+    const a = rand() * Math.PI * 2;
+    const r = opt.rMin + rand() * (opt.rMax - opt.rMin);
+    const bw = 4 + rand() * 8, bd = 4 + rand() * 8, bh = opt.hMin + rand() * (opt.hMax - opt.hMin);
+    const x = r * Math.cos(a), z = r * Math.sin(a);
+    const col = [0x252a36, 0x2b303c, 0x20242e][Math.floor(rand() * 3)];
+    const g = new THREE.Group();
+    const geos = [paintGeo(new THREE.BoxGeometry(bw, bh, bd), col)];
+    geos[0].translate(0, bh / 2, 0);
+    if (rand() > 0.45) { // 무너진 상층부
+      const g2 = paintGeo(new THREE.BoxGeometry(bw * (0.4 + rand() * 0.3), bh * 0.25, bd * 0.5), shade(col, 0.8));
+      g2.translate((rand() - 0.5) * bw * 0.3, bh + bh * 0.12, 0);
+      geos.push(g2);
+    }
+    g.add(new THREE.Mesh(mergeGeometries(geos), vcLambert));
+    if (rand() < opt.litChance) { // 살아있는 불빛
+      const winGeos = [];
+      const n = 1 + Math.floor(rand() * 3);
+      for (let k = 0; k < n; k++) {
+        const wg = new THREE.BoxGeometry(0.55, 0.75, 0.55);
+        wg.translate((rand() - 0.5) * (bw - 1), 1.5 + rand() * (bh - 2.5), (rand() - 0.5) * (bd - 1));
+        winGeos.push(wg);
+      }
+      g.add(new THREE.Mesh(mergeGeometries(winGeos), new THREE.MeshBasicMaterial({ color: 0xd9b06a })));
+    }
+    g.position.set(x, opt.baseY, z);
+    parent.add(g);
+    list.push({ obj: g, dir: new THREE.Vector2(x, z).normalize(), r });
+  }
+  return list;
+}
+
+/* ============================================================
+   셸터 정의 (컨테이너 → 옥상 캠프 → 숲속 오두막)
+============================================================ */
+let ROOM = { w: 6.4, d: 2.9, h: 2.4 };
+let wallList = [];      // { group, normal }
+let blockers = [];      // 고정 소품 충돌 영역 { x, z, w, d }
+let envDyn = {};        // 환경별 동적 요소
+
+const roomGroup = new THREE.Group(); scene.add(roomGroup);
+const envRoot = new THREE.Group(); scene.add(envRoot);
+
+function stdWall(len, h, mat, opts = {}) {
+  const g = new THREE.Group();
+  const t = 0.22;
+  if (!opts.window) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(len, h, t), mat);
+    m.position.y = h / 2; m.castShadow = m.receiveShadow = true;
+    g.add(m);
+  } else {
+    const { winW, winH, winY, winX } = opts.window;
+    const L = winX - winW / 2 + len / 2, R = len / 2 - (winX + winW / 2);
+    const mk = (w, hh, x, y) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, hh, t), mat);
+      m.position.set(x, y, 0); m.castShadow = m.receiveShadow = true; g.add(m);
+    };
+    mk(L, h, -len / 2 + L / 2, h / 2);
+    mk(R, h, len / 2 - R / 2, h / 2);
+    mk(winW, winY - winH / 2, winX, (winY - winH / 2) / 2);
+    mk(winW, h - (winY + winH / 2), winX, (h + winY + winH / 2) / 2);
+    const frameMat = lamb(opts.frameColor ?? 0x5d4a30);
+    const f1 = new THREE.Mesh(new THREE.BoxGeometry(winW + 0.14, 0.1, t + 0.06), frameMat);
+    f1.position.set(winX, winY - winH / 2, 0); g.add(f1);
+    const f2 = f1.clone(); f2.position.y = winY + winH / 2; g.add(f2);
+    const f3 = new THREE.Mesh(new THREE.BoxGeometry(0.1, winH + 0.1, t + 0.06), frameMat);
+    f3.position.set(winX - winW / 2, winY, 0); g.add(f3);
+    const f4 = f3.clone(); f4.position.x = winX + winW / 2; g.add(f4);
+    const sky = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH),
+      new THREE.MeshBasicMaterial({ color: opts.skyColor ?? 0x36435c }));
+    sky.position.set(winX, winY, -0.02);
+    g.add(sky);
+  }
+  return g;
+}
+function addRoofGrass(wallGroup, len, h, seed) {
+  const rand = seededRand(seed);
+  const palette = [0x6a7f4a, 0x8a8a4f, 0xa3703f, 0x7d5a3a, 0x5f7a45, 0x96633c];
+  const geos = [];
+  let x = -len / 2 + 0.1;
+  while (x < len / 2 - 0.1) {
+    const gh = 0.14 + rand() * 0.3;
+    const g = new THREE.ConeGeometry(0.05 + rand() * 0.09, gh, 5);
+    g.rotateZ((rand() - 0.5) * 0.35);
+    g.translate(x, h + gh / 2 - 0.03, (rand() - 0.5) * 0.16);
+    paintGeo(g, palette[Math.floor(rand() * palette.length)]);
+    geos.push(g);
+    x += 0.14 + rand() * 0.18;
+  }
+  wallGroup.add(new THREE.Mesh(mergeGeometries(geos), vcLambert));
+}
+function makeWalls(defs) {
+  wallList = [];
+  for (let i = 0; i < defs.length; i++) {
+    const d = defs[i];
+    d.group.position.set(...d.pos);
+    d.group.rotation.y = d.rotY;
+    roomGroup.add(d.group);
+    wallList.push({ group: d.group, normal: d.normal });
+  }
+}
+function groundPlane(colFn, hFn, size = 200, seg = 48) {
+  const gGeo = new THREE.PlaneGeometry(size, size, seg, seg);
+  gGeo.rotateX(-Math.PI / 2);
+  const pos = gGeo.attributes.position;
+  const colors = [];
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
+    pos.setY(i, hFn(x, z));
+    const c = colFn(x, z);
+    colors.push(c.r, c.g, c.b);
+  }
+  gGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  gGeo.computeVertexNormals();
+  const ground = new THREE.Mesh(gGeo, vcLambert);
+  ground.receiveShadow = true;
+  return ground;
+}
+
+const SHELTERS = {
+  container: {
+    name: '버려진 컨테이너', emoji: '📦', unlockAt: 0, viewH: 14, ceilY: 2.1,
+    desc: '황무지 한가운데 버려진 화물 컨테이너. 좁지만 비바람은 막아준다.',
+    baseComfort: 2,
+    weatherPool: ['clear', 'ash', 'ash', 'snow'],
+    perk: { expBonus: 0.05, label: '🧭 길목의 거점 — 탐험 성공률 +5%p' },
+    room: { w: 6.4, d: 2.9, h: 2.4 },
+    mood: { fog: 0x2e2820, fogNear: 20, fogFar: 52, skyH: 0x453a2d, skyZ: 0x15161e, hemiSky: 0x8a8272, hemiGround: 0x4c443a, hemiInt: 0.72, moonC: 0xc9c0a8, moonInt: 0.68, stars: 0.5 },
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), lamb(0, { map: plywoodTex }));
+      floor.material.color.setHex(0xffffff);
+      floor.position.y = -0.125; floor.receiveShadow = true;
+      roomGroup.add(floor);
+      // 받침 블록
+      for (const [bx, bz] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]])
+        B(roomGroup, 0.6, 0.5, 0.6, 0x4c4a46, bx, -0.5, bz);
+      const wallMat = new THREE.MeshLambertMaterial({ map: metalTex });
+      wallMat.userData.shared = true;
+      const mk = (len, opts) => stdWall(len, h, wallMat, opts);
+      makeWalls([
+        { group: mk(w, { window: { winW: 1.2, winH: 0.8, winY: 1.3, winX: -0.8 }, frameColor: 0x4a4640, skyColor: 0x3d3527 }), pos: [0, 0, -d / 2 - 0.11], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+        { group: mk(w), pos: [0, 0, d / 2 + 0.11], rotY: Math.PI, normal: new THREE.Vector3(0, 0, 1) },
+        { group: mk(d), pos: [-w / 2 - 0.11, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+        { group: mk(d), pos: [w / 2 + 0.11, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
+      ]);
+      blockers = [];
+    },
+    buildEnv() {
+      const GY = -0.75;
+      const rand = seededRand(310);
+      const gh = (x, z) => {
+        const r = Math.hypot(x, z);
+        const n = 0.7 * Math.sin(x * 0.13 + 1) * Math.cos(z * 0.11) + 0.4 * Math.sin(x * 0.33) * Math.sin(z * 0.29 + 2);
+        return GY + n * THREE.MathUtils.smoothstep(r, 6, 13) + THREE.MathUtils.smoothstep(r, 30, 60) * 2.2;
+      };
+      const cA = new THREE.Color(0x4a4234), cB = new THREE.Color(0x564a38), cC = new THREE.Color(0x3d382f);
+      envRoot.add(groundPlane((x, z) => {
+        const m = 0.5 + 0.5 * Math.sin(x * 0.4 + z * 0.31) * Math.cos(z * 0.27 - x * 0.2);
+        return cA.clone().lerp(cB, m * 0.7).lerp(cC, 0.35 * (0.5 + 0.5 * Math.sin(x * 0.09 - z * 0.14)));
+      }, gh));
+      // 고사목
+      for (let i = 0; i < 26; i++) {
+        const a = rand() * Math.PI * 2, r = 8 + Math.pow(rand(), 0.8) * 26;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const geo = deadTreeGeo(rand, 0.8 + rand() * 1.3);
+        geo.rotateY(rand() * Math.PI * 2);
+        geo.translate(x, gh(x, z) - 0.05, z);
+        const m = new THREE.Mesh(geo, vcLambert);
+        m.castShadow = r < 14;
+        envRoot.add(m);
+      }
+      // 폐차 & 전신주 & 잔해
+      buildCarWreck(envRoot, 6.2, 3.4, -0.7, rand);
+      buildCarWreck(envRoot, -8.5, -5.5, 2.1, rand);
+      buildPowerPole(envRoot, -5.5, 6.5, 0.14, GY);
+      buildPowerPole(envRoot, 4.5, -8.5, -0.1, GY);
+      buildPowerPole(envRoot, 13, 2, 0.22, gh(13, 2));
+      const debris = [];
+      for (let i = 0; i < 30; i++) {
+        const a = rand() * Math.PI * 2, r = 5 + rand() * 18;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const bg = new THREE.BoxGeometry(0.2 + rand() * 0.5, 0.1 + rand() * 0.25, 0.2 + rand() * 0.5);
+        bg.rotateY(rand() * 3);
+        bg.translate(x, gh(x, z) + 0.08, z);
+        debris.push(paintGeo(bg, [0x4c443a, 0x57503f, 0x3e3831][Math.floor(rand() * 3)]));
+      }
+      envRoot.add(new THREE.Mesh(mergeGeometries(debris), vcLambert));
+      // 지평선의 폐허 도시
+      buildRuinCity(envRoot, rand, { count: 12, rMin: 30, rMax: 48, hMin: 4, hMax: 13, baseY: GY, litChance: 0.18 });
+      envDyn = {};
+    },
+  },
+
+  bunker: {
+    name: '돔 벙커', emoji: '🛖', unlockAt: 2, viewH: 17, ceilY: 2.6,
+    baseComfort: 5,
+    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (환기·조명 전력)' },
+    desc: '반쯤 무너진 돔형 벙커. 갈라진 외피 사이로 별이 보이지만, 두꺼운 벽 안쪽은 의외로 아늑하다.',
+    room: { w: 8.5, d: 6, h: 3 },
+    mood: { fog: 0x161c2c, fogNear: 22, fogFar: 60, skyH: 0x223048, skyZ: 0x0a0e1a, hemiSky: 0x8593b8, hemiGround: 0x3f3a34, hemiInt: 0.68, moonC: 0x9db4d8, moonInt: 0.8, stars: 0.95 },
+    weatherPool: ['clear', 'snow', 'clear', 'rain'],
+    perk: { injuryHalf: true, label: '🛡️ 두꺼운 외피 — 부상 회복 2배 빠름' },
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
+      conc.userData.shared = true;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, 0.3, d + 0.8), conc);
+      floor.position.y = -0.15; floor.receiveShadow = true;
+      roomGroup.add(floor);
+      // 입구 앞 콘크리트 포치 (컨셉아트의 앞마당)
+      const porch = new THREE.Mesh(new THREE.BoxGeometry(w * 0.7, 0.22, 1.8), conc);
+      porch.position.set(0, -0.19, d / 2 + 1.2);
+      porch.receiveShadow = true;
+      roomGroup.add(porch);
+      B(roomGroup, w + 1.4, 0.7, d + 1.4, 0x2b2e36, 0, -0.65, 0);
+
+      // 뒷벽: 벽돌 + 문 + 액자
+      const brickMat = new THREE.MeshLambertMaterial({ map: brickTex });
+      brickMat.userData.shared = true;
+      const back = new THREE.Group();
+      const bw = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.24), brickMat);
+      bw.position.y = h / 2; bw.castShadow = bw.receiveShadow = true;
+      back.add(bw);
+      const doorX = 1.1;
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1.05, 2.0, 0.1), lamb(0x1a1712));
+      door.position.set(doorX, 1.0, 0.14); back.add(door);
+      const dfm = lamb(0x4a3a28);
+      const df1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.1, 0.16), dfm);
+      df1.position.set(doorX - 0.58, 1.05, 0.14); back.add(df1);
+      const df2 = df1.clone(); df2.position.x = doorX + 0.58; back.add(df2);
+      const df3 = new THREE.Mesh(new THREE.BoxGeometry(1.26, 0.1, 0.16), dfm);
+      df3.position.set(doorX, 2.1, 0.14); back.add(df3);
+      // 벽에 걸린 액자들 (컨셉아트 디테일)
+      const prand = seededRand(55);
+      for (let i = 0; i < 4; i++) {
+        const fw = 0.3 + prand() * 0.3, fh = 0.35 + prand() * 0.25;
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(fw, fh, 0.05), lamb([0x6a5a40, 0x3f3a33, 0x8a7a5c][i % 3]));
+        fr.position.set(-w / 2 + 0.8 + i * 0.75 + prand() * 0.2, 1.5 + prand() * 0.6, 0.14);
+        back.add(fr);
+        const pic = new THREE.Mesh(new THREE.BoxGeometry(fw - 0.08, fh - 0.08, 0.06), lamb([0x9a8a6a, 0x5f7a70, 0xb0937a, 0x7a8a9a][i]));
+        pic.position.copy(fr.position); pic.position.z = 0.15;
+        back.add(pic);
+      }
+      back.position.set(0, 0, -d / 2 - 0.13);
+      const wallDefs = [{ group: back, pos: [0, 0, -d / 2 - 0.13], rotY: 0, normal: new THREE.Vector3(0, 0, -1) }];
+      back.position.set(...wallDefs[0].pos);
+
+      // 돔 아치 쉘 (좌/우 반쪽 — 시야 방향 자동 컬링)
+      const R = 4.35, T = 0.42, SEG = 11;
+      const shellCols = [0xb5b1a6, 0xa8a49a, 0x99958b, 0x8f8b82];
+      const grassPal = [0x6a7f4a, 0x8a8a4f, 0xa3703f, 0x5f7a45];
+      const zBack = -d / 2 - 0.4;
+      const mkHalf = (thetaFrom, seed) => {
+        const g = new THREE.Group();
+        const rand = seededRand(seed);
+        for (let i = 0; i < SEG; i++) {
+          const th = thetaFrom + (i + 0.5) * (Math.PI / 2) / SEG;
+          // 갈라진 외피: 일부 조각은 짧거나 없음
+          if (rand() < 0.1 && th > 0.5 && th < Math.PI - 0.5) continue;
+          let dep = d + 1.0;
+          if (rand() < 0.34) dep *= 0.5 + rand() * 0.32;
+          const arcLen = R * (Math.PI / 2) / SEG + 0.1;
+          const col = rand() < 0.16 ? 0x5d594f : shellCols[Math.floor(rand() * shellCols.length)];
+          const m = new THREE.Mesh(new THREE.BoxGeometry(arcLen, T, dep), lamb(col));
+          m.position.set(R * Math.cos(th), R * Math.sin(th), zBack + dep / 2);
+          m.rotation.z = th + Math.PI / 2;
+          m.castShadow = m.receiveShadow = true;
+          g.add(m);
+          // 외피 위에 자란 풀
+          if (th > 0.35 && th < Math.PI - 0.35 && rand() < 0.5) {
+            const gh2 = 0.15 + rand() * 0.25;
+            const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.07 + rand() * 0.07, gh2, 5),
+              lamb(grassPal[Math.floor(rand() * grassPal.length)]));
+            const rr = R + T / 2 + gh2 / 2 - 0.03;
+            tuft.position.set(rr * Math.cos(th), rr * Math.sin(th), zBack + 0.6 + rand() * (dep - 1));
+            tuft.rotation.z = th - Math.PI / 2 + (rand() - 0.5) * 0.4;
+            g.add(tuft);
+          }
+        }
+        return g;
+      };
+      const right = mkHalf(0, 21);           // x>0 쪽
+      const left = mkHalf(Math.PI / 2, 43);  // x<0 쪽
+      roomGroup.add(right); roomGroup.add(left);
+      wallDefs.push({ group: right, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(1, 0, 0) });
+      wallDefs.push({ group: left, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(-1, 0, 0) });
+      makeWalls(wallDefs);
+
+      // 천장 펜던트 램프 (컨셉아트) — 아치 정점에서 늘어짐
+      Cyl(roomGroup, 0.015, 0.015, 1.3, 0x2a2622, 0, 3.5, -0.6, 5);
+      const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.24, 8), lamb(0x3f4a44));
+      lampShade.position.set(0, 2.82, -0.6); lampShade.castShadow = true;
+      roomGroup.add(lampShade);
+      const lb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6),
+        new THREE.MeshLambertMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 1 }));
+      lb.position.set(0, 2.7, -0.6);
+      roomGroup.add(lb);
+      blockers = [];
+    },
+    buildEnv() {
+      const GY = -0.85;
+      const rand = seededRand(940);
+      const gh = (x, z) => {
+        const r = Math.hypot(x, z);
+        const n = 0.8 * Math.sin(x * 0.14 + 0.6) * Math.cos(z * 0.12) + 0.5 * Math.sin(x * 0.3) * Math.sin(z * 0.26 + 1.4);
+        return GY + n * THREE.MathUtils.smoothstep(r, 7, 14) + THREE.MathUtils.smoothstep(r, 28, 58) * 2.6;
+      };
+      const cA = new THREE.Color(0x3e4a36), cB = new THREE.Color(0x4a4a3a), cC = new THREE.Color(0x35443c);
+      envRoot.add(groundPlane((x, z) => {
+        const m = 0.5 + 0.5 * Math.sin(x * 0.41 + z * 0.3) * Math.cos(z * 0.33 - x * 0.21);
+        return cA.clone().lerp(cB, m * 0.65).lerp(cC, 0.35 * (0.5 + 0.5 * Math.sin(x * 0.1 - z * 0.15)));
+      }, gh));
+      // 무성한 들풀 (병합 1메시)
+      const tufts = [];
+      for (let i = 0; i < 260; i++) {
+        const a = rand() * Math.PI * 2, r = 5.5 + Math.pow(rand(), 0.7) * 22;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const th = 0.2 + rand() * 0.4;
+        const tg = new THREE.ConeGeometry(0.06 + rand() * 0.08, th, 4);
+        tg.rotateZ((rand() - 0.5) * 0.5);
+        tg.translate(x, gh(x, z) + th / 2 - 0.02, z);
+        tufts.push(paintGeo(tg, [0x55663f, 0x6a7047, 0x7d6a42, 0x4a5c3c][Math.floor(rand() * 4)]));
+      }
+      envRoot.add(new THREE.Mesh(mergeGeometries(tufts), vcLambert));
+      // 고사목 + 버려진 가전 더미 + 드럼통 (컨셉아트 앞마당의 잡동사니)
+      for (let i = 0; i < 14; i++) {
+        const a = rand() * Math.PI * 2, r = 9 + Math.pow(rand(), 0.8) * 20;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const geo = deadTreeGeo(rand, 0.8 + rand() * 1.2);
+        geo.rotateY(rand() * Math.PI * 2);
+        geo.translate(x, gh(x, z) - 0.05, z);
+        envRoot.add(new THREE.Mesh(geo, vcLambert));
+      }
+      const junkAt = (x, z) => {
+        const jg = new THREE.Group();
+        B(jg, 0.7, 1.1, 0.6, 0xb0aca2, 0, 0.55, 0);                    // 냉장고
+        B(jg, 0.6, 0.04, 0.5, 0x8a867c, 0.02, 1.13, 0);
+        B(jg, 0.02, 0.8, 0.4, 0x6e6a62, 0.36, 0.55, 0);
+        const wm = B(jg, 0.6, 0.6, 0.55, 0x9a958c, 0.9, 0.3, 0.3);     // 세탁기
+        wm.rotation.z = 0.12;
+        Cyl(jg, 0.18, 0.18, 0.04, 0x3a3733, 0.9, 0.62, 0.58, 10).rotation.x = Math.PI / 2;
+        jg.position.set(x, gh(x, z), z);
+        jg.rotation.y = rand() * Math.PI * 2;
+        envRoot.add(jg);
+      };
+      junkAt(6.5, 5.5); junkAt(-7.5, -4);
+      for (let i = 0; i < 5; i++) {
+        const a = rand() * Math.PI * 2, r = 6 + rand() * 9;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const barrel = Cyl(envRoot, 0.32, 0.32, 0.85, [0x7a4530, 0x5c5f52, 0x6e3e28][i % 3], x, gh(x, z) + 0.42, z, 9);
+        if (rand() < 0.4) { barrel.rotation.z = Math.PI / 2 - 0.1; barrel.position.y = gh(x, z) + 0.34; }
+      }
+      buildPowerPole(envRoot, -10, 8, 0.2, gh(-10, 8));
+      // 지평선의 폐허 도시
+      buildRuinCity(envRoot, rand, { count: 13, rMin: 30, rMax: 48, hMin: 5, hMax: 14, baseY: GY, litChance: 0.12 });
+      // 반딧불이 (힐링 무드)
+      const n = 16, arr = new Float32Array(n * 3);
+      const base = [], phase = [];
+      for (let i = 0; i < n; i++) {
+        const a = rand() * Math.PI * 2, r = 7 + rand() * 8;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const y = gh(x, z) + 0.5 + rand() * 1.1;
+        arr.set([x, y, z], i * 3);
+        base.push({ x, y, z }); phase.push(rand() * Math.PI * 2);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+      const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+        color: 0xd9e77a, size: 3, sizeAttenuation: false, transparent: true, opacity: 0.8, fog: false,
+      }));
+      envRoot.add(pts);
+      envDyn = { fireflies: { pts, base, phase } };
+    },
+  },
+
+  rooftop: {
+    name: '도시 옥탑방', emoji: '🏙️', unlockAt: 4, viewH: 18, ceilY: 2.6,
+    desc: '무너진 도시의 빌딩 옥상. 하늘이 열려 있고 폐허가 된 도시가 내려다보인다.',
+    room: { w: 9, d: 7, h: 0.85 },
+    baseComfort: 4,
+    mood: { fog: 0x1c202c, fogNear: 22, fogFar: 62, skyH: 0x252c3d, skyZ: 0x0b0e18, hemiSky: 0x7d8bb0, hemiGround: 0x3a3733, hemiInt: 0.66, moonC: 0x9db4d8, moonInt: 0.8, stars: 0.75 },
+    weatherPool: ['clear', 'rain', 'clear', 'snow'],
+    perk: { salvagePlus: true, label: '📡 탁 트인 시야 — 부분 성공 시에도 가구 1개 회수' },
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
+      conc.userData.shared = true;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, 0.35, d + 0.8), conc);
+      floor.position.y = -0.175; floor.receiveShadow = true;
+      roomGroup.add(floor);
+      // 낮은 난간 — 배경이 잘 보임
+      const mkP = (len, x, z, rotY) => {
+        const g = new THREE.Group();
+        const m = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.28), lamb(0x5b5b58));
+        m.position.y = h / 2; m.castShadow = m.receiveShadow = true; g.add(m);
+        const cap = new THREE.Mesh(new THREE.BoxGeometry(len, 0.07, 0.36), lamb(0x6a6a66));
+        cap.position.y = h + 0.03; g.add(cap);
+        g.position.set(x, 0, z); g.rotation.y = rotY;
+        roomGroup.add(g);
+      };
+      mkP(w + 0.56, 0, -d / 2 - 0.25, 0);
+      mkP(w + 0.56, 0, d / 2 + 0.25, 0);
+      mkP(d + 0.56, -w / 2 - 0.25, 0, Math.PI / 2);
+      mkP(d + 0.56, w / 2 + 0.25, 0, Math.PI / 2);
+      wallList = [];
+      // 아래 빌딩 몸체 + 창문
+      const body = B(roomGroup, w + 1.2, 17, d + 1.2, 0x252932, 0, -8.9, 0);
+      body.receiveShadow = false;
+      const rand = seededRand(88);
+      const winGeos = [];
+      for (let i = 0; i < 22; i++) {
+        const side = Math.floor(rand() * 4);
+        const wx = side < 2 ? (rand() - 0.5) * (w - 1) : (side === 2 ? -w / 2 - 0.62 : w / 2 + 0.62);
+        const wz = side >= 2 ? (rand() - 0.5) * (d - 1) : (side === 0 ? -d / 2 - 0.62 : d / 2 + 0.62);
+        const wg = new THREE.BoxGeometry(side < 2 ? 0.7 : 0.1, 0.9, side < 2 ? 0.1 : 0.7);
+        wg.translate(wx, -1.6 - rand() * 13, wz);
+        winGeos.push(paintGeo(wg, rand() < 0.15 ? 0xd9b06a : 0x131720));
+      }
+      roomGroup.add(new THREE.Mesh(mergeGeometries(winGeos), vcLambert));
+      // 고정 소품: 텐트 + 모래주머니 + 안테나
+      const tent = new THREE.Group();
+      const tc = 0x76684a;
+      B(tent, 2.2, 0.06, 1.9, shade(tc, 1.05), 0, 0.02, 0);
+      const p1 = B(tent, 2.0, 0.08, 1.35, tc, -0.34, 0.62, 0); p1.rotation.z = 0.86;
+      const p2 = B(tent, 2.0, 0.08, 1.35, shade(tc, 0.9), 0.34, 0.62, 0); p2.rotation.z = -0.86;
+      B(tent, 0.07, 1.25, 0.07, 0x4a4238, 0, 0.62, -0.62);
+      B(tent, 0.07, 1.25, 0.07, 0x4a4238, 0, 0.62, 0.62);
+      const back2 = new THREE.Mesh(new THREE.ConeGeometry(0.94, 1.28, 4), lamb(shade(tc, 0.8)));
+      back2.rotation.y = Math.PI / 4; back2.scale.set(1.1, 1, 0.06);
+      back2.position.set(0, 0.64, -0.65); back2.castShadow = true; tent.add(back2);
+      tent.position.set(-w / 2 + 1.5, 0, -d / 2 + 1.35);
+      tent.rotation.y = 0.35;
+      roomGroup.add(tent);
+      const sb = seededRand(9);
+      for (let i = 0; i < 5; i++)
+        B(roomGroup, 0.55, 0.22, 0.32, [0x6e6350, 0x655b48][i % 2], w / 2 - 0.9 - i * 0.28 * (i % 2), 0.11 + (i > 2 ? 0.22 : 0), d / 2 - 0.75 + sb() * 0.2);
+      Cyl(roomGroup, 0.03, 0.05, 2.6, 0x55504a, w / 2 - 0.5, 1.3, -d / 2 + 0.5, 5);
+      B(roomGroup, 0.7, 0.05, 0.05, 0x55504a, w / 2 - 0.5, 2.3, -d / 2 + 0.5);
+      blockers = [
+        { x: -w / 2 + 1.5, z: -d / 2 + 1.35, w: 2.5, d: 2.3 },
+        { x: w / 2 - 1.1, z: d / 2 - 0.75, w: 1.7, d: 0.7 },
+        { x: w / 2 - 0.5, z: -d / 2 + 0.5, w: 0.5, d: 0.5 },
+      ];
+    },
+    buildEnv() {
+      const rand = seededRand(777);
+      const near = buildRuinCity(envRoot, rand, { count: 9, rMin: 13, rMax: 22, hMin: 6, hMax: 14, baseY: -18, litChance: 0.6 });
+      buildRuinCity(envRoot, rand, { count: 16, rMin: 24, rMax: 46, hMin: 8, hMax: 20, baseY: -18, litChance: 0.45 });
+      // 저 멀리 화재가 난 빌딩
+      const fx = 20, fz = -14, fy = -2;
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 6),
+        new THREE.MeshLambertMaterial({ color: 0xff8840, emissive: 0xff5f20, emissiveIntensity: 1.2 }));
+      glow.position.set(fx, fy, fz);
+      envRoot.add(glow);
+      const fire = new THREE.PointLight(0xff7030, 30, 26, 1.8);
+      fire.position.set(fx, fy + 1, fz);
+      envRoot.add(fire);
+      const street = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), lamb(0x14161c));
+      street.rotation.x = -Math.PI / 2; street.position.y = -18.2;
+      envRoot.add(street);
+      envDyn = { fire, fireBase: 30, buildings: near };
+    },
+  },
+
+  cabin: {
+    name: '숲속 오두막', emoji: '🏡', unlockAt: 7, viewH: 16, ceilY: 2.45,
+    baseComfort: 10,
+    upkeep: { res: 'material', n: 1, every: 3, label: '건축재 1 / 3일' },
+    desc: '숲 가장자리의 오두막. 폐허가 된 세상에서 찾아낸 가장 아늑한 은신처.',
+    weatherPool: ['clear', 'snow', 'rain', 'clear'],
+    perk: { cozyMult: 1.5, label: '🕯️ 아늑한 구조 — 쾌적함 효과 1.5배' },
+    room: { w: 10, d: 8, h: 2.7 },
+    mood: { fog: 0x1a2233, fogNear: 24, fogFar: 58, skyH: 0x1a2233, skyZ: 0x0a0f1a, hemiSky: 0x8a98bd, hemiGround: 0x46403a, hemiInt: 0.7, moonC: 0x9db4d8, moonInt: 0.75, stars: 0.85 },
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const fm = new THREE.MeshLambertMaterial({ map: floorWoodTex }); fm.userData.shared = true;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), fm);
+      floor.position.y = -0.15; floor.receiveShadow = true;
+      roomGroup.add(floor);
+      B(roomGroup, w + 1.0, 0.5, d + 1.0, 0x2b2e36, 0, -0.55, 0);
+      B(roomGroup, w + 1.6, 1.0, d + 1.6, 0x2f333c, 0, -1.15, 0);
+      const wallMat = new THREE.MeshLambertMaterial({ map: wallWoodTex });
+      wallMat.userData.shared = true;
+      const mk = (len, opts) => stdWall(len, h, wallMat, opts);
+      const defs = [
+        { group: mk(w, { window: { winW: 2.2, winH: 1.3, winY: 1.35, winX: -0.6 }, skyColor: 0x2c3a52 }), pos: [0, 0, -d / 2 - 0.11], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+        { group: mk(w), pos: [0, 0, d / 2 + 0.11], rotY: Math.PI, normal: new THREE.Vector3(0, 0, 1) },
+        { group: mk(d), pos: [-w / 2 - 0.11, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+        { group: mk(d), pos: [w / 2 + 0.11, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
+      ];
+      defs.forEach((df, i) => addRoofGrass(df.group, i < 2 ? w : d, h, 41 + i * 17));
+      makeWalls(defs);
+      blockers = [];
+    },
+    buildEnv() {
+      const GY = -1.3;
+      const rand = seededRand(1234);
+      const gh = (x, z) => {
+        const r = Math.hypot(x, z);
+        const n = 1.1 * Math.sin(x * 0.15 + 1.0) * Math.cos(z * 0.11)
+                + 0.6 * Math.sin(x * 0.31 + 0.5) * Math.sin(z * 0.27 + 2.0);
+        return GY + n * THREE.MathUtils.smoothstep(r, 9, 16) + THREE.MathUtils.smoothstep(r, 26, 55) * 3.5;
+      };
+      const cG = new THREE.Color(0x445640), cD = new THREE.Color(0x4d483c), cM = new THREE.Color(0x3a5048);
+      envRoot.add(groundPlane((x, z) => {
+        const m = 0.5 + 0.5 * Math.sin(x * 0.43 + z * 0.29) * Math.cos(z * 0.37 - x * 0.19);
+        return cG.clone().lerp(cD, m * 0.6).lerp(cM, 0.4 * (0.5 + 0.5 * Math.sin(x * 0.11 - z * 0.17)));
+      }, gh));
+      // 숲 (가까운 나무는 개별 메시 — 시야 컬링 + 바람에 흔들림) + 고사목 섞기
+      const trees = [];
+      const farGeos = [];
+      for (let i = 0; i < 105; i++) {
+        const a = rand() * Math.PI * 2;
+        const r = 11.5 + Math.pow(rand(), 0.8) * 24;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const s = 0.8 + rand() * 1.5 + (r > 24 ? 0.5 : 0);
+        const dead = rand() < 0.22;
+        if (r < 20) {
+          const geo = dead ? deadTreeGeo(rand, s * 0.9) : pineGeo(rand, s, false);
+          const m = new THREE.Mesh(geo, vcLambert);
+          m.position.set(x, gh(x, z) - 0.05, z);
+          m.rotation.y = rand() * Math.PI * 2;
+          m.castShadow = true;
+          envRoot.add(m);
+          trees.push({ obj: m, dir: new THREE.Vector2(x, z).normalize(), phase: rand() * Math.PI * 2, sway: dead ? 0.005 : 0.016 });
+        } else {
+          const geo = dead ? deadTreeGeo(rand, s * 0.9) : pineGeo(rand, s, r > 26);
+          geo.rotateY(rand() * Math.PI * 2);
+          geo.translate(x, gh(x, z) - 0.05, z);
+          farGeos.push(geo);
+        }
+      }
+      envRoot.add(new THREE.Mesh(mergeGeometries(farGeos), vcLambert));
+      // 아포칼립스 소품: 버려진 차 + 기울어진 전신주 줄
+      buildCarWreck(envRoot, -9.5, 4.5, 1.2, rand);
+      buildPowerPole(envRoot, 8.5, 7.5, 0.18, gh(8.5, 7.5));
+      buildPowerPole(envRoot, 13.5, 10.5, -0.12, gh(13.5, 10.5));
+      // 무너진 이웃 오두막 (전소된 잔해)
+      {
+        const ruin = new THREE.Group();
+        const rc = 0x4a4038, burnt = 0x2a251f;
+        B(ruin, 3.2, 0.16, 2.6, rc, 0, 0.08, 0);                    // 남은 바닥
+        B(ruin, 0.16, 1.2, 2.4, burnt, -1.5, 0.6, 0);               // 벽 잔해
+        B(ruin, 1.6, 0.9, 0.16, rc, -0.6, 0.45, -1.2);
+        B(ruin, 0.16, 0.5, 1.1, burnt, 1.4, 0.25, 0.5);
+        B(ruin, 0.7, 2.0, 0.7, 0x55524c, 1.1, 1.0, -0.9);           // 벽난로 굴뚝만 남음
+        B(ruin, 0.5, 0.4, 0.5, 0x3a3733, 1.1, 2.1, -0.9);
+        const plank = (x2, z2, ry, rz) => {
+          const p = B(ruin, 1.8, 0.07, 0.3, burnt, x2, 0.35, z2);
+          p.rotation.y = ry; p.rotation.z = rz;
+        };
+        plank(-0.3, 0.3, 0.5, 0.28); plank(0.4, -0.4, -0.8, 0.2); plank(0.1, 0.9, 1.2, 0.35);
+        ruin.position.set(9.5, gh(9.5, -7.5) - 0.02, -7.5);
+        ruin.rotation.y = -0.5;
+        envRoot.add(ruin);
+      }
+      // 불탄 숲 군락 (검게 그을린 고사목)
+      for (let i = 0; i < 7; i++) {
+        const x = -13 + rand() * 7, z = -12 + rand() * 6;
+        const geo = deadTreeGeo(rand, 0.9 + rand() * 1.1, 0x211d18);
+        geo.rotateY(rand() * Math.PI * 2);
+        geo.translate(x, gh(x, z) - 0.05, z);
+        envRoot.add(new THREE.Mesh(geo, vcLambert));
+      }
+      // 드럼통
+      for (let i = 0; i < 3; i++) {
+        const x = 5.5 + rand() * 3, z = 6.5 + rand() * 2.5;
+        Cyl(envRoot, 0.32, 0.32, 0.85, [0x7a4530, 0x5c5f52, 0x6e3e28][i], x, gh(x, z) + 0.42, z, 9);
+      }
+      // 지평선 너머 연기 기둥 (어딘가는 아직 불타고 있다)
+      const smoke = (() => {
+        const n = 14, arr = new Float32Array(n * 3), sBase = [], sPhase = [];
+        for (let i = 0; i < n; i++) {
+          const y = 2 + (i / n) * 13;
+          arr.set([24 + Math.sin(i * 1.7) * 0.8, y, -18 + Math.cos(i * 1.3) * 0.8], i * 3);
+          sBase.push(y); sPhase.push(rand() * Math.PI * 2);
+        }
+        const geo2 = new THREE.BufferGeometry();
+        geo2.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+        const pts2 = new THREE.Points(geo2, new THREE.PointsMaterial({
+          color: 0x6a6f78, size: 7, sizeAttenuation: false, transparent: true, opacity: 0.3,
+        }));
+        envRoot.add(pts2);
+        return { pts: pts2, phase: sPhase };
+      })();
+      // 낙엽 (두 색)
+      const mkLeaves = (color, seed) => {
+        const lrand = seededRand(seed);
+        const n = 22, arr = new Float32Array(n * 3), lBase = [];
+        for (let i = 0; i < n; i++) {
+          const x = (lrand() * 2 - 1) * 14, z = (lrand() * 2 - 1) * 12, y = lrand() * 6 + 0.5;
+          arr.set([x, y, z], i * 3);
+          lBase.push({ ph: lrand() * Math.PI * 2, sp: 0.25 + lrand() * 0.25 });
+        }
+        const geo2 = new THREE.BufferGeometry();
+        geo2.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+        const pts2 = new THREE.Points(geo2, new THREE.PointsMaterial({
+          color, size: 2.5, sizeAttenuation: false, transparent: true, opacity: 0.85,
+        }));
+        envRoot.add(pts2);
+        return { pts: pts2, meta: lBase };
+      };
+      const leaves = [mkLeaves(0xa3703f, 61), mkLeaves(0x7d7f5a, 62)];
+      // 먼 산
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2 + rand() * 0.8;
+        const r = 38 + rand() * 14;
+        const mt = new THREE.Mesh(new THREE.ConeGeometry(16 + rand() * 14, 11 + rand() * 7, 6), lamb(0x242e3d));
+        mt.position.set(r * Math.cos(a), GY + 2, r * Math.sin(a));
+        envRoot.add(mt);
+      }
+      // 반딧불이
+      const n = 26, arr = new Float32Array(n * 3);
+      const base = [], phase = [];
+      for (let i = 0; i < n; i++) {
+        const a = rand() * Math.PI * 2, r = 8.5 + rand() * 8;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const y = gh(x, z) + 0.5 + rand() * 1.2;
+        arr.set([x, y, z], i * 3);
+        base.push({ x, y, z }); phase.push(rand() * Math.PI * 2);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+      const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+        color: 0xd9e77a, size: 3, sizeAttenuation: false, transparent: true, opacity: 0.8, fog: false,
+      }));
+      envRoot.add(pts);
+      envDyn = { trees, fireflies: { pts, base, phase }, leaves, smoke };
+    },
+  },
+
+  bus: {
+    name: '버려진 스쿨버스', emoji: '🚌', unlockAt: 9, viewH: 14, ceilY: 2.0,
+    desc: '고속도로 위에 멈춰 선 스쿨버스. 좁지만 어디로든 갈 수 있을 것 같은 기분이 든다.',
+    room: { w: 6.8, d: 2.4, h: 2.2 },
+    baseComfort: 3,
+    mood: { fog: 0x2a2622, fogNear: 20, fogFar: 54, skyH: 0x3d3830, skyZ: 0x14151d, hemiSky: 0x8a8272, hemiGround: 0x453d33, hemiInt: 0.66, moonC: 0xc9c0a8, moonInt: 0.6, stars: 0.55 },
+    weatherPool: ['clear', 'ash', 'rain', 'clear'],
+    perk: { timeMult: 0.75, label: '🚌 이동형 거점 — 탐험 소요 시간 -25%' },
+    upkeep: { res: 'fuel', n: 1, every: 2, label: '연료 1 / 2일' },
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const busY = 0x9a7a2f, busD = 0x7a6226;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.22, d + 0.5), lamb(0x6a5a44));
+      floor.position.y = -0.11; floor.receiveShadow = true;
+      roomGroup.add(floor);
+      // 차대 + 바퀴
+      B(roomGroup, w + 0.7, 0.4, d + 0.3, 0x3a3733, 0, -0.42, 0);
+      for (const [wx, wz] of [[-w / 2 + 1.1, -d / 2 - 0.2], [-w / 2 + 1.1, d / 2 + 0.2], [w / 2 - 1.1, -d / 2 - 0.2], [w / 2 - 1.1, d / 2 + 0.2]]) {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.3, 10), lamb(0x1f1d1a));
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.set(wx, -0.35, wz);
+        wheel.castShadow = true;
+        roomGroup.add(wheel);
+      }
+      // 보닛(앞) + 범퍼
+      B(roomGroup, 1.1, 1.0, d + 0.2, busD, w / 2 + 0.6, 0.5, 0);
+      B(roomGroup, 0.2, 0.35, d + 0.4, 0x8a8f96, w / 2 + 1.2, 0.3, 0);
+      // 벽: 하부 노란 철판 + 상부 창문 띠 (컬링 대상)
+      const mkBusWall = (len, seed) => {
+        const g = new THREE.Group();
+        const rand = seededRand(seed);
+        B(g, len, 1.0, 0.16, busY, 0, 0.5, 0);
+        B(g, len, 0.14, 0.18, busD, 0, 1.06, 0);
+        const nWin = Math.floor(len / 0.95);
+        for (let i = 0; i < nWin; i++) {
+          const wx = -len / 2 + 0.55 + i * 0.95;
+          B(g, 0.8, 0.85, 0.1, rand() < 0.25 ? 0x1c1f26 : 0x2c3644, wx, 1.6, 0);
+          B(g, 0.06, 0.95, 0.14, busD, wx + 0.46, 1.6, 0);
+        }
+        B(g, len, 0.14, 0.18, busD, 0, 2.1, 0);
+        // 녹 얼룩
+        for (let i = 0; i < 4; i++) B(g, 0.3 + rand() * 0.4, 0.18, 0.17, 0x6e3e28, -len / 2 + rand() * len, 0.35 + rand() * 0.5, 0);
+        return g;
+      };
+      makeWalls([
+        { group: mkBusWall(w, 11), pos: [0, 0, -d / 2 - 0.09], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+        { group: mkBusWall(w, 12), pos: [0, 0, d / 2 + 0.09], rotY: Math.PI, normal: new THREE.Vector3(0, 0, 1) },
+        { group: mkBusWall(d, 13), pos: [-w / 2 - 0.09, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+      ]);
+      blockers = [];
+    },
+    buildEnv() {
+      const GY = -0.8;
+      const rand = seededRand(505);
+      const gh = (x, z) => {
+        const r = Math.hypot(x, z);
+        const n = 0.6 * Math.sin(x * 0.14 + 1) * Math.cos(z * 0.12) + 0.35 * Math.sin(x * 0.3) * Math.sin(z * 0.27);
+        return GY + n * THREE.MathUtils.smoothstep(r, 7, 14) + THREE.MathUtils.smoothstep(r, 28, 58) * 2.2;
+      };
+      const cA = new THREE.Color(0x4a4234), cB = new THREE.Color(0x554a38);
+      envRoot.add(groundPlane((x, z) => {
+        const m = 0.5 + 0.5 * Math.sin(x * 0.4 + z * 0.31);
+        return cA.clone().lerp(cB, m * 0.7);
+      }, gh));
+      // 갈라진 고속도로 (버스가 서 있는 도로)
+      const road = B(envRoot, 90, 0.12, 7, 0x33342f, 0, GY + 0.05, 0);
+      road.receiveShadow = true;
+      for (let i = 0; i < 22; i++) B(envRoot, 1.4, 0.13, 0.16, 0x8a8a72, -44 + i * 4.2, GY + 0.07, 0);
+      // 도로 위 폐차 행렬 + 표지판
+      buildCarWreck(envRoot, -9, 1.8, 0.15, rand);
+      buildCarWreck(envRoot, -15.5, -1.6, -2.9, rand);
+      buildCarWreck(envRoot, 12, -1.9, 3.05, rand);
+      const sign = new THREE.Group();
+      Cyl(sign, 0.05, 0.06, 3.2, 0x55504a, 0, 1.6, 0, 6);
+      B(sign, 2.2, 1.0, 0.08, 0x2a4a35, 0, 3.2, 0);
+      B(sign, 2.0, 0.14, 0.09, 0x8a9a8c, 0, 3.35, 0);
+      B(sign, 1.4, 0.12, 0.09, 0x8a9a8c, -0.2, 3.05, 0);
+      sign.rotation.z = 0.12; sign.rotation.y = 0.4;
+      sign.position.set(7, GY, 4.2);
+      envRoot.add(sign);
+      for (let i = 0; i < 16; i++) {
+        const a = rand() * Math.PI * 2, r = 9 + Math.pow(rand(), 0.8) * 22;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        if (Math.abs(z) < 4.5) continue; // 도로 위는 비움
+        const geo = deadTreeGeo(rand, 0.8 + rand() * 1.2);
+        geo.rotateY(rand() * Math.PI * 2);
+        geo.translate(x, gh(x, z) - 0.05, z);
+        envRoot.add(new THREE.Mesh(geo, vcLambert));
+      }
+      buildPowerPole(envRoot, -6, 7, 0.15, gh(-6, 7));
+      buildPowerPole(envRoot, 5, -8, -0.1, gh(5, -8));
+      buildRuinCity(envRoot, rand, { count: 11, rMin: 30, rMax: 48, hMin: 4, hMax: 12, baseY: GY, litChance: 0.15 });
+      envDyn = {};
+    },
+  },
+
+  subway: {
+    name: '지하철 역사', emoji: '🚇', unlockAt: 12, viewH: 16, ceilY: 2.8, indoor: true,
+    desc: '무너진 도시 아래 잠든 승강장. 날씨도 계절도 닿지 않는 곳 — 어둠만 잘 다스리면 최고의 요새다.',
+    room: { w: 11, d: 6, h: 3 },
+    baseComfort: 6,
+    mood: { fog: 0x121417, fogNear: 16, fogFar: 44, skyH: 0x0b0c0e, skyZ: 0x060708, hemiSky: 0x6e7684, hemiGround: 0x3a352e, hemiInt: 0.68, moonC: 0x8a96a6, moonInt: 0.45, stars: 0 },
+    weatherPool: ['clear'],
+    perk: { lightMult: 1.5, label: '🕯️ 어둠 속 안식 — 조명 쾌적함 효과 1.5배' },
+    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (환기 팬)' },
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
+      conc.userData.shared = true;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), conc);
+      floor.position.y = -0.15; floor.receiveShadow = true;
+      roomGroup.add(floor);
+      const tileMat = new THREE.MeshLambertMaterial({ map: subwayTileTex });
+      tileMat.userData.shared = true;
+      // 뒷벽(타일) + 역명판 + 노선도
+      const back = new THREE.Group();
+      const bw = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.24), tileMat);
+      bw.position.y = h / 2; bw.castShadow = bw.receiveShadow = true;
+      back.add(bw);
+      const signBd = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.55, 0.08), lamb(0x1d3a2a));
+      signBd.position.set(-1.5, 2.1, 0.16); back.add(signBd);
+      const signTx = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.3, 0.09), lamb(0xd8d3c8));
+      signTx.position.set(-1.5, 2.1, 0.17); back.add(signTx);
+      const mapBd = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.9, 0.08), lamb(0x2a3040));
+      mapBd.position.set(2.4, 1.6, 0.16); back.add(mapBd);
+      makeWalls([
+        { group: back, pos: [0, 0, -d / 2 - 0.13], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+      ]);
+      // 승강장 기둥 2개 (고정 소품)
+      for (const px of [-w / 4, w / 4]) {
+        const col = new THREE.Mesh(new THREE.BoxGeometry(0.5, h, 0.5), tileMat);
+        col.position.set(px, h / 2, 0.4);
+        col.castShadow = col.receiveShadow = true;
+        roomGroup.add(col);
+        B(roomGroup, 0.7, 0.12, 0.7, 0x4e4e4c, px, 0.06, 0.4);
+      }
+      // 천장 슬래브 + 매달린 표지판 (위는 막혀있지만 카메라는 이소메트릭이라 룸 위 y3.2에 얇게)
+      const ceil = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.2, d + 0.6), lamb(0x1c1e22));
+      ceil.position.y = h + 0.85;
+      roomGroup.add(ceil);
+      const hang = new THREE.Group();
+      Cyl(hang, 0.02, 0.02, 0.5, 0x3a3733, -0.5, h + 0.55, 0, 5);
+      Cyl(hang, 0.02, 0.02, 0.5, 0x3a3733, 0.5, h + 0.55, 0, 5);
+      B(hang, 1.6, 0.4, 0.06, 0x1d3a2a, 0, h + 0.15, 0);
+      B(hang, 0.5, 0.2, 0.07, 0xd8d3c8, -0.4, h + 0.15, 0);
+      hang.position.set(1.5, 0, 1.2);
+      roomGroup.add(hang);
+      // 승강장 가장자리 경고선 + 선로
+      B(roomGroup, w + 0.6, 0.06, 0.3, 0xa89a4a, 0, 0.03, d / 2 + 0.15);
+      blockers = [
+        { x: -w / 4, z: 0.4, w: 0.7, d: 0.7 },
+        { x: w / 4, z: 0.4, w: 0.7, d: 0.7 },
+      ];
+    },
+    buildEnv() {
+      // 지하: 어둠 + 선로 + 터널 아치
+      const rand = seededRand(606);
+      const { w, d, h } = ROOM;
+      // 선로 바닥 (승강장보다 낮음)
+      B(envRoot, w + 14, 0.2, 3.4, 0x17181a, 0, -1.0, d / 2 + 2.1);
+      for (const rz of [d / 2 + 1.4, d / 2 + 2.8]) {
+        B(envRoot, w + 14, 0.1, 0.14, 0x4a4640, 0, -0.72, rz);
+      }
+      for (let i = 0; i < 18; i++) B(envRoot, 0.5, 0.08, 1.8, 0x33302a, -w / 2 - 6 + i * 1.3, -0.82, d / 2 + 2.1);
+      // 터널 아치 입구 (양쪽)
+      for (const side of [-1, 1]) {
+        const tx = side * (w / 2 + 4.5);
+        const arch = new THREE.Group();
+        B(arch, 0.8, 4.2, 5.5, 0x202226, 0, 1.4, 0);
+        const hole = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.6, 3.2), lamb(0x050506));
+        hole.position.set(0, 0.6, d / 2 + 2.1 - 0);
+        arch.position.set(tx, 0, 0);
+        arch.add(hole);
+        envRoot.add(arch);
+      }
+      // 반대편 벽 (선로 건너)
+      const farWall = new THREE.Mesh(new THREE.BoxGeometry(w + 14, 5, 0.4), lamb(0x191b1e));
+      farWall.position.set(0, 1.5, d / 2 + 4.0);
+      envRoot.add(farWall);
+      // 벽의 광고판 잔해 (희미하게)
+      for (let i = 0; i < 3; i++) {
+        B(envRoot, 1.6, 1.0, 0.1, [0x2a3040, 0x3a2a2a, 0x2a3a30][i], -3 + i * 3.5, 1.6, d / 2 + 3.78);
+      }
+      // 버려진 지하철 차량 실루엣 (터널 안쪽)
+      const train = new THREE.Group();
+      B(train, 6, 2.2, 2.4, 0x23262b, 0, 1.1, 0);
+      for (let i = 0; i < 4; i++) B(train, 0.8, 0.7, 0.1, 0x11141a, -2.2 + i * 1.4, 1.4, 1.26);
+      train.position.set(w / 2 + 8.5, -0.9, d / 2 + 2.1);
+      envRoot.add(train);
+      // 어둠 속 비상등 (붉은 점광)
+      const em = new THREE.PointLight(0xff4030, 6, 9, 1.8);
+      em.position.set(-w / 2 - 3, 2.2, 0);
+      envRoot.add(em);
+      const emg = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 5),
+        new THREE.MeshLambertMaterial({ color: 0xff6650, emissive: 0xcc2211, emissiveIntensity: 1.2 }));
+      emg.position.copy(em.position);
+      envRoot.add(emg);
+      envDyn = { fire: em, fireBase: 6 };
+    },
+  },
+
+  greenhouse: {
+    name: '온실', emoji: '🌿', unlockAt: 15, viewH: 16, ceilY: 2.6,
+    desc: '기적처럼 남아 있는 유리 온실. 세상이 멸망해도 흙에서는 여전히 싹이 튼다.',
+    room: { w: 9, d: 6, h: 2.4 },
+    baseComfort: 8,
+    mood: { fog: 0x1c2426, fogNear: 22, fogFar: 60, skyH: 0x22333a, skyZ: 0x0a1016, hemiSky: 0x8aa8a0, hemiGround: 0x3f4438, hemiInt: 0.72, moonC: 0xa8c4c0, moonInt: 0.7, stars: 0.8 },
+    weatherPool: ['clear', 'rain', 'clear', 'snow'],
+    perk: { produce: { food: 1 }, produceNote: '🌿 온실 텃밭에서 수확했습니다', label: '🌿 텃밭 — 매일 음식 +1' },
+    upkeep: { res: 'water', n: 1, every: 1, label: '깨끗한 물 1 / 일 (급수)' },
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), lamb(0x6b5a44));
+      floor.position.y = -0.125; floor.receiveShadow = true;
+      roomGroup.add(floor);
+      B(roomGroup, w + 0.9, 0.4, d + 0.9, 0x4a4640, 0, -0.42, 0);
+      // 유리벽 (반투명 + 흰 프레임, 컬링 대상)
+      const mkGlass = (len, seed) => {
+        const g = new THREE.Group();
+        const rand = seededRand(seed);
+        const glass = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.06),
+          new THREE.MeshLambertMaterial({ color: 0xbcd8d4, transparent: true, opacity: 0.22 }));
+        glass.position.y = h / 2;
+        g.add(glass);
+        const fm = lamb(0xcfc8ba);
+        for (let x = -len / 2; x <= len / 2 + 0.01; x += len / Math.round(len / 1.1)) {
+          const f = new THREE.Mesh(new THREE.BoxGeometry(0.09, h, 0.1), fm);
+          f.position.set(x, h / 2, 0); f.castShadow = true; g.add(f);
+        }
+        const top = new THREE.Mesh(new THREE.BoxGeometry(len + 0.1, 0.1, 0.12), fm);
+        top.position.y = h; g.add(top);
+        const bot = new THREE.Mesh(new THREE.BoxGeometry(len + 0.1, 0.14, 0.12), fm);
+        bot.position.y = 0.07; g.add(bot);
+        // 깨진 유리 자국
+        if (rand() < 0.7) B(g, 0.5 + rand() * 0.4, 0.5, 0.07, 0x2a3438, -len / 2 + 1 + rand() * (len - 2), 1.2 + rand() * 0.8, 0);
+        return g;
+      };
+      makeWalls([
+        { group: mkGlass(w, 31), pos: [0, 0, -d / 2 - 0.08], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+        { group: mkGlass(w, 32), pos: [0, 0, d / 2 + 0.08], rotY: Math.PI, normal: new THREE.Vector3(0, 0, 1) },
+        { group: mkGlass(d, 33), pos: [-w / 2 - 0.08, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+        { group: mkGlass(d, 34), pos: [w / 2 + 0.08, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
+      ]);
+      // 고정 텃밭 화단 2개 (뒤쪽)
+      const bed = (bx) => {
+        const g = new THREE.Group();
+        B(g, 2.4, 0.35, 0.9, 0x6a4f33, 0, 0.18, 0);
+        B(g, 2.3, 0.1, 0.8, 0x3a2f22, 0, 0.4, 0);
+        const rand = seededRand(bx * 7 + 3);
+        for (let i = 0; i < 6; i++) {
+          const sp = new THREE.Mesh(new THREE.IcosahedronGeometry(0.09 + rand() * 0.08, 0), lamb([0x5f8a52, 0x6f9a5a, 0x7aa862][i % 3]));
+          sp.position.set(-1 + i * 0.4, 0.5, (rand() - 0.5) * 0.5);
+          sp.castShadow = true;
+          g.add(sp);
+        }
+        g.position.set(bx, 0, -ROOM.d / 2 + 0.75);
+        roomGroup.add(g);
+      };
+      bed(-2.6); bed(2.6);
+      blockers = [
+        { x: -2.6, z: -d / 2 + 0.75, w: 2.6, d: 1.1 },
+        { x: 2.6, z: -d / 2 + 0.75, w: 2.6, d: 1.1 },
+      ];
+    },
+    buildEnv() {
+      const GY = -0.75;
+      const rand = seededRand(707);
+      const gh = (x, z) => {
+        const r = Math.hypot(x, z);
+        const n = 0.7 * Math.sin(x * 0.13) * Math.cos(z * 0.12 + 1) + 0.4 * Math.sin(x * 0.29 + 0.5) * Math.sin(z * 0.25);
+        return GY + n * THREE.MathUtils.smoothstep(r, 6.5, 13) + THREE.MathUtils.smoothstep(r, 26, 55) * 2.4;
+      };
+      const cA = new THREE.Color(0x44543c), cB = new THREE.Color(0x54503c), cC = new THREE.Color(0x3a5044);
+      envRoot.add(groundPlane((x, z) => {
+        const m = 0.5 + 0.5 * Math.sin(x * 0.42 + z * 0.3) * Math.cos(z * 0.35 - x * 0.2);
+        return cA.clone().lerp(cB, m * 0.6).lerp(cC, 0.3);
+      }, gh));
+      // 버려진 밭이랑 (줄지어 솟은 두둑)
+      for (let row = 0; row < 5; row++) {
+        const rz = 6 + row * 1.6;
+        const ridge = B(envRoot, 14, 0.3, 0.7, 0x4a3f30, -3, gh(-3, rz) + 0.1, rz);
+        ridge.receiveShadow = true;
+        for (let i = 0; i < 8; i++) {
+          if (rand() < 0.4) continue;
+          const sp = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1 + rand() * 0.1, 0), lamb(rand() < 0.5 ? 0x5a6a42 : 0x6a5f3a));
+          sp.position.set(-9.5 + i * 1.8, gh(-3, rz) + 0.35, rz + (rand() - 0.5) * 0.3);
+          envRoot.add(sp);
+        }
+      }
+      // 풍차 (천천히 도는 날개)
+      const mill = new THREE.Group();
+      Cyl(mill, 0.12, 0.3, 6.5, 0x55504a, 0, 3.25, 0, 6);
+      const blades = new THREE.Group();
+      for (let i = 0; i < 4; i++) {
+        const bl = B(blades, 0.24, 2.2, 0.05, 0x8a857a, 0, 1.2, 0);
+        bl.position.applyAxisAngle(new THREE.Vector3(0, 0, 1), i * Math.PI / 2);
+        bl.rotation.z = i * Math.PI / 2;
+      }
+      blades.position.set(0, 6.3, 0.35);
+      mill.add(blades);
+      mill.position.set(-11, gh(-11, -7), -7);
+      mill.rotation.y = 0.8;
+      envRoot.add(mill);
+      // 고사목 + 들풀
+      const tufts = [];
+      for (let i = 0; i < 200; i++) {
+        const a = rand() * Math.PI * 2, r = 5.5 + Math.pow(rand(), 0.7) * 20;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const th = 0.2 + rand() * 0.35;
+        const tg = new THREE.ConeGeometry(0.06 + rand() * 0.07, th, 4);
+        tg.translate(x, gh(x, z) + th / 2, z);
+        tufts.push(paintGeo(tg, [0x55663f, 0x6a7047, 0x4a5c3c][Math.floor(rand() * 3)]));
+      }
+      envRoot.add(new THREE.Mesh(mergeGeometries(tufts), vcLambert));
+      for (let i = 0; i < 10; i++) {
+        const a = rand() * Math.PI * 2, r = 11 + rand() * 16;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const geo = deadTreeGeo(rand, 0.9 + rand() * 1.1);
+        geo.rotateY(rand() * Math.PI * 2);
+        geo.translate(x, gh(x, z), z);
+        envRoot.add(new THREE.Mesh(geo, vcLambert));
+      }
+      buildRuinCity(envRoot, rand, { count: 10, rMin: 30, rMax: 46, hMin: 4, hMax: 11, baseY: GY, litChance: 0.1 });
+      // 반딧불이
+      const n = 20, arr = new Float32Array(n * 3);
+      const base = [], phase = [];
+      for (let i = 0; i < n; i++) {
+        const a = rand() * Math.PI * 2, r = 6 + rand() * 9;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const y = gh(x, z) + 0.5 + rand() * 1.2;
+        arr.set([x, y, z], i * 3);
+        base.push({ x, y, z }); phase.push(rand() * Math.PI * 2);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+      const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+        color: 0xd9e77a, size: 3, sizeAttenuation: false, transparent: true, opacity: 0.8, fog: false,
+      }));
+      envRoot.add(pts);
+      envDyn = { fireflies: { pts, base, phase }, windmill: blades };
+    },
+  },
+
+  ship: {
+    name: '여객선 선실', emoji: '🚢', unlockAt: 18, viewH: 17, ceilY: 2.5,
+    desc: '해안에 좌초된 여객선의 갑판. 파도 소리와 함께 잠들고, 아침엔 낚싯대를 드리운다.',
+    room: { w: 10, d: 7, h: 0.9 },
+    baseComfort: 7,
+    mood: { fog: 0x16222c, fogNear: 20, fogFar: 56, skyH: 0x1e3040, skyZ: 0x0a1018, hemiSky: 0x7d94b0, hemiGround: 0x3a3d40, hemiInt: 0.68, moonC: 0xa8c0d8, moonInt: 0.8, stars: 0.9 },
+    weatherPool: ['clear', 'rain', 'rain', 'snow'],
+    perk: { failSalvage: true, produce: { food: 1 }, produceNote: '🎣 밤낚시로 물고기를 잡았습니다', label: '🎣 낚시 — 매일 음식 +1 · 탐험 실패에도 자원 일부 회수' },
+    upkeep: { res: 'parts', n: 1, every: 3, label: '부품 1 / 3일 (배수 펌프)' },
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), lamb(0x7a6248));
+      floor.position.y = -0.15; floor.receiveShadow = true;
+      roomGroup.add(floor);
+      for (let i = 0; i < 8; i++) B(roomGroup, w + 0.6, 0.02, 0.06, 0x5d452c, 0, 0.02, -d / 2 + 0.4 + i * 0.85);
+      // 선체 (아래로 이어지는 흘수선)
+      B(roomGroup, w + 1.6, 5.5, d + 1.6, 0x5c3a30, 0, -3.0, 0);
+      B(roomGroup, w + 1.8, 0.7, d + 1.8, 0x2a2622, 0, -5.6, 0);
+      // 흰 난간 (항상 표시)
+      const mkRail = (len, x, z, rotY) => {
+        const g = new THREE.Group();
+        const fm = lamb(0xc8c4b8);
+        for (let i = 0; i <= Math.round(len / 1.1); i++) {
+          const p = new THREE.Mesh(new THREE.BoxGeometry(0.08, h, 0.08), fm);
+          p.position.set(-len / 2 + i * (len / Math.round(len / 1.1)), h / 2, 0);
+          p.castShadow = true; g.add(p);
+        }
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(len + 0.1, 0.08, 0.1), fm);
+        rail.position.y = h; g.add(rail);
+        const mid = new THREE.Mesh(new THREE.BoxGeometry(len + 0.1, 0.05, 0.08), lamb(0xa8a49a));
+        mid.position.y = h * 0.55; g.add(mid);
+        g.position.set(x, 0, z); g.rotation.y = rotY;
+        roomGroup.add(g);
+      };
+      mkRail(w + 0.5, 0, d / 2 + 0.25, 0);
+      mkRail(d + 0.5, -w / 2 - 0.25, 0, Math.PI / 2);
+      mkRail(d + 0.5, w / 2 + 0.25, 0, Math.PI / 2);
+      wallList = [];
+      // 선실 벽 (뒤쪽, 흰 강판 + 둥근 창)
+      const cabinW = new THREE.Group();
+      const cw = new THREE.Mesh(new THREE.BoxGeometry(w, 2.5, 0.3), lamb(0xd0ccc0));
+      cw.position.y = 1.25; cw.castShadow = cw.receiveShadow = true;
+      cabinW.add(cw);
+      for (let i = 0; i < 4; i++) {
+        const port = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.1, 12), lamb(0x8a8f96));
+        port.rotation.x = Math.PI / 2;
+        port.position.set(-3.2 + i * 2.1, 1.5, 0.18);
+        cabinW.add(port);
+        const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 12), lamb(0x2c3a4a));
+        glass.rotation.x = Math.PI / 2;
+        glass.position.set(-3.2 + i * 2.1, 1.5, 0.19);
+        cabinW.add(glass);
+      }
+      const door2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.9, 0.1), lamb(0x6a4f33));
+      door2.position.set(3.6, 0.95, 0.18);
+      cabinW.add(door2);
+      // 녹 줄무늬
+      const rr = seededRand(21);
+      for (let i = 0; i < 5; i++) {
+        const rust = new THREE.Mesh(new THREE.BoxGeometry(0.2 + rr() * 0.3, 0.6 + rr() * 0.8, 0.05), lamb(0x8a5138));
+        rust.position.set(-w / 2 + 1 + rr() * (w - 2), 0.6 + rr() * 1.2, 0.17);
+        cabinW.add(rust);
+      }
+      cabinW.position.set(0, 0, -d / 2 - 0.28);
+      makeWalls([{ group: cabinW, pos: [0, 0, -d / 2 - 0.28], rotY: 0, normal: new THREE.Vector3(0, 0, -1) }]);
+      // 굴뚝 (선실 뒤로)
+      const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, 3.4, 10), lamb(0xa84a3f));
+      stack.position.set(1.6, 3.6, -d / 2 - 1.4);
+      stack.rotation.z = 0.06;
+      stack.castShadow = true;
+      roomGroup.add(stack);
+      B(roomGroup, 1.7, 0.4, 1.7, 0x2a2622, 1.6, 5.3, -d / 2 - 1.5);
+      // 낚싯대 + 구명튜브 (고정 소품)
+      const rod = new THREE.Group();
+      Cyl(rod, 0.02, 0.03, 2.2, 0x6a4f33, 0, 1.0, 0, 5).rotation.z = -0.7;
+      B(rod, 0.15, 0.4, 0.15, 0x55504a, -0.35, 0.2, 0);
+      rod.position.set(w / 2 - 0.7, 0, d / 2 - 0.6);
+      roomGroup.add(rod);
+      const buoyRing = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.09, 6, 12), lamb(0xc45540));
+      buoyRing.position.set(-w / 2 + 0.2, 1.4, -d / 2 - 0.1);
+      roomGroup.add(buoyRing);
+      blockers = [{ x: w / 2 - 0.7, z: d / 2 - 0.6, w: 0.8, d: 0.8 }];
+    },
+    buildEnv() {
+      const rand = seededRand(808);
+      // 바다 (거대한 어두운 수면)
+      const sea = new THREE.Mesh(new THREE.PlaneGeometry(240, 240, 24, 24), lamb(0x14222e));
+      sea.geometry.rotateX(-Math.PI / 2);
+      const sp = sea.geometry.attributes.position;
+      for (let i = 0; i < sp.count; i++) sp.setY(i, Math.sin(sp.getX(i) * 0.3) * Math.cos(sp.getZ(i) * 0.27) * 0.18);
+      sea.geometry.computeVertexNormals();
+      sea.position.y = -6.2;
+      envRoot.add(sea);
+      // 달빛 반사 띠
+      const glint = new THREE.Mesh(new THREE.PlaneGeometry(3, 40),
+        new THREE.MeshLambertMaterial({ color: 0x2a4258, emissive: 0x1a3048, emissiveIntensity: 0.6, transparent: true, opacity: 0.5 }));
+      glint.rotation.x = -Math.PI / 2;
+      glint.position.set(-12, -6.1, -8);
+      glint.rotation.z = 0.4;
+      envRoot.add(glint);
+      // 뱃머리 (우리 배의 앞부분이 이어짐)
+      const bow = new THREE.Group();
+      B(bow, 7, 1.2, 8.4, 0x6a5a48, 0, -0.6, 0);
+      B(bow, 8, 4.8, 9, 0x5c3a30, 0, -3.6, 0);
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(4.2, 6, 4), lamb(0x5c3a30));
+      tip.rotation.z = -Math.PI / 2; tip.rotation.y = Math.PI / 4;
+      tip.scale.set(1, 1, 1.4);
+      tip.position.set(3.5, -3.2, 0);
+      bow.add(tip);
+      bow.position.set(ROOM.w / 2 + 4.2, 0, 0);
+      envRoot.add(bow);
+      // 좌초한 다른 배 실루엣 (수평선)
+      const wreck = new THREE.Group();
+      B(wreck, 16, 4, 4, 0x1c2229, 0, 2, 0);
+      B(wreck, 5, 3, 3, 0x181d24, -2, 5.5, 0);
+      const wtip = new THREE.Mesh(new THREE.ConeGeometry(2.5, 5, 4), lamb(0x1c2229));
+      wtip.rotation.z = Math.PI / 2 + 0.5;
+      wtip.position.set(9, 2.5, 0);
+      wreck.add(wtip);
+      wreck.rotation.z = -0.18;
+      wreck.rotation.y = 0.7;
+      wreck.position.set(-26, -6, -20);
+      envRoot.add(wreck);
+      // 부표 + 갈매기는 없다. 등대 불빛만 멀리서.
+      const buoy = new THREE.Group();
+      const bb = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.4, 6), lamb(0x8a4535));
+      bb.position.y = 0.4;
+      buoy.add(bb);
+      const bl = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 5),
+        new THREE.MeshLambertMaterial({ color: 0xffcc66, emissive: 0xcc8822, emissiveIntensity: 1 }));
+      bl.position.y = 1.2;
+      buoy.add(bl);
+      buoy.position.set(-9, -6, 7);
+      envRoot.add(buoy);
+      // 해안선 절벽 (한쪽)
+      for (let i = 0; i < 6; i++) {
+        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(2.5 + rand() * 3, 0), lamb(0x232830));
+        rock.position.set(-30 + rand() * 10, -5.5 + rand() * 1.5, 14 + rand() * 12);
+        rock.rotation.set(rand() * 3, rand() * 3, rand() * 3);
+        envRoot.add(rock);
+      }
+      envDyn = { sea, seaBase: sea.position.y };
+    },
+  },
+
+  lighthouse: {
+    name: '등대 전망실', emoji: '🗼', unlockAt: 22, viewH: 19, ceilY: 2.4,
+    desc: '절벽 끝 등대의 꼭대기. 회전하는 불빛 아래에서 폐허가 된 세상이 한눈에 내려다보인다.',
+    room: { w: 7, d: 7, h: 0.8 },
+    baseComfort: 9,
+    mood: { fog: 0x1a2430, fogNear: 22, fogFar: 64, skyH: 0x223448, skyZ: 0x0a0f18, hemiSky: 0x8aa0c0, hemiGround: 0x3a3d40, hemiInt: 0.7, moonC: 0xa8c0d8, moonInt: 0.8, stars: 0.95 },
+    weatherPool: ['clear', 'rain', 'snow', 'rain'],
+    perk: { expBonus: 0.03, forecast: true, label: '🔦 탐조등 — 모든 지역 성공률 +3%p · 날씨 예보 제공' },
+    upkeep: { res: 'fuel', n: 1, every: 2, label: '연료 1 / 2일 (등불)' },
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
+      conc.userData.shared = true;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.7, 0.3, d + 0.7), conc);
+      floor.position.y = -0.15; floor.receiveShadow = true;
+      roomGroup.add(floor);
+      // 등대 몸통 (아래로, 홍백 줄무늬)
+      for (let i = 0; i < 5; i++) {
+        const seg = new THREE.Mesh(new THREE.CylinderGeometry(3.6 + i * 0.22, 3.6 + (i + 1) * 0.22, 3.2, 14), lamb(i % 2 ? 0xb84a3f : 0xd8d0c4));
+        seg.position.y = -1.8 - i * 3.2;
+        roomGroup.add(seg);
+      }
+      // 난간 (흰 철제, 항상 표시)
+      const fm = lamb(0xc8c4b8);
+      const mkRail = (len, x, z, rotY) => {
+        const g = new THREE.Group();
+        for (let i = 0; i <= Math.round(len / 0.9); i++) {
+          const p = new THREE.Mesh(new THREE.BoxGeometry(0.07, h, 0.07), fm);
+          p.position.set(-len / 2 + i * (len / Math.round(len / 0.9)), h / 2, 0);
+          g.add(p);
+        }
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(len + 0.1, 0.07, 0.09), fm);
+        rail.position.y = h; g.add(rail);
+        g.position.set(x, 0, z); g.rotation.y = rotY;
+        roomGroup.add(g);
+      };
+      mkRail(w + 0.5, 0, -d / 2 - 0.25, 0);
+      mkRail(w + 0.5, 0, d / 2 + 0.25, 0);
+      mkRail(d + 0.5, -w / 2 - 0.25, 0, Math.PI / 2);
+      mkRail(d + 0.5, w / 2 + 0.25, 0, Math.PI / 2);
+      wallList = [];
+      // 중앙 등탑 (고정 소품 + 회전 탐조등)
+      const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.8, 1.1, 10), lamb(0x3f4448));
+      lampBase.position.y = 0.55;
+      lampBase.castShadow = true;
+      roomGroup.add(lampBase);
+      const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.8, 10),
+        new THREE.MeshLambertMaterial({ color: 0xffe9b0, emissive: 0xffc860, emissiveIntensity: 1.2 }));
+      lens.position.y = 1.55;
+      roomGroup.add(lens);
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(0.85, 0.7, 10), lamb(0xb84a3f));
+      cap.position.y = 2.3;
+      cap.castShadow = true;
+      roomGroup.add(cap);
+      // 회전 빔 (envDyn에서 회전)
+      const beamGroup = new THREE.Group();
+      for (const dir of [1, -1]) {
+        const beam = new THREE.Mesh(new THREE.PlaneGeometry(14, 0.9),
+          new THREE.MeshBasicMaterial({ color: 0xffe0a0, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }));
+        beam.position.x = dir * 7.5;
+        beamGroup.add(beam);
+        const beam2 = beam.clone();
+        beam2.rotation.x = Math.PI / 2;
+        beamGroup.add(beam2);
+      }
+      beamGroup.position.y = 1.55;
+      roomGroup.add(beamGroup);
+      envDyn._beam = beamGroup;
+      blockers = [{ x: 0, z: 0, w: 1.8, d: 1.8 }];
+    },
+    buildEnv() {
+      const rand = seededRand(909);
+      // 절벽 (등대가 선 바위산)
+      const cliff = new THREE.Group();
+      for (let i = 0; i < 9; i++) {
+        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(3.5 + rand() * 3.5, 0), lamb([0x2a2f38, 0x232830, 0x31363e][i % 3]));
+        rock.position.set((rand() - 0.5) * 9, -14 - rand() * 4, (rand() - 0.5) * 9);
+        rock.rotation.set(rand() * 3, rand() * 3, rand() * 3);
+        rock.scale.y = 1.6 + rand();
+        cliff.add(rock);
+      }
+      envRoot.add(cliff);
+      // 바다
+      const sea = new THREE.Mesh(new THREE.PlaneGeometry(240, 240, 20, 20), lamb(0x14222e));
+      sea.geometry.rotateX(-Math.PI / 2);
+      const sp = sea.geometry.attributes.position;
+      for (let i = 0; i < sp.count; i++) sp.setY(i, Math.sin(sp.getX(i) * 0.3) * Math.cos(sp.getZ(i) * 0.27) * 0.2);
+      sea.geometry.computeVertexNormals();
+      sea.position.y = -19;
+      envRoot.add(sea);
+      // 파도가 부서지는 바위들
+      for (let i = 0; i < 8; i++) {
+        const a = rand() * Math.PI * 2, r = 10 + rand() * 14;
+        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2 + rand() * 2, 0), lamb(0x1e232b));
+        rock.position.set(r * Math.cos(a), -18.5 + rand(), r * Math.sin(a));
+        rock.rotation.set(rand() * 3, rand() * 3, rand() * 3);
+        envRoot.add(rock);
+      }
+      // 난파선
+      const wreck = new THREE.Group();
+      B(wreck, 8, 2.2, 2.4, 0x24211c, 0, 1, 0);
+      const wtip = new THREE.Mesh(new THREE.ConeGeometry(1.4, 3, 4), lamb(0x24211c));
+      wtip.rotation.z = Math.PI / 2 + 0.4;
+      wtip.position.set(4.5, 1.2, 0);
+      wreck.add(wtip);
+      wreck.rotation.z = 0.35;
+      wreck.rotation.y = 1.2;
+      wreck.position.set(14, -19, 9);
+      envRoot.add(wreck);
+      // 해안 폐허 마을 (절벽 건너)
+      buildRuinCity(envRoot, rand, { count: 8, rMin: 26, rMax: 44, hMin: 3, hMax: 8, baseY: -18.5, litChance: 0.15 });
+      envDyn.beam = envDyn._beam;
+      delete envDyn._beam;
+    },
+  },
+};
+
+/* ============================================================
+   게임 상태 & 저장
+============================================================ */
+// ---- 자원 (기획서 v0.2: 자원 보유량 및 소비) ----
+const RESOURCES = {
+  food:       { name: '음식',     emoji: '🥫' },
+  water:      { name: '깨끗한 물', emoji: '💧' },
+  cloth:      { name: '천',       emoji: '🧵' },
+  bandage:    { name: '붕대',     emoji: '🩹' },
+  antiseptic: { name: '소독약',   emoji: '🧴' },
+  painkiller: { name: '진통제',   emoji: '💊' },
+  candle:     { name: '양초',     emoji: '🕯️' },
+  battery:    { name: '배터리',   emoji: '🔋' },
+  fuel:       { name: '연료',     emoji: '⛽' },
+  parts:      { name: '부품',     emoji: '⚙️' },
+  material:   { name: '건축재',   emoji: '🧱' },
+};
+// ---- 부상 (기획서 v0.2: 부상 치료 시스템) ----
+const INJURIES = {
+  minor:     { name: '가벼운 부상', icon: '🩹', pen: 0.05, restH: 12, cure: { bandage: 1 }, infect: 0.10 },
+  deep:      { name: '깊은 상처',   icon: '🩸', pen: 0.15, restH: 24, cure: { bandage: 1, antiseptic: 1 }, infect: 0.25 },
+  sprain:    { name: '염좌',        icon: '🦵', pen: 0.10, restH: 18, timeMult: 1.3, cure: { painkiller: 1 } },
+  infection: { name: '감염 위험',   icon: '🤒', pen: 0.20, restH: 36, cure: { antiseptic: 1, water: 1 } },
+};
+// ---- 탐험 준비물 (기획서 v0.2: 준비물 슬롯) ----
+const PREPS = {
+  bottle:    { name: '물병',     emoji: '🥤', cost: { water: 1 },  eff: '부상 시 회복 시간 -20%' },
+  canned:    { name: '통조림',   emoji: '🥫', cost: { food: 1 },   eff: '공업/슬럼 성공률 +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
+  flashlight:{ name: '손전등',   emoji: '🔦', cost: { battery: 1 },eff: '상업/슬럼 성공률 +10%p', bonus: { commercial: 0.10, slum: 0.10 } },
+  gloves:    { name: '장갑',     emoji: '🧤', cost: { cloth: 1 },  eff: '부상 확률 -30%' },
+  raincoat:  { name: '우의',     emoji: '🧥', cost: { cloth: 1 },  eff: '날씨 페널티 -70%' },
+  firstaid:  { name: '응급키트', emoji: '⛑️', cost: { bandage: 1, antiseptic: 1 }, eff: '깊은 상처 → 가벼운 부상으로 완화' },
+};
+
+const state = {
+  ver: 3,
+  current: 'container',
+  successes: 0,
+  inventory: { bed: 1, rug: 1, candle: 1 },
+  // 초기 자원 (기획서 밸런싱 권장값)
+  res: { food: 3, water: 3, cloth: 2, bandage: 1, antiseptic: 0, painkiller: 0, candle: 2, battery: 1, fuel: 0, parts: 0, material: 0 },
+  layouts: { container: [{ d: 'crate', c: 1, x: 2.5, z: -0.75, r: 0 }], bunker: [], rooftop: [], cabin: [] },
+  exp: null,             // { region, end(실시간ms), rate, prep:[] }
+  injury: null,          // { type, untilMin, }
+  gameMin: 8 * 60,       // Day 1, 08:00 시작
+  day: 1,
+  savedAt: Date.now(),
+  weatherType: 'clear',
+  weatherUntil: 0,       // gameMin 기준
+  cleanBy: { container: 70, bunker: 70, rooftop: 70, cabin: 70 },
+  upkeepOk: true,
+  dayLog: { gain: {}, spend: {}, notes: [] },
+  helpSeen: false,
+  stats: { exp: 0, success: 0 },
+};
+
+function resAdd(id, n) {
+  if (n <= 0) return;
+  state.res[id] = (state.res[id] || 0) + n;
+  state.dayLog.gain[id] = (state.dayLog.gain[id] || 0) + n;
+}
+function resConsume(id, n) {
+  if ((state.res[id] || 0) < n) return false;
+  state.res[id] -= n;
+  state.dayLog.spend[id] = (state.dayLog.spend[id] || 0) + n;
+  return true;
+}
+function resHasAll(cost) {
+  return Object.entries(cost).every(([id, n]) => (state.res[id] || 0) >= n);
+}
+function resConsumeAll(cost) {
+  if (!resHasAll(cost)) return false;
+  for (const [id, n] of Object.entries(cost)) resConsume(id, n);
+  return true;
+}
+function costLabel(cost) {
+  return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${RESOURCES[id].name} ${n}`).join(' + ');
+}
+const opts = { pixel: 3, quant: true, dither: true, ceil: true };
+
+let saveTimer = null;
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+    state.savedAt = Date.now();
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ state, opts }));
+    } catch (e) { /* file:// 등 저장 불가 환경 */ }
+    updateHud();                       // 쾌적함 반영
+    if (!state.exp) renderExpPanel();  // 보정된 성공률 반영
+  }, 400);
+}
+function loadSave() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      const oldVer = data.state?.ver || 2;
+      const defaults = JSON.parse(JSON.stringify(state)); // 신규 필드 기본값 보존
+      Object.assign(state, data.state);
+      Object.assign(opts, data.opts);
+      // 구버전(v2) 필드 보정
+      if (oldVer < 3) {
+        // v0.3 시절 옥상 캠프 레이아웃은 벙커로 이전 (v3의 rooftop은 새 셸터)
+        if (state.layouts.rooftop?.length) {
+          state.layouts.bunker = [...(state.layouts.bunker || []), ...state.layouts.rooftop];
+        }
+        state.layouts.rooftop = [];
+        for (const k of ['res', 'gameMin', 'day', 'savedAt', 'weatherType', 'weatherUntil', 'cleanBy', 'upkeepOk', 'dayLog', 'stats'])
+          state[k] = defaults[k];
+        state.injury = null;
+        delete state.injuredUntil;
+        state.ver = 3;
+      }
+      for (const id of Object.keys(SHELTERS)) {
+        if (!state.layouts[id]) state.layouts[id] = [];
+        if (state.cleanBy[id] == null) state.cleanBy[id] = 70;
+      }
+      for (const id of Object.keys(RESOURCES)) if (state.res[id] == null) state.res[id] = 0;
+      if (!SHELTERS[state.current]) state.current = 'container';
+      // 오프라인 시간 진행 (최대 2일)
+      const elapsed = Math.max(0, (Date.now() - (state.savedAt || Date.now())) / 1000);
+      state.gameMin += Math.min(2880, elapsed * GAME_MIN_PER_SEC);
+      return true;
+    }
+    // v1 세이브 마이그레이션: 오두막 레이아웃으로 이전, 전부 해금
+    const old = localStorage.getItem(OLD_SAVE_KEY);
+    if (old) {
+      const v1 = JSON.parse(old);
+      if (v1.items?.length) {
+        state.layouts.cabin = v1.items;
+        state.current = 'cabin';
+        state.successes = 5;
+        state.helpSeen = true;
+        if (v1.opts) Object.assign(opts, v1.opts);
+        return true;
+      }
+    }
+  } catch (e) { /* ignore */ }
+  return false;
+}
+
+/* ============================================================
+   아이템 관리 (배치 / 이동 / 충돌 / 인벤토리)
+============================================================ */
+const items = [];
+const itemsRoot = new THREE.Group();
+scene.add(itemsRoot);
+
+function footprintOf(item) {
+  const fp = DEFS[item.defId].fp;
+  return item.rot % 2 ? { w: fp.d, d: fp.w } : { w: fp.w, d: fp.d };
+}
+function buildItemGroup(item) {
+  const def = DEFS[item.defId];
+  const g = def.build(def.colors[item.colorIdx], item.colorIdx);
+  item.glowMeshes = [];
+  g.traverse(o => {
+    if (o.isMesh) {
+      o.userData.origEmissive = o.material.emissive ? o.material.emissive.getHex() : 0;
+      o.userData.origEmissiveI = o.material.emissiveIntensity ?? 1;
+      if (o.userData.glow) item.glowMeshes.push(o);
+    }
+  });
+  if (def.light) {
+    const L = new THREE.PointLight(def.light.color, def.light.intensity, def.light.dist, 1.8);
+    L.position.set(0, def.light.y, 0);
+    g.add(L);
+    item.lightObj = L;
+    item.lightBase = def.light.intensity;
+  }
+  g.userData.item = item;
+  return g;
+}
+function syncTransform(item) {
+  item.group.position.set(item.x, 0, item.z);
+  item.group.rotation.y = item.rot * Math.PI / 2;
+  shadowDirty();
+}
+function addItem(defId, colorIdx, x, z, rot, on = true) {
+  const item = { defId, colorIdx, x, z, rot, on };
+  item.group = buildItemGroup(item);
+  syncTransform(item);
+  itemsRoot.add(item.group);
+  items.push(item);
+  if (DEFS[defId].light || DEFS[defId].appliance) setItemPower(item, on);
+  return item;
+}
+// 조명 전원 (기획서 v0.2: 조명 ON/OFF + 일일 소비)
+function setItemPower(item, on) {
+  item.on = on;
+  if (item.lightObj) item.lightObj.visible = on;
+  for (const m of (item.glowMeshes || [])) {
+    m.material.emissiveIntensity = on ? m.userData.origEmissiveI : 0.03;
+  }
+  shadowDirty();
+}
+function removeItem(item) {
+  itemsRoot.remove(item.group);
+  disposeDeep(item.group);
+  const i = items.indexOf(item);
+  if (i >= 0) items.splice(i, 1);
+  shadowDirty();
+}
+function recolorItem(item, colorIdx) {
+  item.colorIdx = colorIdx;
+  itemsRoot.remove(item.group);
+  disposeDeep(item.group);
+  item.lightObj = null;
+  item.group = buildItemGroup(item);
+  syncTransform(item);
+  itemsRoot.add(item.group);
+  if (DEFS[item.defId].light || DEFS[item.defId].appliance) setItemPower(item, item.on !== false);
+}
+function clampToRoom(item, x, z) {
+  const fp = footprintOf(item);
+  const mx = ROOM.w / 2 - fp.w / 2 - 0.06, mz = ROOM.d / 2 - fp.d / 2 - 0.06;
+  return [THREE.MathUtils.clamp(x, -mx, mx), THREE.MathUtils.clamp(z, -mz, mz)];
+}
+function collides(item, x, z) {
+  if (DEFS[item.defId].noCollide) return false;
+  const fp = footprintOf(item);
+  for (const other of items) {
+    if (other === item || DEFS[other.defId].noCollide) continue;
+    const ofp = footprintOf(other);
+    if (Math.abs(x - other.x) < (fp.w + ofp.w) / 2 - 0.02 &&
+        Math.abs(z - other.z) < (fp.d + ofp.d) / 2 - 0.02) return true;
+  }
+  for (const b of blockers) {
+    if (Math.abs(x - b.x) < (fp.w + b.w) / 2 - 0.02 &&
+        Math.abs(z - b.z) < (fp.d + b.d) / 2 - 0.02) return true;
+  }
+  return false;
+}
+function setGhostVisual(item, mode) {
+  item.group.traverse(o => {
+    if (!o.isMesh) return;
+    const m = o.material;
+    if (mode) {
+      m.transparent = true; m.opacity = 0.75;
+      if (!o.userData.glow) {
+        m.emissive.setHex(mode === 'invalid' ? 0x7a2020 : 0x1e3a1e);
+        m.emissiveIntensity = 0.9;
+      }
+    } else {
+      m.transparent = false; m.opacity = 1;
+      m.emissive.setHex(o.userData.origEmissive);
+      m.emissiveIntensity = o.userData.origEmissiveI;
+    }
+  });
+}
+
+/* ============================================================
+   셸터 로드 / 이주
+============================================================ */
+const gridHelper = new THREE.GridHelper(1, 1);
+gridHelper.visible = false;
+scene.add(gridHelper);
+let gridObj = gridHelper; // 재생성 대상
+
+function loadShelter(id) {
+  cancelPlacing();
+  deselect();
+  // 기존 배치/방/환경 해체
+  while (items.length) {
+    const it = items.pop();
+    itemsRoot.remove(it.group);
+    disposeDeep(it.group);
+  }
+  disposeDeep(roomGroup); roomGroup.clear();
+  disposeDeep(envRoot); envRoot.clear();
+  wallList = []; blockers = []; envDyn = {};
+
+  state.current = id;
+  const sh = SHELTERS[id];
+  ROOM = { ...sh.room };
+  sh.buildRoom();
+  sh.buildEnv();
+  applyMood(sh.mood);
+  ensureWeather();
+  ceilLight.position.set(0, sh.ceilY, 0);
+
+  // 그리드 재생성
+  scene.remove(gridObj);
+  gridObj.geometry?.dispose?.();
+  const gmax = Math.max(ROOM.w, ROOM.d);
+  gridObj = new THREE.GridHelper(gmax, gmax / GRID, 0xe8a86c, 0x6b5a40);
+  gridObj.material.transparent = true;
+  gridObj.material.opacity = 0.22;
+  gridObj.position.y = 0.02;
+  gridObj.scale.set(ROOM.w / gmax, 1, ROOM.d / gmax);
+  gridObj.visible = false;
+  scene.add(gridObj);
+
+  // 저장된 레이아웃 복원
+  for (const it of (state.layouts[id] || [])) {
+    if (!DEFS[it.d]) continue;
+    addItem(it.d, it.c ?? 0, it.x, it.z, it.r ?? 0, it.o !== 0);
+  }
+  fitZoomForShelter();
+  lastWallMask = -1;
+  shadowDirty();
+  updateHud();
+  if (typeof syncBgm === 'function') syncBgm();
+}
+function moveToShelter(id) {
+  if (id === state.current) { closeModal(); return; }
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+  loadShelter(id);
+  scheduleSave();
+  closeModal();
+  toast(`${SHELTERS[id].emoji} ${SHELTERS[id].name}(으)로 이주했습니다`);
+}
+
+/* ============================================================
+   탐험(파밍) 시스템 — 기획서의 지역별 성공률 기반
+============================================================ */
+const REGIONS = {
+  residential: {
+    name: '주거지역', emoji: '🏘️', rate: 0.8, time: 20,
+    pool: ['bed', 'chair', 'rug', 'dresser', 'candle'], furnChance: 0.5,
+    desc: '음식·천·양초 · 생활 가구', risk: '낮음',
+    lootRes: [['food', 1, 2], ['cloth', 0, 1], ['candle', 0, 1], ['water', 0, 1], ['bandage', 1, 1, 0.25]],
+    injuries: ['minor'],
+  },
+  commercial: {
+    name: '상업지구', emoji: '🏬', rate: 0.6, time: 35,
+    pool: ['sofa', 'table', 'bookshelf', 'radio', 'plant', 'fridge'], furnChance: 0.7,
+    desc: '배터리·의약품 · 상점 가구', risk: '보통',
+    lootRes: [['battery', 0, 2], ['parts', 0, 1], ['food', 0, 1], ['antiseptic', 1, 1, 0.25], ['painkiller', 1, 1, 0.2]],
+    injuries: ['minor', 'minor', 'sprain'],
+  },
+  industrial: {
+    name: '공업지대', emoji: '🏭', rate: 0.4, time: 50,
+    pool: ['lamp', 'crate', 'radio', 'dresser', 'purifier', 'generator'], furnChance: 0.3,
+    desc: '부품·건축재·연료', risk: '높음 — 장갑 권장',
+    lootRes: [['parts', 1, 3], ['material', 1, 3], ['fuel', 0, 2]],
+    injuries: ['deep', 'deep', 'sprain'],
+  },
+  slum: {
+    name: '슬럼가', emoji: '🏚️', rate: 0.25, time: 70,
+    pool: Object.keys(DEFS), furnChance: 0.6,
+    desc: '뭐든 나올 수 있다 · 희귀 가구', risk: '매우 높음 — 응급키트 권장',
+    lootRes: [['parts', 1, 2], ['cloth', 1, 2], ['painkiller', 1, 1, 0.15], ['antiseptic', 1, 1, 0.15]],
+    injuries: ['deep', 'sprain', 'infection'],
+  },
+};
+// 탐험 소요 시간(초): 염좌 +30%, 이동형 거점(버스) -25%
+function expDuration(r) {
+  let t = r.time;
+  if (state.injury?.type === 'sprain') t *= 1.3;
+  t *= SHELTERS[state.current].perk?.timeMult || 1;
+  return Math.round(t);
+}
+// 날씨 예보 (라디오 배치 또는 등대 특성)
+function hasForecast() {
+  return !!SHELTERS[state.current].perk?.forecast || items.some(i => i.defId === 'radio');
+}
+function forecastText() {
+  const nextDayStart = (Math.floor(state.gameMin / 1440) + 1) * 1440;
+  return state.weatherUntil > nextDayStart
+    ? `내일도 ${WEATHERS[state.weatherType].icon} ${WEATHERS[state.weatherType].name}`
+    : '내일 날씨 변동 예상';
+}
+// 탐험은 준비 단계를 거친다 (기획서 v0.2: 지역 → 날씨/위험 확인 → 준비물 → 출발)
+function startExpedition(regionId) {
+  if (state.exp) return;
+  openPrepModal(regionId);
+}
+function openPrepModal(regionId) {
+  const r = REGIONS[regionId];
+  const selected = new Set();
+  const render = () => {
+    const p = rateParts(regionId, [...selected]);
+    const lines = [];
+    lines.push(`기본 성공률 ${Math.round(p.base * 100)}%`);
+    if (p.shelter) lines.push(`<span style="color:var(--good)">거처 +${Math.round(p.shelter * 100)}%</span>`);
+    if (p.comfort) lines.push(`<span style="color:var(--good)">쾌적함 +${Math.round(p.comfort * 100)}%</span>`);
+    if (p.gear) lines.push(`<span style="color:var(--good)">장비 +${Math.round(p.gear * 100)}%</span>`);
+    if (p.weatherPen) lines.push(`<span style="color:var(--bad)">날씨 -${Math.round(p.weatherPen * 100)}%</span>`);
+    if (p.injuryPen) lines.push(`<span style="color:var(--bad)">부상 -${Math.round(p.injuryPen * 100)}%</span>`);
+    const cost = {};
+    for (const id of selected) for (const [rid, n] of Object.entries(PREPS[id].cost)) cost[rid] = (cost[rid] || 0) + n;
+    const dur = expDuration(r);
+    $('modal-body').innerHTML = `
+      <div class="rate-line">
+        ${r.emoji} <b>${Math.round(p.eff * 100)}%</b> · ${lines.join(' · ')}<br>
+        위험도: ${r.risk} · 소요 ${dur}초${state.injury?.type === 'sprain' ? ' <span style="color:var(--bad)">(염좌 +30%)</span>' : ''}${SHELTERS[state.current].perk?.timeMult ? ' <span style="color:var(--good)">(이동형 -25%)</span>' : ''} · ${WEATHERS[weather.type].icon} ${WEATHERS[weather.type].name}${hasForecast() ? ` · 📻 ${forecastText()}` : ''}
+      </div>
+      <div id="prep-list">${Object.entries(PREPS).map(([id, pr]) => {
+        const has = resHasAll(pr.cost);
+        return `<div class="prep-row ${selected.has(id) ? 'sel' : ''} ${has ? '' : 'no'}" data-prep="${id}">
+          <span>${pr.emoji} ${pr.name}</span>
+          <span class="p-eff">${pr.eff}</span>
+          <span class="p-cost">${costLabel(pr.cost)}</span>
+        </div>`;
+      }).join('')}</div>
+      <div style="font-size:11px;color:var(--text-dim);margin:8px 0">
+        예상 소비: ${Object.keys(cost).length ? costLabel(cost) : '없음'}
+      </div>
+      <button class="pixel-btn primary" id="btn-depart" style="width:100%">🎒 출발 (${dur}초)</button>`;
+    $('modal-body').querySelectorAll('.prep-row').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.dataset.prep;
+        if (selected.has(id)) selected.delete(id);
+        else if (resHasAll(PREPS[id].cost)) selected.add(id);
+        else { toast(`${PREPS[id].name} 준비에 필요한 자원이 부족합니다`); return; }
+        render();
+      });
+    });
+    $('btn-depart').addEventListener('click', () => departExpedition(regionId, [...selected]));
+  };
+  openModal(`${r.emoji} ${r.name} 탐험 준비`, '');
+  render();
+}
+function departExpedition(regionId, prep) {
+  if (state.exp) return;
+  const r = REGIONS[regionId];
+  for (const id of prep) resConsumeAll(PREPS[id].cost);
+  const p = rateParts(regionId, prep);
+  const dur = expDuration(r) * 1000;
+  state.exp = { region: regionId, end: Date.now() + dur, dur, rate: p.eff, prep };
+  closeModal();
+  scheduleSave();
+  renderExpPanel();
+  renderResBar();
+  toast(`${r.emoji} ${r.name} 탐험 시작 — 성공률 ${Math.round(p.eff * 100)}%`);
+}
+function resolveExpedition() {
+  const exp = state.exp;
+  if (!exp) return;
+  const r = REGIONS[exp.region];
+  const prep = exp.prep || [];
+  state.exp = null;
+  state.stats.exp++;
+  const rate = exp.rate ?? r.rate;
+  const roll = Math.random();
+  const gotRes = {};   // 자원 획득
+  let got = [];        // 가구 획득
+  const notes = [];
+  let title, body;
+  const rollRes = (mult = 1) => {
+    for (const [id, min, max, chance] of r.lootRes) {
+      if (chance != null && Math.random() > chance) continue;
+      const n = Math.round((min + Math.random() * (max - min)) * mult);
+      if (n > 0) { gotRes[id] = (gotRes[id] || 0) + n; resAdd(id, n); }
+    }
+  };
+  const success = roll < rate;
+  const partial = !success && roll < rate + (1 - rate) * 0.5;
+  if (success) {
+    rollRes(1);
+    if (Math.random() < r.furnChance) got.push(r.pool[Math.floor(Math.random() * r.pool.length)]);
+    state.successes++;
+    state.stats.success++;
+    title = `✅ ${r.name} 탐험 성공!`;
+    body = '쓸 만한 물자를 찾아냈습니다.';
+  } else if (partial) {
+    rollRes(0.5);
+    if (SHELTERS[state.current].perk?.salvagePlus) {
+      got.push(r.pool[Math.floor(Math.random() * r.pool.length)]);
+      notes.push('📡 옥탑방의 시야 덕분에 가구를 하나 더 건졌습니다.');
+    }
+    title = `⚠️ ${r.name} — 겨우 빠져나왔다`;
+    body = '위험했지만 조금은 건졌습니다.';
+  } else {
+    title = `❌ ${r.name} 탐험 실패`;
+    body = '빈손으로 돌아왔습니다.';
+    if (SHELTERS[state.current].perk?.failSalvage) {
+      rollRes(0.3);
+      if (Object.keys(gotRes).length) {
+        body = '실패했지만, 뱃사람의 근성으로 몇 가지는 건져 왔습니다.';
+        notes.push('🎣 구명창고 특성 — 실패에도 자원 일부를 회수했습니다.');
+      }
+    }
+    state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 5);
+    notes.push('🧹 흙투성이로 돌아와 청결도가 떨어졌습니다. (-5)');
+  }
+  // 부상 판정: 실패 시 확정, 부분 성공 시 40%
+  if (!success && (partial ? Math.random() < 0.4 : true)) {
+    let injChance = 1;
+    if (prep.includes('gloves')) injChance -= 0.3;
+    if (Math.random() < injChance) {
+      let type = r.injuries[Math.floor(Math.random() * r.injuries.length)];
+      if (type === 'deep' && prep.includes('firstaid')) {
+        type = 'minor';
+        notes.push('⛑️ 응급키트 덕분에 깊은 상처를 가벼운 부상으로 막았습니다.');
+      }
+      notes.push(applyInjury(type, prep.includes('bottle')));
+    } else if (prep.includes('gloves')) {
+      notes.push('🧤 장갑 덕분에 다치지 않았습니다.');
+    }
+  }
+  // 비/눈 속 탐험 → 젖어서 청결도 감소
+  if (weather.type === 'rain' || weather.type === 'snow') {
+    if (!prep.includes('raincoat')) {
+      state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 3);
+      notes.push(`${WEATHERS[weather.type].icon} 젖은 채로 돌아와 청결도가 떨어졌습니다. (-3)`);
+    }
+  }
+  for (const id of got) state.inventory[id] = (state.inventory[id] || 0) + 1;
+  // 해금 체크
+  let unlockMsg = '';
+  for (const [id, sh] of Object.entries(SHELTERS)) {
+    if (sh.unlockAt > 0 && state.successes === sh.unlockAt) {
+      unlockMsg = `<div style="margin-top:10px;color:var(--accent)">🔓 새로운 거처 발견: <b>${sh.emoji} ${sh.name}</b> — [🏠 이주] 메뉴에서 이동할 수 있습니다!</div>`;
+    }
+  }
+  const resHtml = Object.keys(gotRes).length
+    ? `<div class="loot-list">${Object.entries(gotRes).map(([id, n]) => `<div class="loot-item">${RESOURCES[id].emoji} ${RESOURCES[id].name} +${n}</div>`).join('')}</div>`
+    : '';
+  const lootHtml = got.length
+    ? `<div class="loot-list">${got.map(id => `<div class="loot-item">${DEFS[id].emoji} ${DEFS[id].name}</div>`).join('')}</div>`
+    : '';
+  const prepHtml = prep.length
+    ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">사용한 준비물: ${prep.map(p => `${PREPS[p].emoji}${PREPS[p].name}`).join(', ')}</div>`
+    : '';
+  const noteHtml = notes.length
+    ? `<div style="font-size:11px;line-height:1.7;margin-top:8px">${notes.join('<br>')}</div>`
+    : '';
+  openModal(title, `${body}${resHtml}${lootHtml}${noteHtml}${prepHtml}${unlockMsg}`);
+  scheduleSave();
+  renderInventoryBar();
+  renderResBar();
+  renderExpPanel();
+  updateHud();
+}
+
+/* ============================================================
+   제작 (기획서: 업그레이드 트랙 — 재료 → 자원/가구)
+============================================================ */
+const CRAFTS = [
+  { out: { res: 'bandage', n: 1 }, cost: { cloth: 2 }, hint: '기본 치료품' },
+  { out: { res: 'candle', n: 2 }, cost: { cloth: 1, fuel: 1 }, hint: '조명 연료' },
+  { out: { res: 'material', n: 1 }, cost: { parts: 2 }, hint: '수리·유지비용' },
+  { out: { furn: 'bed' }, cost: { cloth: 3, material: 2 }, hint: '천 + 프레임 → 침대' },
+  { out: { furn: 'lamp' }, cost: { parts: 2, battery: 1 }, hint: '부품 조립 조명' },
+  { out: { furn: 'purifier' }, cost: { parts: 4, material: 2 }, hint: '매일 물 +1 (전력 필요)' },
+  { out: { furn: 'generator' }, cost: { parts: 5, material: 3 }, hint: '배터리 소비 무료화 (연료 필요)' },
+  { out: { furn: 'fridge' }, cost: { parts: 4, material: 2, battery: 1 }, hint: '음식 부패 방지 (전력 필요)' },
+];
+function openCraftModal() {
+  const rows = CRAFTS.map((c, i) => {
+    const outLabel = c.out.res
+      ? `${RESOURCES[c.out.res].emoji} ${RESOURCES[c.out.res].name} ×${c.out.n}`
+      : `${DEFS[c.out.furn].emoji} ${DEFS[c.out.furn].name}`;
+    const ok = resHasAll(c.cost);
+    return `
+      <div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
+        <span>${outLabel}</span>
+        <span class="p-eff" style="font-size:10px">${c.hint}</span>
+        <span class="p-cost">${costLabel(c.cost)}</span>
+        <button class="pixel-btn" data-craft="${i}" ${ok ? '' : 'disabled'} style="margin-left:6px">제작</button>
+      </div>`;
+  }).join('');
+  openModal('🔨 제작대', `<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">탐험에서 모은 재료로 물자와 가구를 만듭니다.</div>${rows}`);
+  $('modal-body').querySelectorAll('button[data-craft]').forEach(b =>
+    b.addEventListener('click', () => {
+      const c = CRAFTS[+b.dataset.craft];
+      if (!resConsumeAll(c.cost)) { toast('재료가 부족합니다'); return; }
+      if (c.out.res) {
+        resAdd(c.out.res, c.out.n);
+        toast(`${RESOURCES[c.out.res].emoji} ${RESOURCES[c.out.res].name} ×${c.out.n} 제작 완료`);
+      } else {
+        state.inventory[c.out.furn] = (state.inventory[c.out.furn] || 0) + 1;
+        toast(`${DEFS[c.out.furn].emoji} ${DEFS[c.out.furn].name} 제작 완료 — 인벤토리에 추가`);
+        renderInventoryBar();
+      }
+      state.dayLog.notes.push(`🔨 제작: ${c.out.res ? RESOURCES[c.out.res].name : DEFS[c.out.furn].name}`);
+      scheduleSave();
+      renderResBar();
+      openCraftModal(); // 갱신
+    }));
+}
+
+/* ============================================================
+   부상 & 치료 (기획서 v0.2: 치료 자원 소비 루프)
+============================================================ */
+function applyInjury(type, hasBottle) {
+  const inj = INJURIES[type];
+  let restH = inj.restH * recoveryMult();
+  if (SHELTERS[state.current].perk?.injuryHalf) restH *= 0.5;
+  if (hasBottle) restH *= 0.8;
+  state.injury = { type, untilMin: state.gameMin + restH * 60 };
+  return `${inj.icon} <b>${inj.name}</b>을(를) 입었습니다 — 탐험 성공률 -${Math.round(inj.pen * 100)}%p, 자연 회복까지 약 ${Math.round(restH)}시간(게임).`;
+}
+function treatInjury() {
+  if (!state.injury) return;
+  const inj = INJURIES[state.injury.type];
+  if (!resConsumeAll(inj.cure)) { toast(`치료 재료가 부족합니다 (${costLabel(inj.cure)})`); return; }
+  toast(`${inj.icon} ${inj.name} 치료 완료 (${costLabel(inj.cure)} 사용)`);
+  state.dayLog.notes.push(`${inj.name} 치료 완료.`);
+  state.injury = null;
+  scheduleSave();
+  renderResBar();
+  renderExpPanel();
+  updateHud();
+}
+function tickInjury() {
+  if (state.injury && state.gameMin >= state.injury.untilMin) {
+    toast(`${INJURIES[state.injury.type].icon} ${INJURIES[state.injury.type].name}이(가) 자연 회복되었습니다`);
+    state.injury = null;
+    scheduleSave();
+    renderExpPanel();
+    updateHud();
+  }
+}
+
+/* ============================================================
+   입력 처리
+============================================================ */
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+let placing = null, selected = null, dragging = null, dragStart = null;
+let orbiting = false, lastOrbX = 0;
+
+const selRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.5, 0.62, 24),
+  new THREE.MeshBasicMaterial({ color: 0xe8a86c, transparent: true, opacity: 0.85, side: THREE.DoubleSide })
+);
+selRing.rotation.x = -Math.PI / 2;
+selRing.position.y = 0.03;
+selRing.visible = false;
+scene.add(selRing);
+
+function updateSelRing() {
+  if (selected) {
+    const fp = footprintOf(selected);
+    const r = Math.max(fp.w, fp.d) / 2 + 0.18;
+    selRing.scale.set(r / 0.56, r / 0.56, 1);
+    selRing.position.x = selected.x; selRing.position.z = selected.z;
+    selRing.visible = true;
+  } else selRing.visible = false;
+}
+function pointerToFloor(e) {
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  const p = new THREE.Vector3();
+  return raycaster.ray.intersectPlane(floorPlane, p) ? p : null;
+}
+function pickItem(e) {
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(itemsRoot.children, true);
+  for (const h of hits) {
+    let o = h.object;
+    while (o && !o.userData.item) o = o.parent;
+    if (o) return o.userData.item;
+  }
+  return null;
+}
+const snap = v => Math.round(v / GRID) * GRID;
+
+function moveGhost(item, e) {
+  const p = pointerToFloor(e);
+  if (!p) return;
+  const [x, z] = clampToRoom(item, snap(p.x), snap(p.z));
+  item.x = x; item.z = z;
+  syncTransform(item);
+  const bad = collides(item, x, z);
+  setGhostVisual(item, bad ? 'invalid' : 'valid');
+  item._valid = !bad;
+}
+function startPlacing(defId) {
+  if ((state.inventory[defId] || 0) <= 0) {
+    toast(`${DEFS[defId].name} 재고가 없습니다 — 🎒 탐험으로 획득하세요`);
+    return;
+  }
+  cancelPlacing();
+  deselect();
+  const item = addItem(defId, 0, 0, 0, 0);
+  placing = item;
+  item._valid = !collides(item, 0, 0);
+  setGhostVisual(item, item._valid ? 'valid' : 'invalid');
+  gridObj.visible = true;
+  $('btn-cancel-place').classList.add('show');
+}
+function cancelPlacing() {
+  $('btn-cancel-place').classList.remove('show');
+  if (!placing) return;
+  removeItem(placing);
+  placing = null;
+  gridObj.visible = false;
+}
+function finishPlacing() {
+  if (!placing || !placing._valid) { toast('그 자리엔 놓을 수 없어요'); return; }
+  $('btn-cancel-place').classList.remove('show');
+  setGhostVisual(placing, null);
+  const item = placing;
+  placing = null;
+  gridObj.visible = false;
+  state.inventory[item.defId]--;
+  renderInventoryBar();
+  select(item);
+  scheduleSave();
+}
+function select(item) {
+  deselect();
+  selected = item;
+  showSelPanel(item);
+  updateSelRing();
+}
+function deselect() {
+  selected = null;
+  hideSelPanel();
+  updateSelRing();
+}
+function reclaimSelected() {
+  if (!selected) return;
+  state.inventory[selected.defId] = (state.inventory[selected.defId] || 0) + 1;
+  removeItem(selected);
+  deselect();
+  renderInventoryBar();
+  scheduleSave();
+}
+
+// 멀티터치 추적: 한 손가락 = 선택/이동/빈 곳 드래그 회전, 두 손가락 = 핀치 줌 + 회전
+const touches = new Map();
+let pinch = null;      // { dist, zoom, cx }
+let orbitDrag = null;  // 빈 공간 좌클릭/터치 드래그 → 카메라 회전
+
+function dropDragging(revert) {
+  if (!dragging) return;
+  if (revert && dragStart) {
+    dragging.x = dragStart.ox; dragging.z = dragStart.oz; dragging.rot = dragStart.or;
+    syncTransform(dragging);
+  }
+  setGhostVisual(dragging, null);
+  gridObj.visible = false;
+  updateSelRing();
+  dragging = null; dragStart = null;
+}
+canvas.addEventListener('pointerdown', e => {
+  touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (touches.size === 2) {
+    // 핀치 시작 — 진행 중이던 가구 드래그는 원위치
+    dropDragging(true);
+    orbitDrag = null; orbiting = false;
+    const [a, b] = [...touches.values()];
+    pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), zoom: camState.zoom, cx: (a.x + b.x) / 2 };
+    return;
+  }
+  if (e.button === 2) { orbiting = true; lastOrbX = e.clientX; return; }
+  if (e.button !== 0 && e.pointerType === 'mouse') return;
+  if (placing) { moveGhost(placing, e); finishPlacing(); return; }
+  const hit = pickItem(e);
+  if (hit) {
+    select(hit);
+    dragging = hit;
+    dragStart = { sx: e.clientX, sy: e.clientY, ox: hit.x, oz: hit.z, or: hit.rot, moved: false };
+  } else {
+    orbitDrag = { x: e.clientX, y: e.clientY, moved: false };
+  }
+});
+addEventListener('pointermove', e => {
+  if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch && touches.size >= 2) {
+    const [a, b] = [...touches.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y);
+    camState.zoom = THREE.MathUtils.clamp(pinch.zoom * (d / pinch.dist), 0.15, 3.2);
+    const cx = (a.x + b.x) / 2;
+    camState.targetYaw += (cx - pinch.cx) * 0.006;
+    pinch.cx = cx;
+    return;
+  }
+  if (orbiting) {
+    camState.targetYaw += (e.clientX - lastOrbX) * 0.008;
+    lastOrbX = e.clientX;
+    return;
+  }
+  if (orbitDrag) {
+    const dx = e.clientX - orbitDrag.x;
+    if (!orbitDrag.moved && Math.hypot(dx, e.clientY - orbitDrag.y) > 7) orbitDrag.moved = true;
+    if (orbitDrag.moved) {
+      camState.targetYaw += dx * 0.008;
+      orbitDrag.x = e.clientX; orbitDrag.y = e.clientY;
+    }
+    return;
+  }
+  if (placing) { moveGhost(placing, e); return; }
+  if (dragging) {
+    if (!dragStart.moved) {
+      if (Math.hypot(e.clientX - dragStart.sx, e.clientY - dragStart.sy) < 5) return;
+      dragStart.moved = true;
+      gridObj.visible = true;
+    }
+    moveGhost(dragging, e);
+    updateSelRing();
+  }
+});
+function onPointerEnd(e) {
+  touches.delete(e.pointerId);
+  if (pinch && touches.size < 2) pinch = null;
+  if (e.button === 2) { orbiting = false; return; }
+  if (orbitDrag) {
+    if (!orbitDrag.moved) deselect(); // 제자리 탭 = 선택 해제
+    orbitDrag = null;
+    return;
+  }
+  if (dragging) {
+    if (dragStart.moved) {
+      if (!dragging._valid) {
+        dragging.x = dragStart.ox; dragging.z = dragStart.oz; dragging.rot = dragStart.or;
+        syncTransform(dragging);
+        toast('그 자리엔 놓을 수 없어요');
+      } else scheduleSave();
+      setGhostVisual(dragging, null);
+      gridObj.visible = false;
+      updateSelRing();
+    }
+    dragging = null; dragStart = null;
+  }
+}
+addEventListener('pointerup', onPointerEnd);
+addEventListener('pointercancel', onPointerEnd);
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  camState.zoom = THREE.MathUtils.clamp(camState.zoom * (e.deltaY < 0 ? 1.1 : 0.9), 0.15, 3.2);
+}, { passive: false });
+
+addEventListener('keydown', e => {
+  if (e.key === 'q' || e.key === 'Q') camState.targetYaw -= Math.PI / 4;
+  if (e.key === 'e' || e.key === 'E') camState.targetYaw += Math.PI / 4;
+  if (e.key === 'Escape') { cancelPlacing(); deselect(); closeModal(); }
+  if (e.key === 'r' || e.key === 'R') rotateActive();
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selected && !placing) reclaimSelected();
+});
+function rotateActive() {
+  const item = placing || (dragging && dragStart?.moved ? dragging : selected);
+  if (!item) return;
+  item.rot = (item.rot + 1) % 4;
+  const [x, z] = clampToRoom(item, item.x, item.z);
+  item.x = x; item.z = z;
+  syncTransform(item);
+  if (item === placing || (dragging === item && dragStart?.moved)) {
+    const bad = collides(item, item.x, item.z);
+    item._valid = !bad;
+    setGhostVisual(item, bad ? 'invalid' : 'valid');
+  } else {
+    if (collides(item, item.x, item.z)) {
+      item.rot = (item.rot + 3) % 4; syncTransform(item);
+      toast('회전할 공간이 없어요');
+    } else scheduleSave();
+  }
+  updateSelRing();
+}
+
+/* ============================================================
+   벽면 컬링 & 환경 애니메이션
+============================================================ */
+let lastWallMask = -1;
+function updateWallCulling() {
+  if (!wallList.length) return;
+  const dir = new THREE.Vector3().subVectors(camera.position, camCenter).normalize();
+  let mask = 0;
+  wallList.forEach((w, i) => {
+    w.group.visible = w.normal.dot(dir) < 0.25;
+    if (w.group.visible) mask |= 1 << i;
+  });
+  if (mask !== lastWallMask) { lastWallMask = mask; shadowDirty(); }
+}
+function updateEnvironment(t, dt) {
+  if (envDyn.trees || envDyn.buildings) {
+    const cd = new THREE.Vector2(camera.position.x - camCenter.x, camera.position.z - camCenter.z).normalize();
+    if (envDyn.trees) {
+      for (const tr of envDyn.trees) {
+        tr.obj.visible = tr.dir.dot(cd) < 0.5;
+        // 바람에 흔들리는 잎사귀
+        tr.obj.rotation.z = Math.sin(t * 0.9 + tr.phase) * tr.sway * (1 + 0.4 * Math.sin(t * 2.3 + tr.phase * 2));
+      }
+    }
+    if (envDyn.buildings) for (const b of envDyn.buildings) b.obj.visible = b.dir.dot(cd) < 0.4;
+  }
+  if (envDyn.leaves) {
+    for (const L of envDyn.leaves) {
+      const p = L.pts.geometry.attributes.position;
+      for (let i = 0; i < L.meta.length; i++) {
+        const m = L.meta[i];
+        let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+        y -= m.sp * dt;
+        x += Math.sin(t * 1.1 + m.ph) * 0.45 * dt;
+        z += Math.cos(t * 0.8 + m.ph) * 0.3 * dt;
+        if (y < 0.05) { y = 4.5 + Math.random() * 3; x = (Math.random() * 2 - 1) * 14; z = (Math.random() * 2 - 1) * 12; }
+        p.setXYZ(i, x, y, z);
+      }
+      p.needsUpdate = true;
+    }
+  }
+  if (envDyn.smoke) {
+    const p = envDyn.smoke.pts.geometry.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      let y = p.getY(i) + 0.9 * dt;
+      if (y > 15.5) y = 2;
+      p.setY(i, y);
+      p.setX(i, 24 + Math.sin(y * 0.5 + envDyn.smoke.phase[i]) * (0.5 + y * 0.09));
+    }
+    p.needsUpdate = true;
+  }
+  if (envDyn.fireflies) {
+    const f = envDyn.fireflies;
+    const p = f.pts.geometry.attributes.position;
+    for (let i = 0; i < f.base.length; i++) {
+      const b = f.base[i], ph = f.phase[i];
+      p.setXYZ(i,
+        b.x + Math.sin(t * 0.4 + ph * 2) * 0.6,
+        b.y + Math.sin(t * 1.1 + ph) * 0.35,
+        b.z + Math.cos(t * 0.5 + ph) * 0.6);
+    }
+    p.needsUpdate = true;
+    f.pts.material.opacity = 0.5 + 0.3 * Math.sin(t * 2.3);
+    f.pts.visible = dayness < 0.5; // 낮에는 반딧불이 없음
+  }
+  if (envDyn.fire) {
+    envDyn.fire.intensity = envDyn.fireBase * (0.75 + 0.3 * Math.sin(t * 9) * Math.sin(t * 4.7) + 0.12 * Math.sin(t * 21));
+  }
+  if (envDyn.windmill) envDyn.windmill.rotation.z += dt * 0.5;      // 풍차
+  if (envDyn.beam) envDyn.beam.rotation.y = t * 0.55;               // 등대 탐조등
+  if (envDyn.sea) envDyn.sea.position.y = envDyn.seaBase + Math.sin(t * 0.5) * 0.08; // 파도
+}
+
+/* ============================================================
+   UI
+============================================================ */
+const $ = id => document.getElementById(id);
+
+/* ============================================================
+   이동/접기 가능한 패널 시스템 (위치는 localStorage에 저장)
+============================================================ */
+const UI_KEY = 'shelter-ui-v1';
+let uiState = {};
+try { uiState = JSON.parse(localStorage.getItem(UI_KEY) || '{}'); } catch (e) { uiState = {}; }
+function saveUiState() {
+  try { localStorage.setItem(UI_KEY, JSON.stringify(uiState)); } catch (e) { /* */ }
+}
+function clampPanel(el) {
+  const r = el.getBoundingClientRect();
+  const l = THREE.MathUtils.clamp(r.left, 0, Math.max(0, innerWidth - Math.min(r.width, 120)));
+  const t = THREE.MathUtils.clamp(r.top, 0, Math.max(0, innerHeight - 30));
+  el.style.left = l + 'px';
+  el.style.top = t + 'px';
+  el.style.right = 'auto';
+  el.style.bottom = 'auto';
+  el.style.transform = 'none';
+}
+function makeDraggablePanel(el, key, title) {
+  const head = document.createElement('div');
+  head.className = 'p-head';
+  head.innerHTML = `<span class="p-title">⠿ ${title}</span><button class="p-min" title="접기/펼치기">–</button>`;
+  el.prepend(head);
+  const saved = uiState[key];
+  if (saved) {
+    el.style.left = saved.l + 'px';
+    el.style.top = saved.t + 'px';
+    el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'none';
+    if (saved.c) el.classList.add('collapsed');
+  } else if (innerWidth < 760 && key === 'render') {
+    el.classList.add('collapsed'); // 모바일 기본: 설정 접힘
+  }
+  const minBtn = head.querySelector('.p-min');
+  const syncMin = () => { minBtn.textContent = el.classList.contains('collapsed') ? '□' : '–'; };
+  syncMin();
+  minBtn.addEventListener('click', ev => {
+    ev.stopPropagation();
+    el.classList.toggle('collapsed');
+    uiState[key] = { ...(uiState[key] || panelPos(el)), c: el.classList.contains('collapsed') };
+    saveUiState();
+    syncMin();
+  });
+  const panelPos = elm => { const r = elm.getBoundingClientRect(); return { l: r.left, t: r.top }; };
+  let drag = null;
+  head.addEventListener('pointerdown', ev => {
+    if (ev.target === minBtn) return;
+    const r = el.getBoundingClientRect();
+    drag = { dx: ev.clientX - r.left, dy: ev.clientY - r.top, id: ev.pointerId };
+    el.classList.add('dragging');
+    head.setPointerCapture(ev.pointerId);
+    ev.preventDefault();
+    ev.stopPropagation();
+  });
+  head.addEventListener('pointermove', ev => {
+    if (!drag || ev.pointerId !== drag.id) return;
+    el.style.left = (ev.clientX - drag.dx) + 'px';
+    el.style.top = (ev.clientY - drag.dy) + 'px';
+    el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'none';
+  });
+  const endDrag = ev => {
+    if (!drag || ev.pointerId !== drag.id) return;
+    drag = null;
+    el.classList.remove('dragging');
+    clampPanel(el);
+    uiState[key] = { ...panelPos(el), c: el.classList.contains('collapsed') };
+    saveUiState();
+  };
+  head.addEventListener('pointerup', endDrag);
+  head.addEventListener('pointercancel', endDrag);
+}
+addEventListener('resize', () => {
+  for (const id of ['hud', 'exp-panel', 'render-panel', 'clock-panel', 'res-bar'])
+    if (uiState[{ 'hud': 'hud', 'exp-panel': 'exp', 'render-panel': 'render', 'clock-panel': 'clock', 'res-bar': 'res' }[id]]) clampPanel($(id));
+});
+
+function updateClock() {
+  const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
+  $('lcd-day').textContent = `DAY ${String(state.day).padStart(2, '0')}`;
+  $('lcd-time').innerHTML = `${String(h).padStart(2, '0')}<span id="lcd-colon">:</span>${String(m).padStart(2, '0')}`;
+  const [icon, label] = timeLabel();
+  $('lcd-sub').textContent = `${icon} ${label} · ${WEATHERS[weather.type].icon}${state.injury ? ' · ' + INJURIES[state.injury.type].icon : ''}`;
+}
+
+function updateHud() {
+  const sh = SHELTERS[state.current];
+  const W = WEATHERS[weather.type];
+  const cd = comfortDetail();
+  const lv = Math.min(5, Math.round(cd.score / 20));
+  const bonus = Math.round(comfortExpBonus() * 100);
+  const injIcon = state.injury ? ` ${INJURIES[state.injury.type].icon}` : '';
+  $('hud-shelter').textContent = `${sh.emoji} ${sh.name}`;
+  $('hud-stat').innerHTML =
+    `${W.icon} ${W.name}${W.penalty ? ` <span style="color:var(--bad)">-${Math.round(W.penalty * 100)}%</span>` : ''}${injIcon}${state.injury ? ` <span style="color:var(--bad)">${INJURIES[state.injury.type].name}</span>` : ''}<br>` +
+    `쾌적함 <span style="color:var(--accent)" title="가구 ${cd.furn} + 조명 ${cd.light} + 청결 ${cd.cleanMod} + 거처 ${cd.shelterMod}${cd.injuryMod ? ` + 부상 ${cd.injuryMod}` : ''}">${cd.score}점 ${'★'.repeat(lv)}${'☆'.repeat(5 - lv)}</span>` +
+    `${bonus ? ` <span style="color:var(--good)">(탐험 +${bonus}%)</span>` : ''} · 청결 ${Math.round(cd.clean)} · 성공 ${state.successes}회`;
+}
+function renderResBar() {
+  const bar = $('res-chips');
+  bar.innerHTML = Object.entries(RESOURCES).map(([id, r]) => {
+    const n = state.res[id] || 0;
+    return `<div class="res-chip ${n === 0 ? 'zero' : ''}" title="${r.name}">${r.emoji}<span>${n}</span></div>`;
+  }).join('');
+}
+function cleanShelter() {
+  const c = state.cleanBy[state.current] ?? 70;
+  if (c >= 100) { toast('이미 깨끗합니다'); return; }
+  if (!resConsume('water', 1)) { toast('깨끗한 물이 필요합니다 (💧1)'); return; }
+  state.cleanBy[state.current] = Math.min(100, c + 20);
+  toast(`🧹 청소 완료 — 청결도 ${Math.round(state.cleanBy[state.current])} (💧물 -1)`);
+  state.dayLog.notes.push('셸터를 청소했습니다. (+20)');
+  scheduleSave();
+  renderResBar();
+  updateHud();
+}
+
+/* ============================================================
+   하루 처리 & 일일 리포트 (기획서 v0.2: SYSTEM 03/04/07)
+============================================================ */
+function processDay() {
+  const notes = state.dayLog.notes;
+  const perk = SHELTERS[state.current].perk || {};
+  // 1) 발전기: 연료를 태우면 그날 배터리 소비가 무료
+  let freePower = false;
+  for (const it of items) {
+    if (DEFS[it.defId].appliance?.effect !== 'power' || it.on === false) continue;
+    if (resConsume('fuel', 1)) {
+      freePower = true;
+      notes.push('⚡ 발전기 가동 — 오늘 배터리 소비가 무료입니다. (연료 -1)');
+    } else {
+      setItemPower(it, false);
+      notes.push('⚠️ 연료 부족 — 발전기가 멈췄습니다.');
+    }
+  }
+  const consumeFuel = (fuelId, n = 1) => (fuelId === 'battery' && freePower) ? true : resConsume(fuelId, n);
+  // 2) 켜진 조명·가전의 일일 연료 소비 (부족 시 자동 꺼짐)
+  for (const it of items) {
+    const def = DEFS[it.defId];
+    const fuelId = def.light?.fuel || (def.appliance?.effect !== 'power' ? def.appliance?.fuel : null);
+    if (!fuelId || it.on === false) continue;
+    if (!consumeFuel(fuelId, 1)) {
+      setItemPower(it, false);
+      notes.push(`⚠️ ${RESOURCES[fuelId].name} 부족 — ${def.name}이(가) 꺼졌습니다.`);
+    }
+  }
+  // 3) 생산: 정수기 / 거처 특성 (온실 텃밭, 여객선 낚시)
+  for (const it of items) {
+    if (DEFS[it.defId].appliance?.effect === 'water' && it.on !== false) {
+      resAdd('water', 1);
+      notes.push('🚰 정수기가 깨끗한 물을 만들었습니다. (+1)');
+    }
+  }
+  if (perk.produce) {
+    for (const [rid, n] of Object.entries(perk.produce)) {
+      resAdd(rid, n);
+      notes.push(`${perk.produceNote || '거처에서 자원을 얻었습니다.'} (${RESOURCES[rid].emoji}+${n})`);
+    }
+  }
+  // 4) 음식 부패: 가동 중인 냉장고가 없으면 매일 음식 -1
+  const fridgeOn = items.some(it => DEFS[it.defId].appliance?.effect === 'fridge' && it.on !== false);
+  if (!fridgeOn && (state.res.food || 0) > 0) {
+    resConsume('food', 1);
+    notes.push('🥫 냉장고가 없어 음식이 상했습니다. (-1)');
+  } else if (fridgeOn) {
+    notes.push('🧊 냉장고 덕분에 음식이 신선하게 보관됐습니다.');
+  }
+  // 청결도 일일 감소
+  state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 2);
+  if (state.cleanBy[state.current] < 20) notes.push('🧹 셸터가 매우 더럽습니다. 청소가 필요합니다.');
+  // 셸터 유지비
+  const up = SHELTERS[state.current].upkeep;
+  if (up) {
+    if (state.day % up.every === 0) {
+      if (resConsume(up.res, up.n)) {
+        state.upkeepOk = true;
+        notes.push(`🏠 거처 유지비 지불 (${RESOURCES[up.res].emoji}${RESOURCES[up.res].name} -${up.n})`);
+      } else {
+        state.upkeepOk = false;
+        notes.push(`⚠️ 유지비(${up.label}) 미납 — 거처 쾌적함 보너스가 꺼졌습니다.`);
+      }
+    }
+  } else state.upkeepOk = true;
+  // 부상 방치 → 감염 악화
+  if (state.injury && INJURIES[state.injury.type].infect && Math.random() < INJURIES[state.injury.type].infect) {
+    state.injury = { type: 'infection', untilMin: state.gameMin + INJURIES.infection.restH * 60 * recoveryMult() };
+    notes.push('🤒 상처를 방치해 감염 위험으로 악화되었습니다.');
+  }
+}
+function showDayReport() {
+  const log = state.dayLog;
+  const fmt = obj => Object.entries(obj).map(([id, n]) => `${RESOURCES[id].emoji}${RESOURCES[id].name} ${n}`).join(', ');
+  const warns = Object.keys(RESOURCES).filter(id => ['water', 'food', 'bandage', 'candle', 'battery'].includes(id) && (state.res[id] || 0) === 0);
+  const tips = [];
+  if (warns.includes('bandage')) tips.push('붕대가 없습니다 — 주거지역에서 구할 수 있습니다.');
+  if (warns.includes('water')) tips.push('깨끗한 물이 없습니다 — 청소와 치료에 필요합니다.');
+  if (warns.includes('battery') && SHELTERS[state.current].upkeep?.res === 'battery') tips.push('벙커 전력용 배터리가 없습니다 — 상업지구를 탐험하세요.');
+  if (state.injury) tips.push(`${INJURIES[state.injury.type].name} 치료 재료: ${costLabel(INJURIES[state.injury.type].cure)}`);
+  if ((state.cleanBy[state.current] ?? 70) < 50) tips.push('청결도가 낮습니다 — 🧹 청소로 쾌적함을 회복하세요.');
+  const forecast = hasForecast()
+    ? `📻 예보: ${forecastText()}`
+    : '내일 날씨는 알 수 없습니다. (라디오를 배치하면 예보를 들을 수 있습니다)';
+  openModal(`📋 Day ${state.day - 1} 결산`, `
+    <div class="report-sec"><span class="r-title">획득</span><br>${Object.keys(log.gain).length ? fmt(log.gain) : '없음'}</div>
+    <div class="report-sec"><span class="r-title">소비</span><br>${Object.keys(log.spend).length ? fmt(log.spend) : '없음'}</div>
+    ${log.notes.length ? `<div class="report-sec"><span class="r-title">기록</span><br>${log.notes.join('<br>')}</div>` : ''}
+    ${warns.length ? `<div class="report-sec report-warn">⚠️ 바닥난 자원: ${warns.map(id => RESOURCES[id].emoji + RESOURCES[id].name).join(', ')}</div>` : ''}
+    <div class="report-sec">${forecast}</div>
+    ${tips.length ? `<div class="report-sec report-tip">💡 ${tips.slice(0, 2).join('<br>💡 ')}</div>` : ''}
+  `);
+  state.dayLog = { gain: {}, spend: {}, notes: [] };
+}
+let reportQueued = false;
+function tickTime(dt) {
+  state.gameMin += dt * GAME_MIN_PER_SEC;
+  const newDay = Math.floor(state.gameMin / 1440) + 1;
+  while (state.day < newDay) {
+    state.day++;
+    processDay();
+    reportQueued = true;
+  }
+  if (reportQueued && !$('modal-back').classList.contains('show')) {
+    reportQueued = false;
+    showDayReport();
+    scheduleSave();
+    renderResBar();
+    renderExpPanel();
+  }
+  tickInjury();
+}
+function renderInventoryBar() {
+  const bar = $('toolbar');
+  bar.innerHTML = '';
+  for (const [id, def] of Object.entries(DEFS)) {
+    const cnt = state.inventory[id] || 0;
+    const el = document.createElement('div');
+    el.className = 'tool-item' + (cnt <= 0 ? ' empty' : '');
+    el.innerHTML = `<span class="emoji">${def.emoji}</span><span>${def.name}</span><span class="cnt">${cnt}</span>`;
+    el.title = cnt > 0 ? `${def.name} 배치하기` : '탐험으로 획득하세요';
+    el.addEventListener('click', () => startPlacing(id));
+    bar.appendChild(el);
+  }
+}
+function renderExpPanel() {
+  const box = $('exp-content');
+  if (state.exp) {
+    const r = REGIONS[state.exp.region];
+    box.innerHTML = `
+      <div id="exp-progress">
+        <div style="font-size:12px">${r.emoji} ${r.name} 탐험 중...</div>
+        <div class="bar-wrap"><div class="bar" id="exp-bar"></div></div>
+        <div class="eta" id="exp-eta"></div>
+      </div>`;
+    return;
+  }
+  // 부상 카드 (치료 or 자연 회복 대기)
+  let injuryHtml = '';
+  if (state.injury) {
+    const inj = INJURIES[state.injury.type];
+    const remainH = Math.max(0, (state.injury.untilMin - state.gameMin) / 60);
+    const canCure = resHasAll(inj.cure);
+    injuryHtml = `
+      <div class="injury-card">
+        <span class="i-name">${inj.icon} ${inj.name}</span> — 탐험 성공률 -${Math.round(inj.pen * 100)}%p${inj.timeMult ? ', 탐험 시간 +30%' : ''}<br>
+        자연 회복까지 약 <span id="injury-eta">${remainH.toFixed(1)}</span>시간 (휴식)
+        <div class="btn-row">
+          <button class="pixel-btn" id="btn-treat" ${canCure ? '' : 'disabled'}>💊 치료 (${costLabel(inj.cure)})</button>
+        </div>
+      </div>`;
+  }
+  box.innerHTML = injuryHtml +
+    Object.entries(REGIONS).map(([id, r]) => {
+      const p = rateParts(id);
+      const mods = [];
+      if (p.shelter) mods.push(`거처 +${Math.round(p.shelter * 100)}`);
+      if (p.comfort) mods.push(`쾌적함 +${Math.round(p.comfort * 100)}`);
+      if (p.weatherPen) mods.push(`날씨 -${Math.round(p.weatherPen * 100)}`);
+      if (p.injuryPen) mods.push(`부상 -${Math.round(p.injuryPen * 100)}`);
+      return `
+      <div class="region-card">
+        <div class="r-head">
+          <span>${r.emoji} ${r.name}</span>
+          <span class="r-rate ${p.eff < 0.5 ? 'low' : ''}">${Math.round(p.eff * 100)}%</span>
+        </div>
+        <div class="r-info">${r.desc}<br>소요 ${r.time}초 · 위험 ${r.risk}
+        ${mods.length ? `<br><span style="color:#7a8296">기본 ${Math.round(p.base * 100)}% · ${mods.join(' · ')}</span>` : ''}</div>
+        <button class="pixel-btn" data-region="${id}">🎒 준비하고 출발</button>
+      </div>`;
+    }).join('');
+  box.querySelectorAll('button[data-region]').forEach(b =>
+    b.addEventListener('click', () => startExpedition(b.dataset.region)));
+  const tb = $('btn-treat');
+  if (tb) tb.addEventListener('click', treatInjury);
+}
+function tickExpeditionUI() {
+  if (state.exp) {
+    const remain = state.exp.end - Date.now();
+    if (remain <= 0) { resolveExpedition(); return; }
+    const bar = $('exp-bar'), eta = $('exp-eta');
+    const total = state.exp.dur || (REGIONS[state.exp.region].time * 1000);
+    if (bar) {
+      bar.style.width = `${100 * (1 - remain / total)}%`;
+      eta.textContent = `${Math.ceil(remain / 1000)}초 남음`;
+    } else renderExpPanel();
+  } else if (state.injury) {
+    const el = $('injury-eta');
+    if (el) el.textContent = Math.max(0, (state.injury.untilMin - state.gameMin) / 60).toFixed(1);
+    else renderExpPanel();
+  }
+}
+
+const selPanel = $('sel-panel');
+function showSelPanel(item) {
+  const def = DEFS[item.defId];
+  $('sel-name').innerHTML = `${def.emoji} ${def.name}`;
+  const sw = $('sel-swatches');
+  sw.innerHTML = '';
+  def.colors.forEach((c, i) => {
+    const s = document.createElement('div');
+    s.className = 'swatch' + (i === item.colorIdx ? ' active' : '');
+    s.style.background = '#' + c.toString(16).padStart(6, '0');
+    s.title = def.colorNames[i];
+    s.addEventListener('click', () => { recolorItem(item, i); showSelPanel(item); scheduleSave(); });
+    sw.appendChild(s);
+  });
+  // 조명/가전: 전원 토글 + 연료 잔량 (기획서 v0.2 UI: "양초 3개 보유 / 1일 1개 소비")
+  const old = $('sel-power'); if (old) old.remove();
+  const fuel = def.light?.fuel || def.appliance?.fuel;
+  if (fuel) {
+    const have = state.res[fuel] || 0;
+    const div = document.createElement('div');
+    div.id = 'sel-power';
+    div.style.cssText = 'font-size:10px;color:var(--text-dim);margin-bottom:8px;line-height:1.6';
+    div.innerHTML = `
+      <button class="pixel-btn" id="btn-power" style="width:100%;margin-bottom:4px">${item.on !== false ? '🔆 켜짐 — 끄기' : '🌑 꺼짐 — 켜기'}</button>
+      ${def.appliance ? `<span style="color:var(--good)">${def.appliance.label}</span><br>` : ''}
+      ${RESOURCES[fuel].emoji} ${RESOURCES[fuel].name} ${have}개 보유 · 켜두면 1일 1개 소비 ${have === 0 ? '<span style="color:var(--bad)">(잔량 없음!)</span>' : `(${have}일 유지 가능)`}`;
+    $('sel-swatches').after(div);
+    $('btn-power').addEventListener('click', () => {
+      setItemPower(item, item.on === false);
+      showSelPanel(item);
+      scheduleSave();
+      toast(item.on ? `${def.name}을(를) 켰습니다` : `${def.name}을(를) 껐습니다 — 쾌적함 보너스 제외`);
+    });
+  }
+  selPanel.classList.add('show');
+}
+function hideSelPanel() { selPanel.classList.remove('show'); }
+
+function openModal(title, html) {
+  $('modal-title').innerHTML = title;
+  $('modal-body').innerHTML = html;
+  $('modal-back').classList.add('show');
+}
+function closeModal() { $('modal-back').classList.remove('show'); }
+$('modal-close').addEventListener('click', closeModal);
+$('modal-back').addEventListener('click', e => { if (e.target === $('modal-back')) closeModal(); });
+
+function shelterUnlocked(id) {
+  return state.successes >= SHELTERS[id].unlockAt || (state.layouts[id]?.length > 0);
+}
+function openShelterModal() {
+  const cards = Object.entries(SHELTERS).map(([id, sh]) => {
+    const unlocked = shelterUnlocked(id);
+    const cur = id === state.current;
+    return `
+      <div class="shelter-card ${cur ? 'current' : ''} ${unlocked ? '' : 'locked'}">
+        <div class="s-emoji">${unlocked ? sh.emoji : '🔒'}</div>
+        <div class="s-body">
+          <div class="s-name">${sh.name} ${cur ? '<span style="color:var(--accent)">(현재)</span>' : ''}</div>
+          <div class="s-desc">${unlocked ? sh.desc : `탐험 성공 ${sh.unlockAt}회 달성 시 발견 (현재 ${state.successes}회)`}</div>
+          ${unlocked && sh.perk ? `<div class="s-desc" style="color:var(--good)">${sh.perk.label}</div>` : ''}
+          ${unlocked ? `<div class="s-desc">기본 쾌적함 +${sh.baseComfort || 0} · 유지비: ${sh.upkeep ? sh.upkeep.label : '없음'}</div>` : ''}
+        </div>
+        ${unlocked && !cur ? `<button class="pixel-btn" data-shelter="${id}">이주</button>` : ''}
+      </div>`;
+  }).join('');
+  openModal('🏠 거처 이주', `<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px">이주해도 배치한 가구는 각 거처에 그대로 남고, 인벤토리는 공유됩니다.</div>${cards}`);
+  $('modal-body').querySelectorAll('button[data-shelter]').forEach(b =>
+    b.addEventListener('click', () => moveToShelter(b.dataset.shelter)));
+}
+function openHelpModal() {
+  openModal('❓ 살아남는 법', `
+    <b>1. 탐험 — 준비하고 나가라</b><br>
+    [🎒 탐험]에서 지역을 고르면 준비 화면이 열립니다. 손전등·장갑·우의 같은
+    준비물은 자원을 소비하지만 성공률을 올리고 부상을 막아줍니다.<br><br>
+    <b>2. 자원 — 모든 것이 소모된다</b><br>
+    상단 바가 보유 자원입니다. 조명은 매일 양초/배터리를 태우고, 치료엔 붕대와
+    소독약이, 청소엔 물이 듭니다. 자원이 떨어지면 조명이 꺼지고 보너스도 사라집니다.<br><br>
+    <b>3. 부상 — 실패는 빚이 된다</b><br>
+    탐험에 실패하면 부상을 입습니다. 재료로 즉시 치료하거나, 시간을 들여 자연
+    회복을 기다리세요. 방치하면 감염으로 악화될 수 있습니다.<br><br>
+    <b>4. 쾌적함 — 꾸미기가 곧 생존</b><br>
+    가구·조명·청결·거처 상태가 쾌적함(0~100)을 만듭니다. 50점부터 탐험 보너스,
+    75점부터 회복 속도 보너스. 청결은 매일 떨어지니 [🧹 청소]를 잊지 마세요.<br><br>
+    <b>5. 시간과 날씨</b><br>
+    새벽→아침→낮→저녁→밤이 흐르고(하루 ≈ 16분), 하루가 끝나면 결산 리포트가
+    나옵니다. 날씨는 하루 이틀 단위로 바뀌며 탐험에 영향을 줍니다.<br><br>
+    <b>6. 더 나은 거처로</b><br>
+    컨테이너 → 돔 벙커 → 도시 옥탑방 → 숲속 오두막. 거처마다 특성과 유지비가
+    다릅니다. 좋은 집일수록 유지비가 듭니다.<br><br>
+    <b>카메라</b>: <kbd>우클릭 드래그</kbd> 또는 <kbd>Q</kbd>/<kbd>E</kbd> 회전 · 휠 줌 (줌아웃하면 주변 폐허가 보입니다)<br>
+    진행 상황은 자동 저장됩니다.
+  `);
+}
+$('btn-exp').addEventListener('click', () => $('exp-panel').classList.toggle('show'));
+$('btn-move').addEventListener('click', openShelterModal);
+$('btn-help').addEventListener('click', openHelpModal);
+$('btn-rotate').addEventListener('click', rotateActive);
+$('btn-delete').addEventListener('click', reclaimSelected);
+$('btn-reset').addEventListener('click', () => {
+  if (!confirm('모든 진행 상황을 지우고 처음부터 시작할까요?')) return;
+  localStorage.removeItem(SAVE_KEY);
+  localStorage.removeItem(OLD_SAVE_KEY);
+  location.reload();
+});
+
+const toastEl = $('toast');
+let toastTimer = null;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
+}
+
+/* ============================================================
+   렌더링 옵션 & 픽셀 파이프라인
+============================================================ */
+let rt = null;
+function makeRT() {
+  if (rt) rt.dispose();
+  const w = Math.max(2, Math.floor(innerWidth / opts.pixel));
+  const h = Math.max(2, Math.floor(innerHeight / opts.pixel));
+  rt = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: true });
+  postMat.uniforms.tex.value = rt.texture;
+  postMat.uniforms.uRes.value.set(w, h);
+}
+const postScene = new THREE.Scene();
+const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const postMat = new THREE.ShaderMaterial({
+  uniforms: {
+    tex: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
+    uLevels: { value: 8.0 }, uQuant: { value: 1.0 }, uDither: { value: 1.0 },
+  },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+  fragmentShader: `
+    precision highp float;
+    varying vec2 vUv;
+    uniform sampler2D tex; uniform vec2 uRes;
+    uniform float uLevels, uQuant, uDither;
+    float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
+    float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+    void main(){
+      vec3 col = texture2D(tex, vUv).rgb;
+      col = pow(col, vec3(1.0 / 2.2));
+      if (uQuant > 0.5) {
+        vec2 pc = floor(vUv * uRes);
+        float d = uDither > 0.5 ? (bayer4(pc) - 0.5) * 0.55 / uLevels : 0.0;
+        col = clamp(col + d, 0.0, 1.0);
+        col = floor(col * uLevels + 0.5) / uLevels;
+      }
+      gl_FragColor = vec4(col, 1.0);
+    }`,
+  depthTest: false, depthWrite: false,
+});
+postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
+
+function applyOpts() {
+  $('opt-pixel').value = opts.pixel; $('opt-quant').checked = opts.quant;
+  $('opt-dither').checked = opts.dither; $('opt-ceil').checked = opts.ceil;
+  postMat.uniforms.uQuant.value = opts.quant ? 1 : 0;
+  postMat.uniforms.uDither.value = opts.dither ? 1 : 0;
+  ceilLight.visible = opts.ceil;
+  shadowDirty();
+  makeRT();
+}
+$('opt-pixel').addEventListener('input', e => { opts.pixel = +e.target.value; applyOpts(); scheduleSave(); });
+$('opt-quant').addEventListener('change', e => { opts.quant = e.target.checked; applyOpts(); scheduleSave(); });
+$('opt-dither').addEventListener('change', e => { opts.dither = e.target.checked; applyOpts(); scheduleSave(); });
+$('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; applyOpts(); scheduleSave(); });
+
+/* ============================================================
+   BGM (bgm.mp3 파일을 같은 폴더에 두면 자동 인식)
+============================================================ */
+// 셸터별 BGM 매핑 (bgm1~4.mp3)
+const BGM_MAP = {
+  container: 'bgm1.mp3', bunker: 'bgm2.mp3', rooftop: 'bgm3.mp3', cabin: 'bgm4.mp3',
+  // 신규 셸터: 무드가 맞는 곡으로 순환 매핑 (bgm5+ 추가 시 여기서 교체)
+  bus: 'bgm1.mp3', subway: 'bgm2.mp3', greenhouse: 'bgm4.mp3', ship: 'bgm3.mp3', lighthouse: 'bgm2.mp3',
+};
+const bgm = new Audio();
+bgm.loop = true;
+bgm.volume = 0.35;
+let bgmReady = false;
+function syncBgm() {
+  const track = BGM_MAP[state.current] || 'bgm1.mp3';
+  const want = new URL(track, location.href).href;
+  if (bgm.src !== want) {
+    bgm.src = track;
+    if (opts.bgm && bgmReady) bgm.play().catch(() => {});
+  }
+}
+// 첫 트랙 존재 확인 → 옵션 노출
+{
+  const probe = new Audio('bgm1.mp3');
+  probe.addEventListener('canplaythrough', () => {
+    bgmReady = true;
+    $('bgm-row').style.display = 'flex';
+    $('opt-bgm').checked = !!opts.bgm;
+    syncBgm();
+    if (opts.bgm) {
+      // 자동재생 정책: 첫 입력 시 재생 시작
+      const kick = () => { bgm.play().catch(() => {}); removeEventListener('pointerdown', kick); };
+      addEventListener('pointerdown', kick);
+    }
+  }, { once: true });
+  probe.addEventListener('error', () => { /* BGM 파일 없음 */ });
+}
+$('opt-bgm').addEventListener('change', e => {
+  opts.bgm = e.target.checked;
+  if (opts.bgm) { syncBgm(); bgm.play().catch(() => {}); }
+  else bgm.pause();
+  scheduleSave();
+});
+
+/* ============================================================
+   시작 & 메인 루프
+============================================================ */
+loadSave();
+loadShelter(state.current);
+renderInventoryBar();
+renderResBar();
+renderExpPanel();
+applyOpts();
+updateHud();
+updateClock();
+$('btn-clean').addEventListener('click', cleanShelter);
+$('btn-craft').addEventListener('click', openCraftModal);
+$('btn-cancel-place').addEventListener('click', () => cancelPlacing());
+// 온스크린 카메라 컨트롤 (모바일/데스크톱 공용)
+$('cam-rotl').addEventListener('click', () => { camState.targetYaw -= Math.PI / 4; });
+$('cam-rotr').addEventListener('click', () => { camState.targetYaw += Math.PI / 4; });
+$('cam-zin').addEventListener('click', () => { camState.zoom = THREE.MathUtils.clamp(camState.zoom * 1.25, 0.15, 3.2); });
+$('cam-zout').addEventListener('click', () => { camState.zoom = THREE.MathUtils.clamp(camState.zoom * 0.8, 0.15, 3.2); });
+$('cam-home').addEventListener('click', () => { camState.targetYaw = Math.PI / 4; fitZoomForShelter(); });
+// 패널 드래그/접기 활성화
+makeDraggablePanel($('hud'), 'hud', '거점');
+makeDraggablePanel($('exp-panel'), 'exp', '탐험');
+makeDraggablePanel($('render-panel'), 'render', '설정');
+makeDraggablePanel($('clock-panel'), 'clock', '시계');
+makeDraggablePanel($('res-bar'), 'res', '자원');
+
+// 탐험이 자리를 비운 사이 끝났다면 즉시 정산
+if (state.exp && Date.now() >= state.exp.end) resolveExpedition();
+if (!state.helpSeen) {
+  state.helpSeen = true;
+  openHelpModal();
+  scheduleSave();
+}
+
+function onResize() {
+  renderer.setSize(innerWidth, innerHeight);
+  makeRT();
+}
+addEventListener('resize', onResize);
+onResize();
+
+const clock = new THREE.Clock();
+let uiTick = 0;
+function renderFrame() {
+  const dt = Math.min(clock.getDelta(), 0.1);
+  const t = clock.elapsedTime;
+  tickTime(dt);
+  applyTimeLighting();
+  updateCamera();
+  updateWallCulling();
+  updateEnvironment(t, dt);
+  updateWeather(dt, t);
+  for (const it of items) {
+    if (it.lightObj && it.on !== false && DEFS[it.defId].light?.flicker) {
+      it.lightObj.intensity = it.lightBase * (0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23));
+    }
+  }
+  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); }
+  renderer.setRenderTarget(rt);
+  renderer.render(scene, camera);
+  renderer.setRenderTarget(null);
+  renderer.render(postScene, postCam);
+}
+function animate() { requestAnimationFrame(animate); renderFrame(); }
+animate();
+setInterval(() => { if (document.hidden) renderFrame(); }, 500);
+document.getElementById('loading').style.display = 'none';
+
+// 디버그/테스트용 핸들
+window.__shelter = {
+  items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, state, opts, camState, weather,
+  addItem, removeItem, loadShelter, moveToShelter, setItemPower,
+  startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,
+  comfortDetail, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
+  renderFrame: () => renderFrame(),
+  finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
+  setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
+};
+</script>
+</body>
+</html>
