@@ -2160,20 +2160,28 @@ function slotMeta(n) {
   };
 }
 let saveTimer = null;
+function doSaveNow() {
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2) }));
+  state.savedAt = Date.now();
+  try {
+    localStorage.setItem(slotKey(currentSlot), JSON.stringify({ state, opts }));
+    localStorage.setItem('project-shelter-lastslot', String(currentSlot));
+  } catch (e) { /* file:// 등 저장 불가 환경 */ }
+  checkAchievements();               // 업적 체크 (모든 변화는 저장을 거친다)
+  updateHud();                       // 쾌적함 반영
+  if (!state.exp) renderExpPanel();  // 보정된 성공률 반영
+}
 function scheduleSave() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2) }));
-    state.savedAt = Date.now();
-    try {
-      localStorage.setItem(slotKey(currentSlot), JSON.stringify({ state, opts }));
-      localStorage.setItem('project-shelter-lastslot', String(currentSlot));
-    } catch (e) { /* file:// 등 저장 불가 환경 */ }
-    checkAchievements();               // 업적 체크 (모든 변화는 저장을 거친다)
-    updateHud();                       // 쾌적함 반영
-    if (!state.exp) renderExpPanel();  // 보정된 성공률 반영
-  }, 400);
+  saveTimer = setTimeout(doSaveNow, 400);
 }
+// 예약된 저장이 있으면 즉시 실행 (내보내기 등 저장 직후 원본이 필요한 경우)
+function flushSave() {
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  doSaveNow();
+}
+function backupKey(n) { return `${slotKey(n)}-bak`; }
 function loadSave() {
   try {
     // 구버전 단일 세이브 → 슬롯 1로 이전
@@ -2182,7 +2190,21 @@ function loadSave() {
       localStorage.setItem(slotKey(1), legacy);
       localStorage.removeItem(SAVE_KEY);
     }
-    let data = readSlot(currentSlot);
+    let data;
+    try {
+      data = readSlot(currentSlot);
+      if (localStorage.getItem(slotKey(currentSlot)) && !data) throw new Error('corrupt');
+    } catch (e) {
+      // 메인 슬롯 손상 → 어제 백업 시도
+      try {
+        const bak = localStorage.getItem(backupKey(currentSlot));
+        data = bak ? JSON.parse(bak) : null;
+        if (data) {
+          localStorage.setItem(slotKey(currentSlot), bak);
+          toast('⚠️ 세이브가 손상되어 어제 백업으로 복구했습니다');
+        }
+      } catch (e2) { data = null; }
+    }
     if (!data) { currentSlot = 1; data = readSlot(1); }
     if (data) {
       const oldVer = data.state?.ver || 2;
@@ -4156,6 +4178,11 @@ function cleanShelter() {
    하루 처리 & 일일 리포트 (기획서 v0.2: SYSTEM 03/04/07)
 ============================================================ */
 function processDay() {
+  // 롤링 백업: 하루가 바뀌는 시점에 어제까지의 세이브를 -bak 키로 보관
+  try {
+    const cur = localStorage.getItem(slotKey(currentSlot));
+    if (cur) localStorage.setItem(backupKey(currentSlot), cur);
+  } catch (e) { /* 저장 실패는 무시 */ }
   const notes = state.dayLog.notes;
   const perk = SHELTERS[state.current].perk || {};
   state.expToday = 0; // 새 하루, 새 걸음
@@ -4537,6 +4564,48 @@ $('btn-delete').addEventListener('click', reclaimSelected);
 $('btn-reset').addEventListener('click', () => {
   scheduleSave();                                  // 마지막 상태 저장 후
   setTimeout(() => location.reload(), 500);        // 타이틀로
+});
+
+// 세이브 내보내기: 현재 슬롯의 원본 JSON을 파일로 다운로드
+$('btn-save-exp').addEventListener('click', () => {
+  flushSave(); // 예약된 저장을 즉시 반영해 최신 상태를 내보낸다
+  const raw = localStorage.getItem(slotKey(currentSlot));
+  if (!raw) { toast('내보낼 세이브가 없습니다'); return; }
+  const blob = new Blob([raw], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `shelter-slot${currentSlot}-day${state.day}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast('💾 세이브 파일을 내보냈습니다');
+});
+
+// 세이브 가져오기: 파일에서 읽어 검증 후 현재 슬롯에 덮어쓰기
+$('btn-save-imp').addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.addEventListener('change', () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let data;
+      try { data = JSON.parse(reader.result); } catch (e) { toast('올바른 세이브 파일이 아닙니다'); return; }
+      if (!data?.state || data.state.ver == null || data.state.day == null) { toast('올바른 세이브 파일이 아닙니다'); return; }
+      if (!confirm(`슬롯 ${currentSlot}(현재)의 세이브를 덮어쓸까요?`)) return;
+      try {
+        localStorage.setItem(slotKey(currentSlot), JSON.stringify(data));
+        localStorage.setItem('project-shelter-lastslot', String(currentSlot));
+      } catch (e) { toast('저장에 실패했습니다'); return; }
+      location.reload();
+    };
+    reader.readAsText(file);
+  });
+  input.click();
 });
 
 const toastEl = $('toast');
