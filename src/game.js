@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert } from './lib/helpers.js';
 import { DEFS } from './data/furniture.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
+import { playSfx, setAmbience, setFire, setRadio, setSfxVol, initSfx } from './sfx.js';
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -2241,6 +2242,7 @@ function sleepUntilMorning(auto = false) {
   scheduleSave();
   updateHud();
   updateClock();
+  playSfx('dawn');
 }
 
 /* ── 세이브 슬롯 (Steam 대비: 슬롯 3개 + 최근 슬롯 기억) ── */
@@ -2856,10 +2858,13 @@ function departExpedition(regionId, prep) {
   renderResBar();
   $('exp-panel').classList.add('show'); // 진행 상황 표시
   toast(t('exp.start', { emoji: r.emoji, name: LName(r), pct: Math.round(p.eff * 100) }));
+  playSfx('door');
+  setTimeout(() => playSfx(seasonOf().id === 'winter' ? 'steps_snow' : 'steps_hard'), 400);
 }
 function resolveExpedition() {
   const exp = state.exp;
   if (!exp) return;
+  playSfx('door');
   const r = REGIONS[exp.region];
   const prep = exp.prep || [];
   state.exp = null;
@@ -3274,6 +3279,7 @@ const EVENTS = {
         state.cat = 1;
         spawnCat();
         state.dayLog.notes.push(t('day.catJoined'));
+        playSfx('meow1');
         return t('ev.cat.r0');
       } },
       { labelId: 'ev.cat.c1', run() { return t('ev.cat.r1'); } },
@@ -3291,6 +3297,7 @@ const EVENTS = {
 function showEvent(id) {
   const ev = EVENTS[id];
   if (!ev) return;
+  playSfx('sting');
   const evTitle = t(ev.titleId);
   const body = `
     <div class="modal-body" style="line-height:2">${t(ev.textId)}</div>
@@ -3459,6 +3466,7 @@ function openCraftModal() {
       state.dayLog.notes.push(t('craft.noteRes', { name: c.out.res ? LName(RESOURCES[c.out.res]) : LName(DEFS[c.out.furn]) }));
       scheduleSave();
       renderResBar();
+      playSfx('craft');
       openCraftModal(); // 갱신
     }));
   $('modal-body').querySelectorAll('button[data-mod]').forEach(b =>
@@ -3524,6 +3532,7 @@ function checkAchievements() {
       state.achs[a.id] = true;
       toast(t('ach.unlocked', { icon: a.icon, name: LName(a) }));
       state.dayLog.notes.push(t('ach.note', { name: LName(a) }));
+      playSfx('ring');
     }
   }
 }
@@ -3620,6 +3629,21 @@ function pointerToFloor(e) {
   const p = new THREE.Vector3();
   return raycaster.ray.intersectPlane(floorPlane, p) ? p : null;
 }
+// 고양이 쓰다듬기: catObj.g 대상 별도 히트테스트 (하루 3회 제한)
+let petDay = 0, petCount = 0;
+function pickCat(e) {
+  if (!catObj) return false;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObject(catObj.g, true);
+  if (!hits.length) return false;
+  if (petDay !== state.day) { petDay = state.day; petCount = 0; }
+  if (petCount >= 3) return true; // 히트는 소비하되 보상 없음(오늘 한도 초과)
+  petCount++;
+  playSfx(['meow1', 'meow2', 'meow3'][Math.floor(Math.random() * 3)]);
+  toast(t('cat.pet'));
+  return true;
+}
 function pickItem(e) {
   pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   raycaster.setFromCamera(pointer, camera);
@@ -3690,6 +3714,7 @@ function finishPlacing() {
   renderInventoryBar();
   select(item);
   scheduleSave();
+  playSfx('place');
 }
 function select(item) {
   deselect();
@@ -3710,6 +3735,7 @@ function reclaimSelected() {
   deselect();
   renderInventoryBar();
   scheduleSave();
+  playSfx('whoosh');
 }
 
 // 멀티터치 추적: 한 손가락 = 선택/이동/빈 곳 드래그 회전, 두 손가락 = 핀치 줌 + 회전
@@ -3743,6 +3769,7 @@ canvas.addEventListener('pointerdown', e => {
   if (e.button === 2) { orbiting = true; lastOrbX = e.clientX; return; }
   if (e.button !== 0 && e.pointerType === 'mouse') return;
   if (placing) { moveGhost(placing, e); finishPlacing(); return; }
+  if (pickCat(e)) return; // 고양이를 쓰다듬은 경우 기존 가구 선택/드래그로 이어지지 않게 소비
   const hit = pickItem(e);
   if (hit) {
     select(hit);
@@ -4180,6 +4207,7 @@ function runEndingSequence() {
   closeModal();
   setPaused(false);
   syncBgm(true); // Ending.mp3
+  playSfx('heli');
   const dayStr = state.day.toLocaleString(lang === 'en' ? 'en-US' : 'ko-KR');
   const lines = [
     t('ending.line0'),
@@ -4452,6 +4480,12 @@ function showDayReport() {
     ${tips.length ? `<div class="report-sec report-tip">💡 ${tips.slice(0, 2).join('<br>💡 ')}</div>` : ''}
   `);
   state.dayLog = { gain: {}, spend: {}, notes: [] };
+  playSfx('pen');
+  // 자원(물/음식) 고갈 경고음 — 하루 1회 제한
+  if ((warns.includes('water') || warns.includes('food')) && state.lastAlarmDay !== state.day) {
+    state.lastAlarmDay = state.day;
+    playSfx('alarm');
+  }
 }
 /* ── 일시정지 (v1.9) ── */
 let paused = false;
@@ -5005,12 +5039,36 @@ function syncBgm(forcePlay = false) {
   }
 }
 bgm.addEventListener('ended', () => { const ctx = bgmContext(); playBgmTrack(pickBgmTrack(ctx), ctx); });
+/* ── SFX 앰비언스/난로/라디오 상태 동기화 (날씨·실내·가구 상태 → 루프 채널) ── */
+function syncSfxAmbience() {
+  if (titleVisible || endingActive) { setAmbience(null); setFire(false); setRadio(false); return; }
+  const indoorSh = !!SHELTERS[state.current]?.indoor;
+  if (indoorSh) {
+    setAmbience(null);
+  } else if (weather.type === 'rain') {
+    setAmbience('amb_rain');
+  } else if (weather.type === 'snow') {
+    setAmbience('amb_wind');
+  } else if (weather.type === 'ash') {
+    setAmbience('amb_wind'); // 재(灰) 날씨는 별도 루프가 없어 바람 앰비언스로 간이 처리
+  } else {
+    setAmbience(null);
+  }
+  const fireOn = items.some(it => ['stove', 'candle', 'lantern'].includes(it.defId) && it.on !== false);
+  setFire(fireOn);
+  const radioOn = items.some(it => it.defId === 'radio' && it.on !== false);
+  setRadio(radioOn, 0.25);
+}
 // 모바일 대응: 재생은 반드시 사용자 제스처 안에서 시작 (자동재생 정책)
 $('bgm-row').style.display = 'flex';
 $('opt-bgm').checked = !!opts.bgm;
 $('opt-bgmvol').value = Math.round((opts.bgmVol ?? 0.35) * 100);
+$('opt-sfxvol').value = Math.round((opts.sfxVol ?? 0.7) * 100);
 // 자동재생이 거부돼 멈춰 있으면 다음 입력에서 재개 (상시)
 addEventListener('pointerdown', () => { if (opts.bgm && bgm.paused) syncBgm(true); });
+// SFX AudioContext도 사용자 제스처 없이는 시작 불가 — 같은 첫 pointerdown에서 초기화
+initSfx();
+setSfxVol(opts.sfxVol ?? 0.7);
 $('opt-bgm').addEventListener('change', e => {
   opts.bgm = e.target.checked;
   if (opts.bgm) syncBgm(true); // change 이벤트 = 사용자 제스처 → 모바일에서도 재생 허용
@@ -5020,6 +5078,11 @@ $('opt-bgm').addEventListener('change', e => {
 $('opt-bgmvol').addEventListener('input', e => {
   opts.bgmVol = (+e.target.value) / 100;
   syncBgm();
+  scheduleSave();
+});
+$('opt-sfxvol').addEventListener('input', e => {
+  opts.sfxVol = (+e.target.value) / 100;
+  setSfxVol(opts.sfxVol);
   scheduleSave();
 });
 
@@ -5099,7 +5162,7 @@ function renderFrame() {
       it.lightObj.intensity = it.lightBase * (0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23));
     }
   }
-  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); syncBgm(); }
+  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); syncBgm(); syncSfxAmbience(); }
   renderer.setRenderTarget(rt);
   renderer.render(scene, camera);
   renderer.setRenderTarget(null);

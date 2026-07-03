@@ -104,6 +104,7 @@ export const STR = {
   'opt.autoeat.title':{ ko: '배고픔/갈증이 40 아래로 내려가면 자동으로 먹고 마십니다', en: 'Automatically eat and drink when hunger/thirst drops below 40' },
   'opt.bgm':          { ko: 'BGM', en: 'BGM' },
   'opt.bgmvol':       { ko: '🔊 음량', en: '🔊 Volume' },
+  'opt.sfxvol':       { ko: '🔔 효과음', en: '🔔 Sound FX' },
   'opt.lang':         { ko: '언어 / Language', en: 'Language / 언어' },
   'btn.saveExp':      { ko: '💾 내보내기', en: '💾 Export' },
   'btn.saveImp':      { ko: '📂 가져오기', en: '📂 Import' },
@@ -515,6 +516,7 @@ export const STR = {
   'ev.cat.c1':          { ko: '조용히 지켜본다', en: 'Watch quietly' },
   'ev.cat.r0':          { ko: '고양이는 그릇을 싹 비우더니, 당연하다는 듯 가장 아늑한 자리를 차지했다.<br>이제 이 집엔 심장이 두 개 뛴다. <b>(쾌적함 +6)</b>', en: 'The cat licks the bowl clean and claims the coziest spot as if it were owed.<br>Now two hearts beat in this home. <b>(comfort +6)</b>' },
   'ev.cat.r1':          { ko: '고양이는 한동안 서성이다가 어둠 속으로 사라졌다.<br>...언젠가 다시 찾아올지도 모른다.', en: 'The cat lingers a while, then slips away into the dark.<br>...perhaps it will return someday.' },
+  'cat.pet':            { ko: '🐈 그르릉...', en: '🐈 Purr...' },
 
   'ev.ending.title':    { ko: '하늘에서 온 손님', en: 'A Visitor from the Sky' },
   'ev.ending.text':     { ko: '요란한 프로펠러 소리가 폐허의 정적을 갈랐다. 헬리콥터다.<br>방호복을 입은 백발의 과학자가 내려와 당신에게 걸어온다.<br>"믿을 수가 없군요. 관측 위성이 당신의 불빛을 10,000일 넘게 기록했습니다.<br>정화 구역이 완성됐습니다 — 함께 갑시다."', en: 'A roar of rotors tore through the silence of the ruins. A helicopter.<br>A white-haired scientist in a hazmat suit steps down and walks toward you.<br>"I can’t believe it. Our satellite recorded your light for over 10,000 days.<br>The cleansed zone is finished — come with us."' },
