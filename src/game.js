@@ -2859,68 +2859,79 @@ function buildCatMesh() {
   const g = new THREE.Group();
   const fur = 0xc98d4e, dk = shade(fur, 0.72), lt = shade(fur, 1.15), cream = 0xece0c8, pink = 0xcf9088;
   const P = {};
-  // ── 몸통 (피벗 = 엉덩이 관절: 앉기/기지개 때 여기를 축으로 기운다)
+  // 곡면 헬퍼 (Sphere/Cone은 helpers.js에 없어 여기서 로컬로 생성)
+  const Sph = (parent, r, c, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, seg = 8) => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, seg, Math.max(6, seg - 2)), lamb(c));
+    m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true;
+    parent.add(m); return m;
+  };
+  const Cone = (parent, r, h, c, x = 0, y = 0, z = 0, rot = 0, seg = 5) => {
+    const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), lamb(c));
+    m.position.set(x, y, z); m.rotation.x = rot; m.castShadow = true;
+    parent.add(m); return m;
+  };
+  // ── 몸통 (피벗 = 엉덩이 관절: 앉기/기지개 때 여기를 축으로 기운다) — 겹친 구 2개로 통통·컴팩트한 실루엣
   const body = new THREE.Group();
   body.position.set(0, 0.14, -0.13);
   g.add(body); P.body = body;
-  B(body, 0.16, 0.13, 0.17, fur, 0, 0.015, 0.075);    // 엉덩이
-  B(body, 0.15, 0.125, 0.2, fur, 0, 0.025, 0.235);    // 가슴
-  B(body, 0.13, 0.05, 0.3, lt, 0, -0.045, 0.16);      // 아랫배 (밝은 털)
-  B(body, 0.12, 0.055, 0.09, cream, 0, -0.02, 0.31);  // 가슴 흰 털
-  for (let i = 0; i < 4; i++)                          // 등 줄무늬 4열
-    B(body, 0.145 + (i % 2) * 0.02, 0.022, 0.045, dk, 0, 0.085 - i * 0.004, 0.05 + i * 0.085);
+  Sph(body, 0.095, fur, 0, 0.005, 0.05, 1.0, 0.9, 1.15, 8);    // 엉덩이 (최고점 ≈ +0.09)
+  Sph(body, 0.085, fur, 0, 0.01, 0.21, 1.0, 0.9, 1.1, 8);      // 가슴 쪽 (엉덩이와 충분히 겹침)
+  Sph(body, 0.06, lt, 0, -0.04, 0.13, 1.0, 0.6, 1.4, 8);       // 아랫배 (밝은 털 — 몸 안쪽에 파묻어 배 아래만 살짝)
+  Sph(body, 0.055, cream, 0, -0.01, 0.27, 0.95, 0.8, 0.8, 8);  // 가슴 크림 패치 (납작)
+  const md = shade(fur, 0.82);                                  // 등 줄무늬 3개 — 아주 납작, 90% 파묻힘, 저대비
+  for (const [sz, sy, tilt] of [[0.02, 0.080, 0.18], [0.10, 0.074, 0.02], [0.18, 0.075, -0.16]])
+    Sph(body, 0.05, md, 0, sy, sz, 1, 0.25, 0.55, 6).rotation.x = tilt;
   // ── 머리 (그루밍/두리번거림)
   const head = new THREE.Group();
   head.position.set(0, 0.09, 0.33);
   body.add(head); P.head = head;
-  B(head, 0.15, 0.13, 0.12, fur, 0, 0.05, 0.02);      // 두상
-  B(head, 0.17, 0.06, 0.1, fur, 0, 0.005, 0.025);     // 볼살
-  B(head, 0.08, 0.05, 0.035, cream, 0, 0.008, 0.085); // 주둥이
-  B(head, 0.024, 0.018, 0.012, pink, 0, 0.035, 0.096);// 코
-  B(head, 0.022, 0.03, 0.012, 0x2a2a20, -0.04, 0.065, 0.082); // 눈
-  B(head, 0.022, 0.03, 0.012, 0x2a2a20, 0.04, 0.065, 0.082);
-  B(head, 0.008, 0.01, 0.013, 0xf4f0e4, -0.045, 0.072, 0.0825); // 눈 하이라이트
-  B(head, 0.008, 0.01, 0.013, 0xf4f0e4, 0.045, 0.072, 0.0825);
-  B(head, 0.05, 0.022, 0.05, dk, 0, 0.115, 0.01);     // 정수리 무늬
+  Sph(head, 0.095, fur, 0, 0.05, 0.015, 1.25, 1.05, 1.05, 8);  // 두상 (볼살, x로 넓게)
+  Sph(head, 0.045, cream, 0, 0.005, 0.09, 1.1, 0.85, 1, 7);    // 짧은 주둥이
+  Sph(head, 0.014, pink, 0, 0.03, 0.125, 1, 0.9, 0.8, 6);      // 코
+  Sph(head, 0.015, 0x2a2a20, -0.042, 0.062, 0.098, 1, 1.2, 0.7, 6); // 눈
+  Sph(head, 0.015, 0x2a2a20, 0.042, 0.062, 0.098, 1, 1.2, 0.7, 6);
+  Sph(head, 0.006, 0xf4f0e4, -0.047, 0.069, 0.104, 1, 1, 0.7, 6); // 눈 하이라이트
+  Sph(head, 0.006, 0xf4f0e4, 0.047, 0.069, 0.104, 1, 1, 0.7, 6);
   const earL = new THREE.Group(); earL.position.set(-0.055, 0.11, 0.01); head.add(earL); P.earL = earL;
   const earR = new THREE.Group(); earR.position.set(0.055, 0.11, 0.01); head.add(earR); P.earR = earR;
-  B(earL, 0.045, 0.055, 0.025, fur, 0, 0.025, 0);
-  B(earL, 0.02, 0.03, 0.012, pink, 0, 0.02, 0.008);   // 귓속
-  B(earR, 0.045, 0.055, 0.025, fur, 0, 0.025, 0);
-  B(earR, 0.02, 0.03, 0.012, pink, 0, 0.02, 0.008);
-  // ── 꼬리 2마디 (S자 컬/살랑임)
+  Cone(earL, 0.028, 0.06, fur, 0, 0.02, 0, 0, 5);              // 귀 (그룹 원점 근처, 머리 양옆에서 살짝 돌출)
+  Cone(earL, 0.015, 0.03, pink, 0, 0.02, 0.007, 0, 5);         // 귓속
+  Cone(earR, 0.028, 0.06, fur, 0, 0.02, 0, 0, 5);
+  Cone(earR, 0.015, 0.03, pink, 0, 0.02, 0.007, 0, 5);
+  // ── 꼬리 2마디 (S자 컬/살랑임) — 끝으로 갈수록 가늘어지는 실린더
   const tail1 = new THREE.Group();
   tail1.position.set(0, 0.05, -0.01);
   body.add(tail1); P.tail1 = tail1;
-  B(tail1, 0.04, 0.04, 0.14, fur, 0, 0, -0.06);
+  Cyl(tail1, 0.018, 0.022, 0.1, fur, 0, 0, -0.08, 7).rotation.x = Math.PI / 2; // 몸통 뒤 표면(z≈-0.033) 밖에서 시작
   const tail2 = new THREE.Group();
   tail2.position.set(0, 0, -0.13);
   tail1.add(tail2); P.tail2 = tail2;
-  B(tail2, 0.036, 0.036, 0.11, fur, 0, 0, -0.045);
-  B(tail2, 0.042, 0.042, 0.05, dk, 0, 0, -0.115);     // 꼬리 끝 (짙은 색)
-  // ── 다리 4개 (어깨/골반 피벗 — 걸을 때 스윙, 앉을 때 접힘)
+  Cyl(tail2, 0.013, 0.017, 0.1, fur, 0, 0, -0.05, 7).rotation.x = Math.PI / 2;
+  Sph(tail2, 0.017, dk, 0, 0, -0.105, 1, 1, 1.2, 6);           // 꼬리 끝 (짙은 색, 둥근 팁)
+  // ── 다리 4개 (어깨/골반 피벗 — 걸을 때 스윙, 앉을 때 접힘) — 가는 캡슐형 실린더 + 양말 발
   P.legs = {};
   for (const [key, x, z] of [['fl', -0.055, 0.17], ['fr', 0.055, 0.17], ['bl', -0.055, -0.1], ['br', 0.055, -0.1]]) {
     const leg = new THREE.Group();
     leg.position.set(x, 0.15, z);
     g.add(leg); P.legs[key] = leg;
-    B(leg, 0.045, 0.1, 0.05, fur, 0, -0.055, 0);      // 윗다리
-    B(leg, 0.04, 0.06, 0.045, lt, 0, -0.125, 0.004);  // 아랫다리
-    B(leg, 0.046, 0.028, 0.055, cream, 0, -0.14, 0.012); // 흰 양말 발
+    Cyl(leg, 0.04, 0.032, 0.1, fur, 0, -0.05, 0, 6);         // 윗다리
+    Cyl(leg, 0.03, 0.026, 0.075, lt, 0, -0.115, 0.004, 6);   // 아랫다리
+    Sph(leg, 0.026, cream, 0, -0.146, 0.01, 1.05, 0.75, 1.15, 6); // 흰 양말 발 (바닥까지 닿는 둥근 발)
   }
   g.traverse(o => { if (o.isMesh) o.castShadow = true; });
   return { g, parts: P };
 }
 /* 고양이 무브셋: walk(다리 스윙 보행) · sit(앉아 두리번+귀 털기) · sleep(식빵 자세 숨쉬기)
    · groom(앞발/가슴 핥기) · stretch(기지개) · play(제자리 콩콩 사냥놀이) */
+// 다리 rotation.x: 음수 = 앞(+z)으로 접힘(배 밑으로 튐), 양수 = 뒤로 뻗음
 const CAT_POSES = {
-  //          bodyY  bodyRX  headRX  fl     fr     bl     br     tail1RX
-  walk:    { by: 0.14, brx: 0,     hrx: 0,    legF: 0,   legB: 0,   t1: -0.5 },
-  sit:     { by: 0.09, brx: -0.5,  hrx: 0.35, legF: 0,   legB: 1.35, t1: -1.1 },
-  sleep:   { by: 0.06, brx: 0,     hrx: 0.5,  legF: 1.4, legB: 1.4, t1: -1.4 },
-  groom:   { by: 0.09, brx: -0.5,  hrx: 0.9,  legF: 0,   legB: 1.35, t1: -1.1 },
-  stretch: { by: 0.12, brx: 0.5,   hrx: -0.5, legF: -0.85, legB: 0.15, t1: 0.35 },
-  play:    { by: 0.11, brx: 0.12,  hrx: 0.15, legF: 0,   legB: 0.4, t1: -0.8 },
+  //          bodyY   bodyRX     headRX      legF        legB        tail1RX
+  walk:    { by: 0.14,  brx: 0,    hrx: 0,    legF: 0,     legB: 0,     t1: -0.5 },
+  sit:     { by: 0.075, brx: -0.3, hrx: 0.15, legF: 0.15,  legB: -1.15, t1: -1.0 },
+  sleep:   { by: 0.05,  brx: 0,    hrx: 0.45, legF: -1.35, legB: -1.35, t1: -1.3 },
+  groom:   { by: 0.075, brx: -0.3, hrx: 0.9,  legF: 0.15,  legB: -1.15, t1: -1.0 },
+  stretch: { by: 0.12,  brx: 0.5,  hrx: -0.5, legF: -0.85, legB: 0.15,  t1: 0.35 },
+  play:    { by: 0.11,  brx: 0.12, hrx: 0.15, legF: 0,     legB: -0.3,  t1: -0.8 },
 };
 function pickNextCatMode(c) {
   const roll = Math.random();
@@ -4779,4 +4790,5 @@ window.__shelter = {
   setSnow: v => { snowCover = v; },
   envFx: () => ({ snowCover, wetness }),
   cat: () => catObj,
+  camera, THREE, CAT_POSES,
 };
