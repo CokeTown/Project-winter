@@ -993,6 +993,28 @@ function clockText() {
 }
 
 /* ============================================================
+   계절 (기획서: 4계절 순환 — 12게임일 = 1계절)
+============================================================ */
+const SEASONS = [
+  { id: 'spring', name: '봄',   icon: '🌸', tint: [1.03, 1.05, 1.0],  desc: '만물이 깨어난다' },
+  { id: 'summer', name: '여름', icon: '☀️', tint: [0.97, 1.04, 0.94], desc: '풀이 무성하다' },
+  { id: 'autumn', name: '가을', icon: '🍂', tint: [1.1, 1.0, 0.86],   desc: '세상이 물든다' },
+  { id: 'winter', name: '겨울', icon: '❄️', tint: [1.0, 1.02, 1.1],   desc: '혹독한 계절' },
+];
+const SEASON_DAYS = 12;
+function seasonOf(day = state.day) { return SEASONS[Math.floor((day - 1) / SEASON_DAYS) % 4]; }
+function seasonDay(day = state.day) { return ((day - 1) % SEASON_DAYS) + 1; }
+// 계절이 날씨 풀을 편향시킨다
+function seasonAdjustPool(pool) {
+  const s = seasonOf().id;
+  return pool.map(w => {
+    if (s === 'winter' && w === 'rain') return 'snow';
+    if (s === 'summer' && w === 'snow') return 'rain';
+    return w;
+  }).concat(s === 'winter' ? ['snow'] : s === 'summer' ? ['clear'] : []);
+}
+
+/* ============================================================
    동적 날씨 (기획서: 날씨가 게임플레이에 직접 영향)
 ============================================================ */
 const WEATHERS = {
@@ -1036,7 +1058,7 @@ function setWeather(type) {
   if (!state.exp) renderExpPanel();
 }
 function rollWeather() {
-  const pool = SHELTERS[state.current].weatherPool || ['clear'];
+  const pool = seasonAdjustPool(SHELTERS[state.current].weatherPool || ['clear']);
   const next = pool[Math.floor(Math.random() * pool.length)];
   if (next !== weather.type) state.dayLog.notes.push(`날씨가 ${WEATHERS[next].name}(으)로 바뀌었습니다.`);
   setWeather(next);
@@ -2593,8 +2615,9 @@ const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true };
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
 ============================================================ */
 function decayGauges(gm) {
-  state.hunger = Math.max(0, state.hunger - gm * 0.028); // 만복 → 0까지 약 2.5게임일
-  state.thirst = Math.max(0, state.thirst - gm * 0.046); // 약 1.5게임일
+  const winterMult = seasonOf().id === 'winter' ? 1.25 : 1; // 겨울엔 열량 소모가 크다
+  state.hunger = Math.max(0, state.hunger - gm * 0.028 * winterMult);
+  state.thirst = Math.max(0, state.thirst - gm * 0.046);
   if (opts.autoEat) {
     let g = 0;
     while (state.hunger < 40 && (state.res.food || 0) > 0 && g++ < 9) { resConsume('food', 1); state.hunger = Math.min(100, state.hunger + 45); }
@@ -3574,10 +3597,16 @@ function updateWallCulling() {
 let snowCover = 0, windLevel = 1;
 function updateEnvironment(t, dt) {
   const wBadNow = weather.type === 'snow' || weather.type === 'rain';
-  // 눈: 내리는 동안 서서히 쌓이고, 그치면 서서히 녹는다 (~1분)
-  const targetSnow = weather.type === 'snow' ? 1 : 0;
+  // 눈: 내리는 동안 서서히 쌓이고, 그치면 녹는다. 겨울엔 잔설이 남는다.
+  const season = seasonOf();
+  const targetSnow = weather.type === 'snow' ? 1 : (season.id === 'winter' ? 0.3 : 0);
   snowCover += (targetSnow - snowCover) * Math.min(1, dt * 0.025);
-  vcLambert.color.setRGB(1 + snowCover * 0.5, 1 + snowCover * 0.58, 1 + snowCover * 0.72);
+  // 계절 색조 × 적설
+  vcLambert.color.setRGB(
+    season.tint[0] * (1 + snowCover * 0.5),
+    season.tint[1] * (1 + snowCover * 0.58),
+    season.tint[2] * (1 + snowCover * 0.72)
+  );
   // 바람: 비/눈엔 강풍
   windLevel += ((wBadNow ? 2.3 : 1) - windLevel) * Math.min(1, dt * 0.6);
   if (envDyn.trees || envDyn.buildings) {
@@ -3721,7 +3750,8 @@ addEventListener('resize', () => {
 
 function updateClock() {
   const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
-  $('lcd-day').textContent = `DAY ${String(state.day).padStart(2, '0')}`;
+  const se = seasonOf();
+  $('lcd-day').textContent = `DAY ${String(state.day).padStart(2, '0')} · ${se.icon} ${se.name} ${seasonDay()}/${SEASON_DAYS}`;
   $('lcd-time').innerHTML = `${String(h).padStart(2, '0')}<span id="lcd-colon">:</span>${String(m).padStart(2, '0')}`;
   const [icon, label] = timeLabel();
   $('lcd-sub').textContent = `${icon} ${label} · ${WEATHERS[weather.type].icon}${state.injury ? ' · ' + INJURIES[state.injury.type].icon : ''}`;
@@ -3781,6 +3811,13 @@ function cleanShelter() {
 function processDay() {
   const notes = state.dayLog.notes;
   const perk = SHELTERS[state.current].perk || {};
+  // 계절 전환
+  if (seasonOf(state.day).id !== seasonOf(state.day - 1).id) {
+    const se = seasonOf(state.day);
+    notes.push(`${se.icon} ${se.name}이 왔습니다 — ${se.desc}.`);
+    toast(`${se.icon} 계절이 바뀌었습니다: ${se.name}`);
+    rollWeather(); // 새 계절의 날씨로
+  }
   // 1) 발전기: 연료를 태우면 그날 배터리 소비가 무료
   let freePower = false;
   for (const it of items) {
@@ -3812,9 +3849,14 @@ function processDay() {
     }
   }
   if (perk.produce) {
-    for (const [rid, n] of Object.entries(perk.produce)) {
-      resAdd(rid, n);
-      notes.push(`${perk.produceNote || '거처에서 자원을 얻었습니다.'} (${RESOURCES[rid].emoji}+${n})`);
+    // 겨울엔 텃밭이 얼어붙는다 (온실 재배 중단, 낚시는 가능)
+    if (seasonOf().id === 'winter' && state.current === 'greenhouse') {
+      notes.push('❄️ 겨울 — 텃밭이 얼어 수확이 없습니다.');
+    } else {
+      for (const [rid, n] of Object.entries(perk.produce)) {
+        resAdd(rid, n);
+        notes.push(`${perk.produceNote || '거처에서 자원을 얻었습니다.'} (${RESOURCES[rid].emoji}+${n})`);
+      }
     }
   }
   // 4) 음식 부패: 가동 중인 냉장고가 없으면 매일 음식 -1
@@ -4081,9 +4123,10 @@ function openHelpModal() {
     <b>4. 쾌적함 — 꾸미기가 곧 생존</b><br>
     가구·조명·청결·거처 상태가 쾌적함(0~100)을 만듭니다. 50점부터 탐험 보너스,
     75점부터 회복 속도 보너스. 청결은 매일 떨어지니 [🧹 청소]를 잊지 마세요.<br><br>
-    <b>5. 시간과 날씨</b><br>
-    새벽→아침→낮→저녁→밤이 흐르고(하루 ≈ 16분), 하루가 끝나면 결산 리포트가
-    나옵니다. 날씨는 하루 이틀 단위로 바뀌며 탐험에 영향을 줍니다.<br><br>
+    <b>5. 시간·날씨·계절</b><br>
+    새벽→밤이 흐르고(하루 ≈ 16분), 하루가 끝나면 결산 리포트가 나옵니다.
+    날씨는 하루 이틀 단위로 바뀌고, <b>12일마다 계절</b>이 순환합니다 —
+    겨울엔 눈이 잦고 배가 빨리 꺼지며 온실 텃밭이 얼어붙습니다.<br><br>
     <b>6. 더 나은 거처로</b><br>
     컨테이너 → 돔 벙커 → 도시 옥탑방 → 숲속 오두막. 거처마다 특성과 유지비가
     다릅니다. 좋은 집일수록 유지비가 듭니다.<br><br>
@@ -4293,6 +4336,7 @@ window.__shelter = {
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,
   comfortDetail, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
+  seasonOf, SEASONS, openMapModal, eatFood, drinkWater,
   renderFrame: () => renderFrame(),
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
