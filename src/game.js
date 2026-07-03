@@ -318,7 +318,7 @@ function seasonAdjustPool(pool) {
   const s = seasonOf().id;
   return pool.map(w => {
     if (s === 'winter' && w === 'rain') return 'snow';
-    if (s === 'summer' && w === 'snow') return 'rain';
+    if (s !== 'winter' && w === 'snow') return 'rain'; // 눈은 겨울에만
     return w;
   }).concat(s === 'winter' ? ['snow'] : s === 'summer' ? ['clear'] : []);
 }
@@ -423,6 +423,104 @@ function updateWeather(dt, t) {
 }
 
 /* ============================================================
+   화면 날씨 오버레이 — 유리에 흘러내리는 빗방울 & 서리/눈꽃 (v1.9)
+============================================================ */
+const fxCanvas = document.getElementById('fx');
+const fxg = fxCanvas.getContext('2d');
+let fxW = 0, fxH = 0, fxFrost = 0, fxRainAcc = 0;
+const fxDrops = [];
+const fxFlakes = (() => {
+  // 서리 눈꽃 결정: 화면 가장자리에 고정 배치 (시야 중앙은 비워둔다)
+  const rand = seededRand(77);
+  const fl = [];
+  for (let i = 0; i < 18; i++) {
+    const edge = Math.floor(rand() * 4);
+    const a = rand(), b = Math.pow(rand(), 2.2) * 0.2;
+    let x, y;
+    if (edge === 0) { x = a; y = b; } else if (edge === 1) { x = a; y = 1 - b; }
+    else if (edge === 2) { x = b; y = a; } else { x = 1 - b; y = a; }
+    fl.push({ x, y, r: 13 + rand() * 26, rot: rand() * Math.PI, ph: rand() * Math.PI * 2 });
+  }
+  return fl;
+})();
+function resizeFx() { fxW = fxCanvas.width = innerWidth; fxH = fxCanvas.height = innerHeight; }
+function drawFlake(x, y, r, rot, alpha) {
+  fxg.save();
+  fxg.translate(x, y); fxg.rotate(rot);
+  fxg.strokeStyle = `rgba(215,232,248,${alpha.toFixed(3)})`;
+  fxg.lineWidth = 1.2;
+  for (let a = 0; a < 6; a++) {
+    fxg.rotate(Math.PI / 3);
+    fxg.beginPath();
+    fxg.moveTo(0, 0); fxg.lineTo(r, 0);
+    for (const f of [0.4, 0.66]) {
+      fxg.moveTo(r * f, 0); fxg.lineTo(r * f + r * 0.2, r * 0.16);
+      fxg.moveTo(r * f, 0); fxg.lineTo(r * f + r * 0.2, -r * 0.16);
+    }
+    fxg.stroke();
+  }
+  fxg.restore();
+}
+function updateScreenFx(dt, t) {
+  if (!fxW) resizeFx();
+  fxg.clearRect(0, 0, fxW, fxH);
+  const indoorSh = !!SHELTERS[state.current]?.indoor;
+  // ── 빗방울: 화면(유리창)을 타고 흘러내린다
+  const raining = weather.type === 'rain' && !indoorSh && !titleVisible;
+  if (raining && fxDrops.length < 44) {
+    fxRainAcc += dt * 12;
+    while (fxRainAcc > 1) {
+      fxRainAcc -= 1;
+      fxDrops.push({
+        x: Math.random() * fxW, y: -10 - Math.random() * fxH * 0.3,
+        r: 1.6 + Math.random() * 2.4, vy: 24 + Math.random() * 80,
+        ph: Math.random() * 9, trail: [],
+      });
+    }
+  }
+  for (let i = fxDrops.length - 1; i >= 0; i--) {
+    const d = fxDrops[i];
+    d.vy += dt * 24;
+    // 미끄러지다 멈칫하고 다시 흐르는 느낌
+    d.y += d.vy * (0.55 + 0.45 * Math.sin(t * 1.7 + d.ph)) * dt;
+    d.x += Math.sin(t * 2.2 + d.ph) * 13 * dt;
+    d.trail.push([d.x, d.y]);
+    if (d.trail.length > 13) d.trail.shift();
+    if (d.y > fxH + 12) { fxDrops.splice(i, 1); continue; }
+    fxg.strokeStyle = 'rgba(190,214,235,0.10)'; // 흘러간 자국
+    fxg.lineWidth = d.r * 1.1;
+    fxg.lineCap = 'round';
+    fxg.beginPath();
+    for (let k = 0; k < d.trail.length; k++) {
+      const p = d.trail[k];
+      k ? fxg.lineTo(p[0], p[1]) : fxg.moveTo(p[0], p[1]);
+    }
+    fxg.stroke();
+    fxg.fillStyle = 'rgba(205,228,246,0.32)'; // 물방울 본체
+    fxg.beginPath(); fxg.ellipse(d.x, d.y, d.r, d.r * 1.35, 0, 0, Math.PI * 2); fxg.fill();
+    fxg.fillStyle = 'rgba(240,250,255,0.5)';  // 하이라이트
+    fxg.beginPath(); fxg.arc(d.x - d.r * 0.3, d.y - d.r * 0.4, d.r * 0.3, 0, Math.PI * 2); fxg.fill();
+  }
+  // ── 서리: 눈 오는 날 화면 가장자리에 성에와 눈 결정이 낀다
+  const frostTarget = (weather.type === 'snow' && !indoorSh && !titleVisible) ? 1 : 0;
+  fxFrost += (frostTarget - fxFrost) * Math.min(1, dt * (frostTarget ? 0.05 : 0.1));
+  if (fxFrost > 0.02) {
+    const m = Math.min(fxW, fxH);
+    for (const [cx, cy] of [[0, 0], [fxW, 0], [0, fxH], [fxW, fxH]]) {
+      const gr = fxg.createRadialGradient(cx, cy, 0, cx, cy, m * 0.42);
+      gr.addColorStop(0, `rgba(214,232,248,${(0.26 * fxFrost).toFixed(3)})`);
+      gr.addColorStop(1, 'rgba(214,232,248,0)');
+      fxg.fillStyle = gr;
+      fxg.fillRect(0, 0, fxW, fxH);
+    }
+    for (const f of fxFlakes) {
+      const tw = 0.75 + 0.25 * Math.sin(t * 0.7 + f.ph);
+      drawFlake(f.x * fxW, f.y * fxH, f.r * (0.6 + 0.4 * fxFrost), f.rot, 0.5 * fxFrost * tw);
+    }
+  }
+}
+
+/* ============================================================
    쾌적함 (기획서: Shelter 꾸미기 품질 → 실질 효과)
 ============================================================ */
 function comfortDetail() {
@@ -442,12 +540,13 @@ function comfortDetail() {
   const injuryMod = (state.injury ? -5 : 0) + ((state.hunger < 25 || state.thirst < 25) ? -5 : 0);
   // 정든 집: 한 거처에 연속으로 머물수록 아늑해진다 (하루 +1, 최대 +8) — 굳이 이주하지 않을 이유
   const settled = Math.min(8, state.stayDays || 0);
+  const catMod = state.cat ? 6 : 0; // 고양이가 있는 집은 따뜻하다
   // 현실 제약: 단열 취약(악천후 시) / 어둠(조명 필수)
   let limitMod = 0;
   if (sh.cold && (weather.type === 'rain' || weather.type === 'snow') && !hasMod('insulation')) limitMod -= sh.cold;
   if (sh.needsLight && light <= 0) limitMod -= sh.needsLight;
-  const score = THREE.MathUtils.clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled, 0, 100);
-  return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, clean, score };
+  const score = THREE.MathUtils.clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod, 0, 100);
+  return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, clean, score };
 }
 function comfortLevel() { return Math.min(5, Math.round(comfortDetail().score / 20)); }
 // 기획서 쾌적함 티어: 50+ → +3%, 75+ → +6%, 90+ → +10%
@@ -635,10 +734,44 @@ function addRoofGrass(wallGroup, len, h, seed) {
   }
   wallGroup.add(new THREE.Mesh(mergeGeometries(geos), vcLambert));
 }
+// 날씨-구조물 상호작용 요소 (벽 위 적설 캡, 벽면 빗방울) — loadShelter마다 재생성
+const weatherFx = { caps: [], drips: [] };
+const snowCapMat = new THREE.MeshLambertMaterial({ color: 0xe9f2fa, transparent: true, opacity: 0.96 });
+snowCapMat.userData.noWet = true;
+snowCapMat.userData.shared = true; // loadShelter의 disposeDeep에서 살아남아야 함
+function addWallWeatherFx(wallGroup) {
+  const bb = new THREE.Box3().setFromObject(wallGroup);
+  const len = bb.max.x - bb.min.x, h = bb.max.y - bb.min.y;
+  if (len < 0.5 || h < 0.5) return;
+  // 눈: 벽 상단에 쌓이는 캡 (snowCover에 따라 두께가 자란다)
+  const capGeo = new THREE.BoxGeometry(len * 0.99, 0.17, 0.4);
+  capGeo.translate(0, 0.085, 0);
+  const cap = new THREE.Mesh(capGeo, snowCapMat);
+  cap.position.y = h - 0.02;
+  cap.castShadow = false; cap.visible = false;
+  wallGroup.add(cap);
+  weatherFx.caps.push(cap);
+  // 비: 외벽에 맺혀 반짝이는 물방울
+  const n = Math.max(6, Math.round(len * 5));
+  const arr = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    arr.set([(Math.random() - 0.5) * (len - 0.3), 0.25 + Math.random() * (h - 0.5), -0.145], i * 3);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    color: 0xcfe2f2, size: 2, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false,
+  }));
+  pts.userData.ph = Math.random() * Math.PI * 2;
+  pts.visible = false;
+  wallGroup.add(pts);
+  weatherFx.drips.push(pts);
+}
 function makeWalls(defs) {
   wallList = [];
   for (let i = 0; i < defs.length; i++) {
     const d = defs[i];
+    addWallWeatherFx(d.group); // 회전 전(로컬 좌표)에 치수 측정
     d.group.position.set(...d.pos);
     d.group.rotation.y = d.rotY;
     roomGroup.add(d.group);
@@ -1927,6 +2060,9 @@ const state = {
   lastEventDay: 0,
   mods: {},            // 거처 개조 { shelterId: [modId] }
   stayDays: 0,         // 현재 거처 연속 거주일 (정든 집 보너스)
+  cat: 0,              // 고양이 입양 여부 (Day 100+ 인카운터)
+  catMusicDay: 0,      // 고양이 인카운터가 뜬 날 — 그날은 Cat OST만 재생
+  endingSeen: false,   // Day 10000 엔딩 감상 여부
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -1953,7 +2089,7 @@ function resConsumeAll(cost) {
 function costLabel(cost) {
   return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${RESOURCES[id].name} ${n}`).join(' + ');
 }
-const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true };
+const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.35 };
 
 /* ============================================================
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
@@ -2027,7 +2163,7 @@ let saveTimer = null;
 function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+    state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2) }));
     state.savedAt = Date.now();
     try {
       localStorage.setItem(slotKey(currentSlot), JSON.stringify({ state, opts }));
@@ -2123,12 +2259,12 @@ function buildItemGroup(item) {
   return g;
 }
 function syncTransform(item) {
-  item.group.position.set(item.x, 0, item.z);
+  item.group.position.set(item.x, item.y || 0, item.z);
   item.group.rotation.y = item.rot * Math.PI / 2;
   shadowDirty();
 }
-function addItem(defId, colorIdx, x, z, rot, on = true) {
-  const item = { defId, colorIdx, x, z, rot, on };
+function addItem(defId, colorIdx, x, z, rot, on = true, y = 0) {
+  const item = { defId, colorIdx, x, z, rot, on, y, support: null };
   item.group = buildItemGroup(item);
   syncTransform(item);
   itemsRoot.add(item.group);
@@ -2167,20 +2303,58 @@ function clampToRoom(item, x, z) {
   const mx = ROOM.w / 2 - fp.w / 2 - 0.06, mz = ROOM.d / 2 - fp.d / 2 - 0.06;
   return [THREE.MathUtils.clamp(x, -mx, mx), THREE.MathUtils.clamp(z, -mz, mz)];
 }
+// 표면 스태킹: 소품(stackable)을 테이블 등(surface) 위에 올릴 수 있다
+function surfaceRectOf(other) {
+  const s = DEFS[other.defId].surface;
+  if (!s) return null;
+  return other.rot % 2 ? { w: s.d, d: s.w, y: s.y } : { w: s.w, d: s.d, y: s.y };
+}
+function findSupport(item, x, z) {
+  if (!DEFS[item.defId].stackable) return null;
+  const fp = footprintOf(item);
+  for (const other of items) {
+    if (other === item || other.y) continue;
+    const sr = surfaceRectOf(other);
+    if (!sr) continue;
+    // 소품 중심이 상판 안쪽에 있으면 올려놓기 (살짝 걸치는 건 허용)
+    if (Math.abs(x - other.x) <= Math.max(0.02, sr.w / 2 - fp.w * 0.3) &&
+        Math.abs(z - other.z) <= Math.max(0.02, sr.d / 2 - fp.d * 0.3)) return { other, y: sr.y };
+  }
+  return null;
+}
+function itemsOn(support) { return items.filter(i => i.support === support); }
 function collides(item, x, z) {
   if (DEFS[item.defId].noCollide) return false;
+  const sup = findSupport(item, x, z);
+  item._support = sup;
   const fp = footprintOf(item);
   for (const other of items) {
     if (other === item || DEFS[other.defId].noCollide) continue;
+    if (sup) {
+      // 표면 위: 지지대와는 겹쳐도 되고, 같은 표면 위 소품끼리만 충돌
+      if (other === sup.other || other.support !== sup.other) continue;
+    } else if (other.support) continue; // 상대가 표면 위에 있으면 바닥과는 무관
     const ofp = footprintOf(other);
     if (Math.abs(x - other.x) < (fp.w + ofp.w) / 2 - 0.02 &&
         Math.abs(z - other.z) < (fp.d + ofp.d) / 2 - 0.02) return true;
   }
+  if (sup) return false;
   for (const b of blockers) {
     if (Math.abs(x - b.x) < (fp.w + b.w) / 2 - 0.02 &&
         Math.abs(z - b.z) < (fp.d + b.d) / 2 - 0.02) return true;
   }
   return false;
+}
+// 지지대가 사라지거나 이동했을 때 위에 있던 소품 정리
+function dropChildrenOf(support) {
+  for (const ch of itemsOn(support)) {
+    ch.support = null; ch.y = 0;
+    if (collides(ch, ch.x, ch.z)) {
+      state.inventory[ch.defId] = (state.inventory[ch.defId] || 0) + 1;
+      removeItem(ch);
+      toast(`${DEFS[ch.defId].emoji} ${DEFS[ch.defId].name}이(가) 자리를 잃어 회수되었습니다`);
+    } else syncTransform(ch);
+  }
 }
 function setGhostVisual(item, mode) {
   item.group.traverse(o => {
@@ -2220,6 +2394,7 @@ function loadShelter(id) {
   disposeDeep(roomGroup); roomGroup.clear();
   disposeDeep(envRoot); envRoot.clear();
   wallList = []; blockers = []; envDyn = {};
+  weatherFx.caps = []; weatherFx.drips = []; wetApplied = -1;
 
   state.current = id;
   const sh = SHELTERS[id];
@@ -2245,11 +2420,20 @@ function loadShelter(id) {
   gridObj.visible = false;
   scene.add(gridObj);
 
-  // 저장된 레이아웃 복원
+  // 저장된 레이아웃 복원 (표면 위 소품은 지지대 링크 재구성)
   for (const it of (state.layouts[id] || [])) {
     if (!DEFS[it.d]) continue;
-    addItem(it.d, it.c ?? 0, it.x, it.z, it.r ?? 0, it.o !== 0);
+    addItem(it.d, it.c ?? 0, it.x, it.z, it.r ?? 0, it.o !== 0, it.y || 0);
   }
+  for (const it of items) {
+    if (!it.y) continue;
+    const sup = findSupport(it, it.x, it.z);
+    if (sup) { it.support = sup.other; it.y = sup.y; }
+    else it.y = 0; // 지지대가 사라졌으면 바닥으로
+    syncTransform(it);
+  }
+  despawnCat();
+  if (state.cat) spawnCat(); // 고양이는 이사할 때도 함께 간다
   fitZoomForShelter();
   lastWallMask = -1;
   shadowDirty();
@@ -2282,7 +2466,7 @@ function moveToShelter(id) {
     state.gameMin += 180; // 구역 간 여정 3시간
     state.dayLog.notes.push(`🚶 ${DISTRICTS[districtOf(id)].name}(으)로 이동 — 여정에 3시간이 걸렸습니다.`);
   }
-  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2) }));
   state.stayDays = 0; // 새 집은 아직 낯설다
   loadShelter(id);
   scheduleSave();
@@ -2662,6 +2846,88 @@ function resolveExpedition() {
 /* ============================================================
    랜덤 인카운터 (아포칼립스의 우연들 — 며칠에 한 번)
 ============================================================ */
+/* ============================================================
+   고양이 동반자 (v1.9) — Day 100+ 인카운터로 입양
+============================================================ */
+let catObj = null;
+function buildCatMesh() {
+  const g = new THREE.Group();
+  const fur = 0xc98d4e, dk = shade(fur, 0.72), cream = 0xe8dcc2;
+  B(g, 0.16, 0.13, 0.3, fur, 0, 0.115, 0);            // 몸통
+  B(g, 0.15, 0.06, 0.13, cream, 0, 0.07, 0.08);       // 가슴털
+  B(g, 0.14, 0.12, 0.12, fur, 0, 0.22, 0.13);         // 머리
+  B(g, 0.12, 0.045, 0.02, cream, 0, 0.185, 0.196);    // 주둥이
+  B(g, 0.04, 0.05, 0.03, dk, -0.05, 0.3, 0.12);       // 귀
+  B(g, 0.04, 0.05, 0.03, dk, 0.05, 0.3, 0.12);
+  B(g, 0.165, 0.03, 0.07, dk, 0, 0.18, -0.03);        // 등 줄무늬
+  B(g, 0.165, 0.03, 0.055, dk, 0, 0.17, -0.11);
+  for (const [x, z] of [[-0.05, 0.1], [0.05, 0.1], [-0.05, -0.1], [0.05, -0.1]])
+    B(g, 0.045, 0.06, 0.045, fur, x, 0.03, z);        // 다리
+  B(g, 0.02, 0.025, 0.012, 0x27271c, -0.035, 0.24, 0.192); // 눈
+  B(g, 0.02, 0.025, 0.012, 0x27271c, 0.035, 0.24, 0.192);
+  const tail = new THREE.Group();
+  tail.position.set(0, 0.16, -0.15);
+  B(tail, 0.035, 0.035, 0.2, fur, 0, 0.03, -0.09);
+  B(tail, 0.042, 0.042, 0.06, dk, 0, 0.03, -0.2);     // 꼬리 끝
+  g.add(tail);
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return { g, tail };
+}
+function catFreeSpot() {
+  // 러그·방석·침대를 좋아한다 — 없으면 빈 바닥
+  const favs = items.filter(i => ['rug', 'cushion', 'bed'].includes(i.defId));
+  if (favs.length && Math.random() < 0.55) {
+    const f = favs[Math.floor(Math.random() * favs.length)];
+    return { x: f.x + (Math.random() - 0.5) * 0.3, z: f.z + (Math.random() - 0.5) * 0.25, y: f.defId === 'bed' ? 0.63 : 0.06 };
+  }
+  for (let k = 0; k < 14; k++) {
+    const x = (Math.random() * 2 - 1) * (ROOM.w / 2 - 0.5);
+    const z = (Math.random() * 2 - 1) * (ROOM.d / 2 - 0.5);
+    const blocked = items.some(i => !DEFS[i.defId].noCollide && !i.support &&
+      Math.abs(x - i.x) < footprintOf(i).w / 2 + 0.18 && Math.abs(z - i.z) < footprintOf(i).d / 2 + 0.18);
+    if (!blocked) return { x, z, y: 0 };
+  }
+  return { x: 0, z: 0, y: 0 };
+}
+function spawnCat() {
+  if (!state.cat || catObj) return;
+  const { g, tail } = buildCatMesh();
+  const s = catFreeSpot();
+  g.position.set(s.x, s.y, s.z);
+  g.rotation.y = Math.random() * Math.PI * 2;
+  scene.add(g);
+  catObj = { g, tail, mode: 'sit', next: 6 + Math.random() * 14, tgt: null };
+  shadowDirty();
+}
+function despawnCat() {
+  if (!catObj) return;
+  scene.remove(catObj.g);
+  disposeDeep(catObj.g);
+  catObj = null;
+}
+function updateCat(t, dt) {
+  if (!catObj) return;
+  const c = catObj;
+  c.tail.rotation.y = Math.sin(t * (c.mode === 'walk' ? 5.5 : 1.5)) * 0.55; // 꼬리 살랑
+  c.next -= dt;
+  if (c.mode === 'sit' && c.next <= 0) { c.tgt = catFreeSpot(); c.mode = 'walk'; }
+  if (c.mode === 'walk' && c.tgt) {
+    const dx = c.tgt.x - c.g.position.x, dz = c.tgt.z - c.g.position.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist < 0.06) {
+      c.g.position.y = c.tgt.y;
+      c.mode = 'sit'; c.next = 12 + Math.random() * 26; c.tgt = null;
+      shadowDirty();
+    } else {
+      c.g.position.x += dx / dist * 0.55 * dt;
+      c.g.position.z += dz / dist * 0.55 * dt;
+      c.g.rotation.y = Math.atan2(dx, dz);
+      // 목적지가 침대 등 높은 곳이면 다가가서 폴짝
+      c.g.position.y = THREE.MathUtils.lerp(c.g.position.y, dist < 0.45 ? c.tgt.y : 0, Math.min(1, dt * 7));
+    }
+  }
+}
+
 const EVENTS = {
   wanderer: {
     icon: '🚶', title: '떠돌이 생존자',
@@ -2736,6 +3002,30 @@ const EVENTS = {
     choices: [
       { label: '좌표를 기록한다', run() { state.buff = { loot: 2, label: '물자 은닉처 좌표' }; return '지도에 좌표를 옮겨 적었다. <b>(다음 탐험 성공 시 자원 2배)</b>'; } },
       { label: '무시한다', run() { return '잡음뿐인 방송은 곧 끊겼다.'; } },
+    ],
+  },
+  /* ── 특수 인카운터 (일반 풀에서 제외) ── */
+  cat: {
+    special: true,
+    icon: '🐈', title: '야윈 고양이',
+    text: '문틈으로 야윈 고양이 한 마리가 들어와 당신을 빤히 올려다본다.<br>얼룩진 털, 조심스러운 발걸음 — 그러나 눈만은 또렷하다.',
+    choices: [
+      { label: '🥫 음식 1개를 내어준다 (가족으로 맞이하기)', cost: { food: 1 }, run() {
+        state.cat = 1;
+        spawnCat();
+        state.dayLog.notes.push('🐈 고양이가 함께 살게 되었습니다.');
+        return '고양이는 그릇을 싹 비우더니, 당연하다는 듯 가장 아늑한 자리를 차지했다.<br>이제 이 집엔 심장이 두 개 뛴다. <b>(쾌적함 +6)</b>';
+      } },
+      { label: '조용히 지켜본다', run() { return '고양이는 한동안 서성이다가 어둠 속으로 사라졌다.<br>...언젠가 다시 찾아올지도 모른다.'; } },
+    ],
+  },
+  ending: {
+    special: true,
+    icon: '🚁', title: '하늘에서 온 손님',
+    text: '요란한 프로펠러 소리가 폐허의 정적을 갈랐다. 헬리콥터다.<br>방호복을 입은 백발의 과학자가 내려와 당신에게 걸어온다.<br>"믿을 수가 없군요. 관측 위성이 당신의 불빛을 10,000일 넘게 기록했습니다.<br>정화 구역이 완성됐습니다 — 함께 갑시다."',
+    choices: [
+      { label: '🚁 박사와 함께 떠난다 (엔딩)', run() { setTimeout(runEndingSequence, 400); return '당신은 천천히 고개를 끄덕이고, 마지막으로 집을 돌아보았다.'; } },
+      { label: '아직은 여기 남는다', run() { return '"...당신 같은 사람들 덕분에 이 별이 아직 살아있는 거겠죠."<br>박사는 통신기를 남기고 떠났다. 부르면 언제든 다시 온다고 했다.'; } },
     ],
   },
 };
@@ -2963,6 +3253,8 @@ const ACHS = [
   { id: 'col21',     icon: '📖', name: '수집가',           desc: '도감 25% (가구 색상 21종)',   chk: () => collectionCount() >= 21 },
   { id: 'col42',     icon: '🖼️', name: '큐레이터',         desc: '도감 50%',                    chk: () => collectionCount() >= 42 },
   { id: 'colAll',    icon: '🏛️', name: '폐허의 박물관장',  desc: '도감 100% (84색상)',          chk: () => collectionCount() >= 84 },
+  { id: 'cat',       icon: '🐈', name: '고양이 집사',      desc: '길고양이를 가족으로 맞이하다', chk: () => !!state.cat },
+  { id: 'ending',    icon: '🚁', name: '폐허 너머로',      desc: 'Day 10000 — 박사와 함께 탈출', chk: () => !!state.endingSeen },
 ];
 function checkAchievements() {
   if (!state.achs) state.achs = {};
@@ -3056,7 +3348,7 @@ function updateSelRing() {
     const fp = footprintOf(selected);
     const r = Math.max(fp.w, fp.d) / 2 + 0.18;
     selRing.scale.set(r / 0.56, r / 0.56, 1);
-    selRing.position.x = selected.x; selRing.position.z = selected.z;
+    selRing.position.set(selected.x, 0.03 + (selected.y || 0), selected.z);
     selRing.visible = true;
   } else selRing.visible = false;
 }
@@ -3083,9 +3375,16 @@ function moveGhost(item, e) {
   const p = pointerToFloor(e);
   if (!p) return;
   const [x, z] = clampToRoom(item, snap(p.x), snap(p.z));
+  const dx = x - item.x, dz = z - item.z;
   item.x = x; item.z = z;
+  const bad = collides(item, x, z); // _support 계산 포함
+  item.y = item._support ? item._support.y : 0;
+  item.support = item._support ? item._support.other : null;
   syncTransform(item);
-  const bad = collides(item, x, z);
+  // 상판 위에 올려둔 소품도 함께 이동
+  if (DEFS[item.defId].surface && (dx || dz)) {
+    for (const ch of itemsOn(item)) { ch.x += dx; ch.z += dz; syncTransform(ch); }
+  }
   setGhostVisual(item, bad ? 'invalid' : 'valid');
   item._valid = !bad;
 }
@@ -3142,6 +3441,7 @@ function deselect() {
 }
 function reclaimSelected() {
   if (!selected) return;
+  if (DEFS[selected.defId].surface) dropChildrenOf(selected);
   state.inventory[selected.defId] = (state.inventory[selected.defId] || 0) + 1;
   removeItem(selected);
   deselect();
@@ -3158,6 +3458,8 @@ function dropDragging(revert) {
   if (!dragging) return;
   if (revert && dragStart) {
     dragging.x = dragStart.ox; dragging.z = dragStart.oz; dragging.rot = dragStart.or;
+    dragging.y = dragStart.oy || 0; dragging.support = dragStart.osup || null;
+    for (const k of (dragStart.kids || [])) { k.ch.x = k.x; k.ch.z = k.z; k.ch.rot = k.r; syncTransform(k.ch); }
     syncTransform(dragging);
   }
   setGhostVisual(dragging, null);
@@ -3182,7 +3484,11 @@ canvas.addEventListener('pointerdown', e => {
   if (hit) {
     select(hit);
     dragging = hit;
-    dragStart = { sx: e.clientX, sy: e.clientY, ox: hit.x, oz: hit.z, or: hit.rot, moved: false };
+    dragStart = {
+      sx: e.clientX, sy: e.clientY, ox: hit.x, oz: hit.z, or: hit.rot, moved: false,
+      oy: hit.y || 0, osup: hit.support || null,
+      kids: DEFS[hit.defId].surface ? itemsOn(hit).map(ch => ({ ch, x: ch.x, z: ch.z, r: ch.rot })) : [],
+    };
   } else {
     orbitDrag = { x: e.clientX, y: e.clientY, moved: false };
   }
@@ -3236,6 +3542,8 @@ function onPointerEnd(e) {
     if (dragStart.moved) {
       if (!dragging._valid) {
         dragging.x = dragStart.ox; dragging.z = dragStart.oz; dragging.rot = dragStart.or;
+        dragging.y = dragStart.oy || 0; dragging.support = dragStart.osup || null;
+        for (const k of (dragStart.kids || [])) { k.ch.x = k.x; k.ch.z = k.z; k.ch.rot = k.r; syncTransform(k.ch); }
         syncTransform(dragging);
         toast('그 자리엔 놓을 수 없어요');
       } else scheduleSave();
@@ -3260,22 +3568,40 @@ addEventListener('keydown', e => {
   if (e.key === 'e' || e.key === 'E') camState.targetYaw += Math.PI / 4;
   if (e.key === 'Escape') { cancelPlacing(); deselect(); closeModal(); }
   if (e.key === 'r' || e.key === 'R') rotateActive();
+  if (e.key === 'p' || e.key === 'P') setPaused(!paused);
   if ((e.key === 'Delete' || e.key === 'Backspace') && selected && !placing) reclaimSelected();
 });
+// 지지대 회전 시 위 소품도 함께 90° 공전 (dir=+1: rot+1과 동일 방향)
+function rotateChildren(item, dir) {
+  if (!DEFS[item.defId].surface) return;
+  for (const ch of itemsOn(item)) {
+    const dx = ch.x - item.x, dz = ch.z - item.z;
+    if (dir > 0) { ch.x = item.x + dz; ch.z = item.z - dx; }
+    else { ch.x = item.x - dz; ch.z = item.z + dx; }
+    ch.rot = (ch.rot + (dir > 0 ? 1 : 3)) % 4;
+    syncTransform(ch);
+  }
+}
 function rotateActive() {
   const item = placing || (dragging && dragStart?.moved ? dragging : selected);
   if (!item) return;
   item.rot = (item.rot + 1) % 4;
+  rotateChildren(item, 1);
   const [x, z] = clampToRoom(item, item.x, item.z);
   item.x = x; item.z = z;
   syncTransform(item);
   if (item === placing || (dragging === item && dragStart?.moved)) {
     const bad = collides(item, item.x, item.z);
+    item.y = item._support ? item._support.y : 0;
+    item.support = item._support ? item._support.other : null;
+    syncTransform(item);
     item._valid = !bad;
     setGhostVisual(item, bad ? 'invalid' : 'valid');
   } else {
     if (collides(item, item.x, item.z)) {
-      item.rot = (item.rot + 3) % 4; syncTransform(item);
+      item.rot = (item.rot + 3) % 4;
+      rotateChildren(item, -1);
+      syncTransform(item);
       toast('회전할 공간이 없어요');
     } else scheduleSave();
   }
@@ -3298,6 +3624,23 @@ function updateWallCulling() {
 }
 // 날씨-환경 상호작용: 눈이 쌓이고(지면·수풀·지붕 풀 서리 톤), 악천후엔 바람이 거세짐
 let snowCover = 0, windLevel = 1;
+// 비가 오면 셸터 겉면이 젖어 어두워진다
+let wetness = 0, wetApplied = -1;
+function applyWetness() {
+  wetApplied = wetness;
+  const seen = new Set();
+  const k = 1 - 0.26 * wetness;
+  roomGroup.traverse(o => {
+    if (!o.isMesh || !o.material?.color) return;
+    const m = o.material;
+    if (m.userData.noWet || seen.has(m.uuid)) return;
+    seen.add(m.uuid);
+    if (m.userData.wetDry == null) m.userData.wetDry = m.color.getHex();
+    _tc.a.setHex(m.userData.wetDry);
+    // 살짝 푸른 기가 도는 젖은 톤
+    m.color.setRGB(_tc.a.r * k, _tc.a.g * (k + 0.02 * wetness), Math.min(1, _tc.a.b * (k + 0.07 * wetness)));
+  });
+}
 function updateEnvironment(t, dt) {
   const wBadNow = weather.type === 'snow' || weather.type === 'rain';
   // 눈: 내리는 동안 서서히 쌓이고, 그치면 녹는다. 겨울엔 잔설이 남는다.
@@ -3312,6 +3655,20 @@ function updateEnvironment(t, dt) {
   );
   // 바람: 비/눈엔 강풍
   windLevel += ((wBadNow ? 2.3 : 1) - windLevel) * Math.min(1, dt * 0.6);
+  // 셸터 겉면 상호작용: 젖음 / 벽 위 적설 / 맺힌 빗방울
+  const indoorSh = !!SHELTERS[state.current]?.indoor;
+  const targetWet = (weather.type === 'rain' && !indoorSh) ? 1 : 0;
+  wetness += (targetWet - wetness) * Math.min(1, dt * (targetWet ? 0.1 : 0.02));
+  if (Math.abs(wetness - wetApplied) > 0.03) applyWetness();
+  for (const cap of weatherFx.caps) {
+    cap.visible = !indoorSh && snowCover > 0.05;
+    if (cap.visible) cap.scale.y = Math.min(1, snowCover * 1.1);
+  }
+  const dripStr = wetness * (weather.type === 'rain' ? 1 : 0.4);
+  for (const dp of weatherFx.drips) {
+    dp.visible = !indoorSh && dripStr > 0.06;
+    if (dp.visible) dp.material.opacity = (0.4 + 0.35 * Math.sin(t * 2.3 + dp.userData.ph)) * dripStr;
+  }
   if (envDyn.trees || envDyn.buildings) {
     const cd = new THREE.Vector2(camera.position.x - camCenter.x, camera.position.z - camCenter.z).normalize();
     if (envDyn.trees) {
@@ -3467,6 +3824,8 @@ addEventListener('resize', () => {
 let titleVisible = false;
 function showTitle() {
   titleVisible = true;
+  // 타이틀에선 내 집만 조용히 보여준다 — 패널/설정창은 전부 숨김 (CSS)
+  document.body.classList.add('title-mode');
   $('title-screen').style.display = 'flex';
   const meta = slotMeta(currentSlot);
   if (meta) {
@@ -3475,8 +3834,16 @@ function showTitle() {
   } else {
     $('t-continue').style.display = 'none';
   }
+  if (typeof syncBgm === 'function') syncBgm(); // Main_theme
 }
-function hideTitle() { titleVisible = false; $('title-screen').style.display = 'none'; }
+function hideTitle() {
+  titleVisible = false;
+  document.body.classList.remove('title-mode');
+  $('title-screen').style.display = 'none';
+  // 자리 비운 사이의 정산(탐험 결과 등)은 게임에 들어온 뒤에 보여준다
+  if (state.exp && Date.now() >= state.exp.end) resolveExpedition();
+  syncBgm();
+}
 function openSlotModal(mode) {
   const cards = [];
   for (let n = 1; n <= SLOT_COUNT; n++) {
@@ -3502,6 +3869,7 @@ function openSlotModal(mode) {
     if (mode === 'load') {
       if (!has) { toast('빈 슬롯입니다'); return; }
       localStorage.setItem('project-shelter-lastslot', String(n));
+      sessionStorage.setItem('ps-load', '1'); // 리로드 후 타이틀 건너뛰고 바로 게임 (밀린 결산 표시)
       location.reload();
     } else {
       if (has && !confirm(`슬롯 ${n}의 기존 세이브를 덮어쓰고 새로 시작할까요?`)) return;
@@ -3540,6 +3908,46 @@ function showIntro() {
   render();
 }
 
+/* ============================================================
+   엔딩 (v1.9) — Day 10000, 박사의 구조 (이때만 Ending OST)
+============================================================ */
+let endingActive = false;
+function runEndingSequence() {
+  endingActive = true;
+  closeModal();
+  setPaused(false);
+  syncBgm(true); // Ending.mp3
+  const lines = [
+    '헬리콥터의 굉음이 잦아들고,<br>박사는 말없이 당신의 집을 한참 바라보았다.',
+    `"${state.day.toLocaleString()}일... 정말 그 세월을<br>여기서 살아냈단 말입니까."`,
+    '당신은 마지막으로 집을 돌아보았다.<br>손때 묻은 가구들, 창가의 불빛, 벽의 흠집 하나까지.'
+      + (state.cat ? '<br><br>고양이가 당연하다는 듯 당신의 품에 뛰어올랐다.<br>함께 간다.' : ''),
+    '폐허는 점점 작아졌다.<br><br>그러나 저 집은 — 분명, 당신의 집이었다.',
+    `🚁 <b>ENDING — 폐허 너머로</b><br><br><span style="font-size:12px;color:var(--text-dim)">생존 ${state.day.toLocaleString()}일 · 탐험 성공 ${state.successes}회${state.cat ? ' · 고양이와 함께 🐈' : ''}</span>`,
+  ];
+  let i = 0;
+  const scr = $('ending-screen'), txt = $('ending-text'), btn = $('ending-next');
+  scr.style.display = 'flex';
+  const render = () => {
+    txt.style.animation = 'none'; void txt.offsetWidth; txt.style.animation = '';
+    txt.innerHTML = lines[i];
+    btn.textContent = i === lines.length - 1 ? '🏠 폐허로 돌아간다 (계속하기)' : '계속 ▸';
+  };
+  btn.onclick = () => { // onclick 대입: 재실행 시 리스너 중복 방지
+    i++;
+    if (i >= lines.length) {
+      scr.style.display = 'none';
+      state.endingSeen = true;
+      endingActive = false;
+      state.dayLog.notes.push('🚁 당신은 구조를 경험했지만, 결국 집으로 돌아왔다.');
+      scheduleSave();
+      syncBgm();
+      toast('🏠 에필로그 — 당신은 이 폐허의 집을 선택했다');
+    } else render();
+  };
+  render();
+}
+
 function updateClock() {
   const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
   const se = seasonOf();
@@ -3564,7 +3972,7 @@ function updateHud() {
     `${injIcon ? `<span title="${state.injury ? INJURIES[state.injury.type].name : ''}">${injIcon}</span>` : ''}` +
     `${cd.limitMod ? ` <span style="color:var(--bad)" title="${sh.limits || ''}">⚠️</span>` : ''}` +
     `${state.buff ? ` <span style="color:var(--good)" title="${state.buff.label}">✨</span>` : ''}` +
-    ` · <span style="color:var(--accent)" title="쾌적함 ${cd.score}점 = 가구 ${cd.furn} + 조명 ${cd.light} + 청결 ${cd.cleanMod} + 거처 ${cd.shelterMod}${cd.settled ? ` + 정든 집 ${cd.settled}` : ''}${cd.injuryMod ? ` + 상태 ${cd.injuryMod}` : ''}${cd.limitMod ? ` + 제약 ${cd.limitMod}` : ''}${bonus ? ` → 탐험 +${bonus}%` : ''}">😊${cd.score} ${'★'.repeat(lv)}</span>` +
+    ` · <span style="color:var(--accent)" title="쾌적함 ${cd.score}점 = 가구 ${cd.furn} + 조명 ${cd.light} + 청결 ${cd.cleanMod} + 거처 ${cd.shelterMod}${cd.settled ? ` + 정든 집 ${cd.settled}` : ''}${cd.catMod ? ` + 고양이 ${cd.catMod}` : ''}${cd.injuryMod ? ` + 상태 ${cd.injuryMod}` : ''}${cd.limitMod ? ` + 제약 ${cd.limitMod}` : ''}${bonus ? ` → 탐험 +${bonus}%` : ''}">😊${cd.score} ${'★'.repeat(lv)}</span>` +
     ` · <span title="청결도 — 🧹 청소로 회복">🧹${Math.round(cd.clean)}</span>` +
     ` · <span title="오늘 탐험 ${state.expToday}/${EXP_PER_DAY}회 (5회면 자동 취침)">🎒${state.expToday}/${EXP_PER_DAY}</span>` +
     ` · <span title="탐험 성공 누적">🏆${state.successes}</span>`;
@@ -3714,9 +4122,30 @@ function processDay() {
     state.injury = { type: 'infection', untilMin: state.gameMin + INJURIES.infection.restH * 60 * recoveryMult() };
     notes.push('🤒 상처를 방치해 감염 위험으로 악화되었습니다.');
   }
+  // 고양이의 하루 (입양 후 소소한 기록)
+  if (state.cat && Math.random() < 0.22) {
+    notes.push([
+      '🐈 고양이가 창가에서 하루 종일 볕을 쬐었습니다.',
+      '🐈 고양이가 문 앞에 쥐 한 마리를 놓아두었습니다. 선물인 모양입니다.',
+      '🐈 고양이가 침대 한가운데를 차지하고 잤습니다. 당신은 구석에서.',
+      '🐈 고양이가 어디선가 실뭉치를 물어 와 밤새 굴리며 놀았습니다.',
+    ][Math.floor(Math.random() * 4)]);
+  }
+  // 특수 인카운터 ①: 야윈 고양이 — Day 100+, 하루 1% (아직 입양 전일 때만)
+  if (!state.pendingEvent && !state.cat && state.day >= 100 && Math.random() < 0.01) {
+    state.pendingEvent = 'cat';
+    state.lastEventDay = state.day;
+    state.catMusicDay = state.day; // 당첨된 날은 하루 종일 Cat OST
+    notes.push('🐈 어디선가 가냘픈 울음소리가 들려온다...');
+  }
+  // 특수 인카운터 ②: 구조 — Day 10000 초과, 하루 5%
+  if (!state.pendingEvent && state.day > 10000 && !state.endingSeen && Math.random() < 0.05) {
+    state.pendingEvent = 'ending';
+    state.lastEventDay = state.day;
+  }
   // 랜덤 인카운터 (마지막 만남 후 2일 이상 지나면 45% 확률)
   if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 2 && Math.random() < 0.45) {
-    const pool = Object.entries(EVENTS).filter(([, e]) => !e.cond || e.cond());
+    const pool = Object.entries(EVENTS).filter(([, e]) => !e.special && (!e.cond || e.cond()));
     if (pool.length) {
       state.pendingEvent = pool[Math.floor(Math.random() * pool.length)][0];
       state.lastEventDay = state.day;
@@ -3745,6 +4174,14 @@ function showDayReport() {
     ${tips.length ? `<div class="report-sec report-tip">💡 ${tips.slice(0, 2).join('<br>💡 ')}</div>` : ''}
   `);
   state.dayLog = { gain: {}, spend: {}, notes: [] };
+}
+/* ── 일시정지 (v1.9) ── */
+let paused = false;
+function setPaused(p) {
+  paused = p;
+  document.body.classList.toggle('paused', p);
+  const b = $('btn-pause');
+  if (b) b.textContent = p ? '▶' : '⏸';
 }
 let reportQueued = false;
 function tickTime(dt) {
@@ -4032,44 +4469,83 @@ $('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; ap
 $('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; scheduleSave(); });
 
 /* ============================================================
-   BGM (bgm.mp3 파일을 같은 폴더에 두면 자동 인식)
+   BGM (v1.9) — 날씨/시간대/계절/상황 기반 OST (public/BGM/*.mp3)
+   · Main_theme: 타이틀/불러오기 화면 (잔잔하게)
+   · Sunny/Raining/Snowing/Gloomy: 현재 날씨 풀
+   · Random1~6: 어떤 날씨든 풀에 섞임 / Random_evening: 저녁(17~21시)만
+   · Winter1~2: 겨울 계절 한정 랜덤
+   · Cat: 고양이 인카운터가 뜬 날 하루 종일 이것만
+   · Ending: Day 10000 구조 엔딩에서만
 ============================================================ */
-// 셸터별 BGM 매핑 (bgm1~4.mp3)
-const BGM_MAP = {
-  container: 'bgm1.mp3', bunker: 'bgm2.mp3', rooftop: 'bgm3.mp3', cabin: 'bgm4.mp3',
-  // 신규 셸터: 무드가 맞는 곡으로 순환 매핑 (bgm5+ 추가 시 여기서 교체)
-  bus: 'bgm1.mp3', subway: 'bgm2.mp3', greenhouse: 'bgm4.mp3', ship: 'bgm3.mp3', lighthouse: 'bgm2.mp3',
+const BGM_LIB = {
+  main: ['Main_theme'],
+  ending: ['Ending'],
+  cat: ['Cat'],
+  weather: {
+    clear: ['Sunny1', 'Sunny2', 'Sunny3', 'Sunny4', 'Sunny5', 'Sunny6', 'Sunny7'],
+    rain: ['Raining1', 'Raining2', 'Raining3', 'Raining4', 'Raining5', 'Raining6', 'Raining7', 'Raining8'],
+    snow: ['Snowing1', 'Snowing2', 'Snowing3', 'Snowing5', 'Snowing6'],
+    ash: ['Gloomy1', 'Gloomy2', 'Gloomy3', 'Gloomy4', 'Gloomy5'],
+  },
+  random: ['Random1', 'Random2', 'Random3', 'Random4', 'Random6'],
+  evening: ['Random_evening'],
+  winter: ['Winter1', 'Winter2'],
 };
 const bgm = new Audio();
-bgm.loop = true;
-bgm.volume = 0.35;
 bgm.preload = 'auto';
-let bgmErrorShown = false;
+let bgmCtxKey = '', bgmTrack = '', bgmErrorShown = false;
 bgm.addEventListener('error', () => {
-  if (opts.bgm && !bgmErrorShown) { bgmErrorShown = true; toast('BGM 파일을 찾을 수 없습니다 (bgm1~4.mp3)'); }
+  if (opts.bgm && !bgmErrorShown) { bgmErrorShown = true; toast('BGM 파일을 찾을 수 없습니다 (BGM 폴더)'); }
 });
-function syncBgm(forcePlay = false) {
-  const track = BGM_MAP[state.current] || 'bgm1.mp3';
-  const want = new URL(track, location.href).href;
-  const changed = bgm.src !== want;
-  if (changed) bgm.src = track;
-  if (opts.bgm && (changed || forcePlay)) bgm.play().catch(() => { /* 사용자 입력 대기 */ });
+function isEveningHour() { const h = gameHour(); return h >= 17 && h < 21; }
+function bgmContext() {
+  if (endingActive) return { key: 'ending', pool: BGM_LIB.ending, loop: true, vol: 1 };
+  if (titleVisible) return { key: 'title', pool: BGM_LIB.main, loop: true, vol: 0.55 }; // 잔잔하게
+  if (state.catMusicDay && state.catMusicDay === state.day)
+    return { key: 'cat', pool: BGM_LIB.cat, loop: true, vol: 1 }; // 그날 하루 종일
+  const wpool = BGM_LIB.weather[weather.type] || BGM_LIB.weather.clear;
+  let pool = [...wpool, ...BGM_LIB.random];
+  if (isEveningHour()) pool = pool.concat(BGM_LIB.evening);
+  if (seasonOf().id === 'winter') pool = pool.concat(BGM_LIB.winter);
+  return { key: `w:${weather.type}|e:${isEveningHour() ? 1 : 0}|s:${seasonOf().id}`, pool, loop: false, vol: 1 };
 }
-// 모바일 대응: 사전 로드 이벤트에 의존하지 않고 토글을 항상 노출,
-// 재생은 반드시 사용자 제스처 안에서 시작 (자동재생 정책)
+function playBgmTrack(name, ctx) {
+  bgmTrack = name;
+  bgm.loop = ctx.loop;
+  bgm.volume = (opts.bgmVol ?? 0.35) * ctx.vol;
+  bgm.src = `BGM/${name}.mp3`;
+  if (opts.bgm) bgm.play().catch(() => { /* 사용자 제스처 대기 (자동재생 정책) */ });
+}
+function pickBgmTrack(ctx) {
+  const cands = ctx.pool.filter(n => n !== bgmTrack);
+  return cands.length ? cands[Math.floor(Math.random() * cands.length)] : ctx.pool[0];
+}
+function syncBgm(forcePlay = false) {
+  const ctx = bgmContext();
+  if (ctx.key !== bgmCtxKey) {
+    bgmCtxKey = ctx.key;
+    playBgmTrack(pickBgmTrack(ctx), ctx);
+  } else {
+    bgm.volume = (opts.bgmVol ?? 0.35) * ctx.vol; // 음량 슬라이더 즉시 반영
+    if (forcePlay && opts.bgm && bgm.paused && bgm.src) bgm.play().catch(() => {});
+  }
+}
+bgm.addEventListener('ended', () => { const ctx = bgmContext(); playBgmTrack(pickBgmTrack(ctx), ctx); });
+// 모바일 대응: 재생은 반드시 사용자 제스처 안에서 시작 (자동재생 정책)
 $('bgm-row').style.display = 'flex';
 $('opt-bgm').checked = !!opts.bgm;
-{
-  const kick = () => {
-    if (opts.bgm && bgm.paused) syncBgm(true);
-    removeEventListener('pointerdown', kick);
-  };
-  addEventListener('pointerdown', kick);
-}
+$('opt-bgmvol').value = Math.round((opts.bgmVol ?? 0.35) * 100);
+// 자동재생이 거부돼 멈춰 있으면 다음 입력에서 재개 (상시)
+addEventListener('pointerdown', () => { if (opts.bgm && bgm.paused) syncBgm(true); });
 $('opt-bgm').addEventListener('change', e => {
   opts.bgm = e.target.checked;
   if (opts.bgm) syncBgm(true); // change 이벤트 = 사용자 제스처 → 모바일에서도 재생 허용
   else bgm.pause();
+  scheduleSave();
+});
+$('opt-bgmvol').addEventListener('input', e => {
+  opts.bgmVol = (+e.target.value) / 100;
+  syncBgm();
   scheduleSave();
 });
 
@@ -4085,6 +4561,7 @@ applyOpts();
 updateHud();
 updateClock();
 $('btn-clean').addEventListener('click', cleanShelter);
+$('btn-pause').addEventListener('click', () => setPaused(!paused));
 $('btn-craft').addEventListener('click', openCraftModal);
 $('btn-journal').addEventListener('click', openJournalModal);
 $('g-hunger').addEventListener('click', eatFood);
@@ -4105,9 +4582,7 @@ makeDraggablePanel($('render-panel'), 'render', '설정');
 makeDraggablePanel($('clock-panel'), 'clock', '시계');
 makeDraggablePanel($('res-bar'), 'res', '자원');
 
-// 탐험이 자리를 비운 사이 끝났다면 즉시 정산
-if (state.exp && Date.now() >= state.exp.end) resolveExpedition();
-// 타이틀 / 인트로
+// 타이틀 / 인트로 (자리 비운 사이 끝난 탐험 정산은 hideTitle에서 — 타이틀에선 집만 보여준다)
 $('t-continue').addEventListener('click', hideTitle);
 $('t-new').addEventListener('click', () => openSlotModal('new'));
 $('t-load').addEventListener('click', () => openSlotModal('load'));
@@ -4115,6 +4590,9 @@ $('t-help').addEventListener('click', openHelpModal);
 if (sessionStorage.getItem('ps-intro')) {
   sessionStorage.removeItem('ps-intro');
   showIntro();
+} else if (sessionStorage.getItem('ps-load')) {
+  sessionStorage.removeItem('ps-load');
+  hideTitle(); // 불러오기 직후: 타이틀 없이 바로 집으로 (그때 이전 내역 결산 표시)
 } else {
   showTitle();
 }
@@ -4122,6 +4600,7 @@ if (sessionStorage.getItem('ps-intro')) {
 function onResize() {
   renderer.setSize(innerWidth, innerHeight);
   makeRT();
+  resizeFx();
 }
 addEventListener('resize', onResize);
 onResize();
@@ -4131,22 +4610,25 @@ let uiTick = 0;
 function renderFrame() {
   const dt = Math.min(clock.getDelta(), 0.1);
   const t = clock.elapsedTime;
-  if (!titleVisible) tickTime(dt); // 타이틀 화면에선 시간 정지
+  if (!titleVisible && !paused && !endingActive) tickTime(dt); // 타이틀·일시정지·엔딩 중엔 시간 정지
+  else if (state.exp) state.exp.end += dt * 1000; // 탐험 실시간 타이머도 함께 멈춘다
   applyTimeLighting();
   updateCamera();
   updateWallCulling();
   updateEnvironment(t, dt);
   updateWeather(dt, t);
+  updateCat(t, dt);
   for (const it of items) {
     if (it.lightObj && it.on !== false && DEFS[it.defId].light?.flicker) {
       it.lightObj.intensity = it.lightBase * (0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23));
     }
   }
-  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); }
+  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); syncBgm(); }
   renderer.setRenderTarget(rt);
   renderer.render(scene, camera);
   renderer.setRenderTarget(null);
   renderer.render(postScene, postCam);
+  updateScreenFx(dt, t);
 }
 function animate() { requestAnimationFrame(animate); renderFrame(); }
 animate();
@@ -4163,4 +4645,10 @@ window.__shelter = {
   renderFrame: () => renderFrame(),
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
+  // v1.9
+  setPaused, spawnCat, despawnCat, runEndingSequence, syncBgm, bgmContext, showTitle, hideTitle,
+  findSupport, itemsOn, weatherFx,
+  bgmInfo: () => ({ key: bgmCtxKey, track: bgmTrack, paused: bgm.paused, vol: bgm.volume }),
+  setSnow: v => { snowCover = v; },
+  envFx: () => ({ snowCover, wetness }),
 };

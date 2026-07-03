@@ -8,12 +8,12 @@ export default defineConfig(({ command, mode }) => ({
   base: mode === 'electron' ? './' : command === 'build' ? '/Project-winter-Rep/' : '/',
   server: {
     host: true, // 0.0.0.0 바인딩 — 같은 네트워크의 휴대폰에서 접속 가능
-    port: 8420,
-    strictPort: true,
+    port: process.env.PORT ? Number(process.env.PORT) : 8420,
+    strictPort: !!process.env.PORT,
   },
   preview: {
     host: true,
-    port: 8420,
-    strictPort: true,
+    port: process.env.PORT ? Number(process.env.PORT) : 8420,
+    strictPort: !!process.env.PORT,
   },
 }));

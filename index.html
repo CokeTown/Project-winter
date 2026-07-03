@@ -14,6 +14,7 @@
 </head>
 <body>
 <canvas id="c"></canvas>
+<canvas id="fx"></canvas>
 <div id="loading">SHELTER LOADING . . .</div>
 
 <div id="title-screen" style="display:none">
@@ -33,6 +34,11 @@
 <div id="intro-screen" style="display:none">
   <div id="intro-text"></div>
   <button class="pixel-btn primary" id="intro-next">계속 ▸</button>
+</div>
+
+<div id="ending-screen" style="display:none">
+  <div id="ending-text"></div>
+  <button class="pixel-btn primary" id="ending-next">계속 ▸</button>
 </div>
 
 <div class="panel" id="hud">
@@ -70,7 +76,9 @@
   <button class="cam-btn" id="cam-zin" title="줌 인">＋</button>
   <button class="cam-btn" id="cam-zout" title="줌 아웃">－</button>
   <button class="cam-btn" id="cam-home" title="시점 초기화">⌂</button>
+  <button class="cam-btn" id="btn-pause" title="일시정지 (P)">⏸</button>
 </div>
+<div id="pause-ind">⏸ 일시정지</div>
 
 <button class="pixel-btn danger" id="btn-cancel-place">✖ 배치 취소</button>
 
@@ -87,6 +95,7 @@
   <label>실내 조명 <input type="checkbox" id="opt-ceil" checked></label>
   <label title="배고픔/갈증이 40 아래로 내려가면 자동으로 먹고 마십니다">자동 섭취 <input type="checkbox" id="opt-autoeat" checked></label>
   <label id="bgm-row" style="display:none">BGM <input type="checkbox" id="opt-bgm"></label>
+  <label id="bgmvol-row">🔊 음량 <input type="range" id="opt-bgmvol" min="0" max="100" step="5" value="35"></label>
   <div class="btn-row">
     <button class="pixel-btn" id="btn-reset">🚪 타이틀로</button>
   </div>

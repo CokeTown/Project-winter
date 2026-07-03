@@ -356,3 +356,37 @@
     .cam-btn { width: 44px; height: 44px; }
     #modal { max-height: 72vh; }
   }
+
+  /* ── v1.9: 화면 날씨 오버레이 (빗방울/서리) ── */
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+
+  /* ── v1.9: 일시정지 ── */
+  #pause-ind {
+    display: none; position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+    z-index: 20; padding: 6px 14px; font-size: 12px; letter-spacing: 2px;
+    color: var(--accent); background: rgba(14,16,20,0.82);
+    border: 2px solid var(--panel-border); border-radius: 4px;
+    animation: pauseblink 1.6s ease-in-out infinite;
+  }
+  @keyframes pauseblink { 50% { opacity: 0.45; } }
+  body.paused #pause-ind { display: block; }
+
+  /* ── v1.9: 타이틀 = 내 집 배경 (패널 전부 숨김) ── */
+  body.title-mode .panel, body.title-mode #cam-ctrl, body.title-mode #toolbar,
+  body.title-mode #pause-ind, body.title-mode #btn-cancel-place { display: none !important; }
+  body.title-mode #title-screen {
+    background: radial-gradient(ellipse at 50% 62%, rgba(10,12,17,0.08) 0%, rgba(8,9,13,0.66) 88%);
+  }
+
+  /* ── v1.9: 엔딩 ── */
+  #ending-screen {
+    position: absolute; inset: 0; z-index: 38;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(8,9,13,0.93); padding: 30px;
+  }
+  #ending-text {
+    max-width: 520px; font-size: 15px; line-height: 2.1; color: var(--text);
+    text-align: center; margin-bottom: 40px; min-height: 100px;
+    animation: introfade 1.2s ease-out;
+  }
+  #ending-next { padding: 10px 26px; font-size: 13px; }

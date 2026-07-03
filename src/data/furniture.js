@@ -57,6 +57,7 @@ const DEFS = {
   },
   table: {
     name: '테이블', emoji: '🪵', fp: { w: 1.5, d: 0.9 },
+    surface: { y: 0.77, w: 1.3, d: 0.72 }, // 상판 위에 소품을 올릴 수 있음
     colorNames: WOODS.names, colors: WOODS.colors,
     build(c) {
       const g = new THREE.Group();
@@ -68,6 +69,7 @@ const DEFS = {
   },
   dresser: {
     name: '서랍장', emoji: '🗄️', fp: { w: 1.2, d: 0.55 },
+    surface: { y: 1.13, w: 1.05, d: 0.42 },
     colorNames: ['내추럴', '다크브라운', '화이트', '그레이'],
     colors: [0xa9825c, 0x5f452f, 0xd4cfc2, 0x7c7f86],
     build(c) {
@@ -142,6 +144,7 @@ const DEFS = {
   },
   plant: {
     name: '화분', emoji: '🪴', fp: { w: 0.55, d: 0.55 },
+    stackable: true,
     colorNames: ['테라코타', '화이트', '블랙', '민트'],
     colors: [0xb3674d, 0xd8d3c7, 0x46484a, 0x9dbcae],
     build(c) {
@@ -159,6 +162,7 @@ const DEFS = {
   },
   crate: {
     name: '나무상자', emoji: '📦', fp: { w: 0.8, d: 0.8 },
+    surface: { y: 0.6, w: 0.68, d: 0.68 },
     colorNames: WOODS.names, colors: WOODS.colors,
     build(c) {
       const g = new THREE.Group();
@@ -172,6 +176,7 @@ const DEFS = {
   },
   radio: {
     name: '라디오', emoji: '📻', fp: { w: 0.6, d: 0.35 },
+    stackable: true, // 테이블·서랍장 등 표면 위에 올릴 수 있음
     colorNames: ['체리레드', '크림', '민트', '브라운'],
     colors: [0xa8433f, 0xd9cdb2, 0x93b5a5, 0x6f4f38],
     build(c) {
@@ -317,6 +322,7 @@ const DEFS = {
   },
   bookstack: {
     name: '책 더미', emoji: '📖', fp: { w: 0.5, d: 0.5 },
+    stackable: true,
     colorNames: ['모험담', '시집', '도감', '일기장'],
     colors: [0xa8524e, 0x54688a, 0x6a7f5b, 0xb5764a],
     build(c, colorIdx = 0) {
