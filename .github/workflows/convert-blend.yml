@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Blender
         run: |
-          sudo snap install blender --classic
+          sudo snap install blender --classic --channel=4.2lts/stable
           blender --version
       - name: Convert and render
         run: |
@@ -60,6 +60,7 @@ jobs:
           EOF
           blender -b assets-src/models/riggedcat.blend --python /tmp/export.py
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: riggedcat-glb
           path: blend-out/
