@@ -1,5 +1,5 @@
 {
-  "name": "project-shelter",
+  "name": "nine-winters",
   "private": true,
   "version": "1.6.0",
   "type": "module",
@@ -30,7 +30,7 @@
   },
   "build": {
     "appId": "com.projectwinter.shelter",
-    "productName": "Project Shelter",
+    "productName": "Nine Winters",
     "files": [
       "dist/**/*",
       "electron/**/*",

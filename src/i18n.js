@@ -66,13 +66,12 @@ export function applyStaticI18n(root = document) {
 ============================================================ */
 export const STR = {
   /* ── index.html 정적 ── */
-  'doc.title':      { ko: 'Project Shelter — 폐허 속에서, 나만의 집을', en: 'Project Shelter — A home of my own, amid the ruins' },
-  'title.sub':      { ko: '폐허 속에서, 나만의 집을', en: 'A home of my own, amid the ruins' },
+  'doc.title':      { ko: 'Nine Winters', en: 'Nine Winters' },
   'title.continue': { ko: '▶ 이어하기', en: '▶ Continue' },
   'title.new':      { ko: '✚ 새 게임', en: '✚ New Game' },
   'title.load':     { ko: '💾 불러오기', en: '💾 Load' },
   'title.help':     { ko: '❓ 살아남는 법', en: '❓ How to Survive' },
-  'title.ver':      { ko: 'Project_winter · web build', en: 'Project_winter · web build' },
+  'title.ver':      { ko: 'Nine Winters · web build', en: 'Nine Winters · web build' },
   'intro.next':     { ko: '계속 ▸', en: 'Continue ▸' },
   'loading':        { ko: 'SHELTER LOADING . . .', en: 'SHELTER LOADING . . .' },
   'hud.shelter':    { ko: '🏚️ 셸터', en: '🏚️ Shelter' },

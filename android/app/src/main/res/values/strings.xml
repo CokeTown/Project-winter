@@ -1,7 +1,7 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Project Shelter</string>
-    <string name="title_activity_main">Project Shelter</string>
+    <string name="app_name">Nine Winters</string>
+    <string name="title_activity_main">Nine Winters</string>
     <string name="package_name">com.projectwinter.shelter</string>
     <string name="custom_url_scheme">com.projectwinter.shelter</string>
 </resources>
