@@ -1,0 +1,11 @@
+{
+  "name": "Project Shelter — 폐허 속에서, 나만의 집을",
+  "short_name": "Shelter",
+  "description": "포스트 아포칼립스 생존 기지 꾸미기",
+  "start_url": ".",
+  "scope": ".",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0e1014",
+  "theme_color": "#0e1014"
+}
