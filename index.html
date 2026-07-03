@@ -46,6 +46,20 @@
   #hud .stat { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
   #hud .btn-row { display: flex; gap: 5px; flex-wrap: wrap; }
   #hud .btn-row .pixel-btn { flex: 1 0 auto; padding: 6px 7px; min-width: 0; }
+  #gauges { display: flex; gap: 6px; margin-bottom: 8px; }
+  .gauge {
+    position: relative; flex: 1; height: 16px; cursor: pointer;
+    background: #14161d; border: 2px solid var(--panel-border); border-radius: 3px;
+    overflow: hidden;
+  }
+  .gauge .g-fill { position: absolute; inset: 0; width: 50%; background: #5f7a4a; transition: width .4s, background .4s; }
+  .gauge .g-fill.warn { background: #a8842f; }
+  .gauge .g-fill.crit { background: #a3403a; animation: gaugeblink 1s steps(2) infinite; }
+  @keyframes gaugeblink { 50% { opacity: 0.55; } }
+  .gauge .g-label {
+    position: relative; z-index: 1; font-size: 10px; line-height: 12px;
+    display: block; text-align: center; text-shadow: 1px 1px 0 #0008;
+  }
 
   /* ── 탐험 패널 ── */
   #exp-panel { top: 118px; left: 12px; width: 240px; display: none; max-height: calc(100vh - 140px); overflow-y: auto; }
@@ -292,6 +306,10 @@
 <div class="panel" id="hud">
   <div class="shelter-name" id="hud-shelter">🏚️ 셸터</div>
   <div class="stat" id="hud-stat">성공한 탐험 0회</div>
+  <div id="gauges">
+    <div class="gauge" id="g-hunger" title="클릭하면 음식을 먹습니다"><div class="g-fill"></div><span class="g-label">🥫 80</span></div>
+    <div class="gauge" id="g-thirst" title="클릭하면 물을 마십니다"><div class="g-fill"></div><span class="g-label">💧 80</span></div>
+  </div>
   <div class="btn-row">
     <button class="pixel-btn primary" id="btn-exp">🎒 탐험</button>
     <button class="pixel-btn" id="btn-move">🏠 이주</button>
@@ -332,6 +350,7 @@
   <label>색상 양자화 <input type="checkbox" id="opt-quant" checked></label>
   <label>디더링 <input type="checkbox" id="opt-dither" checked></label>
   <label>실내 조명 <input type="checkbox" id="opt-ceil" checked></label>
+  <label title="배고픔/갈증이 40 아래로 내려가면 자동으로 먹고 마십니다">자동 섭취 <input type="checkbox" id="opt-autoeat" checked></label>
   <label id="bgm-row" style="display:none">BGM <input type="checkbox" id="opt-bgm"></label>
   <div class="btn-row">
     <button class="pixel-btn danger" id="btn-reset">처음부터</button>
@@ -1046,7 +1065,7 @@ function comfortDetail() {
   const cleanMod = clean >= 80 ? 5 : clean >= 50 ? 0 : clean >= 20 ? -5 : -10;
   const sh = SHELTERS[state.current];
   const shelterMod = state.upkeepOk ? (sh.baseComfort || 0) : 0;
-  const injuryMod = state.injury ? -5 : 0;
+  const injuryMod = (state.injury ? -5 : 0) + ((state.hunger < 25 || state.thirst < 25) ? -5 : 0);
   // 현실 제약: 단열 취약(악천후 시) / 어둠(조명 필수)
   let limitMod = 0;
   if (sh.cold && (weather.type === 'rain' || weather.type === 'snow')) limitMod -= sh.cold;
@@ -1080,8 +1099,9 @@ function rateParts(regionId, prep = []) {
     if (b && b[regionId]) gear += b[regionId];
   }
   const injuryPen = state.injury ? INJURIES[state.injury.type].pen : 0;
-  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + district + gear - weatherPen - injuryPen, 0.05, 0.95);
-  return { base: r.rate, comfort, shelter, district, gear, weatherPen, injuryPen, eff };
+  const hungryPen = (state.hunger < 25 || state.thirst < 25) ? 0.10 : 0; // 허기/갈증
+  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + district + gear - weatherPen - injuryPen - hungryPen, 0.05, 0.95);
+  return { base: r.rate, comfort, shelter, district, gear, weatherPen, injuryPen, hungryPen, eff };
 }
 
 /* ============================================================
@@ -2492,7 +2512,7 @@ const INJURIES = {
 };
 // ---- 탐험 준비물 (기획서 v0.2: 준비물 슬롯) ----
 const PREPS = {
-  bottle:    { name: '물병',     emoji: '🥤', cost: { water: 1 },  eff: '부상 시 회복 시간 -20%' },
+  bottle:    { name: '물병',     emoji: '🥤', cost: { water: 1 },  eff: '탐험 갈증 소모 절반 · 부상 회복 -20%' },
   canned:    { name: '통조림',   emoji: '🥫', cost: { food: 1 },   eff: '공업/슬럼 성공률 +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
   flashlight:{ name: '손전등',   emoji: '🔦', cost: { battery: 1 },eff: '상업/슬럼 성공률 +10%p', bonus: { commercial: 0.10, slum: 0.10 } },
   gloves:    { name: '장갑',     emoji: '🧤', cost: { cloth: 1 },  eff: '부상 확률 -30%' },
@@ -2517,6 +2537,8 @@ const state = {
   weatherUntil: 0,       // gameMin 기준
   cleanBy: { container: 70, bunker: 70, rooftop: 70, cabin: 70 },
   renovated: { container: true },   // 정비를 마친 셸터 (최초 입주 시 자원 소요)
+  hunger: 80,   // 배고픔 (0=탈진)
+  thirst: 80,   // 갈증 (0=탈진)
   upkeepOk: true,
   dayLog: { gain: {}, spend: {}, notes: [] },
   helpSeen: false,
@@ -2545,7 +2567,38 @@ function resConsumeAll(cost) {
 function costLabel(cost) {
   return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${RESOURCES[id].name} ${n}`).join(' + ');
 }
-const opts = { pixel: 3, quant: true, dither: true, ceil: true };
+const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true };
+
+/* ============================================================
+   생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
+============================================================ */
+function decayGauges(gm) {
+  state.hunger = Math.max(0, state.hunger - gm * 0.028); // 만복 → 0까지 약 2.5게임일
+  state.thirst = Math.max(0, state.thirst - gm * 0.046); // 약 1.5게임일
+  if (opts.autoEat) {
+    let g = 0;
+    while (state.hunger < 40 && (state.res.food || 0) > 0 && g++ < 9) { resConsume('food', 1); state.hunger = Math.min(100, state.hunger + 45); }
+    g = 0;
+    while (state.thirst < 40 && (state.res.water || 0) > 0 && g++ < 9) { resConsume('water', 1); state.thirst = Math.min(100, state.thirst + 45); }
+  }
+}
+function eatFood() {
+  if ((state.res.food || 0) < 1) { toast('음식이 없습니다 — 주거지역을 탐험하세요'); return; }
+  if (state.hunger > 85) { toast('아직 배부릅니다'); return; }
+  resConsume('food', 1);
+  state.hunger = Math.min(100, state.hunger + 45);
+  toast('🥫 식사했습니다 (+45)');
+  renderResBar(); updateHud(); scheduleSave();
+}
+function drinkWater() {
+  if ((state.res.water || 0) < 1) { toast('깨끗한 물이 없습니다'); return; }
+  if (state.thirst > 85) { toast('목마르지 않습니다'); return; }
+  resConsume('water', 1);
+  state.thirst = Math.min(100, state.thirst + 45);
+  toast('💧 물을 마셨습니다 (+45)');
+  renderResBar(); updateHud(); scheduleSave();
+}
+function isExhausted() { return state.hunger <= 0 || state.thirst <= 0; }
 
 let saveTimer = null;
 function scheduleSave() {
@@ -2590,10 +2643,14 @@ function loadSave() {
         if (state.layouts[id].length > 0 || state.current === id) state.renovated[id] = true;
       }
       for (const id of Object.keys(RESOURCES)) if (state.res[id] == null) state.res[id] = 0;
+      if (state.hunger == null) state.hunger = 80;
+      if (state.thirst == null) state.thirst = 80;
       if (!SHELTERS[state.current]) state.current = 'container';
-      // 오프라인 시간 진행 (최대 2일)
+      // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
       const elapsed = Math.max(0, (Date.now() - (state.savedAt || Date.now())) / 1000);
-      state.gameMin += Math.min(2880, elapsed * GAME_MIN_PER_SEC);
+      const offlineMin = Math.min(2880, elapsed * GAME_MIN_PER_SEC);
+      state.gameMin += offlineMin;
+      decayGauges(offlineMin);
       return true;
     }
     // v1 세이브 마이그레이션: 오두막 레이아웃으로 이전, 전부 해금
@@ -2863,6 +2920,7 @@ function forecastText() {
 // 탐험은 준비 단계를 거친다 (기획서 v0.2: 지역 → 날씨/위험 확인 → 준비물 → 출발)
 function startExpedition(regionId) {
   if (state.exp) return;
+  if (isExhausted()) { toast('탈진 상태입니다 — 먹고 마셔야 움직일 수 있습니다'); return; }
   openPrepModal(regionId);
 }
 function openPrepModal(regionId) {
@@ -2878,6 +2936,7 @@ function openPrepModal(regionId) {
     if (p.gear) lines.push(`<span style="color:var(--good)">장비 +${Math.round(p.gear * 100)}%</span>`);
     if (p.weatherPen) lines.push(`<span style="color:var(--bad)">날씨 -${Math.round(p.weatherPen * 100)}%</span>`);
     if (p.injuryPen) lines.push(`<span style="color:var(--bad)">부상 -${Math.round(p.injuryPen * 100)}%</span>`);
+    if (p.hungryPen) lines.push(`<span style="color:var(--bad)">허기 -${Math.round(p.hungryPen * 100)}%</span>`);
     const cost = {};
     for (const id of selected) for (const [rid, n] of Object.entries(PREPS[id].cost)) cost[rid] = (cost[rid] || 0) + n;
     const dur = expDuration(r);
@@ -2918,6 +2977,9 @@ function departExpedition(regionId, prep) {
   for (const id of prep) resConsumeAll(PREPS[id].cost);
   const p = rateParts(regionId, prep);
   const dur = expDuration(r) * 1000;
+  // 탐험도 몸을 쓴다: 배고픔/갈증 소모 (물병이 갈증 소모를 반감)
+  state.hunger = Math.max(0, state.hunger - 8);
+  state.thirst = Math.max(0, state.thirst - (prep.includes('bottle') ? 5 : 10));
   state.exp = { region: regionId, end: Date.now() + dur, dur, rate: p.eff, prep };
   closeModal();
   scheduleSave();
@@ -3536,6 +3598,16 @@ function updateHud() {
     `${W.icon} ${W.name}${W.penalty ? ` <span style="color:var(--bad)">-${Math.round(W.penalty * 100)}%</span>` : ''}${injIcon}${state.injury ? ` <span style="color:var(--bad)">${INJURIES[state.injury.type].name}</span>` : ''}${cd.limitMod ? ` <span style="color:var(--bad)" title="${sh.limits || ''}">⚠️</span>` : ''}<br>` +
     `쾌적함 <span style="color:var(--accent)" title="가구 ${cd.furn} + 조명 ${cd.light} + 청결 ${cd.cleanMod} + 거처 ${cd.shelterMod}${cd.injuryMod ? ` + 부상 ${cd.injuryMod}` : ''}${cd.limitMod ? ` + 제약 ${cd.limitMod}` : ''}">${cd.score}점 ${'★'.repeat(lv)}${'☆'.repeat(5 - lv)}</span>` +
     `${bonus ? ` <span style="color:var(--good)">(탐험 +${bonus}%)</span>` : ''} · 청결 ${Math.round(cd.clean)} · 성공 ${state.successes}회`;
+  renderGauge('g-hunger', state.hunger, '🥫');
+  renderGauge('g-thirst', state.thirst, '💧');
+}
+function renderGauge(id, val, emoji) {
+  const g = $(id);
+  if (!g) return;
+  const fill = g.querySelector('.g-fill');
+  fill.style.width = Math.max(0, Math.round(val)) + '%';
+  fill.className = 'g-fill' + (val < 25 ? ' crit' : val < 45 ? ' warn' : '');
+  g.querySelector('.g-label').textContent = `${emoji} ${Math.round(val)}${val <= 0 ? ' 탈진!' : ''}`;
 }
 let lastResSnapshot = {};
 function renderResBar() {
@@ -3672,6 +3744,7 @@ function showDayReport() {
 let reportQueued = false;
 function tickTime(dt) {
   state.gameMin += dt * GAME_MIN_PER_SEC;
+  decayGauges(dt * GAME_MIN_PER_SEC);
   const newDay = Math.floor(state.gameMin / 1440) + 1;
   while (state.day < newDay) {
     state.day++;
@@ -3736,6 +3809,7 @@ function renderExpPanel() {
       if (p.comfort) mods.push(`쾌적함 +${Math.round(p.comfort * 100)}`);
       if (p.weatherPen) mods.push(`날씨 -${Math.round(p.weatherPen * 100)}`);
       if (p.injuryPen) mods.push(`부상 -${Math.round(p.injuryPen * 100)}`);
+      if (p.hungryPen) mods.push(`허기 -${Math.round(p.hungryPen * 100)}`);
       return `
       <div class="region-card">
         <div class="r-head">
@@ -3872,9 +3946,11 @@ function openHelpModal() {
     <b>1. 탐험 — 준비하고 나가라</b><br>
     [🎒 탐험]에서 지역을 고르면 준비 화면이 열립니다. 손전등·장갑·우의 같은
     준비물은 자원을 소비하지만 성공률을 올리고 부상을 막아줍니다.<br><br>
-    <b>2. 자원 — 모든 것이 소모된다</b><br>
-    상단 바가 보유 자원입니다. 조명은 매일 양초/배터리를 태우고, 치료엔 붕대와
-    소독약이, 청소엔 물이 듭니다. 자원이 떨어지면 조명이 꺼지고 보너스도 사라집니다.<br><br>
+    <b>2. 자원과 몸 — 모든 것이 소모된다</b><br>
+    조명은 매일 양초/배터리를 태우고, 치료엔 붕대와 소독약이, 청소엔 물이 듭니다.
+    그리고 당신도 먹고 마셔야 합니다 — <b>🥫배고픔/💧갈증 게이지</b>가 바닥나면 탈진해
+    탐험을 나갈 수 없습니다. 게이지를 클릭해 먹고 마시거나, 자동 섭취를 켜두세요.
+    25 아래로 떨어지면 탐험 성공률 -10%p.<br><br>
     <b>3. 부상 — 실패는 빚이 된다</b><br>
     탐험에 실패하면 부상을 입습니다. 재료로 즉시 치료하거나, 시간을 들여 자연
     회복을 기다리세요. 방치하면 감염으로 악화될 수 있습니다.<br><br>
@@ -3957,6 +4033,7 @@ postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
 function applyOpts() {
   $('opt-pixel').value = opts.pixel; $('opt-quant').checked = opts.quant;
   $('opt-dither').checked = opts.dither; $('opt-ceil').checked = opts.ceil;
+  $('opt-autoeat').checked = opts.autoEat !== false;
   postMat.uniforms.uQuant.value = opts.quant ? 1 : 0;
   postMat.uniforms.uDither.value = opts.dither ? 1 : 0;
   ceilLight.visible = opts.ceil;
@@ -3967,6 +4044,7 @@ $('opt-pixel').addEventListener('input', e => { opts.pixel = +e.target.value; ap
 $('opt-quant').addEventListener('change', e => { opts.quant = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-dither').addEventListener('change', e => { opts.dither = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; applyOpts(); scheduleSave(); });
+$('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; scheduleSave(); });
 
 /* ============================================================
    BGM (bgm.mp3 파일을 같은 폴더에 두면 자동 인식)
@@ -4025,6 +4103,8 @@ updateHud();
 updateClock();
 $('btn-clean').addEventListener('click', cleanShelter);
 $('btn-craft').addEventListener('click', openCraftModal);
+$('g-hunger').addEventListener('click', eatFood);
+$('g-thirst').addEventListener('click', drinkWater);
 $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
 // 온스크린 카메라 컨트롤 (모바일/데스크톱 공용)
 $('cam-rotl').addEventListener('click', () => { camState.targetYaw -= Math.PI / 4; });
@@ -4070,7 +4150,7 @@ function renderFrame() {
       it.lightObj.intensity = it.lightBase * (0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23));
     }
   }
-  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); }
+  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); }
   renderer.setRenderTarget(rt);
   renderer.render(scene, camera);
   renderer.setRenderTarget(null);
