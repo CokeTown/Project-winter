@@ -125,7 +125,7 @@
   /* ── 모달 (이주 / 전리품 / 도움말) ── */
   #modal-back {
     position: absolute; inset: 0; background: rgba(8, 9, 12, 0.72);
-    display: none; align-items: center; justify-content: center; z-index: 20;
+    display: none; align-items: center; justify-content: center; z-index: 50;
   }
   #modal-back.show { display: flex; }
   #modal { max-width: 560px; width: calc(100vw - 60px); max-height: 80vh; overflow-y: auto; }
@@ -222,7 +222,7 @@
     position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
     background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 4px;
     padding: 7px 16px; font-size: 12px; color: var(--accent);
-    opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 30;
+    opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 55;
     text-align: center;
   }
   #toast.show { opacity: 1; }
@@ -230,6 +230,57 @@
   #loading {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     background: #0e1014; color: var(--text-dim); font-size: 14px; z-index: 40; letter-spacing: 2px;
+  }
+
+  /* ── 타이틀 화면 ── */
+  #title-screen {
+    position: absolute; inset: 0; z-index: 35;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 62%, rgba(10,12,17,0.25) 0%, rgba(8,9,13,0.82) 78%);
+  }
+  #title-inner { text-align: center; }
+  #title-logo {
+    font-size: 52px; line-height: 1.05; letter-spacing: 6px; color: var(--accent);
+    text-shadow: 0 0 18px rgba(232,168,108,0.35), 3px 3px 0 #1a1408;
+    margin-bottom: 10px;
+  }
+  #title-sub { font-size: 13px; color: var(--text-dim); letter-spacing: 3px; margin-bottom: 34px; }
+  #title-menu { display: flex; flex-direction: column; gap: 9px; width: 240px; margin: 0 auto; }
+  #title-menu .pixel-btn { padding: 11px 10px; font-size: 13px; }
+  #title-ver { margin-top: 26px; font-size: 10px; color: #565b6b; letter-spacing: 1px; }
+  .slot-card {
+    display: flex; gap: 10px; align-items: center;
+    border: 2px solid var(--panel-border); border-radius: 4px;
+    padding: 9px 10px; margin-bottom: 8px; background: #1c1f28; cursor: pointer;
+  }
+  .slot-card:hover { border-color: var(--accent); }
+  .slot-card.empty { opacity: 0.55; }
+  .slot-card .sl-no { font-size: 18px; color: var(--accent); }
+  .slot-card .sl-body { flex: 1; font-size: 11px; line-height: 1.6; }
+  .slot-card .sl-meta { color: var(--text-dim); font-size: 10px; }
+  .slot-card .sl-del {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 14px; font-family: inherit;
+  }
+  .slot-card .sl-del:hover { color: var(--bad); }
+
+  /* ── 인트로 ── */
+  #intro-screen {
+    position: absolute; inset: 0; z-index: 36;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #0a0b0f; padding: 30px;
+  }
+  #intro-text {
+    max-width: 480px; font-size: 15px; line-height: 2.1; color: var(--text);
+    text-align: center; margin-bottom: 40px; min-height: 100px;
+    animation: introfade 1.2s ease-out;
+  }
+  @keyframes introfade { from { opacity: 0; transform: translateY(8px); } }
+  #intro-next { padding: 10px 26px; font-size: 13px; }
+
+  @media (max-width: 760px) {
+    #title-logo { font-size: 34px; letter-spacing: 4px; }
+    #intro-text { font-size: 13px; }
   }
 
   /* ── 이동/접기 가능한 패널 ── */
@@ -323,6 +374,25 @@
 <canvas id="c"></canvas>
 <div id="loading">SHELTER LOADING . . .</div>
 
+<div id="title-screen" style="display:none">
+  <div id="title-inner">
+    <div id="title-logo">PROJECT<br>SHELTER</div>
+    <div id="title-sub">폐허 속에서, 나만의 집을</div>
+    <div id="title-menu">
+      <button class="pixel-btn primary" id="t-continue" style="display:none">▶ 이어하기<br><span id="t-continue-info" style="font-size:9px;color:var(--text-dim)"></span></button>
+      <button class="pixel-btn" id="t-new">✚ 새 게임</button>
+      <button class="pixel-btn" id="t-load">💾 불러오기</button>
+      <button class="pixel-btn" id="t-help">❓ 살아남는 법</button>
+    </div>
+    <div id="title-ver">Project_winter · web build</div>
+  </div>
+</div>
+
+<div id="intro-screen" style="display:none">
+  <div id="intro-text"></div>
+  <button class="pixel-btn primary" id="intro-next">계속 ▸</button>
+</div>
+
 <div class="panel" id="hud">
   <div class="shelter-name" id="hud-shelter">🏚️ 셸터</div>
   <div class="stat" id="hud-stat">성공한 탐험 0회</div>
@@ -373,7 +443,7 @@
   <label title="배고픔/갈증이 40 아래로 내려가면 자동으로 먹고 마십니다">자동 섭취 <input type="checkbox" id="opt-autoeat" checked></label>
   <label id="bgm-row" style="display:none">BGM <input type="checkbox" id="opt-bgm"></label>
   <div class="btn-row">
-    <button class="pixel-btn danger" id="btn-reset">처음부터</button>
+    <button class="pixel-btn" id="btn-reset">🚪 타이틀로</button>
   </div>
 </div>
 
@@ -2586,6 +2656,8 @@ const state = {
   helpSeen: false,
   stats: { exp: 0, success: 0 },
 };
+// 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
+const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
 
 function resAdd(id, n) {
   if (n <= 0) return;
@@ -2643,6 +2715,24 @@ function drinkWater() {
 }
 function isExhausted() { return state.hunger <= 0 || state.thirst <= 0; }
 
+/* ── 세이브 슬롯 (Steam 대비: 슬롯 3개 + 최근 슬롯 기억) ── */
+const SLOT_COUNT = 3;
+const slotKey = n => `project-shelter-slot${n}`;
+let currentSlot = parseInt(localStorage.getItem('project-shelter-lastslot') || '1', 10) || 1;
+function readSlot(n) {
+  try { return JSON.parse(localStorage.getItem(slotKey(n)) || 'null'); } catch (e) { return null; }
+}
+function slotMeta(n) {
+  const d = readSlot(n);
+  if (!d?.state) return null;
+  const st = d.state;
+  const se = SEASONS[Math.floor(((st.day || 1) - 1) / SEASON_DAYS) % 4];
+  return {
+    day: st.day || 1, season: se, shelter: SHELTERS[st.current] ? SHELTERS[st.current] : SHELTERS.container,
+    successes: st.successes || 0,
+    saved: st.savedAt ? new Date(st.savedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-',
+  };
+}
 let saveTimer = null;
 function scheduleSave() {
   clearTimeout(saveTimer);
@@ -2650,7 +2740,8 @@ function scheduleSave() {
     state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
     state.savedAt = Date.now();
     try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ state, opts }));
+      localStorage.setItem(slotKey(currentSlot), JSON.stringify({ state, opts }));
+      localStorage.setItem('project-shelter-lastslot', String(currentSlot));
     } catch (e) { /* file:// 등 저장 불가 환경 */ }
     updateHud();                       // 쾌적함 반영
     if (!state.exp) renderExpPanel();  // 보정된 성공률 반영
@@ -2658,9 +2749,15 @@ function scheduleSave() {
 }
 function loadSave() {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) {
-      const data = JSON.parse(raw);
+    // 구버전 단일 세이브 → 슬롯 1로 이전
+    const legacy = localStorage.getItem(SAVE_KEY);
+    if (legacy && !localStorage.getItem(slotKey(1))) {
+      localStorage.setItem(slotKey(1), legacy);
+      localStorage.removeItem(SAVE_KEY);
+    }
+    let data = readSlot(currentSlot);
+    if (!data) { currentSlot = 1; data = readSlot(1); }
+    if (data) {
       const oldVer = data.state?.ver || 2;
       const defaults = JSON.parse(JSON.stringify(state)); // 신규 필드 기본값 보존
       Object.assign(state, data.state);
@@ -2695,19 +2792,6 @@ function loadSave() {
       state.gameMin += offlineMin;
       decayGauges(offlineMin);
       return true;
-    }
-    // v1 세이브 마이그레이션: 오두막 레이아웃으로 이전, 전부 해금
-    const old = localStorage.getItem(OLD_SAVE_KEY);
-    if (old) {
-      const v1 = JSON.parse(old);
-      if (v1.items?.length) {
-        state.layouts.cabin = v1.items;
-        state.current = 'cabin';
-        state.successes = 5;
-        state.helpSeen = true;
-        if (v1.opts) Object.assign(opts, v1.opts);
-        return true;
-      }
     }
   } catch (e) { /* ignore */ }
   return false;
@@ -3553,6 +3637,7 @@ canvas.addEventListener('wheel', e => {
 }, { passive: false });
 
 addEventListener('keydown', e => {
+  if (titleVisible) return;
   if (e.key === 'q' || e.key === 'Q') camState.targetYaw -= Math.PI / 4;
   if (e.key === 'e' || e.key === 'E') camState.targetYaw += Math.PI / 4;
   if (e.key === 'Escape') { cancelPlacing(); deselect(); closeModal(); }
@@ -3747,6 +3832,85 @@ addEventListener('resize', () => {
   for (const id of ['hud', 'exp-panel', 'render-panel', 'clock-panel', 'res-bar'])
     if (uiState[{ 'hud': 'hud', 'exp-panel': 'exp', 'render-panel': 'render', 'clock-panel': 'clock', 'res-bar': 'res' }[id]]) clampPanel($(id));
 });
+
+/* ============================================================
+   타이틀 화면 · 인트로 · 세이브 슬롯 UI
+============================================================ */
+let titleVisible = false;
+function showTitle() {
+  titleVisible = true;
+  $('title-screen').style.display = 'flex';
+  const meta = slotMeta(currentSlot);
+  if (meta) {
+    $('t-continue').style.display = '';
+    $('t-continue-info').textContent = `슬롯 ${currentSlot} · Day ${meta.day} ${meta.season.icon} · ${meta.shelter.emoji} ${meta.shelter.name}`;
+  } else {
+    $('t-continue').style.display = 'none';
+  }
+}
+function hideTitle() { titleVisible = false; $('title-screen').style.display = 'none'; }
+function openSlotModal(mode) {
+  const cards = [];
+  for (let n = 1; n <= SLOT_COUNT; n++) {
+    const m = slotMeta(n);
+    cards.push(`
+      <div class="slot-card ${m ? '' : 'empty'}" data-slot="${n}" data-has="${m ? 1 : 0}">
+        <span class="sl-no">${n}</span>
+        <div class="sl-body">${m
+          ? `${m.shelter.emoji} ${m.shelter.name} — Day ${m.day} ${m.season.icon}<br><span class="sl-meta">탐험 성공 ${m.successes}회 · 저장 ${m.saved}</span>`
+          : '빈 슬롯'}</div>
+        ${m ? `<button class="sl-del" data-del="${n}" title="세이브 삭제">🗑</button>` : ''}
+      </div>`);
+  }
+  openModal(mode === 'new' ? '✚ 새 게임 — 슬롯 선택' : '💾 불러오기', cards.join(''));
+  $('modal-body').querySelectorAll('.sl-del').forEach(b => b.addEventListener('click', ev => {
+    ev.stopPropagation();
+    if (!confirm(`슬롯 ${b.dataset.del}의 세이브를 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    localStorage.removeItem(slotKey(+b.dataset.del));
+    openSlotModal(mode);
+  }));
+  $('modal-body').querySelectorAll('.slot-card').forEach(c => c.addEventListener('click', () => {
+    const n = +c.dataset.slot, has = c.dataset.has === '1';
+    if (mode === 'load') {
+      if (!has) { toast('빈 슬롯입니다'); return; }
+      localStorage.setItem('project-shelter-lastslot', String(n));
+      location.reload();
+    } else {
+      if (has && !confirm(`슬롯 ${n}의 기존 세이브를 덮어쓰고 새로 시작할까요?`)) return;
+      const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      fresh.savedAt = Date.now();
+      fresh.helpSeen = true;
+      localStorage.setItem(slotKey(n), JSON.stringify({ state: fresh, opts }));
+      localStorage.setItem('project-shelter-lastslot', String(n));
+      sessionStorage.setItem('ps-intro', '1');
+      location.reload();
+    }
+  }));
+}
+const INTRO_LINES = [
+  '세상이 무너진 지 3년.\n도시는 조용해졌고,\n갈라진 도로 틈에는 풀이 자랐다.',
+  '당신은 살아남았다.\n그리고 깨달았다 —\n살아남는 것만으로는 부족하다는 걸.',
+  '황무지 한가운데, 버려진 컨테이너 하나.\n오늘부터 여기가 당신의 집이다.\n\n폐허 속에서, 나만의 집을.',
+];
+function showIntro() {
+  let i = 0;
+  const scr = $('intro-screen'), txt = $('intro-text');
+  scr.style.display = 'flex';
+  const render = () => {
+    txt.style.animation = 'none'; void txt.offsetWidth; txt.style.animation = '';
+    txt.innerHTML = INTRO_LINES[i].replace(/\n/g, '<br>');
+    $('intro-next').textContent = i === INTRO_LINES.length - 1 ? '▶ 시작하기' : '계속 ▸';
+  };
+  $('intro-next').addEventListener('click', () => {
+    i++;
+    if (i >= INTRO_LINES.length) {
+      scr.style.display = 'none';
+      toast('📦 버려진 컨테이너 — 당신의 첫 거처입니다');
+      openHelpModal();
+    } else render();
+  });
+  render();
+}
 
 function updateClock() {
   const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
@@ -4144,10 +4308,8 @@ $('btn-help').addEventListener('click', openHelpModal);
 $('btn-rotate').addEventListener('click', rotateActive);
 $('btn-delete').addEventListener('click', reclaimSelected);
 $('btn-reset').addEventListener('click', () => {
-  if (!confirm('모든 진행 상황을 지우고 처음부터 시작할까요?')) return;
-  localStorage.removeItem(SAVE_KEY);
-  localStorage.removeItem(OLD_SAVE_KEY);
-  location.reload();
+  scheduleSave();                                  // 마지막 상태 저장 후
+  setTimeout(() => location.reload(), 500);        // 타이틀로
 });
 
 const toastEl = $('toast');
@@ -4290,10 +4452,16 @@ makeDraggablePanel($('res-bar'), 'res', '자원');
 
 // 탐험이 자리를 비운 사이 끝났다면 즉시 정산
 if (state.exp && Date.now() >= state.exp.end) resolveExpedition();
-if (!state.helpSeen) {
-  state.helpSeen = true;
-  openHelpModal();
-  scheduleSave();
+// 타이틀 / 인트로
+$('t-continue').addEventListener('click', hideTitle);
+$('t-new').addEventListener('click', () => openSlotModal('new'));
+$('t-load').addEventListener('click', () => openSlotModal('load'));
+$('t-help').addEventListener('click', openHelpModal);
+if (sessionStorage.getItem('ps-intro')) {
+  sessionStorage.removeItem('ps-intro');
+  showIntro();
+} else {
+  showTitle();
 }
 
 function onResize() {
@@ -4308,7 +4476,7 @@ let uiTick = 0;
 function renderFrame() {
   const dt = Math.min(clock.getDelta(), 0.1);
   const t = clock.elapsedTime;
-  tickTime(dt);
+  if (!titleVisible) tickTime(dt); // 타이틀 화면에선 시간 정지
   applyTimeLighting();
   updateCamera();
   updateWallCulling();
