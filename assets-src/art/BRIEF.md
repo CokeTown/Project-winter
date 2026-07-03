@@ -1,0 +1,242 @@
+# Nine Winters — 아트 브리프 (ChatGPT 수동 생성용)
+
+> 이 문서는 `tools/art-brief.mjs`가 `assets-src/art/manifest.json`에서 자동 생성했습니다.
+> 각 카드의 프롬프트를 ChatGPT(GPT Pro, 이미지 생성)에 그대로 붙여넣어 이미지를 만드세요.
+> 생성된 이미지는 `{id}.png` 파일명으로 저장해 `assets-src/art/incoming/`에 넣고,
+> 그 다음 `node tools/art-ingest.mjs`를 실행하면 목표 크기로 자동 크롭·리사이즈되어 배치됩니다.
+
+## 공통 스타일 앵커
+
+아래 문단은 모든 에셋 프롬프트에 공통으로 깔리는 무드/스타일 기준입니다. 개별 프롬프트에 이미 녹여져 있지만, ChatGPT가 스타일을 벗어난 결과를 낼 경우 이 문장을 강조해서 다시 요청하세요.
+
+```
+Nine Winters key art style anchor: a dark, ruined post-apocalyptic isometric container-room shelter,
+warm candlelight glowing orange inside against a cold blue-grey twilight outside, pixel art with soft
+dithering, gentle falling snow. cozy pixel art, isometric, warm candlelight against cold blue dusk, falling snow, soft dithering, no text
+```
+
+---
+
+## steam_main_capsule
+
+- **용도**: Steam 상점 메인 캡슐 이미지 (상점 페이지 최상단 배너)
+- **목표 크기**: 616x353 (생성 비율: 1536x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/steam_main_capsule.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+Isometric cutaway view of a single cozy shipping-container shelter room at dusk, aspect ratio close to 16:9 (compose for a 1536x1024 canvas that will be cropped to 616x353). A warm candle and a lantern glow orange on a nightstand beside a neatly made bed with a patchwork quilt, casting soft light across a wooden crate, a small bookshelf, and a rag rug. Outside the open container wall, a snowstorm falls over a ruined post-apocalyptic city skyline silhouetted in cold blue-grey twilight. Strong warm-vs-cool color contrast: glowing orange candlelight interior against desaturated blue dusk exterior. Cozy pixel art, isometric, warm candlelight against cold blue dusk, falling snow, soft dithering, no text. Title text 'NINE WINTERS' in chunky pixel font, placed in open sky space in the upper-left third so it won't be cropped.
+```
+
+생성 후 `steam_main_capsule.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## steam_small_capsule
+
+- **용도**: Steam 작은 캡슐 이미지 (검색 결과·위시리스트 목록용 축소 썸네일)
+- **목표 크기**: 231x87 (생성 비율: 1536x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/steam_small_capsule.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+Very compact wide isometric diorama of a tiny shelter room corner: a single candle on a crate glowing warm orange, silhouette of a container wall and a hint of snow falling just outside a gap, cold blue dusk visible through the opening. Keep the composition extremely simple and legible at very small size (this will be shown as a tiny 231x87 thumbnail) — one strong warm light source, high contrast, minimal clutter, no fine detail that would disappear when shrunk. Cozy pixel art, isometric, warm candlelight against cold blue dusk, falling snow, soft dithering, no text. Title text 'NINE WINTERS' in chunky pixel font in a clear sky area.
+```
+
+생성 후 `steam_small_capsule.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## steam_header
+
+- **용도**: Steam 상점 헤더 캡슐 (커뮤니티 허브/상점 상단 와이드 배너)
+- **목표 크기**: 460x215 (생성 비율: 1536x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/steam_header.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+Wide isometric shelter scene at dusk: the same cozy container room as the game's icon art, viewed slightly wider to show two furnished corners (a bed with candle nightstand on one side, a small stove and stacked crates on the other), warm orange candle and firelight glow filling the interior. Outside the container's open side, distant ruined skyline and leafless trees stand against a cold blue-grey twilight sky, gentle snow falling. Cozy pixel art, isometric, warm candlelight against cold blue dusk, falling snow, soft dithering, no text. Title text 'NINE WINTERS' in chunky pixel font in the open sky, upper portion of frame.
+```
+
+생성 후 `steam_header.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## steam_library
+
+- **용도**: Steam 라이브러리 세로 카드 아트 (내 라이브러리 목록에 표시되는 세로형 포스터)
+- **목표 크기**: 600x900 (생성 비율: 1024x1536, fit: cover)
+- **배치 경로**: `assets-src/art/out/steam_library.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+Tall vertical portrait composition (1024x1536) of a cozy shelter interior seen through a frost-edged container window. Inside: a windowsill with a small potted plant, a stray orange tabby cat curled up asleep on a folded blanket, and a lit candle in a jar casting warm orange light across the sill and the cat's fur. Through the window glass, falling snow and a distant ruined city skyline glow faintly under a deep cold blue dusk sky, a few lit windows flickering in the far buildings. Reflections and light dithering on the window glass. Cozy pixel art, isometric, warm candlelight against cold blue dusk, falling snow, soft dithering, no text.
+```
+
+생성 후 `steam_library.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## steam_hero
+
+- **용도**: Steam 페이지 최상단 히어로/배경 이미지 (초대형 와이드 파노라마)
+- **목표 크기**: 3840x1240 (생성 비율: 1536x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/steam_hero.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+Ultra-wide panoramic skyline (compose loosely and centrally so it can be cropped to a 3840x1240 letterbox band) of a ruined post-apocalyptic city at dusk, seen from a snowy rooftop or hillside. Scattered among the broken buildings and skeletal trees, a handful of makeshift container shelters glow with warm orange candlelight in their windows, small beacons of life in the cold blue-grey twilight. Heavy snowfall drifts across the whole scene, soft atmospheric haze in the distance, silhouetted power lines and rubble in the foreground. Cozy pixel art, isometric, warm candlelight against cold blue dusk, falling snow, soft dithering, no text. Keep the vertical center third free of large silhouettes so a wide crop remains readable.
+```
+
+생성 후 `steam_hero.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## steam_logo
+
+- **용도**: Steam 로고 이미지 (투명 배경, 게임 타이틀 로고타입 전용)
+- **목표 크기**: 1280x720 (생성 비율: 1024x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/steam_logo.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+Standalone game logo artwork only, transparent background, no scene, no room, no characters. Chunky pixel-font wordmark reading 'NINE WINTERS', styled to evoke cozy pixel art warmth against cold — the letters lit as if by warm candlelight (soft orange gradient with subtle flame-like highlights) with a thin frosty blue-white outline or drop shadow suggesting cold dusk, tiny pixel snowflakes drifting around the letters, soft dithering on the gradients. Title text 'NINE WINTERS' in chunky pixel font, this IS the entire image — no background scenery, background must be transparent/empty.
+```
+
+생성 후 `steam_logo.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## play_feature
+
+- **용도**: Google Play 스토어 피처 그래픽 (스토어 리스팅 상단 와이드 배너)
+- **목표 크기**: 1024x500 (생성 비율: 1536x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/play_feature.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+Wide isometric shelter scene at dusk, similar mood to the game's icon: a cozy container room with a candlelit bed and nightstand, warm orange glow spilling out through the open side of the container into a cold blue-grey twilight exterior with gentle falling snow and a faint ruined skyline in the distance. Compose with the main warm light source roughly centered so it reads well as a wide store banner. Cozy pixel art, isometric, warm candlelight against cold blue dusk, falling snow, soft dithering, no text. Title text 'NINE WINTERS' in chunky pixel font in open sky space.
+```
+
+생성 후 `play_feature.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## android_splash
+
+- **용도**: Android 스플래시 화면 (중앙 1/3 안전영역에 핵심 구도 배치, 정사각 대형)
+- **목표 크기**: 2732x2732 (생성 비율: 1024x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/android_splash.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+Square composition (1024x1024) with the entire important content — a single glowing candle in a lantern sitting on a wooden crate, warm orange light pooling around it — tightly centered within the middle third of the frame, since outer edges will be cropped aggressively on various phone screens. Surrounding the central candle, keep the outer regions simple and dark: a softly blurred cold blue-grey dusk gradient with a few falling snowflakes, almost no other detail near the edges. Cozy pixel art, isometric, warm candlelight against cold blue dusk, falling snow, soft dithering, no text.
+```
+
+생성 후 `android_splash.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## title_bg
+
+- **용도**: 게임 타이틀 화면 배경 후보 (메인 메뉴 뒤 풀스크린 배경)
+- **목표 크기**: 1920x1080 (생성 비율: 1536x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/title_bg.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+Full-scene isometric view of the shelter room from the game's icon, pulled back slightly to show more of the surrounding ruined exterior: broken power lines, bare trees, distant crumbling skyline under a cold blue-grey dusk sky, heavy soft snowfall throughout. Inside the open container, warm orange candlelight and a lantern illuminate a bed, crate, and small shelf, glowing invitingly against the cold outside. Leave calm, less-detailed areas near the top and sides suitable for a title menu UI to overlay later. Cozy pixel art, isometric, warm candlelight against cold blue dusk, falling snow, soft dithering, no text.
+```
+
+생성 후 `title_bg.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## press_key_art
+
+- **용도**: 보도자료/프레스킷용 키 아트 (리뷰어·기자에게 배포하는 대표 이미지)
+- **목표 크기**: 1920x1080 (생성 비율: 1536x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/press_key_art.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+Widescreen isometric key art establishing the whole game concept: a lone furnished shipping-container shelter sits amid rubble and bare trees on a snowy ruined street at dusk, its open side glowing warm orange with candlelight, a wisp of chimney smoke rising, while the cold blue-grey twilight sky above is thick with falling snow and a hint of a distant devastated skyline. Composition should read clearly as a single strong hero image suitable for press coverage, balanced framing, clear silhouette of the shelter against the sky. Cozy pixel art, isometric, warm candlelight against cold blue dusk, falling snow, soft dithering, no text.
+```
+
+생성 후 `press_key_art.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## paper_note_bg
+
+- **용도**: 인게임 종이 메모 배경 텍스처 (그 위에 텍스트를 얹는 UI용 바탕)
+- **목표 크기**: 1024x1024 (생성 비율: 1024x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/paper_note_bg.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+A single sheet of old, weathered, crumpled paper filling the entire square frame, like a post-apocalyptic survivor's note scavenged from a shelter. The paper is creased and softly wrinkled with visible fold lines, slightly yellowed and scorched at a couple of edge spots, with faint water stains and warm candlelight tone (soft amber-beige overall cast, as if lit by a nearby candle). Keep the central third of the sheet relatively flat, even, and clean — minimal creases or stains there — since UI text will be placed over that area. The outer border areas show torn, ragged, uneven paper edges and deeper folds/creases. Subtle pixel-art grain and soft dithering in the texture, no text, no writing, no ink marks — blank paper only.
+```
+
+생성 후 `paper_note_bg.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## journal_cover
+
+- **용도**: 생존 수첩(도감/일지) 커버 아트 — 인게임 저널/도감 화면 표지
+- **목표 크기**: 1024x1536 (생성 비율: 1024x1536, fit: cover)
+- **배치 경로**: `assets-src/art/out/journal_cover.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+A worn old leather-bound survivor's journal cover filling a tall vertical frame, resting against a dark, softly shadowed background. Cracked, weathered brown leather with scuffed corners and a visible spiral/ring binding along one edge, a frayed strap or elastic band wrapped around it, small scorch marks and stains suggesting it's been carried through the ruins for a long time. A hint of warm candlelight falls across the cover from one side, catching the leather's texture and the metal spiral binding, while the surrounding background fades into cold dark shadow — reminiscent of a Resident Evil-style notebook item icon. Weathered, crumpled-paper-adjacent grime, post-apocalyptic survivor's note aesthetic, warm candlelight tone, subtle pixel-art grain and soft dithering, no text, no title lettering on the cover.
+```
+
+생성 후 `journal_cover.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## tip_scrap
+
+- **용도**: 인게임 Tip 팝업용 찢어진 종이 조각 (텍스트 배경, 투명 배경 요청)
+- **목표 크기**: 1024x1024 (생성 비율: 1024x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/tip_scrap.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+A single small torn scrap of old weathered paper centered on a fully transparent background, irregular ragged edges as if hastily torn by hand from a larger post-apocalyptic survivor's note — no straight cut sides anywhere, rough fibrous tear texture visible along every edge. The paper itself is softly aged and yellowed with a warm candlelight tone (gentle amber cast), maybe one small stain or scorch mark near a corner, subtle pixel-art grain and soft dithering. Keep the central area of the scrap relatively clean and even so short tip text can be placed over it. No text, no writing. Background must be transparent/empty, not white.
+```
+
+생성 후 `tip_scrap.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
+
+## event_card_frame
+
+- **용도**: 인카운터 이벤트 일러스트용 프레임 (중앙은 비우고 테두리만, 위에 씬 아트를 합성)
+- **목표 크기**: 1536x1024 (생성 비율: 1536x1024, fit: cover)
+- **배치 경로**: `assets-src/art/out/event_card_frame.png`
+
+**ChatGPT에 붙여넣을 프롬프트:**
+
+```
+A decorative frame/border for an encounter event illustration, designed so the wide center area is left empty (plain, neutral, near-transparent-looking dark or blank space) for another scene image to be composited underneath later. Around that empty center, render a heavy dark vignette fading in from all edges, styled like an old weathered Polaroid photo border crossed with a torn survivor's note: soft rounded photo-corner shapes, faint scorch and water-stain marks along the border, subtle rough torn-paper texture at the outer edge, a warm candlelight tone glowing faintly at the frame's inner edge where it meets the empty center. Weathered, crumpled paper, post-apocalyptic survivor's note aesthetic, warm candlelight tone, subtle pixel-art grain, soft dithering, no text.
+```
+
+생성 후 `event_card_frame.png` 로 저장해 `assets-src/art/incoming/` 에 넣으세요.
+
+---
