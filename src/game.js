@@ -2623,7 +2623,7 @@ function openMapModal() {
         ${r.emoji} <b>${Math.round(p.eff * 100)}%</b> ${r.name} — ${r.desc}<br>
         위험 ${r.risk} · 이동 포함 <b>${dur}초</b> (거리 ×${regionDistMult(rid).toFixed(2)}) · ${WEATHERS[weather.type].icon} ${WEATHERS[weather.type].name}${hasForecast() ? ` · 📻 ${forecastText()}` : ''}
         <div style="margin-top:6px"><button class="pixel-btn primary" id="btn-map-go" style="width:100%">🎒 준비하고 출발</button></div>`;
-      $('btn-map-go').addEventListener('click', () => { closeModal(); openPrepModal(rid); });
+      $('btn-map-go').addEventListener('click', () => { closeModal(); startExpedition(rid); }); // 에너지/탈진/횟수 검사를 거친다
     });
     wrap.appendChild(el);
   }
@@ -2705,6 +2705,10 @@ function openPrepModal(regionId) {
 }
 function departExpedition(regionId, prep) {
   if (state.exp) return;
+  // 준비 모달을 열어둔 사이 상태가 나빠졌을 수도 있다 — 출발 직전 재검사
+  if (isExhausted()) { toast('탈진 상태입니다 — 먹고 마셔야 움직일 수 있습니다'); closeModal(); return; }
+  if (state.energy < 20) { toast('⚡ 너무 지쳤습니다 — 🛌 취침으로 회복하세요'); closeModal(); return; }
+  if (state.expToday >= EXP_PER_DAY) { toast(`오늘은 이미 ${EXP_PER_DAY}번 나갔다 왔습니다 — 🛌 쉬어야 합니다`); closeModal(); return; }
   const r = REGIONS[regionId];
   for (const id of prep) resConsumeAll(PREPS[id].cost);
   const p = rateParts(regionId, prep);
@@ -2850,28 +2854,82 @@ function resolveExpedition() {
    고양이 동반자 (v1.9) — Day 100+ 인카운터로 입양
 ============================================================ */
 let catObj = null;
+// 관절형 치즈 태비 (v1.9.1) — 몸통(호흡)·머리·귀·꼬리 2마디·다리 4개가 따로 움직인다
 function buildCatMesh() {
   const g = new THREE.Group();
-  const fur = 0xc98d4e, dk = shade(fur, 0.72), cream = 0xe8dcc2;
-  B(g, 0.16, 0.13, 0.3, fur, 0, 0.115, 0);            // 몸통
-  B(g, 0.15, 0.06, 0.13, cream, 0, 0.07, 0.08);       // 가슴털
-  B(g, 0.14, 0.12, 0.12, fur, 0, 0.22, 0.13);         // 머리
-  B(g, 0.12, 0.045, 0.02, cream, 0, 0.185, 0.196);    // 주둥이
-  B(g, 0.04, 0.05, 0.03, dk, -0.05, 0.3, 0.12);       // 귀
-  B(g, 0.04, 0.05, 0.03, dk, 0.05, 0.3, 0.12);
-  B(g, 0.165, 0.03, 0.07, dk, 0, 0.18, -0.03);        // 등 줄무늬
-  B(g, 0.165, 0.03, 0.055, dk, 0, 0.17, -0.11);
-  for (const [x, z] of [[-0.05, 0.1], [0.05, 0.1], [-0.05, -0.1], [0.05, -0.1]])
-    B(g, 0.045, 0.06, 0.045, fur, x, 0.03, z);        // 다리
-  B(g, 0.02, 0.025, 0.012, 0x27271c, -0.035, 0.24, 0.192); // 눈
-  B(g, 0.02, 0.025, 0.012, 0x27271c, 0.035, 0.24, 0.192);
-  const tail = new THREE.Group();
-  tail.position.set(0, 0.16, -0.15);
-  B(tail, 0.035, 0.035, 0.2, fur, 0, 0.03, -0.09);
-  B(tail, 0.042, 0.042, 0.06, dk, 0, 0.03, -0.2);     // 꼬리 끝
-  g.add(tail);
+  const fur = 0xc98d4e, dk = shade(fur, 0.72), lt = shade(fur, 1.15), cream = 0xece0c8, pink = 0xcf9088;
+  const P = {};
+  // ── 몸통 (피벗 = 엉덩이 관절: 앉기/기지개 때 여기를 축으로 기운다)
+  const body = new THREE.Group();
+  body.position.set(0, 0.14, -0.13);
+  g.add(body); P.body = body;
+  B(body, 0.16, 0.13, 0.17, fur, 0, 0.015, 0.075);    // 엉덩이
+  B(body, 0.15, 0.125, 0.2, fur, 0, 0.025, 0.235);    // 가슴
+  B(body, 0.13, 0.05, 0.3, lt, 0, -0.045, 0.16);      // 아랫배 (밝은 털)
+  B(body, 0.12, 0.055, 0.09, cream, 0, -0.02, 0.31);  // 가슴 흰 털
+  for (let i = 0; i < 4; i++)                          // 등 줄무늬 4열
+    B(body, 0.145 + (i % 2) * 0.02, 0.022, 0.045, dk, 0, 0.085 - i * 0.004, 0.05 + i * 0.085);
+  // ── 머리 (그루밍/두리번거림)
+  const head = new THREE.Group();
+  head.position.set(0, 0.09, 0.33);
+  body.add(head); P.head = head;
+  B(head, 0.15, 0.13, 0.12, fur, 0, 0.05, 0.02);      // 두상
+  B(head, 0.17, 0.06, 0.1, fur, 0, 0.005, 0.025);     // 볼살
+  B(head, 0.08, 0.05, 0.035, cream, 0, 0.008, 0.085); // 주둥이
+  B(head, 0.024, 0.018, 0.012, pink, 0, 0.035, 0.096);// 코
+  B(head, 0.022, 0.03, 0.012, 0x2a2a20, -0.04, 0.065, 0.082); // 눈
+  B(head, 0.022, 0.03, 0.012, 0x2a2a20, 0.04, 0.065, 0.082);
+  B(head, 0.008, 0.01, 0.013, 0xf4f0e4, -0.045, 0.072, 0.0825); // 눈 하이라이트
+  B(head, 0.008, 0.01, 0.013, 0xf4f0e4, 0.045, 0.072, 0.0825);
+  B(head, 0.05, 0.022, 0.05, dk, 0, 0.115, 0.01);     // 정수리 무늬
+  const earL = new THREE.Group(); earL.position.set(-0.055, 0.11, 0.01); head.add(earL); P.earL = earL;
+  const earR = new THREE.Group(); earR.position.set(0.055, 0.11, 0.01); head.add(earR); P.earR = earR;
+  B(earL, 0.045, 0.055, 0.025, fur, 0, 0.025, 0);
+  B(earL, 0.02, 0.03, 0.012, pink, 0, 0.02, 0.008);   // 귓속
+  B(earR, 0.045, 0.055, 0.025, fur, 0, 0.025, 0);
+  B(earR, 0.02, 0.03, 0.012, pink, 0, 0.02, 0.008);
+  // ── 꼬리 2마디 (S자 컬/살랑임)
+  const tail1 = new THREE.Group();
+  tail1.position.set(0, 0.05, -0.01);
+  body.add(tail1); P.tail1 = tail1;
+  B(tail1, 0.04, 0.04, 0.14, fur, 0, 0, -0.06);
+  const tail2 = new THREE.Group();
+  tail2.position.set(0, 0, -0.13);
+  tail1.add(tail2); P.tail2 = tail2;
+  B(tail2, 0.036, 0.036, 0.11, fur, 0, 0, -0.045);
+  B(tail2, 0.042, 0.042, 0.05, dk, 0, 0, -0.115);     // 꼬리 끝 (짙은 색)
+  // ── 다리 4개 (어깨/골반 피벗 — 걸을 때 스윙, 앉을 때 접힘)
+  P.legs = {};
+  for (const [key, x, z] of [['fl', -0.055, 0.17], ['fr', 0.055, 0.17], ['bl', -0.055, -0.1], ['br', 0.055, -0.1]]) {
+    const leg = new THREE.Group();
+    leg.position.set(x, 0.15, z);
+    g.add(leg); P.legs[key] = leg;
+    B(leg, 0.045, 0.1, 0.05, fur, 0, -0.055, 0);      // 윗다리
+    B(leg, 0.04, 0.06, 0.045, lt, 0, -0.125, 0.004);  // 아랫다리
+    B(leg, 0.046, 0.028, 0.055, cream, 0, -0.14, 0.012); // 흰 양말 발
+  }
   g.traverse(o => { if (o.isMesh) o.castShadow = true; });
-  return { g, tail };
+  return { g, parts: P };
+}
+/* 고양이 무브셋: walk(다리 스윙 보행) · sit(앉아 두리번+귀 털기) · sleep(식빵 자세 숨쉬기)
+   · groom(앞발/가슴 핥기) · stretch(기지개) · play(제자리 콩콩 사냥놀이) */
+const CAT_POSES = {
+  //          bodyY  bodyRX  headRX  fl     fr     bl     br     tail1RX
+  walk:    { by: 0.14, brx: 0,     hrx: 0,    legF: 0,   legB: 0,   t1: -0.5 },
+  sit:     { by: 0.09, brx: -0.5,  hrx: 0.35, legF: 0,   legB: 1.35, t1: -1.1 },
+  sleep:   { by: 0.06, brx: 0,     hrx: 0.5,  legF: 1.4, legB: 1.4, t1: -1.4 },
+  groom:   { by: 0.09, brx: -0.5,  hrx: 0.9,  legF: 0,   legB: 1.35, t1: -1.1 },
+  stretch: { by: 0.12, brx: 0.5,   hrx: -0.5, legF: -0.85, legB: 0.15, t1: 0.35 },
+  play:    { by: 0.11, brx: 0.12,  hrx: 0.15, legF: 0,   legB: 0.4, t1: -0.8 },
+};
+function pickNextCatMode(c) {
+  const roll = Math.random();
+  if (roll < 0.34) { c.tgt = catFreeSpot(); c.mode = 'walk'; return; }
+  if (roll < 0.53) { c.mode = 'groom'; c.timer = 5 + Math.random() * 5; }
+  else if (roll < 0.68) { c.mode = 'sleep'; c.timer = 25 + Math.random() * 35; }
+  else if (roll < 0.8) { c.mode = 'stretch'; c.timer = 2.2; }
+  else if (roll < 0.9) { c.mode = 'play'; c.timer = 3.5 + Math.random() * 2; }
+  else { c.mode = 'sit'; c.timer = 8 + Math.random() * 14; }
 }
 function catFreeSpot() {
   // 러그·방석·침대를 좋아한다 — 없으면 빈 바닥
@@ -2891,12 +2949,15 @@ function catFreeSpot() {
 }
 function spawnCat() {
   if (!state.cat || catObj) return;
-  const { g, tail } = buildCatMesh();
+  const { g, parts } = buildCatMesh();
   const s = catFreeSpot();
   g.position.set(s.x, s.y, s.z);
   g.rotation.y = Math.random() * Math.PI * 2;
   scene.add(g);
-  catObj = { g, tail, mode: 'sit', next: 6 + Math.random() * 14, tgt: null };
+  catObj = {
+    g, p: parts, mode: 'sit', timer: 5 + Math.random() * 8, tgt: null,
+    gait: 0, earKick: 0, earNext: 2 + Math.random() * 5, baseY: s.y,
+  };
   shadowDirty();
 }
 function despawnCat() {
@@ -2907,24 +2968,90 @@ function despawnCat() {
 }
 function updateCat(t, dt) {
   if (!catObj) return;
-  const c = catObj;
-  c.tail.rotation.y = Math.sin(t * (c.mode === 'walk' ? 5.5 : 1.5)) * 0.55; // 꼬리 살랑
-  c.next -= dt;
-  if (c.mode === 'sit' && c.next <= 0) { c.tgt = catFreeSpot(); c.mode = 'walk'; }
+  const c = catObj, p = c.p;
+  // ── 모드 전환
+  if (c.mode !== 'walk') {
+    c.timer -= dt;
+    if (c.timer <= 0) pickNextCatMode(c);
+  }
+  // ── 걷기: 이동 + 대각 보행 (FL+BR / FR+BL 스윙)
+  let stride = 0;
   if (c.mode === 'walk' && c.tgt) {
     const dx = c.tgt.x - c.g.position.x, dz = c.tgt.z - c.g.position.z;
     const dist = Math.hypot(dx, dz);
-    if (dist < 0.06) {
-      c.g.position.y = c.tgt.y;
-      c.mode = 'sit'; c.next = 12 + Math.random() * 26; c.tgt = null;
+    if (dist < 0.05) {
+      c.baseY = c.tgt.y; c.tgt = null;
+      c.mode = 'sit'; c.timer = 6 + Math.random() * 12;
       shadowDirty();
     } else {
-      c.g.position.x += dx / dist * 0.55 * dt;
-      c.g.position.z += dz / dist * 0.55 * dt;
-      c.g.rotation.y = Math.atan2(dx, dz);
-      // 목적지가 침대 등 높은 곳이면 다가가서 폴짝
-      c.g.position.y = THREE.MathUtils.lerp(c.g.position.y, dist < 0.45 ? c.tgt.y : 0, Math.min(1, dt * 7));
+      c.gait += dt * 10;
+      stride = Math.sin(c.gait) * 0.65;
+      c.g.position.x += dx / dist * 0.5 * dt;
+      c.g.position.z += dz / dist * 0.5 * dt;
+      // 부드러운 방향 전환
+      const want = Math.atan2(dx, dz);
+      let dr = want - c.g.rotation.y;
+      while (dr > Math.PI) dr -= Math.PI * 2;
+      while (dr < -Math.PI) dr += Math.PI * 2;
+      c.g.rotation.y += dr * Math.min(1, dt * 8);
+      // 침대 등 높은 목적지엔 다가가서 폴짝
+      c.baseY = THREE.MathUtils.lerp(c.g.position.y, dist < 0.45 ? c.tgt.y : 0, Math.min(1, dt * 7));
     }
+  }
+  // ── 목표 포즈로 부드럽게 — 기본값(pv)을 따로 lerp하고, 오버레이는 매 프레임 합산만 한다
+  const pose = CAT_POSES[c.mode] || CAT_POSES.sit;
+  const k = Math.min(1, dt * 6);
+  const pv = c.pv || (c.pv = { by: 0.14, brx: 0, hrx: 0, hry: 0, fl: 0, fr: 0, bl: 0, br: 0, t1: -0.5 });
+  pv.by += (pose.by - pv.by) * k;
+  pv.brx += (pose.brx - pv.brx) * k;
+  pv.hrx += (pose.hrx - pv.hrx) * k;
+  pv.fl += (pose.legF - pv.fl) * k;
+  pv.fr += (pose.legF - pv.fr) * k;
+  pv.bl += (pose.legB - pv.bl) * k;
+  pv.br += (pose.legB - pv.br) * k;
+  pv.t1 += (pose.t1 - pv.t1) * k;
+  // ── 모드별 오버레이 (누적 없이 pv + 오버레이로 매번 재계산)
+  let headRX = pv.hrx, headRY = 0, flX = pv.fl + stride, frX = pv.fr - stride;
+  const walkBob = c.mode === 'walk' ? Math.abs(Math.sin(c.gait)) * 0.018 : 0;
+  const hop = c.mode === 'play' ? Math.abs(Math.sin(t * 7.5)) * 0.055 : 0; // 사냥놀이 콩콩
+  c.g.position.y = c.baseY + walkBob + hop;
+  if (c.mode === 'sleep') {
+    const br = 1 + Math.sin(t * 1.7) * 0.035;          // 식빵 자세 숨쉬기
+    p.body.scale.set(br, br, 1);
+  } else {
+    p.body.scale.set(1, 1, 1);
+    if (c.mode === 'groom') {
+      // 가슴/앞발을 핥는 고갯짓 + 한쪽 앞발 들기
+      headRX += Math.sin(t * 7.5) * 0.16;
+      headRY = Math.sin(t * 0.9) > 0 ? 0.4 : -0.4;
+      flX += Math.max(0, Math.sin(t * 0.9)) * -0.5;
+    } else if (c.mode === 'sit') {
+      headRY = Math.sin(t * 0.4) * 0.55;               // 느긋한 두리번
+    } else if (c.mode === 'play') {
+      headRY = Math.sin(t * 5) * 0.3;                  // 사냥감 쫓는 시선
+    }
+  }
+  p.body.position.y = pv.by;
+  p.body.rotation.x = pv.brx;
+  p.head.rotation.x = headRX;
+  p.head.rotation.y += (headRY - p.head.rotation.y) * Math.min(1, dt * 4);
+  p.legs.fl.rotation.x = flX;
+  p.legs.fr.rotation.x = frX;
+  p.legs.bl.rotation.x = pv.bl - stride;
+  p.legs.br.rotation.x = pv.br + stride;
+  p.tail1.rotation.x = pv.t1;
+  // ── 꼬리 살랑 (모드별 속도/진폭) — 2마디가 위상차를 두고 S자로
+  const tailSpd = c.mode === 'play' ? 9 : c.mode === 'walk' ? 4.5 : c.mode === 'sleep' ? 0.7 : 1.6;
+  const tailAmp = c.mode === 'play' ? 0.7 : c.mode === 'sleep' ? 0.12 : 0.4;
+  p.tail1.rotation.y = Math.sin(t * tailSpd) * tailAmp;
+  p.tail2.rotation.y = Math.sin(t * tailSpd - 0.9) * tailAmp * 1.3;
+  p.tail2.rotation.x = Math.sin(t * tailSpd * 0.6) * 0.2 - (c.mode === 'walk' ? 0.4 : 0);
+  // ── 귀 털기 (이따금 빠르게 파르르)
+  c.earNext -= dt;
+  if (c.earNext <= 0) { c.earKick = 1; c.earNext = 3 + Math.random() * 8; c.earSide = Math.random() < 0.5 ? 'earL' : 'earR'; }
+  if (c.earKick > 0) {
+    c.earKick = Math.max(0, c.earKick - dt * 4);
+    p[c.earSide || 'earL'].rotation.z = Math.sin(c.earKick * 28) * 0.35 * c.earKick;
   }
 }
 
@@ -4651,4 +4778,5 @@ window.__shelter = {
   bgmInfo: () => ({ key: bgmCtxKey, track: bgmTrack, paused: bgm.paused, vol: bgm.volume }),
   setSnow: v => { snowCover = v; },
   envFx: () => ({ snowCover, wetness }),
+  cat: () => catObj,
 };

@@ -11,6 +11,7 @@
     "assets:tex": "node tools/gen-textures.mjs",
     "assets:models": "node tools/gen-models.mjs",
     "assets": "node tools/gen-textures.mjs && node tools/gen-models.mjs",
+    "assets:icons": "node tools/gen-icons.mjs",
     "electron": "electron .",
     "build:electron": "vite build --mode electron",
     "build:exe": "npm run build:electron && electron-builder --win portable"
