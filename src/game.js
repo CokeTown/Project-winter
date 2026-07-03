@@ -2191,7 +2191,7 @@ function resConsumeAll(cost) {
 function costLabel(cost) {
   return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(' + ');
 }
-const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.35, sfxVol: 0.7, lang: 'ko' };
+const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.35, sfxVol: 0.07, lang: 'ko' };
 
 /* ============================================================
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
@@ -2315,6 +2315,8 @@ function loadSave() {
       const defaults = JSON.parse(JSON.stringify(state)); // 신규 필드 기본값 보존
       Object.assign(state, data.state);
       Object.assign(opts, data.opts);
+      // 효과음 기본값 하향 마이그레이션 (구 기본 0.7은 사용자가 고른 값이 아님)
+      if (opts.sfxVol === 0.7) opts.sfxVol = 0.07;
       // 구버전(v2) 필드 보정
       if (oldVer < 3) {
         // v0.3 시절 옥상 캠프 레이아웃은 벙커로 이전 (v3의 rooftop은 새 셸터)
@@ -4192,6 +4194,10 @@ function showTitle() {
   } else {
     $('t-continue').style.display = 'none';
   }
+  // 현재 언어 버튼 표시
+  const cur = opts.lang || 'ko';
+  $('lang-ko')?.classList.toggle('primary', cur === 'ko');
+  $('lang-en')?.classList.toggle('primary', cur === 'en');
   if (typeof syncBgm === 'function') syncBgm(); // Main_theme
 }
 function hideTitle() {
@@ -4884,7 +4890,7 @@ function ensureSfxCtx() {
 function paperSfx(sfxOpts = {}) {
   try {
     const ctx = ensureSfxCtx();
-    const vol = sfxOpts.sfxVol ?? opts.sfxVol ?? 0.7;
+    const vol = sfxOpts.sfxVol ?? opts.sfxVol ?? 0.07;
     const bursts = 2 + Math.floor(Math.random() * 2); // 2~3회의 짧은 크랙클
     let t0 = ctx.currentTime;
     for (let b = 0; b < bursts; b++) {
@@ -5133,12 +5139,12 @@ function syncSfxAmbience() {
 $('bgm-row').style.display = 'flex';
 $('opt-bgm').checked = !!opts.bgm;
 $('opt-bgmvol').value = Math.round((opts.bgmVol ?? 0.35) * 100);
-$('opt-sfxvol').value = Math.round((opts.sfxVol ?? 0.7) * 100);
+$('opt-sfxvol').value = Math.round((opts.sfxVol ?? 0.07) * 100);
 // 자동재생이 거부돼 멈춰 있으면 다음 입력에서 재개 (상시)
 addEventListener('pointerdown', () => { if (opts.bgm && bgm.paused) syncBgm(true); });
 // SFX AudioContext도 사용자 제스처 없이는 시작 불가 — 같은 첫 pointerdown에서 초기화
 initSfx();
-setSfxVol(opts.sfxVol ?? 0.7);
+setSfxVol(opts.sfxVol ?? 0.07);
 $('opt-bgm').addEventListener('change', e => {
   opts.bgm = e.target.checked;
   if (opts.bgm) syncBgm(true); // change 이벤트 = 사용자 제스처 → 모바일에서도 재생 허용
@@ -5193,6 +5199,15 @@ makeDraggablePanel($('res-bar'), 'res', t('panel.res'));
 
 // 타이틀 / 인트로 (자리 비운 사이 끝난 탐험 정산은 hideTitle에서 — 타이틀에선 집만 보여준다)
 $('t-continue').addEventListener('click', hideTitle);
+// 타이틀 언어 선택 (설정 진입 없이 첫 화면에서)
+function pickTitleLang(next) {
+  if (next === (opts.lang || 'ko')) return;
+  opts.lang = next;
+  flushSave();
+  location.reload();
+}
+$('lang-ko').addEventListener('click', () => pickTitleLang('ko'));
+$('lang-en').addEventListener('click', () => pickTitleLang('en'));
 $('t-new').addEventListener('click', () => openSlotModal('new'));
 $('t-load').addEventListener('click', () => openSlotModal('load'));
 $('t-help').addEventListener('click', openHelpModal);

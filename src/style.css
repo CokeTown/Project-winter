@@ -490,3 +490,12 @@
     zoom: var(--uiz);
   }
   #ending-next { padding: 10px 26px; font-size: 13px; }
+
+  /* ── v2.3.1: 타이틀 언어 선택 + 셀렉트 픽셀 테마 ── */
+  #title-lang { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+  #title-lang .lang-btn { font-size: 11px; padding: 6px 14px; flex: 1; }
+  #render-panel select {
+    background: #1c1f28; color: var(--text);
+    border: 2px solid var(--panel-border); border-radius: 3px;
+    font-family: inherit; font-size: inherit; padding: 2px 4px;
+  }
