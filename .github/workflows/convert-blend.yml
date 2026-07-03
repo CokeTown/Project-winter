@@ -27,8 +27,21 @@ jobs:
               print(f"  {o.type}: {o.name}{extra}")
           for img in bpy.data.images:
               print(f"  IMG {img.name} {img.size[0]}x{img.size[1]} packed={img.packed_file is not None}")
-          bpy.ops.export_scene.gltf(filepath=OUT + '/riggedcat.glb', export_format='GLB', export_animations=False)
-          print("GLB size:", os.path.getsize(OUT + '/riggedcat.glb'))
+          # Rigify 정리: 위젯/보조 오브젝트 제거, 텍스처 팩킹, DEF 본만 내보내기
+          for o in list(bpy.data.objects):
+              if o.name.startswith('WGT-') or (o.type == 'MESH' and len(o.data.polygons) == 0) or o.name == 'Plane.001':
+                  bpy.data.objects.remove(o, do_unlink=True)
+          try:
+              bpy.ops.file.pack_all()
+          except Exception as e:
+              print("pack_all warn:", e)
+          try:
+              bpy.ops.export_scene.gltf(
+                  filepath=OUT + '/riggedcat.glb', export_format='GLB',
+                  export_animations=False, export_def_bones=True, export_apply=False)
+              print("GLB size:", os.path.getsize(OUT + '/riggedcat.glb'))
+          except Exception as e:
+              print("GLTF EXPORT FAILED:", e)
           # 미리보기 렌더 (workbench = GPU 불필요)
           scene = bpy.context.scene
           for o in [o for o in bpy.data.objects if o.type in ('CAMERA', 'LIGHT')]:
