@@ -1212,8 +1212,9 @@ function rateParts(regionId, prep = []) {
   }
   const injuryPen = state.injury ? INJURIES[state.injury.type].pen : 0;
   const hungryPen = (state.hunger < 25 || state.thirst < 25) ? 0.10 : 0; // 허기/갈증
-  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + district + gear - weatherPen - injuryPen - hungryPen, 0.05, 0.95);
-  return { base: r.rate, comfort, shelter, district, gear, weatherPen, injuryPen, hungryPen, eff };
+  const buff = state.buff?.exp || 0; // 인카운터 버프/디버프
+  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + district + gear + buff - weatherPen - injuryPen - hungryPen, 0.05, 0.95);
+  return { base: r.rate, comfort, shelter, district, gear, buff, weatherPen, injuryPen, hungryPen, eff };
 }
 
 /* ============================================================
@@ -2655,6 +2656,9 @@ const state = {
   dayLog: { gain: {}, spend: {}, notes: [] },
   helpSeen: false,
   stats: { exp: 0, success: 0 },
+  buff: null,          // 인카운터 버프 { exp?:+0.1, loot?:2, label }
+  pendingEvent: null,  // 표시 대기 중인 인카운터 id
+  lastEventDay: 0,
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -3182,6 +3186,7 @@ function openPrepModal(regionId) {
     if (p.district) lines.push(`<span style="color:var(--good)">위치 +${Math.round(p.district * 100)}%</span>`);
     if (p.comfort) lines.push(`<span style="color:var(--good)">쾌적함 +${Math.round(p.comfort * 100)}%</span>`);
     if (p.gear) lines.push(`<span style="color:var(--good)">장비 +${Math.round(p.gear * 100)}%</span>`);
+    if (p.buff) lines.push(`<span style="color:${p.buff > 0 ? 'var(--good)' : 'var(--bad)'}">✨ ${state.buff?.label || '이벤트'} ${p.buff > 0 ? '+' : ''}${Math.round(p.buff * 100)}%</span>`);
     if (p.weatherPen) lines.push(`<span style="color:var(--bad)">날씨 -${Math.round(p.weatherPen * 100)}%</span>`);
     if (p.injuryPen) lines.push(`<span style="color:var(--bad)">부상 -${Math.round(p.injuryPen * 100)}%</span>`);
     if (p.hungryPen) lines.push(`<span style="color:var(--bad)">허기 -${Math.round(p.hungryPen * 100)}%</span>`);
@@ -3228,6 +3233,8 @@ function departExpedition(regionId, prep) {
   // 탐험도 몸을 쓴다: 배고픔/갈증 소모 (물병이 갈증 소모를 반감)
   state.hunger = Math.max(0, state.hunger - 8);
   state.thirst = Math.max(0, state.thirst - (prep.includes('bottle') ? 5 : 10));
+  // 성공률 버프/디버프는 이번 출발에 반영되어 소진 (물자 좌표 버프는 정산 시)
+  if (state.buff?.exp) state.buff = null;
   state.exp = { region: regionId, end: Date.now() + dur, dur, rate: p.eff, prep };
   closeModal();
   scheduleSave();
@@ -3260,6 +3267,11 @@ function resolveExpedition() {
   const partial = !success && roll < rate + (1 - rate) * 0.5;
   if (success) {
     rollRes(1);
+    if (state.buff?.loot) { // 은닉처 좌표: 자원 2배
+      rollRes(1);
+      notes.push('📡 방송의 좌표가 정확했다 — 은닉처에서 자원을 두 배로 회수했습니다!');
+      state.buff = null;
+    }
     if (Math.random() < r.furnChance) got.push(r.pool[Math.floor(Math.random() * r.pool.length)]);
     state.successes++;
     state.stats.success++;
@@ -3334,6 +3346,111 @@ function resolveExpedition() {
   renderResBar();
   renderExpPanel();
   updateHud();
+}
+
+/* ============================================================
+   랜덤 인카운터 (아포칼립스의 우연들 — 며칠에 한 번)
+============================================================ */
+const EVENTS = {
+  wanderer: {
+    icon: '🚶', title: '떠돌이 생존자',
+    text: '누더기를 걸친 생존자가 거처 앞에 서 있다. 눈이 퀭하다.<br>"...먹을 것 좀... 나눠줄 수 있소?"',
+    choices: [
+      { label: '🥫 음식 2개를 나눠준다', cost: { food: 2 }, run() { state.buff = { exp: 0.10, label: '선행의 보답' }; return '생존자가 고개를 숙이며 지도에 뭔가를 표시해준다.<br>"이 은혜는 잊지 않겠소. 저쪽 구역엔 아직 물자가 남아있다오."<br><b>(다음 탐험 성공률 +10%p)</b>'; } },
+      { label: '조용히 고개를 젓는다', run() { return '생존자는 말없이 어둠 속으로 사라졌다.'; } },
+    ],
+  },
+  trader: {
+    icon: '🎒', title: '행상인',
+    text: '낡은 수레를 끈 행상인이 찾아왔다.<br>"배터리 두 개면 약품 세트를 드리리다. 어떻소?"',
+    choices: [
+      { label: '🔋 배터리 2 ↔ 🩹 붕대 + 🧴 소독약', cost: { battery: 2 }, run() { resAdd('bandage', 1); resAdd('antiseptic', 1); return '"좋은 거래였소." 행상인이 약품을 건네고 수레를 끌고 떠났다.'; } },
+      { label: '거절한다', run() { return '행상인은 어깨를 으쓱하고 다음 거처로 향했다.'; } },
+    ],
+  },
+  dog: {
+    icon: '🐕', title: '떠돌이 개',
+    text: '비쩍 마른 개 한 마리가 꼬리를 살랑거리며 다가온다.<br>이 폐허에서 용케도 살아남았구나.',
+    choices: [
+      { label: '🥫 음식 1개를 나눠준다', cost: { food: 1 }, run() { state.buff = { exp: 0.10, label: '든든한 동행' }; return '개가 허겁지겁 먹더니 당신 곁에 앉는다.<br>다음 탐험에 따라나설 모양이다. <b>(다음 탐험 +10%p)</b>'; } },
+      { label: '모른 척한다', run() { return '개는 한참을 서성이다 절뚝이며 떠났다.'; } },
+    ],
+  },
+  storm: {
+    icon: '🌪️', title: '폭풍 전조',
+    text: '하늘이 심상치 않다. 새들이 낮게 날고, 공기가 무겁다.<br>오늘 밤 강풍이 불 것 같다.',
+    choices: [
+      { label: '🧱 건축재 1로 거처를 보강한다', cost: { material: 1 }, run() { return '문틈과 창을 단단히 보강했다.<br>밤새 바람이 몰아쳤지만 거처는 끄떡없었다.'; } },
+      { label: '그냥 버텨본다', run() { state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 10); return '밤새 바람이 창틈을 파고들어 모든 것에 흙먼지를 끼얹었다. <b>(청결 -10)</b>'; } },
+    ],
+  },
+  broken: {
+    icon: '🔩', title: '장비 고장',
+    text: '손전등 스위치가 헐거워졌고, 공구 손잡이에 금이 갔다.<br>폐허에서 장비는 곧 생명이다.',
+    choices: [
+      { label: '⚙️ 부품 1로 수리한다', cost: { parts: 1 }, run() { return '말끔히 수리했다. 역시 장비는 관리가 생명이다.'; } },
+      { label: '대충 쓴다', run() { state.buff = { exp: -0.05, label: '삐걱대는 장비' }; return '어떻게든 쓸 수는 있겠지만, 영 미덥지 않다. <b>(다음 탐험 -5%p)</b>'; } },
+    ],
+  },
+  thief: {
+    icon: '👣', title: '침입의 흔적',
+    text: '밤사이 누군가 거처 주변을 뒤진 흔적이 있다.<br>발자국이 어지럽다.',
+    choices: [
+      { label: '없어진 게 있는지 확인한다', run() {
+        const lit = items.some(it => DEFS[it.defId].light && it.on !== false);
+        if (lit) return '조명이 켜져 있던 덕분인지 아무것도 없어지지 않았다.<br>불빛이 도둑을 쫓아낸 모양이다. <b>(조명의 가치!)</b>';
+        for (const rid of ['bandage', 'battery', 'food']) {
+          if ((state.res[rid] || 0) > 0) { resConsume(rid, 1); return `어두운 틈을 타 <b>${RESOURCES[rid].name} 1개</b>를 도둑맞았다.<br>밤에는 조명을 켜두는 게 좋겠다.`; }
+        }
+        return '다행히 가져갈 만한 게 없었다... 그게 더 서글프다.';
+      } },
+    ],
+  },
+  seeds: {
+    icon: '🌱', title: '낯선 노인',
+    text: '"물 두 통만 주게. 대신 이 씨앗을 주지.<br>이 세상에 아직 싹이 트는 씨앗이야."',
+    choices: [
+      { label: '💧 물 2를 건넨다', cost: { water: 2 }, run() {
+        if (state.current === 'greenhouse') { resAdd('food', 3); return '온실 텃밭에 씨앗을 심었다. 놀랍게도 금세 자랐다! <b>(음식 +3)</b>'; }
+        resAdd('food', 1);
+        return '씨앗을 받았지만 심을 곳이 마땅치 않다. <b>(음식 +1)</b><br>온실이 있었다면 더 좋았을 텐데.';
+      } },
+      { label: '거절한다', run() { return '노인은 혀를 차며 지팡이를 끌고 떠났다.'; } },
+    ],
+  },
+  radio_sig: {
+    icon: '📡', title: '수수께끼의 방송',
+    cond: () => items.some(i => i.defId === 'radio'),
+    text: '라디오에서 잡음 섞인 목소리가 흘러나온다.<br>"...좌표... 창고... 물자가 아직 남아있다..."',
+    choices: [
+      { label: '좌표를 기록한다', run() { state.buff = { loot: 2, label: '물자 은닉처 좌표' }; return '지도에 좌표를 옮겨 적었다. <b>(다음 탐험 성공 시 자원 2배)</b>'; } },
+      { label: '무시한다', run() { return '잡음뿐인 방송은 곧 끊겼다.'; } },
+    ],
+  },
+};
+function showEvent(id) {
+  const ev = EVENTS[id];
+  if (!ev) return;
+  const body = `
+    <div class="modal-body" style="line-height:2">${ev.text}</div>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+      ${ev.choices.map((c, i) => {
+        const ok = !c.cost || resHasAll(c.cost);
+        return `<button class="pixel-btn" data-ch="${i}" ${ok ? '' : 'disabled'}>${c.label}${c.cost && !ok ? ' (자원 부족)' : ''}</button>`;
+      }).join('')}
+    </div>`;
+  openModal(`${ev.icon} ${ev.title}`, body);
+  $('modal-body').querySelectorAll('button[data-ch]').forEach(b =>
+    b.addEventListener('click', () => {
+      const c = ev.choices[+b.dataset.ch];
+      if (c.cost && !resConsumeAll(c.cost)) { toast('자원이 부족합니다'); return; }
+      const result = c.run();
+      state.dayLog.notes.push(`${ev.icon} ${ev.title} — 만남이 있었다.`);
+      openModal(`${ev.icon} ${ev.title}`, `<div style="line-height:2">${result}</div>`);
+      scheduleSave();
+      renderResBar();
+      updateHud();
+    }));
 }
 
 /* ============================================================
@@ -3931,7 +4048,7 @@ function updateHud() {
   const dist = DISTRICTS[districtOf(state.current)];
   $('hud-shelter').textContent = `${dist.emoji} ${dist.name} · ${sh.emoji} ${sh.name}`;
   $('hud-stat').innerHTML =
-    `${W.icon} ${W.name}${W.penalty ? ` <span style="color:var(--bad)">-${Math.round(W.penalty * 100)}%</span>` : ''}${injIcon}${state.injury ? ` <span style="color:var(--bad)">${INJURIES[state.injury.type].name}</span>` : ''}${cd.limitMod ? ` <span style="color:var(--bad)" title="${sh.limits || ''}">⚠️</span>` : ''}<br>` +
+    `${W.icon} ${W.name}${W.penalty ? ` <span style="color:var(--bad)">-${Math.round(W.penalty * 100)}%</span>` : ''}${injIcon}${state.injury ? ` <span style="color:var(--bad)">${INJURIES[state.injury.type].name}</span>` : ''}${cd.limitMod ? ` <span style="color:var(--bad)" title="${sh.limits || ''}">⚠️</span>` : ''}${state.buff ? ` <span style="color:var(--good)" title="${state.buff.label}">✨</span>` : ''}<br>` +
     `쾌적함 <span style="color:var(--accent)" title="가구 ${cd.furn} + 조명 ${cd.light} + 청결 ${cd.cleanMod} + 거처 ${cd.shelterMod}${cd.injuryMod ? ` + 부상 ${cd.injuryMod}` : ''}${cd.limitMod ? ` + 제약 ${cd.limitMod}` : ''}">${cd.score}점 ${'★'.repeat(lv)}${'☆'.repeat(5 - lv)}</span>` +
     `${bonus ? ` <span style="color:var(--good)">(탐험 +${bonus}%)</span>` : ''} · 청결 ${Math.round(cd.clean)} · 성공 ${state.successes}회`;
   renderGauge('g-hunger', state.hunger, '🥫');
@@ -4065,6 +4182,14 @@ function processDay() {
     state.injury = { type: 'infection', untilMin: state.gameMin + INJURIES.infection.restH * 60 * recoveryMult() };
     notes.push('🤒 상처를 방치해 감염 위험으로 악화되었습니다.');
   }
+  // 랜덤 인카운터 (마지막 만남 후 2일 이상 지나면 45% 확률)
+  if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 2 && Math.random() < 0.45) {
+    const pool = Object.entries(EVENTS).filter(([, e]) => !e.cond || e.cond());
+    if (pool.length) {
+      state.pendingEvent = pool[Math.floor(Math.random() * pool.length)][0];
+      state.lastEventDay = state.day;
+    }
+  }
 }
 function showDayReport() {
   const log = state.dayLog;
@@ -4105,6 +4230,11 @@ function tickTime(dt) {
     scheduleSave();
     renderResBar();
     renderExpPanel();
+  } else if (state.pendingEvent && !reportQueued && !$('modal-back').classList.contains('show') && !titleVisible) {
+    // 리포트를 닫은 다음에 인카운터 등장
+    const ev = state.pendingEvent;
+    state.pendingEvent = null;
+    showEvent(ev);
   }
   tickInjury();
 }
@@ -4504,7 +4634,7 @@ window.__shelter = {
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,
   comfortDetail, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
-  seasonOf, SEASONS, openMapModal, eatFood, drinkWater,
+  seasonOf, SEASONS, openMapModal, eatFood, drinkWater, EVENTS, showEvent,
   renderFrame: () => renderFrame(),
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
