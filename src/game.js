@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert } from './lib/helpers.js';
 import { DEFS } from './data/furniture.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
-import { playSfx, setAmbience, setFire, setRadio, setSfxVol, initSfx } from './sfx.js';
+import { playSfx, setAmbience, setFire, setSfxVol, initSfx } from './sfx.js';
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -328,6 +328,7 @@ function phaseValues(name) {
   return { fog: m.fog, skyH: m.skyH, skyZ: m.skyZ, sunC: m.moonC, sunInt: m.moonInt, hemiC: m.hemiSky, hemiG: m.hemiGround, hemiInt: m.hemiInt, stars: m.stars };
 }
 const _tc = { a: new THREE.Color(), b: new THREE.Color() };
+const _wetSpec = new THREE.Color(); // applyWetness()의 젖은 벽 specular 램프용 임시 컬러
 function lerpHex(h1, h2, f, target) {
   _tc.a.setHex(h1); _tc.b.setHex(h2);
   return target.copy(_tc.a).lerp(_tc.b, f);
@@ -398,9 +399,12 @@ function seasonDay(day = state.day) { return ((day - 1) % SEASON_DAYS) + 1; }
 // 계절이 날씨 풀을 편향시킨다
 function seasonAdjustPool(pool) {
   const s = seasonOf().id;
+  // 초봄 꽃샘추위: 봄 1~4일차엔 눈이 완전히 비로 바뀌지 않고 절반 확률로만 남는다
+  const earlySpring = s === 'spring' && seasonDay() <= 4;
   return pool.map(w => {
     if (s === 'winter' && w === 'rain') return 'snow';
-    if (s !== 'winter' && w === 'snow') return 'rain'; // 눈은 겨울에만
+    if (earlySpring && w === 'snow') return Math.random() < 0.5 ? 'rain' : 'snow';
+    if (s !== 'winter' && !earlySpring && w === 'snow') return 'rain'; // 눈은 겨울에만 (초봄 제외)
     return w;
   }).concat(s === 'winter' ? ['snow'] : s === 'summer' ? ['clear'] : []);
 }
@@ -413,10 +417,11 @@ const WEATHERS = {
   snow:  { name: '눈',   nameEn: 'Snow', icon: '🌨️', penalty: 0.15, count: 850, color: 0xdde8f0, size: 3, fall: 1.6, sway: 0.7 },
   rain:  { name: '비',   nameEn: 'Rain', icon: '🌧️', penalty: 0.10, count: 1100, color: 0x8fa8c8, size: 2, fall: 10, sway: 0.12 },
   ash:   { name: '재',   nameEn: 'Ash', icon: '🌫️', penalty: 0.05, count: 380, color: 0x9a938a, size: 2.5, fall: 0.45, sway: 1.3 },
+  storm: { name: '폭우', nameEn: 'Downpour', icon: '⛈️', penalty: 0.2, count: 2200, color: 0x7e97b8, size: 2, fall: 14, sway: 0.2 },
 };
 const weather = { type: 'clear', nextChange: 0, pts: null, seedY: [], seedS: [] };
 {
-  const MAXN = 1100, SPAN = 23, TOP = 17;
+  const MAXN = 2200, SPAN = 23, TOP = 17;
   const arr = new Float32Array(MAXN * 3);
   const wrand = seededRand(4242);
   for (let i = 0; i < MAXN; i++) {
@@ -471,12 +476,14 @@ function setWeather(type) {
   updateHud();
   if (!state.exp) renderExpPanel();
   // 찢어진 쪽지: 첫 비/눈 (부팅·타이틀 중 발화 방지 — 실제 플레이 중에만)
-  if (gameStarted && type === 'rain') tipOnce('tip.rain');
+  if (gameStarted && (type === 'rain' || type === 'storm')) tipOnce('tip.rain');
   if (gameStarted && type === 'snow') tipOnce('tip.snow');
 }
 function rollWeather() {
   const pool = seasonAdjustPool(SHELTERS[state.current].weatherPool || ['clear']);
-  const next = pool[Math.floor(Math.random() * pool.length)];
+  let next = pool[Math.floor(Math.random() * pool.length)];
+  // 비가 뽑히면 25% 확률로 폭우(storm)로 승격 (seasonAdjustPool의 풀에는 넣지 않음)
+  if (next === 'rain' && Math.random() < 0.25) next = 'storm';
   if (next !== weather.type) state.dayLog.notes.push(t('weather.changed', { name: LName(WEATHERS[next]) }));
   setWeather(next);
   // 날씨는 하루~이틀 유지 (기획: 리얼타임 감각)
@@ -484,7 +491,9 @@ function rollWeather() {
 }
 function ensureWeather() {
   const pool = SHELTERS[state.current].weatherPool || ['clear'];
-  if (state.weatherUntil > state.gameMin && pool.includes(state.weatherType)) setWeather(state.weatherType);
+  // storm은 rain의 승격 상태이므로 rain을 다루는 셸터라면 유효한 날씨로 취급
+  const valid = pool.includes(state.weatherType) || (state.weatherType === 'storm' && pool.includes('rain'));
+  if (state.weatherUntil > state.gameMin && valid) setWeather(state.weatherType);
   else rollWeather();
 }
 function updateWeather(dt, t) {
@@ -550,8 +559,8 @@ function updateScreenFx(dt, t) {
   if (!fxW) resizeFx();
   fxg.clearRect(0, 0, fxW, fxH);
   const indoorSh = !!SHELTERS[state.current]?.indoor;
-  // ── 빗방울: 화면(유리창)을 타고 흘러내린다
-  const raining = weather.type === 'rain' && !indoorSh && !titleVisible;
+  // ── 빗방울: 화면(유리창)을 타고 흘러내린다 (폭우 전용 — 일반 비는 오버레이 없음)
+  const raining = weather.type === 'storm' && !indoorSh && !titleVisible;
   if (raining && fxDrops.length < 44) {
     fxRainAcc += dt * 12;
     while (fxRainAcc > 1) {
@@ -628,7 +637,7 @@ function comfortDetail() {
   const catMod = state.cat ? 6 : 0; // 고양이가 있는 집은 따뜻하다
   // 현실 제약: 단열 취약(악천후 시) / 어둠(조명 필수)
   let limitMod = 0;
-  if (sh.cold && (weather.type === 'rain' || weather.type === 'snow') && !hasMod('insulation')) limitMod -= sh.cold;
+  if (sh.cold && (weather.type === 'rain' || weather.type === 'snow' || weather.type === 'storm') && !hasMod('insulation')) limitMod -= sh.cold;
   if (sh.needsLight && light <= 0) limitMod -= sh.needsLight;
   const score = THREE.MathUtils.clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod, 0, 100);
   return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, clean, score };
@@ -771,6 +780,17 @@ let envDyn = {};        // 환경별 동적 요소
 const roomGroup = new THREE.Group(); scene.add(roomGroup);
 const envRoot = new THREE.Group(); scene.add(envRoot);
 
+// 벽/바닥 재질: Phong으로 생성 — applyWetness()가 젖었을 때 specular/shininess를 올려
+// 빛을 반사하는 재질감을 낸다 (Lambert는 specular가 없어 이 표현이 불가능).
+function wallPhong(opts = {}) {
+  return new THREE.MeshPhongMaterial({ shininess: 4, specular: 0x000000, ...opts });
+}
+// B()의 Phong 버전 — lamb() 헬퍼(Lambert)만 쓰는 벽 패널(예: 버스)을 위해
+function BP(parent, w, h, d, c, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallPhong({ color: c }));
+  m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
+  parent.add(m); return m;
+}
 function stdWall(len, h, mat, opts = {}) {
   const g = new THREE.Group();
   const t = 0.22;
@@ -819,8 +839,9 @@ function addRoofGrass(wallGroup, len, h, seed) {
   }
   wallGroup.add(new THREE.Mesh(mergeGeometries(geos), vcLambert));
 }
-// 날씨-구조물 상호작용 요소 (벽 위 적설 캡, 벽면 빗방울) — loadShelter마다 재생성
-const weatherFx = { caps: [], drips: [] };
+// 날씨-구조물 상호작용 요소 (벽 위 적설 캡) — loadShelter마다 재생성
+// (빗물 표현은 파티클 대신 applyWetness()의 반사 재질(Phong specular)로 대체됨)
+const weatherFx = { caps: [] };
 const snowCapMat = new THREE.MeshLambertMaterial({ color: 0xe9f2fa, transparent: true, opacity: 0.96 });
 snowCapMat.userData.noWet = true;
 snowCapMat.userData.shared = true; // loadShelter의 disposeDeep에서 살아남아야 함
@@ -836,21 +857,6 @@ function addWallWeatherFx(wallGroup) {
   cap.castShadow = false; cap.visible = false;
   wallGroup.add(cap);
   weatherFx.caps.push(cap);
-  // 비: 외벽에 맺혀 반짝이는 물방울
-  const n = Math.max(6, Math.round(len * 5));
-  const arr = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) {
-    arr.set([(Math.random() - 0.5) * (len - 0.3), 0.25 + Math.random() * (h - 0.5), -0.145], i * 3);
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
-  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
-    color: 0xcfe2f2, size: 2, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false,
-  }));
-  pts.userData.ph = Math.random() * Math.PI * 2;
-  pts.visible = false;
-  wallGroup.add(pts);
-  weatherFx.drips.push(pts);
 }
 function makeWalls(defs) {
   wallList = [];
@@ -894,14 +900,14 @@ const SHELTERS = {
     mood: { fog: 0x2e2820, fogNear: 20, fogFar: 52, skyH: 0x453a2d, skyZ: 0x15161e, hemiSky: 0x8a8272, hemiGround: 0x4c443a, hemiInt: 0.72, moonC: 0xc9c0a8, moonInt: 0.68, stars: 0.5 },
     buildRoom() {
       const { w, d, h } = ROOM;
-      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), lamb(0, { map: plywoodTex }));
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ map: plywoodTex }));
       floor.material.color.setHex(0xffffff);
       floor.position.y = -0.125; floor.receiveShadow = true;
       roomGroup.add(floor);
       // 받침 블록
       for (const [bx, bz] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]])
         B(roomGroup, 0.6, 0.5, 0.6, 0x4c4a46, bx, -0.5, bz);
-      const wallMat = new THREE.MeshLambertMaterial({ map: metalTex });
+      const wallMat = wallPhong({ map: metalTex });
       wallMat.userData.shared = true;
       const mk = (len, opts) => stdWall(len, h, wallMat, opts);
       makeWalls([
@@ -971,7 +977,7 @@ const SHELTERS = {
     perk: { injuryHalf: true, label: '🛡️ 두꺼운 외피 — 부상 회복 2배 빠름', labelEn: '🛡️ Thick shell — injuries heal twice as fast' },
     buildRoom() {
       const { w, d, h } = ROOM;
-      const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
+      const conc = wallPhong({ map: concreteTex });
       conc.userData.shared = true;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, 0.3, d + 0.8), conc);
       floor.position.y = -0.15; floor.receiveShadow = true;
@@ -984,7 +990,7 @@ const SHELTERS = {
       B(roomGroup, w + 1.4, 0.7, d + 1.4, 0x2b2e36, 0, -0.65, 0);
 
       // 뒷벽: 벽돌 + 문 + 액자
-      const brickMat = new THREE.MeshLambertMaterial({ map: brickTex });
+      const brickMat = wallPhong({ map: brickTex });
       brickMat.userData.shared = true;
       const back = new THREE.Group();
       const bw = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.24), brickMat);
@@ -1154,7 +1160,7 @@ const SHELTERS = {
     perk: { salvagePlus: true, label: '📡 탁 트인 시야 — 부분 성공 시에도 가구 1개 회수', labelEn: '📡 Clear vantage — salvage 1 furniture even on partial success' },
     buildRoom() {
       const { w, d, h } = ROOM;
-      const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
+      const conc = wallPhong({ map: concreteTex });
       conc.userData.shared = true;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, 0.35, d + 0.8), conc);
       floor.position.y = -0.175; floor.receiveShadow = true;
@@ -1162,9 +1168,9 @@ const SHELTERS = {
       // 낮은 난간 — 배경이 잘 보임
       const mkP = (len, x, z, rotY) => {
         const g = new THREE.Group();
-        const m = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.28), lamb(0x5b5b58));
+        const m = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.28), wallPhong({ color: 0x5b5b58 }));
         m.position.y = h / 2; m.castShadow = m.receiveShadow = true; g.add(m);
-        const cap = new THREE.Mesh(new THREE.BoxGeometry(len, 0.07, 0.36), lamb(0x6a6a66));
+        const cap = new THREE.Mesh(new THREE.BoxGeometry(len, 0.07, 0.36), wallPhong({ color: 0x6a6a66 }));
         cap.position.y = h + 0.03; g.add(cap);
         g.position.set(x, 0, z); g.rotation.y = rotY;
         roomGroup.add(g);
@@ -1237,7 +1243,7 @@ const SHELTERS = {
     name: '숲속 오두막', nameEn: 'Forest Cabin', emoji: '🏡', unlockAt: 7, viewH: 16, ceilY: 2.45,
     baseComfort: 10,
     upkeep: { res: 'material', n: 1, every: 3, label: '건축재 1 / 3일', labelEn: 'Building material 1 / 3 days' },
-    stormRepair: ['rain', 'snow'], moveCost: { material: 4 },
+    stormRepair: ['rain', 'snow', 'storm'], moveCost: { material: 4 },
     limits: '🪵 목조 지붕 — 악천후엔 매일 건축재 1로 누수 수리 (없으면 청결 -8)', limitsEn: '🪵 Timber roof — bad weather needs 1 material/day for leak repair (else cleanliness -8)',
     desc: '숲 가장자리의 오두막. 폐허가 된 세상에서 찾아낸 가장 아늑한 은신처.',
     descEn: 'A cabin on the forest’s edge. The coziest refuge you have found in this ruined world.',
@@ -1247,13 +1253,13 @@ const SHELTERS = {
     mood: { fog: 0x1a2233, fogNear: 24, fogFar: 58, skyH: 0x1a2233, skyZ: 0x0a0f1a, hemiSky: 0x8a98bd, hemiGround: 0x46403a, hemiInt: 0.7, moonC: 0x9db4d8, moonInt: 0.75, stars: 0.85 },
     buildRoom() {
       const { w, d, h } = ROOM;
-      const fm = new THREE.MeshLambertMaterial({ map: floorWoodTex }); fm.userData.shared = true;
+      const fm = wallPhong({ map: floorWoodTex }); fm.userData.shared = true;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), fm);
       floor.position.y = -0.15; floor.receiveShadow = true;
       roomGroup.add(floor);
       B(roomGroup, w + 1.0, 0.5, d + 1.0, 0x2b2e36, 0, -0.55, 0);
       B(roomGroup, w + 1.6, 1.0, d + 1.6, 0x2f333c, 0, -1.15, 0);
-      const wallMat = new THREE.MeshLambertMaterial({ map: wallWoodTex });
+      const wallMat = wallPhong({ map: wallWoodTex });
       wallMat.userData.shared = true;
       const mk = (len, opts) => stdWall(len, h, wallMat, opts);
       const defs = [
@@ -1417,7 +1423,7 @@ const SHELTERS = {
     buildRoom() {
       const { w, d, h } = ROOM;
       const busY = 0x9a7a2f, busD = 0x7a6226;
-      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.22, d + 0.5), lamb(0x6a5a44));
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.22, d + 0.5), wallPhong({ color: 0x6a5a44 }));
       floor.position.y = -0.11; floor.receiveShadow = true;
       roomGroup.add(floor);
       // 차대 + 바퀴
@@ -1436,15 +1442,15 @@ const SHELTERS = {
       const mkBusWall = (len, seed) => {
         const g = new THREE.Group();
         const rand = seededRand(seed);
-        B(g, len, 1.0, 0.16, busY, 0, 0.5, 0);
-        B(g, len, 0.14, 0.18, busD, 0, 1.06, 0);
+        BP(g, len, 1.0, 0.16, busY, 0, 0.5, 0);
+        BP(g, len, 0.14, 0.18, busD, 0, 1.06, 0);
         const nWin = Math.floor(len / 0.95);
         for (let i = 0; i < nWin; i++) {
           const wx = -len / 2 + 0.55 + i * 0.95;
           B(g, 0.8, 0.85, 0.1, rand() < 0.25 ? 0x1c1f26 : 0x2c3644, wx, 1.6, 0);
           B(g, 0.06, 0.95, 0.14, busD, wx + 0.46, 1.6, 0);
         }
-        B(g, len, 0.14, 0.18, busD, 0, 2.1, 0);
+        BP(g, len, 0.14, 0.18, busD, 0, 2.1, 0);
         // 녹 얼룩
         for (let i = 0; i < 4; i++) B(g, 0.3 + rand() * 0.4, 0.18, 0.17, 0x6e3e28, -len / 2 + rand() * len, 0.35 + rand() * 0.5, 0);
         return g;
@@ -1514,12 +1520,12 @@ const SHELTERS = {
     needsLight: 12, moveCost: { battery: 2, material: 3 }, limits: '🌑 완전한 어둠 — 켜진 조명이 하나도 없으면 쾌적함 -12', limitsEn: '🌑 Total darkness — comfort -12 if no light is lit',
     buildRoom() {
       const { w, d, h } = ROOM;
-      const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
+      const conc = wallPhong({ map: concreteTex });
       conc.userData.shared = true;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), conc);
       floor.position.y = -0.15; floor.receiveShadow = true;
       roomGroup.add(floor);
-      const tileMat = new THREE.MeshLambertMaterial({ map: subwayTileTex });
+      const tileMat = wallPhong({ map: subwayTileTex });
       tileMat.userData.shared = true;
       // 뒷벽(타일) + 역명판 + 노선도
       const back = new THREE.Group();
@@ -1622,7 +1628,7 @@ const SHELTERS = {
     limits: '❄️ 유리 지붕 — 눈 오는 날엔 건축재 1로 보수 (없으면 청결 -8)', limitsEn: '❄️ Glass roof — snowy days need 1 material to patch (else cleanliness -8)',
     buildRoom() {
       const { w, d, h } = ROOM;
-      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), lamb(0x6b5a44));
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ color: 0x6b5a44 }));
       floor.position.y = -0.125; floor.receiveShadow = true;
       roomGroup.add(floor);
       B(roomGroup, w + 0.9, 0.4, d + 0.9, 0x4a4640, 0, -0.42, 0);
@@ -1631,10 +1637,10 @@ const SHELTERS = {
         const g = new THREE.Group();
         const rand = seededRand(seed);
         const glass = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.06),
-          new THREE.MeshLambertMaterial({ color: 0xbcd8d4, transparent: true, opacity: 0.22 }));
+          wallPhong({ color: 0xbcd8d4, transparent: true, opacity: 0.22 }));
         glass.position.y = h / 2;
         g.add(glass);
-        const fm = lamb(0xcfc8ba);
+        const fm = wallPhong({ color: 0xcfc8ba });
         for (let x = -len / 2; x <= len / 2 + 0.01; x += len / Math.round(len / 1.1)) {
           const f = new THREE.Mesh(new THREE.BoxGeometry(0.09, h, 0.1), fm);
           f.position.set(x, h / 2, 0); f.castShadow = true; g.add(f);
@@ -1766,7 +1772,7 @@ const SHELTERS = {
     dailyDirt: 2, moveCost: { parts: 3, material: 2 }, limits: '💧 바다의 습기 — 청결이 매일 2 더 빨리 떨어짐', limitsEn: '💧 Sea damp — cleanliness drops 2 faster each day',
     buildRoom() {
       const { w, d, h } = ROOM;
-      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), lamb(0x7a6248));
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), wallPhong({ color: 0x7a6248 }));
       floor.position.y = -0.15; floor.receiveShadow = true;
       roomGroup.add(floor);
       for (let i = 0; i < 8; i++) B(roomGroup, w + 0.6, 0.02, 0.06, 0x5d452c, 0, 0.02, -d / 2 + 0.4 + i * 0.85);
@@ -1795,7 +1801,7 @@ const SHELTERS = {
       wallList = [];
       // 선실 벽 (뒤쪽, 흰 강판 + 둥근 창)
       const cabinW = new THREE.Group();
-      const cw = new THREE.Mesh(new THREE.BoxGeometry(w, 2.5, 0.3), lamb(0xd0ccc0));
+      const cw = new THREE.Mesh(new THREE.BoxGeometry(w, 2.5, 0.3), wallPhong({ color: 0xd0ccc0 }));
       cw.position.y = 1.25; cw.castShadow = cw.receiveShadow = true;
       cabinW.add(cw);
       for (let i = 0; i < 4; i++) {
@@ -1914,7 +1920,7 @@ const SHELTERS = {
     limits: '🌧️ 옥상 빗물받이 — 비/눈 오는 날 깨끗한 물 +2 (자급 가능)', limitsEn: '🌧️ Rooftop rain catch — clean water +2 on rainy/snowy days (self-sufficient)',
     buildRoom() {
       const { w, d, h } = ROOM;
-      const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
+      const conc = wallPhong({ map: concreteTex });
       conc.userData.shared = true;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.7, 0.3, d + 0.7), conc);
       floor.position.y = -0.15; floor.receiveShadow = true;
@@ -1929,7 +1935,7 @@ const SHELTERS = {
       const mkWall = (len, seed) => {
         const g = new THREE.Group();
         const rand = seededRand(seed);
-        const wallM = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.26), lamb(0xd8d0c4));
+        const wallM = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.26), wallPhong({ color: 0xd8d0c4 }));
         wallM.position.y = h / 2; wallM.castShadow = wallM.receiveShadow = true;
         g.add(wallM);
         const base = new THREE.Mesh(new THREE.BoxGeometry(len, 0.35, 0.28), lamb(0xb84a3f));
@@ -2191,7 +2197,7 @@ function resConsumeAll(cost) {
 function costLabel(cost) {
   return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(' + ');
 }
-const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.35, sfxVol: 0.07, lang: 'ko' };
+const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko' };
 
 /* ============================================================
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
@@ -2315,8 +2321,9 @@ function loadSave() {
       const defaults = JSON.parse(JSON.stringify(state)); // 신규 필드 기본값 보존
       Object.assign(state, data.state);
       Object.assign(opts, data.opts);
-      // 효과음 기본값 하향 마이그레이션 (구 기본 0.7은 사용자가 고른 값이 아님)
+      // 효과음/배경음 기본값 하향 마이그레이션 (구 기본값은 사용자가 고른 값이 아님)
       if (opts.sfxVol === 0.7) opts.sfxVol = 0.07;
+      if (opts.bgmVol === 0.35) opts.bgmVol = 0.15;
       // 구버전(v2) 필드 보정
       if (oldVer < 3) {
         // v0.3 시절 옥상 캠프 레이아웃은 벙커로 이전 (v3의 rooftop은 새 셸터)
@@ -2525,7 +2532,9 @@ function loadShelter(id) {
   disposeDeep(roomGroup); roomGroup.clear();
   disposeDeep(envRoot); envRoot.clear();
   wallList = []; blockers = []; envDyn = {};
-  weatherFx.caps = []; weatherFx.drips = []; wetApplied = -1;
+  weatherFx.caps = []; wetApplied = -1;
+  // 초봄(Day 1~2) 시작: 겨울의 끝자락 잔설이 남아있다가 서서히 녹는다 (최초 입장 1회만 시딩)
+  if (!snowSeeded && state.day <= 2 && seasonOf().id === 'spring') { snowCover = 0.25; snowSeeded = true; }
 
   state.current = id;
   const sh = SHELTERS[id];
@@ -2948,7 +2957,7 @@ function resolveExpedition() {
     }
   }
   // 비/눈 속 탐험 → 젖어서 청결도 감소
-  if (weather.type === 'rain' || weather.type === 'snow') {
+  if (weather.type === 'rain' || weather.type === 'snow' || weather.type === 'storm') {
     if (!prep.includes('raincoat')) {
       state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 3);
       notes.push(t('exp.note.wet3', { icon: WEATHERS[weather.type].icon }));
@@ -3775,6 +3784,7 @@ canvas.addEventListener('pointerdown', e => {
   const hit = pickItem(e);
   if (hit) {
     select(hit);
+    if (hit.defId === 'radio') playSfx('radio_noise', { vol: 0.5, jitter: 0 }); // 라디오 클릭 시 지지직 1회
     dragging = hit;
     dragStart = {
       sx: e.clientX, sy: e.clientY, ox: hit.x, oz: hit.z, or: hit.rot, moved: false,
@@ -3916,6 +3926,7 @@ function updateWallCulling() {
 }
 // 날씨-환경 상호작용: 눈이 쌓이고(지면·수풀·지붕 풀 서리 톤), 악천후엔 바람이 거세짐
 let snowCover = 0, windLevel = 1;
+let snowSeeded = false; // 초봄 잔설 초기값은 최초 1회만 세팅 (셸터 재입장/개조 시 덮어쓰지 않도록)
 // 비가 오면 셸터 겉면이 젖어 어두워진다
 let wetness = 0, wetApplied = -1;
 function applyWetness() {
@@ -3931,10 +3942,18 @@ function applyWetness() {
     _tc.a.setHex(m.userData.wetDry);
     // 살짝 푸른 기가 도는 젖은 톤
     m.color.setRGB(_tc.a.r * k, _tc.a.g * (k + 0.02 * wetness), Math.min(1, _tc.a.b * (k + 0.07 * wetness)));
+    // 젖은 벽면 반사 재질감: Phong 벽/바닥 재질만 specular·shininess를 올린다
+    if (m.isMeshPhongMaterial) {
+      if (m.userData.specDry == null) m.userData.specDry = m.specular.getHex();
+      if (m.userData.shininessDry == null) m.userData.shininessDry = m.shininess;
+      _tc.b.setHex(m.userData.specDry).lerp(_wetSpec.set(0x36404c), wetness);
+      m.specular.copy(_tc.b);
+      m.shininess = m.userData.shininessDry + (28 - m.userData.shininessDry) * wetness;
+    }
   });
 }
 function updateEnvironment(t, dt) {
-  const wBadNow = weather.type === 'snow' || weather.type === 'rain';
+  const wBadNow = weather.type === 'snow' || weather.type === 'rain' || weather.type === 'storm';
   // 눈: 내리는 동안 서서히 쌓이고, 그치면 녹는다. 겨울엔 잔설이 남는다.
   const season = seasonOf();
   const targetSnow = weather.type === 'snow' ? 1 : (season.id === 'winter' ? 0.3 : 0);
@@ -3947,19 +3966,16 @@ function updateEnvironment(t, dt) {
   );
   // 바람: 비/눈엔 강풍
   windLevel += ((wBadNow ? 2.3 : 1) - windLevel) * Math.min(1, dt * 0.6);
-  // 셸터 겉면 상호작용: 젖음 / 벽 위 적설 / 맺힌 빗방울
+  // 셸터 겉면 상호작용: 젖음(반사 재질) / 벽 위 적설
   const indoorSh = !!SHELTERS[state.current]?.indoor;
-  const targetWet = (weather.type === 'rain' && !indoorSh) ? 1 : 0;
-  wetness += (targetWet - wetness) * Math.min(1, dt * (targetWet ? 0.1 : 0.02));
+  const isWet = weather.type === 'rain' || weather.type === 'storm';
+  const targetWet = (isWet && !indoorSh) ? 1 : 0;
+  const wetSpeed = weather.type === 'storm' ? 0.2 : 0.1;
+  wetness += (targetWet - wetness) * Math.min(1, dt * (targetWet ? wetSpeed : 0.02));
   if (Math.abs(wetness - wetApplied) > 0.03) applyWetness();
   for (const cap of weatherFx.caps) {
     cap.visible = !indoorSh && snowCover > 0.05;
     if (cap.visible) cap.scale.y = Math.min(1, snowCover * 1.1);
-  }
-  const dripStr = wetness * (weather.type === 'rain' ? 1 : 0.4);
-  for (const dp of weatherFx.drips) {
-    dp.visible = !indoorSh && dripStr > 0.06;
-    if (dp.visible) dp.material.opacity = (0.4 + 0.35 * Math.sin(t * 2.3 + dp.userData.ph)) * dripStr;
   }
   if (envDyn.trees || envDyn.buildings) {
     const cd = new THREE.Vector2(camera.position.x - camCenter.x, camera.position.z - camCenter.z).normalize();
@@ -4470,7 +4486,7 @@ function processDay() {
   }
   // 청결도 일일 감소 + 거처별 현실 제약
   const sh = SHELTERS[state.current];
-  const wBad = state.weatherType === 'rain' || state.weatherType === 'snow';
+  const wBad = state.weatherType === 'rain' || state.weatherType === 'snow' || state.weatherType === 'storm';
   let dirt = 2;
   if (sh.dailyDirt) { dirt += sh.dailyDirt; notes.push(t('day.seaDamp')); }
   if (sh.weatherDirt && wBad) { dirt += sh.weatherDirt; notes.push(t('day.openWet', { icon: WEATHERS[state.weatherType].icon })); }
@@ -5087,7 +5103,8 @@ function bgmContext() {
   if (titleVisible) return { key: 'title', pool: BGM_LIB.main, loop: true, vol: 0.55 }; // 잔잔하게
   if (state.catMusicDay && state.catMusicDay === state.day)
     return { key: 'cat', pool: BGM_LIB.cat, loop: true, vol: 1 }; // 그날 하루 종일
-  const wpool = BGM_LIB.weather[weather.type] || BGM_LIB.weather.clear;
+  // storm은 rain 풀을 그대로 사용
+  const wpool = BGM_LIB.weather[weather.type === 'storm' ? 'rain' : weather.type] || BGM_LIB.weather.clear;
   let pool = [...wpool, ...BGM_LIB.random];
   if (isEveningHour()) pool = pool.concat(BGM_LIB.evening);
   if (seasonOf().id === 'winter') pool = pool.concat(BGM_LIB.winter);
@@ -5096,7 +5113,7 @@ function bgmContext() {
 function playBgmTrack(name, ctx) {
   bgmTrack = name;
   bgm.loop = ctx.loop;
-  bgm.volume = (opts.bgmVol ?? 0.35) * ctx.vol;
+  bgm.volume = (opts.bgmVol ?? 0.15) * ctx.vol;
   bgm.src = `BGM/${name}.mp3`;
   if (opts.bgm) bgm.play().catch(() => { /* 사용자 제스처 대기 (자동재생 정책) */ });
 }
@@ -5110,19 +5127,28 @@ function syncBgm(forcePlay = false) {
     bgmCtxKey = ctx.key;
     playBgmTrack(pickBgmTrack(ctx), ctx);
   } else {
-    bgm.volume = (opts.bgmVol ?? 0.35) * ctx.vol; // 음량 슬라이더 즉시 반영
+    bgm.volume = (opts.bgmVol ?? 0.15) * ctx.vol; // 음량 슬라이더 즉시 반영
     if (forcePlay && opts.bgm && bgm.paused && bgm.src) bgm.play().catch(() => {});
   }
 }
 bgm.addEventListener('ended', () => { const ctx = bgmContext(); playBgmTrack(pickBgmTrack(ctx), ctx); });
-/* ── SFX 앰비언스/난로/라디오 상태 동기화 (날씨·실내·가구 상태 → 루프 채널) ── */
+// 셸터별 빗소리 앰비언스 (지역 재질감 반영) — storm은 셸터 무관 rain_heavy로 통일
+const RAIN_AMB = {
+  container: 'rain_roof', bunker: 'rain_roof', ship: 'rain_roof', lighthouse: 'rain_roof',
+  rooftop: 'rain_city',
+  cabin: 'rain_forest', greenhouse: 'rain_forest',
+  bus: 'rain_road',
+};
+/* ── SFX 앰비언스/난로 상태 동기화 (날씨·실내·가구 상태 → 루프 채널) ── */
 function syncSfxAmbience() {
-  if (titleVisible || endingActive) { setAmbience(null); setFire(false); setRadio(false); return; }
+  if (titleVisible || endingActive) { setAmbience(null); setFire(false); return; }
   const indoorSh = !!SHELTERS[state.current]?.indoor;
   if (indoorSh) {
     setAmbience(null);
+  } else if (weather.type === 'storm') {
+    setAmbience('rain_heavy');
   } else if (weather.type === 'rain') {
-    setAmbience('amb_rain');
+    setAmbience(RAIN_AMB[state.current] || 'rain_roof');
   } else if (weather.type === 'snow') {
     setAmbience('amb_wind');
   } else if (weather.type === 'ash') {
@@ -5132,13 +5158,11 @@ function syncSfxAmbience() {
   }
   const fireOn = items.some(it => ['stove', 'candle', 'lantern'].includes(it.defId) && it.on !== false);
   setFire(fireOn);
-  const radioOn = items.some(it => it.defId === 'radio' && it.on !== false);
-  setRadio(radioOn, 0.25);
 }
 // 모바일 대응: 재생은 반드시 사용자 제스처 안에서 시작 (자동재생 정책)
 $('bgm-row').style.display = 'flex';
 $('opt-bgm').checked = !!opts.bgm;
-$('opt-bgmvol').value = Math.round((opts.bgmVol ?? 0.35) * 100);
+$('opt-bgmvol').value = Math.round((opts.bgmVol ?? 0.15) * 100);
 $('opt-sfxvol').value = Math.round((opts.sfxVol ?? 0.07) * 100);
 // 자동재생이 거부돼 멈춰 있으면 다음 입력에서 재개 (상시)
 addEventListener('pointerdown', () => { if (opts.bgm && bgm.paused) syncBgm(true); });

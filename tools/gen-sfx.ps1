@@ -15,6 +15,8 @@ New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 $P1 = 'G:\Sample\Pro Sound Effects - CORE Free Sampler - Part01'
 $P2 = 'G:\Sample\Pro Sound Effects - CORE Free Sampler - Part02'
 $CAT = 'G:\Project_winter\assets-src\Cat_sound'
+$RAIN = 'G:\Project_winter\assets-src\Rain_SFX'
+$ASRC = 'G:\Project_winter\assets-src'
 
 # name, source, seek(s), dur(s), channels(1|2), extra filter chain (before loudnorm/fades), fadeIn, fadeOut
 $jobs = @(
@@ -39,6 +41,14 @@ $jobs = @(
   @{ n='meow2';        s="$CAT\meow2.mp3";      ch=1 }
   @{ n='meow3';        s="$CAT\meow3.mp3";      ch=1 }
   @{ n='cat_eat';      s="$CAT\cat_eating.mp3"; ss=0; t=3; ch=1; fo=0.3 }
+  # region-specific rain loops (v2.4 rework #22): 25-30s stereo loops, quieter loudnorm
+  @{ n='rain_roof';    s="$RAIN\Rain_on_roof.mp3"; ss=20; t=28; ch=2; fi=0.5; fo=0.5 }
+  @{ n='rain_city';    s="$RAIN\City_rain.mp3";    ss=20; t=28; ch=2; fi=0.5; fo=0.5 }
+  @{ n='rain_forest';  s="$RAIN\Forest_Rain.mp3";  ss=20; t=28; ch=2; fi=0.5; fo=0.5 }
+  @{ n='rain_road';    s="$RAIN\Road_rain.mp3";    ss=20; t=28; ch=2; fi=0.5; fo=0.5 }
+  @{ n='rain_heavy';   s="$RAIN\Heavy_Rain.mp3";   ss=10; t=27; ch=2; fi=0.5; fo=0.5 }
+  # radio noise: one-shot click sound, mono, quieter loudnorm
+  @{ n='radio_noise';  s="$ASRC\radio_noise.mp3";  ss=0;  ch=1; loudI=-24 }
 )
 
 foreach ($j in $jobs) {
@@ -47,7 +57,8 @@ foreach ($j in $jobs) {
 
   $filters = @()
   if ($j.trim) { $filters += 'silenceremove=start_periods=1:start_threshold=-45dB' }
-  $filters += 'loudnorm=I=-18:TP=-1.5'
+  $loudI = if ($j.ContainsKey('loudI')) { $j.loudI } else { -18 }
+  $filters += "loudnorm=I=$($loudI):TP=-1.5"
   if ($j.fi) { $filters += "afade=t=in:st=0:d=$($j.fi)" }
   if ($j.fo -and $j.t) {
     $st = [math]::Round(($j.t - $j.fo), 2)

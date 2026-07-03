@@ -2,10 +2,10 @@
  * initSfx()            : 첫 pointerdown에서 AudioContext 생성 (자동재생 정책 우회)
  * playSfx(name, opts)  : 원샷 재생. fetch+decode 캐시(lazy), 재생속도 ±jitter 랜덤
  * setSfxVol(v)         : 마스터 볼륨 (BGM과 별개)
- * setAmbience(name)    : 날씨 앰비언트 루프 (amb_rain/amb_wind/amb_storm/null) — 1.2s 크로스페이드
+ * setAmbience(name)    : 날씨 앰비언트 루프 (amb_rain/amb_wind/amb_storm/rain_xxx/null) — 1.2s 크로스페이드
  * setFire(on)          : 난롯불 루프 (amb_fire)
- * setRadio(on, vol)    : 라디오 노이즈 루프 (radio_static)
  * 경로: sfx/{name}.ogg (BGM과 동일한 상대경로 방식)
+ * (라디오 상시 잡음 루프는 #22에서 제거됨 — 라디오는 클릭 시 playSfx('radio_noise')로 1회 재생)
  */
 
 let ctx = null;          // AudioContext (첫 사용자 제스처 후 생성)
@@ -93,24 +93,15 @@ function channelPlay(chan, name, vol) {
 
 const ambChan = makeChannel();   // 날씨 앰비언트
 const fireChan = makeChannel();  // 난롯불
-const radioChan = makeChannel(); // 라디오 노이즈
 
-export function setAmbience(name, vol = 0.8) {
+export function setAmbience(name, vol = 0.3) {
   if (!ctx) return;
   if (!name) { channelStop(ambChan); return; }
   channelPlay(ambChan, name, vol);
 }
 
-export function setFire(on, vol = 0.5) {
+export function setFire(on, vol = 0.22) {
   if (!ctx) return;
   if (on) channelPlay(fireChan, 'amb_fire', vol);
   else channelStop(fireChan);
-}
-
-// 라디오 상시 잡음은 거슬린다는 피드백으로 극소 볼륨의 배경 결로만 유지
-// (추후: 상시 루프 대신 예보 갱신 순간에만 짧게 지지직 — #22에서 재설계)
-export function setRadio(on, vol = 0.04) {
-  if (!ctx) return;
-  if (on) channelPlay(radioChan, 'radio_static', vol);
-  else channelStop(radioChan);
 }

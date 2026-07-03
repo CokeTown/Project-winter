@@ -129,8 +129,8 @@ export const STR = {
   /* ── 인트로 ── */
   'intro.start': { ko: '▶ 시작하기', en: '▶ Begin' },
   'intro.0': {
-    ko: '세상이 무너진 지 3년.\n도시는 조용해졌고,\n갈라진 도로 틈에는 풀이 자랐다.',
-    en: 'Three years since the world fell.\nThe cities went quiet,\nand grass crept through the cracked roads.',
+    ko: '세상이 무너진 지 3년, 겨울의 끝자락.\n녹다 만 눈이 갈라진 도로 틈에 남아 있고,\n그 틈으로 이른 봄풀이 고개를 내밀었다.',
+    en: 'Three years since the world fell, at the tail end of winter.\nHalf-melted snow still clings to the cracked roads,\nwhere early spring grass has just begun to push through.',
   },
   'intro.1': {
     ko: '당신은 살아남았다.\n그리고 깨달았다 —\n살아남는 것만으로는 부족하다는 걸.',
