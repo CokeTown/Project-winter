@@ -1,0 +1,21 @@
+{
+  "name": "project-shelter",
+  "private": true,
+  "version": "1.4.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 8420 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 8420 --strictPort",
+    "assets:tex": "node tools/gen-textures.mjs",
+    "assets:models": "node tools/gen-models.mjs",
+    "assets": "node tools/gen-textures.mjs && node tools/gen-models.mjs"
+  },
+  "dependencies": {
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "pngjs": "^7.0.0"
+  }
+}

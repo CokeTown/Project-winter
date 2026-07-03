@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "shelter",
-      "runtimeExecutable": "powershell",
-      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "serve.ps1"],
+      "runtimeExecutable": "C:\\Users\\mhdmj\\AppData\\Local\\node-portable\\node.exe",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "--port", "8420", "--strictPort"],
       "port": 8420
     }
   ]

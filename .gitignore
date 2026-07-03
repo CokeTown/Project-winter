@@ -1,3 +1,5 @@
 push_log.txt
 push_out.txt
 *.tmp
+node_modules/
+dist/
