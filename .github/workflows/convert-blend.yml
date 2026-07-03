@@ -1,0 +1,65 @@
+name: convert-blend
+# riggedcat.blend → GLB + 미리보기 렌더 (로컬 PC에 Blender 실행 불가 환경 우회)
+on: workflow_dispatch
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Blender
+        run: |
+          sudo snap install blender --classic
+          blender --version
+      - name: Convert and render
+        run: |
+          cat > /tmp/export.py <<'EOF'
+          import bpy, math, os, mathutils
+          OUT = os.environ.get('GITHUB_WORKSPACE', '.') + '/blend-out'
+          os.makedirs(OUT, exist_ok=True)
+          print("=== OBJECTS ===")
+          for o in bpy.data.objects:
+              extra = ""
+              if o.type == 'MESH':
+                  extra = f" verts={len(o.data.vertices)} polys={len(o.data.polygons)} mats={[m.name if m else None for m in o.data.materials]}"
+              if o.type == 'ARMATURE':
+                  extra = f" bones={len(o.data.bones)} names={[b.name for b in o.data.bones][:24]}"
+              print(f"  {o.type}: {o.name}{extra}")
+          for img in bpy.data.images:
+              print(f"  IMG {img.name} {img.size[0]}x{img.size[1]} packed={img.packed_file is not None}")
+          bpy.ops.export_scene.gltf(filepath=OUT + '/riggedcat.glb', export_format='GLB', export_animations=False)
+          print("GLB size:", os.path.getsize(OUT + '/riggedcat.glb'))
+          # 미리보기 렌더 (workbench = GPU 불필요)
+          scene = bpy.context.scene
+          for o in [o for o in bpy.data.objects if o.type in ('CAMERA', 'LIGHT')]:
+              bpy.data.objects.remove(o, do_unlink=True)
+          meshes = [o for o in bpy.data.objects if o.type == 'MESH']
+          mins = mathutils.Vector((1e9,) * 3); maxs = mathutils.Vector((-1e9,) * 3)
+          for m in meshes:
+              for c in m.bound_box:
+                  w = m.matrix_world @ mathutils.Vector(c)
+                  mins = mathutils.Vector(map(min, mins, w)); maxs = mathutils.Vector(map(max, maxs, w))
+          center = (mins + maxs) / 2
+          size = max((maxs - mins))
+          cam = bpy.data.objects.new("Cam", bpy.data.cameras.new("Cam"))
+          scene.collection.objects.link(cam)
+          scene.camera = cam
+          scene.render.engine = 'BLENDER_WORKBENCH'
+          scene.display.shading.light = 'STUDIO'
+          scene.display.shading.color_type = 'TEXTURE'
+          scene.render.resolution_x = 640
+          scene.render.resolution_y = 640
+          for i, ang in enumerate([35, 145, 250]):
+              a = math.radians(ang)
+              d = size * 2.2
+              cam.location = (center.x + d * math.cos(a), center.y + d * math.sin(a), center.z + size * 0.8)
+              cam.rotation_euler = (center - cam.location).to_track_quat('-Z', 'Y').to_euler()
+              scene.render.filepath = f"{OUT}/preview_{i}.png"
+              bpy.ops.render.render(write_still=True)
+          print("DONE")
+          EOF
+          blender -b assets-src/models/riggedcat.blend --python /tmp/export.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: riggedcat-glb
+          path: blend-out/
