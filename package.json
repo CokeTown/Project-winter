@@ -16,6 +16,9 @@
     "build:exe": "npm run build:electron && electron-builder --win portable"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
     "three": "^0.160.0"
   },
   "devDependencies": {
@@ -27,9 +30,19 @@
   "build": {
     "appId": "com.projectwinter.shelter",
     "productName": "Project Shelter",
-    "files": ["dist/**/*", "electron/**/*", "package.json"],
-    "directories": { "output": "release" },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
     "asar": true,
-    "win": { "target": ["portable"] }
+    "win": {
+      "target": [
+        "portable"
+      ]
+    }
   }
 }

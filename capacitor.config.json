@@ -1,0 +1,9 @@
+{
+  "appId": "com.projectwinter.shelter",
+  "appName": "Project Shelter",
+  "webDir": "dist",
+  "backgroundColor": "#0e1014",
+  "android": {
+    "allowMixedContent": false
+  }
+}
