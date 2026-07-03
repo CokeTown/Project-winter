@@ -107,7 +107,9 @@ export function setFire(on, vol = 0.5) {
   else channelStop(fireChan);
 }
 
-export function setRadio(on, vol = 0.25) {
+// 라디오 상시 잡음은 거슬린다는 피드백으로 극소 볼륨의 배경 결로만 유지
+// (추후: 상시 루프 대신 예보 갱신 순간에만 짧게 지지직 — #22에서 재설계)
+export function setRadio(on, vol = 0.04) {
   if (!ctx) return;
   if (on) channelPlay(radioChan, 'radio_static', vol);
   else channelStop(radioChan);
