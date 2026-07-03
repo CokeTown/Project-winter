@@ -34,15 +34,18 @@
   <div class="shelter-name" id="hud-shelter">🏚️ 셸터</div>
   <div class="stat" id="hud-stat">성공한 탐험 0회</div>
   <div id="gauges">
-    <div class="gauge" id="g-hunger" title="클릭하면 음식을 먹습니다"><div class="g-fill"></div><span class="g-label">🥫 80</span></div>
-    <div class="gauge" id="g-thirst" title="클릭하면 물을 마십니다"><div class="g-fill"></div><span class="g-label">💧 80</span></div>
+    <div class="gauge" id="g-hunger" title="배고픔 — 클릭하면 음식을 먹습니다"><div class="g-fill"></div><span class="g-label">🥫 80</span></div>
+    <div class="gauge" id="g-thirst" title="갈증 — 클릭하면 물을 마십니다"><div class="g-fill"></div><span class="g-label">💧 80</span></div>
+    <div class="gauge" id="g-energy" title="에너지 — 탐험마다 소모, 취침으로 회복"><div class="g-fill"></div><span class="g-label">⚡ 100</span></div>
   </div>
-  <div class="btn-row">
-    <button class="pixel-btn primary" id="btn-exp">🎒 탐험</button>
-    <button class="pixel-btn" id="btn-move">🏠 이주</button>
-    <button class="pixel-btn" id="btn-craft">🔨 제작</button>
-    <button class="pixel-btn" id="btn-clean" title="깨끗한 물 1 소비, 청결 +20">🧹 청소</button>
-    <button class="pixel-btn" id="btn-help">❓</button>
+  <div class="btn-row icons">
+    <button class="pixel-btn primary" id="btn-exp" title="탐험 (지도)">🎒</button>
+    <button class="pixel-btn" id="btn-move" title="이주">🏠</button>
+    <button class="pixel-btn" id="btn-craft" title="제작대">🔨</button>
+    <button class="pixel-btn" id="btn-clean" title="청소 (물 1 → 청결 +20)">🧹</button>
+    <button class="pixel-btn" id="btn-sleep" title="취침 — 내일 아침까지 자고 에너지 회복">🛌</button>
+    <button class="pixel-btn" id="btn-journal" title="일지 (도감·업적·통계)">📖</button>
+    <button class="pixel-btn" id="btn-help" title="튜토리얼">🎓</button>
   </div>
 </div>
 

@@ -39,6 +39,7 @@
   #hud .stat { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
   #hud .btn-row { display: flex; gap: 5px; flex-wrap: wrap; }
   #hud .btn-row .pixel-btn { flex: 1 0 auto; padding: 6px 7px; min-width: 0; }
+  #hud .btn-row.icons .pixel-btn { font-size: 15px; padding: 7px 0; line-height: 1; }
   #gauges { display: flex; gap: 6px; margin-bottom: 8px; }
   .gauge {
     position: relative; flex: 1; height: 16px; cursor: pointer;

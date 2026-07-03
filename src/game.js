@@ -1916,6 +1916,8 @@ const state = {
   renovated: { container: true },   // 정비를 마친 셸터 (최초 입주 시 자원 소요)
   hunger: 80,   // 배고픔 (0=탈진)
   thirst: 80,   // 갈증 (0=탈진)
+  energy: 100,  // 에너지 — 탐험/노동으로 소모, 취침으로 회복
+  expToday: 0,  // 오늘 탐험 횟수 (하루 5회 제한)
   upkeepOk: true,
   dayLog: { gain: {}, spend: {}, notes: [] },
   helpSeen: false,
@@ -1985,6 +1987,24 @@ function drinkWater() {
 }
 function isExhausted() { return state.hunger <= 0 || state.thirst <= 0; }
 
+/* ── 취침 (의무 휴식 — 자원 인플레이션 방지 + 침대의 가치) ── */
+const EXP_PER_DAY = 5;
+function sleepUntilMorning(auto = false) {
+  if (state.exp) { toast('탐험대가 돌아오기 전엔 잘 수 없습니다'); return; }
+  const hasBed = items.some(i => i.defId === 'bed');
+  const cozy = comfortDetail().score;
+  // 내일 아침 07:00으로 — 하루 정산(processDay)은 tickTime이 처리
+  state.gameMin = (Math.floor(state.gameMin / 1440) + 1) * 1440 + 7 * 60;
+  state.energy = Math.min(100, (hasBed ? 90 : 65) + (cozy >= 75 ? 10 : 0));
+  state.dayLog.notes.push(`😴 ${hasBed ? '침대에서 푹' : '바닥에서 웅크리고'} 잤습니다. (에너지 ${Math.round(state.energy)})`);
+  toast(auto
+    ? `😴 지쳐 곯아떨어졌다... ${hasBed ? '침대' : '바닥'}에서 아침을 맞았다 (⚡${Math.round(state.energy)})`
+    : `😴 ${hasBed ? '침대에서 푹 잤다' : '바닥에서 웅크리고 잤다'} — 아침이 밝았다 (⚡${Math.round(state.energy)})`);
+  scheduleSave();
+  updateHud();
+  updateClock();
+}
+
 /* ── 세이브 슬롯 (Steam 대비: 슬롯 3개 + 최근 슬롯 기억) ── */
 const SLOT_COUNT = 3;
 const slotKey = n => `project-shelter-slot${n}`;
@@ -2013,6 +2033,7 @@ function scheduleSave() {
       localStorage.setItem(slotKey(currentSlot), JSON.stringify({ state, opts }));
       localStorage.setItem('project-shelter-lastslot', String(currentSlot));
     } catch (e) { /* file:// 등 저장 불가 환경 */ }
+    checkAchievements();               // 업적 체크 (모든 변화는 저장을 거친다)
     updateHud();                       // 쾌적함 반영
     if (!state.exp) renderExpPanel();  // 보정된 성공률 반영
   }, 400);
@@ -2055,6 +2076,8 @@ function loadSave() {
       for (const id of Object.keys(RESOURCES)) if (state.res[id] == null) state.res[id] = 0;
       if (state.hunger == null) state.hunger = 80;
       if (state.thirst == null) state.thirst = 80;
+      if (state.energy == null) state.energy = 100;
+      if (state.expToday == null) state.expToday = 0;
       if (!SHELTERS[state.current]) state.current = 'container';
       // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
       const elapsed = Math.max(0, (Date.now() - (state.savedAt || Date.now())) / 1000);
@@ -2201,6 +2224,7 @@ function loadShelter(id) {
   state.current = id;
   const sh = SHELTERS[id];
   ROOM = { ...sh.room };
+  if ((state.mods?.[id] || []).includes('extension')) ROOM.w += 2; // 증축
   sh.buildRoom();
   sh.buildEnv();
   buildModProps(); // 설치된 개조 소품
@@ -2442,6 +2466,8 @@ function forecastText() {
 function startExpedition(regionId) {
   if (state.exp) return;
   if (isExhausted()) { toast('탈진 상태입니다 — 먹고 마셔야 움직일 수 있습니다'); return; }
+  if (state.energy < 20) { toast('⚡ 너무 지쳤습니다 — 🛌 취침으로 회복하세요'); return; }
+  if (state.expToday >= EXP_PER_DAY) { toast(`오늘은 이미 ${EXP_PER_DAY}번 나갔다 왔습니다 — 🛌 쉬어야 합니다`); return; }
   openPrepModal(regionId);
 }
 function openPrepModal(regionId) {
@@ -2499,9 +2525,10 @@ function departExpedition(regionId, prep) {
   for (const id of prep) resConsumeAll(PREPS[id].cost);
   const p = rateParts(regionId, prep);
   const dur = expDuration(r) * 1000;
-  // 탐험도 몸을 쓴다: 배고픔/갈증 소모 (물병이 갈증 소모를 반감)
-  state.hunger = Math.max(0, state.hunger - 8);
-  state.thirst = Math.max(0, state.thirst - (prep.includes('bottle') ? 5 : 10));
+  // 탐험도 몸을 쓴다 (소모 절반으로 완화) + 에너지 소모
+  state.hunger = Math.max(0, state.hunger - 4);
+  state.thirst = Math.max(0, state.thirst - (prep.includes('bottle') ? 3 : 5));
+  state.energy = Math.max(0, state.energy - 20);
   // 성공률 버프/디버프는 이번 출발에 반영되어 소진 (물자 좌표 버프는 정산 시)
   if (state.buff?.exp) state.buff = null;
   state.exp = { region: regionId, end: Date.now() + dur, dur, rate: p.eff, prep };
@@ -2519,6 +2546,9 @@ function resolveExpedition() {
   const prep = exp.prep || [];
   state.exp = null;
   state.stats.exp++;
+  // 탐험을 다녀오면 하루가 그만큼 흘러 있다 (거리 비례 2~5시간)
+  state.gameMin += 120 + expDuration(r) * 2.5;
+  state.expToday = (state.expToday || 0) + 1;
   const rate = exp.rate ?? r.rate;
   const roll = Math.random();
   const gotRes = {};   // 자원 획득
@@ -2625,6 +2655,8 @@ function resolveExpedition() {
   renderResBar();
   renderExpPanel();
   updateHud();
+  // 하루 5회를 채우면 몸이 버티지 못한다 — 강제 취침
+  if (state.expToday >= EXP_PER_DAY) sleepUntilMorning(true);
 }
 
 /* ============================================================
@@ -2743,6 +2775,7 @@ const SHELTER_MODS = {
   shelf:      { name: '증축 선반',   emoji: '🪜', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', only: ['bus'] },
   solar:      { name: '태양광 패널', emoji: '🔆', cost: { parts: 4, battery: 1 },  desc: '이틀에 한 번 배터리 +1', not: ['subway'] },
   roof:       { name: '지붕 보강',   emoji: '🛠️', cost: { material: 4 },           desc: '악천후 수리 자재가 더 이상 들지 않음', only: ['cabin', 'greenhouse'] },
+  extension:  { name: '증축',        emoji: '🧱', cost: { material: 6, parts: 2 },  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
 };
 function modAvailable(id, shelterId) {
   const m = SHELTER_MODS[id];
@@ -2871,6 +2904,7 @@ function openCraftModal() {
         toast(`${DEFS[c.out.furn].emoji} ${DEFS[c.out.furn].name} 제작 완료 — 인벤토리에 추가`);
         renderInventoryBar();
       }
+      state.stats.craft = (state.stats.craft || 0) + 1;
       state.dayLog.notes.push(`🔨 제작: ${c.out.res ? RESOURCES[c.out.res].name : DEFS[c.out.furn].name}`);
       scheduleSave();
       renderResBar();
@@ -2885,15 +2919,84 @@ function openCraftModal() {
       if (!state.mods) state.mods = {};
       if (!state.mods[state.current]) state.mods[state.current] = [];
       state.mods[state.current].push(id);
-      addModProp(id);
-      shadowDirty();
       toast(`${m.emoji} ${m.name} 설치 완료!`);
       state.dayLog.notes.push(`🔧 거처 개조: ${m.name} 설치`);
+      if (id === 'extension') {
+        // 방 구조가 바뀌므로 거처를 다시 짓는다
+        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+        loadShelter(state.current);
+        closeModal();
+      } else {
+        addModProp(id);
+        openCraftModal();
+      }
+      shadowDirty();
       scheduleSave();
       renderResBar();
       updateHud();
-      openCraftModal();
     }));
+}
+
+/* ============================================================
+   일지: 도감 · 업적 · 통계 (장기 동기부여 + Steam 업적 대비)
+============================================================ */
+function markCollection(defId, colorIdx) {
+  if (!state.collection) state.collection = {};
+  if (!state.collection[defId]) state.collection[defId] = [false, false, false, false];
+  state.collection[defId][colorIdx] = true;
+}
+function collectionCount() {
+  return Object.values(state.collection || {}).reduce((a, arr) => a + arr.filter(Boolean).length, 0);
+}
+const ACHS = [
+  { id: 'first',     icon: '👣', name: '첫 발걸음',        desc: '첫 탐험 성공',                chk: () => state.stats.success >= 1 },
+  { id: 'exp10',     icon: '🎒', name: '베테랑 스캐빈저',  desc: '탐험 성공 10회',              chk: () => state.stats.success >= 10 },
+  { id: 'exp30',     icon: '🗺️', name: '폐허의 주인',      desc: '탐험 성공 30회',              chk: () => state.stats.success >= 30 },
+  { id: 'craft5',    icon: '🔨', name: '손재주',           desc: '제작 5회',                    chk: () => (state.stats.craft || 0) >= 5 },
+  { id: 'craft20',   icon: '⚙️', name: '폐허의 장인',      desc: '제작 20회',                   chk: () => (state.stats.craft || 0) >= 20 },
+  { id: 'comfort90', icon: '🏡', name: '완벽한 안식처',    desc: '쾌적함 90 달성',              chk: () => comfortDetail().score >= 90 },
+  { id: 'settled8',  icon: '🕯️', name: '정든 집',          desc: '한 거처에 8일 연속 거주',     chk: () => (state.stayDays || 0) >= 8 },
+  { id: 'renov3',    icon: '🏠', name: '개척자',           desc: '거처 3곳 정비',               chk: () => Object.values(state.renovated || {}).filter(Boolean).length >= 3 },
+  { id: 'renovAll',  icon: '🌍', name: '모든 곳이 집',     desc: '거처 9곳 전부 정비',          chk: () => Object.values(state.renovated || {}).filter(Boolean).length >= 9 },
+  { id: 'mods3',     icon: '🔧', name: '개조 기술자',      desc: '거처 개조 3개 설치',          chk: () => Object.values(state.mods || {}).flat().length >= 3 },
+  { id: 'winter',    icon: '❄️', name: '첫 겨울을 넘다',   desc: 'Day 48 도달 (사계절 생존)',   chk: () => state.day >= 48 },
+  { id: 'col21',     icon: '📖', name: '수집가',           desc: '도감 25% (가구 색상 21종)',   chk: () => collectionCount() >= 21 },
+  { id: 'col42',     icon: '🖼️', name: '큐레이터',         desc: '도감 50%',                    chk: () => collectionCount() >= 42 },
+  { id: 'colAll',    icon: '🏛️', name: '폐허의 박물관장',  desc: '도감 100% (84색상)',          chk: () => collectionCount() >= 84 },
+];
+function checkAchievements() {
+  if (!state.achs) state.achs = {};
+  for (const a of ACHS) {
+    if (!state.achs[a.id] && a.chk()) {
+      state.achs[a.id] = true;
+      toast(`🏆 업적 달성 — ${a.icon} ${a.name}`);
+      state.dayLog.notes.push(`🏆 업적: ${a.name}`);
+    }
+  }
+}
+function openJournalModal() {
+  const se = seasonOf();
+  const achsHtml = ACHS.map(a => {
+    const got = state.achs?.[a.id];
+    return `<div class="prep-row" style="cursor:default;${got ? '' : 'opacity:0.4'}">
+      <span style="font-size:16px">${a.icon}</span>
+      <span>${a.name}</span>
+      <span class="p-cost">${a.desc}${got ? ' ✓' : ''}</span>
+    </div>`;
+  }).join('');
+  const colHtml = Object.entries(DEFS).map(([id, def]) => {
+    const arr = state.collection?.[id] || [];
+    const sw = def.colors.map((c, i) =>
+      `<span title="${def.colorNames[i]}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-left:3px;background:${arr[i] ? '#' + c.toString(16).padStart(6, '0') : '#22252d'};border:1px solid ${arr[i] ? 'var(--accent)' : '#333'}"></span>`).join('');
+    return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${def.emoji}${sw}</span>`;
+  }).join('');
+  openModal('📖 생존 일지', `
+    <div class="report-sec"><span class="r-title">통계</span><br>
+      Day ${state.day} ${se.icon} · 탐험 ${state.stats.exp}회 (성공 ${state.stats.success}) · 제작 ${state.stats.craft || 0}회 · 연속 거주 ${state.stayDays || 0}일
+    </div>
+    <div class="report-sec"><span class="r-title">도감 — 배치해 본 가구 색상 ${collectionCount()}/84</span><br>${colHtml}</div>
+    <div class="report-sec"><span class="r-title">업적 ${Object.values(state.achs || {}).filter(Boolean).length}/${ACHS.length}</span></div>
+    ${achsHtml}`);
 }
 
 /* ============================================================
@@ -3021,6 +3124,7 @@ function finishPlacing() {
   placing = null;
   gridObj.visible = false;
   state.inventory[item.defId]--;
+  markCollection(item.defId, item.colorIdx);
   renderInventoryBar();
   select(item);
   scheduleSave();
@@ -3454,12 +3558,19 @@ function updateHud() {
   const injIcon = state.injury ? ` ${INJURIES[state.injury.type].icon}` : '';
   const dist = DISTRICTS[districtOf(state.current)];
   $('hud-shelter').textContent = `${dist.emoji} ${dist.name} · ${sh.emoji} ${sh.name}`;
+  // 아이콘 중심 상태 표시 (자세한 설명은 툴팁으로)
   $('hud-stat').innerHTML =
-    `${W.icon} ${W.name}${W.penalty ? ` <span style="color:var(--bad)">-${Math.round(W.penalty * 100)}%</span>` : ''}${injIcon}${state.injury ? ` <span style="color:var(--bad)">${INJURIES[state.injury.type].name}</span>` : ''}${cd.limitMod ? ` <span style="color:var(--bad)" title="${sh.limits || ''}">⚠️</span>` : ''}${state.buff ? ` <span style="color:var(--good)" title="${state.buff.label}">✨</span>` : ''}<br>` +
-    `쾌적함 <span style="color:var(--accent)" title="가구 ${cd.furn} + 조명 ${cd.light} + 청결 ${cd.cleanMod} + 거처 ${cd.shelterMod}${cd.settled ? ` + 정든 집 ${cd.settled}` : ''}${cd.injuryMod ? ` + 부상 ${cd.injuryMod}` : ''}${cd.limitMod ? ` + 제약 ${cd.limitMod}` : ''}">${cd.score}점 ${'★'.repeat(lv)}${'☆'.repeat(5 - lv)}</span>` +
-    `${bonus ? ` <span style="color:var(--good)">(탐험 +${bonus}%)</span>` : ''} · 청결 ${Math.round(cd.clean)} · 성공 ${state.successes}회`;
+    `${W.icon}${W.penalty ? `<span style="color:var(--bad)">-${Math.round(W.penalty * 100)}%</span>` : ''}` +
+    `${injIcon ? `<span title="${state.injury ? INJURIES[state.injury.type].name : ''}">${injIcon}</span>` : ''}` +
+    `${cd.limitMod ? ` <span style="color:var(--bad)" title="${sh.limits || ''}">⚠️</span>` : ''}` +
+    `${state.buff ? ` <span style="color:var(--good)" title="${state.buff.label}">✨</span>` : ''}` +
+    ` · <span style="color:var(--accent)" title="쾌적함 ${cd.score}점 = 가구 ${cd.furn} + 조명 ${cd.light} + 청결 ${cd.cleanMod} + 거처 ${cd.shelterMod}${cd.settled ? ` + 정든 집 ${cd.settled}` : ''}${cd.injuryMod ? ` + 상태 ${cd.injuryMod}` : ''}${cd.limitMod ? ` + 제약 ${cd.limitMod}` : ''}${bonus ? ` → 탐험 +${bonus}%` : ''}">😊${cd.score} ${'★'.repeat(lv)}</span>` +
+    ` · <span title="청결도 — 🧹 청소로 회복">🧹${Math.round(cd.clean)}</span>` +
+    ` · <span title="오늘 탐험 ${state.expToday}/${EXP_PER_DAY}회 (5회면 자동 취침)">🎒${state.expToday}/${EXP_PER_DAY}</span>` +
+    ` · <span title="탐험 성공 누적">🏆${state.successes}</span>`;
   renderGauge('g-hunger', state.hunger, '🥫');
   renderGauge('g-thirst', state.thirst, '💧');
+  renderGauge('g-energy', state.energy, '⚡');
 }
 function renderGauge(id, val, emoji) {
   const g = $(id);
@@ -3484,7 +3595,9 @@ function renderResBar() {
 function cleanShelter() {
   const c = state.cleanBy[state.current] ?? 70;
   if (c >= 100) { toast('이미 깨끗합니다'); return; }
+  if (state.energy < 10) { toast('⚡ 너무 지쳐서 청소할 힘이 없습니다'); return; }
   if (!resConsume('water', 1)) { toast('깨끗한 물이 필요합니다 (💧1)'); return; }
+  state.energy = Math.max(0, state.energy - 5);
   state.cleanBy[state.current] = Math.min(100, c + 20);
   toast(`🧹 청소 완료 — 청결도 ${Math.round(state.cleanBy[state.current])} (💧물 -1)`);
   state.dayLog.notes.push('셸터를 청소했습니다. (+20)');
@@ -3499,6 +3612,7 @@ function cleanShelter() {
 function processDay() {
   const notes = state.dayLog.notes;
   const perk = SHELTERS[state.current].perk || {};
+  state.expToday = 0; // 새 하루, 새 걸음
   // 정든 집
   state.stayDays = (state.stayDays || 0) + 1;
   if (state.stayDays === 3) notes.push('🕯️ 이 집이 조금씩 편안해집니다. (정든 집 +3)');
@@ -3732,7 +3846,7 @@ function showSelPanel(item) {
     s.className = 'swatch' + (i === item.colorIdx ? ' active' : '');
     s.style.background = '#' + c.toString(16).padStart(6, '0');
     s.title = def.colorNames[i];
-    s.addEventListener('click', () => { recolorItem(item, i); showSelPanel(item); scheduleSave(); });
+    s.addEventListener('click', () => { recolorItem(item, i); markCollection(item.defId, i); showSelPanel(item); scheduleSave(); });
     sw.appendChild(s);
   });
   // 조명/가전: 전원 토글 + 연료 잔량 (기획서 v0.2 UI: "양초 3개 보유 / 1일 1개 소비")
@@ -3820,28 +3934,18 @@ function openShelterModal() {
     b.addEventListener('click', () => moveToShelter(b.dataset.shelter)));
 }
 function openHelpModal() {
-  openModal('❓ 살아남는 법', `
-    <b>1. 탐험 — 준비하고 나가라</b><br>
-    [🎒 탐험]에서 지역을 고르면 준비 화면이 열립니다. 손전등·장갑·우의 같은
-    준비물은 자원을 소비하지만 성공률을 올리고 부상을 막아줍니다.<br><br>
-    <b>2. 자원과 몸 — 모든 것이 소모된다</b><br>
-    조명은 매일 양초/배터리를 태우고, 치료엔 붕대와 소독약이, 청소엔 물이 듭니다.
-    그리고 당신도 먹고 마셔야 합니다 — <b>🥫배고픔/💧갈증 게이지</b>가 바닥나면 탈진해
-    탐험을 나갈 수 없습니다. 게이지를 클릭해 먹고 마시거나, 자동 섭취를 켜두세요.
-    25 아래로 떨어지면 탐험 성공률 -10%p.<br><br>
-    <b>3. 부상 — 실패는 빚이 된다</b><br>
-    탐험에 실패하면 부상을 입습니다. 재료로 즉시 치료하거나, 시간을 들여 자연
-    회복을 기다리세요. 방치하면 감염으로 악화될 수 있습니다.<br><br>
-    <b>4. 쾌적함 — 꾸미기가 곧 생존</b><br>
-    가구·조명·청결·거처 상태가 쾌적함(0~100)을 만듭니다. 50점부터 탐험 보너스,
-    75점부터 회복 속도 보너스. 청결은 매일 떨어지니 [🧹 청소]를 잊지 마세요.<br><br>
-    <b>5. 시간·날씨·계절</b><br>
-    새벽→밤이 흐르고(하루 ≈ 16분), 하루가 끝나면 결산 리포트가 나옵니다.
-    날씨는 하루 이틀 단위로 바뀌고, <b>12일마다 계절</b>이 순환합니다 —
-    겨울엔 눈이 잦고 배가 빨리 꺼지며 온실 텃밭이 얼어붙습니다.<br><br>
-    <b>6. 더 나은 거처로</b><br>
-    컨테이너 → 돔 벙커 → 도시 옥탑방 → 숲속 오두막. 거처마다 특성과 유지비가
-    다릅니다. 좋은 집일수록 유지비가 듭니다.<br><br>
+  const card = (icon, title, body) => `
+    <div class="prep-row" style="cursor:default;align-items:flex-start">
+      <span style="font-size:20px">${icon}</span>
+      <div style="flex:1;line-height:1.7"><b>${title}</b><br><span style="font-size:10px;color:var(--text-dim)">${body}</span></div>
+    </div>`;
+  openModal('🎓 튜토리얼', `
+    ${card('🎒', '탐험', '지도에서 지역 선택 → 준비물 챙기면 성공률↑. 하루 5회, 다녀오면 시간이 흐릅니다.')}
+    ${card('🥫💧⚡', '생존', '게이지 클릭 = 먹기/마시기/취침. ⚡가 없으면 🛌 자야 합니다. 침대가 있으면 푹 잡니다.')}
+    ${card('🔨', '제작', '가구는 파밍이 아니라 제작이 기본. 재료(천·부품·건축재)를 탐험으로 모으세요.')}
+    ${card('😊', '쾌적함', '가구·조명·청결·정든 집이 쾌적함을 만들고, 탐험 성공률과 회복 속도를 올립니다.')}
+    ${card('🏠', '거처', '구역마다 특성·유지비·제약이 다릅니다. 개조(빗물받이·텃밭...)로 자급자족.')}
+    ${card('🌤️', '세월', '날씨는 며칠 단위, 계절은 12일 주기. 겨울을 대비해 비축하세요. 저장은 자동.')}
     <b>카메라</b>: <kbd>우클릭 드래그</kbd> 또는 <kbd>Q</kbd>/<kbd>E</kbd> 회전 · 휠 줌 (줌아웃하면 주변 폐허가 보입니다)<br>
     진행 상황은 자동 저장됩니다.
   `);
@@ -3982,8 +4086,11 @@ updateHud();
 updateClock();
 $('btn-clean').addEventListener('click', cleanShelter);
 $('btn-craft').addEventListener('click', openCraftModal);
+$('btn-journal').addEventListener('click', openJournalModal);
 $('g-hunger').addEventListener('click', eatFood);
 $('g-thirst').addEventListener('click', drinkWater);
+$('g-energy').addEventListener('click', () => sleepUntilMorning());
+$('btn-sleep').addEventListener('click', () => sleepUntilMorning());
 $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
 // 온스크린 카메라 컨트롤 (모바일/데스크톱 공용)
 $('cam-rotl').addEventListener('click', () => { camState.targetYaw -= Math.PI / 4; });
