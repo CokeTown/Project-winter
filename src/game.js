@@ -4041,10 +4041,22 @@ try { uiState = JSON.parse(localStorage.getItem(UI_KEY) || '{}'); } catch (e) { 
 function saveUiState() {
   try { localStorage.setItem(UI_KEY, JSON.stringify(uiState)); } catch (e) { /* */ }
 }
+// .panel 계열은 CSS `zoom: var(--uiz)`로 확대/축소된다. zoom이 걸린 요소의
+// getBoundingClientRect()/pointer 좌표는 "화면에 보이는(visual)" 좌표계이지만,
+// style.left/top(=position:absolute의 offset)은 줌이 적용되기 전(pre-zoom) 좌표계로
+// 해석된다. 그래서 visual 좌표를 그대로 style.left/top에 되돌려 쓰면 다음 프레임에
+// 줌 배율만큼 다시 튀어(누적 드리프트) 화면 밖으로 밀려난다 — 반드시 uiz로 나눠 보정한다.
+function getUiz() {
+  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--uiz'));
+  return v > 0 ? v : 1;
+}
 function clampPanel(el) {
+  const z = getUiz();
   const r = el.getBoundingClientRect();
-  const l = THREE.MathUtils.clamp(r.left, 0, Math.max(0, innerWidth - Math.min(r.width, 120)));
-  const t = THREE.MathUtils.clamp(r.top, 0, Math.max(0, innerHeight - 30));
+  // pre-zoom 좌표계로 환산
+  const preL = r.left / z, preT = r.top / z, preW = r.width / z;
+  const l = THREE.MathUtils.clamp(preL, 0, Math.max(0, innerWidth - Math.min(preW, 120)));
+  const t = THREE.MathUtils.clamp(preT, 0, Math.max(0, innerHeight - 30));
   el.style.left = l + 'px';
   el.style.top = t + 'px';
   el.style.right = 'auto';
@@ -4062,8 +4074,8 @@ function makeDraggablePanel(el, key, title) {
     el.style.top = saved.t + 'px';
     el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'none';
     if (saved.c) el.classList.add('collapsed');
-  } else if (innerWidth < 760 && (key === 'render' || key === 'res')) {
-    el.classList.add('collapsed'); // 모바일 기본: 설정·자원 접힘
+  } else if ((innerWidth < 760 || innerWidth < 900 || innerHeight < 500) && (key === 'render' || key === 'res')) {
+    el.classList.add('collapsed'); // 작은 창 기본: 설정·자원 접힘 (겹침 방지)
   }
   const minBtn = head.querySelector('.p-min');
   const syncMin = () => { minBtn.textContent = el.classList.contains('collapsed') ? '□' : '–'; };
@@ -4075,11 +4087,14 @@ function makeDraggablePanel(el, key, title) {
     saveUiState();
     syncMin();
   });
-  const panelPos = elm => { const r = elm.getBoundingClientRect(); return { l: r.left, t: r.top }; };
+  // panelPos: 저장용 — pre-zoom(=style.left/top과 같은) 좌표계로 환산해서 반환
+  const panelPos = elm => { const z = getUiz(); const r = elm.getBoundingClientRect(); return { l: r.left / z, t: r.top / z }; };
   let drag = null;
   head.addEventListener('pointerdown', ev => {
     if (ev.target === minBtn) return;
+    const z = getUiz();
     const r = el.getBoundingClientRect();
+    // dx/dy는 visual 좌표계 안에서의 오프셋이므로 그대로 두되, 매 이동마다 pre-zoom으로 환산해 되돌린다
     drag = { dx: ev.clientX - r.left, dy: ev.clientY - r.top, id: ev.pointerId };
     el.classList.add('dragging');
     head.setPointerCapture(ev.pointerId);
@@ -4088,8 +4103,9 @@ function makeDraggablePanel(el, key, title) {
   });
   head.addEventListener('pointermove', ev => {
     if (!drag || ev.pointerId !== drag.id) return;
-    el.style.left = (ev.clientX - drag.dx) + 'px';
-    el.style.top = (ev.clientY - drag.dy) + 'px';
+    const z = getUiz();
+    el.style.left = ((ev.clientX - drag.dx) / z) + 'px';
+    el.style.top = ((ev.clientY - drag.dy) / z) + 'px';
     el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'none';
   });
   const endDrag = ev => {
@@ -4103,10 +4119,61 @@ function makeDraggablePanel(el, key, title) {
   head.addEventListener('pointerup', endDrag);
   head.addEventListener('pointercancel', endDrag);
 }
-addEventListener('resize', () => {
+// 화면 밖으로는 절대 나가지 않게 — 사용자가 옮겼든 기본 위치든 매 리사이즈마다 전 패널에 적용
+function reclampAllPanels() {
   for (const id of ['hud', 'exp-panel', 'render-panel', 'clock-panel', 'res-bar'])
-    if (uiState[{ 'hud': 'hud', 'exp-panel': 'exp', 'render-panel': 'render', 'clock-panel': 'clock', 'res-bar': 'res' }[id]]) clampPanel($(id));
-});
+    clampPanel($(id));
+}
+// 사용자가 드래그로 옮기지 않은(uiState 미저장) 패널은 화면 크기/스케일이 바뀔 때마다
+// 실제 콘텐츠 높이 기준으로 겹치지 않게 재배치 (하드코딩된 top 값은 콘텐츠 높이 변화·
+// UI 스케일 변화에 취약하므로, 기본 위치일 때만 다른 패널을 피해 이어붙인다).
+// 완전한 무충돌을 보장하진 않지만(겹침은 허용), 대표적인 기본 배치 충돌(설정↔카메라 버튼,
+// 자원↔설정, 탐험↔거처)은 해소한다.
+function autoStackPanels() {
+  const z = getUiz();
+  // rect를 pre-zoom(=style.left/top과 같은 좌표계)으로 환산해서 반환
+  const preRect = elm => {
+    const r = elm.getBoundingClientRect();
+    return { left: r.left / z, top: r.top / z, right: r.right / z, bottom: r.bottom / z, width: r.width / z };
+  };
+  // 설정 패널(render-panel) 자체가 카메라 컨트롤(#cam-ctrl)과 가로로 겹치지 않게:
+  // 뷰포트가 좁아 render-panel 오른쪽 경계가 cam-ctrl 왼쪽 경계를 침범하면 접어서 폭을 줄인다.
+  // (res-bar를 그 아래로 이어붙이기 전에 먼저 최종 높이를 확정해야 여백이 낭비되지 않는다)
+  if (!uiState.render) {
+    const rp = $('render-panel');
+    const cc = $('cam-ctrl');
+    if (rp && cc && !rp.classList.contains('collapsed')) {
+      const rr = rp.getBoundingClientRect();
+      const cr = cc.getBoundingClientRect();
+      const overlapsVert = rr.bottom > cr.top;
+      if (overlapsVert && rr.right > cr.left) rp.classList.add('collapsed');
+    }
+  }
+  // 자원 패널: 설정 패널(render-panel) 바로 아래로 이어붙인다 (둘 다 접혀 있으면 헤더만 겹쳐 쌓이므로
+  // 작은 창에서도 그대로 적용 — cam-ctrl과의 우발적 겹침을 피하는 데도 도움이 된다)
+  if (!uiState.res && !uiState.render && innerWidth >= 760) {
+    const rp = $('render-panel');
+    const rb = $('res-bar');
+    if (rp && rb) {
+      const r = preRect(rp);
+      const rbW = preRect(rb).width;
+      rb.style.top = Math.round(r.bottom + 10) + 'px';
+      rb.style.left = Math.round(r.right - rbW) + 'px';
+      rb.style.right = 'auto'; rb.style.bottom = 'auto'; rb.style.transform = 'none';
+    }
+  }
+  // 탐험 패널: hud 바로 아래로
+  if (!uiState.exp && !uiState.hud && innerWidth >= 760) {
+    const hud = $('hud');
+    const exp = $('exp-panel');
+    if (hud && exp) {
+      const r = preRect(hud);
+      exp.style.top = Math.round(r.bottom + 10) + 'px';
+      exp.style.left = Math.round(r.left) + 'px';
+      exp.style.right = 'auto'; exp.style.bottom = 'auto'; exp.style.transform = 'none';
+    }
+  }
+}
 
 /* ============================================================
    타이틀 화면 · 인트로 · 세이브 슬롯 UI
@@ -4132,6 +4199,9 @@ function hideTitle() {
   gameStarted = true;
   document.body.classList.remove('title-mode');
   $('title-screen').style.display = 'none';
+  // 타이틀 화면에선 .panel이 display:none이라 이전 onResize() 때 패널 크기가 0으로 측정됐다.
+  // 실제 패널이 보이기 시작한 지금 다시 계산해 자동 배치를 맞춘다.
+  onResize();
   // 자리 비운 사이의 정산(탐험 결과 등)은 게임에 들어온 뒤에 보여준다
   if (state.exp && Date.now() >= state.exp.end) resolveExpedition();
   syncBgm();
@@ -5136,10 +5206,34 @@ if (sessionStorage.getItem('ps-intro')) {
   showTitle();
 }
 
+/* ============================================================
+   UI 동적 스케일 (--uiz): 저해상도(WSVGA)~4K·모바일 전 구간 대응
+   기준 1400x860에서 1.0, 화면이 커질수록 확대, 작아질수록 축소.
+   본문 기준 폰트(11px)가 스케일 후 11px 밑으로 내려가지 않도록 하한 보정.
+============================================================ */
+const UI_BASE_FONT = 11;   // .panel 계열 기본 폰트 크기(px) — 이 값 자체가 이미 최소 가독 크기
+const UI_MIN_FONT = 11;    // 스케일 후에도 유지해야 할 최소 렌더 폰트(px)
+function updateUiScale() {
+  let s = Math.min(innerWidth / 1400, innerHeight / 860);
+  s = THREE.MathUtils.clamp(s, 0.85, 2.1);
+  // 스케일 후 기준 폰트(11px)가 최소 가독 크기(11px) 밑으로 내려가지 않게 보정
+  const minScale = UI_MIN_FONT / UI_BASE_FONT; // = 1.0
+  if (s < minScale) s = minScale;
+  document.documentElement.style.setProperty('--uiz', s.toFixed(3));
+  return s;
+}
 function onResize() {
   renderer.setSize(innerWidth, innerHeight);
   makeRT();
   resizeFx();
+  updateUiScale();
+  // 타이틀 화면에선 .panel 전체가 display:none이라 getBoundingClientRect()가 0을 반환 —
+  // 그 상태로 배치/클램프하면 위치가 (0,0)으로 망가진다. 실제 게임 화면일 때만 계산한다.
+  // (hideTitle()이 게임 진입 시점에 onResize()를 다시 호출해 그때 제대로 잡아준다.)
+  if (!titleVisible) {
+    autoStackPanels();
+    reclampAllPanels();
+  }
 }
 addEventListener('resize', onResize);
 onResize();
