@@ -2,6 +2,20 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert } from './lib/helpers.js';
 import { DEFS } from './data/furniture.js';
+import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
+
+// 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
+const LName = LN;                        // obj.name / obj.nameEn
+const LDesc = LD;                        // obj.desc / obj.descEn
+const LRisk = (o) => LF(o, 'risk');      // REGIONS.risk
+const LEff  = (o) => LF(o, 'eff');       // PREPS.eff
+const LLabel = (o) => LF(o, 'label');    // perk.label / upkeep.label / appliance.label
+const LBonus = (o) => LF(o, 'bonusLabel'); // DISTRICTS.bonusLabel
+const LHint = (o) => LF(o, 'hint');      // CRAFTS.hint
+const LLimits = (o) => LF(o, 'limits');  // SHELTERS.limits
+const LColor = (o, i) => (lang === 'en' && o.colorNamesEn ? o.colorNamesEn[i] : o.colorNames[i]);
+// buff 라벨: 이벤트 버프는 labelId(신규) 또는 label(구세이브 잔재)
+const buffLabel = (b) => b ? (b.labelId ? t(b.labelId) : (b.label || '')) : '';
 
 /* ============================================================
    기본 설정
@@ -287,13 +301,13 @@ function applyTimeLighting() {
 }
 function timeLabel() {
   const h = gameHour();
-  if (h < 4.5) return ['🌙', '밤'];
-  if (h < 7) return ['🌄', '새벽'];
-  if (h < 11) return ['🌅', '아침'];
-  if (h < 16.5) return ['☀️', '낮'];
-  if (h < 19) return ['🌆', '저녁'];
-  if (h < 21) return ['🌇', '황혼'];
-  return ['🌙', '밤'];
+  if (h < 4.5) return ['🌙', t('time.night')];
+  if (h < 7) return ['🌄', t('time.dawn')];
+  if (h < 11) return ['🌅', t('time.morning')];
+  if (h < 16.5) return ['☀️', t('time.day')];
+  if (h < 19) return ['🌆', t('time.evening')];
+  if (h < 21) return ['🌇', t('time.dusk')];
+  return ['🌙', t('time.night')];
 }
 function clockText() {
   const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
@@ -305,10 +319,10 @@ function clockText() {
    계절 (기획서: 4계절 순환 — 12게임일 = 1계절)
 ============================================================ */
 const SEASONS = [
-  { id: 'spring', name: '봄',   icon: '🌸', tint: [1.03, 1.05, 1.0],  desc: '만물이 깨어난다' },
-  { id: 'summer', name: '여름', icon: '☀️', tint: [0.97, 1.04, 0.94], desc: '풀이 무성하다' },
-  { id: 'autumn', name: '가을', icon: '🍂', tint: [1.1, 1.0, 0.86],   desc: '세상이 물든다' },
-  { id: 'winter', name: '겨울', icon: '❄️', tint: [1.0, 1.02, 1.1],   desc: '혹독한 계절' },
+  { id: 'spring', name: '봄',   nameEn: 'Spring', icon: '🌸', tint: [1.03, 1.05, 1.0],  desc: '만물이 깨어난다', descEn: 'all things awaken' },
+  { id: 'summer', name: '여름', nameEn: 'Summer', icon: '☀️', tint: [0.97, 1.04, 0.94], desc: '풀이 무성하다', descEn: 'the grass grows thick' },
+  { id: 'autumn', name: '가을', nameEn: 'Autumn', icon: '🍂', tint: [1.1, 1.0, 0.86],   desc: '세상이 물든다', descEn: 'the world takes on color' },
+  { id: 'winter', name: '겨울', nameEn: 'Winter', icon: '❄️', tint: [1.0, 1.02, 1.1],   desc: '혹독한 계절', descEn: 'a harsh season' },
 ];
 const SEASON_DAYS = 12;
 function seasonOf(day = state.day) { return SEASONS[Math.floor((day - 1) / SEASON_DAYS) % 4]; }
@@ -327,10 +341,10 @@ function seasonAdjustPool(pool) {
    동적 날씨 (기획서: 날씨가 게임플레이에 직접 영향)
 ============================================================ */
 const WEATHERS = {
-  clear: { name: '맑음', icon: '🌤️', penalty: 0 },
-  snow:  { name: '눈',   icon: '🌨️', penalty: 0.15, count: 850, color: 0xdde8f0, size: 3, fall: 1.6, sway: 0.7 },
-  rain:  { name: '비',   icon: '🌧️', penalty: 0.10, count: 1100, color: 0x8fa8c8, size: 2, fall: 10, sway: 0.12 },
-  ash:   { name: '재',   icon: '🌫️', penalty: 0.05, count: 380, color: 0x9a938a, size: 2.5, fall: 0.45, sway: 1.3 },
+  clear: { name: '맑음', nameEn: 'Clear', icon: '🌤️', penalty: 0 },
+  snow:  { name: '눈',   nameEn: 'Snow', icon: '🌨️', penalty: 0.15, count: 850, color: 0xdde8f0, size: 3, fall: 1.6, sway: 0.7 },
+  rain:  { name: '비',   nameEn: 'Rain', icon: '🌧️', penalty: 0.10, count: 1100, color: 0x8fa8c8, size: 2, fall: 10, sway: 0.12 },
+  ash:   { name: '재',   nameEn: 'Ash', icon: '🌫️', penalty: 0.05, count: 380, color: 0x9a938a, size: 2.5, fall: 0.45, sway: 1.3 },
 };
 const weather = { type: 'clear', nextChange: 0, pts: null, seedY: [], seedS: [] };
 {
@@ -392,7 +406,7 @@ function setWeather(type) {
 function rollWeather() {
   const pool = seasonAdjustPool(SHELTERS[state.current].weatherPool || ['clear']);
   const next = pool[Math.floor(Math.random() * pool.length)];
-  if (next !== weather.type) state.dayLog.notes.push(`날씨가 ${WEATHERS[next].name}(으)로 바뀌었습니다.`);
+  if (next !== weather.type) state.dayLog.notes.push(t('weather.changed', { name: LName(WEATHERS[next]) }));
   setWeather(next);
   // 날씨는 하루~이틀 유지 (기획: 리얼타임 감각)
   state.weatherUntil = state.gameMin + 1440 + Math.random() * 1440;
@@ -798,12 +812,13 @@ function groundPlane(colFn, hFn, size = 300, seg = 52) {
 
 const SHELTERS = {
   container: {
-    name: '버려진 컨테이너', emoji: '📦', unlockAt: 0, viewH: 14, ceilY: 2.1,
+    name: '버려진 컨테이너', nameEn: 'Abandoned Container', emoji: '📦', unlockAt: 0, viewH: 14, ceilY: 2.1,
     desc: '황무지 한가운데 버려진 화물 컨테이너. 좁지만 비바람은 막아준다.',
+    descEn: 'A cargo container abandoned in the middle of the wasteland. Cramped, but it keeps out the wind and rain.',
     baseComfort: 2,
-    cold: 8, limits: '🥶 얇은 철판 — 비/눈 오는 날 쾌적함 -8',
+    cold: 8, limits: '🥶 얇은 철판 — 비/눈 오는 날 쾌적함 -8', limitsEn: '🥶 Thin steel — comfort -8 on rainy/snowy days',
     weatherPool: ['clear', 'ash', 'ash', 'snow'],
-    perk: { expBonus: 0.05, label: '🧭 길목의 거점 — 탐험 성공률 +5%p' },
+    perk: { expBonus: 0.05, label: '🧭 길목의 거점 — 탐험 성공률 +5%p', labelEn: '🧭 Crossroads outpost — expedition success +5%p' },
     room: { w: 6.4, d: 2.9, h: 2.4 },
     mood: { fog: 0x2e2820, fogNear: 20, fogFar: 52, skyH: 0x453a2d, skyZ: 0x15161e, hemiSky: 0x8a8272, hemiGround: 0x4c443a, hemiInt: 0.72, moonC: 0xc9c0a8, moonInt: 0.68, stars: 0.5 },
     buildRoom() {
@@ -873,15 +888,16 @@ const SHELTERS = {
   },
 
   bunker: {
-    name: '돔 벙커', emoji: '🛖', unlockAt: 2, viewH: 17, ceilY: 2.6,
+    name: '돔 벙커', nameEn: 'Dome Bunker', emoji: '🛖', unlockAt: 2, viewH: 17, ceilY: 2.6,
     baseComfort: 5,
-    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (환기·조명 전력)' },
-    moveCost: { material: 2, battery: 1 }, limits: '🔌 밀폐 구조 — 전력이 끊기면 거처 보너스·특성 정지',
+    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (환기·조명 전력)', labelEn: 'Battery 1 / day (ventilation & lighting)' },
+    moveCost: { material: 2, battery: 1 }, limits: '🔌 밀폐 구조 — 전력이 끊기면 거처 보너스·특성 정지', limitsEn: '🔌 Sealed structure — losing power halts shelter bonuses & traits',
     desc: '반쯤 무너진 돔형 벙커. 갈라진 외피 사이로 별이 보이지만, 두꺼운 벽 안쪽은 의외로 아늑하다.',
+    descEn: 'A half-collapsed dome bunker. Stars peek through the cracked shell, but inside the thick walls it is surprisingly snug.',
     room: { w: 8.5, d: 6, h: 3 },
     mood: { fog: 0x161c2c, fogNear: 22, fogFar: 60, skyH: 0x223048, skyZ: 0x0a0e1a, hemiSky: 0x8593b8, hemiGround: 0x3f3a34, hemiInt: 0.68, moonC: 0x9db4d8, moonInt: 0.8, stars: 0.95 },
     weatherPool: ['clear', 'snow', 'clear', 'rain'],
-    perk: { injuryHalf: true, label: '🛡️ 두꺼운 외피 — 부상 회복 2배 빠름' },
+    perk: { injuryHalf: true, label: '🛡️ 두꺼운 외피 — 부상 회복 2배 빠름', labelEn: '🛡️ Thick shell — injuries heal twice as fast' },
     buildRoom() {
       const { w, d, h } = ROOM;
       const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
@@ -1056,14 +1072,15 @@ const SHELTERS = {
   },
 
   rooftop: {
-    name: '도시 옥탑방', emoji: '🏙️', unlockAt: 4, viewH: 18, ceilY: 2.6,
+    name: '도시 옥탑방', nameEn: 'City Rooftop', emoji: '🏙️', unlockAt: 4, viewH: 18, ceilY: 2.6,
     desc: '무너진 도시의 빌딩 옥상. 하늘이 열려 있고 폐허가 된 도시가 내려다보인다.',
+    descEn: 'A rooftop atop a fallen city building. The sky is wide open, and the ruined city spreads out below.',
     room: { w: 9, d: 7, h: 0.85 },
     baseComfort: 4,
-    weatherDirt: 3, moveCost: { material: 2, parts: 1 }, limits: '🌧️ 지붕 없는 노천 — 비/눈 오는 날마다 청결 -3',
+    weatherDirt: 3, moveCost: { material: 2, parts: 1 }, limits: '🌧️ 지붕 없는 노천 — 비/눈 오는 날마다 청결 -3', limitsEn: '🌧️ Roofless & exposed — cleanliness -3 on each rainy/snowy day',
     mood: { fog: 0x1c202c, fogNear: 22, fogFar: 62, skyH: 0x252c3d, skyZ: 0x0b0e18, hemiSky: 0x7d8bb0, hemiGround: 0x3a3733, hemiInt: 0.66, moonC: 0x9db4d8, moonInt: 0.8, stars: 0.75 },
     weatherPool: ['clear', 'rain', 'clear', 'snow'],
-    perk: { salvagePlus: true, label: '📡 탁 트인 시야 — 부분 성공 시에도 가구 1개 회수' },
+    perk: { salvagePlus: true, label: '📡 탁 트인 시야 — 부분 성공 시에도 가구 1개 회수', labelEn: '📡 Clear vantage — salvage 1 furniture even on partial success' },
     buildRoom() {
       const { w, d, h } = ROOM;
       const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
@@ -1146,14 +1163,15 @@ const SHELTERS = {
   },
 
   cabin: {
-    name: '숲속 오두막', emoji: '🏡', unlockAt: 7, viewH: 16, ceilY: 2.45,
+    name: '숲속 오두막', nameEn: 'Forest Cabin', emoji: '🏡', unlockAt: 7, viewH: 16, ceilY: 2.45,
     baseComfort: 10,
-    upkeep: { res: 'material', n: 1, every: 3, label: '건축재 1 / 3일' },
+    upkeep: { res: 'material', n: 1, every: 3, label: '건축재 1 / 3일', labelEn: 'Building material 1 / 3 days' },
     stormRepair: ['rain', 'snow'], moveCost: { material: 4 },
-    limits: '🪵 목조 지붕 — 악천후엔 매일 건축재 1로 누수 수리 (없으면 청결 -8)',
+    limits: '🪵 목조 지붕 — 악천후엔 매일 건축재 1로 누수 수리 (없으면 청결 -8)', limitsEn: '🪵 Timber roof — bad weather needs 1 material/day for leak repair (else cleanliness -8)',
     desc: '숲 가장자리의 오두막. 폐허가 된 세상에서 찾아낸 가장 아늑한 은신처.',
+    descEn: 'A cabin on the forest’s edge. The coziest refuge you have found in this ruined world.',
     weatherPool: ['clear', 'snow', 'rain', 'clear'],
-    perk: { cozyMult: 1.5, label: '🕯️ 아늑한 구조 — 쾌적함 효과 1.5배' },
+    perk: { cozyMult: 1.5, label: '🕯️ 아늑한 구조 — 쾌적함 효과 1.5배', labelEn: '🕯️ Cozy layout — comfort effects ×1.5' },
     room: { w: 10, d: 8, h: 2.7 },
     mood: { fog: 0x1a2233, fogNear: 24, fogFar: 58, skyH: 0x1a2233, skyZ: 0x0a0f1a, hemiSky: 0x8a98bd, hemiGround: 0x46403a, hemiInt: 0.7, moonC: 0x9db4d8, moonInt: 0.75, stars: 0.85 },
     buildRoom() {
@@ -1315,15 +1333,16 @@ const SHELTERS = {
   },
 
   bus: {
-    name: '버려진 스쿨버스', emoji: '🚌', unlockAt: 9, viewH: 14, ceilY: 2.0,
+    name: '버려진 스쿨버스', nameEn: 'Abandoned School Bus', emoji: '🚌', unlockAt: 9, viewH: 14, ceilY: 2.0,
     desc: '고속도로 위에 멈춰 선 스쿨버스. 좁지만 어디로든 갈 수 있을 것 같은 기분이 든다.',
+    descEn: 'A school bus stalled on the highway. Cramped, but it feels like it could take you anywhere.',
     room: { w: 6.8, d: 2.4, h: 2.2 },
     baseComfort: 3,
     mood: { fog: 0x2a2622, fogNear: 20, fogFar: 54, skyH: 0x3d3830, skyZ: 0x14151d, hemiSky: 0x8a8272, hemiGround: 0x453d33, hemiInt: 0.66, moonC: 0xc9c0a8, moonInt: 0.6, stars: 0.55 },
     weatherPool: ['clear', 'ash', 'rain', 'clear'],
-    perk: { timeMult: 0.75, label: '🚌 이동형 거점 — 탐험 소요 시간 -25%' },
-    upkeep: { res: 'fuel', n: 1, every: 2, label: '연료 1 / 2일' },
-    maxItems: 8, moveCost: { fuel: 2, parts: 2 }, limits: '📦 좁은 실내 — 가구 최대 8개',
+    perk: { timeMult: 0.75, label: '🚌 이동형 거점 — 탐험 소요 시간 -25%', labelEn: '🚌 Mobile base — expedition time -25%' },
+    upkeep: { res: 'fuel', n: 1, every: 2, label: '연료 1 / 2일', labelEn: 'Fuel 1 / 2 days' },
+    maxItems: 8, moveCost: { fuel: 2, parts: 2 }, limits: '📦 좁은 실내 — 가구 최대 8개', limitsEn: '📦 Tight interior — max 8 furniture',
     buildRoom() {
       const { w, d, h } = ROOM;
       const busY = 0x9a7a2f, busD = 0x7a6226;
@@ -1412,15 +1431,16 @@ const SHELTERS = {
   },
 
   subway: {
-    name: '지하철 역사', emoji: '🚇', unlockAt: 12, viewH: 16, ceilY: 2.8, indoor: true,
+    name: '지하철 역사', nameEn: 'Subway Station', emoji: '🚇', unlockAt: 12, viewH: 16, ceilY: 2.8, indoor: true,
     desc: '무너진 도시 아래 잠든 승강장. 날씨도 계절도 닿지 않는 곳 — 어둠만 잘 다스리면 최고의 요새다.',
+    descEn: 'A platform sleeping beneath the fallen city. Untouched by weather or season — master the dark and it becomes the finest fortress.',
     room: { w: 11, d: 6, h: 3 },
     baseComfort: 6,
     mood: { fog: 0x121417, fogNear: 16, fogFar: 44, skyH: 0x0b0c0e, skyZ: 0x060708, hemiSky: 0x6e7684, hemiGround: 0x3a352e, hemiInt: 0.68, moonC: 0x8a96a6, moonInt: 0.45, stars: 0 },
     weatherPool: ['clear'],
-    perk: { lightMult: 1.5, label: '🕯️ 어둠 속 안식 — 조명 쾌적함 효과 1.5배' },
-    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (환기 팬)' },
-    needsLight: 12, moveCost: { battery: 2, material: 3 }, limits: '🌑 완전한 어둠 — 켜진 조명이 하나도 없으면 쾌적함 -12',
+    perk: { lightMult: 1.5, label: '🕯️ 어둠 속 안식 — 조명 쾌적함 효과 1.5배', labelEn: '🕯️ Rest in the dark — lighting comfort effect ×1.5' },
+    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (환기 팬)', labelEn: 'Battery 1 / day (ventilation fan)' },
+    needsLight: 12, moveCost: { battery: 2, material: 3 }, limits: '🌑 완전한 어둠 — 켜진 조명이 하나도 없으면 쾌적함 -12', limitsEn: '🌑 Total darkness — comfort -12 if no light is lit',
     buildRoom() {
       const { w, d, h } = ROOM;
       const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
@@ -1518,16 +1538,17 @@ const SHELTERS = {
   },
 
   greenhouse: {
-    name: '온실', emoji: '🌿', unlockAt: 15, viewH: 16, ceilY: 2.6,
+    name: '온실', nameEn: 'Greenhouse', emoji: '🌿', unlockAt: 15, viewH: 16, ceilY: 2.6,
     desc: '기적처럼 남아 있는 유리 온실. 세상이 멸망해도 흙에서는 여전히 싹이 튼다.',
+    descEn: 'A glass greenhouse that survived as if by miracle. Even at the end of the world, seeds still sprout from the soil.',
     room: { w: 9, d: 6, h: 2.4 },
     baseComfort: 8,
     mood: { fog: 0x1c2426, fogNear: 22, fogFar: 60, skyH: 0x22333a, skyZ: 0x0a1016, hemiSky: 0x8aa8a0, hemiGround: 0x3f4438, hemiInt: 0.72, moonC: 0xa8c4c0, moonInt: 0.7, stars: 0.8 },
     weatherPool: ['clear', 'rain', 'clear', 'snow'],
-    perk: { produce: { food: 1 }, produceNote: '🌿 온실 텃밭에서 수확했습니다', label: '🌿 텃밭 — 매일 음식 +1' },
-    upkeep: { res: 'water', n: 1, every: 1, label: '깨끗한 물 1 / 일 (급수)' },
+    perk: { produce: { food: 1 }, produceNote: '🌿 온실 텃밭에서 수확했습니다', produceNoteEn: '🌿 Harvested from the greenhouse garden', label: '🌿 텃밭 — 매일 음식 +1', labelEn: '🌿 Garden — food +1 daily' },
+    upkeep: { res: 'water', n: 1, every: 1, label: '깨끗한 물 1 / 일 (급수)', labelEn: 'Clean water 1 / day (irrigation)' },
     stormRepair: ['snow'], moveCost: { material: 3, water: 2 },
-    limits: '❄️ 유리 지붕 — 눈 오는 날엔 건축재 1로 보수 (없으면 청결 -8)',
+    limits: '❄️ 유리 지붕 — 눈 오는 날엔 건축재 1로 보수 (없으면 청결 -8)', limitsEn: '❄️ Glass roof — snowy days need 1 material to patch (else cleanliness -8)',
     buildRoom() {
       const { w, d, h } = ROOM;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), lamb(0x6b5a44));
@@ -1662,15 +1683,16 @@ const SHELTERS = {
   },
 
   ship: {
-    name: '여객선 선실', emoji: '🚢', unlockAt: 18, viewH: 17, ceilY: 2.5,
+    name: '여객선 선실', nameEn: 'Liner Cabin', emoji: '🚢', unlockAt: 18, viewH: 17, ceilY: 2.5,
     desc: '해안에 좌초된 여객선의 갑판. 파도 소리와 함께 잠들고, 아침엔 낚싯대를 드리운다.',
+    descEn: 'The deck of a passenger liner run aground on the coast. You sleep to the sound of waves and cast a line at dawn.',
     room: { w: 10, d: 7, h: 0.9 },
     baseComfort: 7,
     mood: { fog: 0x16222c, fogNear: 20, fogFar: 56, skyH: 0x1e3040, skyZ: 0x0a1018, hemiSky: 0x7d94b0, hemiGround: 0x3a3d40, hemiInt: 0.68, moonC: 0xa8c0d8, moonInt: 0.8, stars: 0.9 },
     weatherPool: ['clear', 'rain', 'rain', 'snow'],
-    perk: { failSalvage: true, produce: { food: 1 }, produceNote: '🎣 밤낚시로 물고기를 잡았습니다', label: '🎣 낚시 — 매일 음식 +1 · 탐험 실패에도 자원 일부 회수' },
-    upkeep: { res: 'parts', n: 1, every: 3, label: '부품 1 / 3일 (배수 펌프)' },
-    dailyDirt: 2, moveCost: { parts: 3, material: 2 }, limits: '💧 바다의 습기 — 청결이 매일 2 더 빨리 떨어짐',
+    perk: { failSalvage: true, produce: { food: 1 }, produceNote: '🎣 밤낚시로 물고기를 잡았습니다', produceNoteEn: '🎣 Caught a fish with night fishing', label: '🎣 낚시 — 매일 음식 +1 · 탐험 실패에도 자원 일부 회수', labelEn: '🎣 Fishing — food +1 daily · salvage some resources even on failed expeditions' },
+    upkeep: { res: 'parts', n: 1, every: 3, label: '부품 1 / 3일 (배수 펌프)', labelEn: 'Parts 1 / 3 days (bilge pump)' },
+    dailyDirt: 2, moveCost: { parts: 3, material: 2 }, limits: '💧 바다의 습기 — 청결이 매일 2 더 빨리 떨어짐', limitsEn: '💧 Sea damp — cleanliness drops 2 faster each day',
     buildRoom() {
       const { w, d, h } = ROOM;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), lamb(0x7a6248));
@@ -1808,16 +1830,17 @@ const SHELTERS = {
   },
 
   lighthouse: {
-    name: '등대 등탑 거실', emoji: '🗼', unlockAt: 22, viewH: 19, ceilY: 2.2,
+    name: '등대 등탑 거실', nameEn: 'Lighthouse Lamp Room', emoji: '🗼', unlockAt: 22, viewH: 19, ceilY: 2.2,
     desc: '절벽 끝 등대의 꼭대기 층. 두꺼운 벽 안은 아늑하고, 옥상 랜턴 옆 빗물받이가 물을 모아준다.',
+    descEn: 'The top floor of a lighthouse at the cliff’s edge. Snug within thick walls, with a rain catch beside the rooftop lantern.',
     room: { w: 7, d: 7, h: 2.6 },
     baseComfort: 9,
     mood: { fog: 0x1a2430, fogNear: 22, fogFar: 64, skyH: 0x223448, skyZ: 0x0a0f18, hemiSky: 0x8aa0c0, hemiGround: 0x3a3d40, hemiInt: 0.7, moonC: 0xa8c0d8, moonInt: 0.8, stars: 0.95 },
     weatherPool: ['clear', 'rain', 'snow', 'rain'],
-    perk: { expBonus: 0.03, forecast: true, label: '🔦 탐조등 — 모든 지역 성공률 +3%p · 날씨 예보 제공' },
-    upkeep: { res: 'fuel', n: 1, every: 2, label: '연료 1 / 2일 (등불)' },
+    perk: { expBonus: 0.03, forecast: true, label: '🔦 탐조등 — 모든 지역 성공률 +3%p · 날씨 예보 제공', labelEn: '🔦 Searchlight — success +3%p in all regions · weather forecast' },
+    upkeep: { res: 'fuel', n: 1, every: 2, label: '연료 1 / 2일 (등불)', labelEn: 'Fuel 1 / 2 days (beacon)' },
     rainCatch: 2, moveCost: { fuel: 2, parts: 3 },
-    limits: '🌧️ 옥상 빗물받이 — 비/눈 오는 날 깨끗한 물 +2 (자급 가능)',
+    limits: '🌧️ 옥상 빗물받이 — 비/눈 오는 날 깨끗한 물 +2 (자급 가능)', limitsEn: '🌧️ Rooftop rain catch — clean water +2 on rainy/snowy days (self-sufficient)',
     buildRoom() {
       const { w, d, h } = ROOM;
       const conc = new THREE.MeshLambertMaterial({ map: concreteTex });
@@ -1961,34 +1984,39 @@ const SHELTERS = {
 ============================================================ */
 const DISTRICTS = {
   outskirts: {
-    name: '잿빛 외곽', emoji: '🏜️', shelters: ['container', 'bus'],
+    name: '잿빛 외곽', nameEn: 'Ashen Outskirts', emoji: '🏜️', shelters: ['container', 'bus'],
     desc: '도시 밖 황무지. 고속도로가 지나가 이동이 편하다.',
+    descEn: 'Wasteland beyond the city. A highway runs through, making travel easy.',
     regionBonus: { residential: 0.03 },
-    bonusLabel: '주거지역 접근성 +3%p',
+    bonusLabel: '주거지역 접근성 +3%p', bonusLabelEn: 'Residential access +3%p',
   },
   city: {
-    name: '무너진 도심', emoji: '🏙️', shelters: ['rooftop', 'subway'],
+    name: '무너진 도심', nameEn: 'Fallen Downtown', emoji: '🏙️', shelters: ['rooftop', 'subway'],
     desc: '폐허가 된 시가지. 위험하지만 물자가 몰려 있다.',
+    descEn: 'A ruined city center. Dangerous, but supplies are dense here.',
     regionBonus: { commercial: 0.05, slum: 0.05 },
-    bonusLabel: '상업지구·슬럼가 접근성 +5%p',
+    bonusLabel: '상업지구·슬럼가 접근성 +5%p', bonusLabelEn: 'Commercial & slum access +5%p',
   },
   meadow: {
-    name: '초원 구릉지', emoji: '🌾', shelters: ['bunker', 'greenhouse'],
+    name: '초원 구릉지', nameEn: 'Meadow Hills', emoji: '🌾', shelters: ['bunker', 'greenhouse'],
     desc: '들풀이 무성한 벌판. 조용하고 흙이 살아있다.',
+    descEn: 'A field thick with wild grass. Quiet, and the soil is alive.',
     regionBonus: { residential: 0.05 },
-    bonusLabel: '주거지역 접근성 +5%p',
+    bonusLabel: '주거지역 접근성 +5%p', bonusLabelEn: 'Residential access +5%p',
   },
   forest: {
-    name: '숲과 산기슭', emoji: '🌲', shelters: ['cabin'],
+    name: '숲과 산기슭', nameEn: 'Forest & Foothills', emoji: '🌲', shelters: ['cabin'],
     desc: '침엽수림 가장자리. 폐허에서 가장 먼 안식처.',
+    descEn: 'The edge of a conifer forest. The refuge farthest from the ruins.',
     regionBonus: { industrial: 0.05 },
-    bonusLabel: '공업지대 접근성 +5%p',
+    bonusLabel: '공업지대 접근성 +5%p', bonusLabelEn: 'Industrial access +5%p',
   },
   coast: {
-    name: '잿빛 해안', emoji: '🌊', shelters: ['ship', 'lighthouse'],
+    name: '잿빛 해안', nameEn: 'Ashen Coast', emoji: '🌊', shelters: ['ship', 'lighthouse'],
     desc: '안개 낀 바닷가. 바다가 주는 것과 빼앗는 것이 있다.',
+    descEn: 'A fog-wrapped shore. The sea gives, and the sea takes.',
     regionBonus: { slum: 0.05 },
-    bonusLabel: '슬럼가 접근성 +5%p',
+    bonusLabel: '슬럼가 접근성 +5%p', bonusLabelEn: 'Slum access +5%p',
   },
 };
 function districtOf(shelterId) {
@@ -2001,33 +2029,33 @@ function districtOf(shelterId) {
 ============================================================ */
 // ---- 자원 (기획서 v0.2: 자원 보유량 및 소비) ----
 const RESOURCES = {
-  food:       { name: '음식',     emoji: '🥫' },
-  water:      { name: '깨끗한 물', emoji: '💧' },
-  cloth:      { name: '천',       emoji: '🧵' },
-  bandage:    { name: '붕대',     emoji: '🩹' },
-  antiseptic: { name: '소독약',   emoji: '🧴' },
-  painkiller: { name: '진통제',   emoji: '💊' },
-  candle:     { name: '양초',     emoji: '🕯️' },
-  battery:    { name: '배터리',   emoji: '🔋' },
-  fuel:       { name: '연료',     emoji: '⛽' },
-  parts:      { name: '부품',     emoji: '⚙️' },
-  material:   { name: '건축재',   emoji: '🧱' },
+  food:       { name: '음식',     nameEn: 'Food',        emoji: '🥫' },
+  water:      { name: '깨끗한 물', nameEn: 'Clean Water', emoji: '💧' },
+  cloth:      { name: '천',       nameEn: 'Cloth',       emoji: '🧵' },
+  bandage:    { name: '붕대',     nameEn: 'Bandage',     emoji: '🩹' },
+  antiseptic: { name: '소독약',   nameEn: 'Antiseptic',  emoji: '🧴' },
+  painkiller: { name: '진통제',   nameEn: 'Painkiller',  emoji: '💊' },
+  candle:     { name: '양초',     nameEn: 'Candle',      emoji: '🕯️' },
+  battery:    { name: '배터리',   nameEn: 'Battery',     emoji: '🔋' },
+  fuel:       { name: '연료',     nameEn: 'Fuel',        emoji: '⛽' },
+  parts:      { name: '부품',     nameEn: 'Parts',       emoji: '⚙️' },
+  material:   { name: '건축재',   nameEn: 'Material',    emoji: '🧱' },
 };
 // ---- 부상 (기획서 v0.2: 부상 치료 시스템) ----
 const INJURIES = {
-  minor:     { name: '가벼운 부상', icon: '🩹', pen: 0.05, restH: 12, cure: { bandage: 1 }, infect: 0.10 },
-  deep:      { name: '깊은 상처',   icon: '🩸', pen: 0.15, restH: 24, cure: { bandage: 1, antiseptic: 1 }, infect: 0.25 },
-  sprain:    { name: '염좌',        icon: '🦵', pen: 0.10, restH: 18, timeMult: 1.3, cure: { painkiller: 1 } },
-  infection: { name: '감염 위험',   icon: '🤒', pen: 0.20, restH: 36, cure: { antiseptic: 1, water: 1 } },
+  minor:     { name: '가벼운 부상', nameEn: 'Minor Injury',    icon: '🩹', pen: 0.05, restH: 12, cure: { bandage: 1 }, infect: 0.10 },
+  deep:      { name: '깊은 상처',   nameEn: 'Deep Wound',      icon: '🩸', pen: 0.15, restH: 24, cure: { bandage: 1, antiseptic: 1 }, infect: 0.25 },
+  sprain:    { name: '염좌',        nameEn: 'Sprain',          icon: '🦵', pen: 0.10, restH: 18, timeMult: 1.3, cure: { painkiller: 1 } },
+  infection: { name: '감염 위험',   nameEn: 'Infection Risk',  icon: '🤒', pen: 0.20, restH: 36, cure: { antiseptic: 1, water: 1 } },
 };
 // ---- 탐험 준비물 (기획서 v0.2: 준비물 슬롯) ----
 const PREPS = {
-  bottle:    { name: '물병',     emoji: '🥤', cost: { water: 1 },  eff: '탐험 갈증 소모 절반 · 부상 회복 -20%' },
-  canned:    { name: '통조림',   emoji: '🥫', cost: { food: 1 },   eff: '공업/슬럼 성공률 +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
-  flashlight:{ name: '손전등',   emoji: '🔦', cost: { battery: 1 },eff: '상업/슬럼 성공률 +10%p', bonus: { commercial: 0.10, slum: 0.10 } },
-  gloves:    { name: '장갑',     emoji: '🧤', cost: { cloth: 1 },  eff: '부상 확률 -30%' },
-  raincoat:  { name: '우의',     emoji: '🧥', cost: { cloth: 1 },  eff: '날씨 페널티 -70%' },
-  firstaid:  { name: '응급키트', emoji: '⛑️', cost: { bandage: 1, antiseptic: 1 }, eff: '깊은 상처 → 가벼운 부상으로 완화' },
+  bottle:    { name: '물병',     nameEn: 'Water Bottle', emoji: '🥤', cost: { water: 1 },  eff: '탐험 갈증 소모 절반 · 부상 회복 -20%', effEn: 'Halves thirst use on expeditions · injury recovery -20%' },
+  canned:    { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫', cost: { food: 1 },   eff: '공업/슬럼 성공률 +5%p', effEn: 'Industrial/slum success +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
+  flashlight:{ name: '손전등',   nameEn: 'Flashlight', emoji: '🔦', cost: { battery: 1 },eff: '상업/슬럼 성공률 +10%p', effEn: 'Commercial/slum success +10%p', bonus: { commercial: 0.10, slum: 0.10 } },
+  gloves:    { name: '장갑',     nameEn: 'Gloves', emoji: '🧤', cost: { cloth: 1 },  eff: '부상 확률 -30%', effEn: 'Injury chance -30%' },
+  raincoat:  { name: '우의',     nameEn: 'Raincoat', emoji: '🧥', cost: { cloth: 1 },  eff: '날씨 페널티 -70%', effEn: 'Weather penalty -70%' },
+  firstaid:  { name: '응급키트', nameEn: 'First-Aid Kit', emoji: '⛑️', cost: { bandage: 1, antiseptic: 1 }, eff: '깊은 상처 → 가벼운 부상으로 완화', effEn: 'Softens deep wounds into minor injuries' },
 };
 
 const state = {
@@ -2087,9 +2115,9 @@ function resConsumeAll(cost) {
   return true;
 }
 function costLabel(cost) {
-  return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${RESOURCES[id].name} ${n}`).join(' + ');
+  return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(' + ');
 }
-const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.35 };
+const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.35, lang: 'ko' };
 
 /* ============================================================
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
@@ -2106,19 +2134,19 @@ function decayGauges(gm) {
   }
 }
 function eatFood() {
-  if ((state.res.food || 0) < 1) { toast('음식이 없습니다 — 주거지역을 탐험하세요'); return; }
-  if (state.hunger > 85) { toast('아직 배부릅니다'); return; }
+  if ((state.res.food || 0) < 1) { toast(t('eat.noFood')); return; }
+  if (state.hunger > 85) { toast(t('eat.full')); return; }
   resConsume('food', 1);
   state.hunger = Math.min(100, state.hunger + 45);
-  toast('🥫 식사했습니다 (+45)');
+  toast(t('eat.done'));
   renderResBar(); updateHud(); scheduleSave();
 }
 function drinkWater() {
-  if ((state.res.water || 0) < 1) { toast('깨끗한 물이 없습니다'); return; }
-  if (state.thirst > 85) { toast('목마르지 않습니다'); return; }
+  if ((state.res.water || 0) < 1) { toast(t('drink.noWater')); return; }
+  if (state.thirst > 85) { toast(t('drink.full')); return; }
   resConsume('water', 1);
   state.thirst = Math.min(100, state.thirst + 45);
-  toast('💧 물을 마셨습니다 (+45)');
+  toast(t('drink.done'));
   renderResBar(); updateHud(); scheduleSave();
 }
 function isExhausted() { return state.hunger <= 0 || state.thirst <= 0; }
@@ -2126,16 +2154,17 @@ function isExhausted() { return state.hunger <= 0 || state.thirst <= 0; }
 /* ── 취침 (의무 휴식 — 자원 인플레이션 방지 + 침대의 가치) ── */
 const EXP_PER_DAY = 5;
 function sleepUntilMorning(auto = false) {
-  if (state.exp) { toast('탐험대가 돌아오기 전엔 잘 수 없습니다'); return; }
+  if (state.exp) { toast(t('sleep.cantDuringExp')); return; }
   const hasBed = items.some(i => i.defId === 'bed');
   const cozy = comfortDetail().score;
   // 내일 아침 07:00으로 — 하루 정산(processDay)은 tickTime이 처리
   state.gameMin = (Math.floor(state.gameMin / 1440) + 1) * 1440 + 7 * 60;
   state.energy = Math.min(100, (hasBed ? 90 : 65) + (cozy >= 75 ? 10 : 0));
-  state.dayLog.notes.push(`😴 ${hasBed ? '침대에서 푹' : '바닥에서 웅크리고'} 잤습니다. (에너지 ${Math.round(state.energy)})`);
+  const e = Math.round(state.energy);
+  state.dayLog.notes.push(t(hasBed ? 'sleep.noteBed' : 'sleep.noteFloor', { e }));
   toast(auto
-    ? `😴 지쳐 곯아떨어졌다... ${hasBed ? '침대' : '바닥'}에서 아침을 맞았다 (⚡${Math.round(state.energy)})`
-    : `😴 ${hasBed ? '침대에서 푹 잤다' : '바닥에서 웅크리고 잤다'} — 아침이 밝았다 (⚡${Math.round(state.energy)})`);
+    ? t(hasBed ? 'sleep.autoBed' : 'sleep.autoFloor', { e })
+    : t(hasBed ? 'sleep.wakeBed' : 'sleep.wakeFloor', { e }));
   scheduleSave();
   updateHud();
   updateClock();
@@ -2156,7 +2185,7 @@ function slotMeta(n) {
   return {
     day: st.day || 1, season: se, shelter: SHELTERS[st.current] ? SHELTERS[st.current] : SHELTERS.container,
     successes: st.successes || 0,
-    saved: st.savedAt ? new Date(st.savedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-',
+    saved: st.savedAt ? new Date(st.savedAt).toLocaleString(lang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-',
   };
 }
 let saveTimer = null;
@@ -2201,7 +2230,7 @@ function loadSave() {
         data = bak ? JSON.parse(bak) : null;
         if (data) {
           localStorage.setItem(slotKey(currentSlot), bak);
-          toast('⚠️ 세이브가 손상되어 어제 백업으로 복구했습니다');
+          toast(t('save.corrupt'));
         }
       } catch (e2) { data = null; }
     }
@@ -2374,7 +2403,7 @@ function dropChildrenOf(support) {
     if (collides(ch, ch.x, ch.z)) {
       state.inventory[ch.defId] = (state.inventory[ch.defId] || 0) + 1;
       removeItem(ch);
-      toast(`${DEFS[ch.defId].emoji} ${DEFS[ch.defId].name}이(가) 자리를 잃어 회수되었습니다`);
+      toast(t('drop.child', { emoji: DEFS[ch.defId].emoji, name: LName(DEFS[ch.defId]) }));
     } else syncTransform(ch);
   }
 }
@@ -2476,17 +2505,17 @@ function moveToShelter(id) {
   if (id === state.current) { closeModal(); return; }
   const { cost, cross, renov } = moveCostFor(id);
   if (!resHasAll(cost)) {
-    toast(`이주 물자가 부족합니다 — ${costLabel(cost)}`);
+    toast(t('move.needSupplies', { cost: costLabel(cost) }));
     return;
   }
   resConsumeAll(cost);
   if (renov) {
     state.renovated[id] = true;
-    state.dayLog.notes.push(`🔧 ${SHELTERS[id].name} 정비 완료 (${costLabel(SHELTERS[id].moveCost || {}) || '무료'})`);
+    state.dayLog.notes.push(t('move.renovNote', { name: LName(SHELTERS[id]), cost: costLabel(SHELTERS[id].moveCost || {}) || t('free') }));
   }
   if (cross) {
     state.gameMin += 180; // 구역 간 여정 3시간
-    state.dayLog.notes.push(`🚶 ${DISTRICTS[districtOf(id)].name}(으)로 이동 — 여정에 3시간이 걸렸습니다.`);
+    state.dayLog.notes.push(t('move.journeyNote', { name: LName(DISTRICTS[districtOf(id)]) }));
   }
   state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2) }));
   state.stayDays = 0; // 새 집은 아직 낯설다
@@ -2494,7 +2523,7 @@ function moveToShelter(id) {
   scheduleSave();
   renderResBar();
   closeModal();
-  toast(`${SHELTERS[id].emoji} ${SHELTERS[id].name}(으)로 이주했습니다${cross ? ' (여정 3시간)' : ''}`);
+  toast(t('move.done', { emoji: SHELTERS[id].emoji, name: LName(SHELTERS[id]), journey: cross ? t('move.journeyTag') : '' }));
 }
 
 /* ============================================================
@@ -2502,30 +2531,30 @@ function moveToShelter(id) {
 ============================================================ */
 const REGIONS = {
   residential: {
-    name: '주거지역', emoji: '🏘️', rate: 0.8, time: 20,
+    name: '주거지역', nameEn: 'Residential', emoji: '🏘️', rate: 0.8, time: 20,
     pool: ['bed', 'chair', 'rug', 'dresser', 'candle', 'cushion', 'bookstack'], furnChance: 0.02,
-    desc: '음식·물·천·양초 · 생활 가구', risk: '낮음',
+    desc: '음식·물·천·양초 · 생활 가구', descEn: 'Food, water, cloth, candles · household furniture', risk: '낮음', riskEn: 'Low',
     lootRes: [['food', 1, 2], ['cloth', 0, 1], ['candle', 0, 1], ['water', 1, 2], ['bandage', 1, 1, 0.25]],
     injuries: ['minor'],
   },
   commercial: {
-    name: '상업지구', emoji: '🏬', rate: 0.6, time: 35,
+    name: '상업지구', nameEn: 'Commercial', emoji: '🏬', rate: 0.6, time: 35,
     pool: ['sofa', 'table', 'bookshelf', 'radio', 'plant', 'fridge', 'teatable', 'clock', 'lantern'], furnChance: 0.02,
-    desc: '배터리·의약품 · 상점 가구', risk: '보통',
+    desc: '배터리·의약품 · 상점 가구', descEn: 'Batteries, medicine · store furniture', risk: '보통', riskEn: 'Medium',
     lootRes: [['battery', 0, 2], ['parts', 0, 1], ['food', 0, 1], ['water', 0, 1], ['antiseptic', 1, 1, 0.25], ['painkiller', 1, 1, 0.2]],
     injuries: ['minor', 'minor', 'sprain'],
   },
   industrial: {
-    name: '공업지대', emoji: '🏭', rate: 0.4, time: 50,
+    name: '공업지대', nameEn: 'Industrial', emoji: '🏭', rate: 0.4, time: 50,
     pool: ['lamp', 'crate', 'radio', 'dresser', 'purifier', 'generator', 'stove'], furnChance: 0.01,
-    desc: '부품·건축재·연료', risk: '높음 — 장갑 권장',
+    desc: '부품·건축재·연료', descEn: 'Parts, building material, fuel', risk: '높음 — 장갑 권장', riskEn: 'High — gloves advised',
     lootRes: [['parts', 1, 3], ['material', 1, 3], ['fuel', 0, 2]],
     injuries: ['deep', 'deep', 'sprain'],
   },
   slum: {
-    name: '슬럼가', emoji: '🏚️', rate: 0.25, time: 70,
+    name: '슬럼가', nameEn: 'Slums', emoji: '🏚️', rate: 0.25, time: 70,
     pool: Object.keys(DEFS), furnChance: 0.03,
-    desc: '뭐든 나올 수 있다 · 희귀 가구', risk: '매우 높음 — 응급키트 권장',
+    desc: '뭐든 나올 수 있다 · 희귀 가구', descEn: 'Anything might turn up · rare furniture', risk: '매우 높음 — 응급키트 권장', riskEn: 'Very high — first-aid kit advised',
     lootRes: [['parts', 1, 2], ['cloth', 1, 2], ['painkiller', 1, 1, 0.15], ['antiseptic', 1, 1, 0.15]],
     injuries: ['deep', 'sprain', 'infection'],
   },
@@ -2606,10 +2635,10 @@ function buildMapCanvas() {
 }
 function openMapModal() {
   if (state.exp) { $('exp-panel').classList.add('show'); renderExpPanel(); return; }
-  if (isExhausted()) { toast('탈진 상태입니다 — 먹고 마셔야 움직일 수 있습니다'); return; }
-  openModal('🗺️ 탐험 지도 — 어디로 가시겠습니까?', `
+  if (isExhausted()) { toast(t('toast.exhausted')); return; }
+  openModal(t('map.title'), `
     <div id="map-wrap"></div>
-    <div id="map-info" class="rate-line" style="margin-top:8px">지도의 파밍 지역(테두리 박스)을 선택하세요.</div>`);
+    <div id="map-info" class="rate-line" style="margin-top:8px">${t('map.pick')}</div>`);
   const wrap = $('map-wrap');
   wrap.appendChild(buildMapCanvas());
   const pct = p => ({ left: (p.x / MAP.W * 100) + '%', top: (p.y / MAP.H * 100) + '%' });
@@ -2618,7 +2647,7 @@ function openMapModal() {
     const p = MAP.districts[did];
     const el = document.createElement('div');
     el.className = 'map-marker dist';
-    el.innerHTML = `<span class="de">${d.emoji}</span>${d.name}`;
+    el.innerHTML = `<span class="de">${d.emoji}</span>${LName(d)}`;
     Object.assign(el.style, pct({ x: p.x, y: p.y + 2.2 }));
     wrap.appendChild(el);
   }
@@ -2634,17 +2663,18 @@ function openMapModal() {
     const el = document.createElement('div');
     el.className = 'map-marker region';
     el.textContent = r.emoji;
-    el.title = r.name;
+    el.title = LName(r);
     Object.assign(el.style, pct(MAP.regions[rid]));
     el.addEventListener('click', () => {
       if (selEl) selEl.classList.remove('sel');
       selEl = el; el.classList.add('sel');
       const p = rateParts(rid);
       const dur = expDuration(r);
+      const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
       $('map-info').innerHTML = `
-        ${r.emoji} <b>${Math.round(p.eff * 100)}%</b> ${r.name} — ${r.desc}<br>
-        위험 ${r.risk} · 이동 포함 <b>${dur}초</b> (거리 ×${regionDistMult(rid).toFixed(2)}) · ${WEATHERS[weather.type].icon} ${WEATHERS[weather.type].name}${hasForecast() ? ` · 📻 ${forecastText()}` : ''}
-        <div style="margin-top:6px"><button class="pixel-btn primary" id="btn-map-go" style="width:100%">🎒 준비하고 출발</button></div>`;
+        ${t('map.regionLine', { emoji: r.emoji, pct: Math.round(p.eff * 100), name: LName(r), desc: LDesc(r) })}<br>
+        ${t('map.riskLine', { risk: LRisk(r), dur, mult: regionDistMult(rid).toFixed(2), wicon: WEATHERS[weather.type].icon, wname: LName(WEATHERS[weather.type]), forecast: fc })}
+        <div style="margin-top:6px"><button class="pixel-btn primary" id="btn-map-go" style="width:100%">${t('map.go')}</button></div>`;
       $('btn-map-go').addEventListener('click', () => { closeModal(); startExpedition(rid); }); // 에너지/탈진/횟수 검사를 거친다
     });
     wrap.appendChild(el);
@@ -2665,15 +2695,15 @@ function hasForecast() {
 function forecastText() {
   const nextDayStart = (Math.floor(state.gameMin / 1440) + 1) * 1440;
   return state.weatherUntil > nextDayStart
-    ? `내일도 ${WEATHERS[state.weatherType].icon} ${WEATHERS[state.weatherType].name}`
-    : '내일 날씨 변동 예상';
+    ? t('forecast.tomorrowSame', { icon: WEATHERS[state.weatherType].icon, name: LName(WEATHERS[state.weatherType]) })
+    : t('forecast.tomorrowChange');
 }
 // 탐험은 준비 단계를 거친다 (기획서 v0.2: 지역 → 날씨/위험 확인 → 준비물 → 출발)
 function startExpedition(regionId) {
   if (state.exp) return;
-  if (isExhausted()) { toast('탈진 상태입니다 — 먹고 마셔야 움직일 수 있습니다'); return; }
-  if (state.energy < 20) { toast('⚡ 너무 지쳤습니다 — 🛌 취침으로 회복하세요'); return; }
-  if (state.expToday >= EXP_PER_DAY) { toast(`오늘은 이미 ${EXP_PER_DAY}번 나갔다 왔습니다 — 🛌 쉬어야 합니다`); return; }
+  if (isExhausted()) { toast(t('toast.exhausted')); return; }
+  if (state.energy < 20) { toast(t('toast.tooTired')); return; }
+  if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); return; }
   openPrepModal(regionId);
 }
 function openPrepModal(regionId) {
@@ -2682,55 +2712,56 @@ function openPrepModal(regionId) {
   const render = () => {
     const p = rateParts(regionId, [...selected]);
     const lines = [];
-    lines.push(`기본 성공률 ${Math.round(p.base * 100)}%`);
-    if (p.shelter) lines.push(`<span style="color:var(--good)">거처 +${Math.round(p.shelter * 100)}%</span>`);
-    if (p.district) lines.push(`<span style="color:var(--good)">위치 +${Math.round(p.district * 100)}%</span>`);
-    if (p.comfort) lines.push(`<span style="color:var(--good)">쾌적함 +${Math.round(p.comfort * 100)}%</span>`);
-    if (p.gear) lines.push(`<span style="color:var(--good)">장비 +${Math.round(p.gear * 100)}%</span>`);
-    if (p.buff) lines.push(`<span style="color:${p.buff > 0 ? 'var(--good)' : 'var(--bad)'}">✨ ${state.buff?.label || '이벤트'} ${p.buff > 0 ? '+' : ''}${Math.round(p.buff * 100)}%</span>`);
-    if (p.weatherPen) lines.push(`<span style="color:var(--bad)">날씨 -${Math.round(p.weatherPen * 100)}%</span>`);
-    if (p.injuryPen) lines.push(`<span style="color:var(--bad)">부상 -${Math.round(p.injuryPen * 100)}%</span>`);
-    if (p.hungryPen) lines.push(`<span style="color:var(--bad)">허기 -${Math.round(p.hungryPen * 100)}%</span>`);
+    lines.push(t('prep.base', { pct: Math.round(p.base * 100) }));
+    if (p.shelter) lines.push(`<span style="color:var(--good)">${t('prep.shelter', { pct: Math.round(p.shelter * 100) })}</span>`);
+    if (p.district) lines.push(`<span style="color:var(--good)">${t('prep.district', { pct: Math.round(p.district * 100) })}</span>`);
+    if (p.comfort) lines.push(`<span style="color:var(--good)">${t('prep.comfort', { pct: Math.round(p.comfort * 100) })}</span>`);
+    if (p.gear) lines.push(`<span style="color:var(--good)">${t('prep.gear', { pct: Math.round(p.gear * 100) })}</span>`);
+    if (p.buff) lines.push(`<span style="color:${p.buff > 0 ? 'var(--good)' : 'var(--bad)'}">${t('prep.buff', { label: buffLabel(state.buff) || t('prep.event'), sign: p.buff > 0 ? '+' : '', pct: Math.round(p.buff * 100) })}</span>`);
+    if (p.weatherPen) lines.push(`<span style="color:var(--bad)">${t('prep.weatherPen', { pct: Math.round(p.weatherPen * 100) })}</span>`);
+    if (p.injuryPen) lines.push(`<span style="color:var(--bad)">${t('prep.injuryPen', { pct: Math.round(p.injuryPen * 100) })}</span>`);
+    if (p.hungryPen) lines.push(`<span style="color:var(--bad)">${t('prep.hungryPen', { pct: Math.round(p.hungryPen * 100) })}</span>`);
     const cost = {};
     for (const id of selected) for (const [rid, n] of Object.entries(PREPS[id].cost)) cost[rid] = (cost[rid] || 0) + n;
     const dur = expDuration(r);
+    const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
     $('modal-body').innerHTML = `
       <div class="rate-line">
-        ${r.emoji} <b>${Math.round(p.eff * 100)}%</b> · ${lines.join(' · ')}<br>
-        위험도: ${r.risk} · 소요 ${dur}초${state.injury?.type === 'sprain' ? ' <span style="color:var(--bad)">(염좌 +30%)</span>' : ''}${SHELTERS[state.current].perk?.timeMult ? ' <span style="color:var(--good)">(이동형 -25%)</span>' : ''} · ${WEATHERS[weather.type].icon} ${WEATHERS[weather.type].name}${hasForecast() ? ` · 📻 ${forecastText()}` : ''}
+        ${t('prep.rateLine', { emoji: r.emoji, pct: Math.round(p.eff * 100), lines: lines.join(' · ') })}<br>
+        ${t('prep.riskLine', { risk: LRisk(r), dur, sprain: state.injury?.type === 'sprain' ? t('prep.sprainTag') : '', mobile: SHELTERS[state.current].perk?.timeMult ? t('prep.mobileTag') : '', wicon: WEATHERS[weather.type].icon, wname: LName(WEATHERS[weather.type]), forecast: fc })}
       </div>
       <div id="prep-list">${Object.entries(PREPS).map(([id, pr]) => {
         const has = resHasAll(pr.cost);
         return `<div class="prep-row ${selected.has(id) ? 'sel' : ''} ${has ? '' : 'no'}" data-prep="${id}">
-          <span>${pr.emoji} ${pr.name}</span>
-          <span class="p-eff">${pr.eff}</span>
+          <span>${pr.emoji} ${LName(pr)}</span>
+          <span class="p-eff">${LEff(pr)}</span>
           <span class="p-cost">${costLabel(pr.cost)}</span>
         </div>`;
       }).join('')}</div>
       <div style="font-size:11px;color:var(--text-dim);margin:8px 0">
-        예상 소비: ${Object.keys(cost).length ? costLabel(cost) : '없음'}
+        ${t('prep.expectCost', { cost: Object.keys(cost).length ? costLabel(cost) : t('none') })}
       </div>
-      <button class="pixel-btn primary" id="btn-depart" style="width:100%">🎒 출발 (${dur}초)</button>`;
+      <button class="pixel-btn primary" id="btn-depart" style="width:100%">${t('prep.depart', { dur })}</button>`;
     $('modal-body').querySelectorAll('.prep-row').forEach(el => {
       el.addEventListener('click', () => {
         const id = el.dataset.prep;
         if (selected.has(id)) selected.delete(id);
         else if (resHasAll(PREPS[id].cost)) selected.add(id);
-        else { toast(`${PREPS[id].name} 준비에 필요한 자원이 부족합니다`); return; }
+        else { toast(t('prep.needFor', { name: LName(PREPS[id]) })); return; }
         render();
       });
     });
     $('btn-depart').addEventListener('click', () => departExpedition(regionId, [...selected]));
   };
-  openModal(`${r.emoji} ${r.name} 탐험 준비`, '');
+  openModal(t('prep.title', { emoji: r.emoji, name: LName(r) }), '');
   render();
 }
 function departExpedition(regionId, prep) {
   if (state.exp) return;
   // 준비 모달을 열어둔 사이 상태가 나빠졌을 수도 있다 — 출발 직전 재검사
-  if (isExhausted()) { toast('탈진 상태입니다 — 먹고 마셔야 움직일 수 있습니다'); closeModal(); return; }
-  if (state.energy < 20) { toast('⚡ 너무 지쳤습니다 — 🛌 취침으로 회복하세요'); closeModal(); return; }
-  if (state.expToday >= EXP_PER_DAY) { toast(`오늘은 이미 ${EXP_PER_DAY}번 나갔다 왔습니다 — 🛌 쉬어야 합니다`); closeModal(); return; }
+  if (isExhausted()) { toast(t('toast.exhausted')); closeModal(); return; }
+  if (state.energy < 20) { toast(t('toast.tooTired')); closeModal(); return; }
+  if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); closeModal(); return; }
   const r = REGIONS[regionId];
   for (const id of prep) resConsumeAll(PREPS[id].cost);
   const p = rateParts(regionId, prep);
@@ -2747,7 +2778,7 @@ function departExpedition(regionId, prep) {
   renderExpPanel();
   renderResBar();
   $('exp-panel').classList.add('show'); // 진행 상황 표시
-  toast(`${r.emoji} ${r.name} 탐험 시작 — 성공률 ${Math.round(p.eff * 100)}%`);
+  toast(t('exp.start', { emoji: r.emoji, name: LName(r), pct: Math.round(p.eff * 100) }));
 }
 function resolveExpedition() {
   const exp = state.exp;
@@ -2785,37 +2816,37 @@ function resolveExpedition() {
     rollRes(1);
     if (state.buff?.loot) { // 은닉처 좌표: 자원 2배
       rollRes(1);
-      notes.push('📡 방송의 좌표가 정확했다 — 은닉처에서 자원을 두 배로 회수했습니다!');
+      notes.push(t('exp.note.loot2'));
       state.buff = null;
     }
     if (Math.random() < r.furnChance) {
       got.push(pickFurniture(r.pool));
-      notes.push('🛋️ 폐허 속에서 온전한 가구를 발견했습니다 — 흔치 않은 행운!');
+      notes.push(t('exp.note.furniture'));
     }
     state.successes++;
     state.stats.success++;
-    title = `✅ ${r.name} 탐험 성공!`;
-    body = '쓸 만한 물자를 찾아냈습니다.';
+    title = t('exp.successTitle', { name: LName(r) });
+    body = t('exp.successBody');
   } else if (partial) {
     rollRes(0.5);
     if (SHELTERS[state.current].perk?.salvagePlus && Math.random() < 0.25) {
       got.push(pickFurniture(r.pool));
-      notes.push('📡 옥탑방의 시야 덕분에 가구를 건졌습니다.');
+      notes.push(t('exp.note.rooftopSalvage'));
     }
-    title = `⚠️ ${r.name} — 겨우 빠져나왔다`;
-    body = '위험했지만 조금은 건졌습니다.';
+    title = t('exp.partialTitle', { name: LName(r) });
+    body = t('exp.partialBody');
   } else {
-    title = `❌ ${r.name} 탐험 실패`;
-    body = '빈손으로 돌아왔습니다.';
+    title = t('exp.failTitle', { name: LName(r) });
+    body = t('exp.failBody');
     if (SHELTERS[state.current].perk?.failSalvage) {
       rollRes(0.3);
       if (Object.keys(gotRes).length) {
-        body = '실패했지만, 뱃사람의 근성으로 몇 가지는 건져 왔습니다.';
-        notes.push('🎣 구명창고 특성 — 실패에도 자원 일부를 회수했습니다.');
+        body = t('exp.failSalvageBody');
+        notes.push(t('exp.note.shipSalvage'));
       }
     }
     state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 5);
-    notes.push('🧹 흙투성이로 돌아와 청결도가 떨어졌습니다. (-5)');
+    notes.push(t('exp.note.dirty5'));
   }
   // 부상 판정: 실패 시 확정, 부분 성공 시 40%
   if (!success && (partial ? Math.random() < 0.4 : true)) {
@@ -2825,18 +2856,18 @@ function resolveExpedition() {
       let type = r.injuries[Math.floor(Math.random() * r.injuries.length)];
       if (type === 'deep' && prep.includes('firstaid')) {
         type = 'minor';
-        notes.push('⛑️ 응급키트 덕분에 깊은 상처를 가벼운 부상으로 막았습니다.');
+        notes.push(t('exp.note.firstaid'));
       }
       notes.push(applyInjury(type, prep.includes('bottle')));
     } else if (prep.includes('gloves')) {
-      notes.push('🧤 장갑 덕분에 다치지 않았습니다.');
+      notes.push(t('exp.note.gloves'));
     }
   }
   // 비/눈 속 탐험 → 젖어서 청결도 감소
   if (weather.type === 'rain' || weather.type === 'snow') {
     if (!prep.includes('raincoat')) {
       state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 3);
-      notes.push(`${WEATHERS[weather.type].icon} 젖은 채로 돌아와 청결도가 떨어졌습니다. (-3)`);
+      notes.push(t('exp.note.wet3', { icon: WEATHERS[weather.type].icon }));
     }
   }
   for (const id of got) state.inventory[id] = (state.inventory[id] || 0) + 1;
@@ -2844,17 +2875,17 @@ function resolveExpedition() {
   let unlockMsg = '';
   for (const [id, sh] of Object.entries(SHELTERS)) {
     if (sh.unlockAt > 0 && state.successes === sh.unlockAt) {
-      unlockMsg = `<div style="margin-top:10px;color:var(--accent)">🔓 새로운 거처 발견: <b>${sh.emoji} ${sh.name}</b> — [🏠 이주] 메뉴에서 이동할 수 있습니다!</div>`;
+      unlockMsg = t('exp.unlock', { emoji: sh.emoji, name: LName(sh) });
     }
   }
   const resHtml = Object.keys(gotRes).length
-    ? `<div class="loot-list">${Object.entries(gotRes).map(([id, n]) => `<div class="loot-item">${RESOURCES[id].emoji} ${RESOURCES[id].name} +${n}</div>`).join('')}</div>`
+    ? `<div class="loot-list">${Object.entries(gotRes).map(([id, n]) => `<div class="loot-item">${RESOURCES[id].emoji} ${LName(RESOURCES[id])} +${n}</div>`).join('')}</div>`
     : '';
   const lootHtml = got.length
-    ? `<div class="loot-list">${got.map(id => `<div class="loot-item">${DEFS[id].emoji} ${DEFS[id].name}</div>`).join('')}</div>`
+    ? `<div class="loot-list">${got.map(id => `<div class="loot-item">${DEFS[id].emoji} ${LName(DEFS[id])}</div>`).join('')}</div>`
     : '';
   const prepHtml = prep.length
-    ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">사용한 준비물: ${prep.map(p => `${PREPS[p].emoji}${PREPS[p].name}`).join(', ')}</div>`
+    ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">${t('exp.usedPrep', { list: prep.map(p => `${PREPS[p].emoji}${LName(PREPS[p])}`).join(', ') })}</div>`
     : '';
   const noteHtml = notes.length
     ? `<div style="font-size:11px;line-height:1.7;margin-top:8px">${notes.join('<br>')}</div>`
@@ -3088,126 +3119,118 @@ function updateCat(t, dt) {
   }
 }
 
+// title/text/choice label 은 언어 전환 시점(showEvent) 에 t() 로 해석하므로 id 로 보관한다.
 const EVENTS = {
   wanderer: {
-    icon: '🚶', title: '떠돌이 생존자',
-    text: '누더기를 걸친 생존자가 거처 앞에 서 있다. 눈이 퀭하다.<br>"...먹을 것 좀... 나눠줄 수 있소?"',
+    icon: '🚶', titleId: 'ev.wanderer.title', textId: 'ev.wanderer.text',
     choices: [
-      { label: '🥫 음식 2개를 나눠준다', cost: { food: 2 }, run() { state.buff = { exp: 0.10, label: '선행의 보답' }; return '생존자가 고개를 숙이며 지도에 뭔가를 표시해준다.<br>"이 은혜는 잊지 않겠소. 저쪽 구역엔 아직 물자가 남아있다오."<br><b>(다음 탐험 성공률 +10%p)</b>'; } },
-      { label: '조용히 고개를 젓는다', run() { return '생존자는 말없이 어둠 속으로 사라졌다.'; } },
+      { labelId: 'ev.wanderer.c0', cost: { food: 2 }, run() { state.buff = { exp: 0.10, labelId: 'buff.wanderer' }; return t('ev.wanderer.r0'); } },
+      { labelId: 'ev.wanderer.c1', run() { return t('ev.wanderer.r1'); } },
     ],
   },
   trader: {
-    icon: '🎒', title: '행상인',
-    text: '낡은 수레를 끈 행상인이 찾아왔다.<br>"배터리 두 개면 약품 세트를 드리리다. 어떻소?"',
+    icon: '🎒', titleId: 'ev.trader.title', textId: 'ev.trader.text',
     choices: [
-      { label: '🔋 배터리 2 ↔ 🩹 붕대 + 🧴 소독약', cost: { battery: 2 }, run() { resAdd('bandage', 1); resAdd('antiseptic', 1); return '"좋은 거래였소." 행상인이 약품을 건네고 수레를 끌고 떠났다.'; } },
-      { label: '거절한다', run() { return '행상인은 어깨를 으쓱하고 다음 거처로 향했다.'; } },
+      { labelId: 'ev.trader.c0', cost: { battery: 2 }, run() { resAdd('bandage', 1); resAdd('antiseptic', 1); return t('ev.trader.r0'); } },
+      { labelId: 'ev.trader.c1', run() { return t('ev.trader.r1'); } },
     ],
   },
   dog: {
-    icon: '🐕', title: '떠돌이 개',
-    text: '비쩍 마른 개 한 마리가 꼬리를 살랑거리며 다가온다.<br>이 폐허에서 용케도 살아남았구나.',
+    icon: '🐕', titleId: 'ev.dog.title', textId: 'ev.dog.text',
     choices: [
-      { label: '🥫 음식 1개를 나눠준다', cost: { food: 1 }, run() { state.buff = { exp: 0.10, label: '든든한 동행' }; return '개가 허겁지겁 먹더니 당신 곁에 앉는다.<br>다음 탐험에 따라나설 모양이다. <b>(다음 탐험 +10%p)</b>'; } },
-      { label: '모른 척한다', run() { return '개는 한참을 서성이다 절뚝이며 떠났다.'; } },
+      { labelId: 'ev.dog.c0', cost: { food: 1 }, run() { state.buff = { exp: 0.10, labelId: 'buff.dog' }; return t('ev.dog.r0'); } },
+      { labelId: 'ev.dog.c1', run() { return t('ev.dog.r1'); } },
     ],
   },
   storm: {
-    icon: '🌪️', title: '폭풍 전조',
-    text: '하늘이 심상치 않다. 새들이 낮게 날고, 공기가 무겁다.<br>오늘 밤 강풍이 불 것 같다.',
+    icon: '🌪️', titleId: 'ev.storm.title', textId: 'ev.storm.text',
     choices: [
-      { label: '🧱 건축재 1로 거처를 보강한다', cost: { material: 1 }, run() { return '문틈과 창을 단단히 보강했다.<br>밤새 바람이 몰아쳤지만 거처는 끄떡없었다.'; } },
-      { label: '그냥 버텨본다', run() { state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 10); return '밤새 바람이 창틈을 파고들어 모든 것에 흙먼지를 끼얹었다. <b>(청결 -10)</b>'; } },
+      { labelId: 'ev.storm.c0', cost: { material: 1 }, run() { return t('ev.storm.r0'); } },
+      { labelId: 'ev.storm.c1', run() { state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 10); return t('ev.storm.r1'); } },
     ],
   },
   broken: {
-    icon: '🔩', title: '장비 고장',
-    text: '손전등 스위치가 헐거워졌고, 공구 손잡이에 금이 갔다.<br>폐허에서 장비는 곧 생명이다.',
+    icon: '🔩', titleId: 'ev.broken.title', textId: 'ev.broken.text',
     choices: [
-      { label: '⚙️ 부품 1로 수리한다', cost: { parts: 1 }, run() { return '말끔히 수리했다. 역시 장비는 관리가 생명이다.'; } },
-      { label: '대충 쓴다', run() { state.buff = { exp: -0.05, label: '삐걱대는 장비' }; return '어떻게든 쓸 수는 있겠지만, 영 미덥지 않다. <b>(다음 탐험 -5%p)</b>'; } },
+      { labelId: 'ev.broken.c0', cost: { parts: 1 }, run() { return t('ev.broken.r0'); } },
+      { labelId: 'ev.broken.c1', run() { state.buff = { exp: -0.05, labelId: 'buff.broken' }; return t('ev.broken.r1'); } },
     ],
   },
   thief: {
-    icon: '👣', title: '침입의 흔적',
-    text: '밤사이 누군가 거처 주변을 뒤진 흔적이 있다.<br>발자국이 어지럽다.',
+    icon: '👣', titleId: 'ev.thief.title', textId: 'ev.thief.text',
     choices: [
-      { label: '없어진 게 있는지 확인한다', run() {
+      { labelId: 'ev.thief.c0', run() {
         const lit = items.some(it => DEFS[it.defId].light && it.on !== false);
-        if (lit) return '조명이 켜져 있던 덕분인지 아무것도 없어지지 않았다.<br>불빛이 도둑을 쫓아낸 모양이다. <b>(조명의 가치!)</b>';
+        if (lit) return t('ev.thief.r.safe');
         for (const rid of ['bandage', 'battery', 'food']) {
-          if ((state.res[rid] || 0) > 0) { resConsume(rid, 1); return `어두운 틈을 타 <b>${RESOURCES[rid].name} 1개</b>를 도둑맞았다.<br>밤에는 조명을 켜두는 게 좋겠다.`; }
+          if ((state.res[rid] || 0) > 0) { resConsume(rid, 1); return t('event.stolen', { name: LN(RESOURCES[rid]) }); }
         }
-        return '다행히 가져갈 만한 게 없었다... 그게 더 서글프다.';
+        return t('ev.thief.r.none');
       } },
     ],
   },
   seeds: {
-    icon: '🌱', title: '낯선 노인',
-    text: '"물 두 통만 주게. 대신 이 씨앗을 주지.<br>이 세상에 아직 싹이 트는 씨앗이야."',
+    icon: '🌱', titleId: 'ev.seeds.title', textId: 'ev.seeds.text',
     choices: [
-      { label: '💧 물 2를 건넨다', cost: { water: 2 }, run() {
-        if (state.current === 'greenhouse') { resAdd('food', 3); return '온실 텃밭에 씨앗을 심었다. 놀랍게도 금세 자랐다! <b>(음식 +3)</b>'; }
+      { labelId: 'ev.seeds.c0', cost: { water: 2 }, run() {
+        if (state.current === 'greenhouse') { resAdd('food', 3); return t('ev.seeds.r.green'); }
         resAdd('food', 1);
-        return '씨앗을 받았지만 심을 곳이 마땅치 않다. <b>(음식 +1)</b><br>온실이 있었다면 더 좋았을 텐데.';
+        return t('ev.seeds.r.plain');
       } },
-      { label: '거절한다', run() { return '노인은 혀를 차며 지팡이를 끌고 떠났다.'; } },
+      { labelId: 'ev.seeds.c1', run() { return t('ev.seeds.r1'); } },
     ],
   },
   radio_sig: {
-    icon: '📡', title: '수수께끼의 방송',
+    icon: '📡', titleId: 'ev.radio.title', textId: 'ev.radio.text',
     cond: () => items.some(i => i.defId === 'radio'),
-    text: '라디오에서 잡음 섞인 목소리가 흘러나온다.<br>"...좌표... 창고... 물자가 아직 남아있다..."',
     choices: [
-      { label: '좌표를 기록한다', run() { state.buff = { loot: 2, label: '물자 은닉처 좌표' }; return '지도에 좌표를 옮겨 적었다. <b>(다음 탐험 성공 시 자원 2배)</b>'; } },
-      { label: '무시한다', run() { return '잡음뿐인 방송은 곧 끊겼다.'; } },
+      { labelId: 'ev.radio.c0', run() { state.buff = { loot: 2, labelId: 'buff.radio' }; return t('ev.radio.r0'); } },
+      { labelId: 'ev.radio.c1', run() { return t('ev.radio.r1'); } },
     ],
   },
   /* ── 특수 인카운터 (일반 풀에서 제외) ── */
   cat: {
     special: true,
-    icon: '🐈', title: '야윈 고양이',
-    text: '문틈으로 야윈 고양이 한 마리가 들어와 당신을 빤히 올려다본다.<br>얼룩진 털, 조심스러운 발걸음 — 그러나 눈만은 또렷하다.',
+    icon: '🐈', titleId: 'ev.cat.title', textId: 'ev.cat.text',
     choices: [
-      { label: '🥫 음식 1개를 내어준다 (가족으로 맞이하기)', cost: { food: 1 }, run() {
+      { labelId: 'ev.cat.c0', cost: { food: 1 }, run() {
         state.cat = 1;
         spawnCat();
-        state.dayLog.notes.push('🐈 고양이가 함께 살게 되었습니다.');
-        return '고양이는 그릇을 싹 비우더니, 당연하다는 듯 가장 아늑한 자리를 차지했다.<br>이제 이 집엔 심장이 두 개 뛴다. <b>(쾌적함 +6)</b>';
+        state.dayLog.notes.push(t('day.catJoined'));
+        return t('ev.cat.r0');
       } },
-      { label: '조용히 지켜본다', run() { return '고양이는 한동안 서성이다가 어둠 속으로 사라졌다.<br>...언젠가 다시 찾아올지도 모른다.'; } },
+      { labelId: 'ev.cat.c1', run() { return t('ev.cat.r1'); } },
     ],
   },
   ending: {
     special: true,
-    icon: '🚁', title: '하늘에서 온 손님',
-    text: '요란한 프로펠러 소리가 폐허의 정적을 갈랐다. 헬리콥터다.<br>방호복을 입은 백발의 과학자가 내려와 당신에게 걸어온다.<br>"믿을 수가 없군요. 관측 위성이 당신의 불빛을 10,000일 넘게 기록했습니다.<br>정화 구역이 완성됐습니다 — 함께 갑시다."',
+    icon: '🚁', titleId: 'ev.ending.title', textId: 'ev.ending.text',
     choices: [
-      { label: '🚁 박사와 함께 떠난다 (엔딩)', run() { setTimeout(runEndingSequence, 400); return '당신은 천천히 고개를 끄덕이고, 마지막으로 집을 돌아보았다.'; } },
-      { label: '아직은 여기 남는다', run() { return '"...당신 같은 사람들 덕분에 이 별이 아직 살아있는 거겠죠."<br>박사는 통신기를 남기고 떠났다. 부르면 언제든 다시 온다고 했다.'; } },
+      { labelId: 'ev.ending.c0', run() { setTimeout(runEndingSequence, 400); return t('ev.ending.r0'); } },
+      { labelId: 'ev.ending.c1', run() { return t('ev.ending.r1'); } },
     ],
   },
 };
 function showEvent(id) {
   const ev = EVENTS[id];
   if (!ev) return;
+  const evTitle = t(ev.titleId);
   const body = `
-    <div class="modal-body" style="line-height:2">${ev.text}</div>
+    <div class="modal-body" style="line-height:2">${t(ev.textId)}</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
       ${ev.choices.map((c, i) => {
         const ok = !c.cost || resHasAll(c.cost);
-        return `<button class="pixel-btn" data-ch="${i}" ${ok ? '' : 'disabled'}>${c.label}${c.cost && !ok ? ' (자원 부족)' : ''}</button>`;
+        return `<button class="pixel-btn" data-ch="${i}" ${ok ? '' : 'disabled'}>${t(c.labelId)}${c.cost && !ok ? t('ev.noResource') : ''}</button>`;
       }).join('')}
     </div>`;
-  openModal(`${ev.icon} ${ev.title}`, body);
+  openModal(`${ev.icon} ${evTitle}`, body);
   $('modal-body').querySelectorAll('button[data-ch]').forEach(b =>
     b.addEventListener('click', () => {
       const c = ev.choices[+b.dataset.ch];
-      if (c.cost && !resConsumeAll(c.cost)) { toast('자원이 부족합니다'); return; }
+      if (c.cost && !resConsumeAll(c.cost)) { toast(t('toast.needResource')); return; }
       const result = c.run();
-      state.dayLog.notes.push(`${ev.icon} ${ev.title} — 만남이 있었다.`);
-      openModal(`${ev.icon} ${ev.title}`, `<div style="line-height:2">${result}</div>`);
+      state.dayLog.notes.push(t('event.metNote', { icon: ev.icon, title: evTitle }));
+      openModal(`${ev.icon} ${evTitle}`, `<div style="line-height:2">${result}</div>`);
       scheduleSave();
       renderResBar();
       updateHud();
@@ -3219,13 +3242,13 @@ function showEvent(id) {
 ============================================================ */
 /* ── 거처 개조 (기지 커스터마이징: 빗물받이·텃밭·증축 등) ── */
 const SHELTER_MODS = {
-  raincatch:  { name: '빗물받이',    emoji: '🪣', cost: { material: 2, parts: 1 }, desc: '비/눈 오는 날 깨끗한 물 +1', not: ['lighthouse'] },
-  garden:     { name: '텃밭 상자',   emoji: '🌱', cost: { material: 2, water: 2 }, desc: '이틀에 한 번 음식 +1 (겨울 제외)', not: ['subway'] },
-  insulation: { name: '단열재',      emoji: '🧤', cost: { cloth: 3, material: 2 }, desc: '악천후에도 쾌적함이 떨어지지 않음', only: ['container', 'bus'] },
-  shelf:      { name: '증축 선반',   emoji: '🪜', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', only: ['bus'] },
-  solar:      { name: '태양광 패널', emoji: '🔆', cost: { parts: 4, battery: 1 },  desc: '이틀에 한 번 배터리 +1', not: ['subway'] },
-  roof:       { name: '지붕 보강',   emoji: '🛠️', cost: { material: 4 },           desc: '악천후 수리 자재가 더 이상 들지 않음', only: ['cabin', 'greenhouse'] },
-  extension:  { name: '증축',        emoji: '🧱', cost: { material: 6, parts: 2 },  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
+  raincatch:  { name: '빗물받이',    nameEn: 'Rain Catch',   emoji: '🪣', cost: { material: 2, parts: 1 }, desc: '비/눈 오는 날 깨끗한 물 +1', descEn: 'Clean water +1 on rainy/snowy days', not: ['lighthouse'] },
+  garden:     { name: '텃밭 상자',   nameEn: 'Garden Box',   emoji: '🌱', cost: { material: 2, water: 2 }, desc: '이틀에 한 번 음식 +1 (겨울 제외)', descEn: 'Food +1 every other day (except winter)', not: ['subway'] },
+  insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '🧤', cost: { cloth: 3, material: 2 }, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
+  shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '🪜', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
+  solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '🔆', cost: { parts: 4, battery: 1 },  desc: '이틀에 한 번 배터리 +1', descEn: 'Battery +1 every other day', not: ['subway'] },
+  roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '🛠️', cost: { material: 4 },      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
+  extension:  { name: '증축',        nameEn: 'Extension',    emoji: '🧱', cost: { material: 6, parts: 2 },  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
 };
 function modAvailable(id, shelterId) {
   const m = SHELTER_MODS[id];
@@ -3282,43 +3305,43 @@ function buildModProps() {
 
 // 가구는 파밍이 아니라 제작이 기본 (파밍은 극히 드문 행운)
 const CRAFTS = [
-  { out: { res: 'bandage', n: 1 }, cost: { cloth: 2 }, hint: '기본 치료품' },
-  { out: { res: 'candle', n: 2 }, cost: { cloth: 1, fuel: 1 }, hint: '조명 연료' },
-  { out: { res: 'material', n: 1 }, cost: { parts: 2 }, hint: '수리·유지비용' },
-  { out: { furn: 'cushion' }, cost: { cloth: 2 }, hint: '푹신한 바닥 방석' },
-  { out: { furn: 'bookstack' }, cost: { cloth: 1, material: 1 }, hint: '주워 모은 책 무더기' },
-  { out: { furn: 'crate' }, cost: { material: 2 }, hint: '수납 상자' },
-  { out: { furn: 'chair' }, cost: { material: 2 }, hint: '나무 의자' },
-  { out: { furn: 'candle' }, cost: { material: 1, candle: 1 }, hint: '캔들 스툴' },
-  { out: { furn: 'teatable' }, cost: { material: 2, cloth: 1 }, hint: '낮은 찻상 — 따뜻한 한 잔' },
-  { out: { furn: 'rug' }, cost: { cloth: 3 }, hint: '천을 엮은 러그' },
-  { out: { furn: 'plant' }, cost: { water: 2, material: 1 }, hint: '화분에 심은 초록' },
-  { out: { furn: 'table' }, cost: { material: 3 }, hint: '식탁' },
-  { out: { furn: 'dresser' }, cost: { material: 3, cloth: 1 }, hint: '서랍장' },
-  { out: { furn: 'lantern' }, cost: { parts: 1, material: 1, candle: 2 }, hint: '걸이형 랜턴 (양초 연료)' },
-  { out: { furn: 'bed' }, cost: { cloth: 3, material: 2 }, hint: '천 + 프레임 → 침대' },
-  { out: { furn: 'bookshelf' }, cost: { material: 4 }, hint: '책장' },
-  { out: { furn: 'sofa' }, cost: { cloth: 4, material: 2 }, hint: '패브릭 소파' },
-  { out: { furn: 'lamp' }, cost: { parts: 2, battery: 1 }, hint: '부품 조립 조명' },
-  { out: { furn: 'clock' }, cost: { parts: 2, material: 2 }, hint: '괘종시계 — 시간이 흐르는 소리' },
-  { out: { furn: 'radio' }, cost: { parts: 3, battery: 1 }, hint: '라디오 (날씨 예보)' },
-  { out: { furn: 'stove' }, cost: { parts: 3, material: 3 }, hint: '장작 난로 — 최고의 온기 (연료 1/일)' },
-  { out: { furn: 'purifier' }, cost: { parts: 4, material: 2 }, hint: '매일 물 +1 (전력 필요)' },
-  { out: { furn: 'generator' }, cost: { parts: 5, material: 3 }, hint: '배터리 소비 무료화 (연료 필요)' },
-  { out: { furn: 'fridge' }, cost: { parts: 4, material: 2, battery: 1 }, hint: '음식 부패 방지 (전력 필요)' },
+  { out: { res: 'bandage', n: 1 }, cost: { cloth: 2 }, hint: '기본 치료품', hintEn: 'Basic first aid' },
+  { out: { res: 'candle', n: 2 }, cost: { cloth: 1, fuel: 1 }, hint: '조명 연료', hintEn: 'Lighting fuel' },
+  { out: { res: 'material', n: 1 }, cost: { parts: 2 }, hint: '수리·유지비용', hintEn: 'Repairs & upkeep' },
+  { out: { furn: 'cushion' }, cost: { cloth: 2 }, hint: '푹신한 바닥 방석', hintEn: 'A soft floor cushion' },
+  { out: { furn: 'bookstack' }, cost: { cloth: 1, material: 1 }, hint: '주워 모은 책 무더기', hintEn: 'A pile of gathered books' },
+  { out: { furn: 'crate' }, cost: { material: 2 }, hint: '수납 상자', hintEn: 'Storage crate' },
+  { out: { furn: 'chair' }, cost: { material: 2 }, hint: '나무 의자', hintEn: 'Wooden chair' },
+  { out: { furn: 'candle' }, cost: { material: 1, candle: 1 }, hint: '캔들 스툴', hintEn: 'Candle stool' },
+  { out: { furn: 'teatable' }, cost: { material: 2, cloth: 1 }, hint: '낮은 찻상 — 따뜻한 한 잔', hintEn: 'A low tea table — a warm cup' },
+  { out: { furn: 'rug' }, cost: { cloth: 3 }, hint: '천을 엮은 러그', hintEn: 'A woven-cloth rug' },
+  { out: { furn: 'plant' }, cost: { water: 2, material: 1 }, hint: '화분에 심은 초록', hintEn: 'Greenery in a pot' },
+  { out: { furn: 'table' }, cost: { material: 3 }, hint: '식탁', hintEn: 'Dining table' },
+  { out: { furn: 'dresser' }, cost: { material: 3, cloth: 1 }, hint: '서랍장', hintEn: 'Dresser' },
+  { out: { furn: 'lantern' }, cost: { parts: 1, material: 1, candle: 2 }, hint: '걸이형 랜턴 (양초 연료)', hintEn: 'Hanging lantern (candle fuel)' },
+  { out: { furn: 'bed' }, cost: { cloth: 3, material: 2 }, hint: '천 + 프레임 → 침대', hintEn: 'Cloth + frame → bed' },
+  { out: { furn: 'bookshelf' }, cost: { material: 4 }, hint: '책장', hintEn: 'Bookshelf' },
+  { out: { furn: 'sofa' }, cost: { cloth: 4, material: 2 }, hint: '패브릭 소파', hintEn: 'Fabric sofa' },
+  { out: { furn: 'lamp' }, cost: { parts: 2, battery: 1 }, hint: '부품 조립 조명', hintEn: 'Part-built lamp' },
+  { out: { furn: 'clock' }, cost: { parts: 2, material: 2 }, hint: '괘종시계 — 시간이 흐르는 소리', hintEn: 'Grandfather clock — the sound of passing time' },
+  { out: { furn: 'radio' }, cost: { parts: 3, battery: 1 }, hint: '라디오 (날씨 예보)', hintEn: 'Radio (weather forecast)' },
+  { out: { furn: 'stove' }, cost: { parts: 3, material: 3 }, hint: '장작 난로 — 최고의 온기 (연료 1/일)', hintEn: 'Wood stove — the best warmth (fuel 1/day)' },
+  { out: { furn: 'purifier' }, cost: { parts: 4, material: 2 }, hint: '매일 물 +1 (전력 필요)', hintEn: 'Water +1 daily (needs power)' },
+  { out: { furn: 'generator' }, cost: { parts: 5, material: 3 }, hint: '배터리 소비 무료화 (연료 필요)', hintEn: 'Free battery use (needs fuel)' },
+  { out: { furn: 'fridge' }, cost: { parts: 4, material: 2, battery: 1 }, hint: '음식 부패 방지 (전력 필요)', hintEn: 'Prevents food spoilage (needs power)' },
 ];
 function openCraftModal() {
   const rows = CRAFTS.map((c, i) => {
     const outLabel = c.out.res
-      ? `${RESOURCES[c.out.res].emoji} ${RESOURCES[c.out.res].name} ×${c.out.n}`
-      : `${DEFS[c.out.furn].emoji} ${DEFS[c.out.furn].name}`;
+      ? `${RESOURCES[c.out.res].emoji} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`
+      : `${DEFS[c.out.furn].emoji} ${LName(DEFS[c.out.furn])}`;
     const ok = resHasAll(c.cost);
     return `
       <div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
         <span>${outLabel}</span>
-        <span class="p-eff" style="font-size:10px">${c.hint}</span>
+        <span class="p-eff" style="font-size:10px">${LHint(c)}</span>
         <span class="p-cost">${costLabel(c.cost)}</span>
-        <button class="pixel-btn" data-craft="${i}" ${ok ? '' : 'disabled'} style="margin-left:6px">제작</button>
+        <button class="pixel-btn" data-craft="${i}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('craft.make')}</button>
       </div>`;
   }).join('');
   // 현재 거처에 설치 가능한 개조
@@ -3330,32 +3353,32 @@ function openCraftModal() {
       const ok = resHasAll(m.cost);
       return `
       <div class="prep-row ${built ? 'sel' : ok ? '' : 'no'}" style="cursor:default">
-        <span>${m.emoji} ${m.name}</span>
-        <span class="p-eff" style="font-size:10px">${m.desc}</span>
+        <span>${m.emoji} ${LName(m)}</span>
+        <span class="p-eff" style="font-size:10px">${LDesc(m)}</span>
         <span class="p-cost">${built ? '' : costLabel(m.cost)}</span>
         ${built
-          ? `<span style="color:var(--good);font-size:11px;margin-left:6px">✓ 설치됨</span>`
-          : `<button class="pixel-btn" data-mod="${id}" ${ok ? '' : 'disabled'} style="margin-left:6px">설치</button>`}
+          ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('craft.installed')}</span>`
+          : `<button class="pixel-btn" data-mod="${id}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('craft.install')}</button>`}
       </div>`;
     }).join('');
-  openModal('🔨 제작대', `
-    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">탐험에서 모은 재료로 물자와 가구를 만듭니다.</div>${rows}
-    <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🔧 거처 개조 — ${sh.emoji} ${sh.name}</div>
-    <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">개조는 이 거처에 영구 설치됩니다.</div>${modRows || '<div style="font-size:11px;color:var(--text-dim)">이 거처에 설치할 수 있는 개조가 없습니다.</div>'}`);
+  openModal(t('craft.title'), `
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('craft.intro')}</div>${rows}
+    <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>
+    <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}`);
   $('modal-body').querySelectorAll('button[data-craft]').forEach(b =>
     b.addEventListener('click', () => {
       const c = CRAFTS[+b.dataset.craft];
-      if (!resConsumeAll(c.cost)) { toast('재료가 부족합니다'); return; }
+      if (!resConsumeAll(c.cost)) { toast(t('toast.needMaterial')); return; }
       if (c.out.res) {
         resAdd(c.out.res, c.out.n);
-        toast(`${RESOURCES[c.out.res].emoji} ${RESOURCES[c.out.res].name} ×${c.out.n} 제작 완료`);
+        toast(t('craft.doneRes', { emoji: RESOURCES[c.out.res].emoji, name: LName(RESOURCES[c.out.res]), n: c.out.n }));
       } else {
         state.inventory[c.out.furn] = (state.inventory[c.out.furn] || 0) + 1;
-        toast(`${DEFS[c.out.furn].emoji} ${DEFS[c.out.furn].name} 제작 완료 — 인벤토리에 추가`);
+        toast(t('craft.doneFurn', { emoji: DEFS[c.out.furn].emoji, name: LName(DEFS[c.out.furn]) }));
         renderInventoryBar();
       }
       state.stats.craft = (state.stats.craft || 0) + 1;
-      state.dayLog.notes.push(`🔨 제작: ${c.out.res ? RESOURCES[c.out.res].name : DEFS[c.out.furn].name}`);
+      state.dayLog.notes.push(t('craft.noteRes', { name: c.out.res ? LName(RESOURCES[c.out.res]) : LName(DEFS[c.out.furn]) }));
       scheduleSave();
       renderResBar();
       openCraftModal(); // 갱신
@@ -3365,12 +3388,12 @@ function openCraftModal() {
       const id = b.dataset.mod;
       const m = SHELTER_MODS[id];
       if (hasMod(id)) return;
-      if (!resConsumeAll(m.cost)) { toast('재료가 부족합니다'); return; }
+      if (!resConsumeAll(m.cost)) { toast(t('toast.needMaterial')); return; }
       if (!state.mods) state.mods = {};
       if (!state.mods[state.current]) state.mods[state.current] = [];
       state.mods[state.current].push(id);
-      toast(`${m.emoji} ${m.name} 설치 완료!`);
-      state.dayLog.notes.push(`🔧 거처 개조: ${m.name} 설치`);
+      toast(t('craft.modDone', { emoji: m.emoji, name: LName(m) }));
+      state.dayLog.notes.push(t('craft.modNote', { name: LName(m) }));
       if (id === 'extension') {
         // 방 구조가 바뀌므로 거처를 다시 짓는다
         state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
@@ -3399,30 +3422,30 @@ function collectionCount() {
   return Object.values(state.collection || {}).reduce((a, arr) => a + arr.filter(Boolean).length, 0);
 }
 const ACHS = [
-  { id: 'first',     icon: '👣', name: '첫 발걸음',        desc: '첫 탐험 성공',                chk: () => state.stats.success >= 1 },
-  { id: 'exp10',     icon: '🎒', name: '베테랑 스캐빈저',  desc: '탐험 성공 10회',              chk: () => state.stats.success >= 10 },
-  { id: 'exp30',     icon: '🗺️', name: '폐허의 주인',      desc: '탐험 성공 30회',              chk: () => state.stats.success >= 30 },
-  { id: 'craft5',    icon: '🔨', name: '손재주',           desc: '제작 5회',                    chk: () => (state.stats.craft || 0) >= 5 },
-  { id: 'craft20',   icon: '⚙️', name: '폐허의 장인',      desc: '제작 20회',                   chk: () => (state.stats.craft || 0) >= 20 },
-  { id: 'comfort90', icon: '🏡', name: '완벽한 안식처',    desc: '쾌적함 90 달성',              chk: () => comfortDetail().score >= 90 },
-  { id: 'settled8',  icon: '🕯️', name: '정든 집',          desc: '한 거처에 8일 연속 거주',     chk: () => (state.stayDays || 0) >= 8 },
-  { id: 'renov3',    icon: '🏠', name: '개척자',           desc: '거처 3곳 정비',               chk: () => Object.values(state.renovated || {}).filter(Boolean).length >= 3 },
-  { id: 'renovAll',  icon: '🌍', name: '모든 곳이 집',     desc: '거처 9곳 전부 정비',          chk: () => Object.values(state.renovated || {}).filter(Boolean).length >= 9 },
-  { id: 'mods3',     icon: '🔧', name: '개조 기술자',      desc: '거처 개조 3개 설치',          chk: () => Object.values(state.mods || {}).flat().length >= 3 },
-  { id: 'winter',    icon: '❄️', name: '첫 겨울을 넘다',   desc: 'Day 48 도달 (사계절 생존)',   chk: () => state.day >= 48 },
-  { id: 'col21',     icon: '📖', name: '수집가',           desc: '도감 25% (가구 색상 21종)',   chk: () => collectionCount() >= 21 },
-  { id: 'col42',     icon: '🖼️', name: '큐레이터',         desc: '도감 50%',                    chk: () => collectionCount() >= 42 },
-  { id: 'colAll',    icon: '🏛️', name: '폐허의 박물관장',  desc: '도감 100% (84색상)',          chk: () => collectionCount() >= 84 },
-  { id: 'cat',       icon: '🐈', name: '고양이 집사',      desc: '길고양이를 가족으로 맞이하다', chk: () => !!state.cat },
-  { id: 'ending',    icon: '🚁', name: '폐허 너머로',      desc: 'Day 10000 — 박사와 함께 탈출', chk: () => !!state.endingSeen },
+  { id: 'first',     icon: '👣', name: '첫 발걸음',        nameEn: 'First Steps',        desc: '첫 탐험 성공',                descEn: 'First successful expedition',        chk: () => state.stats.success >= 1 },
+  { id: 'exp10',     icon: '🎒', name: '베테랑 스캐빈저',  nameEn: 'Veteran Scavenger',  desc: '탐험 성공 10회',              descEn: '10 successful expeditions',          chk: () => state.stats.success >= 10 },
+  { id: 'exp30',     icon: '🗺️', name: '폐허의 주인',      nameEn: 'Lord of the Ruins',  desc: '탐험 성공 30회',              descEn: '30 successful expeditions',          chk: () => state.stats.success >= 30 },
+  { id: 'craft5',    icon: '🔨', name: '손재주',           nameEn: 'Handy',              desc: '제작 5회',                    descEn: 'Craft 5 times',                      chk: () => (state.stats.craft || 0) >= 5 },
+  { id: 'craft20',   icon: '⚙️', name: '폐허의 장인',      nameEn: 'Ruins Artisan',      desc: '제작 20회',                   descEn: 'Craft 20 times',                     chk: () => (state.stats.craft || 0) >= 20 },
+  { id: 'comfort90', icon: '🏡', name: '완벽한 안식처',    nameEn: 'Perfect Refuge',     desc: '쾌적함 90 달성',              descEn: 'Reach comfort 90',                   chk: () => comfortDetail().score >= 90 },
+  { id: 'settled8',  icon: '🕯️', name: '정든 집',          nameEn: 'Settled Home',       desc: '한 거처에 8일 연속 거주',     descEn: 'Live 8 days straight in one shelter', chk: () => (state.stayDays || 0) >= 8 },
+  { id: 'renov3',    icon: '🏠', name: '개척자',           nameEn: 'Pioneer',            desc: '거처 3곳 정비',               descEn: 'Refit 3 shelters',                   chk: () => Object.values(state.renovated || {}).filter(Boolean).length >= 3 },
+  { id: 'renovAll',  icon: '🌍', name: '모든 곳이 집',     nameEn: 'Everywhere Is Home', desc: '거처 9곳 전부 정비',          descEn: 'Refit all 9 shelters',               chk: () => Object.values(state.renovated || {}).filter(Boolean).length >= 9 },
+  { id: 'mods3',     icon: '🔧', name: '개조 기술자',      nameEn: 'Modder',             desc: '거처 개조 3개 설치',          descEn: 'Install 3 shelter mods',             chk: () => Object.values(state.mods || {}).flat().length >= 3 },
+  { id: 'winter',    icon: '❄️', name: '첫 겨울을 넘다',   nameEn: 'Past the First Winter', desc: 'Day 48 도달 (사계절 생존)', descEn: 'Reach Day 48 (survive all seasons)', chk: () => state.day >= 48 },
+  { id: 'col21',     icon: '📖', name: '수집가',           nameEn: 'Collector',          desc: '도감 25% (가구 색상 21종)',   descEn: 'Collection 25% (21 furniture colors)', chk: () => collectionCount() >= 21 },
+  { id: 'col42',     icon: '🖼️', name: '큐레이터',         nameEn: 'Curator',            desc: '도감 50%',                    descEn: 'Collection 50%',                     chk: () => collectionCount() >= 42 },
+  { id: 'colAll',    icon: '🏛️', name: '폐허의 박물관장',  nameEn: 'Museum Keeper of the Ruins', desc: '도감 100% (84색상)',   descEn: 'Collection 100% (84 colors)',        chk: () => collectionCount() >= 84 },
+  { id: 'cat',       icon: '🐈', name: '고양이 집사',      nameEn: 'Cat Servant',        desc: '길고양이를 가족으로 맞이하다', descEn: 'Welcome a stray cat as family',      chk: () => !!state.cat },
+  { id: 'ending',    icon: '🚁', name: '폐허 너머로',      nameEn: 'Beyond the Ruins',   desc: 'Day 10000 — 박사와 함께 탈출', descEn: 'Day 10000 — escape with the doctor', chk: () => !!state.endingSeen },
 ];
 function checkAchievements() {
   if (!state.achs) state.achs = {};
   for (const a of ACHS) {
     if (!state.achs[a.id] && a.chk()) {
       state.achs[a.id] = true;
-      toast(`🏆 업적 달성 — ${a.icon} ${a.name}`);
-      state.dayLog.notes.push(`🏆 업적: ${a.name}`);
+      toast(t('ach.unlocked', { icon: a.icon, name: LName(a) }));
+      state.dayLog.notes.push(t('ach.note', { name: LName(a) }));
     }
   }
 }
@@ -3432,22 +3455,22 @@ function openJournalModal() {
     const got = state.achs?.[a.id];
     return `<div class="prep-row" style="cursor:default;${got ? '' : 'opacity:0.4'}">
       <span style="font-size:16px">${a.icon}</span>
-      <span>${a.name}</span>
-      <span class="p-cost">${a.desc}${got ? ' ✓' : ''}</span>
+      <span>${LName(a)}</span>
+      <span class="p-cost">${LDesc(a)}${got ? ' ✓' : ''}</span>
     </div>`;
   }).join('');
   const colHtml = Object.entries(DEFS).map(([id, def]) => {
     const arr = state.collection?.[id] || [];
     const sw = def.colors.map((c, i) =>
-      `<span title="${def.colorNames[i]}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-left:3px;background:${arr[i] ? '#' + c.toString(16).padStart(6, '0') : '#22252d'};border:1px solid ${arr[i] ? 'var(--accent)' : '#333'}"></span>`).join('');
+      `<span title="${LColor(def, i)}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-left:3px;background:${arr[i] ? '#' + c.toString(16).padStart(6, '0') : '#22252d'};border:1px solid ${arr[i] ? 'var(--accent)' : '#333'}"></span>`).join('');
     return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${def.emoji}${sw}</span>`;
   }).join('');
-  openModal('📖 생존 일지', `
-    <div class="report-sec"><span class="r-title">통계</span><br>
-      Day ${state.day} ${se.icon} · 탐험 ${state.stats.exp}회 (성공 ${state.stats.success}) · 제작 ${state.stats.craft || 0}회 · 연속 거주 ${state.stayDays || 0}일
+  openModal(t('journal.title'), `
+    <div class="report-sec"><span class="r-title">${t('journal.statsTitle')}</span><br>
+      ${t('journal.statsLine', { day: state.day, sicon: se.icon, exp: state.stats.exp, succ: state.stats.success, craft: state.stats.craft || 0, stay: state.stayDays || 0 })}
     </div>
-    <div class="report-sec"><span class="r-title">도감 — 배치해 본 가구 색상 ${collectionCount()}/84</span><br>${colHtml}</div>
-    <div class="report-sec"><span class="r-title">업적 ${Object.values(state.achs || {}).filter(Boolean).length}/${ACHS.length}</span></div>
+    <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount() })}</span><br>${colHtml}</div>
+    <div class="report-sec"><span class="r-title">${t('journal.achTitle', { n: Object.values(state.achs || {}).filter(Boolean).length, total: ACHS.length })}</span></div>
     ${achsHtml}`);
 }
 
@@ -3460,14 +3483,14 @@ function applyInjury(type, hasBottle) {
   if (SHELTERS[state.current].perk?.injuryHalf) restH *= 0.5;
   if (hasBottle) restH *= 0.8;
   state.injury = { type, untilMin: state.gameMin + restH * 60 };
-  return `${inj.icon} <b>${inj.name}</b>을(를) 입었습니다 — 탐험 성공률 -${Math.round(inj.pen * 100)}%p, 자연 회복까지 약 ${Math.round(restH)}시간(게임).`;
+  return t('injury.applied', { icon: inj.icon, name: LName(inj), pen: Math.round(inj.pen * 100), h: Math.round(restH) });
 }
 function treatInjury() {
   if (!state.injury) return;
   const inj = INJURIES[state.injury.type];
-  if (!resConsumeAll(inj.cure)) { toast(`치료 재료가 부족합니다 (${costLabel(inj.cure)})`); return; }
-  toast(`${inj.icon} ${inj.name} 치료 완료 (${costLabel(inj.cure)} 사용)`);
-  state.dayLog.notes.push(`${inj.name} 치료 완료.`);
+  if (!resConsumeAll(inj.cure)) { toast(t('injury.needCure', { cost: costLabel(inj.cure) })); return; }
+  toast(t('injury.treated', { icon: inj.icon, name: LName(inj), cost: costLabel(inj.cure) }));
+  state.dayLog.notes.push(t('injury.treatedNote', { name: LName(inj) }));
   state.injury = null;
   scheduleSave();
   renderResBar();
@@ -3476,7 +3499,7 @@ function treatInjury() {
 }
 function tickInjury() {
   if (state.injury && state.gameMin >= state.injury.untilMin) {
-    toast(`${INJURIES[state.injury.type].icon} ${INJURIES[state.injury.type].name}이(가) 자연 회복되었습니다`);
+    toast(t('injury.recovered', { icon: INJURIES[state.injury.type].icon, name: LName(INJURIES[state.injury.type]) }));
     state.injury = null;
     scheduleSave();
     renderExpPanel();
@@ -3550,13 +3573,13 @@ function moveGhost(item, e) {
 }
 function startPlacing(defId) {
   if ((state.inventory[defId] || 0) <= 0) {
-    toast(`${DEFS[defId].name} 재고가 없습니다 — 🎒 탐험으로 획득하세요`);
+    toast(t('place.noStock', { name: LName(DEFS[defId]) }));
     return;
   }
   let maxN = SHELTERS[state.current].maxItems;
   if (maxN && hasMod('shelf')) maxN += 4;
   if (maxN && items.length >= maxN) {
-    toast(`${SHELTERS[state.current].name}에는 가구를 ${maxN}개까지만 놓을 수 있습니다`);
+    toast(t('place.maxItems', { shelter: LName(SHELTERS[state.current]), n: maxN }));
     return;
   }
   cancelPlacing();
@@ -3576,7 +3599,7 @@ function cancelPlacing() {
   gridObj.visible = false;
 }
 function finishPlacing() {
-  if (!placing || !placing._valid) { toast('그 자리엔 놓을 수 없어요'); return; }
+  if (!placing || !placing._valid) { toast(t('place.cantHere')); return; }
   $('btn-cancel-place').classList.remove('show');
   setGhostVisual(placing, null);
   const item = placing;
@@ -3705,7 +3728,7 @@ function onPointerEnd(e) {
         dragging.y = dragStart.oy || 0; dragging.support = dragStart.osup || null;
         for (const k of (dragStart.kids || [])) { k.ch.x = k.x; k.ch.z = k.z; k.ch.rot = k.r; syncTransform(k.ch); }
         syncTransform(dragging);
-        toast('그 자리엔 놓을 수 없어요');
+        toast(t('place.cantHere'));
       } else scheduleSave();
       setGhostVisual(dragging, null);
       gridObj.visible = false;
@@ -3762,7 +3785,7 @@ function rotateActive() {
       item.rot = (item.rot + 3) % 4;
       rotateChildren(item, -1);
       syncTransform(item);
-      toast('회전할 공간이 없어요');
+      toast(t('rotate.noSpace'));
     } else scheduleSave();
   }
   updateSelRing();
@@ -3924,7 +3947,7 @@ function clampPanel(el) {
 function makeDraggablePanel(el, key, title) {
   const head = document.createElement('div');
   head.className = 'p-head';
-  head.innerHTML = `<span class="p-title">⠿ ${title}</span><button class="p-min" title="접기/펼치기">–</button>`;
+  head.innerHTML = `<span class="p-title">⠿ ${title}</span><button class="p-min" title="${t('panel.collapse')}">–</button>`;
   el.prepend(head);
   const saved = uiState[key];
   if (saved) {
@@ -3990,7 +4013,7 @@ function showTitle() {
   const meta = slotMeta(currentSlot);
   if (meta) {
     $('t-continue').style.display = '';
-    $('t-continue-info').textContent = `슬롯 ${currentSlot} · Day ${meta.day} ${meta.season.icon} · ${meta.shelter.emoji} ${meta.shelter.name}`;
+    $('t-continue-info').textContent = t('title.continueInfo', { slot: currentSlot, day: meta.day, sicon: meta.season.icon, semoji: meta.shelter.emoji, sname: LName(meta.shelter) });
   } else {
     $('t-continue').style.display = 'none';
   }
@@ -4012,27 +4035,27 @@ function openSlotModal(mode) {
       <div class="slot-card ${m ? '' : 'empty'}" data-slot="${n}" data-has="${m ? 1 : 0}">
         <span class="sl-no">${n}</span>
         <div class="sl-body">${m
-          ? `${m.shelter.emoji} ${m.shelter.name} — Day ${m.day} ${m.season.icon}<br><span class="sl-meta">탐험 성공 ${m.successes}회 · 저장 ${m.saved}</span>`
-          : '빈 슬롯'}</div>
-        ${m ? `<button class="sl-del" data-del="${n}" title="세이브 삭제">🗑</button>` : ''}
+          ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}<br><span class="sl-meta">${t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
+          : t('slot.empty')}</div>
+        ${m ? `<button class="sl-del" data-del="${n}" title="${t('slot.del.title')}">🗑</button>` : ''}
       </div>`);
   }
-  openModal(mode === 'new' ? '✚ 새 게임 — 슬롯 선택' : '💾 불러오기', cards.join(''));
+  openModal(mode === 'new' ? t('slot.new') : t('slot.load'), cards.join(''));
   $('modal-body').querySelectorAll('.sl-del').forEach(b => b.addEventListener('click', ev => {
     ev.stopPropagation();
-    if (!confirm(`슬롯 ${b.dataset.del}의 세이브를 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    if (!confirm(t('slot.delConfirm', { n: b.dataset.del }))) return;
     localStorage.removeItem(slotKey(+b.dataset.del));
     openSlotModal(mode);
   }));
   $('modal-body').querySelectorAll('.slot-card').forEach(c => c.addEventListener('click', () => {
     const n = +c.dataset.slot, has = c.dataset.has === '1';
     if (mode === 'load') {
-      if (!has) { toast('빈 슬롯입니다'); return; }
+      if (!has) { toast(t('toast.emptySlot')); return; }
       localStorage.setItem('project-shelter-lastslot', String(n));
       sessionStorage.setItem('ps-load', '1'); // 리로드 후 타이틀 건너뛰고 바로 게임 (밀린 결산 표시)
       location.reload();
     } else {
-      if (has && !confirm(`슬롯 ${n}의 기존 세이브를 덮어쓰고 새로 시작할까요?`)) return;
+      if (has && !confirm(t('slot.newConfirm', { n }))) return;
       const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
       fresh.savedAt = Date.now();
       fresh.helpSeen = true;
@@ -4043,25 +4066,21 @@ function openSlotModal(mode) {
     }
   }));
 }
-const INTRO_LINES = [
-  '세상이 무너진 지 3년.\n도시는 조용해졌고,\n갈라진 도로 틈에는 풀이 자랐다.',
-  '당신은 살아남았다.\n그리고 깨달았다 —\n살아남는 것만으로는 부족하다는 걸.',
-  '황무지 한가운데, 버려진 컨테이너 하나.\n오늘부터 여기가 당신의 집이다.\n\n폐허 속에서, 나만의 집을.',
-];
+const INTRO_IDS = ['intro.0', 'intro.1', 'intro.2'];
 function showIntro() {
   let i = 0;
   const scr = $('intro-screen'), txt = $('intro-text');
   scr.style.display = 'flex';
   const render = () => {
     txt.style.animation = 'none'; void txt.offsetWidth; txt.style.animation = '';
-    txt.innerHTML = INTRO_LINES[i].replace(/\n/g, '<br>');
-    $('intro-next').textContent = i === INTRO_LINES.length - 1 ? '▶ 시작하기' : '계속 ▸';
+    txt.innerHTML = t(INTRO_IDS[i]).replace(/\n/g, '<br>');
+    $('intro-next').textContent = i === INTRO_IDS.length - 1 ? t('intro.start') : t('intro.next');
   };
   $('intro-next').addEventListener('click', () => {
     i++;
-    if (i >= INTRO_LINES.length) {
+    if (i >= INTRO_IDS.length) {
       scr.style.display = 'none';
-      toast('📦 버려진 컨테이너 — 당신의 첫 거처입니다');
+      toast(t('intro.firstShelter'));
       openHelpModal();
     } else render();
   });
@@ -4077,13 +4096,13 @@ function runEndingSequence() {
   closeModal();
   setPaused(false);
   syncBgm(true); // Ending.mp3
+  const dayStr = state.day.toLocaleString(lang === 'en' ? 'en-US' : 'ko-KR');
   const lines = [
-    '헬리콥터의 굉음이 잦아들고,<br>박사는 말없이 당신의 집을 한참 바라보았다.',
-    `"${state.day.toLocaleString()}일... 정말 그 세월을<br>여기서 살아냈단 말입니까."`,
-    '당신은 마지막으로 집을 돌아보았다.<br>손때 묻은 가구들, 창가의 불빛, 벽의 흠집 하나까지.'
-      + (state.cat ? '<br><br>고양이가 당연하다는 듯 당신의 품에 뛰어올랐다.<br>함께 간다.' : ''),
-    '폐허는 점점 작아졌다.<br><br>그러나 저 집은 — 분명, 당신의 집이었다.',
-    `🚁 <b>ENDING — 폐허 너머로</b><br><br><span style="font-size:12px;color:var(--text-dim)">생존 ${state.day.toLocaleString()}일 · 탐험 성공 ${state.successes}회${state.cat ? ' · 고양이와 함께 🐈' : ''}</span>`,
+    t('ending.line0'),
+    t('ending.line1', { day: dayStr }),
+    t('ending.line2') + (state.cat ? t('ending.line2cat') : ''),
+    t('ending.line3'),
+    t('ending.line4', { day: dayStr, succ: state.successes, cat: state.cat ? t('ending.catTag') : '' }),
   ];
   let i = 0;
   const scr = $('ending-screen'), txt = $('ending-text'), btn = $('ending-next');
@@ -4091,7 +4110,7 @@ function runEndingSequence() {
   const render = () => {
     txt.style.animation = 'none'; void txt.offsetWidth; txt.style.animation = '';
     txt.innerHTML = lines[i];
-    btn.textContent = i === lines.length - 1 ? '🏠 폐허로 돌아간다 (계속하기)' : '계속 ▸';
+    btn.textContent = i === lines.length - 1 ? t('ending.back') : t('intro.next');
   };
   btn.onclick = () => { // onclick 대입: 재실행 시 리스너 중복 방지
     i++;
@@ -4099,10 +4118,10 @@ function runEndingSequence() {
       scr.style.display = 'none';
       state.endingSeen = true;
       endingActive = false;
-      state.dayLog.notes.push('🚁 당신은 구조를 경험했지만, 결국 집으로 돌아왔다.');
+      state.dayLog.notes.push(t('ending.note'));
       scheduleSave();
       syncBgm();
-      toast('🏠 에필로그 — 당신은 이 폐허의 집을 선택했다');
+      toast(t('ending.epilogue'));
     } else render();
   };
   render();
@@ -4111,7 +4130,7 @@ function runEndingSequence() {
 function updateClock() {
   const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
   const se = seasonOf();
-  $('lcd-day').textContent = `DAY ${String(state.day).padStart(2, '0')} · ${se.icon} ${se.name} ${seasonDay()}/${SEASON_DAYS}`;
+  $('lcd-day').textContent = t('clock.dayLine', { day: String(state.day).padStart(2, '0'), sicon: se.icon, sname: LName(se), sd: seasonDay(), total: SEASON_DAYS });
   $('lcd-time').innerHTML = `${String(h).padStart(2, '0')}<span id="lcd-colon">:</span>${String(m).padStart(2, '0')}`;
   const [icon, label] = timeLabel();
   $('lcd-sub').textContent = `${icon} ${label} · ${WEATHERS[weather.type].icon}${state.injury ? ' · ' + INJURIES[state.injury.type].icon : ''}`;
@@ -4125,17 +4144,25 @@ function updateHud() {
   const bonus = Math.round(comfortExpBonus() * 100);
   const injIcon = state.injury ? ` ${INJURIES[state.injury.type].icon}` : '';
   const dist = DISTRICTS[districtOf(state.current)];
-  $('hud-shelter').textContent = `${dist.emoji} ${dist.name} · ${sh.emoji} ${sh.name}`;
+  $('hud-shelter').textContent = t('hud.shelterLine', { demoji: dist.emoji, dname: LName(dist), semoji: sh.emoji, sname: LName(sh) });
+  const comfortTip = t('hud.comfortTip', {
+    score: cd.score, furn: cd.furn, light: cd.light, clean: cd.cleanMod, shelter: cd.shelterMod,
+    settled: cd.settled ? t('hud.comfortSettled', { n: cd.settled }) : '',
+    cat: cd.catMod ? t('hud.comfortCat', { n: cd.catMod }) : '',
+    injury: cd.injuryMod ? t('hud.comfortInjury', { n: cd.injuryMod }) : '',
+    limit: cd.limitMod ? t('hud.comfortLimit', { n: cd.limitMod }) : '',
+    bonus: bonus ? t('hud.comfortBonus', { n: bonus }) : '',
+  });
   // 아이콘 중심 상태 표시 (자세한 설명은 툴팁으로)
   $('hud-stat').innerHTML =
     `${W.icon}${W.penalty ? `<span style="color:var(--bad)">-${Math.round(W.penalty * 100)}%</span>` : ''}` +
-    `${injIcon ? `<span title="${state.injury ? INJURIES[state.injury.type].name : ''}">${injIcon}</span>` : ''}` +
-    `${cd.limitMod ? ` <span style="color:var(--bad)" title="${sh.limits || ''}">⚠️</span>` : ''}` +
-    `${state.buff ? ` <span style="color:var(--good)" title="${state.buff.label}">✨</span>` : ''}` +
-    ` · <span style="color:var(--accent)" title="쾌적함 ${cd.score}점 = 가구 ${cd.furn} + 조명 ${cd.light} + 청결 ${cd.cleanMod} + 거처 ${cd.shelterMod}${cd.settled ? ` + 정든 집 ${cd.settled}` : ''}${cd.catMod ? ` + 고양이 ${cd.catMod}` : ''}${cd.injuryMod ? ` + 상태 ${cd.injuryMod}` : ''}${cd.limitMod ? ` + 제약 ${cd.limitMod}` : ''}${bonus ? ` → 탐험 +${bonus}%` : ''}">😊${cd.score} ${'★'.repeat(lv)}</span>` +
-    ` · <span title="청결도 — 🧹 청소로 회복">🧹${Math.round(cd.clean)}</span>` +
-    ` · <span title="오늘 탐험 ${state.expToday}/${EXP_PER_DAY}회 (5회면 자동 취침)">🎒${state.expToday}/${EXP_PER_DAY}</span>` +
-    ` · <span title="탐험 성공 누적">🏆${state.successes}</span>`;
+    `${injIcon ? `<span title="${state.injury ? LName(INJURIES[state.injury.type]) : ''}">${injIcon}</span>` : ''}` +
+    `${cd.limitMod ? ` <span style="color:var(--bad)" title="${LLimits(sh) || ''}">⚠️</span>` : ''}` +
+    `${state.buff ? ` <span style="color:var(--good)" title="${buffLabel(state.buff)}">✨</span>` : ''}` +
+    ` · <span style="color:var(--accent)" title="${comfortTip}">😊${cd.score} ${'★'.repeat(lv)}</span>` +
+    ` · <span title="${t('hud.cleanTip')}">🧹${Math.round(cd.clean)}</span>` +
+    ` · <span title="${t('hud.expTip', { n: state.expToday, max: EXP_PER_DAY })}">🎒${state.expToday}/${EXP_PER_DAY}</span>` +
+    ` · <span title="${t('hud.succTip')}">🏆${state.successes}</span>`;
   renderGauge('g-hunger', state.hunger, '🥫');
   renderGauge('g-thirst', state.thirst, '💧');
   renderGauge('g-energy', state.energy, '⚡');
@@ -4146,7 +4173,7 @@ function renderGauge(id, val, emoji) {
   const fill = g.querySelector('.g-fill');
   fill.style.width = Math.max(0, Math.round(val)) + '%';
   fill.className = 'g-fill' + (val < 25 ? ' crit' : val < 45 ? ' warn' : '');
-  g.querySelector('.g-label').textContent = `${emoji} ${Math.round(val)}${val <= 0 ? ' 탈진!' : ''}`;
+  g.querySelector('.g-label').textContent = `${emoji} ${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
 }
 let lastResSnapshot = {};
 function renderResBar() {
@@ -4154,21 +4181,21 @@ function renderResBar() {
   bar.innerHTML = Object.entries(RESOURCES).map(([id, r]) => {
     const n = state.res[id] || 0;
     const changed = lastResSnapshot[id] != null && lastResSnapshot[id] !== n;
-    return `<div class="res-chip ${n === 0 ? 'zero' : ''} ${changed ? 'flash' : ''}" title="${r.name}">
-      <span class="re">${r.emoji}</span><span class="rname">${r.name}</span><span class="rn">${n}</span>
+    return `<div class="res-chip ${n === 0 ? 'zero' : ''} ${changed ? 'flash' : ''}" title="${LName(r)}">
+      <span class="re">${r.emoji}</span><span class="rname">${LName(r)}</span><span class="rn">${n}</span>
     </div>`;
   }).join('');
   lastResSnapshot = { ...state.res };
 }
 function cleanShelter() {
   const c = state.cleanBy[state.current] ?? 70;
-  if (c >= 100) { toast('이미 깨끗합니다'); return; }
-  if (state.energy < 10) { toast('⚡ 너무 지쳐서 청소할 힘이 없습니다'); return; }
-  if (!resConsume('water', 1)) { toast('깨끗한 물이 필요합니다 (💧1)'); return; }
+  if (c >= 100) { toast(t('clean.already')); return; }
+  if (state.energy < 10) { toast(t('clean.tooTired')); return; }
+  if (!resConsume('water', 1)) { toast(t('clean.needWater')); return; }
   state.energy = Math.max(0, state.energy - 5);
   state.cleanBy[state.current] = Math.min(100, c + 20);
-  toast(`🧹 청소 완료 — 청결도 ${Math.round(state.cleanBy[state.current])} (💧물 -1)`);
-  state.dayLog.notes.push('셸터를 청소했습니다. (+20)');
+  toast(t('clean.done', { n: Math.round(state.cleanBy[state.current]) }));
+  state.dayLog.notes.push(t('clean.note'));
   scheduleSave();
   renderResBar();
   updateHud();
@@ -4188,13 +4215,13 @@ function processDay() {
   state.expToday = 0; // 새 하루, 새 걸음
   // 정든 집
   state.stayDays = (state.stayDays || 0) + 1;
-  if (state.stayDays === 3) notes.push('🕯️ 이 집이 조금씩 편안해집니다. (정든 집 +3)');
-  if (state.stayDays === 8) notes.push('🏡 이제 여기가 진짜 집처럼 느껴집니다. (정든 집 +8, 최대)');
+  if (state.stayDays === 3) notes.push(t('settled.3'));
+  if (state.stayDays === 8) notes.push(t('settled.8'));
   // 계절 전환
   if (seasonOf(state.day).id !== seasonOf(state.day - 1).id) {
     const se = seasonOf(state.day);
-    notes.push(`${se.icon} ${se.name}이 왔습니다 — ${se.desc}.`);
-    toast(`${se.icon} 계절이 바뀌었습니다: ${se.name}`);
+    notes.push(t('season.arrived', { icon: se.icon, name: LName(se), desc: LDesc(se) }));
+    toast(t('season.changed', { icon: se.icon, name: LName(se) }));
     rollWeather(); // 새 계절의 날씨로
   }
   // 1) 발전기: 연료를 태우면 그날 배터리 소비가 무료
@@ -4203,10 +4230,10 @@ function processDay() {
     if (DEFS[it.defId].appliance?.effect !== 'power' || it.on === false) continue;
     if (resConsume('fuel', 1)) {
       freePower = true;
-      notes.push('⚡ 발전기 가동 — 오늘 배터리 소비가 무료입니다. (연료 -1)');
+      notes.push(t('day.genRun'));
     } else {
       setItemPower(it, false);
-      notes.push('⚠️ 연료 부족 — 발전기가 멈췄습니다.');
+      notes.push(t('day.genStop'));
     }
   }
   const consumeFuel = (fuelId, n = 1) => (fuelId === 'battery' && freePower) ? true : resConsume(fuelId, n);
@@ -4217,24 +4244,24 @@ function processDay() {
     if (!fuelId || it.on === false) continue;
     if (!consumeFuel(fuelId, 1)) {
       setItemPower(it, false);
-      notes.push(`⚠️ ${RESOURCES[fuelId].name} 부족 — ${def.name}이(가) 꺼졌습니다.`);
+      notes.push(t('day.fuelOut', { fuel: LName(RESOURCES[fuelId]), name: LName(def) }));
     }
   }
   // 3) 생산: 정수기 / 거처 특성 (온실 텃밭, 여객선 낚시)
   for (const it of items) {
     if (DEFS[it.defId].appliance?.effect === 'water' && it.on !== false) {
       resAdd('water', 1);
-      notes.push('🚰 정수기가 깨끗한 물을 만들었습니다. (+1)');
+      notes.push(t('day.purifier'));
     }
   }
   if (perk.produce) {
     // 겨울엔 텃밭이 얼어붙는다 (온실 재배 중단, 낚시는 가능)
     if (seasonOf().id === 'winter' && state.current === 'greenhouse') {
-      notes.push('❄️ 겨울 — 텃밭이 얼어 수확이 없습니다.');
+      notes.push(t('day.gardenFrozen'));
     } else {
       for (const [rid, n] of Object.entries(perk.produce)) {
         resAdd(rid, n);
-        notes.push(`${perk.produceNote || '거처에서 자원을 얻었습니다.'} (${RESOURCES[rid].emoji}+${n})`);
+        notes.push(t('day.produce', { note: LF(perk, 'produceNote'), emoji: RESOURCES[rid].emoji, n }));
       }
     }
   }
@@ -4242,66 +4269,61 @@ function processDay() {
   const fridgeOn = items.some(it => DEFS[it.defId].appliance?.effect === 'fridge' && it.on !== false);
   if (!fridgeOn && (state.res.food || 0) > 0) {
     resConsume('food', 1);
-    notes.push('🥫 냉장고가 없어 음식이 상했습니다. (-1)');
+    notes.push(t('day.foodSpoiled'));
   } else if (fridgeOn) {
-    notes.push('🧊 냉장고 덕분에 음식이 신선하게 보관됐습니다.');
+    notes.push(t('day.foodFresh'));
   }
   // 청결도 일일 감소 + 거처별 현실 제약
   const sh = SHELTERS[state.current];
   const wBad = state.weatherType === 'rain' || state.weatherType === 'snow';
   let dirt = 2;
-  if (sh.dailyDirt) { dirt += sh.dailyDirt; notes.push('💧 바다의 습기로 셸터가 눅눅해집니다.'); }
-  if (sh.weatherDirt && wBad) { dirt += sh.weatherDirt; notes.push(`${WEATHERS[state.weatherType].icon} 노천 거처가 비바람에 그대로 젖었습니다.`); }
+  if (sh.dailyDirt) { dirt += sh.dailyDirt; notes.push(t('day.seaDamp')); }
+  if (sh.weatherDirt && wBad) { dirt += sh.weatherDirt; notes.push(t('day.openWet', { icon: WEATHERS[state.weatherType].icon })); }
   if (sh.stormRepair && sh.stormRepair.includes(state.weatherType) && !hasMod('roof')) {
-    if (resConsume('material', 1)) notes.push('🔧 악천후 — 건축재 1로 지붕을 보수했습니다.');
-    else { dirt += 8; notes.push('⚠️ 건축재가 없어 빗물이 새어 들어옵니다! (청결 -8)'); }
+    if (resConsume('material', 1)) notes.push(t('day.roofRepair'));
+    else { dirt += 8; notes.push(t('day.roofLeak')); }
   }
   if (sh.rainCatch && wBad) {
     resAdd('water', sh.rainCatch);
-    notes.push(`🌧️ 옥상 빗물받이에 깨끗한 물이 모였습니다. (+${sh.rainCatch})`);
+    notes.push(t('day.rooftopRain', { n: sh.rainCatch }));
   }
   // 거처 개조 효과
-  if (hasMod('raincatch') && wBad) { resAdd('water', 1); notes.push('🪣 빗물받이에 물이 모였습니다. (+1)'); }
+  if (hasMod('raincatch') && wBad) { resAdd('water', 1); notes.push(t('day.raincatch')); }
   if (hasMod('garden') && state.day % 2 === 0) {
-    if (seasonOf().id === 'winter') notes.push('🌱 텃밭 상자가 얼어 수확이 없습니다.');
-    else { resAdd('food', 1); notes.push('🌱 텃밭 상자에서 수확했습니다. (+1)'); }
+    if (seasonOf().id === 'winter') notes.push(t('day.gardenBoxFrozen'));
+    else { resAdd('food', 1); notes.push(t('day.gardenBox')); }
   }
-  if (hasMod('solar') && state.day % 2 === 1) { resAdd('battery', 1); notes.push('🔆 태양광 패널이 배터리를 충전했습니다. (+1)'); }
+  if (hasMod('solar') && state.day % 2 === 1) { resAdd('battery', 1); notes.push(t('day.solar')); }
   state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - dirt);
-  if (state.cleanBy[state.current] < 20) notes.push('🧹 셸터가 매우 더럽습니다. 청소가 필요합니다.');
+  if (state.cleanBy[state.current] < 20) notes.push(t('day.veryDirty'));
   // 셸터 유지비
   const up = sh.upkeep;
   if (up) {
     if (state.day % up.every === 0) {
       if (resConsume(up.res, up.n)) {
         state.upkeepOk = true;
-        notes.push(`🏠 거처 유지비 지불 (${RESOURCES[up.res].emoji}${RESOURCES[up.res].name} -${up.n})`);
+        notes.push(t('day.upkeepPaid', { emoji: RESOURCES[up.res].emoji, name: LName(RESOURCES[up.res]), n: up.n }));
       } else {
         state.upkeepOk = false;
-        notes.push(`⚠️ 유지비(${up.label}) 미납 — 거처 쾌적함 보너스가 꺼졌습니다.`);
+        notes.push(t('day.upkeepUnpaid', { label: LLabel(up) }));
       }
     }
   } else state.upkeepOk = true;
   // 부상 방치 → 감염 악화
   if (state.injury && INJURIES[state.injury.type].infect && Math.random() < INJURIES[state.injury.type].infect) {
     state.injury = { type: 'infection', untilMin: state.gameMin + INJURIES.infection.restH * 60 * recoveryMult() };
-    notes.push('🤒 상처를 방치해 감염 위험으로 악화되었습니다.');
+    notes.push(t('day.infectWorse'));
   }
   // 고양이의 하루 (입양 후 소소한 기록)
   if (state.cat && Math.random() < 0.22) {
-    notes.push([
-      '🐈 고양이가 창가에서 하루 종일 볕을 쬐었습니다.',
-      '🐈 고양이가 문 앞에 쥐 한 마리를 놓아두었습니다. 선물인 모양입니다.',
-      '🐈 고양이가 침대 한가운데를 차지하고 잤습니다. 당신은 구석에서.',
-      '🐈 고양이가 어디선가 실뭉치를 물어 와 밤새 굴리며 놀았습니다.',
-    ][Math.floor(Math.random() * 4)]);
+    notes.push(t(['day.cat0', 'day.cat1', 'day.cat2', 'day.cat3'][Math.floor(Math.random() * 4)]));
   }
   // 특수 인카운터 ①: 야윈 고양이 — Day 100+, 하루 1% (아직 입양 전일 때만)
   if (!state.pendingEvent && !state.cat && state.day >= 100 && Math.random() < 0.01) {
     state.pendingEvent = 'cat';
     state.lastEventDay = state.day;
     state.catMusicDay = state.day; // 당첨된 날은 하루 종일 Cat OST
-    notes.push('🐈 어디선가 가냘픈 울음소리가 들려온다...');
+    notes.push(t('day.catHint'));
   }
   // 특수 인카운터 ②: 구조 — Day 10000 초과, 하루 5%
   if (!state.pendingEvent && state.day > 10000 && !state.endingSeen && Math.random() < 0.05) {
@@ -4319,22 +4341,22 @@ function processDay() {
 }
 function showDayReport() {
   const log = state.dayLog;
-  const fmt = obj => Object.entries(obj).map(([id, n]) => `${RESOURCES[id].emoji}${RESOURCES[id].name} ${n}`).join(', ');
+  const fmt = obj => Object.entries(obj).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(', ');
   const warns = Object.keys(RESOURCES).filter(id => ['water', 'food', 'bandage', 'candle', 'battery'].includes(id) && (state.res[id] || 0) === 0);
   const tips = [];
-  if (warns.includes('bandage')) tips.push('붕대가 없습니다 — 주거지역에서 구할 수 있습니다.');
-  if (warns.includes('water')) tips.push('깨끗한 물이 없습니다 — 청소와 치료에 필요합니다.');
-  if (warns.includes('battery') && SHELTERS[state.current].upkeep?.res === 'battery') tips.push('벙커 전력용 배터리가 없습니다 — 상업지구를 탐험하세요.');
-  if (state.injury) tips.push(`${INJURIES[state.injury.type].name} 치료 재료: ${costLabel(INJURIES[state.injury.type].cure)}`);
-  if ((state.cleanBy[state.current] ?? 70) < 50) tips.push('청결도가 낮습니다 — 🧹 청소로 쾌적함을 회복하세요.');
+  if (warns.includes('bandage')) tips.push(t('report.tip.bandage'));
+  if (warns.includes('water')) tips.push(t('report.tip.water'));
+  if (warns.includes('battery') && SHELTERS[state.current].upkeep?.res === 'battery') tips.push(t('report.tip.battery'));
+  if (state.injury) tips.push(t('injury.tip', { name: LName(INJURIES[state.injury.type]), cost: costLabel(INJURIES[state.injury.type].cure) }));
+  if ((state.cleanBy[state.current] ?? 70) < 50) tips.push(t('report.tip.clean'));
   const forecast = hasForecast()
-    ? `📻 예보: ${forecastText()}`
-    : '내일 날씨는 알 수 없습니다. (라디오를 배치하면 예보를 들을 수 있습니다)';
-  openModal(`📋 Day ${state.day - 1} 결산`, `
-    <div class="report-sec"><span class="r-title">획득</span><br>${Object.keys(log.gain).length ? fmt(log.gain) : '없음'}</div>
-    <div class="report-sec"><span class="r-title">소비</span><br>${Object.keys(log.spend).length ? fmt(log.spend) : '없음'}</div>
-    ${log.notes.length ? `<div class="report-sec"><span class="r-title">기록</span><br>${log.notes.join('<br>')}</div>` : ''}
-    ${warns.length ? `<div class="report-sec report-warn">⚠️ 바닥난 자원: ${warns.map(id => RESOURCES[id].emoji + RESOURCES[id].name).join(', ')}</div>` : ''}
+    ? t('report.forecast', { text: forecastText() })
+    : t('report.noForecast');
+  openModal(t('report.title', { day: state.day - 1 }), `
+    <div class="report-sec"><span class="r-title">${t('report.gain')}</span><br>${Object.keys(log.gain).length ? fmt(log.gain) : t('none')}</div>
+    <div class="report-sec"><span class="r-title">${t('report.spend')}</span><br>${Object.keys(log.spend).length ? fmt(log.spend) : t('none')}</div>
+    ${log.notes.length ? `<div class="report-sec"><span class="r-title">${t('report.notes')}</span><br>${log.notes.join('<br>')}</div>` : ''}
+    ${warns.length ? `<div class="report-sec report-warn">${t('report.warn', { list: warns.map(id => RESOURCES[id].emoji + LName(RESOURCES[id])).join(', ') })}</div>` : ''}
     <div class="report-sec">${forecast}</div>
     ${tips.length ? `<div class="report-sec report-tip">💡 ${tips.slice(0, 2).join('<br>💡 ')}</div>` : ''}
   `);
@@ -4379,8 +4401,8 @@ function renderInventoryBar() {
     const cnt = state.inventory[id] || 0;
     const el = document.createElement('div');
     el.className = 'tool-item' + (cnt <= 0 ? ' empty' : '');
-    el.innerHTML = `<span class="emoji">${def.emoji}</span><span>${def.name}</span><span class="cnt">${cnt}</span>`;
-    el.title = cnt > 0 ? `${def.name} 배치하기` : '탐험으로 획득하세요';
+    el.innerHTML = `<span class="emoji">${def.emoji}</span><span>${LName(def)}</span><span class="cnt">${cnt}</span>`;
+    el.title = cnt > 0 ? t('inv.place', { name: LName(def) }) : t('inv.getByExp');
     el.addEventListener('click', () => startPlacing(id));
     bar.appendChild(el);
   }
@@ -4391,7 +4413,7 @@ function renderExpPanel() {
     const r = REGIONS[state.exp.region];
     box.innerHTML = `
       <div id="exp-progress">
-        <div style="font-size:12px">${r.emoji} ${r.name} 탐험 중...</div>
+        <div style="font-size:12px">${t('exp.inProgress', { emoji: r.emoji, name: LName(r) })}</div>
         <div class="bar-wrap"><div class="bar" id="exp-bar"></div></div>
         <div class="eta" id="exp-eta"></div>
       </div>`;
@@ -4405,15 +4427,14 @@ function renderExpPanel() {
     const canCure = resHasAll(inj.cure);
     injuryHtml = `
       <div class="injury-card">
-        <span class="i-name">${inj.icon} ${inj.name}</span> — 탐험 성공률 -${Math.round(inj.pen * 100)}%p${inj.timeMult ? ', 탐험 시간 +30%' : ''}<br>
-        자연 회복까지 약 <span id="injury-eta">${remainH.toFixed(1)}</span>시간 (휴식)
+        ${t('injury.card', { icon: inj.icon, name: LName(inj), pen: Math.round(inj.pen * 100), time: inj.timeMult ? t('injury.card.time') : '', h: remainH.toFixed(1) })}
         <div class="btn-row">
-          <button class="pixel-btn" id="btn-treat" ${canCure ? '' : 'disabled'}>💊 치료 (${costLabel(inj.cure)})</button>
+          <button class="pixel-btn" id="btn-treat" ${canCure ? '' : 'disabled'}>${t('injury.treat', { cost: costLabel(inj.cure) })}</button>
         </div>
       </div>`;
   }
   box.innerHTML = injuryHtml + `
-    <button class="pixel-btn primary" id="btn-open-map" style="width:100%">🗺️ 탐험 지도 열기</button>
+    <button class="pixel-btn primary" id="btn-open-map" style="width:100%">${t('exp.openMap')}</button>
     ${hasForecast() ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px;text-align:center">📻 ${forecastText()}</div>` : ''}`;
   const mb = $('btn-open-map');
   if (mb) mb.addEventListener('click', openMapModal);
@@ -4428,7 +4449,7 @@ function tickExpeditionUI() {
     const total = state.exp.dur || (REGIONS[state.exp.region].time * 1000);
     if (bar) {
       bar.style.width = `${100 * (1 - remain / total)}%`;
-      eta.textContent = `${Math.ceil(remain / 1000)}초 남음`;
+      eta.textContent = t('exp.timeLeft', { n: Math.ceil(remain / 1000) });
     } else renderExpPanel();
   } else if (state.injury) {
     const el = $('injury-eta');
@@ -4440,14 +4461,14 @@ function tickExpeditionUI() {
 const selPanel = $('sel-panel');
 function showSelPanel(item) {
   const def = DEFS[item.defId];
-  $('sel-name').innerHTML = `${def.emoji} ${def.name}`;
+  $('sel-name').innerHTML = `${def.emoji} ${LName(def)}`;
   const sw = $('sel-swatches');
   sw.innerHTML = '';
   def.colors.forEach((c, i) => {
     const s = document.createElement('div');
     s.className = 'swatch' + (i === item.colorIdx ? ' active' : '');
     s.style.background = '#' + c.toString(16).padStart(6, '0');
-    s.title = def.colorNames[i];
+    s.title = LColor(def, i);
     s.addEventListener('click', () => { recolorItem(item, i); markCollection(item.defId, i); showSelPanel(item); scheduleSave(); });
     sw.appendChild(s);
   });
@@ -4460,15 +4481,15 @@ function showSelPanel(item) {
     div.id = 'sel-power';
     div.style.cssText = 'font-size:10px;color:var(--text-dim);margin-bottom:8px;line-height:1.6';
     div.innerHTML = `
-      <button class="pixel-btn" id="btn-power" style="width:100%;margin-bottom:4px">${item.on !== false ? '🔆 켜짐 — 끄기' : '🌑 꺼짐 — 켜기'}</button>
-      ${def.appliance ? `<span style="color:var(--good)">${def.appliance.label}</span><br>` : ''}
-      ${RESOURCES[fuel].emoji} ${RESOURCES[fuel].name} ${have}개 보유 · 켜두면 1일 1개 소비 ${have === 0 ? '<span style="color:var(--bad)">(잔량 없음!)</span>' : `(${have}일 유지 가능)`}`;
+      <button class="pixel-btn" id="btn-power" style="width:100%;margin-bottom:4px">${item.on !== false ? t('power.on') : t('power.off')}</button>
+      ${def.appliance ? `<span style="color:var(--good)">${LLabel(def.appliance)}</span><br>` : ''}
+      ${t('power.fuelLine', { emoji: RESOURCES[fuel].emoji, name: LName(RESOURCES[fuel]), have, status: have === 0 ? t('power.empty') : t('power.lasts', { n: have }) })}`;
     $('sel-swatches').after(div);
     $('btn-power').addEventListener('click', () => {
       setItemPower(item, item.on === false);
       showSelPanel(item);
       scheduleSave();
-      toast(item.on ? `${def.name}을(를) 켰습니다` : `${def.name}을(를) 껐습니다 — 쾌적함 보너스 제외`);
+      toast(item.on ? t('power.turnedOn', { name: LName(def) }) : t('power.turnedOff', { name: LName(def) }));
     });
   }
   selPanel.classList.add('show');
@@ -4500,21 +4521,21 @@ function openShelterModal() {
       if (unlocked && !cur) {
         const { cost, cross, renov } = moveCostFor(id);
         const parts = [];
-        if (renov) parts.push(`🔧 정비 ${costLabel(sh.moveCost || {}) || '무료'}`);
-        if (cross) parts.push('🚶 여정 🥫1+💧1 · 3시간');
-        costLine = parts.length ? `<div class="s-desc" style="color:var(--accent)">이주 비용: ${parts.join(' · ')}</div>` : '';
+        if (renov) parts.push(t('shelter.refitPart', { cost: costLabel(sh.moveCost || {}) || t('free') }));
+        if (cross) parts.push(t('shelter.journeyPart'));
+        costLine = parts.length ? `<div class="s-desc" style="color:var(--accent)">${t('shelter.moveCost', { parts: parts.join(' · ') })}</div>` : '';
         const ok = resHasAll(cost);
-        btn = `<button class="pixel-btn" data-shelter="${id}" ${ok ? '' : 'disabled'} title="${ok ? '' : '자원 부족: ' + costLabel(cost)}">${renov ? '정비 후 이주' : '이주'}</button>`;
+        btn = `<button class="pixel-btn" data-shelter="${id}" ${ok ? '' : 'disabled'} title="${ok ? '' : t('shelter.noCostNeed', { cost: costLabel(cost) })}">${renov ? t('shelter.moveRefit') : t('shelter.move')}</button>`;
       }
       return `
       <div class="shelter-card ${cur ? 'current' : ''} ${unlocked ? '' : 'locked'}">
         <div class="s-emoji">${unlocked ? sh.emoji : '🔒'}</div>
         <div class="s-body">
-          <div class="s-name">${sh.name} ${cur ? '<span style="color:var(--accent)">(현재)</span>' : ''}${unlocked && !state.renovated[id] ? ' <span style="color:var(--text-dim);font-size:10px">(미정비)</span>' : ''}</div>
-          <div class="s-desc">${unlocked ? sh.desc : `탐험 성공 ${sh.unlockAt}회 달성 시 발견 (현재 ${state.successes}회)`}</div>
-          ${unlocked && sh.perk ? `<div class="s-desc" style="color:var(--good)">${sh.perk.label}</div>` : ''}
-          ${unlocked && sh.limits ? `<div class="s-desc" style="color:var(--bad)">${sh.limits}</div>` : ''}
-          ${unlocked ? `<div class="s-desc">기본 쾌적함 +${sh.baseComfort || 0} · 유지비: ${sh.upkeep ? sh.upkeep.label : '없음'}</div>` : ''}
+          <div class="s-name">${LName(sh)} ${cur ? `<span style="color:var(--accent)">${t('current')}</span>` : ''}${unlocked && !state.renovated[id] ? t('shelter.unrefit') : ''}</div>
+          <div class="s-desc">${unlocked ? LDesc(sh) : t('shelter.locked', { need: sh.unlockAt, cur: state.successes })}</div>
+          ${unlocked && sh.perk ? `<div class="s-desc" style="color:var(--good)">${LLabel(sh.perk)}</div>` : ''}
+          ${unlocked && sh.limits ? `<div class="s-desc" style="color:var(--bad)">${LLimits(sh)}</div>` : ''}
+          ${unlocked ? `<div class="s-desc">${t('shelter.baseComfort', { n: sh.baseComfort || 0, upkeep: sh.upkeep ? LLabel(sh.upkeep) : t('upkeep.none') })}</div>` : ''}
           ${costLine}
         </div>
         ${btn}
@@ -4522,15 +4543,12 @@ function openShelterModal() {
     }).join('');
     return `
       <div style="margin:12px 0 6px;font-size:12px;color:${here ? 'var(--accent)' : 'var(--text-dim)'}">
-        ${dist.emoji} <b>${dist.name}</b>${here ? ' — 현재 구역' : ''}
-        <span style="font-size:10px"> · ${dist.bonusLabel}</span><br>
-        <span style="font-size:10px;color:var(--text-dim)">${dist.desc}</span>
+        ${t('shelter.districtHeader', { emoji: dist.emoji, name: LName(dist), here: here ? t('shelter.hereTag') : '', bonus: LBonus(dist), desc: LDesc(dist) })}
       </div>${cards}`;
   }).join('');
-  openModal('🗺️ 구역과 거처', `
+  openModal(t('shelter.modalTitle'), `
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">
-      같은 구역 안에서는 자유롭게 오가지만, <b>다른 구역으로의 이주는 물자(🥫1+💧1)와 시간(3시간)</b>이 듭니다.
-      처음 입주하는 거처는 <b>정비 자원</b>이 필요합니다. 배치한 가구는 각 거처에 남고 인벤토리는 공유됩니다.
+      ${t('shelter.intro')}
     </div>${groups}`);
   $('modal-body').querySelectorAll('button[data-shelter]').forEach(b =>
     b.addEventListener('click', () => moveToShelter(b.dataset.shelter)));
@@ -4541,15 +4559,14 @@ function openHelpModal() {
       <span style="font-size:20px">${icon}</span>
       <div style="flex:1;line-height:1.7"><b>${title}</b><br><span style="font-size:10px;color:var(--text-dim)">${body}</span></div>
     </div>`;
-  openModal('🎓 튜토리얼', `
-    ${card('🎒', '탐험', '지도에서 지역 선택 → 준비물 챙기면 성공률↑. 하루 5회, 다녀오면 시간이 흐릅니다.')}
-    ${card('🥫💧⚡', '생존', '게이지 클릭 = 먹기/마시기/취침. ⚡가 없으면 🛌 자야 합니다. 침대가 있으면 푹 잡니다.')}
-    ${card('🔨', '제작', '가구는 파밍이 아니라 제작이 기본. 재료(천·부품·건축재)를 탐험으로 모으세요.')}
-    ${card('😊', '쾌적함', '가구·조명·청결·정든 집이 쾌적함을 만들고, 탐험 성공률과 회복 속도를 올립니다.')}
-    ${card('🏠', '거처', '구역마다 특성·유지비·제약이 다릅니다. 개조(빗물받이·텃밭...)로 자급자족.')}
-    ${card('🌤️', '세월', '날씨는 며칠 단위, 계절은 12일 주기. 겨울을 대비해 비축하세요. 저장은 자동.')}
-    <b>카메라</b>: <kbd>우클릭 드래그</kbd> 또는 <kbd>Q</kbd>/<kbd>E</kbd> 회전 · 휠 줌 (줌아웃하면 주변 폐허가 보입니다)<br>
-    진행 상황은 자동 저장됩니다.
+  openModal(t('help.title'), `
+    ${card('🎒', t('help.exp.t'), t('help.exp.b'))}
+    ${card('🥫💧⚡', t('help.survive.t'), t('help.survive.b'))}
+    ${card('🔨', t('help.craft.t'), t('help.craft.b'))}
+    ${card('😊', t('help.comfort.t'), t('help.comfort.b'))}
+    ${card('🏠', t('help.shelter.t'), t('help.shelter.b'))}
+    ${card('🌤️', t('help.time.t'), t('help.time.b'))}
+    ${t('help.camera')}
   `);
 }
 $('btn-exp').addEventListener('click', () => {
@@ -4570,7 +4587,7 @@ $('btn-reset').addEventListener('click', () => {
 $('btn-save-exp').addEventListener('click', () => {
   flushSave(); // 예약된 저장을 즉시 반영해 최신 상태를 내보낸다
   const raw = localStorage.getItem(slotKey(currentSlot));
-  if (!raw) { toast('내보낼 세이브가 없습니다'); return; }
+  if (!raw) { toast(t('save.exportNone')); return; }
   const blob = new Blob([raw], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -4580,7 +4597,7 @@ $('btn-save-exp').addEventListener('click', () => {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  toast('💾 세이브 파일을 내보냈습니다');
+  toast(t('save.exported'));
 });
 
 // 세이브 가져오기: 파일에서 읽어 검증 후 현재 슬롯에 덮어쓰기
@@ -4594,13 +4611,13 @@ $('btn-save-imp').addEventListener('click', () => {
     const reader = new FileReader();
     reader.onload = () => {
       let data;
-      try { data = JSON.parse(reader.result); } catch (e) { toast('올바른 세이브 파일이 아닙니다'); return; }
-      if (!data?.state || data.state.ver == null || data.state.day == null) { toast('올바른 세이브 파일이 아닙니다'); return; }
-      if (!confirm(`슬롯 ${currentSlot}(현재)의 세이브를 덮어쓸까요?`)) return;
+      try { data = JSON.parse(reader.result); } catch (e) { toast(t('save.invalidFile')); return; }
+      if (!data?.state || data.state.ver == null || data.state.day == null) { toast(t('save.invalidFile')); return; }
+      if (!confirm(t('save.overwrite', { n: currentSlot }))) return;
       try {
         localStorage.setItem(slotKey(currentSlot), JSON.stringify(data));
         localStorage.setItem('project-shelter-lastslot', String(currentSlot));
-      } catch (e) { toast('저장에 실패했습니다'); return; }
+      } catch (e) { toast(t('save.failed')); return; }
       location.reload();
     };
     reader.readAsText(file);
@@ -4663,6 +4680,7 @@ function applyOpts() {
   $('opt-pixel').value = opts.pixel; $('opt-quant').checked = opts.quant;
   $('opt-dither').checked = opts.dither; $('opt-ceil').checked = opts.ceil;
   $('opt-autoeat').checked = opts.autoEat !== false;
+  $('opt-lang').value = opts.lang || 'ko';
   postMat.uniforms.uQuant.value = opts.quant ? 1 : 0;
   postMat.uniforms.uDither.value = opts.dither ? 1 : 0;
   ceilLight.visible = opts.ceil;
@@ -4674,6 +4692,15 @@ $('opt-quant').addEventListener('change', e => { opts.quant = e.target.checked; 
 $('opt-dither').addEventListener('change', e => { opts.dither = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; scheduleSave(); });
+// 언어 전환: 저장 후 재로딩 (라이브 리렌더 대신 단순하게)
+$('opt-lang').addEventListener('change', e => {
+  const next = e.target.value === 'en' ? 'en' : 'ko';
+  if (next === (opts.lang || 'ko')) return;
+  if (!confirm(t('lang.confirm'))) { e.target.value = opts.lang || 'ko'; return; }
+  opts.lang = next;
+  flushSave();               // 즉시 저장 후
+  location.reload();         // 재로딩하며 부팅 시 setLang(opts.lang) 적용
+});
 
 /* ============================================================
    BGM (v1.9) — 날씨/시간대/계절/상황 기반 OST (public/BGM/*.mp3)
@@ -4702,7 +4729,7 @@ const bgm = new Audio();
 bgm.preload = 'auto';
 let bgmCtxKey = '', bgmTrack = '', bgmErrorShown = false;
 bgm.addEventListener('error', () => {
-  if (opts.bgm && !bgmErrorShown) { bgmErrorShown = true; toast('BGM 파일을 찾을 수 없습니다 (BGM 폴더)'); }
+  if (opts.bgm && !bgmErrorShown) { bgmErrorShown = true; toast(t('bgm.notFound')); }
 });
 function isEveningHour() { const h = gameHour(); return h >= 17 && h < 21; }
 function bgmContext() {
@@ -4760,6 +4787,8 @@ $('opt-bgmvol').addEventListener('input', e => {
    시작 & 메인 루프
 ============================================================ */
 loadSave();
+setLang(opts.lang || 'ko');   // 세이브된 언어 적용 (기본 ko)
+applyStaticI18n();             // index.html 정적 텍스트 치환
 loadShelter(state.current);
 renderInventoryBar();
 renderResBar();
@@ -4783,11 +4812,11 @@ $('cam-zin').addEventListener('click', () => { camState.zoom = THREE.MathUtils.c
 $('cam-zout').addEventListener('click', () => { camState.zoom = THREE.MathUtils.clamp(camState.zoom * 0.8, 0.25, 3.2); });
 $('cam-home').addEventListener('click', () => { camState.targetYaw = Math.PI / 4; fitZoomForShelter(); });
 // 패널 드래그/접기 활성화
-makeDraggablePanel($('hud'), 'hud', '거점');
-makeDraggablePanel($('exp-panel'), 'exp', '탐험');
-makeDraggablePanel($('render-panel'), 'render', '설정');
-makeDraggablePanel($('clock-panel'), 'clock', '시계');
-makeDraggablePanel($('res-bar'), 'res', '자원');
+makeDraggablePanel($('hud'), 'hud', t('panel.hud'));
+makeDraggablePanel($('exp-panel'), 'exp', t('panel.exp'));
+makeDraggablePanel($('render-panel'), 'render', t('panel.render'));
+makeDraggablePanel($('clock-panel'), 'clock', t('panel.clock'));
+makeDraggablePanel($('res-bar'), 'res', t('panel.res'));
 
 // 타이틀 / 인트로 (자리 비운 사이 끝난 탐험 정산은 hideTitle에서 — 타이틀에선 집만 보여준다)
 $('t-continue').addEventListener('click', hideTitle);

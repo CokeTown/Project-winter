@@ -4,12 +4,13 @@ import { lamb, B, Cyl, shade, seededRand } from '../lib/helpers.js';
 /* ============================================================
    가구 정의 (12종 × 색상 4종)
 ============================================================ */
-const WOODS = { names: ['오크', '월넛', '화이트워시', '블랙우드'], colors: [0xa07850, 0x64452e, 0xcfc8ba, 0x3c3a38] };
+const WOODS = { names: ['오크', '월넛', '화이트워시', '블랙우드'], namesEn: ['Oak', 'Walnut', 'Whitewash', 'Blackwood'], colors: [0xa07850, 0x64452e, 0xcfc8ba, 0x3c3a38] };
 
 const DEFS = {
   bed: {
-    name: '침대', emoji: '🛏️', fp: { w: 1.8, d: 2.3 },
+    name: '침대', nameEn: 'Bed', emoji: '🛏️', fp: { w: 1.8, d: 2.3 },
     colorNames: ['와인레드', '포레스트', '네이비', '크림'],
+    colorNamesEn: ['Wine Red', 'Forest', 'Navy', 'Cream'],
     colors: [0xa84a4a, 0x5a7d5a, 0x46557a, 0xd6c9ab],
     build(c) {
       const g = new THREE.Group();
@@ -27,8 +28,9 @@ const DEFS = {
     }
   },
   sofa: {
-    name: '소파', emoji: '🛋️', fp: { w: 2.0, d: 0.95 },
+    name: '소파', nameEn: 'Sofa', emoji: '🛋️', fp: { w: 2.0, d: 0.95 },
     colorNames: ['베이지', '그레이', '올리브', '테라코타'],
+    colorNamesEn: ['Beige', 'Gray', 'Olive', 'Terracotta'],
     colors: [0xc4b295, 0x84878e, 0x7d7f5a, 0xb0644d],
     build(c) {
       const g = new THREE.Group();
@@ -44,8 +46,8 @@ const DEFS = {
     }
   },
   chair: {
-    name: '의자', emoji: '🪑', fp: { w: 0.6, d: 0.6 },
-    colorNames: WOODS.names, colors: WOODS.colors,
+    name: '의자', nameEn: 'Chair', emoji: '🪑', fp: { w: 0.6, d: 0.6 },
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     build(c) {
       const g = new THREE.Group();
       B(g, 0.5, 0.07, 0.5, c, 0, 0.46, 0);
@@ -56,9 +58,9 @@ const DEFS = {
     }
   },
   table: {
-    name: '테이블', emoji: '🪵', fp: { w: 1.5, d: 0.9 },
+    name: '테이블', nameEn: 'Table', emoji: '🪵', fp: { w: 1.5, d: 0.9 },
     surface: { y: 0.77, w: 1.3, d: 0.72 }, // 상판 위에 소품을 올릴 수 있음
-    colorNames: WOODS.names, colors: WOODS.colors,
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     build(c) {
       const g = new THREE.Group();
       B(g, 1.4, 0.09, 0.8, c, 0, 0.72, 0);
@@ -68,9 +70,10 @@ const DEFS = {
     }
   },
   dresser: {
-    name: '서랍장', emoji: '🗄️', fp: { w: 1.2, d: 0.55 },
+    name: '서랍장', nameEn: 'Dresser', emoji: '🗄️', fp: { w: 1.2, d: 0.55 },
     surface: { y: 1.13, w: 1.05, d: 0.42 },
     colorNames: ['내추럴', '다크브라운', '화이트', '그레이'],
+    colorNamesEn: ['Natural', 'Dark Brown', 'White', 'Gray'],
     colors: [0xa9825c, 0x5f452f, 0xd4cfc2, 0x7c7f86],
     build(c) {
       const g = new THREE.Group();
@@ -85,8 +88,8 @@ const DEFS = {
     }
   },
   bookshelf: {
-    name: '책장', emoji: '📚', fp: { w: 1.0, d: 0.4 },
-    colorNames: WOODS.names, colors: WOODS.colors,
+    name: '책장', nameEn: 'Bookshelf', emoji: '📚', fp: { w: 1.0, d: 0.4 },
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     build(c, colorIdx = 0) {
       const g = new THREE.Group();
       B(g, 0.06, 1.8, 0.32, c, -0.47, 0.9, 0); B(g, 0.06, 1.8, 0.32, c, 0.47, 0.9, 0);
@@ -110,8 +113,9 @@ const DEFS = {
     }
   },
   rug: {
-    name: '러그', emoji: '🧶', fp: { w: 2.2, d: 1.5 }, noCollide: true,
+    name: '러그', nameEn: 'Rug', emoji: '🧶', fp: { w: 2.2, d: 1.5 }, noCollide: true,
     colorNames: ['레드', '블루', '그린', '베이지'],
+    colorNamesEn: ['Red', 'Blue', 'Green', 'Beige'],
     colors: [0x9e524e, 0x54688a, 0x6a7f5b, 0xc4b295],
     build(c) {
       const g = new THREE.Group();
@@ -123,8 +127,9 @@ const DEFS = {
     }
   },
   lamp: {
-    name: '스탠드 조명', emoji: '💡', fp: { w: 0.45, d: 0.45 },
+    name: '스탠드 조명', nameEn: 'Floor Lamp', emoji: '💡', fp: { w: 0.45, d: 0.45 },
     colorNames: ['웜화이트', '세이지', '로즈', '스카이'],
+    colorNamesEn: ['Warm White', 'Sage', 'Rose', 'Sky'],
     colors: [0xe8d9b0, 0x9aa88a, 0xc79a9a, 0x93a8bb],
     light: { color: 0xffb670, intensity: 7, dist: 7, y: 1.45, fuel: 'battery', comfort: 8 },
     build(c) {
@@ -143,9 +148,10 @@ const DEFS = {
     }
   },
   plant: {
-    name: '화분', emoji: '🪴', fp: { w: 0.55, d: 0.55 },
+    name: '화분', nameEn: 'Potted Plant', emoji: '🪴', fp: { w: 0.55, d: 0.55 },
     stackable: true,
     colorNames: ['테라코타', '화이트', '블랙', '민트'],
+    colorNamesEn: ['Terracotta', 'White', 'Black', 'Mint'],
     colors: [0xb3674d, 0xd8d3c7, 0x46484a, 0x9dbcae],
     build(c) {
       const g = new THREE.Group();
@@ -161,9 +167,9 @@ const DEFS = {
     }
   },
   crate: {
-    name: '나무상자', emoji: '📦', fp: { w: 0.8, d: 0.8 },
+    name: '나무상자', nameEn: 'Wooden Crate', emoji: '📦', fp: { w: 0.8, d: 0.8 },
     surface: { y: 0.6, w: 0.68, d: 0.68 },
-    colorNames: WOODS.names, colors: WOODS.colors,
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     build(c) {
       const g = new THREE.Group();
       B(g, 0.75, 0.6, 0.75, c, 0, 0.3, 0);
@@ -175,9 +181,10 @@ const DEFS = {
     }
   },
   radio: {
-    name: '라디오', emoji: '📻', fp: { w: 0.6, d: 0.35 },
+    name: '라디오', nameEn: 'Radio', emoji: '📻', fp: { w: 0.6, d: 0.35 },
     stackable: true, // 테이블·서랍장 등 표면 위에 올릴 수 있음
     colorNames: ['체리레드', '크림', '민트', '브라운'],
+    colorNamesEn: ['Cherry Red', 'Cream', 'Mint', 'Brown'],
     colors: [0xa8433f, 0xd9cdb2, 0x93b5a5, 0x6f4f38],
     build(c) {
       const g = new THREE.Group();
@@ -193,8 +200,9 @@ const DEFS = {
     }
   },
   candle: {
-    name: '캔들 스툴', emoji: '🕯️', fp: { w: 0.5, d: 0.5 },
+    name: '캔들 스툴', nameEn: 'Candle Stool', emoji: '🕯️', fp: { w: 0.5, d: 0.5 },
     colorNames: ['우드', '화이트', '블랙', '라벤더'],
+    colorNamesEn: ['Wood', 'White', 'Black', 'Lavender'],
     colors: [0x8a6a48, 0xd4cfc2, 0x46484a, 0x9a8aa8],
     light: { color: 0xffa050, intensity: 3, dist: 4, y: 0.75, flicker: true, fuel: 'candle', comfort: 6 },
     build(c) {
@@ -211,10 +219,11 @@ const DEFS = {
     }
   },
   fridge: {
-    name: '냉장고', emoji: '🧊', fp: { w: 0.78, d: 0.68 },
+    name: '냉장고', nameEn: 'Fridge', emoji: '🧊', fp: { w: 0.78, d: 0.68 },
     colorNames: ['체리레드', '민트', '크림', '화이트'],
+    colorNamesEn: ['Cherry Red', 'Mint', 'Cream', 'White'],
     colors: [0xa8433f, 0x93b5a5, 0xd9cdb2, 0xd8d8d4],
-    appliance: { fuel: 'battery', effect: 'fridge', label: '음식 부패 방지' },
+    appliance: { fuel: 'battery', effect: 'fridge', label: '음식 부패 방지', labelEn: 'Prevents food spoilage' },
     build(c) {
       const g = new THREE.Group();
       B(g, 0.7, 1.35, 0.6, c, 0, 0.72, 0);
@@ -231,10 +240,11 @@ const DEFS = {
     }
   },
   purifier: {
-    name: '정수기', emoji: '🚰', fp: { w: 0.6, d: 0.6 },
+    name: '정수기', nameEn: 'Water Purifier', emoji: '🚰', fp: { w: 0.6, d: 0.6 },
     colorNames: ['스틸', '화이트', '올리브', '네이비'],
+    colorNamesEn: ['Steel', 'White', 'Olive', 'Navy'],
     colors: [0x8a8f96, 0xd4cfc2, 0x7d7f5a, 0x46557a],
-    appliance: { fuel: 'battery', effect: 'water', label: '매일 깨끗한 물 +1' },
+    appliance: { fuel: 'battery', effect: 'water', label: '매일 깨끗한 물 +1', labelEn: 'Clean water +1 daily' },
     build(c) {
       const g = new THREE.Group();
       B(g, 0.5, 0.5, 0.5, shade(c, 0.85), 0, 0.25, 0);            // 받침 캐비닛
@@ -249,10 +259,11 @@ const DEFS = {
     }
   },
   generator: {
-    name: '발전기', emoji: '⚡', fp: { w: 0.95, d: 0.7 },
+    name: '발전기', nameEn: 'Generator', emoji: '⚡', fp: { w: 0.95, d: 0.7 },
     colorNames: ['레드', '옐로우', '올리브', '그레이'],
+    colorNamesEn: ['Red', 'Yellow', 'Olive', 'Gray'],
     colors: [0x9e4a3a, 0xb08a3a, 0x6a7047, 0x7c7f86],
-    appliance: { fuel: 'fuel', effect: 'power', label: '가동 중엔 배터리 소비 무료 (연료 1/일)' },
+    appliance: { fuel: 'fuel', effect: 'power', label: '가동 중엔 배터리 소비 무료 (연료 1/일)', labelEn: 'Free battery use while running (fuel 1/day)' },
     build(c) {
       const g = new THREE.Group();
       B(g, 0.85, 0.5, 0.55, c, 0, 0.35, 0);                       // 엔진 본체
@@ -270,8 +281,9 @@ const DEFS = {
   },
   /* ── cozy 확장 가구 (v1.4) ── */
   stove: {
-    name: '장작 난로', emoji: '🔥', fp: { w: 1.0, d: 0.75 },
+    name: '장작 난로', nameEn: 'Wood Stove', emoji: '🔥', fp: { w: 1.0, d: 0.75 },
     colorNames: ['무쇠', '벽돌레드', '크림', '올리브'],
+    colorNamesEn: ['Cast Iron', 'Brick Red', 'Cream', 'Olive'],
     colors: [0x3a3d42, 0x8a5138, 0xcfc8ba, 0x6a7047],
     light: { color: 0xff8c3a, intensity: 9, dist: 8, y: 0.7, flicker: true, fuel: 'fuel', comfort: 12 },
     build(c) {
@@ -293,8 +305,9 @@ const DEFS = {
     }
   },
   cushion: {
-    name: '방석', emoji: '🧘', fp: { w: 0.65, d: 0.65 },
+    name: '방석', nameEn: 'Cushion', emoji: '🧘', fp: { w: 0.65, d: 0.65 },
     colorNames: ['머스터드', '와인', '세이지', '인디고'],
+    colorNamesEn: ['Mustard', 'Wine', 'Sage', 'Indigo'],
     colors: [0xbb9440, 0x8f4a4a, 0x8a9a78, 0x4a5680],
     build(c) {
       const g = new THREE.Group();
@@ -306,8 +319,8 @@ const DEFS = {
     }
   },
   teatable: {
-    name: '찻상', emoji: '🍵', fp: { w: 0.95, d: 0.6 },
-    colorNames: WOODS.names, colors: WOODS.colors,
+    name: '찻상', nameEn: 'Tea Table', emoji: '🍵', fp: { w: 0.95, d: 0.6 },
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     build(c) {
       const g = new THREE.Group();
       B(g, 0.9, 0.06, 0.55, c, 0, 0.3, 0);
@@ -321,9 +334,10 @@ const DEFS = {
     }
   },
   bookstack: {
-    name: '책 더미', emoji: '📖', fp: { w: 0.5, d: 0.5 },
+    name: '책 더미', nameEn: 'Book Stack', emoji: '📖', fp: { w: 0.5, d: 0.5 },
     stackable: true,
     colorNames: ['모험담', '시집', '도감', '일기장'],
+    colorNamesEn: ['Adventure', 'Poetry', 'Field Guide', 'Diary'],
     colors: [0xa8524e, 0x54688a, 0x6a7f5b, 0xb5764a],
     build(c, colorIdx = 0) {
       const g = new THREE.Group();
@@ -342,8 +356,9 @@ const DEFS = {
     }
   },
   clock: {
-    name: '괘종시계', emoji: '🕰️', fp: { w: 0.55, d: 0.4 },
+    name: '괘종시계', nameEn: 'Grandfather Clock', emoji: '🕰️', fp: { w: 0.55, d: 0.4 },
     colorNames: ['마호가니', '오크', '블랙', '아이보리'],
+    colorNamesEn: ['Mahogany', 'Oak', 'Black', 'Ivory'],
     colors: [0x6b4a32, 0xa07850, 0x3c3a38, 0xcfc8ba],
     build(c) {
       const g = new THREE.Group();
@@ -362,8 +377,9 @@ const DEFS = {
     }
   },
   lantern: {
-    name: '걸이 랜턴', emoji: '🏮', fp: { w: 0.45, d: 0.45 },
+    name: '걸이 랜턴', nameEn: 'Hanging Lantern', emoji: '🏮', fp: { w: 0.45, d: 0.45 },
     colorNames: ['황동', '무쇠', '레드', '민트'],
+    colorNamesEn: ['Brass', 'Cast Iron', 'Red', 'Mint'],
     colors: [0xb08a3a, 0x4a4d52, 0xa8433f, 0x93b5a5],
     light: { color: 0xffc060, intensity: 5, dist: 6, y: 1.15, flicker: true, fuel: 'candle', comfort: 7 },
     build(c) {
