@@ -1,9 +1,11 @@
 import { defineConfig } from 'vite';
 
-// GitHub Pages 프로젝트 사이트는 /Project-winter-Rep/ 하위 경로로 서빙되므로
-// 빌드시에만 base를 맞추고, 로컬 dev/preview에서는 루트('/')를 그대로 사용한다.
-export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/Project-winter-Rep/' : '/',
+// base 경로는 배포 대상에 따라 다르다:
+// - GitHub Pages(기본 build): 프로젝트 사이트 하위 경로 /Project-winter-Rep/
+// - Electron(file:// 로 로드): 반드시 상대경로 './' 이어야 함
+// - 로컬 dev/preview: 서버 루트 '/'
+export default defineConfig(({ command, mode }) => ({
+  base: mode === 'electron' ? './' : command === 'build' ? '/Project-winter-Rep/' : '/',
   server: {
     host: true, // 0.0.0.0 바인딩 — 같은 네트워크의 휴대폰에서 접속 가능
     port: 8420,

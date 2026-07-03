@@ -3,3 +3,4 @@ push_out.txt
 *.tmp
 node_modules/
 dist/
+release/
