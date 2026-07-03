@@ -277,6 +277,59 @@
     #intro-text { font-size: 13px; }
   }
 
+  /* ── 생존 수첩 (전 거주자의 노트 프레젠테이션) ── */
+  #journal-screen {
+    position: absolute; inset: 0; z-index: 60;
+    background: rgba(5, 6, 8, 0.9);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #journal-paper {
+    width: min(440px, calc(100vw - 60px));
+    max-height: 82vh; overflow-y: auto;
+    background-color: #d8cbaa;
+    background-size: cover;
+    border: 2px solid #3a3026;
+    border-radius: 3px;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.55), 0 2px 0 rgba(255,255,255,0.08) inset;
+    padding: 22px 24px 16px;
+    color: #3a3026;
+    font-family: 'DungGeunMo', 'Malgun Gothic', sans-serif;
+    transform: translateY(26px) rotate(-1deg);
+    opacity: 0;
+    transition: transform .38s cubic-bezier(.2,.8,.3,1.1), opacity .32s ease-out;
+  }
+  #journal-screen.show #journal-paper { transform: translateY(0) rotate(-1deg); opacity: 1; }
+  #journal-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; letter-spacing: 1px; }
+  #journal-body { font-size: 12px; line-height: 1.9; min-height: 90px; }
+  #journal-body kbd { background: rgba(58,48,38,0.12); border: 1px solid rgba(58,48,38,0.4); border-radius: 3px; padding: 0 5px; font-family: inherit; color: #3a3026; }
+  #journal-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
+  #journal-page-ind { font-size: 11px; color: rgba(58,48,38,0.65); letter-spacing: 1px; }
+  #journal-footer .btn-row { display: flex; gap: 6px; }
+  #journal-footer .pixel-btn { background: rgba(58,48,38,0.08); border-color: rgba(58,48,38,0.45); color: #3a3026; }
+  #journal-footer .pixel-btn:hover { border-color: #6b4a2a; color: #6b4a2a; }
+  #journal-footer .pixel-btn.primary { border-color: #6b4a2a; color: #4a3722; }
+
+  /* ── 찢어진 쪽지 (일회성 팁) ── */
+  #tip-note {
+    /* z-index 55: 모달 백드롭(50)보다 위 — 리포트/인카운터가 떠 있어도 쪽지가 보인다 (toast와 동급) */
+    position: absolute; right: 22px; bottom: 22px; z-index: 55;
+    width: 240px; padding: 16px 18px 20px;
+    background-color: #d8cbaa; background-size: cover;
+    color: #3a3026; font-size: 11px; line-height: 1.7;
+    font-family: 'DungGeunMo', 'Malgun Gothic', sans-serif;
+    cursor: pointer; user-select: none;
+    clip-path: polygon(2% 6%, 18% 0%, 34% 4%, 51% 0%, 68% 5%, 84% 1%, 100% 8%,
+                        97% 26%, 100% 44%, 96% 62%, 100% 80%, 95% 97%,
+                        79% 100%, 62% 96%, 45% 100%, 28% 95%, 12% 100%, 3% 92%,
+                        6% 74%, 1% 55%, 5% 38%, 0% 20%);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.45);
+    transform: translate(120%, 40%) rotate(4deg);
+    transition: transform .4s cubic-bezier(.2,.8,.3,1.05);
+  }
+  #tip-note.show { transform: translate(0, 0) rotate(2deg); }
+  body.title-mode #tip-note { display: none !important; } /* 타이틀 화면에선 쪽지 숨김 (안전망) */
+
+
   /* ── 이동/접기 가능한 패널 ── */
   #c { touch-action: none; }
   .p-head {

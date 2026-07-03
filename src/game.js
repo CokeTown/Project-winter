@@ -187,6 +187,73 @@ const concreteTex = makeCanvasTex((g, w, h) => {
   g.beginPath(); g.moveTo(90, 100); g.lineTo(74, 82); g.lineTo(84, 60); g.stroke();
 }, 128, 128, 4, 3);
 
+/* ============================================================
+   낡은 종이 텍스처 (생존 수첩 / 찢어진 쪽지용)
+   — 추후 AI 생성 텍스처로 교체될 수 있어 함수 하나로 격리해둔다.
+============================================================ */
+function makePaperTexture(w = 512, h = 640) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const g = cv.getContext('2d');
+  const rand = seededRand(Math.floor(Math.random() * 1e9));
+  // 바탕: 베이지-누런 색 계열, 약간의 얼룩덜룩한 변주
+  g.fillStyle = '#d8cbaa'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 40; i++) {
+    const x = rand() * w, y = rand() * h, r = 30 + rand() * 90;
+    const grad = g.createRadialGradient(x, y, 0, x, y, r);
+    const tone = rand() > 0.5 ? '210,196,160' : '196,178,138';
+    grad.addColorStop(0, `rgba(${tone},${(0.05 + rand() * 0.08).toFixed(3)})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, w, h);
+  }
+  // 얼룩 / 그을음 자국 — 가장자리로 갈수록 짙어지는 비네트
+  for (let i = 0; i < 16; i++) {
+    const x = rand() * w, y = rand() * h, r = 14 + rand() * 46;
+    const edge = Math.min(x, w - x, y, h - y) / Math.min(w, h);
+    const dark = rand() > 0.6;
+    const grad = g.createRadialGradient(x, y, 0, x, y, r);
+    const alpha = (0.10 + rand() * 0.16) * (1 - edge * 0.4);
+    grad.addColorStop(0, dark ? `rgba(70,52,30,${alpha.toFixed(3)})` : `rgba(120,95,55,${(alpha * 0.7).toFixed(3)})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, w, h);
+  }
+  // 비네트: 가장자리를 어둡게
+  const vg = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.72);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(40,30,18,0.38)');
+  g.fillStyle = vg;
+  g.fillRect(0, 0, w, h);
+  // 접힌 자국: 밝고 어두운 대각 줄무늬 몇 개
+  g.save();
+  g.globalCompositeOperation = 'overlay';
+  for (let i = 0; i < 4; i++) {
+    const x0 = rand() * w, y0 = 0, x1 = x0 + (rand() - 0.5) * 140, y1 = h;
+    const grad = g.createLinearGradient(x0, y0, x1, y1);
+    const light = i % 2 === 0;
+    grad.addColorStop(0.48, 'rgba(0,0,0,0)');
+    grad.addColorStop(0.5, light ? 'rgba(255,250,230,0.35)' : 'rgba(40,30,18,0.3)');
+    grad.addColorStop(0.52, 'rgba(0,0,0,0)');
+    g.strokeStyle = grad;
+    g.lineWidth = 3 + rand() * 4;
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+  }
+  g.restore();
+  // 미세한 노이즈 그레인
+  const grainCanvas = document.createElement('canvas');
+  grainCanvas.width = w; grainCanvas.height = h;
+  const gg = grainCanvas.getContext('2d');
+  const imgData = gg.createImageData(w, h);
+  for (let i = 0; i < imgData.data.length; i += 4) {
+    const n = 128 + (rand() - 0.5) * 40;
+    imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = n;
+    imgData.data[i + 3] = 14;
+  }
+  gg.putImageData(imgData, 0, 0);
+  g.drawImage(grainCanvas, 0, 0);
+  return cv.toDataURL();
+}
+
 function disposeDeep(root) {
   root.traverse(o => {
     if (o.isMesh || o.isPoints) {
@@ -402,6 +469,9 @@ function setWeather(type) {
   }
   updateHud();
   if (!state.exp) renderExpPanel();
+  // 찢어진 쪽지: 첫 비/눈 (부팅·타이틀 중 발화 방지 — 실제 플레이 중에만)
+  if (gameStarted && type === 'rain') tipOnce('tip.rain');
+  if (gameStarted && type === 'snow') tipOnce('tip.snow');
 }
 function rollWeather() {
   const pool = seasonAdjustPool(SHELTERS[state.current].weatherPool || ['clear']);
@@ -2091,6 +2161,9 @@ const state = {
   cat: 0,              // 고양이 입양 여부 (Day 100+ 인카운터)
   catMusicDay: 0,      // 고양이 인카운터가 뜬 날 — 그날은 Cat OST만 재생
   endingSeen: false,   // Day 10000 엔딩 감상 여부
+  tutDay: 0,           // 신규 게임 첫 3일 튜토리얼 진행 단계 (0~3)
+  tipsSeen: {},        // 찢어진 쪽지(1회성 팁) 열람 여부 { 'tip.rain': true, ... }
+  pendingTutorial: null, // 표시 대기 중인 튜토리얼 수첩 페이지 단계 (day-report 뒤로 미룸)
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -2117,7 +2190,7 @@ function resConsumeAll(cost) {
 function costLabel(cost) {
   return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(' + ');
 }
-const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.35, lang: 'ko' };
+const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.35, sfxVol: 0.7, lang: 'ko' };
 
 /* ============================================================
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
@@ -2265,6 +2338,9 @@ function loadSave() {
       if (state.thirst == null) state.thirst = 80;
       if (state.energy == null) state.energy = 100;
       if (state.expToday == null) state.expToday = 0;
+      if (state.tutDay == null) state.tutDay = 0;
+      if (!state.tipsSeen) state.tipsSeen = {};
+      if (state.pendingTutorial === undefined) state.pendingTutorial = null;
       if (!SHELTERS[state.current]) state.current = 'container';
       // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
       const elapsed = Math.max(0, (Date.now() - (state.savedAt || Date.now())) / 1000);
@@ -2770,6 +2846,7 @@ function departExpedition(regionId, prep) {
   state.hunger = Math.max(0, state.hunger - 4);
   state.thirst = Math.max(0, state.thirst - (prep.includes('bottle') ? 3 : 5));
   state.energy = Math.max(0, state.energy - 20);
+  if (state.energy < 20) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
   // 성공률 버프/디버프는 이번 출발에 반영되어 소진 (물자 좌표 버프는 정산 시)
   if (state.buff?.exp) state.buff = null;
   state.exp = { region: regionId, end: Date.now() + dur, dur, rate: p.eff, prep };
@@ -3235,6 +3312,7 @@ function showEvent(id) {
       renderResBar();
       updateHud();
     }));
+  tipOnce('tip.event'); // 찢어진 쪽지: 첫 인카운터 직후
 }
 
 /* ============================================================
@@ -3483,6 +3561,7 @@ function applyInjury(type, hasBottle) {
   if (SHELTERS[state.current].perk?.injuryHalf) restH *= 0.5;
   if (hasBottle) restH *= 0.8;
   state.injury = { type, untilMin: state.gameMin + restH * 60 };
+  tipOnce('tip.injury'); // 찢어진 쪽지: 첫 부상
   return t('injury.applied', { icon: inj.icon, name: LName(inj), pen: Math.round(inj.pen * 100), h: Math.round(restH) });
 }
 function treatInjury() {
@@ -3607,6 +3686,7 @@ function finishPlacing() {
   gridObj.visible = false;
   state.inventory[item.defId]--;
   markCollection(item.defId, item.colorIdx);
+  if (DEFS[item.defId].surface) tipOnce('tip.stack'); // 찢어진 쪽지: 첫 스태킹 가능 가구(테이블 등) 배치
   renderInventoryBar();
   select(item);
   scheduleSave();
@@ -4005,6 +4085,7 @@ addEventListener('resize', () => {
    타이틀 화면 · 인트로 · 세이브 슬롯 UI
 ============================================================ */
 let titleVisible = false;
+let gameStarted = false; // 타이틀/인트로를 벗어나 실제 플레이 중인지 (부팅 중 쪽지 팁 발화 방지)
 function showTitle() {
   titleVisible = true;
   // 타이틀에선 내 집만 조용히 보여준다 — 패널/설정창은 전부 숨김 (CSS)
@@ -4021,6 +4102,7 @@ function showTitle() {
 }
 function hideTitle() {
   titleVisible = false;
+  gameStarted = true;
   document.body.classList.remove('title-mode');
   $('title-screen').style.display = 'none';
   // 자리 비운 사이의 정산(탐험 결과 등)은 게임에 들어온 뒤에 보여준다
@@ -4080,8 +4162,10 @@ function showIntro() {
     i++;
     if (i >= INTRO_IDS.length) {
       scr.style.display = 'none';
+      gameStarted = true;
       toast(t('intro.firstShelter'));
-      openHelpModal();
+      // 신규 게임: 인트로 종료 직후 수첩 1페이지 (Day 1 튜토리얼 — '물부터')
+      if (state.tutDay < 1) showTutorialPage(1);
     } else render();
   });
   render();
@@ -4193,6 +4277,7 @@ function cleanShelter() {
   if (state.energy < 10) { toast(t('clean.tooTired')); return; }
   if (!resConsume('water', 1)) { toast(t('clean.needWater')); return; }
   state.energy = Math.max(0, state.energy - 5);
+  if (state.energy < 20) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
   state.cleanBy[state.current] = Math.min(100, c + 20);
   toast(t('clean.done', { n: Math.round(state.cleanBy[state.current]) }));
   state.dayLog.notes.push(t('clean.note'));
@@ -4213,6 +4298,11 @@ function processDay() {
   const notes = state.dayLog.notes;
   const perk = SHELTERS[state.current].perk || {};
   state.expToday = 0; // 새 하루, 새 걸음
+  // 첫 3일 튜토리얼: Day 2/3 아침에 다음 페이지를 표시 대기열에 넣는다 (day-report 뒤로 미룸)
+  // tutDay>=1: Day 1 페이지(신규 게임)를 이미 본 경우에만 이어서 진행 — 구세이브는 tutDay 0 그대로라 대상 아님
+  if ((state.day === 2 || state.day === 3) && state.tutDay >= 1 && state.tutDay < state.day) {
+    state.pendingTutorial = state.day; // 이틀치가 한 번에 지나가면(오프라인 정산) 최신 페이지로 갱신
+  }
   // 정든 집
   state.stayDays = (state.stayDays || 0) + 1;
   if (state.stayDays === 3) notes.push(t('settled.3'));
@@ -4223,6 +4313,7 @@ function processDay() {
     notes.push(t('season.arrived', { icon: se.icon, name: LName(se), desc: LDesc(se) }));
     toast(t('season.changed', { icon: se.icon, name: LName(se) }));
     rollWeather(); // 새 계절의 날씨로
+    if (se.id === 'winter') tipOnce('tip.winter'); // 찢어진 쪽지: 첫 겨울
   }
   // 1) 발전기: 연료를 태우면 그날 배터리 소비가 무료
   let freePower = false;
@@ -4380,17 +4471,22 @@ function tickTime(dt) {
     processDay();
     reportQueued = true;
   }
-  if (reportQueued && !$('modal-back').classList.contains('show')) {
+  if (reportQueued && !journalOpen && !$('modal-back').classList.contains('show')) {
     reportQueued = false;
     showDayReport();
     scheduleSave();
     renderResBar();
     renderExpPanel();
-  } else if (state.pendingEvent && !reportQueued && !$('modal-back').classList.contains('show') && !titleVisible) {
+  } else if (state.pendingEvent && !reportQueued && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
     // 리포트를 닫은 다음에 인카운터 등장
     const ev = state.pendingEvent;
     state.pendingEvent = null;
     showEvent(ev);
+  } else if (state.pendingTutorial && !reportQueued && !state.pendingEvent && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
+    // 리포트/인카운터를 모두 닫은 다음에 튜토리얼 수첩 페이지 등장
+    const day = state.pendingTutorial;
+    state.pendingTutorial = null;
+    showTutorialPage(day);
   }
   tickInjury();
 }
@@ -4553,21 +4649,165 @@ function openShelterModal() {
   $('modal-body').querySelectorAll('button[data-shelter]').forEach(b =>
     b.addEventListener('click', () => moveToShelter(b.dataset.shelter)));
 }
-function openHelpModal() {
-  const card = (icon, title, body) => `
-    <div class="prep-row" style="cursor:default;align-items:flex-start">
-      <span style="font-size:20px">${icon}</span>
-      <div style="flex:1;line-height:1.7"><b>${title}</b><br><span style="font-size:10px;color:var(--text-dim)">${body}</span></div>
-    </div>`;
-  openModal(t('help.title'), `
-    ${card('🎒', t('help.exp.t'), t('help.exp.b'))}
-    ${card('🥫💧⚡', t('help.survive.t'), t('help.survive.b'))}
-    ${card('🔨', t('help.craft.t'), t('help.craft.b'))}
-    ${card('😊', t('help.comfort.t'), t('help.comfort.b'))}
-    ${card('🏠', t('help.shelter.t'), t('help.shelter.b'))}
-    ${card('🌤️', t('help.time.t'), t('help.time.b'))}
-    ${t('help.camera')}
-  `);
+/* ============================================================
+   생존 수첩 프레젠테이션 — 전 거주자가 남긴 수첩/쪽지 (RE 메모 스타일, cozy 톤)
+============================================================ */
+let journalPaperURL = null;
+function paperTextureURL() {
+  if (!journalPaperURL) journalPaperURL = makePaperTexture();
+  return journalPaperURL;
+}
+
+// 종이 질감 배경을 붙인 오버레이(수첩 패널 / 쪽지)에 텍스처를 씌운다
+function applyPaperBg(el) {
+  el.style.backgroundImage = `url(${paperTextureURL()})`;
+}
+
+let journalKeyHandler = null;
+let journalOpen = false; // 수첩이 떠 있는 동안 리포트/인카운터/다음 튜토리얼이 겹치지 않도록
+function openJournalPages(pages, opts = {}) {
+  if (!pages || !pages.length) return;
+  let i = 0;
+  const scr = $('journal-screen'), paper = $('journal-paper');
+  const titleEl = $('journal-title'), bodyEl = $('journal-body'), indEl = $('journal-page-ind');
+  const prevBtn = $('journal-prev'), nextBtn = $('journal-next');
+  applyPaperBg(paper);
+  paperSfx(opts);
+
+  const render = () => {
+    const p = pages[i];
+    titleEl.innerHTML = p.titleId ? t(p.titleId) : '';
+    bodyEl.innerHTML = p.bodyId ? t(p.bodyId) : '';
+    indEl.textContent = t('journalpg.indicator', { cur: i + 1, total: pages.length });
+    prevBtn.style.display = i > 0 ? '' : 'none';
+    nextBtn.textContent = i === pages.length - 1 ? t('journalpg.close') : t('journalpg.next');
+  };
+  function close() {
+    journalOpen = false;
+    scr.classList.remove('show');
+    scr.style.display = 'none';
+    prevBtn.onclick = null;
+    nextBtn.onclick = null;
+    if (journalKeyHandler) { document.removeEventListener('keydown', journalKeyHandler); journalKeyHandler = null; }
+    if (typeof opts.onClose === 'function') opts.onClose();
+  }
+  // onclick 대입: 재호출 시 이전 리스너가 겹쳐 쌓이지 않도록 (ending-next와 동일 패턴)
+  prevBtn.onclick = () => { if (i > 0) { i--; render(); } };
+  nextBtn.onclick = () => {
+    if (i < pages.length - 1) { i++; render(); }
+    else close();
+  };
+  if (journalKeyHandler) document.removeEventListener('keydown', journalKeyHandler);
+  journalKeyHandler = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', journalKeyHandler);
+
+  journalOpen = true;
+  scr.style.display = 'flex';
+  void paper.offsetWidth; // 리플로우 강제 — 진입 애니메이션이 매번 재생되도록
+  scr.classList.add('show');
+  render();
+}
+
+function openHelpModal(opts) {
+  openJournalPages([
+    { titleId: 'jnl.help.p1.title', bodyId: 'jnl.help.p1.body' },
+    { titleId: 'jnl.help.p2.title', bodyId: 'jnl.help.p2.body' },
+    { titleId: 'jnl.help.p3.title', bodyId: 'jnl.help.p3.body' },
+    { titleId: 'jnl.help.p4.title', bodyId: 'jnl.help.p4.body' },
+    { titleId: 'jnl.help.p5.title', bodyId: 'jnl.help.p5.body' },
+  ], opts);
+}
+
+/* ── 첫 3일 튜토리얼 (신규 게임 한정) ── */
+const TUTORIAL_PAGES = {
+  1: [{ titleId: 'jnl.tut1.title', bodyId: 'jnl.tut1.body' }],
+  2: [{ titleId: 'jnl.tut2.title', bodyId: 'jnl.tut2.body' }],
+  3: [{ titleId: 'jnl.tut3.title', bodyId: 'jnl.tut3.body' }],
+};
+function showTutorialPage(day) {
+  const pages = TUTORIAL_PAGES[day];
+  if (!pages) return;
+  state.tutDay = day; // 표시 즉시 기록 — 닫기 전에 리로드해도 같은 페이지가 중복되지 않게
+  scheduleSave();
+  openJournalPages(pages);
+}
+
+/* ── 찢어진 쪽지 (1회성 팁) ── */
+const tipQueue = [];
+let tipShowing = false;
+let tipTimer = null;
+function showTipNote(id) {
+  const note = $('tip-note');
+  applyPaperBg(note);
+  note.textContent = t(id);
+  note.style.display = 'block';
+  void note.offsetWidth;
+  note.classList.add('show');
+  paperSfx();
+  const dismiss = () => {
+    clearTimeout(tipTimer);
+    note.classList.remove('show');
+    note.removeEventListener('click', dismiss);
+    setTimeout(() => {
+      note.style.display = 'none';
+      tipShowing = false;
+      drainTipQueue();
+    }, 420); // 슬라이드 아웃 트랜지션 시간만큼 대기
+  };
+  note.addEventListener('click', dismiss);
+  tipTimer = setTimeout(dismiss, 15000);
+}
+function drainTipQueue() {
+  if (tipShowing || !tipQueue.length) return;
+  tipShowing = true;
+  showTipNote(tipQueue.shift());
+}
+function tipOnce(id) {
+  if (state.tipsSeen[id]) return;
+  state.tipsSeen[id] = true;
+  tipQueue.push(id);
+  drainTipQueue();
+  scheduleSave();
+}
+
+/* ── 종이 부스럭 소리 (WebAudio 합성 — 오디오 파일 없음) ── */
+let sfxCtx = null;
+function ensureSfxCtx() {
+  if (!sfxCtx) sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (sfxCtx.state === 'suspended') sfxCtx.resume().catch(() => {});
+  return sfxCtx;
+}
+function paperSfx(sfxOpts = {}) {
+  try {
+    const ctx = ensureSfxCtx();
+    const vol = sfxOpts.sfxVol ?? opts.sfxVol ?? 0.7;
+    const bursts = 2 + Math.floor(Math.random() * 2); // 2~3회의 짧은 크랙클
+    let t0 = ctx.currentTime;
+    for (let b = 0; b < bursts; b++) {
+      const dur = 0.06 + Math.random() * 0.06;
+      const bufSize = Math.max(1, Math.floor(ctx.sampleRate * dur));
+      const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      const f0 = 1800 + Math.random() * 800;
+      const f1 = 3200 + Math.random() * 800;
+      bp.frequency.setValueAtTime(f0, t0);
+      bp.frequency.linearRampToValueAtTime(f1, t0 + dur);
+      bp.Q.value = 0.9;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(vol * (0.5 + Math.random() * 0.5), t0 + dur * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+      src.connect(bp); bp.connect(gain); gain.connect(ctx.destination);
+      src.start(t0);
+      src.stop(t0 + dur + 0.02);
+      t0 += dur * (0.55 + Math.random() * 0.4);
+    }
+  } catch (e) { /* 오디오 컨텍스트 사용 불가 환경 — 무시 */ }
 }
 $('btn-exp').addEventListener('click', () => {
   // 탐험 중이거나 부상 중이면 상태 패널, 아니면 바로 지도
@@ -4883,6 +5123,8 @@ window.__shelter = {
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
   // v1.9
   setPaused, spawnCat, despawnCat, runEndingSequence, syncBgm, bgmContext, showTitle, hideTitle,
+  // 생존 수첩 연출
+  openJournalPages, openHelpModal, showTutorialPage, tipOnce, paperSfx, makePaperTexture,
   findSupport, itemsOn, weatherFx,
   bgmInfo: () => ({ key: bgmCtxKey, track: bgmTrack, paused: bgm.paused, vol: bgm.volume }),
   setSnow: v => { snowCover = v; },

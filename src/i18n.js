@@ -70,7 +70,7 @@ export const STR = {
   'title.continue': { ko: '▶ 이어하기', en: '▶ Continue' },
   'title.new':      { ko: '✚ 새 게임', en: '✚ New Game' },
   'title.load':     { ko: '💾 불러오기', en: '💾 Load' },
-  'title.help':     { ko: '❓ 살아남는 법', en: '❓ How to Survive' },
+  'title.help':     { ko: '📖 생존 수첩', en: '📖 Survivor\'s Journal' },
   'title.ver':      { ko: 'Nine Winters · web build', en: 'Nine Winters · web build' },
   'intro.next':     { ko: '계속 ▸', en: 'Continue ▸' },
   'loading':        { ko: 'SHELTER LOADING . . .', en: 'SHELTER LOADING . . .' },
@@ -85,7 +85,7 @@ export const STR = {
   'btn.clean.title':  { ko: '청소 (물 1 → 청결 +20)', en: 'Clean (water 1 → cleanliness +20)' },
   'btn.sleep.title':  { ko: '취침 — 내일 아침까지 자고 에너지 회복', en: 'Sleep — rest until morning and restore energy' },
   'btn.journal.title':{ ko: '일지 (도감·업적·통계)', en: 'Journal (collection · achievements · stats)' },
-  'btn.help.title':   { ko: '튜토리얼', en: 'Tutorial' },
+  'btn.help.title':   { ko: '생존 수첩 — 이전 거주자의 기록', en: 'Survivor\'s Journal — notes from the previous occupant' },
   'cam.rotl.title':   { ko: '시점 좌회전 (Q)', en: 'Rotate view left (Q)' },
   'cam.rotr.title':   { ko: '시점 우회전 (E)', en: 'Rotate view right (E)' },
   'cam.zin.title':    { ko: '줌 인', en: 'Zoom in' },
@@ -528,4 +528,61 @@ export const STR = {
   'bgm.notFound':     { ko: 'BGM 파일을 찾을 수 없습니다 (BGM 폴더)', en: 'BGM files not found (BGM folder)' },
 
   /* ── 계절 desc (SEASONS) — LN/LD가 아닌 direct 참조는 없지만 병기용으로 game.js에서 desc/nameEn 사용 ── */
+
+  /* ── 생존 수첩 (구 튜토리얼 모달 → 전 거주자의 수첩) ── */
+  'journalpg.next':      { ko: '다음 장 ▸', en: 'Next page ▸' },
+  'journalpg.close':     { ko: '수첩 덮기', en: 'Close notebook' },
+  'journalpg.indicator': { ko: '{cur} / {total}', en: '{cur} / {total}' },
+
+  'jnl.help.p1.title': { ko: '낡은 수첩', en: 'A Worn Notebook' },
+  'jnl.help.p1.body':  {
+    ko: '누군가 이 컨테이너에 먼저 살았다. 침대 밑에서 손때 묻은 수첩을 발견했다.<br>첫 장에 급하게 휘갈긴 글씨.<br><br>🎒 <b>탐험</b> — 지도에서 지역을 골라 준비물을 챙기면 성공률이 오른다. 하루 5번까지, 다녀오면 시간이 흐른다.',
+    en: 'Someone lived in this container before you. You found a worn notebook under the bed.<br>The first page is scrawled in a hurry.<br><br>🎒 <b>Expeditions</b> — pick a region on the map and gear up to raise your odds. Up to 5 a day; time passes when you return.',
+  },
+  'jnl.help.p2.title': { ko: '두 번째 장', en: 'The Second Page' },
+  'jnl.help.p2.body':  {
+    ko: '글씨가 조금 차분해진다. 살아가는 법을 적어둔 모양이다.<br><br>🥫💧⚡ <b>생존</b> — 게이지를 클릭하면 먹고, 마시고, 잔다. 에너지가 바닥나면 반드시 🛌 자야 한다. 침대가 있으면 훨씬 푹 잔다.',
+    en: 'The handwriting settles a little — notes on how to get by.<br><br>🥫💧⚡ <b>Survival</b> — click a gauge to eat, drink, or sleep. Run out of energy and you must 🛌 sleep. A bed makes for far deeper rest.',
+  },
+  'jnl.help.p3.title': { ko: '얼룩진 페이지', en: 'A Stained Page' },
+  'jnl.help.p3.body':  {
+    ko: '얼룩이 진 페이지 — 손끝에 자재 부스러기가 묻어난다.<br><br>🔨 <b>제작</b> — 가구는 줍는 게 아니라 만드는 것. 천·부품·건축재를 모아 제작대에서 만든다.<br>😊 <b>쾌적함</b> — 가구·조명·청결·정든 집이 쾌적함을 쌓고, 탐험 성공률과 회복 속도를 끌어올린다.',
+    en: 'This page is stained — flecks of building material still cling to it.<br><br>🔨 <b>Crafting</b> — furniture is mostly built, not found. Gather cloth, parts and material, then craft it at the workbench.<br>😊 <b>Comfort</b> — furniture, light, cleanliness and a settled home build comfort, boosting expedition success and recovery.',
+  },
+  'jnl.help.p4.title': { ko: '접힌 모서리', en: 'A Folded Corner' },
+  'jnl.help.p4.body':  {
+    ko: '모서리가 접혀 있다. 자주 들춰본 페이지인 듯.<br><br>🏠 <b>거처</b> — 구역마다 특성·유지비·제약이 다르다. 빗물받이·텃밭 같은 개조로 자급자족할 수 있다.<br>🌤️ <b>세월</b> — 날씨는 며칠 단위로, 계절은 12일 주기로 바뀐다. 겨울을 대비해 미리 쌓아두어라.',
+    en: 'A dog-eared corner — this page must have been read often.<br><br>🏠 <b>Shelters</b> — every district has its own traits, upkeep and limits. Mods like rain catches and garden boxes help you become self-sufficient.<br>🌤️ <b>Seasons</b> — weather shifts over a few days, and seasons turn every 12 days. Stock up before winter arrives.',
+  },
+  'jnl.help.p5.title': { ko: '마지막 장', en: 'The Last Page' },
+  'jnl.help.p5.body':  {
+    ko: '마지막 장엔 딱 한 줄. 서두르다 만 듯, 그러나 또박또박.<br><br><b>카메라</b>: <kbd>우클릭 드래그</kbd> 또는 <kbd>Q</kbd>/<kbd>E</kbd> 회전 · 휠 줌 (줌아웃하면 주변 폐허가 보인다)<br><br>진행 상황은 자동으로 저장된다. 그리고 이 수첩은, 이제 당신의 것이다.',
+    en: 'Only one line on the last page — written in haste, but carefully all the same.<br><br><b>Camera</b>: <kbd>right-click drag</kbd> or <kbd>Q</kbd>/<kbd>E</kbd> to rotate · wheel to zoom (zoom out to see the ruins around you)<br><br>Progress saves automatically. And this notebook — it\'s yours now.',
+  },
+
+  /* ── 신규 3일 튜토리얼 (첫 게임 한정) ── */
+  'jnl.tut1.title': { ko: 'Day 1 — 첫 장', en: 'Day 1 — The First Page' },
+  'jnl.tut1.body':  {
+    ko: '수첩 맨 앞장에 다급하게 적힌 메모.<br><br>"뭐부터 해야 할지 모르겠다면 — 갈증부터 해결해라. 배고픔보다 먼저 사람을 지치게 하는 건 갈증이다."<br><br>💧 게이지를 클릭하면 마신다. 인벤토리의 가구는 클릭해서 바닥에 배치할 수 있다 — 배치한 뒤 다시 클릭하면 회전·회수도 가능하다.',
+    en: 'A hurried note on the notebook\'s first page.<br><br>"If you don\'t know where to start — deal with thirst first. It wears you down faster than hunger ever will."<br><br>💧 Click a gauge to drink. Furniture in your inventory can be clicked to place it on the floor — click a placed piece again to rotate or reclaim it.',
+  },
+  'jnl.tut2.title': { ko: 'Day 2 — 두 번째 메모', en: 'Day 2 — A Second Note' },
+  'jnl.tut2.body':  {
+    ko: '다음 장엔 지도가 손으로 그려져 있다.<br><br>"곳간은 저절로 차지 않는다. 지도를 펴고 위험이 적은 지역부터 나가보아라. 준비물을 챙기면 훨씬 안전하다."<br><br>🎒 HUD의 배낭 아이콘으로 탐험 지도를 열 수 있다.',
+    en: 'The next page has a map sketched by hand.<br><br>"The pantry doesn\'t fill itself. Open the map and start with the safer regions. Gearing up first makes it far safer."<br><br>🎒 Use the backpack icon on the HUD to open the expedition map.',
+  },
+  'jnl.tut3.title': { ko: 'Day 3 — 세 번째 메모', en: 'Day 3 — A Third Note' },
+  'jnl.tut3.body':  {
+    ko: '페이지 끝에 짧게 덧붙여진 말.<br><br>"주운 것만으로는 오래 못 버틴다 — 제작대에서 필요한 걸 직접 만들어라. 그리고 가끔은 청소도 해라, 지저분한 채로 오래 버틴 사람은 없었다."<br><br>🔨 제작대, 🧹 청소 버튼이 HUD에 있다.',
+    en: 'A short line added at the bottom of the page.<br><br>"Scavenging alone won\'t carry you far — craft what you need at the workbench. And clean now and then; no one lasted long living in filth."<br><br>🔨 Workbench and 🧹 Clean buttons are on the HUD.',
+  },
+
+  /* ── 찢어진 쪽지 (일회성 팁) ── */
+  'tip.rain':   { ko: '"빗물을 받아둘 걸 마련해라 — 하늘이 주는 건 공짜다." — 빗물받이를 만들면 비 오는 날 물을 모을 수 있다.', en: '"Set something up to catch the rain — what the sky gives is free." — a rain catch collects water on rainy days.' },
+  'tip.snow':   { ko: '"눈이 내리면 거처가 더 시린 법이다. 단열재를 들이는 걸 고려해봐라." — 악천후엔 쾌적함이 떨어지니 대비하자.', en: '"Snow makes a shelter colder than it looks. Consider getting some insulation." — comfort drops in bad weather, so plan ahead.' },
+  'tip.injury': { ko: '"다친 채로 버티지 마라. 방치하면 곪는다." — 부상은 탐험 패널에서 재료를 모아 치료할 수 있다.', en: '"Don\'t just tough out an injury. Left alone, it festers." — treat injuries from the expedition panel once you have the materials.' },
+  'tip.event':  { ko: '"가끔 낯선 이가 문을 두드린다. 매번 같은 답이 정답은 아니다." — 인카운터의 선택은 상황에 따라 다르게 두는 게 좋다.', en: '"Now and then a stranger knocks. The same answer isn\'t always right." — weigh each encounter\'s choice on its own.' },
+  'tip.energy': { ko: '"눈이 침침해질 때까지 버티지 마라. 그만 자라는 뜻이다." — 에너지가 낮으면 취침으로 회복해야 한다.', en: '"Don\'t push on until your eyes blur. That\'s your body telling you to sleep." — rest with sleep once energy runs low.' },
+  'tip.winter': { ko: '"겨울이 왔다. 곳간을 미리 채워두지 않은 자에게는 길고 매서운 계절이다." — 겨울엔 허기가 더 빨리 지고 텃밭도 얼어붙는다.', en: '"Winter\'s here. For those who didn\'t stock up, it\'s a long, bitter season." — hunger drains faster and gardens freeze in winter.' },
+  'tip.stack':  { ko: '"상판이 있는 가구 위엔 작은 소품을 올려둘 수 있다." — 테이블 같은 가구 위에 다른 소품을 겹쳐 배치해보자.', en: '"Furniture with a flat top can hold smaller things on it." — try placing small items on top of tables and the like.' },
 };
