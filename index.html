@@ -33,6 +33,7 @@
     font-family: inherit; font-size: 11px; color: var(--text);
     background: #262a35; border: 2px solid var(--panel-border); border-radius: 3px;
     padding: 6px 9px; cursor: pointer;
+    white-space: nowrap; /* 좁아져도 글자가 세로로 꺾이지 않게 */
   }
   button.pixel-btn:hover { border-color: var(--accent); color: var(--accent); }
   button.pixel-btn.danger:hover { border-color: var(--bad); color: var(--bad); }
@@ -40,11 +41,11 @@
   button.pixel-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
   /* ── 좌상단 상태 패널 ── */
-  #hud { top: 12px; left: 12px; width: 240px; }
-  #hud .shelter-name { font-size: 14px; color: var(--accent); margin-bottom: 4px; }
+  #hud { top: 12px; left: 12px; width: 250px; }
+  #hud .shelter-name { font-size: 13px; color: var(--accent); margin-bottom: 4px; }
   #hud .stat { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
-  #hud .btn-row { display: flex; gap: 5px; }
-  #hud .btn-row .pixel-btn { flex: 1; padding: 6px 2px; }
+  #hud .btn-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  #hud .btn-row .pixel-btn { flex: 1 0 auto; padding: 6px 7px; min-width: 0; }
 
   /* ── 탐험 패널 ── */
   #exp-panel { top: 118px; left: 12px; width: 240px; display: none; max-height: calc(100vh - 140px); overflow-y: auto; }
@@ -134,19 +135,24 @@
     padding: 6px 10px; font-size: 12px; background: #1c1f28;
   }
 
-  /* ── 자원 바 ── */
+  /* ── 자원 사이드바 (이름+수량, 가시성 우선) ── */
   #res-bar {
-    top: 12px; left: 50%; transform: translateX(-50%);
-    padding: 6px 8px; max-width: calc(100vw - 480px);
+    top: 214px; right: 12px; width: 208px;
+    padding: 8px 10px;
   }
-  #res-chips { display: flex; gap: 3px; overflow-x: auto; }
+  #res-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .res-chip {
-    display: flex; align-items: center; gap: 3px;
-    font-size: 11px; padding: 2px 6px; border-radius: 3px;
-    background: #1c1f28; white-space: nowrap;
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; padding: 4px 7px; border-radius: 3px;
+    background: #1c1f28; white-space: nowrap; border: 1px solid #262a35;
   }
-  .res-chip.zero { color: var(--bad); background: #2a1c1c; }
-  .res-chip .rn { color: var(--text-dim); font-size: 10px; }
+  .res-chip .re { font-size: 14px; line-height: 1; }
+  .res-chip .rname { color: var(--text-dim); font-size: 10px; flex: 1; overflow: hidden; }
+  .res-chip .rn { font-size: 13px; color: var(--text); }
+  .res-chip.zero { background: #2a1c1c; border-color: #4a2c28; }
+  .res-chip.zero .rn, .res-chip.zero .rname { color: var(--bad); }
+  .res-chip.flash { animation: resflash 0.9s; }
+  @keyframes resflash { 0% { background: #4a4630; border-color: var(--accent); } }
 
   /* ── 부상 카드 ── */
   .injury-card {
@@ -256,7 +262,9 @@
     #hud .shelter-name { font-size: 12px; }
     #hud .stat { font-size: 10px; }
     #hud .btn-row .pixel-btn { padding: 7px 1px; font-size: 10px; }
-    #res-bar { top: auto; bottom: 88px; left: 8px; right: 8px; transform: none; max-width: none; }
+    #res-bar { top: 170px; right: 8px; left: auto; width: 172px; }
+    .res-chip { font-size: 11px; padding: 3px 5px; }
+    #res-chips { grid-template-columns: 1fr; }
     #clock-panel { right: 8px; top: 8px; }
     #lcd-time { font-size: 20px; }
     #render-panel { top: 118px; right: 8px; width: 160px; }
@@ -880,7 +888,7 @@ function applyMood(m) {
 // 밤은 셸터 고유 무드를 그대로 사용, 나머지는 전역 팔레트
 const DAY_PHASES = {
   dawn: { fog: 0x4a4238, skyH: 0x8a5f4a, skyZ: 0x2a3045, sunC: 0xffb27a, sunInt: 0.55, hemiC: 0x9a8f88, hemiG: 0x4a423a, hemiInt: 0.8, stars: 0.25 },
-  day:  { fog: 0x878e9a, skyH: 0xa2b0bc, skyZ: 0x5f7488, sunC: 0xfff0d0, sunInt: 1.15, hemiC: 0xc8d2de, hemiG: 0x6a625a, hemiInt: 1.05, stars: 0 },
+  day:  { fog: 0x788292, skyH: 0x8c9dae, skyZ: 0x54687e, sunC: 0xfff0d0, sunInt: 1.15, hemiC: 0xc8d2de, hemiG: 0x6a625a, hemiInt: 1.05, stars: 0 },
   dusk: { fog: 0x50403c, skyH: 0xa05a38, skyZ: 0x2f2c4c, sunC: 0xff9a5a, sunInt: 0.6, hemiC: 0xa08a80, hemiG: 0x4a3f38, hemiInt: 0.8, stars: 0.2 },
 };
 const DAY_KEYS = [[0, 'night'], [4.5, 'night'], [6.5, 'dawn'], [9, 'day'], [16.5, 'day'], [19, 'dusk'], [21, 'night'], [24, 'night']];
@@ -1240,7 +1248,7 @@ function makeWalls(defs) {
     wallList.push({ group: d.group, normal: d.normal });
   }
 }
-function groundPlane(colFn, hFn, size = 200, seg = 48) {
+function groundPlane(colFn, hFn, size = 300, seg = 52) {
   const gGeo = new THREE.PlaneGeometry(size, size, seg, seg);
   gGeo.rotateX(-Math.PI / 2);
   const pos = gGeo.attributes.position;
@@ -1600,7 +1608,7 @@ const SHELTERS = {
       const fire = new THREE.PointLight(0xff7030, 30, 26, 1.8);
       fire.position.set(fx, fy + 1, fz);
       envRoot.add(fire);
-      const street = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), lamb(0x14161c));
+      const street = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), lamb(0x14161c));
       street.rotation.x = -Math.PI / 2; street.position.y = -18.2;
       envRoot.add(street);
       envDyn = { fire, fireBase: 30, buildings: near };
@@ -2210,7 +2218,7 @@ const SHELTERS = {
     buildEnv() {
       const rand = seededRand(808);
       // 바다 (거대한 어두운 수면)
-      const sea = new THREE.Mesh(new THREE.PlaneGeometry(240, 240, 24, 24), lamb(0x14222e));
+      const sea = new THREE.Mesh(new THREE.PlaneGeometry(320, 320, 24, 24), lamb(0x14222e));
       sea.geometry.rotateX(-Math.PI / 2);
       const sp = sea.geometry.attributes.position;
       for (let i = 0; i < sp.count; i++) sp.setY(i, Math.sin(sp.getX(i) * 0.3) * Math.cos(sp.getZ(i) * 0.27) * 0.18);
@@ -2384,7 +2392,7 @@ const SHELTERS = {
       }
       envRoot.add(cliff);
       // 바다
-      const sea = new THREE.Mesh(new THREE.PlaneGeometry(240, 240, 20, 20), lamb(0x14222e));
+      const sea = new THREE.Mesh(new THREE.PlaneGeometry(320, 320, 20, 20), lamb(0x14222e));
       sea.geometry.rotateX(-Math.PI / 2);
       const sp = sea.geometry.attributes.position;
       for (let i = 0; i < sp.count; i++) sp.setY(i, Math.sin(sp.getX(i) * 0.3) * Math.cos(sp.getZ(i) * 0.27) * 0.2);
@@ -3255,7 +3263,7 @@ addEventListener('pointermove', e => {
   if (pinch && touches.size >= 2) {
     const [a, b] = [...touches.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y);
-    camState.zoom = THREE.MathUtils.clamp(pinch.zoom * (d / pinch.dist), 0.15, 3.2);
+    camState.zoom = THREE.MathUtils.clamp(pinch.zoom * (d / pinch.dist), 0.25, 3.2);
     const cx = (a.x + b.x) / 2;
     camState.targetYaw += (cx - pinch.cx) * 0.006;
     pinch.cx = cx;
@@ -3314,7 +3322,7 @@ addEventListener('pointercancel', onPointerEnd);
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
-  camState.zoom = THREE.MathUtils.clamp(camState.zoom * (e.deltaY < 0 ? 1.1 : 0.9), 0.15, 3.2);
+  camState.zoom = THREE.MathUtils.clamp(camState.zoom * (e.deltaY < 0 ? 1.1 : 0.9), 0.25, 3.2);
 }, { passive: false });
 
 addEventListener('keydown', e => {
@@ -3358,14 +3366,23 @@ function updateWallCulling() {
   });
   if (mask !== lastWallMask) { lastWallMask = mask; shadowDirty(); }
 }
+// 날씨-환경 상호작용: 눈이 쌓이고(지면·수풀·지붕 풀 서리 톤), 악천후엔 바람이 거세짐
+let snowCover = 0, windLevel = 1;
 function updateEnvironment(t, dt) {
+  const wBadNow = weather.type === 'snow' || weather.type === 'rain';
+  // 눈: 내리는 동안 서서히 쌓이고, 그치면 서서히 녹는다 (~1분)
+  const targetSnow = weather.type === 'snow' ? 1 : 0;
+  snowCover += (targetSnow - snowCover) * Math.min(1, dt * 0.025);
+  vcLambert.color.setRGB(1 + snowCover * 0.5, 1 + snowCover * 0.58, 1 + snowCover * 0.72);
+  // 바람: 비/눈엔 강풍
+  windLevel += ((wBadNow ? 2.3 : 1) - windLevel) * Math.min(1, dt * 0.6);
   if (envDyn.trees || envDyn.buildings) {
     const cd = new THREE.Vector2(camera.position.x - camCenter.x, camera.position.z - camCenter.z).normalize();
     if (envDyn.trees) {
       for (const tr of envDyn.trees) {
         tr.obj.visible = tr.dir.dot(cd) < 0.5;
-        // 바람에 흔들리는 잎사귀
-        tr.obj.rotation.z = Math.sin(t * 0.9 + tr.phase) * tr.sway * (1 + 0.4 * Math.sin(t * 2.3 + tr.phase * 2));
+        // 바람에 흔들리는 잎사귀 (강풍이면 크게)
+        tr.obj.rotation.z = Math.sin(t * (0.9 + windLevel * 0.3) + tr.phase) * tr.sway * windLevel * (1 + 0.4 * Math.sin(t * 2.3 + tr.phase * 2));
       }
     }
     if (envDyn.buildings) for (const b of envDyn.buildings) b.obj.visible = b.dir.dot(cd) < 0.4;
@@ -3376,9 +3393,9 @@ function updateEnvironment(t, dt) {
       for (let i = 0; i < L.meta.length; i++) {
         const m = L.meta[i];
         let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-        y -= m.sp * dt;
-        x += Math.sin(t * 1.1 + m.ph) * 0.45 * dt;
-        z += Math.cos(t * 0.8 + m.ph) * 0.3 * dt;
+        y -= m.sp * (0.6 + windLevel * 0.4) * dt;
+        x += Math.sin(t * 1.1 + m.ph) * 0.45 * windLevel * dt;
+        z += Math.cos(t * 0.8 + m.ph) * 0.3 * windLevel * dt;
         if (y < 0.05) { y = 4.5 + Math.random() * 3; x = (Math.random() * 2 - 1) * 14; z = (Math.random() * 2 - 1) * 12; }
         p.setXYZ(i, x, y, z);
       }
@@ -3452,8 +3469,8 @@ function makeDraggablePanel(el, key, title) {
     el.style.top = saved.t + 'px';
     el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'none';
     if (saved.c) el.classList.add('collapsed');
-  } else if (innerWidth < 760 && key === 'render') {
-    el.classList.add('collapsed'); // 모바일 기본: 설정 접힘
+  } else if (innerWidth < 760 && (key === 'render' || key === 'res')) {
+    el.classList.add('collapsed'); // 모바일 기본: 설정·자원 접힘
   }
   const minBtn = head.querySelector('.p-min');
   const syncMin = () => { minBtn.textContent = el.classList.contains('collapsed') ? '□' : '–'; };
@@ -3520,12 +3537,17 @@ function updateHud() {
     `쾌적함 <span style="color:var(--accent)" title="가구 ${cd.furn} + 조명 ${cd.light} + 청결 ${cd.cleanMod} + 거처 ${cd.shelterMod}${cd.injuryMod ? ` + 부상 ${cd.injuryMod}` : ''}${cd.limitMod ? ` + 제약 ${cd.limitMod}` : ''}">${cd.score}점 ${'★'.repeat(lv)}${'☆'.repeat(5 - lv)}</span>` +
     `${bonus ? ` <span style="color:var(--good)">(탐험 +${bonus}%)</span>` : ''} · 청결 ${Math.round(cd.clean)} · 성공 ${state.successes}회`;
 }
+let lastResSnapshot = {};
 function renderResBar() {
   const bar = $('res-chips');
   bar.innerHTML = Object.entries(RESOURCES).map(([id, r]) => {
     const n = state.res[id] || 0;
-    return `<div class="res-chip ${n === 0 ? 'zero' : ''}" title="${r.name}">${r.emoji}<span>${n}</span></div>`;
+    const changed = lastResSnapshot[id] != null && lastResSnapshot[id] !== n;
+    return `<div class="res-chip ${n === 0 ? 'zero' : ''} ${changed ? 'flash' : ''}" title="${r.name}">
+      <span class="re">${r.emoji}</span><span class="rname">${r.name}</span><span class="rn">${n}</span>
+    </div>`;
   }).join('');
+  lastResSnapshot = { ...state.res };
 }
 function cleanShelter() {
   const c = state.cleanBy[state.current] ?? 70;
@@ -4007,8 +4029,8 @@ $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
 // 온스크린 카메라 컨트롤 (모바일/데스크톱 공용)
 $('cam-rotl').addEventListener('click', () => { camState.targetYaw -= Math.PI / 4; });
 $('cam-rotr').addEventListener('click', () => { camState.targetYaw += Math.PI / 4; });
-$('cam-zin').addEventListener('click', () => { camState.zoom = THREE.MathUtils.clamp(camState.zoom * 1.25, 0.15, 3.2); });
-$('cam-zout').addEventListener('click', () => { camState.zoom = THREE.MathUtils.clamp(camState.zoom * 0.8, 0.15, 3.2); });
+$('cam-zin').addEventListener('click', () => { camState.zoom = THREE.MathUtils.clamp(camState.zoom * 1.25, 0.25, 3.2); });
+$('cam-zout').addEventListener('click', () => { camState.zoom = THREE.MathUtils.clamp(camState.zoom * 0.8, 0.25, 3.2); });
 $('cam-home').addEventListener('click', () => { camState.targetYaw = Math.PI / 4; fitZoomForShelter(); });
 // 패널 드래그/접기 활성화
 makeDraggablePanel($('hud'), 'hud', '거점');
