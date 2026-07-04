@@ -460,6 +460,7 @@
     touch-action: manipulation;
   }
   .cam-btn:hover, .cam-btn:active { border-color: var(--accent); color: var(--accent); }
+  .cam-btn.primary { border-color: var(--accent); color: var(--accent); background: rgba(107,90,64,0.35); }
 
   #btn-cancel-place {
     position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);

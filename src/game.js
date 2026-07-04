@@ -2174,6 +2174,7 @@ const state = {
   thirst: 80,   // 갈증 (0=탈진)
   energy: 100,  // 에너지 — 탐험/노동으로 소모, 취침으로 회복
   expToday: 0,  // 오늘 탐험 횟수 (하루 5회 제한)
+  expFailStreak: 0, // 연속 탐험 실패 횟수 (성공률 체감 보정 pity용, 캡3)
   upkeepOk: true,
   dayLog: { gain: {}, spend: {}, notes: [] },
   helpSeen: false,
@@ -2292,19 +2293,24 @@ function restEnergyValue() {
 function sleepUntilMorning(auto = false) {
   if (!auto && paused) { toast(t('pause.blocked')); return; }
   if (state.exp) { toast(t('sleep.cantDuringExp')); return; }
+  if (blackoutActive) return;
   const { hasBed, energy } = restEnergyValue();
-  // 내일 아침 07:00으로 — 하루 정산(processDay)은 tickTime이 처리
-  state.gameMin = (Math.floor(state.gameMin / 1440) + 1) * 1440 + 7 * 60;
-  state.energy = energy;
-  const e = Math.round(state.energy);
-  state.dayLog.notes.push(t(hasBed ? 'sleep.noteBed' : 'sleep.noteFloor', { e }));
-  toast(auto
-    ? t(hasBed ? 'sleep.autoBed' : 'sleep.autoFloor', { e })
-    : t(hasBed ? 'sleep.wakeBed' : 'sleep.wakeFloor', { e }));
-  scheduleSave();
-  updateHud();
-  updateClock();
-  playSfx('dawn');
+  blackout(() => {
+    // 정점(검은 화면)에서 시간 점프·에너지 회복·노트 — 유저 눈엔 자연스러운 취침
+    // 내일 아침 07:00으로 — 하루 정산(processDay)은 tickTime이 처리
+    state.gameMin = (Math.floor(state.gameMin / 1440) + 1) * 1440 + 7 * 60;
+    state.energy = energy;
+    const e = Math.round(state.energy);
+    state.dayLog.notes.push(t(hasBed ? 'sleep.noteBed' : 'sleep.noteFloor', { e }));
+    // 기상 토스트·'dawn' SFX는 페이드아웃(눈 뜨는 시점)에
+    toast(auto
+      ? t(hasBed ? 'sleep.autoBed' : 'sleep.autoFloor', { e })
+      : t(hasBed ? 'sleep.wakeBed' : 'sleep.wakeFloor', { e }));
+    scheduleSave();
+    updateHud();
+    updateClock();
+    playSfx('dawn');
+  });
 }
 
 /* ── 세이브 슬롯 (Steam 대비: 슬롯 3개 + 최근 슬롯 기억) ── */
@@ -2414,6 +2420,7 @@ function loadSave() {
       if (state.thirst == null) state.thirst = 80;
       if (state.energy == null) state.energy = 100;
       if (state.expToday == null) state.expToday = 0;
+      state.expFailStreak = state.expFailStreak ?? 0; // 구세이브 마이그레이션
       if (state.tutDay == null) state.tutDay = 0;
       if (!state.tipsSeen) state.tipsSeen = {};
       if (state.pendingTutorial === undefined) state.pendingTutorial = null;
@@ -2832,7 +2839,7 @@ function openMapModal() {
       if (selEl) selEl.classList.remove('sel');
       selEl = el; el.classList.add('sel');
       const p = rateParts(rid);
-      const dur = expDuration(r);
+      const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC); // 실초→게임 시간 표기
       const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
       $('map-info').innerHTML = `
         ${t('map.regionLine', { emoji: r.emoji, pct: Math.round(p.eff * 100), name: LName(r), desc: LDesc(r) })}<br>
@@ -2850,6 +2857,14 @@ function expDuration(r) {
   if (state.injury?.type === 'sprain') t *= 1.3;
   t *= SHELTERS[state.current].perk?.timeMult || 1;
   return Math.round(t);
+}
+// 게임 시간 포매터 — 게임 '분'을 받아 "N분 / N시간 / N시간 N분"으로 표기 (5분 단위 반올림).
+// 실초→게임분은 ×GAME_MIN_PER_SEC(1.5). 메커니즘은 건드리지 않고 라벨만 게임 시간으로 통일.
+function fmtGameDur(min) {
+  let m = Math.round(min / 5) * 5;
+  if (m < 60) return t('dur.min', { n: m });
+  const h = Math.floor(m / 60), mm = m % 60;
+  return mm === 0 ? t('dur.h', { h }) : t('dur.hm', { h, m: mm });
 }
 // 날씨 예보 (라디오 배치 또는 등대 특성)
 function hasForecast() {
@@ -2887,7 +2902,7 @@ function openPrepModal(regionId) {
     if (p.hungryPen) lines.push(`<span style="color:var(--bad)">${t('prep.hungryPen', { pct: Math.round(p.hungryPen * 100) })}</span>`);
     const cost = {};
     for (const id of selected) for (const [rid, n] of Object.entries(PREPS[id].cost)) cost[rid] = (cost[rid] || 0) + n;
-    const dur = expDuration(r);
+    const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC); // 실초→게임 시간 표기
     const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
     $('modal-body').innerHTML = `
       <div class="rate-line">
@@ -2950,6 +2965,12 @@ function departExpedition(regionId, prep) {
   playSfx('door');
   setTimeout(() => playSfx(seasonOf().id === 'winter' ? 'steps_snow' : 'steps_hard'), 400);
 }
+// 성공률 체감 보정: 표기(rate)는 그대로 두고 실제 판정 확률만 몰래 올린다.
+// 표기 73%에서 3연속 실패=2%지만 체감은 "사기" — 플레이어 신뢰 보호용 숨은 보정.
+// 노말 +4%p 상시 + pity(연속 실패당 +8%p, 캡3). 하드는 상시 보정 없이 pity만. 상한 0.95.
+function expActualRate(rate, streak) {
+  return Math.min(0.95, rate + (isHard() ? 0 : 0.04) + 0.08 * Math.min(3, streak || 0));
+}
 function resolveExpedition() {
   const exp = state.exp;
   if (!exp) return;
@@ -2961,7 +2982,8 @@ function resolveExpedition() {
   // 탐험을 다녀오면 하루가 그만큼 흘러 있다 (거리 비례 2~5시간)
   state.gameMin += 120 + expDuration(r) * 2.5;
   state.expToday = (state.expToday || 0) + 1;
-  const rate = exp.rate ?? r.rate;
+  const rate = exp.rate ?? r.rate;                         // 표기용(화면에 보인 확률) — 변경 없음
+  const actual = expActualRate(rate, state.expFailStreak); // 실제 판정 확률(숨은 보정)
   const roll = Math.random();
   const gotRes = {};   // 자원 획득
   let got = [];        // 가구 획득
@@ -2984,8 +3006,11 @@ function resolveExpedition() {
     for (let i = 0; i < pool.length; i++) { roll -= ws[i]; if (roll <= 0) return pool[i]; }
     return pool[pool.length - 1];
   };
-  const success = roll < rate;
-  const partial = !success && roll < rate + (1 - rate) * 0.5;
+  const success = roll < actual;
+  const partial = !success && roll < actual + (1 - actual) * 0.5;
+  // pity streak 갱신: 성공하면 리셋, 실패(부분 포함)면 증가
+  if (success) state.expFailStreak = 0;
+  else state.expFailStreak = (state.expFailStreak || 0) + 1;
   if (success) {
     rollRes(1);
     if (state.buff?.loot) { // 은닉처 좌표: 자원 2배 (하드 감산 없이 온전한 +1배)
@@ -3953,6 +3978,26 @@ const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
 let placing = null, selected = null, dragging = null, dragStart = null;
 let orbiting = false, lastOrbX = 0;
+// v0.9.2 배치 모드: OFF(기본)면 화면 조작 중 기존 가구가 덥석 선택/이동되지 않는다.
+// 저장하지 않는 세션 변수 — 기능형 상호작용(라디오/촛불 토글)은 모드와 무관하게 항상 동작.
+let editMode = false;
+function funcClickItem(item) {
+  // editMode OFF에서의 "기능형 클릭": 선택/이동/패널 없이 기능만 실행.
+  const def = DEFS[item.defId];
+  if (item.defId === 'radio') { dbgSfx = 'radio_noise'; playSfx('radio_noise', { vol: 0.5, jitter: 0 }); return true; }
+  if (['candle', 'lantern'].includes(item.defId) || def.light || def.appliance) {
+    // 전원 토글 (성냥음은 setItemPower가 candle/lantern에서 재생)
+    if (def.light?.fuel || def.appliance?.fuel || def.light || def.appliance) {
+      setItemPower(item, item.on === false, { silent: false });
+      dbgSfx = ['candle', 'lantern'].includes(item.defId) ? 'candle_light' : 'toggle';
+      toast(item.on ? t('power.turnedOn', { name: LName(def) }) : t('power.turnedOff', { name: LName(def) }));
+      scheduleSave();
+      return true;
+    }
+  }
+  return false;
+}
+let dbgSfx = null; // 테스트용: 마지막 기능형 클릭이 낸 SFX
 
 const selRing = new THREE.Mesh(
   new THREE.RingGeometry(0.5, 0.62, 24),
@@ -4125,6 +4170,14 @@ canvas.addEventListener('pointerdown', e => {
   if (pickCat(e)) return; // 고양이를 쓰다듬은 경우 기존 가구 선택/드래그로 이어지지 않게 소비
   const hit = pickItem(e);
   if (hit) {
+    // 배치 모드 OFF: 가구 선택/이동은 막고, 기능형(라디오/촛불 토글)만 실행.
+    // 화면 회전 조작 중 가구가 덥석 잡히는 오작동 방지 (베타 피드백).
+    if (!editMode) {
+      if (funcClickItem(hit)) return;         // 기능 실행 후 소비 (선택/드래그 없음)
+      orbitDrag = { x: e.clientX, y: e.clientY, moved: false }; // 그 외엔 화면 회전으로
+      return;
+    }
+    // 배치 모드 ON: 선택 + 드래그 이동 허용
     select(hit);
     if (hit.defId === 'radio') playSfx('radio_noise', { vol: 0.5, jitter: 0 }); // 라디오 클릭 시 지지직 1회
     dragging = hit;
@@ -5057,6 +5110,37 @@ function setPaused(p) {
 }
 let reportQueued = false;
 let lastAutoHour = -1;
+// 부팅 직후 첫 틱: 오프라인 정산(loadSave가 밀어둔 gameMin)이 이 틱에서 소화된다.
+// 그 catch-up은 이미 부팅 암전(#fade-veil)이 화면을 덮고 있으므로 blackout을 겹치지 않는다.
+let settlingOffline = true;
+// 암전 연출 (기상/탐험 복귀/자정 깜빡잠 등): #fade-veil을 검게 올렸다가 내리는 동안
+// 시간 점프·상태 변경(midFn)을 수행한다. 연출 중엔 입력 차단 + 보고/이벤트 노출 보류.
+let blackoutActive = false;
+function blackout(midFn, holdMs = 500) {
+  const veil = $('fade-veil');
+  if (!veil) { try { midFn && midFn(); } catch (e) { /* ignore */ } return; }
+  if (blackoutActive) return; // 재진입 가드 (연출 중 재호출 무시)
+  blackoutActive = true;
+  const prevTrans = veil.style.transition;
+  veil.style.transition = 'opacity .4s ease';
+  veil.style.pointerEvents = 'auto'; // 입력 차단
+  // 리플로우 강제 후 페이드인 (transition이 확실히 걸리도록)
+  void veil.offsetWidth;
+  veil.style.opacity = '1';
+  const IN = 400, OUT = 400;
+  setTimeout(() => {                 // 정점: 시간 점프·상태 변경
+    try { midFn && midFn(); } catch (e) { console.error('[shelter:blackout]', e); }
+    setTimeout(() => {               // 유지 후 페이드아웃
+      veil.style.opacity = '0';
+      setTimeout(() => {             // 페이드아웃 완료: 확정값 재설정 + 가드 해제
+        veil.style.opacity = '0';
+        veil.style.pointerEvents = 'none';
+        veil.style.transition = prevTrans;
+        blackoutActive = false;
+      }, OUT + 30);
+    }, holdMs);
+  }, IN);
+}
 // 자동 진행 모드 (Day 10+ 해금): 매 게임 내 정시마다 간단한 생존 루틴을 대신 처리
 function runAutoPlay() {
   if (paused || titleVisible || !opts.autoPlay || state.day < 10) return;
@@ -5090,40 +5174,64 @@ function tickTime(dt) {
     runAutoPlay();
   }
   const newDay = Math.floor(state.gameMin / 1440) + 1;
+  let rolledOver = false;
   while (state.day < newDay) {
     state.day++;
     refreshAutoplayLock();
     processDay();
     reportQueued = true;
-    // 자정을 자연 경과(취침이 아님)로 넘긴 경우: 아침 08:00으로 점프 + 쪽잠 회복
-    // (sleepUntilMorning은 스스로 다음날 07:00 이후로 세팅하므로, 그 경우 아래 조건이 걸리지 않는다)
+    rolledOver = true;
+  }
+  // 자정을 자연 경과(취침이 아님)로 넘긴 경우 — 마지막 날 기준 아침 08:00으로 점프.
+  // (sleepUntilMorning은 스스로 다음날 07:00 이후로 세팅하므로 아래 조건이 걸리지 않는다.)
+  if (rolledOver) {
     const morning8 = (state.day - 1) * 1440 + 8 * 60;
     if (state.gameMin < morning8) {
-      state.gameMin = morning8;
-      const { energy } = restEnergyValue();
-      state.energy = Math.max(state.energy, energy);
-      const e = Math.round(state.energy);
-      state.dayLog.notes.push(t('day.napMorning', { e }));
+      if (state.exp) {
+        // 탐험(부재) 중 자정 경과: 밖에 있으니 암전 없음 + 쪽잠 에너지 회복 없음. 시간만 점프.
+        state.gameMin = morning8;
+        state.dayLog.notes.push(t('day.expNight'));
+      } else if (settlingOffline) {
+        // 부팅 오프라인 정산: 이미 부팅 암전이 덮고 있어 blackout을 겹치지 않는다.
+        state.gameMin = morning8;
+        const { energy } = restEnergyValue();
+        state.energy = Math.max(state.energy, energy);
+        const e = Math.round(state.energy);
+        state.dayLog.notes.push(t('day.napMorning', { e }));
+      } else {
+        // 셸터 안에서 자정 경과: "결국 졸음을 이기지 못했다" — 암전 경유로 점프(1회).
+        const { energy } = restEnergyValue();
+        blackout(() => {
+          state.gameMin = morning8;
+          state.energy = Math.max(state.energy, energy);
+          const e = Math.round(state.energy);
+          state.dayLog.notes.push(t('day.napMorning', { e }));
+          updateHud(); updateClock();
+        });
+      }
     }
   }
-  if (reportQueued && !journalOpen && !$('modal-back').classList.contains('show')) {
+  // 보고/이벤트 노출 게이트: 탐험(부재) 중이거나 암전 연출 중엔 하루 보고·셸터 이벤트를 띄우지 않는다.
+  // (탐험 복귀 결산 모달을 닫으면 modal-back 조건이 풀려 자연히 표시된다.)
+  if (reportQueued && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show')) {
     reportQueued = false;
     showDayReport();
     scheduleSave();
     renderResBar();
     renderExpPanel();
-  } else if (state.pendingEvent && !reportQueued && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
-    // 리포트를 닫은 다음에 인카운터 등장
+  } else if (state.pendingEvent && !reportQueued && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
+    // 리포트를 닫은 다음에 인카운터 등장 (탐험 부재/암전 중엔 보류)
     const ev = state.pendingEvent;
     state.pendingEvent = null;
     showEvent(ev);
-  } else if (state.pendingTutorial && !reportQueued && !state.pendingEvent && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
+  } else if (state.pendingTutorial && !reportQueued && !state.pendingEvent && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
     // 리포트/인카운터를 모두 닫은 다음에 튜토리얼 수첩 페이지 등장
     const day = state.pendingTutorial;
     state.pendingTutorial = null;
     showTutorialPage(day);
   }
   tickInjury();
+  settlingOffline = false; // 첫 틱(오프라인 정산) 소화 완료 — 이후엔 정상 암전 경로
 }
 function renderInventoryBar() {
   const bar = $('toolbar');
@@ -5154,11 +5262,11 @@ function renderExpPanel() {
   let injuryHtml = '';
   if (state.injury) {
     const inj = INJURIES[state.injury.type];
-    const remainH = Math.max(0, (state.injury.untilMin - state.gameMin) / 60);
+    const remainMin = Math.max(0, state.injury.untilMin - state.gameMin);
     const canCure = resHasAll(inj.cure);
     injuryHtml = `
       <div class="injury-card">
-        ${t('injury.card', { icon: inj.icon, name: LName(inj), pen: Math.round(inj.pen * 100), time: inj.timeMult ? t('injury.card.time') : '', h: remainH.toFixed(1) })}
+        ${t('injury.card', { icon: inj.icon, name: LName(inj), pen: Math.round(inj.pen * 100), time: inj.timeMult ? t('injury.card.time') : '', h: fmtGameDur(remainMin) })}
         <div class="btn-row">
           <button class="pixel-btn" id="btn-treat" ${canCure ? '' : 'disabled'}>${t('injury.treat', { cost: costLabel(inj.cure) })}</button>
         </div>
@@ -5191,11 +5299,11 @@ function tickExpeditionUI() {
     const bar = $('exp-bar'), eta = $('exp-eta');
     if (bar) {
       bar.style.width = `${100 * (1 - remain / total)}%`;
-      eta.textContent = t('exp.timeLeft', { n: Math.ceil(remain / 1000) });
+      eta.textContent = t('exp.timeLeft', { d: fmtGameDur((remain / 1000) * GAME_MIN_PER_SEC) });
     } else renderExpPanel();
   } else if (state.injury) {
     const el = $('injury-eta');
-    if (el) el.textContent = Math.max(0, (state.injury.untilMin - state.gameMin) / 60).toFixed(1);
+    if (el) el.textContent = fmtGameDur(Math.max(0, state.injury.untilMin - state.gameMin));
     else renderExpPanel();
   }
 }
@@ -5673,6 +5781,18 @@ function syncAutoBtn() {
   const b = $('btn-auto');
   if (b) b.classList.toggle('primary', !!opts.autoPlay);
 }
+// v0.9.2 배치 모드 토글
+function toggleEditMode(force) {
+  editMode = force === undefined ? !editMode : !!force;
+  const b = $('btn-edit');
+  if (b) b.classList.toggle('primary', editMode);
+  if (editMode) {
+    toast(t('edit.on'));
+  } else {
+    toast(t('edit.off'));
+    deselect(); // 모드 해제 시 선택 해제
+  }
+}
 function applyOpts() {
   $('opt-pixel').value = opts.pixel; $('opt-quant').checked = opts.quant;
   $('opt-dither').checked = opts.dither; $('opt-ceil').checked = opts.ceil;
@@ -5972,6 +6092,7 @@ updateHud();
 updateClock();
 renderQuestCard();
 $('btn-clean').addEventListener('click', cleanShelter);
+$('btn-edit').addEventListener('click', () => toggleEditMode());
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
 // P2-b: 자동 진행 토글 버튼 (cam-ctrl) — Day 10 미만이면 잠금 토스트, 아니면 opts.autoPlay 토글 + 체크박스 양방향 동기화
 $('btn-auto').addEventListener('click', () => {
@@ -6289,4 +6410,17 @@ window.__shelter = {
   camera, THREE, CAT_POSES,
   // 퀘스트 트래커
   QUESTS, questProgress, renderQuestCard, questActive,
+  // v0.9.2 개연성 패스 (1부)
+  fmtGameDur, expDuration, sleepUntilMorning, tickTime, GAME_MIN_PER_SEC,
+  isBlackoutActive: () => blackoutActive,
+  renderExpPanel, startPlacing, finishPlacing, select, deselect,
+  dbg: () => ({ reportQueued, blackoutActive, journalOpen, settlingOffline, pendingEvent: state.pendingEvent }),
+  // v0.9.2 배치 모드 + 성공률 보정 (2부)
+  expActualRate,
+  toggleEditMode,
+  isEditMode: () => editMode,
+  lastSfx: () => dbgSfx,
+  resetSfx: () => { dbgSfx = null; },
+  pickItemAt: (cx, cy) => pickItem({ clientX: cx, clientY: cy }),
+  funcClickItem,
 };

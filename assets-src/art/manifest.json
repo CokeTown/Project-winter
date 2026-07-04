@@ -109,7 +109,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/paper_note_bg.png",
-      "prompt": "A single sheet of old, weathered, crumpled paper filling the entire square frame, like a post-apocalyptic survivor's note scavenged from a shelter. The paper is creased and softly wrinkled with visible fold lines, slightly yellowed and scorched at a couple of edge spots, with faint water stains and warm candlelight tone (soft amber-beige overall cast, as if lit by a nearby candle). Keep the central third of the sheet relatively flat, even, and clean — minimal creases or stains there — since UI text will be placed over that area. The outer border areas show torn, ragged, uneven paper edges and deeper folds/creases. Subtle pixel-art grain and soft dithering in the texture, no text, no writing, no ink marks — blank paper only."
+      "prompt": "A single sheet of very old ruled writing paper filling the entire square frame, photographed flat — a page torn from a survivor's worn notebook. Pale desaturated ivory and light gray-beige tones (NOT orange, NOT sandy, low saturation), with clearly visible fine paper fiber texture running through the sheet. Faint, barely-visible horizontal ruled lines in washed-out blue-gray across the page (old notebook ruling, very subtle), and one faded vertical margin line near the left edge. The page has been folded twice long ago: soft cross-shaped fold creases with slight shadowing along them. Age spots (foxing), one faint coffee-ring stain near a corner, gently darkened and worn torn edges, subtle vignette toward the borders. Keep the central area flat and clean for UI text overlay. Realistic aged-paper material study, soft even light, no text, no handwriting, no ink marks — blank ruled paper only, no uniform grain or noise."
     },
     {
       "id": "journal_cover",
@@ -129,7 +129,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/tip_scrap.png",
-      "prompt": "A single small torn scrap of old weathered paper centered on a fully transparent background, irregular ragged edges as if hastily torn by hand from a larger post-apocalyptic survivor's note — no straight cut sides anywhere, rough fibrous tear texture visible along every edge. The paper itself is softly aged and yellowed with a warm candlelight tone (gentle amber cast), maybe one small stain or scorch mark near a corner, subtle pixel-art grain and soft dithering. Keep the central area of the scrap relatively clean and even so short tip text can be placed over it. No text, no writing. Background must be transparent/empty, not white."
+      "prompt": "A single small torn scrap of very old ruled notebook paper centered on a fully transparent background, irregular ragged hand-torn edges on every side with rough fibrous tear texture — no straight cut sides anywhere. Pale desaturated ivory and light gray-beige paper (NOT orange, NOT sandy, low saturation) with visible fine paper fibers and two or three faint washed-out blue-gray ruled lines crossing the scrap (remnants of old notebook ruling, very subtle). One soft fold crease, small age spots near an edge, slightly darkened worn borders. Keep the central area clean and even so short tip text can be placed over it. Realistic aged-paper material, soft even light, no text, no handwriting. Background must be transparent/empty, not white."
     },
     {
       "id": "event_card_frame",
