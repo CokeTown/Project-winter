@@ -549,6 +549,38 @@ export const STR = {
   'coldsnap.exposed': { ko: '🥶 찬바람이 벽 틈으로 파고들었습니다. 배고픔이 빨리 도집니다.', en: '🥶 The cold wind bites through the cracks. Hunger sets in fast.' },
   'coldsnap.defended':{ ko: '🔥 난로 곁에서 한파를 버텨냈습니다.', en: '🔥 You weathered the cold snap by the stove.' },
   'coldsnap.ended':   { ko: '🌤️ 한파가 물러갔습니다.', en: '🌤️ The cold snap has passed.' },
+
+  /* ── Nine Winters(#11): 겨울을 넘기다 ── */
+  'winter.passed':    { ko: '❄️ {n}번째 겨울을 넘겼습니다.', en: '❄️ You made it through winter number {n}.' },
+  'winter.badge.tip': { ko: '넘긴 겨울 {n}번', en: '{n} winters weathered' },
+  'title.continueWinters': { ko: ' · ❄️{n}/9', en: ' · ❄️{n}/9' },
+  // "그 해 겨울" 자동 수첩 페이지
+  'winter.page.title':{ ko: '{n}번째 겨울', en: 'Winter №{n}' },
+  'winter.page.body': { ko: '거처에서 {days}일을 버텼다.<br>한파 {cold}번, 그중 {defended}일은 막아냈다.<br>탐험으로 {exp}번 무언가를 건졌다.<br>땔감 {fuel}을 태웠다.<br>{cat}<br><br>{closing}',
+                        en: 'Held out {days} days in the shelter.<br>{cold} cold snaps, {defended} of them held off.<br>Brought something back {exp} times.<br>Burned {fuel} fuel.<br>{cat}<br><br>{closing}' },
+  'winter.memoir.catYes': { ko: '고양이가 곁에 있었다.', en: 'The cat stayed close.' },
+  'winter.memoir.catNo':  { ko: '혼자였다.', en: 'You were alone.' },
+  // 겨울 번호별 마무리 1줄 (건조한 생존 문체, 번역투 금지)
+  'winter.memoir.1':  { ko: '첫 겨울은 그저 견디는 것이었다.', en: 'The first winter was just about lasting.' },
+  'winter.memoir.2':  { ko: '두 번째 겨울. 이번엔 준비가 있었다.', en: 'A second winter. This time you were ready for it.' },
+  'winter.memoir.3':  { ko: '세 번째. 추위가 언제 오는지 몸이 먼저 안다.', en: 'The third. Your body knows the cold before it comes now.' },
+  'winter.memoir.4':  { ko: '네 번째 겨울. 버티는 게 아니라 사는 것에 가까워졌다.', en: 'A fourth winter. Less enduring now, closer to living.' },
+  'winter.memoir.5':  { ko: '다섯 번째. 눈 내리는 소리가 더는 무섭지 않다.', en: 'The fifth. The sound of falling snow no longer frightens you.' },
+  'winter.memoir.6':  { ko: '여섯 번째 겨울. 이 자리에 익숙해졌다.', en: 'A sixth winter. This place has become familiar.' },
+  'winter.memoir.7':  { ko: '일곱 번째. 겨울도 이제 지나가는 계절일 뿐이다.', en: 'The seventh. Winter is just a season that passes now.' },
+  'winter.memoir.8':  { ko: '여덟 번째 겨울. 여기는 버티는 곳이 아니라 집이다.', en: 'An eighth winter. This isn\'t a place you endure — it\'s home.' },
+  'winter.memoir.9':  { ko: '아홉 번째 겨울. 제목이 약속한 그 겨울이다.', en: 'The ninth winter. The one the title promised.' },
+  'winter.memoir.beyond': { ko: '또 한 번의 겨울. 약속했던 아홉을 이미 넘었다.', en: 'Another winter. You are already past the nine you were promised.' },
+  // 아홉 번째 겨울 특별 페이지 (통산 총결산)
+  'winter.ninth.title': { ko: '아홉 번째 겨울 — 그리고 당신은 여전히 여기에 있다', en: 'Nine Winters — And You Are Still Here' },
+  'winter.ninth.body':  { ko: '아홉 번의 겨울을 넘겼다.<br><br>Day {day}까지 살아남았다.<br>탐험 {exp}번을 성공했고, {craft}번을 만들었다.<br>{cat}<br><br>이 게임의 제목은 이제 지나간 시간이 되었다.',
+                          en: 'Nine winters, all weathered.<br><br>You survived to Day {day}.<br>Succeeded on {exp} expeditions, crafted {craft} things.<br>{cat}<br><br>The title of this game is now behind you.' },
+  // 박사 첫 무전 이벤트
+  'ev.doctor.title':  { ko: '지직거리는 무전', en: 'A Crackling Transmission' },
+  'ev.doctor.text':   { ko: '한밤중, 라디오가 저 혼자 지직거린다. 잡음 사이로 사람의 목소리가 끊겼다 이어진다.<br><br>"…들리는가. …9년을 버틴 신호를 봤다. 우리는 아직 관측하고 있다. — Dr. ___"',
+                        en: 'Deep in the night, the radio crackles on its own. Between the static, a human voice cuts in and out.<br><br>"…do you read me. …we saw the signal that held nine years. We are still watching. — Dr. ___"' },
+  'ev.doctor.c0':     { ko: '무전을 오래 들었다', en: 'You listen for a long while' },
+  'ev.doctor.r0':     { ko: '목소리는 다시 잡음에 묻혔다. 하지만 누군가 당신을 보고 있었다.', en: 'The voice sinks back into static. But someone had been watching you.' },
   'report.tip.bandage':{ ko: '붕대가 없습니다 — 주거지역에서 구할 수 있습니다.', en: 'You have no bandages — find them in the residential district.' },
   'report.tip.water': { ko: '깨끗한 물이 없습니다 — 청소와 치료에 필요합니다.', en: 'You have no clean water — needed for cleaning and treatment.' },
   'report.tip.battery':{ ko: '벙커 전력용 배터리가 없습니다 — 상업지구를 탐험하세요.', en: 'No batteries for shelter power — explore the commercial district.' },

@@ -441,6 +441,20 @@ function seasonOf(day = state.day) { return SEASONS[Math.floor((day - 1) / SEASO
 function seasonDay(day = state.day) { return ((day - 1) % SEASON_DAYS) + 1; }
 // 계절 절대 인덱스 (겨울 카운터 리셋 기준) — 0부터 계절마다 +1
 function seasonIndex(day = state.day) { return Math.floor((day - 1) / SEASON_DAYS); }
+/* ── Nine Winters(#11): 겨울 스냅샷 — 겨울에 들어서는 날 이번 겨울의 시작값을 기록해 둔다.
+   memoir는 봄으로 넘어가는 날 이 스냅샷과의 차분으로 "그 해 겨울"을 요약한다.
+   winterSnap.acc = 겨울 동안 누적되는 서사 통계 (한파/방어/연료). exp 성공은 lifetime stats.success 차분으로. */
+function beginWinterSnapshot() {
+  state.winterSnap = {
+    day: state.day,                        // 겨울 첫날
+    successStart: state.stats?.success || 0, // lifetime 탐험 성공 (차분용)
+    acc: { coldSnaps: 0, defended: 0, fuel: 0 }, // 겨울 중 누적
+  };
+}
+// 겨울 중 연료 소모 집계 (winterSnap.acc.fuel) — resConsume('fuel') 경로에서 호출
+function accWinterFuel(n) {
+  if (seasonOf().id === 'winter' && state.winterSnap?.acc) state.winterSnap.acc.fuel += n;
+}
 /* ── 한파 (cold snap) — 겨울 보스 이벤트 (Phase B) ── */
 // 한파 방어 수단이 몇 단계 갖춰졌는가: 단열 개조 + 난방 가동(장작 난로/온풍기 ON)
 function coldDefenseLevel() {
@@ -2377,6 +2391,11 @@ const state = {
   coldSnapForecast: 0, // 한파 발동 예정일 (day). 0=예보 없음. 예보 리드타임 동안 브리핑에 표시
   coldSnapsThisWinter: 0, // 이번 겨울 한파 발동 횟수 (겨울당 상한 제한용)
   coldSnapWinterKey: -1,  // 카운터가 속한 겨울 식별자 (계절 인덱스). 겨울이 바뀌면 리셋
+  // ── Nine Winters 엔드게임 마일스톤 (#11) ──
+  winters: 0,          // 넘긴 겨울 수 (봄으로 넘어가는 날 +1). 제목이 곧 장기 목표.
+  winterSnap: null,    // 현재/직전 겨울 시작 시점 스냅샷 (memoir 차분 계산용)
+  pendingWinterMemoir: [], // 표시 대기 중인 "그 해 겨울" 수첩 페이지 큐 (봄 첫 아침 보고 뒤로 미룸)
+  doctorRadioPending: false, // 9겨울 마일스톤 후 박사 무전 대기 (라디오 미보유 시 다음 배치까지 보류)
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -2390,6 +2409,7 @@ function resConsume(id, n) {
   if ((state.res[id] || 0) < n) return false;
   state.res[id] -= n;
   state.dayLog.spend[id] = (state.dayLog.spend[id] || 0) + n;
+  if (id === 'fuel') accWinterFuel(n); // Nine Winters(#11): 겨울 중 연료 소모 집계
   return true;
 }
 function resHasAll(cost) {
@@ -2515,6 +2535,8 @@ function slotMeta(n) {
   return {
     day: st.day || 1, season: se, shelter: SHELTERS[st.current] ? SHELTERS[st.current] : SHELTERS.container,
     successes: st.successes || 0, mode: st.mode === 'hard' ? 'hard' : 'normal',
+    // Nine Winters(#11): 슬롯/이어하기에 겨울 수 (없으면 day로 역산 — 마이그레이션과 동일 규칙)
+    winters: st.winters != null ? st.winters : Math.floor(((st.day || 1) - 1) / SEASON_DAYS / 4),
     qaUsed: !!st.qaUsed,
     saved: st.savedAt ? new Date(st.savedAt).toLocaleString(lang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-',
   };
@@ -2612,6 +2634,13 @@ function loadSave() {
       if (state.tutDay == null) state.tutDay = 0;
       if (!state.tipsSeen) state.tipsSeen = {};
       if (state.pendingTutorial === undefined) state.pendingTutorial = null;
+      // Nine Winters(#11) 마이그레이션: 세이브에 winters 필드가 아예 없던 구세이브면 day로 역산해 카운터만 맞춘다.
+      // (DEFAULT_STATE.winters=0이라 Object.assign 뒤 state.winters는 항상 존재하므로, "필드 유무"는 원본 data.state로 판정해야 한다.)
+      // 과거를 소급해도 겨울 시작 스냅샷이 없어 memoir는 빈다 — 그래서 memoir는 '다음 겨울'부터, 카운터만 절충.
+      if (data.state.winters == null) state.winters = Math.floor((state.day - 1) / SEASON_DAYS / 4);
+      if (data.state.winterSnap === undefined) state.winterSnap = null;   // 스냅샷 없음 → 다음 겨울 시작 때 생성
+      if (!Array.isArray(state.pendingWinterMemoir)) state.pendingWinterMemoir = [];
+      if (data.state.doctorRadioPending == null) state.doctorRadioPending = false;
       if (data.state.questIdx === undefined) state.questIdx = (state.day > 1 || state.successes > 0) ? -1 : 0;
       if (!SHELTERS[state.current]) state.current = 'container';
       // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
@@ -3947,6 +3976,14 @@ const EVENTS = {
       { labelId: 'ev.ending.c1', run() { return t('ev.ending.r1'); } },
     ],
   },
+  // Nine Winters(#11): 9번째 겨울 이후 박사의 첫 무전 — Day 10000 엔딩의 첫 복선 (이름은 밝히지 않는다)
+  doctor_radio: {
+    special: true,
+    icon: '📻', titleId: 'ev.doctor.title', textId: 'ev.doctor.text',
+    choices: [
+      { labelId: 'ev.doctor.c0', run() { return t('ev.doctor.r0'); } },
+    ],
+  },
 };
 // 이벤트 선택지 비용 판정/소비: food가 섞인 cost는 신선+통조림 합산으로 취급 (신선 우선 소비 후 통조림 폴백)
 function eventCostOk(cost) {
@@ -4230,6 +4267,7 @@ const ACHS = [
   { id: 'renovAll',  icon: '🌍', name: '모든 곳이 집',     nameEn: 'Everywhere Is Home', desc: '거처 9곳 전부 정비',          descEn: 'Refit all 9 shelters',               chk: () => Object.values(state.renovated || {}).filter(Boolean).length >= 9 },
   { id: 'mods3',     icon: '🔧', name: '개조 기술자',      nameEn: 'Modder',             desc: '거처 개조 3개 설치',          descEn: 'Install 3 shelter mods',             chk: () => Object.values(state.mods || {}).flat().length >= 3 },
   { id: 'winter',    icon: '❄️', name: '첫 겨울을 넘다',   nameEn: 'Past the First Winter', desc: 'Day 48 도달 (사계절 생존)', descEn: 'Reach Day 48 (survive all seasons)', chk: () => state.day >= 48 },
+  { id: 'nine_winters', icon: '❄️', name: '아홉 번째 겨울', nameEn: 'Nine Winters', desc: '아홉 번의 겨울을 넘기다', descEn: 'Weather nine winters', chk: () => (state.winters || 0) >= 9 },
   { id: 'col21',     icon: '📖', name: '수집가',           nameEn: 'Collector',          desc: '도감 25% (가구 색상 21종)',   descEn: 'Collection 25% (21 furniture colors)', chk: () => collectionCount() >= 21 },
   { id: 'col42',     icon: '🖼️', name: '큐레이터',         nameEn: 'Curator',            desc: '도감 50%',                    descEn: 'Collection 50%',                     chk: () => collectionCount() >= 42 },
   { id: 'colAll',    icon: '🏛️', name: '폐허의 박물관장',  nameEn: 'Museum Keeper of the Ruins', desc: '도감 100% (84색상)',   descEn: 'Collection 100% (84 colors)',        chk: () => collectionCount() >= 84 },
@@ -5028,7 +5066,9 @@ function showTitle() {
   const meta = slotMeta(currentSlot);
   if (meta) {
     $('t-continue').style.display = '';
-    $('t-continue-info').textContent = t('title.continueInfo', { slot: currentSlot, day: meta.day, sicon: meta.season.icon, semoji: meta.shelter.emoji, sname: LName(meta.shelter) }) + (meta.mode === 'hard' ? ' 🔥' : '');
+    $('t-continue-info').textContent = t('title.continueInfo', { slot: currentSlot, day: meta.day, sicon: meta.season.icon, semoji: meta.shelter.emoji, sname: LName(meta.shelter) })
+      + (meta.winters >= 1 ? t('title.continueWinters', { n: meta.winters }) : '') // Nine Winters(#11)
+      + (meta.mode === 'hard' ? ' 🔥' : '');
   } else {
     $('t-continue').style.display = 'none';
   }
@@ -5061,7 +5101,7 @@ function openSlotModal(mode) {
         ${m && m.qaUsed ? `<span class="sl-qa" title="QA 치트 사용됨" style="position:absolute;top:4px;left:4px;font-size:9px;background:#6b5a40;color:#1a1408;padding:1px 4px;border-radius:3px;font-weight:bold">QA</span>` : ''}
         <span class="sl-no">${n}</span>
         <div class="sl-body">${m
-          ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}<br><span class="sl-meta">${t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
+          ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}${m.winters >= 1 ? ` <span class="sl-winters">❄️${m.winters}/9</span>` : ''}<br><span class="sl-meta">${t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
           : t('slot.empty')}</div>
         ${m ? `<button class="sl-del" data-del="${n}" title="${t('slot.del.title')}">🗑</button>` : ''}
       </div>`);
@@ -5216,7 +5256,11 @@ function updateHud() {
     ` · <span style="color:var(--accent)" title="${comfortTip}">😊${cd.score} ${'★'.repeat(lv)}</span>` +
     ` · <span title="${t('hud.cleanTip')}">🧹${Math.round(cd.clean)}</span>` +
     ` · <span title="${t('hud.expTip', { n: state.expToday, max: EXP_PER_DAY })}">🎒${state.expToday}/${EXP_PER_DAY}</span>` +
-    ` · <span title="${t('hud.succTip')}">🏆${state.successes}</span>`;
+    ` · <span title="${t('hud.succTip')}">🏆${state.successes}</span>` +
+    // Nine Winters(#11): 넘긴 겨울 배지 — 1겨울부터 노출. 9 초과는 약속을 넘어선 시간 → accent
+    ((state.winters || 0) >= 1
+      ? ` · <span class="hud-winters${state.winters > 9 ? ' beyond' : ''}" title="${t('winter.badge.tip', { n: state.winters })}">❄️${state.winters}/9</span>`
+      : '');
   renderGauge('g-hunger', state.hunger, '🥫');
   renderGauge('g-thirst', state.thirst, '💧');
   renderGauge('g-energy', state.energy, '⚡');
@@ -5260,6 +5304,69 @@ function cleanShelter() {
 }
 
 /* ============================================================
+   Nine Winters(#11) — 겨울을 넘기다: 카운터 + "그 해 겨울" 수첩 + 9겨울 마일스톤
+============================================================ */
+// 겨울 memoir 서사 마무리 1줄 (겨울 번호별 9종). 10 이상은 9를 넘어선 톤(.beyond).
+function winterMemoirLine(n) {
+  if (n >= 9) return t(n === 9 ? 'winter.memoir.9' : 'winter.memoir.beyond');
+  return t('winter.memoir.' + n);
+}
+// memoir 페이지 1장을 구성해 큐에 넣는다. 스냅샷과의 차분으로 이번 겨울을 요약.
+function buildWinterMemoir(n) {
+  const snap = state.winterSnap;
+  // 스냅샷이 없으면(마이그레이션 절충 — 겨울 진입을 못 본 구세이브) memoir를 건너뛴다.
+  if (!snap) return;
+  const acc = snap.acc || { coldSnaps: 0, defended: 0, fuel: 0 };
+  const days = Math.max(1, state.day - snap.day); // 이 겨울 동안 버틴 날수 (봄 첫날 - 겨울 첫날)
+  const expWon = Math.max(0, (state.stats?.success || 0) - (snap.successStart || 0));
+  const catLine = state.cat ? t('winter.memoir.catYes') : t('winter.memoir.catNo');
+  const page = {
+    titleId: 'winter.page.title', titleArgs: { n },
+    bodyId: 'winter.page.body',
+    bodyArgs: {
+      days, cold: acc.coldSnaps, defended: acc.defended, exp: expWon, fuel: acc.fuel,
+      cat: catLine, closing: winterMemoirLine(n),
+    },
+  };
+  state.pendingWinterMemoir.push(page);
+}
+// 9번째 겨울 마일스톤: 특별 페이지 + 업적 + 박사 무전 예약
+function buildNinthWinterMilestone() {
+  const st = state.stats || {};
+  const page = {
+    titleId: 'winter.ninth.title',
+    bodyId: 'winter.ninth.body',
+    bodyArgs: {
+      day: state.day, exp: st.success || 0, craft: st.craft || 0,
+      cat: state.cat ? t('winter.memoir.catYes') : t('winter.memoir.catNo'),
+    },
+  };
+  state.pendingWinterMemoir.push(page);
+  // 업적: chk:()=>state.winters>=9 로 자동 해금 (state.winters는 passWinter에서 이미 9로 세팅됨).
+  // 즉시 노출을 위해 여기서도 트리거 (checkAchievements는 self-init·멱등).
+  checkAchievements();
+  // 박사 첫 무전: 라디오가 배치돼 있으면 그날 밤 1회, 없으면 다음 라디오 배치일까지 대기
+  state.doctorRadioPending = true;
+}
+// 겨울을 넘겼다 — 카운터 +1, memoir 큐 적재, 9겨울이면 마일스톤. 새 스냅샷은 다음 겨울 진입 때.
+function passWinter(notes) {
+  state.winters = (state.winters || 0) + 1;
+  buildWinterMemoir(state.winters);
+  if (state.winters === 9) buildNinthWinterMilestone();
+  notes.push(t('winter.passed', { n: state.winters }));
+  state.winterSnap = null; // 이번 겨울 스냅샷 소진 — 다음 겨울 진입 때 새로 뜬다
+}
+// 박사 무전 발화 시도 (밤, 라디오 보유 시). processDay 말미에서 호출.
+function tryDoctorRadio() {
+  if (!state.doctorRadioPending) return;
+  if (!items.some(i => i.defId === 'radio')) return; // 라디오 미보유 → 다음 배치일까지 보류
+  if (state.pendingEvent) return;                    // 다른 인카운터 대기 중이면 다음 날
+  state.doctorRadioPending = false;
+  state.pendingEvent = 'doctor_radio';
+  state.lastEventDay = state.day;
+}
+
+/* ============================================================
    하루 처리 & 일일 리포트 (기획서 v0.2: SYSTEM 03/04/07)
 ============================================================ */
 function processDay() {
@@ -5284,10 +5391,13 @@ function processDay() {
   // 계절 전환
   if (seasonOf(state.day).id !== seasonOf(state.day - 1).id) {
     const se = seasonOf(state.day);
+    const prev = seasonOf(state.day - 1);
     notes.push(t('season.arrived', { icon: se.icon, name: LName(se), desc: LDesc(se) }));
     toast(t('season.changed', { icon: se.icon, name: LName(se) }));
     rollWeather(); // 새 계절의 날씨로
-    if (se.id === 'winter') tipOnce('tip.winter'); // 찢어진 쪽지: 첫 겨울
+    if (se.id === 'winter') { tipOnce('tip.winter'); beginWinterSnapshot(); } // 겨울 진입: memoir용 스냅샷
+    // ── Nine Winters(#11): 겨울을 "넘긴" 순간 = 겨울 마지막 날을 거처에서 맞고 봄으로 넘어온 오늘
+    if (prev.id === 'winter' && se.id === 'spring') passWinter(notes);
   }
   // ── 한파 (겨울 보스): 예보 → 발동 → 지속 → 종료 (Phase B) ──
   {
@@ -5301,12 +5411,15 @@ function processDay() {
       state.coldSnap = { until: state.day + dur - 1, severity: 1 };
       state.coldSnapForecast = 0;
       state.coldSnapsThisWinter++;
+      if (state.winterSnap?.acc) state.winterSnap.acc.coldSnaps++; // memoir: 이번 겨울 한파 횟수
       notes.push(t('coldsnap.hit'));
       toast(t('coldsnap.toast'));
     }
     // 2) 진행 중인 한파: 오늘 방어 여부에 따른 서사 (하루 1회)
     if (state.coldSnap && inWinter && state.day <= state.coldSnap.until) {
-      notes.push(coldSnapNetSeverity() > 0 ? t('coldsnap.exposed') : t('coldsnap.defended'));
+      const defended = coldSnapNetSeverity() <= 0;
+      if (defended && state.winterSnap?.acc) state.winterSnap.acc.defended++; // memoir: 방어 성공한 한파-일
+      notes.push(defended ? t('coldsnap.defended') : t('coldsnap.exposed'));
     }
     // 3) 한파 종료
     if (state.coldSnap && (!inWinter || state.day > state.coldSnap.until)) {
@@ -5451,6 +5564,8 @@ function processDay() {
     state.pendingEvent = 'ending';
     state.lastEventDay = state.day;
   }
+  // Nine Winters(#11): 9겨울 마일스톤 박사 무전 — 라디오 보유 시 밤에 1회 (미보유 시 다음 배치까지 보류)
+  tryDoctorRadio();
   // 랜덤 인카운터 v0.9.1: 마지막 만남 1일 경과 + 60% 확률 (기존 2일+45%에서 상향)
   if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 1 && Math.random() < 0.60) {
     const pool = Object.entries(EVENTS).filter(([, e]) => !e.special && (!e.cond || e.cond()));
@@ -5655,6 +5770,12 @@ function tickTime(dt) {
     const day = state.pendingTutorial;
     state.pendingTutorial = null;
     showTutorialPage(day);
+  } else if (state.pendingWinterMemoir?.length && !reportQueued && !state.pendingEvent && !state.pendingTutorial && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
+    // Nine Winters(#11): 봄 첫 아침 보고를 모두 닫은 뒤 "그 해 겨울" 수첩 페이지를 순서대로 편다.
+    // (오프라인 정산으로 겨울 여러 번을 지났으면 큐에 쌓인 순서대로 한 번에 한 장씩.)
+    const page = state.pendingWinterMemoir.shift();
+    scheduleSave();
+    openJournalPages([page]);
   }
   tickInjury();
   settlingOffline = false; // 첫 틱(오프라인 정산) 소화 완료 — 이후엔 정상 암전 경로
@@ -5881,8 +6002,8 @@ function openJournalPages(pages, opts = {}) {
 
   const render = () => {
     const p = pages[i];
-    titleEl.innerHTML = p.titleId ? t(p.titleId) : '';
-    bodyEl.innerHTML = p.bodyId ? t(p.bodyId) : '';
+    titleEl.innerHTML = p.titleId ? t(p.titleId, p.titleArgs) : '';
+    bodyEl.innerHTML = p.bodyId ? t(p.bodyId, p.bodyArgs) : '';
     indEl.textContent = t('journalpg.indicator', { cur: i + 1, total: pages.length });
     prevBtn.style.display = i > 0 ? '' : 'none';
     nextBtn.textContent = i === pages.length - 1 ? t('journalpg.close') : t('journalpg.next');
@@ -6960,6 +7081,7 @@ window.__shelter = {
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
+  slotMeta, updateHud, checkAchievements, renderResBar, // Nine Winters(#11) QA
   seasonOf, SEASONS, openMapModal, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
   renderFrame: () => renderFrame(),

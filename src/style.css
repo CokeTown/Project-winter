@@ -645,3 +645,8 @@
   body.title-mode #btn-gear { display: none !important; }
   /* 인게임 전용 💾 저장 버튼 — 타이틀 설정(show-in-title)에선 숨김 (유령 세이브 방지) */
   body.title-mode #btn-save-now { display: none !important; }
+
+  /* Nine Winters(#11): 넘긴 겨울 배지 — HUD stat 줄 + 슬롯 카드 */
+  #hud-stat .hud-winters { color: #a9c4d6; white-space: nowrap; }
+  #hud-stat .hud-winters.beyond { color: var(--accent); font-weight: bold; } /* 9 초과 = 약속을 넘어선 시간 */
+  .slot-card .sl-winters { color: #a9c4d6; font-size: 11px; white-space: nowrap; }
