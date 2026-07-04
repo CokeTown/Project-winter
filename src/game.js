@@ -2192,6 +2192,7 @@ const state = {
   tipsSeen: {},        // 찢어진 쪽지(1회성 팁) 열람 여부 { 'tip.rain': true, ... }
   pendingTutorial: null, // 표시 대기 중인 튜토리얼 수첩 페이지 단계 (day-report 뒤로 미룸)
   questIdx: 0,         // 퀘스트 체인 진행 인덱스 (QUESTS 배열 기준, -1=비활성/완료, QUESTS.length=전체 완료)
+  mode: 'normal',      // 난이도 모드 'normal' | 'hard' (하드: 전리품 -30% · 게이지 소모 +50%)
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -2231,12 +2232,25 @@ function consumeAnyFood(n = 1) {
 const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, autoPlay: false, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko', fpsCap: 60, lowSpec: false, bgIdle: true };
 
 /* ============================================================
+   난이도 모드 (v0.9.2) — 하드: 전리품 -30% · 게이지 소모 +50%
+============================================================ */
+const isHard = () => state.mode === 'hard';
+// 하드 전리품 -30%. EV 보존 확률적 반올림: floor만 쓰면 1개 드랍이 항상 0이 되고,
+// round만 쓰면 1개가 영원히 안 줄어든다 — 소수부를 확률로 처리해 기댓값(×0.7)을 지킨다.
+function hardLoot(n) {
+  if (!isHard()) return n;
+  const x = n * 0.7, f = Math.floor(x);
+  return f + (Math.random() < x - f ? 1 : 0);
+}
+
+/* ============================================================
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
 ============================================================ */
 function decayGauges(gm) {
   const winterMult = seasonOf().id === 'winter' ? 1.25 : 1; // 겨울엔 열량 소모가 크다
-  state.hunger = Math.max(0, state.hunger - gm * 0.01326 * winterMult); // v0.9.1: 22% 완화 (×0.78) — 만복 → 0까지 약 5게임일
-  state.thirst = Math.max(0, state.thirst - gm * 0.02106);              // v0.9.1: 22% 완화 (×0.78)
+  const hardMul = isHard() ? 1.5 : 1; // 하드: 배고픔/갈증 소모 +50%
+  state.hunger = Math.max(0, state.hunger - gm * 0.01326 * winterMult * hardMul); // v0.9.1: 22% 완화 (×0.78) — 만복 → 0까지 약 5게임일
+  state.thirst = Math.max(0, state.thirst - gm * 0.02106 * hardMul);              // v0.9.1: 22% 완화 (×0.78)
   if (opts.autoEat) {
     let g = 0;
     while (state.hunger < 40 && hasAnyFood(1) && g++ < 9) { consumeAnyFood(1); state.hunger = Math.min(100, state.hunger + 45); }
@@ -2307,7 +2321,7 @@ function slotMeta(n) {
   const se = SEASONS[Math.floor(((st.day || 1) - 1) / SEASON_DAYS) % 4];
   return {
     day: st.day || 1, season: se, shelter: SHELTERS[st.current] ? SHELTERS[st.current] : SHELTERS.container,
-    successes: st.successes || 0,
+    successes: st.successes || 0, mode: st.mode === 'hard' ? 'hard' : 'normal',
     saved: st.savedAt ? new Date(st.savedAt).toLocaleString(lang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-',
   };
 }
@@ -2395,6 +2409,7 @@ function loadSave() {
         if (state.layouts[id].length > 0 || state.current === id) state.renovated[id] = true;
       }
       for (const id of Object.keys(RESOURCES)) if (state.res[id] == null) state.res[id] = 0;
+      if (!state.mode) state.mode = 'normal'; // 구세이브는 전부 노말 취급
       if (state.hunger == null) state.hunger = 80;
       if (state.thirst == null) state.thirst = 80;
       if (state.energy == null) state.energy = 100;
@@ -2917,8 +2932,9 @@ function departExpedition(regionId, prep) {
   const p = rateParts(regionId, prep);
   const dur = expDuration(r) * 1000;
   // 탐험도 몸을 쓴다 (소모 절반으로 완화) + 에너지 소모
-  state.hunger = Math.max(0, state.hunger - 4);
-  state.thirst = Math.max(0, state.thirst - (prep.includes('bottle') ? 3 : 5));
+  const expMul = isHard() ? 1.5 : 1; // 하드: 탐험 게이지 소모 +50%
+  state.hunger = Math.max(0, state.hunger - 4 * expMul);
+  state.thirst = Math.max(0, state.thirst - (prep.includes('bottle') ? 3 : 5) * expMul);
   state.energy = Math.max(0, state.energy - 20);
   if (state.energy < 20) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
   // 성공률 버프/디버프는 이번 출발에 반영되어 소진 (물자 좌표 버프는 정산 시)
@@ -2951,10 +2967,13 @@ function resolveExpedition() {
   let got = [];        // 가구 획득
   const notes = [];
   let title, body;
-  const rollRes = (mult = 1) => {
+  // hard=true인 기본 획득에만 하드 -30%를 적용한다. 은닉처 loot×2 버프는 hard=false로 호출해
+  // 온전한 2배를 보장 — 유저가 얻은 "2배" 버프의 체감 가치를 하드가 깎지 않도록.
+  const rollRes = (mult = 1, hard = true) => {
     for (const [id, min, max, chance] of r.lootRes) {
       if (chance != null && Math.random() > chance) continue;
-      const n = Math.round((min + Math.random() * (max - min)) * mult);
+      let n = Math.round((min + Math.random() * (max - min)) * mult);
+      if (hard) n = hardLoot(n);
       if (n > 0) { gotRes[id] = (gotRes[id] || 0) + n; resAdd(id, n); }
     }
   };
@@ -2969,8 +2988,8 @@ function resolveExpedition() {
   const partial = !success && roll < rate + (1 - rate) * 0.5;
   if (success) {
     rollRes(1);
-    if (state.buff?.loot) { // 은닉처 좌표: 자원 2배
-      rollRes(1);
+    if (state.buff?.loot) { // 은닉처 좌표: 자원 2배 (하드 감산 없이 온전한 +1배)
+      rollRes(1, false);
       notes.push(t('exp.note.loot2'));
       state.buff = null;
     }
@@ -4611,7 +4630,7 @@ function showTitle() {
   const meta = slotMeta(currentSlot);
   if (meta) {
     $('t-continue').style.display = '';
-    $('t-continue-info').textContent = t('title.continueInfo', { slot: currentSlot, day: meta.day, sicon: meta.season.icon, semoji: meta.shelter.emoji, sname: LName(meta.shelter) });
+    $('t-continue-info').textContent = t('title.continueInfo', { slot: currentSlot, day: meta.day, sicon: meta.season.icon, semoji: meta.shelter.emoji, sname: LName(meta.shelter) }) + (meta.mode === 'hard' ? ' 🔥' : '');
   } else {
     $('t-continue').style.display = 'none';
   }
@@ -4640,6 +4659,7 @@ function openSlotModal(mode) {
     const m = slotMeta(n);
     cards.push(`
       <div class="slot-card ${m ? '' : 'empty'}" data-slot="${n}" data-has="${m ? 1 : 0}">
+        ${m && m.mode === 'hard' ? `<span class="sl-mode-hard" title="${t('slot.hardBadge.title')}">🔥</span>` : ''}
         <span class="sl-no">${n}</span>
         <div class="sl-body">${m
           ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}<br><span class="sl-meta">${t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
@@ -4666,15 +4686,36 @@ function openSlotModal(mode) {
       sessionStorage.setItem('ps-load', '1'); // 리로드 후 타이틀 건너뛰고 바로 게임 (밀린 결산 표시)
       location.reload();
     } else {
+      // 덮어쓰기 confirm은 슬롯 클릭 시점에만 (모드 화면 뒤 재선택 시 재확인은 허용)
       if (has && !confirm(t('slot.newConfirm', { n }))) return;
-      const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
-      fresh.savedAt = Date.now();
-      fresh.helpSeen = true;
-      localStorage.setItem(slotKey(n), JSON.stringify({ state: fresh, opts }));
-      localStorage.setItem('project-shelter-lastslot', String(n));
-      sessionStorage.setItem('ps-intro', '1');
-      location.reload();
+      openModeModal(n);
     }
+  }));
+}
+// 새 게임: 슬롯 선택 후 노말/하드 모드를 고르는 화면 (같은 모달의 body 교체)
+function openModeModal(n) {
+  const card = (mode, titleId, tagId, descId) => `
+    <div class="slot-card mode-card" data-mode="${mode}">
+      <div class="sl-body">
+        <div class="mc-title">${t(titleId)}</div>
+        <div class="mc-tag">${t(tagId)}</div>
+        <div class="sl-meta">${t(descId)}</div>
+      </div>
+    </div>`;
+  const body = card('normal', 'mode.normal', 'mode.normal.tag', 'mode.normal.desc')
+    + card('hard', 'mode.hard', 'mode.hard.tag', 'mode.hard.desc')
+    + `<button class="pixel-btn mode-back">${t('mode.back')}</button>`;
+  openModal(t('mode.pick.title'), body);
+  $('modal-body').querySelector('.mode-back').addEventListener('click', () => openSlotModal('new'));
+  $('modal-body').querySelectorAll('.mode-card').forEach(c => c.addEventListener('click', () => {
+    const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    fresh.savedAt = Date.now();
+    fresh.helpSeen = true;
+    fresh.mode = c.dataset.mode === 'hard' ? 'hard' : 'normal';
+    localStorage.setItem(slotKey(n), JSON.stringify({ state: fresh, opts }));
+    localStorage.setItem('project-shelter-lastslot', String(n));
+    sessionStorage.setItem('ps-intro', '1');
+    location.reload();
   }));
 }
 const INTRO_IDS = ['intro.0', 'intro.1', 'intro.2'];
@@ -5965,6 +6006,14 @@ makeDraggablePanel($('res-bar'), 'res', t('panel.res'));
 // display만 제어하므로 $('opt-...') 접근/이벤트는 숨겨진 상태에서도 정상 동작한다.
 if (isPcInput) $('render-panel').style.display = 'none';
 
+// UI 스케일 상수 — 아래 부팅 분기(ps-load 경로의 hideTitle→onResize→updateUiScale)보다
+// 먼저 평가되어야 한다. 선언이 뒤에 있으면 불러오기 부팅이 TDZ로 죽는다.
+const UI_BASE_FONT = 11;   // .panel 계열 기본 폰트 크기(px) — 이 값 자체가 이미 최소 가독 크기
+const UI_MIN_FONT = 11;    // 스케일 후에도 유지해야 할 최소 렌더 폰트(px)
+// P0: 전 UI 15% 확대(가독성)를 JS에서 곱한다 — CSS zoom은 var(--uiz)만 쓰므로
+// 렌더 배율과 드래그/클램프 좌표 보정 배율이 항상 동일한 단일 소스(--uiz)로 일치한다.
+const TEXT_BOOST = 1.15;
+
 // 타이틀 / 인트로 (자리 비운 사이 끝난 탐험 정산은 hideTitle에서 — 타이틀에선 집만 보여준다)
 $('t-continue').addEventListener('click', hideTitle);
 // 타이틀 언어 선택 (설정 진입 없이 첫 화면에서)
@@ -6000,11 +6049,7 @@ if (sessionStorage.getItem('ps-intro')) {
    기준 1400x860에서 1.0, 화면이 커질수록 확대, 작아질수록 축소.
    본문 기준 폰트(11px)가 스케일 후 11px 밑으로 내려가지 않도록 하한 보정.
 ============================================================ */
-const UI_BASE_FONT = 11;   // .panel 계열 기본 폰트 크기(px) — 이 값 자체가 이미 최소 가독 크기
-const UI_MIN_FONT = 11;    // 스케일 후에도 유지해야 할 최소 렌더 폰트(px)
-// P0: 전 UI 15% 확대(가독성)를 JS에서 곱한다 — CSS zoom은 var(--uiz)만 쓰므로
-// 렌더 배율과 드래그/클램프 좌표 보정 배율이 항상 동일한 단일 소스(--uiz)로 일치한다.
-const TEXT_BOOST = 1.15;
+// (UI_BASE_FONT/UI_MIN_FONT/TEXT_BOOST 상수는 부팅 분기 위에서 선언 — TDZ 방지)
 function updateUiScale() {
   let s = Math.min(innerWidth / 1400, innerHeight / 860);
   s = THREE.MathUtils.clamp(s, 0.85, 2.1);
@@ -6179,8 +6224,9 @@ function _simDaysInner(n, opt) {
     for (let k = 0; k < expPerDay; k++) {
       if (isExhausted()) break; // 탈진하면 더 못 나감
       // 탐험 비용(에너지/게이지) — departExpedition 로직 요약
-      state.hunger = Math.max(0, state.hunger - 4);
-      state.thirst = Math.max(0, state.thirst - 5);
+      const expMul = isHard() ? 1.5 : 1; // 하드: 탐험 게이지 소모 +50%
+      state.hunger = Math.max(0, state.hunger - 4 * expMul);
+      state.thirst = Math.max(0, state.thirst - 5 * expMul);
       state.energy = Math.max(0, state.energy - 20);
       const eff = rateParts(bestId, []).eff;
       const roll = Math.random();
@@ -6222,6 +6268,7 @@ function _simDaysInner(n, opt) {
 // 디버그/테스트용 핸들
 window.__shelter = {
   simDays, simReset, expectedLoot,
+  isHard, hardLoot, loadSave,
   items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather,
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,

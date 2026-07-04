@@ -273,6 +273,17 @@ export const STR = {
   'slot.newConfirm':  { ko: '슬롯 {n}의 기존 세이브를 덮어쓰고 새로 시작할까요?', en: 'Overwrite the existing save in slot {n} and start anew?' },
   'slot.meta':        { ko: '탐험 성공 {succ}회 · 저장 {saved}', en: '{succ} successful expeditions · saved {saved}' },
   'title.continueInfo':{ ko: '슬롯 {slot} · Day {day} {sicon} · {semoji} {sname}', en: 'Slot {slot} · Day {day} {sicon} · {semoji} {sname}' },
+  'slot.hardBadge.title': { ko: '하드 모드', en: 'Hard mode' },
+
+  /* ── 난이도 모드 선택 (v0.9.2) ── */
+  'mode.pick.title':  { ko: '어떤 겨울을 살아갈까', en: 'Choose Your Winter' },
+  'mode.normal':      { ko: '🌿 노말', en: '🌿 Normal' },
+  'mode.normal.tag':  { ko: '폐허에도 온기는 남아 있다', en: 'Warmth still lingers in the ruins' },
+  'mode.normal.desc': { ko: '표준 밸런스. 느긋하게 셸터를 가꾸는 코지 생존.', en: 'Standard balance. Cozy survival at your own pace.' },
+  'mode.hard':        { ko: '🔥 하드', en: '🔥 Hard' },
+  'mode.hard.tag':    { ko: '폐허는 아무것도 거저 주지 않는다', en: 'The ruins give nothing for free' },
+  'mode.hard.desc':   { ko: '탐험 전리품 −30% · 배고픔/갈증 소모 +50%. 첫 겨울이 진짜 시험이 된다.', en: 'Expedition loot −30% · hunger/thirst drain +50%. The first winter becomes a real test.' },
+  'mode.back':        { ko: '◂ 뒤로', en: '◂ Back' },
 
   /* ── 지도 / 탐험 ── */
   'map.title':        { ko: '🗺️ 탐험 지도 — 어디로 가시겠습니까?', en: '🗺️ Expedition Map — where will you go?' },
