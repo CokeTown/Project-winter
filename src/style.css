@@ -263,25 +263,43 @@
   .rate-line { font-size: 11px; line-height: 1.8; margin-bottom: 8px; color: var(--text-dim); }
   .rate-line b { color: var(--accent); font-size: 14px; }
 
-  /* ── 도트 지도 ── */
-  #map-wrap { position: relative; user-select: none; }
-  #map-cv { width: 100%; display: block; image-rendering: pixelated; border: 2px solid var(--panel-border); border-radius: 3px; }
-  .map-marker {
+  /* ── 종이 지도 (#47) — 손그림 map_paper.png 위 지역 마커 ── */
+  #map-wrap.paper {
+    position: relative; user-select: none;
+    width: 100%; aspect-ratio: 1400 / 1000;   /* 비율 유지 (1400×1000) */
+    background: url("img/map_paper.png") center / 100% 100% no-repeat;
+    border: 2px solid var(--panel-border); border-radius: 4px;
+  }
+  .map-pin {
     position: absolute; transform: translate(-50%, -50%);
-    font-size: 15px; line-height: 1; pointer-events: none;
-    text-shadow: 1px 1px 0 #000c;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    cursor: pointer; pointer-events: auto; z-index: 2;
+    min-width: 44px; min-height: 48px; padding: 4px;   /* 터치 타깃 보장 (#47) */
   }
-  .map-marker.dist { font-size: 10px; color: var(--text-dim); text-align: center; white-space: nowrap; }
-  .map-marker.dist .de { font-size: 14px; display: block; }
-  .map-marker.region {
-    pointer-events: auto; cursor: pointer; font-size: 16px;
-    background: rgba(10, 12, 16, 0.55); border: 2px solid var(--panel-border);
-    border-radius: 4px; padding: 2px 4px;
+  .map-pin img.px-icon { width: 44px; height: 44px; image-rendering: auto;
+    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.45)); transition: transform .12s; }
+  .map-pin:hover img.px-icon { transform: scale(1.12); }
+  /* 좁은 화면(모바일 가로/세로): zoom 축소분을 상쇄해 마커를 키운다 — 터치 타깃 확보 */
+  @media (max-width: 640px) {
+    .map-pin { min-width: 52px; min-height: 56px; }
+    .map-pin img.px-icon { width: 52px; height: 52px; }
+    .map-pin .pin-rate { font-size: 12px; padding: 3px 7px; }
   }
-  .map-marker.region:hover { border-color: var(--accent); }
-  .map-marker.region.sel { border-color: var(--accent); background: rgba(60, 45, 20, 0.75); }
-  .map-marker.loc { font-size: 17px; animation: locpulse 1.2s ease-in-out infinite; z-index: 2; }
-  @keyframes locpulse { 50% { transform: translate(-50%, -70%); } }
+  /* 성공률 칩 — 종이 위에서 읽히도록 반투명 배경 */
+  .map-pin .pin-rate {
+    font-size: 11px; font-weight: bold; line-height: 1; white-space: nowrap;
+    padding: 2px 6px; border-radius: 8px;
+    background: rgba(14, 12, 9, 0.78); border: 1px solid rgba(0,0,0,0.35);
+    min-width: 34px; min-height: 16px; text-align: center;
+  }
+  .map-pin .pin-rate.ok { color: var(--good); }
+  .map-pin .pin-rate.lack { color: var(--bad); }
+  /* 현 거처 위치 표식 (지구 매핑 가능 시) */
+  .map-pin.here::after {
+    content: "📍"; position: absolute; top: -18px; font-size: 16px;
+    animation: locpulse 1.2s ease-in-out infinite;
+  }
+  @keyframes locpulse { 50% { transform: translateY(-4px); } }
 
   /* ── 일일 리포트 ── */
   .report-sec { margin-bottom: 8px; font-size: 11px; line-height: 1.7; }
@@ -340,7 +358,8 @@
   }
   .slot-card .sl-del:hover { color: var(--bad); }
   .slot-card { position: relative; }
-  .slot-card .sl-mode-hard {
+  .slot-card .sl-mode-hard,
+  .slot-card .sl-mode-zen {
     position: absolute; top: 4px; right: 6px;
     font-size: 12px; line-height: 1; pointer-events: none;
   }

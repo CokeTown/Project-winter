@@ -149,7 +149,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_food.png",
-      "prompt": "a fresh apple with a small leaf, slightly bruised. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a bright red apple with a green leaf. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_res_canned",
@@ -159,7 +159,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_canned.png",
-      "prompt": "a dented tin can of preserved food with a worn paper label. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a tin can with a bright red-and-cream label and shiny silver lid. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_res_water",
@@ -169,7 +169,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_water.png",
-      "prompt": "a clear water droplet with a tiny highlight. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a vivid clear blue water droplet with a white highlight. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_res_cloth",
@@ -179,7 +179,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_cloth.png",
-      "prompt": "a folded stack of rough gray-beige cloth. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a folded stack of warm cream and sky-blue cloth. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_res_candle",
@@ -189,7 +189,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_candle.png",
-      "prompt": "a stubby white candle with a small warm flame and melted wax. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a white candle with a bright warm orange flame. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_res_battery",
@@ -199,7 +199,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_battery.png",
-      "prompt": "a chunky AA battery, olive body with copper top. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a battery with bright green body and copper gold top. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_res_fuel",
@@ -209,7 +209,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_fuel.png",
-      "prompt": "a small red jerry can of fuel with a cross-brace pattern. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a bright red jerry fuel can with yellow cap. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_res_parts",
@@ -219,7 +219,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_parts.png",
-      "prompt": "a steel gear with a small wrench crossed behind it. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a shiny steel gear with a bright orange-handled wrench crossed behind. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_res_material",
@@ -229,7 +229,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_material.png",
-      "prompt": "a short stack of salvaged planks and a brick. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "warm honey-colored wooden planks stacked with a red brick. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_res_bandage",
@@ -239,7 +239,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_bandage.png",
-      "prompt": "a rolled white bandage with a loose end. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a white bandage roll with a red cross tag. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_res_antiseptic",
@@ -249,7 +249,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_antiseptic.png",
-      "prompt": "a small brown antiseptic bottle with a cork and cross label. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "an amber glass antiseptic bottle with a bright teal label and red cross. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_res_painkiller",
@@ -259,7 +259,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_res_painkiller.png",
-      "prompt": "a small pill bottle with two tablets beside it. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a white pill bottle with a red cap and two white pills. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_g_hunger",
@@ -269,7 +269,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_g_hunger.png",
-      "prompt": "a rustic bowl of warm stew with a spoon, gentle steam. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a bowl of hearty orange-red stew with steam, on a warm wooden bowl. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_g_thirst",
@@ -279,7 +279,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_g_thirst.png",
-      "prompt": "a dented metal canteen with a water droplet. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a bright blue metal canteen with a water droplet badge. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_g_energy",
@@ -289,7 +289,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_g_energy.png",
-      "prompt": "a yellow lightning bolt, slightly angled. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a vivid golden-yellow lightning bolt with white core. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_act_explore",
@@ -299,7 +299,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_act_explore.png",
-      "prompt": "a worn red hiking backpack with rolled blanket on top. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "A bright red hiking backpack seen straight from the front, chunky and symmetrical, two shoulder straps visible at the sides, one big front pocket with a buckle, a tan rolled-up blanket strapped horizontally on top. Cozy pixel art game icon, single object centered and FILLING 90% of the frame, fully transparent background, bright saturated colors with strong contrast, bold 2px dark outline, simple readable silhouette at 24px, soft top-left light, no text, no frame."
     },
     {
       "id": "icon_act_move",
@@ -309,7 +309,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_act_move.png",
-      "prompt": "a small wooden shelter house with a chimney. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a cozy little house with warm yellow glowing window and red roof. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_act_craft",
@@ -319,7 +319,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_act_craft.png",
-      "prompt": "a claw hammer crossed over a hand saw. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a claw hammer with orange handle crossed over a saw with red handle. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_act_clean",
@@ -329,7 +329,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_act_clean.png",
-      "prompt": "a straw broom leaning at an angle. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a straw broom with golden-yellow bristles and a blue band. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_act_sleep",
@@ -339,7 +339,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_act_sleep.png",
-      "prompt": "a simple bed with a patched blanket and pillow. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a bed with a bright blue quilt and white pillow, warm wooden frame. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_act_journal",
@@ -349,7 +349,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_act_journal.png",
-      "prompt": "a worn leather journal with a pencil. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "a warm brown leather journal with a golden clasp and a red pencil. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "icon_act_help",
@@ -359,7 +359,7 @@
       "genSize": "1024x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_act_help.png",
-      "prompt": "a folded paper map with a small compass. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+      "prompt": "an unfolded paper map with bright green route line and a red compass needle. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     },
     {
       "id": "tip_strip",

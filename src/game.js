@@ -2463,6 +2463,7 @@ const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, a
    난이도 모드 (v0.9.2) — 하드: 전리품 -30% · 게이지 소모 +50%
 ============================================================ */
 const isHard = () => state.mode === 'hard';
+const isZen = () => state.mode === 'zen'; // ♾️ 무한: 자동 진행 첫날 해금 + 겨울 카운터 분모 없음
 // 하드 전리품 -30%. EV 보존 확률적 반올림: floor만 쓰면 1개 드랍이 항상 0이 되고,
 // round만 쓰면 1개가 영원히 안 줄어든다 — 소수부를 확률로 처리해 기댓값(×0.7)을 지킨다.
 function hardLoot(n) {
@@ -2558,7 +2559,7 @@ function slotMeta(n) {
   const se = SEASONS[Math.floor(((st.day || 1) - 1) / SEASON_DAYS) % 4];
   return {
     day: st.day || 1, season: se, shelter: SHELTERS[st.current] ? SHELTERS[st.current] : SHELTERS.container,
-    successes: st.successes || 0, mode: st.mode === 'hard' ? 'hard' : 'normal',
+    successes: st.successes || 0, mode: st.mode === 'hard' ? 'hard' : st.mode === 'zen' ? 'zen' : 'normal',
     // Nine Winters(#11): 슬롯/이어하기에 겨울 수 (없으면 day로 역산 — 마이그레이션과 동일 규칙)
     winters: st.winters != null ? st.winters : Math.floor(((st.day || 1) - 1) / SEASON_DAYS / 4),
     qaUsed: !!st.qaUsed,
@@ -3110,48 +3111,42 @@ function openMapModal() {
   if (state.exp) { $('exp-panel').classList.add('show'); renderExpPanel(); return; }
   if (isExhausted()) { toast(t('toast.exhausted')); return; }
   openModal(t('map.title'), `
-    <div id="map-wrap"></div>
+    <div id="map-wrap" class="paper"></div>
     <div id="map-info" class="rate-line" style="margin-top:8px">${t('map.pick')}</div>`);
   const wrap = $('map-wrap');
-  wrap.appendChild(buildMapCanvas());
-  const pct = p => ({ left: (p.x / MAP.W * 100) + '%', top: (p.y / MAP.H * 100) + '%' });
-  // 구역 라벨
-  for (const [did, d] of Object.entries(DISTRICTS)) {
-    const p = MAP.districts[did];
-    const el = document.createElement('div');
-    el.className = 'map-marker dist';
-    el.innerHTML = `<span class="de">${d.emoji}</span>${LName(d)}`;
-    Object.assign(el.style, pct({ x: p.x, y: p.y + 2.2 }));
-    wrap.appendChild(el);
-  }
-  // 현재 위치
-  const loc = document.createElement('div');
-  loc.className = 'map-marker loc';
-  loc.textContent = '📍';
-  Object.assign(loc.style, pct(MAP.districts[districtOf(state.current)]));
-  wrap.appendChild(loc);
-  // 파밍 지역 마커
-  let selEl = null;
+  // 손그림 종이 지도 위에 4개 파밍 지역 마커를 지구 클러스터 위치에 % 절대 배치 (#47).
+  // 좌표는 map_paper.png 위 집/빌딩/공장/판자촌 그림에 맞춰 하네스 스크린샷으로 조정.
   for (const [rid, r] of Object.entries(REGIONS)) {
+    const p = MAP_MARKERS[rid];
+    if (!p) continue;
     const el = document.createElement('div');
-    el.className = 'map-marker region';
-    el.innerHTML = regionIcon(rid, 'px-lg');
+    el.className = 'map-pin region';
+    el.style.left = p.x + '%'; el.style.top = p.y + '%';
     el.title = LName(r);
-    Object.assign(el.style, pct(MAP.regions[rid]));
-    el.addEventListener('click', () => {
-      if (selEl) selEl.classList.remove('sel');
-      selEl = el; el.classList.add('sel');
-      const p = rateParts(rid);
-      const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC); // 실초→게임 시간 표기
-      const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
-      $('map-info').innerHTML = `
-        ${t('map.regionLine', { emoji: regionIcon(rid), pct: Math.round(p.eff * 100), name: LName(r), desc: LDesc(r) })}<br>
-        ${t('map.riskLine', { risk: LRisk(r), dur, mult: regionDistMult(rid).toFixed(2), wicon: wxIcon(weather.type), wname: LName(WEATHERS[weather.type]), forecast: fc })}
-        <div style="margin-top:6px"><button class="pixel-btn primary" id="btn-map-go" style="width:100%">${t('map.go')}</button></div>`;
-      $('btn-map-go').addEventListener('click', () => { closeModal(); startExpedition(rid); }); // 에너지/탈진/횟수 검사를 거친다
-    });
+    const rate = Math.round(rateParts(rid).eff * 100);
+    const cls = rate >= 50 ? 'ok' : 'lack';
+    el.innerHTML = `${regionIcon(rid, 'px-lg')}<span class="pin-rate ${cls}">${rate}%</span>`;
+    el.addEventListener('click', () => { closeModal(); startExpedition(rid); }); // 준비 모달 경로 그대로 (에너지/탈진/횟수 검사 포함)
+    // 호버/선택 시 하단 정보 줄에 위험·소요·날씨 표기
+    el.addEventListener('mouseenter', () => showMapInfo(rid));
     wrap.appendChild(el);
   }
+}
+// 종이 지도 마커 좌표(% left/top) — 그림 상의 지구 클러스터 위치. residential 좌상 · commercial 우상 · industrial 좌하 · slum 우하.
+const MAP_MARKERS = {
+  residential: { x: 20, y: 20 },  // 좌상 손그림 집 클러스터
+  commercial:  { x: 74, y: 18 },  // 우상 무너진 빌딩(도심)
+  industrial:  { x: 18, y: 56 },  // 좌하 공장
+  slum:        { x: 78, y: 57 },  // 우하 판자촌
+};
+function showMapInfo(rid) {
+  const r = REGIONS[rid];
+  const p = rateParts(rid);
+  const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC);
+  const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
+  $('map-info').innerHTML = `
+    ${t('map.regionLine', { emoji: regionIcon(rid), pct: Math.round(p.eff * 100), name: LName(r), desc: LDesc(r) })}<br>
+    ${t('map.riskLine', { risk: LRisk(r), dur, mult: regionDistMult(rid).toFixed(2), wicon: wxIcon(weather.type), wname: LName(WEATHERS[weather.type]), forecast: fc })}`;
 }
 
 // 탐험 소요 시간(초): 거리 + 염좌 +30% + 이동형 거점(버스) -25%
@@ -5096,7 +5091,7 @@ function showTitle() {
     $('t-continue').style.display = '';
     $('t-continue-info').textContent = t('title.continueInfo', { slot: currentSlot, day: meta.day, sicon: meta.season.icon, semoji: meta.shelter.emoji, sname: LName(meta.shelter) })
       + (meta.winters >= 1 ? t('title.continueWinters', { n: meta.winters }) : '') // Nine Winters(#11)
-      + (meta.mode === 'hard' ? ' 🔥' : '');
+      + (meta.mode === 'hard' ? ' 🔥' : meta.mode === 'zen' ? ' ♾️' : '');
   } else {
     $('t-continue').style.display = 'none';
   }
@@ -5126,10 +5121,11 @@ function openSlotModal(mode) {
     cards.push(`
       <div class="slot-card ${m ? '' : 'empty'}" data-slot="${n}" data-has="${m ? 1 : 0}">
         ${m && m.mode === 'hard' ? `<span class="sl-mode-hard" title="${t('slot.hardBadge.title')}">🔥</span>` : ''}
+        ${m && m.mode === 'zen' ? `<span class="sl-mode-zen" title="${t('slot.zenBadge.title')}">♾️</span>` : ''}
         ${m && m.qaUsed ? `<span class="sl-qa" title="QA 치트 사용됨" style="position:absolute;top:4px;left:4px;font-size:9px;background:#6b5a40;color:#1a1408;padding:1px 4px;border-radius:3px;font-weight:bold">QA</span>` : ''}
         <span class="sl-no">${n}</span>
         <div class="sl-body">${m
-          ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}${m.winters >= 1 ? ` <span class="sl-winters">❄️${m.winters}/9</span>` : ''}<br><span class="sl-meta">${t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
+          ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}${m.winters >= 1 ? ` <span class="sl-winters">❄️${m.winters}${m.mode === 'zen' ? '' : '/9'}</span>` : ''}<br><span class="sl-meta">${t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
           : t('slot.empty')}</div>
         ${m ? `<button class="sl-del" data-del="${n}" title="${t('slot.del.title')}">🗑</button>` : ''}
       </div>`);
@@ -5171,6 +5167,7 @@ function openModeModal(n) {
     </div>`;
   const body = card('normal', 'mode.normal', 'mode.normal.tag', 'mode.normal.desc')
     + card('hard', 'mode.hard', 'mode.hard.tag', 'mode.hard.desc')
+    + card('zen', 'mode.zen', 'mode.zen.tag', 'mode.zen.desc')
     + `<button class="pixel-btn mode-back">${t('mode.back')}</button>`;
   openModal(t('mode.pick.title'), body);
   $('modal-body').querySelector('.mode-back').addEventListener('click', () => openSlotModal('new'));
@@ -5178,7 +5175,11 @@ function openModeModal(n) {
     const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
     fresh.savedAt = Date.now();
     fresh.helpSeen = true;
-    fresh.mode = c.dataset.mode === 'hard' ? 'hard' : 'normal';
+    fresh.mode = c.dataset.mode === 'hard' ? 'hard' : c.dataset.mode === 'zen' ? 'zen' : 'normal';
+    // ♾️ 무한 모드: 넉넉한 시작 물자 가산 (노말 밸런스 위에)
+    if (fresh.mode === 'zen') {
+      for (const [rid, n2] of Object.entries(BAL.economy.zenStart || {})) fresh.res[rid] = (fresh.res[rid] || 0) + n2;
+    }
     localStorage.setItem(slotKey(n), JSON.stringify({ state: fresh, opts }));
     localStorage.setItem('project-shelter-lastslot', String(n));
     sessionStorage.setItem('ps-intro', '1');
@@ -5287,7 +5288,7 @@ function updateHud() {
     ` · <span title="${t('hud.succTip')}">🏆${state.successes}</span>` +
     // Nine Winters(#11): 넘긴 겨울 배지 — 1겨울부터 노출. 9 초과는 약속을 넘어선 시간 → accent
     ((state.winters || 0) >= 1
-      ? ` · <span class="hud-winters${state.winters > 9 ? ' beyond' : ''}" title="${t('winter.badge.tip', { n: state.winters })}">❄️${state.winters}/9</span>`
+      ? ` · <span class="hud-winters${state.winters > 9 ? ' beyond' : ''}" title="${t('winter.badge.tip', { n: state.winters })}">❄️${state.winters}${isZen() ? '' : '/9'}</span>`
       : '');
   renderGauge('g-hunger', state.hunger, 'hunger', '🥫');
   renderGauge('g-thirst', state.thirst, 'thirst', '💧');
@@ -5711,7 +5712,7 @@ function blackout(midFn, holdMs = 500) {
 }
 // 자동 진행 모드 (Day 10+ 해금): 매 게임 내 정시마다 간단한 생존 루틴을 대신 처리
 function runAutoPlay() {
-  if (paused || titleVisible || !opts.autoPlay || state.day < 10) return;
+  if (paused || titleVisible || !opts.autoPlay || (!isZen() && state.day < 10)) return;
   if (state.injury && resHasAll(INJURIES[state.injury.type].cure)) {
     const name = LName(INJURIES[state.injury.type]);
     treatInjury();
@@ -5747,7 +5748,8 @@ function tickTime(dt) {
     state.day++;
     refreshAutoplayLock();
     // Day 10 도달(또는 이미 지난 구세이브 첫 부팅 이후 롤오버): 자동 진행 해금 1회 안내
-    if (state.day >= 10 && !state.autoNoticeShown) { state.autoNoticeShown = true; state.pendingAutoNotice = true; }
+    // 노말/하드: Day 10 도달 시 해금 안내. 무한(zen): 이미 첫날부터 열려 있으므로 첫 아침 롤오버에 안내.
+    if ((isZen() || state.day >= 10) && !state.autoNoticeShown) { state.autoNoticeShown = true; state.pendingAutoNotice = true; }
     processDay();
     reportQueued = true;
     rolledOver = true;
@@ -6417,7 +6419,7 @@ function applyLowSpec() {
 // 자동 진행 체크박스는 index.html 정적 마크업(#opt-autoplay, #autoplay-row)으로 이전됨 (P2-b)
 function refreshAutoplayLock() {
   const cb = $('opt-autoplay');
-  const locked = state.day < 10;
+  const locked = !isZen() && state.day < 10;
   if (cb) cb.disabled = locked;
   const row = $('autoplay-row');
   if (row) row.title = locked ? t('opt.autoplay.locked') : t('opt.autoplay.title');
@@ -6790,7 +6792,7 @@ $('btn-edit').addEventListener('click', () => toggleEditMode());
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
 // P2-b: 자동 진행 토글 버튼 (cam-ctrl) — Day 10 미만이면 잠금 토스트, 아니면 opts.autoPlay 토글 + 체크박스 양방향 동기화
 $('btn-auto').addEventListener('click', () => {
-  if (state.day < 10) { toast(t('auto.locked')); return; }
+  if (!isZen() && state.day < 10) { toast(t('auto.locked')); return; }
   opts.autoPlay = !opts.autoPlay;
   const cb = $('opt-autoplay'); if (cb) cb.checked = opts.autoPlay;
   syncAutoBtn();
@@ -7162,7 +7164,8 @@ function _simDaysInner(n, opt) {
 // 디버그/테스트용 핸들
 window.__shelter = {
   simDays, simReset, expectedLoot,
-  isHard, hardLoot, loadSave, gameConfirm,
+  isHard, isZen, hardLoot, loadSave, gameConfirm,
+  openModeModal, refreshAutoplayLock, runAutoPlay,
   items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather,
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,

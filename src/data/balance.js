@@ -87,6 +87,8 @@ export const BAL = {
 
   /* ── 경제 (processDay 생산/소비 / 제작 / 개조 / 이주) ── */
   economy: {
+    // ♾️ 무한(zen) 모드 시작 물자 증량 — 새 게임 생성 시 mode==='zen'이면 DEFAULT_STATE.res에 가산.
+    zenStart: { food: 6, canned: 8, water: 10, cloth: 4, candle: 4, fuel: 4, material: 4, parts: 2, battery: 2 },
     dailyDirt: 1,          // 일일 청결 감소 기본값 (v0.9.1 2→1)
     foodSpoilPerDay: 1,    // 냉장고 없을 때 신선식품 일일 부패량
     catFeedEvery: 3,       // 고양이 먹이 주기 (일)
