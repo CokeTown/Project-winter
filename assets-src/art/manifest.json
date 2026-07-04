@@ -800,6 +800,16 @@
       "fit": "cover",
       "dest": "assets-src/art/out/icons/ev_thief.png",
       "prompt": "Fresh scattered footprints in snow around the corner of a shelter at dawn, an overturned crate and a torn cloth on the ground, cold pale morning light, no people visible. Cozy pixel art illustration, isometric-leaning cinematic angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "map_paper",
+      "purpose": "탐험 지도 배경 - 생존자의 손때 묻은 종이 지도 (지역 마커를 위에 얹는 UI 바탕)",
+      "w": 1400,
+      "h": 1000,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/map_paper.png",
+      "prompt": "A weathered hand-drawn survivor's paper map of a ruined city region, spread flat, filling the frame. Aged ivory paper with fold creases, burnt corner, coffee stain, drawn in ink and faded colored pencil: a winding main road crossing the map, a river with a broken bridge, and four distinct districts sketched as clusters - small suburban houses (upper left area), dense downtown ruins with tall broken buildings (upper right), a factory zone with smokestacks (lower left), and cramped shanty slums (lower right). Small hand annotations like arrows, X marks, circled areas, tiny warning symbols, a simple compass rose in a corner, dashed travel routes between districts. Muted desaturated palette with warm sepia ink and sparse red-pencil accents, subtle pixel-art grain, readable at a glance. Keep each district cluster visually separated with open paper space between them for UI markers. No text, no letters, no words - symbols and drawings only."
     }
   ]
 }
