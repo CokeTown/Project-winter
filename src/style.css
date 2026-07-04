@@ -267,7 +267,9 @@
   #map-wrap.paper {
     position: relative; user-select: none;
     width: 100%; aspect-ratio: 1400 / 1000;   /* 비율 유지 (1400×1000) */
-    background: url("img/map_paper.png") center / 100% 100% no-repeat;
+    /* 배경 이미지는 JS 인라인으로 — CSS url()은 빌드 후 /assets/ 기준으로 풀려
+       릴리즈(exe file://, 프로덕션)에서 404가 난다 (유저 실증). applyPaperBg와 동일 원칙 */
+    background: #b7a98c center / 100% 100% no-repeat; /* 로드 전 종이톤 폴백 */
     border: 2px solid var(--panel-border); border-radius: 4px;
   }
   .map-pin {

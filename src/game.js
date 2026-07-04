@@ -322,7 +322,7 @@ const stars = (() => {
   scene.add(p); return p;
 })();
 const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(3.2, 16, 12),
-  new THREE.MeshBasicMaterial({ color: 0xe8eef7, fog: false }));
+  new THREE.MeshBasicMaterial({ color: 0xcdd8ea, fog: false })); // 창백한 차가운 달 (붉은 원 신고 대응)
 moonMesh.position.copy(moon.position.clone().normalize().multiplyScalar(115));
 scene.add(moonMesh);
 
@@ -456,7 +456,9 @@ function applyTimeLighting() {
   const wSun = { clear: 1.06, snow: 0.8, rain: 0.55, ash: 0.62, storm: 0.42 }[weather.type] ?? 1;
   moon.intensity *= 1 + (wSun - 1) * dayness;
   hemi.intensity *= 1 + (wSun - 1) * 0.45 * dayness;
-  moonMesh.visible = dayness < 0.35;
+  // 달: 밤/여명에만 노출. 낮(7~18h)엔 dayness 계산과 무관하게 절대 숨긴다 (실기기 신고: 낮 하늘의 붉은 원).
+  // 색은 창백한 차가운 톤(0x9db4d8 계열)으로 고정 — 붉은 여명 하늘과 대비되도록.
+  moonMesh.visible = dayness < 0.35 && (h < 7 || h >= 18);
   updateWindowSkies();
   updateSunShafts();
 }
@@ -1212,6 +1214,24 @@ const SHELTERS = {
         { group: mk(d), pos: [-w / 2 - 0.11, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
         { group: mk(d), pos: [w / 2 + 0.11, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
       ]);
+      // 외형 개성화 (#18): 지붕 방수포 + 고정 로프 + 문짝 스텐실 — 밋밋한 철제 박스 실루엣 깨기
+      {
+        const crand = seededRand(77);
+        // 지붕 위 접힌 방수포 (한쪽으로 쏠려 늘어짐)
+        const tarp = new THREE.Mesh(new THREE.BoxGeometry(w * 0.62, 0.05, d + 0.5), lamb(0x4a5560));
+        tarp.position.set(-w * 0.12, h + 0.03, 0.1); tarp.rotation.z = 0.03; tarp.castShadow = true;
+        roomGroup.add(tarp);
+        const tarp2 = new THREE.Mesh(new THREE.BoxGeometry(w * 0.22, 0.06, d + 0.6), lamb(0x3f4954));
+        tarp2.position.set(-w * 0.32, h + 0.06, 0); tarp2.rotation.z = 0.16; tarp2.castShadow = true; // 접힌 자락
+        roomGroup.add(tarp2);
+        // 고정 로프 (지붕 → 처마)
+        for (const sx of [-w * 0.28, w * 0.05, w * 0.24]) Cyl(roomGroup, 0.015, 0.015, 0.5, 0x2a2620, sx, h - 0.1, d / 2 + 0.08, 4).rotation.x = 0.4;
+        // 문짝 스텐실 (뒷벽 +z 바깥면에 페인트 번호판)
+        B(roomGroup, 0.5, 0.34, 0.02, 0xb8a24a, w * 0.22, 1.5, d / 2 + 0.12);
+        B(roomGroup, 0.42, 0.26, 0.03, 0x2a2b26, w * 0.22, 1.5, d / 2 + 0.13);
+        // 녹 얼룩 몇 점
+        for (let i = 0; i < 3; i++) B(roomGroup, 0.16 + crand() * 0.2, 0.4 + crand() * 0.5, 0.02, 0x6e3e28, -w / 2 + crand() * w, 0.8 + crand() * 1.0, d / 2 + 0.115);
+      }
       blockers = [];
     },
     buildEnv() {
@@ -1793,6 +1813,19 @@ const SHELTERS = {
         { group: mkBusWall(w, 12), pos: [0, 0, d / 2 + 0.09], rotY: Math.PI, normal: new THREE.Vector3(0, 0, 1) },
         { group: mkBusWall(d, 13), pos: [-w / 2 - 0.09, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
       ]);
+      // 외형 개성화 (#18): 지붕 짐칸(방수포 묶음+짐) + 앞유리 위 행선지 롤사인 — 밋밋한 노란 박스 깨기
+      {
+        // 지붕 레일 + 묶인 방수포 짐
+        B(roomGroup, w * 0.9, 0.06, d * 0.9, 0x3a3733, 0, h + 0.03, 0); // 루프 랙 판
+        for (const sx of [-w * 0.35, w * 0.35]) B(roomGroup, 0.05, 0.12, d * 0.9, 0x55504a, sx, h + 0.09, 0); // 레일
+        const bundle = new THREE.Mesh(new THREE.BoxGeometry(w * 0.5, 0.4, d * 0.7), lamb(0x4a5560));
+        bundle.position.set(-w * 0.08, h + 0.24, 0); bundle.rotation.z = 0.02; bundle.castShadow = true; roomGroup.add(bundle);
+        for (const bz of [-d * 0.25, d * 0.25]) B(roomGroup, w * 0.55, 0.03, 0.03, 0x2a2620, -w * 0.08, h + 0.24, bz); // 결속 끈
+        const box = B(roomGroup, 0.6, 0.4, 0.5, 0x6a5a40, w * 0.28, h + 0.24, d * 0.15); box.castShadow = true; // 잡짐 상자
+        // 앞유리 위 행선지 롤사인 (보닛 쪽 +x)
+        B(roomGroup, 0.1, 0.34, d * 0.7, 0x1c1f26, w / 2 + 0.62, 1.15, 0);
+        B(roomGroup, 0.11, 0.24, d * 0.55, 0xc7b25a, w / 2 + 0.63, 1.15, 0);
+      }
       blockers = [];
     },
     buildEnv() {
@@ -1993,6 +2026,21 @@ const SHELTERS = {
         { group: mkGlass(d, 33), pos: [-w / 2 - 0.08, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
         { group: mkGlass(d, 34), pos: [w / 2 + 0.08, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
       ]);
+      // 외형 개성화 (#18): 깨진 지붕 채광창에 덧댄 반투명 비닐 + 이음 각목 + 지붕 능선 골조 — 밋밋한 유리 박스 깨기
+      {
+        // 지붕 능선 골조 (양 처마 → 용마루)
+        B(roomGroup, w + 0.2, 0.08, 0.08, 0xcfc8ba, 0, h + 0.04, 0);
+        for (const sz of [-d / 2, 0, d / 2]) B(roomGroup, w + 0.1, 0.06, 0.06, 0xbfb8aa, 0, h + 0.02, sz);
+        // 찢어진 곳에 덧댄 비닐 패치 2장 (반투명, 살짝 처짐)
+        for (const [px, pz, s] of [[-w * 0.22, d * 0.18, 1.0], [w * 0.26, -d * 0.14, 0.8]]) {
+          const tarp = new THREE.Mesh(new THREE.BoxGeometry(2.0 * s, 0.04, 1.5 * s),
+            wallPhong({ color: 0xcdd8d0, transparent: true, opacity: 0.5 }));
+          tarp.position.set(px, h + 0.06, pz); tarp.rotation.z = 0.06; tarp.rotation.x = -0.04; tarp.castShadow = true;
+          roomGroup.add(tarp);
+          // 고정 각목
+          B(roomGroup, 2.1 * s, 0.05, 0.05, 0x8a6a48, px, h + 0.09, pz - 0.7 * s);
+        }
+      }
       // 고정 텃밭 화단 2개 (뒤쪽)
       const bed = (bx) => {
         const g = new THREE.Group();
@@ -2053,6 +2101,19 @@ const SHELTERS = {
       mill.position.set(-11, gh(-11, -7), -7);
       mill.rotation.y = 0.8;
       envRoot.add(mill);
+      // 월드 소품 증량 (#18): 셸터 옆 타이어 더미 + 드럼통 + 기울어진 표지판 (전부 gh 접지)
+      {
+        const hw = ROOM.w / 2;
+        const px = hw + 2.2, pz = 2.5;
+        const gy = gh(px, pz);
+        for (let i = 0; i < 3; i++) { const ty = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.13, 6, 12), lamb(0x1f1d1a)); ty.rotation.x = Math.PI / 2; ty.position.set(px + (i % 2) * 0.1, gy + 0.14 + i * 0.22, pz); ty.castShadow = true; envRoot.add(ty); }
+        Cyl(envRoot, 0.32, 0.32, 0.85, 0x5c5f52, px + 0.9, gh(px + 0.9, pz - 0.8) + 0.42, pz - 0.8, 9).castShadow = true;
+        const sign = new THREE.Group();
+        Cyl(sign, 0.04, 0.05, 2.0, 0x55504a, 0, 1.0, 0, 5);
+        B(sign, 1.0, 0.6, 0.06, 0x3a5a3a, 0, 1.9, 0);
+        sign.position.set(-hw - 2.0, gh(-hw - 2.0, 1.5), 1.5); sign.rotation.z = 0.16; sign.rotation.y = -0.5;
+        envRoot.add(sign);
+      }
       // 고사목 + 들풀
       const tufts = [];
       for (let i = 0; i < 200; i++) {
@@ -3049,7 +3110,13 @@ function loadShelter(id) {
   despawnCat();
   if (state.cat) spawnCat(); // 고양이는 이사할 때도 함께 간다
   fitZoomForShelter();
+  // 벽 컬링을 로드 시점에 동기로 확정한다 (실기기 신고: 부팅 직후 컨테이너 벽 하나가 사라져 T자로 보이다
+  // 나중에 정상화되던 버그). 원인: 첫 프레임 전 camera.position가 아직 갱신 안 된 상태로 mask가 잘못 잡히고,
+  // 다음 mask 변화(카메라 회전)까지 유지됨. → yaw를 targetYaw로 즉시 스냅 + updateCamera로 카메라 확정 후 컬링.
+  camState.yaw = camState.targetYaw;
   lastWallMask = -1;
+  updateCamera();
+  updateWallCulling();
   shadowDirty();
   updateHud();
   if (typeof syncBgm === 'function') syncBgm();
@@ -3240,6 +3307,8 @@ function openMapModal() {
     <div id="map-wrap" class="paper"></div>
     <div id="map-info" class="rate-line" style="margin-top:8px">${t('map.pick')}</div>`);
   const wrap = $('map-wrap');
+  // 배경은 JS 인라인으로 — CSS url()은 빌드 후 /assets/ 기준 404 (릴리즈 실증, applyPaperBg 원칙)
+  wrap.style.backgroundImage = 'url(img/map_paper.png)';
   // 손그림 종이 지도 위에 4개 파밍 지역 마커를 지구 클러스터 위치에 % 절대 배치 (#47).
   // 좌표는 map_paper.png 위 집/빌딩/공장/판자촌 그림에 맞춰 하네스 스크린샷으로 조정.
   for (const [rid, r] of Object.entries(REGIONS)) {
@@ -4704,6 +4773,55 @@ const SHELTER_MODS = {
   insulationPlus: { name: '강화 단열재', nameEn: 'Reinforced Insulation', emoji: '🧥', cost: { cloth: 7, material: 5, parts: 1 }, desc: '한파 방어 강화 (단열재 위에)', descEn: 'Stronger cold-snap defense (over insulation)', req: 'insulation' },
   bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '🛢️', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
 };
+// 개조가 셸터의 어느 앵커에 붙는지 선언 (ARC-01: 콘텐츠는 테이블).
+// roof=지붕면 브래킷 · eave=처마 홈통+파이프+물통 · wall=외벽 덧댐 · ground=지면(마당) 배치.
+const MOD_MOUNT = {
+  solar: 'roof', raincatch: 'eave', bigraincatch: 'eave',
+  insulation: 'wall', insulationPlus: 'wall', garden: 'ground',
+};
+// 셸터별 설치 앵커 실측 좌표 (buildRoom 지오메트리 기준).
+//  roof:  { y(지붕 상면), cx, cz(지붕 중심), hw, hd(지붕 반폭/반깊이), pitch?(경사지붕이면 +z로 내려가는 기울기 rad) }
+//  eave:  { y(처마 높이), x, z(모서리), dir(파이프가 뻗는 방향 [±1,±1]) }
+//  wall:  { face:'-z'|'+z'|'-x'|'+x', y(벽 높이), len(벽 길이), off(벽 바깥면까지 거리) }
+// 앵커가 없는 셸터의 개조는 addModProp의 폴백(벽 밀착 지면 배치)을 쓴다.
+const SHELTER_MOUNTS = {
+  container: { // 6.4×2.9×2.4 평지붕, 벽 off 0.11
+    roof: { y: 2.42, cx: 0, cz: 0, hw: 3.0, hd: 1.3 },
+    eave: { y: 2.4, x: 3.31, z: 1.45, dir: [1, 1] },
+    wall: { face: '+z', y: 2.4, len: 6.4, off: 1.45 },
+  },
+  bunker: { // 돔 아치 R4.35 — 평지붕 없음. 앞 포치(+z) 위 경사 거치.
+    roof: { y: 2.7, cx: 0, cz: 3.4, hw: 2.4, hd: 0.7 },
+    eave: { y: 3.0, x: 4.25, z: 3.0, dir: [1, 1] },
+  },
+  rooftop: { // 옥탑: 개방 난간 h0.85. 지붕면 없음 — 난간 위 경사 거치.
+    roof: { y: 1.0, cx: 0, cz: 0, hw: 3.6, hd: 2.6 },
+    eave: { y: 0.9, x: 4.75, z: 3.75, dir: [1, 1] },
+  },
+  cabin: { // 10×8×2.7 풀지붕(평평). 벽 off 0.11
+    roof: { y: 2.85, cx: 0, cz: 0, hw: 4.6, hd: 3.6 },
+    eave: { y: 2.7, x: 5.11, z: 4.11, dir: [1, 1] },
+  },
+  bus: { // 6.8×2.4×2.2 평지붕, 상단 띠 2.17. 벽 off 0.09
+    roof: { y: 2.2, cx: 0, cz: 0, hw: 3.1, hd: 1.1 },
+    eave: { y: 2.15, x: 3.49, z: 1.29, dir: [1, 1] },
+    wall: { face: '+z', y: 2.1, len: 6.8, off: 1.29 },
+  },
+  subway: { // 지하 — 지붕/처마 무의미. 뒷벽(-z)에 지면 배치.
+    eave: { y: 0, x: 4.6, z: -2.7, dir: [1, -1] },
+  },
+  greenhouse: { // 9×6×2.4 유리 프레임 상단 y2.4. 벽 off 0.08
+    roof: { y: 2.44, cx: 0, cz: 0, hw: 4.1, hd: 2.6 },
+    eave: { y: 2.4, x: 4.58, z: 3.08, dir: [1, 1] },
+  },
+  ship: { // 개방 갑판 — 선실 벽(-z, 상단 2.5)에 거치.
+    roof: { y: 2.55, cx: 0, cz: -3.5, hw: 4.5, hd: 0.9 },
+    eave: { y: 2.5, x: 4.7, z: -3.0, dir: [1, -1] },
+  },
+  lighthouse: { // 원통 — 랜턴 데크 아래 벽 상단 h2.6. 자체 홈통 존재(raincatch not).
+    roof: { y: 2.9, cx: 0, cz: 0, hw: 2.0, hd: 2.0 },
+  },
+};
 function modAvailable(id, shelterId) {
   const m = SHELTER_MODS[id];
   if (m.only && !m.only.includes(shelterId)) return false;
@@ -4714,14 +4832,111 @@ function modAvailable(id, shelterId) {
 }
 function hasMod(id) { return (state.mods?.[state.current] || []).includes(id); }
 // 설치된 개조의 시각 소품 (roomGroup에 부착 — 셸터 로드 시 재생성)
+// ── 앵커 부착 소품 빌더 (#51) ──
+// 태양광: 지붕면 위 경사 브래킷 프레임 + 패널. roof 앵커의 pitch가 있으면 지붕 각도에 밀착.
+function buildSolarProp(roof) {
+  const g = new THREE.Group();
+  const tilt = -0.42; // 패널 경사 ~24°
+  const legF = 0.12, legB = 0.5; // 앞다리 짧게/뒷다리 길게 → 경사 거치대
+  const pw = Math.min(1.6, roof.hw * 0.9), pd = Math.min(1.1, roof.hd * 1.1);
+  // 브래킷 다리 4개
+  for (const sx of [-1, 1]) {
+    Cyl(g, 0.035, 0.045, legF, 0x55504a, sx * pw * 0.42, legF / 2, pd * 0.5, 5);
+    Cyl(g, 0.035, 0.045, legB, 0x55504a, sx * pw * 0.42, legB / 2, -pd * 0.5, 5);
+  }
+  // 경사 레일 2개
+  for (const sx of [-1, 1]) {
+    const rail = B(g, 0.05, 0.05, pd + 0.1, 0x6a655c, sx * pw * 0.42, (legF + legB) / 2 + 0.02, 0);
+    rail.rotation.x = tilt;
+  }
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(pw + 0.08, 0.04, pd + 0.08), lamb(0x8a8f96));
+  frame.position.set(0, (legF + legB) / 2 + 0.08, 0); frame.rotation.x = tilt; g.add(frame);
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(pw, 0.05, pd), lamb(0x1d2b45));
+  panel.position.set(0, (legF + legB) / 2 + 0.11, 0); panel.rotation.x = tilt;
+  panel.castShadow = true; g.add(panel);
+  // 셀 격자 (읽히는 디테일)
+  for (let i = 1; i < 3; i++) B(g, pw, 0.055, 0.015, 0x2f4468, 0, (legF + legB) / 2 + 0.115, -pd / 2 + i * pd / 3).rotation.x = tilt;
+  g.position.set(roof.cx, roof.y, roof.cz);
+  if (roof.pitch) g.rotation.x = roof.pitch;
+  roomGroup.add(g);
+}
+// 빗물받이: 처마 홈통(가는 박스) + 모서리 세로 파이프 + 지면 물통. big이면 홈통 2변 + 큰 물통.
+function buildRainProp(eave, big) {
+  const g = new THREE.Group();
+  const [dx, dz] = eave.dir;
+  const gutMat = 0x6a7076;
+  // 홈통: 모서리에서 안쪽으로 뻗는 가로 박스 (처마 라인)
+  const gutLen = big ? 3.4 : 2.2;
+  const gutA = B(g, 0.12, 0.1, gutLen, gutMat, eave.x, eave.y - 0.05, eave.z - dz * gutLen / 2);
+  gutA.castShadow = true;
+  if (big) {
+    const gutB = B(g, gutLen, 0.1, 0.12, gutMat, eave.x - dx * gutLen / 2, eave.y - 0.05, eave.z);
+    gutB.castShadow = true;
+  }
+  // 세로 파이프: 처마 모서리 → 지면
+  Cyl(g, 0.055, 0.055, eave.y, gutMat, eave.x, eave.y / 2, eave.z, 6);
+  // 물통 (모서리 바로 아래)
+  const br = big ? 0.44 : 0.32, bh = big ? 0.95 : 0.66;
+  const barrel = Cyl(g, br, br * 0.9, bh, big ? 0x4a6a5c : 0x5a7a8c, eave.x, bh / 2, eave.z, 12);
+  barrel.castShadow = true;
+  B(g, br * 1.5, 0.04, br * 1.5, 0x3a4a55, eave.x, bh + 0.02, eave.z);
+  roomGroup.add(g);
+}
+// 단열재: 외벽면에 덧댄 패널 3~4장 (벽보다 밝은 회백, 두께감 +0.06, 이음 라인). plus면 모서리 금속 몰딩.
+function buildInsulationProp(wall, plus) {
+  const g = new THREE.Group();
+  const n = 4, gap = 0.03, pw = (wall.len - gap * (n + 1)) / n;
+  const off = wall.off + 0.03;
+  const panels = [];
+  for (let i = 0; i < n; i++) {
+    const lx = -wall.len / 2 + gap + pw / 2 + i * (pw + gap);
+    panels.push({ lx, w: pw });
+  }
+  const ph = wall.y - 0.1;
+  const baseCol = plus ? 0xc4c5bb : 0xb2b0a4;
+  panels.forEach(({ lx, w: pwi }, i) => {
+    // 패널마다 미세하게 다른 명도 → 낱장 덧댐이 읽힌다
+    const shadeMul = 1 - (i % 2) * 0.08;
+    const p = new THREE.Mesh(new THREE.BoxGeometry(pwi, ph, 0.06), wallPhong({ color: shade(baseCol, shadeMul) }));
+    p.position.set(lx, ph / 2 + 0.05, 0); p.castShadow = p.receiveShadow = true; g.add(p);
+    // 이음 홈 (패널 좌측 어두운 세로선) — base/plus 공통
+    B(g, 0.035, ph, 0.075, plus ? 0x8a8a80 : 0x76746a, lx - pwi / 2 - gap / 2, ph / 2 + 0.05, 0);
+  });
+  // 하단 마감 레일 (벽 바깥으로 덧댄 두께감)
+  B(g, wall.len, 0.09, 0.08, shade(baseCol, 0.82), 0, 0.09, 0.01);
+  if (plus) {
+    // 모서리 금속 몰딩 (좌우 세로 + 상단 가로)
+    B(g, 0.09, wall.y, 0.09, 0x9a9e9a, -wall.len / 2, wall.y / 2, 0.02);
+    B(g, 0.09, wall.y, 0.09, 0x9a9e9a, wall.len / 2, wall.y / 2, 0.02);
+    B(g, wall.len, 0.09, 0.09, 0x9a9e9a, 0, wall.y, 0.02);
+  }
+  // face별 위치/회전
+  const rot = { '-z': 0, '+z': Math.PI, '-x': Math.PI / 2, '+x': -Math.PI / 2 };
+  const pos = { '-z': [0, 0, -off], '+z': [0, 0, off], '-x': [-off, 0, 0], '+x': [off, 0, 0] };
+  g.rotation.y = rot[wall.face] ?? 0;
+  g.position.set(...(pos[wall.face] ?? [0, 0, off]));
+  roomGroup.add(g);
+}
 function addModProp(id) {
   const { w, d } = ROOM;
-  if (id === 'raincatch') {
-    const barrel = Cyl(roomGroup, 0.32, 0.28, 0.66, 0x5a7a8c, -w / 2 - 0.55, 0.33, d / 2 + 0.4, 10);
-    barrel.castShadow = true;
-    B(roomGroup, 0.46, 0.04, 0.46, 0x3a4a55, -w / 2 - 0.55, 0.68, d / 2 + 0.4);
-    Cyl(roomGroup, 0.05, 0.05, ROOM.h * 0.8, 0x6a7076, -w / 2 - 0.42, ROOM.h * 0.4, d / 2 + 0.28, 6);
-  } else if (id === 'garden') {
+  const mounts = SHELTER_MOUNTS[state.current] || {};
+  const type = MOD_MOUNT[id];
+  if (id === 'solar') {
+    if (mounts.roof) return buildSolarProp(mounts.roof);
+    // 폴백: 벽에 최대한 밀착한 지면 경사 거치
+    return buildSolarProp({ y: 0, cx: w / 2 - 0.5, cz: 0, hw: 1.6, hd: 1.0 });
+  }
+  if (id === 'raincatch' || id === 'bigraincatch') {
+    const big = id === 'bigraincatch';
+    if (mounts.eave) return buildRainProp(mounts.eave, big);
+    return buildRainProp({ y: ROOM.h * 0.9, x: w / 2 + 0.4, z: d / 2 + 0.4, dir: [1, 1] }, big);
+  }
+  if (id === 'insulation' || id === 'insulationPlus') {
+    const plus = id === 'insulationPlus';
+    if (mounts.wall) return buildInsulationProp(mounts.wall, plus);
+    return buildInsulationProp({ face: '+z', y: ROOM.h, len: w, off: d / 2 + 0.12 }, plus);
+  }
+  if (id === 'garden') {
     const g = new THREE.Group();
     B(g, 1.8, 0.3, 0.7, 0x6a4f33, 0, 0.15, 0);
     B(g, 1.7, 0.08, 0.6, 0x3a2f22, 0, 0.32, 0);
@@ -4734,26 +4949,12 @@ function addModProp(id) {
     }
     g.position.set(w / 2 + 1.1, 0, -d / 2 + 1.2);
     roomGroup.add(g);
-  } else if (id === 'solar') {
-    const g = new THREE.Group();
-    Cyl(g, 0.06, 0.08, 1.6, 0x55504a, 0, 0.8, 0, 6);
-    const panel = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.06, 0.9), lamb(0x1d2b45));
-    panel.position.y = 1.7;
-    panel.rotation.z = -0.5;
-    panel.castShadow = true;
-    g.add(panel);
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.04, 0.98), lamb(0x8a8f96));
-    frame.position.y = 1.67;
-    frame.rotation.z = -0.5;
-    g.add(frame);
-    g.position.set(w / 2 + 0.9, 0, d / 2 + 0.7);
-    roomGroup.add(g);
   } else if (id === 'shelf') {
     B(roomGroup, 0.06, 1.4, ROOM.d * 0.7, 0x77543a, -w / 2 + 0.12, 0.7, 0);
     B(roomGroup, 0.4, 0.05, ROOM.d * 0.7, 0x8a6a48, -w / 2 + 0.28, 1.1, 0);
     B(roomGroup, 0.4, 0.05, ROOM.d * 0.7, 0x8a6a48, -w / 2 + 0.28, 1.7, 0);
   }
-  // insulation / roof: 시각 변화 없음 (내부 보강)
+  // roof(지붕 보강)/extension: 시각 소품 없음 (구조 변경 개조)
 }
 function buildModProps() {
   for (const id of (state.mods?.[state.current] || [])) addModProp(id);
@@ -5899,6 +6100,10 @@ function openModeModal(n) {
     if (fresh.mode === 'zen') {
       for (const [rid, n2] of Object.entries(BAL.economy.zenStart || {})) fresh.res[rid] = (fresh.res[rid] || 0) + n2;
     }
+    // 새 게임은 자동 진행이 '해금만' 된 상태로 시작 — 기본 OFF. (실기기 신고: zen이 시작하자마자 자동 돌입)
+    // opts는 전역 지속값이라 이전 게임에서 켰던 autoPlay가 새 슬롯에 그대로 새지 않게 여기서 끈다.
+    // 유저는 첫 아침 해금 팝업('지금 켠다')으로 직접 선택한다.
+    opts.autoPlay = false;
     localStorage.setItem(slotKey(n), JSON.stringify({ state: fresh, opts }));
     localStorage.setItem('project-shelter-lastslot', String(n));
     sessionStorage.setItem('ps-intro', '1');
@@ -7789,7 +7994,9 @@ function updateUiScale() {
   let s = Math.min(innerWidth / 1400, innerHeight / 860);
   // 초소형 창(위젯 미니 480x300 등): 최소 가독 폰트 하한을 고집하면 UI가 화면을 넘어버린다.
   // 기준(960x600) 미만에선 하한을 창 크기 비례로 풀어 "작아도 다 보이는" 쪽을 택한다.
-  const tiny = innerWidth < 960 || innerHeight < 600;
+  // 단, 모바일은 CSS폭이 원래 좁다(세로 ~412px) — 미니창 취급하면 UI가 쪼그라든다(v0.9.5 리그레션).
+  // 모바일은 항상 기존 하한(1.0) 경로: 폰 비율은 폰 문법대로.
+  const tiny = !isMobileEnv && (innerWidth < 960 || innerHeight < 600);
   s = THREE.MathUtils.clamp(s, tiny ? 0.35 : 0.85, 2.1);
   if (!tiny) {
     // 스케일 후 기준 폰트(11px)가 최소 가독 크기(11px) 밑으로 내려가지 않게 보정
