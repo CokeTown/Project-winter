@@ -370,6 +370,436 @@
       "fit": "cover",
       "dest": "assets-src/art/out/tip_strip.png",
       "prompt": "A single WIDE horizontal strip of very old ruled notebook paper, hand-torn along all four edges with rough fibrous irregular tears (no straight cut sides), centered on a fully transparent background. The strip is much wider than tall, filling almost the full width of the frame, roughly 3:1 aspect, like a long ribbon torn across a page. Pale desaturated ivory and light gray-beige paper (NOT orange, low saturation), fine visible paper fibers, one or two faint washed-out blue-gray ruled lines running along its length, a soft fold crease, small age spots near one end. Keep the central band clean and even so a line or two of tip text can sit on it. Realistic aged-paper material, soft even light, no text, no handwriting. Background fully transparent, not white."
+    },
+    {
+      "id": "icon_furn_bed",
+      "purpose": "가구 아이콘: 침대",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_bed.png",
+      "prompt": "a simple wooden-frame bed with a patched quilt and two pillows. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_sofa",
+      "purpose": "가구 아이콘: 소파",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_sofa.png",
+      "prompt": "a worn two-seat fabric sofa with side armrests. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_chair",
+      "purpose": "가구 아이콘: 의자",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_chair.png",
+      "prompt": "a plain wooden chair. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_table",
+      "purpose": "가구 아이콘: 테이블",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_table.png",
+      "prompt": "a sturdy wooden table. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_dresser",
+      "purpose": "가구 아이콘: 서랍장",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_dresser.png",
+      "prompt": "a wooden dresser with three drawers. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_bookshelf",
+      "purpose": "가구 아이콘: 책장",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_bookshelf.png",
+      "prompt": "a tall wooden bookshelf filled with salvaged books. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_rug",
+      "purpose": "가구 아이콘: 러그",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_rug.png",
+      "prompt": "a rectangular layered area rug seen at an angle. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_lamp",
+      "purpose": "가구 아이콘: 스탠드 조명",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_lamp.png",
+      "prompt": "a floor lamp with a warm glowing fabric shade. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_plant",
+      "purpose": "가구 아이콘: 화분",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_plant.png",
+      "prompt": "a leafy potted plant in a clay pot. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_crate",
+      "purpose": "가구 아이콘: 나무상자",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_crate.png",
+      "prompt": "a rough wooden storage crate. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_radio",
+      "purpose": "가구 아이콘: 라디오",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_radio.png",
+      "prompt": "an old portable radio with a dial and antenna. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_candle",
+      "purpose": "가구 아이콘: 캔들 스툴",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_candle.png",
+      "prompt": "a candle stool: a small wooden stool with a lit candle in a jar on top. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_fridge",
+      "purpose": "가구 아이콘: 냉장고",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_fridge.png",
+      "prompt": "a compact salvaged refrigerator with a dented door. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_purifier",
+      "purpose": "가구 아이콘: 정수기",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_purifier.png",
+      "prompt": "a water purifier: a metal tank with a spout and small filter pipes. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_generator",
+      "purpose": "가구 아이콘: 발전기",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_generator.png",
+      "prompt": "a portable fuel generator with a pull cord and small exhaust. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_stove",
+      "purpose": "가구 아이콘: 장작 난로",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_stove.png",
+      "prompt": "a cast-iron wood stove with a warm fire glowing through its window and a short chimney pipe. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_cushion",
+      "purpose": "가구 아이콘: 방석",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_cushion.png",
+      "prompt": "a floor cushion with stitched cover. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_teatable",
+      "purpose": "가구 아이콘: 찻상",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_teatable.png",
+      "prompt": "a low tea table with a small teapot and cup. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_bookstack",
+      "purpose": "가구 아이콘: 책 더미",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_bookstack.png",
+      "prompt": "a book stack as a cozy survival-shelter furnishing. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_clock",
+      "purpose": "가구 아이콘: 괘종시계",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_clock.png",
+      "prompt": "a tall grandfather clock with a brass pendulum. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_lantern",
+      "purpose": "가구 아이콘: 걸이 랜턴",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_lantern.png",
+      "prompt": "a hanging lantern as a cozy survival-shelter furnishing. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_heater",
+      "purpose": "가구 아이콘: 온풍기",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_heater.png",
+      "prompt": "a boxy fuel space heater with a warm orange glow grille. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_autopurifier",
+      "purpose": "가구 아이콘: 자동 급수기",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_autopurifier.png",
+      "prompt": "an automatic water purifier: a tall tank with tubes, a small pump and an indicator light. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_shelter_container",
+      "purpose": "셸터 아이콘: 버려진 컨테이너",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_shelter_container.png",
+      "prompt": "a single rusty shipping container home with a small stovepipe, standing in wasteland. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_shelter_bunker",
+      "purpose": "셸터 아이콘: 돔 벙커",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_shelter_bunker.png",
+      "prompt": "a small concrete dome bunker half-buried in earth with a heavy hatch door. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_shelter_rooftop",
+      "purpose": "셸터 아이콘: 도시 옥탑방",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_shelter_rooftop.png",
+      "prompt": "a tiny rooftop shack on top of a ruined city building with a water tank. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_shelter_cabin",
+      "purpose": "셸터 아이콘: 숲속 오두막",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_shelter_cabin.png",
+      "prompt": "a small log cabin with a chimney at the edge of a bare forest. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_shelter_bus",
+      "purpose": "셸터 아이콘: 버려진 스쿨버스",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_shelter_bus.png",
+      "prompt": "an abandoned yellow school bus converted into a shelter, curtains in windows. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_shelter_subway",
+      "purpose": "셸터 아이콘: 지하철 역사",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_shelter_subway.png",
+      "prompt": "a subway station entrance stairway leading underground, sandbags around it. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_shelter_greenhouse",
+      "purpose": "셸터 아이콘: 온실",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_shelter_greenhouse.png",
+      "prompt": "a small glass greenhouse with plants growing inside, some panes cracked. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_shelter_ship",
+      "purpose": "셸터 아이콘: 좌초된 여객선",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_shelter_ship.png",
+      "prompt": "a beached small ferry ship listing slightly, rust streaks on the hull. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_shelter_lighthouse",
+      "purpose": "셸터 아이콘: 등대",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_shelter_lighthouse.png",
+      "prompt": "a weathered lighthouse tower with a faint warm light at the top. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_region_residential",
+      "purpose": "지역 아이콘: 주거지역",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_region_residential.png",
+      "prompt": "a row of small ruined suburban houses, overgrown yards. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_region_commercial",
+      "purpose": "지역 아이콘: 상업지구",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_region_commercial.png",
+      "prompt": "a ruined shopping street with broken storefront signs and a shopping cart. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_region_industrial",
+      "purpose": "지역 아이콘: 공업지대",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_region_industrial.png",
+      "prompt": "a derelict factory with smokestacks and rusted pipes. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_region_slums",
+      "purpose": "지역 아이콘: 슬럼가",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_region_slums.png",
+      "prompt": "densely stacked makeshift shanty structures with tarps and scrap walls. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_weather_clear",
+      "purpose": "날씨 아이콘: 맑음",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_weather_clear.png",
+      "prompt": "a bright sun with soft rays breaking through two small clouds. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_weather_snow",
+      "purpose": "날씨 아이콘: 눈",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_weather_snow.png",
+      "prompt": "a gray cloud dropping large pixel snowflakes. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_weather_rain",
+      "purpose": "날씨 아이콘: 비",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_weather_rain.png",
+      "prompt": "a dark cloud with slanted rain streaks. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_weather_storm",
+      "purpose": "날씨 아이콘: 폭우",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_weather_storm.png",
+      "prompt": "a heavy storm cloud with dense rain and one lightning bolt. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_weather_ash",
+      "purpose": "날씨 아이콘: 재",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_weather_ash.png",
+      "prompt": "a murky brown-gray cloud drifting flakes of ash downward. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "ev_wanderer",
+      "purpose": "이벤트 일러스트: 떠돌이 생존자",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_wanderer.png",
+      "prompt": "A weary wanderer in a heavy patched coat and scarf standing at the door of a small shelter at dusk, holding a dim lantern, snow drifting, the shelter's warm light spilling onto their face. Cozy pixel art illustration, isometric-leaning cinematic angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_thief",
+      "purpose": "이벤트 일러스트: 침입의 흔적",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_thief.png",
+      "prompt": "Fresh scattered footprints in snow around the corner of a shelter at dawn, an overturned crate and a torn cloth on the ground, cold pale morning light, no people visible. Cozy pixel art illustration, isometric-leaning cinematic angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
     }
   ]
 }
