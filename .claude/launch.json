@@ -12,6 +12,12 @@
       "runtimeExecutable": "C:\\Users\\mhdmj\\AppData\\Local\\node-portable\\node.exe",
       "runtimeArgs": ["node_modules/vite/bin/vite.js", "--port", "8431", "--strictPort"],
       "port": 8431
+    },
+    {
+      "name": "shelter-dist",
+      "runtimeExecutable": "C:\\Users\\mhdmj\\AppData\\Local\\node-portable\\node.exe",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "preview", "--port", "8433", "--strictPort"],
+      "port": 8433
     }
   ]
 }

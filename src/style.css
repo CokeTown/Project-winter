@@ -481,6 +481,9 @@
   /* ── v1.9: 타이틀 = 내 집 배경 (패널 전부 숨김) ── */
   body.title-mode .panel, body.title-mode #cam-ctrl, body.title-mode #toolbar,
   body.title-mode #pause-ind, body.title-mode #btn-cancel-place { display: none !important; }
+  /* [치명 버그 수정 v0.9.1] #modal도 .panel이라 위 규칙에 걸려, 타이틀에서 여는
+     새 게임/불러오기/도움말 창이 전 플랫폼에서 투명해지던 문제 — 모달은 예외 처리 */
+  body.title-mode #modal-back .panel { display: block !important; }
   body.title-mode #title-screen {
     background: radial-gradient(ellipse at 50% 62%, rgba(10,12,17,0.08) 0%, rgba(8,9,13,0.66) 88%);
   }
