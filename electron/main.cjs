@@ -106,13 +106,38 @@ ipcMain.on('display:set', (evt, cfg) => {
   }
 });
 
-app.whenReady().then(() => {
-  createWindow();
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+// ── 단일 인스턴스 강제 (#48) ──
+// 이미 실행 중이면 두 번째 인스턴스는 즉시 종료하고, 기존 창을 복원·포커스한다.
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWin) {
+      if (mainWin.isMinimized()) mainWin.restore();
+      mainWin.show();
+      mainWin.focus();
+    }
   });
-});
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
+  app.whenReady().then(() => {
+    createWindow();
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
+
+  // 종료 직전 위젯 모드 상태(항상 위/클릭 통과)를 해제해 유령 오버레이가 남지 않게 한다.
+  app.on('before-quit', () => {
+    if (mainWin && !mainWin.isDestroyed()) {
+      try {
+        mainWin.setAlwaysOnTop(false);
+        mainWin.setIgnoreMouseEvents(false);
+      } catch (e) {}
+    }
+  });
+}

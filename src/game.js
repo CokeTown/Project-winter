@@ -1589,7 +1589,7 @@ const SHELTERS = {
       }
       envRoot.add(new THREE.Mesh(mergeGeometries(farGeos), vcLambert));
       // 아포칼립스 소품: 버려진 차 + 기울어진 전신주 줄
-      buildCarWreck(envRoot, -9.5, 4.5, 1.2, rand);
+      buildCarWreck(envRoot, -9.5, 4.5, 1.2, rand, gh(-9.5, 4.5)); // 지형 접지 (공중부양 수정)
       buildPowerPole(envRoot, 8.5, 7.5, 0.18, gh(8.5, 7.5));
       buildPowerPole(envRoot, 13.5, 10.5, -0.12, gh(13.5, 10.5));
       // 무너진 이웃 오두막 (전소된 잔해)
@@ -1757,9 +1757,10 @@ const SHELTERS = {
       road.receiveShadow = true;
       for (let i = 0; i < 22; i++) B(envRoot, 1.4, 0.13, 0.16, 0x8a8a72, -44 + i * 4.2, GY + 0.07, 0);
       // 도로 위 폐차 행렬 + 표지판
-      buildCarWreck(envRoot, -9, 1.8, 0.15, rand);
-      buildCarWreck(envRoot, -15.5, -1.6, -2.9, rand);
-      buildCarWreck(envRoot, 12, -1.9, 3.05, rand);
+      // 폐차 행렬은 도로 위에 서 있다 — 도로 상면(GY+0.11)에 접지 (공중부양 수정)
+      buildCarWreck(envRoot, -9, 1.8, 0.15, rand, GY + 0.11);
+      buildCarWreck(envRoot, -15.5, -1.6, -2.9, rand, GY + 0.11);
+      buildCarWreck(envRoot, 12, -1.9, 3.05, rand, GY + 0.11);
       const sign = new THREE.Group();
       Cyl(sign, 0.05, 0.06, 3.2, 0x55504a, 0, 1.6, 0, 6);
       B(sign, 2.2, 1.0, 0.08, 0x2a4a35, 0, 3.2, 0);
@@ -3599,10 +3600,37 @@ function normalizeCatGlb(root) {
 // 단위: PX = 0.02 월드유닛/px (MC 원본 텍스처 px 그대로 치수 대입)
 //   머리 5×4×5px, 몸통 4×4×12px(낮고 긴 수평 박스), 다리 2×6×2px×4, 꼬리 1×1×6px×2마디
 //   배색 = 치즈 태비: 몸통 주황 / 등 줄무늬 진주황(파묻힘) / 주둥이·가슴·배·발·꼬리끝 흰색 / 눈 초록+검은 동공
+// 마인크래프트 얼룩 고양이식 얼굴 — 정면 면에 픽셀 페인팅(별도 눈 지오메트리 대신).
+//   바탕은 털색(fur)과 동일해 박스 이음새가 안 보이고, 눈은 흰 공막 없이 진초록+검정 세로 픽셀 + 위 하이라이트.
+//   16×16 그리드에 그려 NearestFilter로 픽셀 유지.
+let _catFaceTex = null;
+function catFaceTex() {
+  if (_catFaceTex) return _catFaceTex;
+  _catFaceTex = makeCanvasTex((g2, w, h) => {
+    const cell = w / 16;          // 16px 얼굴
+    const px = (cx, cy, cw, ch, col) => { g2.fillStyle = col; g2.fillRect(cx * cell, cy * cell, cw * cell, ch * cell); };
+    px(0, 0, 16, 16, '#df9038');  // 바탕 = 털색
+    // 주둥이 흰 패치 (코 지오메트리 주변 밝게 — MC 얼룩 고양이 느낌)
+    px(5, 10, 6, 4, '#f2eee4');
+    // 양 눈 (간격 넓게: 좌 x=3, 우 x=11), 폭 2px
+    const eyeDark = '#243d1c', eyeHi = '#6fae3e';
+    for (const ex of [3, 11]) {
+      px(ex, 7, 2, 3, eyeDark);   // 눈 본체 (진초록/검정 톤)
+      px(ex, 6, 2, 1, eyeHi);     // 위쪽 1px 하이라이트
+      px(ex, 8, 1, 1, '#0d0b09'); // 세로 동공 느낌의 검정 픽셀
+    }
+    // 콧등 아래 입 라인 (다크 1px, 코 지오메트리 아래쪽)
+    px(6, 12, 4, 1, '#5a3a24');
+    px(7, 13, 1, 1, '#5a3a24'); px(8, 13, 1, 1, '#5a3a24');
+  }, 16, 16);
+  _catFaceTex.repeat.set(1, 1);
+  _catFaceTex.wrapS = _catFaceTex.wrapT = THREE.ClampToEdgeWrapping;
+  return _catFaceTex;
+}
 function buildCatMesh() {
   const g = new THREE.Group();
   const PX = 0.02;
-  const fur = 0xdf9038, stripe = 0xb96f24, white = 0xf2eee4, pink = 0xcf9088, eyeGreen = 0x5daa4d, pupil = 0x1a1712;
+  const fur = 0xdf9038, stripe = 0xb96f24, white = 0xf2eee4, pink = 0xcf9088;
   const P = {};
   // ── 몸통 (피벗 = 엉덩이/골반 관절, 4×4×12px 낮고 긴 수평 박스) — 앉기/기지개 때 이 지점을 축으로 기운다
   //   기립 시 어깨~골반 높이 0.13 부근에 박스 중심을 두고, 몸이 앞(+z)으로 길게 뻗도록 배치
@@ -3619,13 +3647,18 @@ function buildCatMesh() {
   const head = new THREE.Group();
   head.position.set(0, 1.5 * PX, 12 * PX + 2.5 * PX);   // 몸통 앞면(6+6=12px)에서 머리 반경(2.5px)만큼 더 앞
   body.add(head); P.head = head;
-  B(head, 5 * PX, 4 * PX, 5 * PX, fur, 0, 0, 0);                     // 두상
-  B(head, 3 * PX, 2 * PX, 1 * PX, white, 0, -1.2 * PX, 2.5 * PX + 0.5 * PX); // 주둥이 (흰색, 얼굴 앞면 밖으로 살짝)
-  B(head, 0.8 * PX, 0.6 * PX, 0.3 * PX, pink, 0, -0.2 * PX, 2.5 * PX + 1 * PX); // 코 (분홍)
-  B(head, 1 * PX, 1 * PX, 0.3 * PX, eyeGreen, -1.6 * PX, 0.6 * PX, 2.5 * PX + 0.16 * PX); // 눈(초록) 좌
-  B(head, 1 * PX, 1 * PX, 0.3 * PX, eyeGreen, 1.6 * PX, 0.6 * PX, 2.5 * PX + 0.16 * PX);  // 눈(초록) 우
-  B(head, 0.45 * PX, 0.45 * PX, 0.32 * PX, pupil, -1.6 * PX, 0.5 * PX, 2.5 * PX + 0.17 * PX); // 동공 좌
-  B(head, 0.45 * PX, 0.45 * PX, 0.32 * PX, pupil, 1.6 * PX, 0.5 * PX, 2.5 * PX + 0.17 * PX);  // 동공 우
+  // 두상 — 정면(+Z=BoxGeometry 4번 면)만 얼굴 텍스처, 나머지 5면은 털색. 눈은 텍스처 픽셀로 표현.
+  {
+    const furMat = lamb(fur);
+    const faceMat = new THREE.MeshLambertMaterial({ map: catFaceTex() });
+    // BoxGeometry 면 순서: [+X, -X, +Y, -Y, +Z, -Z] — 고양이는 +Z를 바라본다
+    const headMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(5 * PX, 4 * PX, 5 * PX),
+      [furMat, furMat, furMat, furMat, faceMat, furMat]);
+    headMesh.castShadow = true;
+    head.add(headMesh);
+  }
+  B(head, 0.8 * PX, 0.6 * PX, 0.3 * PX, pink, 0, -0.2 * PX, 2.5 * PX + 1 * PX); // 튀어나온 코 (분홍, 디렉터 승인 유지)
   // ── 귀 (1×2×1px 두 개, 머리 위 모서리)
   const earL = new THREE.Group(); earL.position.set(-1.7 * PX, 2 * PX + 1 * PX, -1.7 * PX); head.add(earL); P.earL = earL;
   const earR = new THREE.Group(); earR.position.set(1.7 * PX, 2 * PX + 1 * PX, -1.7 * PX); head.add(earR); P.earR = earR;
@@ -3672,12 +3705,18 @@ const CAT_POSES = {
   //   앞다리는 거의 수직 유지(legF≈0, 몸이 들려도 어깨 피벗은 고정이라 다리는 그대로 뻗은 자세로 보임),
   //   뒷다리는 -1.5rad 로 완전히 접어 배(들린 엉덩이) 밑으로 숨김(다리 끝 y≈0.11, z가 몸쪽으로 당겨짐).
   //   (라이브 튜닝 확정 2026-07-04: 57°는 가슴이 앞다리에서 벗어나 공중부양으로 보임 → 35°)
-  sit:     { by: 0.045, brx: -0.62, hrx: 0.45, legF: 0,     legB: -1.5,  t1: -0.85 },
+  //   (v0.9.5 재수술: brx -0.62(35°)는 긴 몸통 박스를 사선 판자처럼 만들고 고정 다리와 어깨가 분리돼 "박살"으로 보임 →
+  //    brx -0.30(17°)로 완화해 몸통을 거의 수평 로프 실루엣으로, 앞다리 소폭 접힘(-0.3)으로 앞발 앞짚음, by 소폭 상향)
+  sit:     { by: 0.06,  brx: -0.30, hrx: 0.20, legF: -0.3,  legB: -1.5,  t1: -0.85 },
   // sleep: 식빵 — 몸통 수평(brx=0)으로 낮춰 배가 바닥에 닿게(by=0.03 → 바닥면 y≈-0.01, 살짝 파묻혀 접지감),
   //   네 다리 전부 -1.5rad 로 접어 몸 밑에 숨김(legF=legB), 머리는 살짝 숙임(hrx 양수)
   sleep:   { by: 0.03,  brx: 0,     hrx: 0.5,  legF: -1.5,  legB: -1.5,  t1: -1.3 },
-  // groom: sit과 같은 앉음 실루엣 위에 오버레이(updateCat의 headRX 사인파/앞발 들기)가 얹힌다
-  groom:   { by: 0.045, brx: -0.62, hrx: 0.55, legF: 0,     legB: -1.5,  t1: -0.85 },
+  // sprawl: 배 까고 드러눕기 — 몸통을 Z축으로 ~90°(brz) 굴려 옆으로 눕고 배가 화면 쪽을 향한다.
+  //   그룹을 옆으로 굴리면 몸 반지름(2px=0.04)만큼 중심이 내려가 바닥에 파묻히므로 by를 몸 반지름만큼 올려 접지.
+  //   네 다리는 몸에서 느슨하게 뻗침(legF/legB 소폭 +), 꼬리 편안히 늘어뜨림. (brz 필드 신설)
+  sprawl:  { by: 0.07,  brx: 0,     hrx: 0.15, legF: 0.35,  legB: 0.45,  t1: -0.6,  brz: 1.45 },
+  // groom: sit과 같은 앉음 실루엣 위에 오버레이(updateCat의 headRX 사인파/앞발 들기)가 얹힌다 (sit 재수술에 맞춰 완화)
+  groom:   { by: 0.06,  brx: -0.30, hrx: 0.30, legF: -0.3,  legB: -1.5,  t1: -0.85 },
   // stretch: 다운독 — brx=+0.6, by=0.17 → 가슴쪽(z=0.24) 바닥 코너 y=0(접지), 엉덩이쪽 y≈0.14(번쩍 들림)
   //   앞다리는 앞으로 쭉 뻗고(legF 음수, 접힘 부호를 반대로 써 전방으로 펴짐), 뒷다리는 곧게 편 채 지지(legB≈0)
   stretch: { by: 0.17,  brx: 0.6,   hrx: -0.4, legF: -0.9,  legB: 0.1,   t1: 0.35 },
@@ -3686,11 +3725,24 @@ const CAT_POSES = {
   // hop: 가구 오르내리는 점프 중 — 네 다리 웅크림 + 꼬리 들어 균형
   hop:     { by: 0.13,  brx: -0.12, hrx: -0.1, legF: -0.85, legB: -0.85, t1: 0.35 },
 };
+// 지면(baseY≈0)에서 (x,z)가 가구 풋프린트와 겹치는지 — 회피용 저비용 AABB 전수 검사.
+//   noCollide/support(상판 위 소품)/얹힘 가구는 통과 허용. 고양이 몸통 반경 여유 0.14.
+function catPointBlocked(x, z, baseY) {
+  if ((baseY || 0) > 0.12) return false; // 가구 위(퍼치)에서는 회피 안 함
+  const PAD = 0.18;  // 고양이 몸통 반폭 여유 (검증 하네스의 판정폭 0.16보다 크게 잡아 겹침 0 보장)
+  for (const i of items) {
+    if (DEFS[i.defId].noCollide || i.support) continue;
+    if ((i.y || 0) > 0.12) continue; // 상판 위에 얹힌 소품은 바닥 이동에 방해 안 됨
+    const fp = footprintOf(i);
+    if (Math.abs(x - i.x) < fp.w / 2 + PAD && Math.abs(z - i.z) < fp.d / 2 + PAD) return true;
+  }
+  return false;
+}
 function pickNextCatMode(c) {
   const roll = Math.random();
   if (roll < 0.34) { c.tgt = catFreeSpot(); c.mode = 'walk'; return; }
   if (roll < 0.53) { c.mode = 'groom'; c.timer = 5 + Math.random() * 5; }
-  else if (roll < 0.68) { c.mode = 'sleep'; c.timer = 25 + Math.random() * 35; }
+  else if (roll < 0.68) { c.mode = Math.random() < 0.6 ? 'sprawl' : 'sleep'; c.timer = 25 + Math.random() * 35; } // 취침: 배 까고 드러눕기(sprawl) 6 : 식빵(sleep) 4
   else if (roll < 0.8) { c.mode = 'stretch'; c.timer = 2.2; }
   else if (roll < 0.9) { c.mode = 'play'; c.timer = 3.5 + Math.random() * 2; }
   else { c.mode = 'sit'; c.timer = 8 + Math.random() * 14; }
@@ -3813,13 +3865,41 @@ function updateCat(t, dt) {
     } else {
       c.gait += dt * 10;
       stride = Math.sin(c.gait) * 0.65;
-      c.g.position.x += dx / dist * 0.5 * dt;
-      c.g.position.z += dz / dist * 0.5 * dt;
+      // ── 장애물 회피: 이번 스텝의 도착 지점(그리고 그 조금 앞)이 가구 풋프린트와 겹치면 진행각을 틀어 우회.
+      //   후보각을 baseHeading부터 좌우로 넓혀가며(먼저 좌, 다음 우) 처음으로 뚫리는 각을 채택.
+      const step = 0.5 * dt;
+      const baseHeading = Math.atan2(dx, dz);
+      const stepBlocked = h => {
+        // 도착 지점 + 그 앞 0.25(선행 감지) 두 점 모두 확인 → 코너로 파고드는 것 방지
+        const s = Math.sin(h), co = Math.cos(h);
+        return catPointBlocked(c.g.position.x + s * step, c.g.position.z + co * step, c.baseY)
+            || catPointBlocked(c.g.position.x + s * (step + 0.25), c.g.position.z + co * (step + 0.25), c.baseY);
+      };
+      let heading = baseHeading, found = !stepBlocked(baseHeading);
+      if (!found) {
+        // 좌우 대칭으로 각을 벌려가며 탐색 (0.6 → 1.1 → 1.6 rad)
+        for (const off of [0.6, 1.1, 1.6]) {
+          if (!stepBlocked(baseHeading - off)) { heading = baseHeading - off; found = true; break; }
+          if (!stepBlocked(baseHeading + off)) { heading = baseHeading + off; found = true; break; }
+        }
+      }
+      if (found) {
+        c._catStuck = 0;
+        c.g.position.x += Math.sin(heading) * step;
+        c.g.position.z += Math.cos(heading) * step;
+      } else {
+        // 사방 봉쇄 — 이동 금지(파묻힘 방지). 3회 연속이면 목표 재선정.
+        c._catStuck = (c._catStuck || 0) + 1;
+        if (c._catStuck >= 3) { c._catStuck = 0; c._bestDist = undefined; c.tgt = catFreeSpot(); }
+      }
+      // 진척 없음 감지: 목표까지 거리가 3초간 개선되지 않으면(우회로도 못 뚫으면) 목표 재선정
+      if (c._bestDist === undefined || dist < c._bestDist - 0.1) { c._bestDist = dist; c._noProg = 0; }
+      else { c._noProg = (c._noProg || 0) + dt; if (c._noProg > 3) { c._noProg = 0; c._bestDist = undefined; c.tgt = catFreeSpot(); } }
       // 그림자맵은 autoUpdate=false(배터리) — 이동 중엔 10Hz로 갱신해 그림자가 실시간으로 따라온다
       c._shT = (c._shT || 0) + dt;
       if (c._shT > 0.1) { c._shT = 0; shadowDirty(); }
-      // 부드러운 방향 전환
-      const want = Math.atan2(dx, dz);
+      // 부드러운 방향 전환 (우회 중엔 실제 진행각을 바라본다)
+      const want = heading;
       let dr = want - c.g.rotation.y;
       while (dr > Math.PI) dr -= Math.PI * 2;
       while (dr < -Math.PI) dr += Math.PI * 2;
@@ -3828,10 +3908,12 @@ function updateCat(t, dt) {
   }
   // ── 목표 포즈로 부드럽게 — 기본값(pv)을 따로 lerp하고, 오버레이는 매 프레임 합산만 한다
   const pose = CAT_POSES[c.mode] || CAT_POSES.sit;
-  const k = Math.min(1, dt * 6);
-  const pv = c.pv || (c.pv = { by: 0.13, brx: 0, hrx: 0, hry: 0, fl: 0, fr: 0, bl: 0, br: 0, t1: -0.5 });
+  // sit/sprawl 진입은 즉시성을 높여(러프 계수 ×2) 전환 중 어색한 중간 실루엣 노출을 줄인다
+  const k = Math.min(1, dt * ((c.mode === 'sit' || c.mode === 'sprawl') ? 12 : 6));
+  const pv = c.pv || (c.pv = { by: 0.13, brx: 0, brz: 0, hrx: 0, hry: 0, fl: 0, fr: 0, bl: 0, br: 0, t1: -0.5 });
   pv.by += (pose.by - pv.by) * k;
   pv.brx += (pose.brx - pv.brx) * k;
+  pv.brz += ((pose.brz || 0) - pv.brz) * k;
   pv.hrx += (pose.hrx - pv.hrx) * k;
   pv.fl += (pose.legF - pv.fl) * k;
   pv.fr += (pose.legF - pv.fr) * k;
@@ -3877,6 +3959,7 @@ function updateCat(t, dt) {
   p.body.scale.set(bodyBr, bodyBr, 1);
   p.body.position.y = pv.by;
   p.body.rotation.x = pv.brx;
+  p.body.rotation.z = pv.brz;   // sprawl: 몸통을 옆으로 굴려 배를 화면 쪽으로 (다른 포즈는 brz=0)
   p.head.rotation.x = headRX;
   p.head.rotation.y += (headRY - p.head.rotation.y) * Math.min(1, dt * 4);
   p.legs.fl.rotation.x = flX;
@@ -4445,6 +4528,16 @@ function funcClickItem(item) {
   return false;
 }
 let dbgSfx = null; // 테스트용: 마지막 기능형 클릭이 낸 SFX
+// 비배치 모드에서 가구를 탭했을 때 배치 모드 전환을 제안. '닫기' 후 60초는 팝업 대신 토스트로 강등.
+let _editAskMuteUntil = 0;
+async function offerEditMode(item) {
+  playSfx('place', { vol: 0.25, rate: 1.5, jitter: 0.1 }); // 상호작용음 (select와 동일한 가벼운 '톡')
+  const name = LName(DEFS[item.defId]);
+  if (Date.now() < _editAskMuteUntil) { toast(t('edit.enterHint')); return; }
+  const ok = await gameConfirm(t('edit.enterAsk', { name }), t('edit.enterYes'), t('edit.enterNo'));
+  if (ok) { toggleEditMode(true); select(item); }
+  else _editAskMuteUntil = Date.now() + 60000; // '닫기' → 60초 강등
+}
 
 const selRing = new THREE.Mesh(
   new THREE.RingGeometry(0.5, 0.62, 24),
@@ -4626,6 +4719,8 @@ canvas.addEventListener('pointerdown', e => {
     // 화면 회전 조작 중 가구가 덥석 잡히는 오작동 방지 (베타 피드백).
     if (!editMode) {
       if (funcClickItem(hit)) return;         // 기능 실행 후 소비 (선택/드래그 없음)
+      // 비배치 모드에서 일반 가구 탭 → 배치 모드 진입 유도 팝업 (기능형은 위에서 소비됨)
+      offerEditMode(hit);
       orbitDrag = { x: e.clientX, y: e.clientY, moved: false }; // 그 외엔 화면 회전으로
       return;
     }
@@ -7248,7 +7343,7 @@ window.__shelter = {
   lastSfx: () => dbgSfx,
   resetSfx: () => { dbgSfx = null; },
   pickItemAt: (cx, cy) => pickItem({ clientX: cx, clientY: cy }),
-  funcClickItem,
+  funcClickItem, addItem, catPointBlocked, footprintOf, scene,
   // 편의성 배치 v0.9.2
   canMoveSomewhere, updateMoveBadge, showEventChip, hideEventChip, reclaimSelected,
   currentSlot: () => currentSlot, doSaveNow, flushSave,

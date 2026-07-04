@@ -405,6 +405,10 @@ export const STR = {
   'move.confirmFurniture':{ ko: '배치된 가구 {n}개는 이 거처에 남습니다. 이주할까요?', en: 'Your {n} placed furnishings will stay behind. Move anyway?' },
   'move.newShelter':  { ko: '🏠 새 거처 발견 — 이주 지도를 확인하자', en: '🏠 New shelter found — check the relocation map' },
   'move.badge.title': { ko: '이주 가능한 거처가 있습니다', en: 'A shelter is ready to relocate to' },
+  'edit.enterAsk':    { ko: '{name} — 옮기거나 회수하려면 배치 모드가 필요하다.', en: '{name} — you need placement mode to move or reclaim it.' },
+  'edit.enterYes':    { ko: '🔧 배치 모드 켜기', en: '🔧 Enter placement mode' },
+  'edit.enterNo':     { ko: '닫기', en: 'Close' },
+  'edit.enterHint':   { ko: '🔧 배치 모드에서 옮길 수 있다', en: '🔧 You can move it in placement mode' },
 
   /* ── 거처 모달 ── */
   'shelter.modalTitle':{ ko: '🗺️ 구역과 거처', en: '🗺️ Districts & Shelters' },
