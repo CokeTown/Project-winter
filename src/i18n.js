@@ -319,8 +319,9 @@ export const STR = {
   'slot.zenBadge.title': { ko: '무한 모드', en: 'Endless mode' },
 
   /* ── 지도 / 탐험 ── */
-  'map.title':        { ko: '🗺️ 탐험 지도 — 어디로 가시겠습니까?', en: '🗺️ Expedition Map — where will you go?' },
-  'map.pick':         { ko: '지도의 파밍 지역(테두리 박스)을 선택하세요.', en: 'Pick a scavenging region (boxed) on the map.' },
+  // 수사 의문·지시조 안내문 금지 — UI는 어포던스로 스스로 읽혀야 한다 (2026-07-05 디렉터 지침)
+  'map.title':        { ko: '🗺️ 탐험 지도', en: '🗺️ Expedition Map' },
+  'map.pick':         { ko: '', en: '' },
   'map.go':           { ko: '🎒 준비하고 출발', en: '🎒 Prepare and depart' },
   'map.riskLine':     { ko: '위험 {risk} · 이동 포함 <b>{dur}</b> (거리 ×{mult}) · {wicon} {wname}{forecast}', en: 'Risk {risk} · incl. travel <b>{dur}</b> (distance ×{mult}) · {wicon} {wname}{forecast}' },
   'dur.min':          { ko: '{n}분', en: '{n} min' },

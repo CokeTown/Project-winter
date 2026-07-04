@@ -368,20 +368,45 @@ const sunMotes = [];
 let _beamTex = null;
 function beamTex() {
   if (_beamTex) return _beamTex;
-  const cv = document.createElement('canvas'); cv.width = 8; cv.height = 64;
+  // 2D 소프트 빔: 세로 감쇠 × 가로 falloff(중심 밝음→가장자리 0).
+  // 가로 페이드가 없으면 옆모서리가 칼로 자른 유리판처럼 보인다 (유저 신고: "너무 직선").
+  const W = 64, H = 64;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const g2 = cv.getContext('2d');
-  const gr = g2.createLinearGradient(0, 0, 0, 64); // v0=창가(밝음) → v1=바닥(소멸)
-  gr.addColorStop(0, 'rgba(255,255,255,0.95)');
-  gr.addColorStop(0.55, 'rgba(255,255,255,0.4)');
-  gr.addColorStop(1, 'rgba(255,255,255,0)');
-  g2.fillStyle = gr; g2.fillRect(0, 0, 8, 64);
+  const img = g2.createImageData(W, H);
+  for (let y = 0; y < H; y++) {
+    const v = y / (H - 1);
+    const fadeV = Math.pow(1 - v, 1.4) * (0.35 + 0.65 * (1 - v)); // 창가 밝고 바닥으로 소멸
+    for (let x = 0; x < W; x++) {
+      const u = Math.abs(x / (W - 1) - 0.5) * 2; // 0=중심, 1=가장자리
+      const fadeH = Math.pow(Math.max(0, 1 - u), 1.7); // 부드러운 측면 산란
+      const a = Math.round(255 * fadeV * fadeH);
+      const i = (y * W + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
+      img.data[i + 3] = a;
+    }
+  }
+  g2.putImageData(img, 0, 0);
   _beamTex = new THREE.CanvasTexture(cv);
   return _beamTex;
+}
+let _floorGlowTex = null;
+function floorGlowTex() {
+  if (_floorGlowTex) return _floorGlowTex;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const g2 = cv.getContext('2d');
+  const gr = g2.createRadialGradient(32, 32, 2, 32, 32, 31);
+  gr.addColorStop(0, 'rgba(255,255,255,0.8)');
+  gr.addColorStop(0.5, 'rgba(255,255,255,0.28)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g2.fillStyle = gr; g2.fillRect(0, 0, 64, 64);
+  _floorGlowTex = new THREE.CanvasTexture(cv);
+  return _floorGlowTex;
 }
 function updateSunShafts() {
   if (!sunShafts.length && !sunMotes.length) return;
   const s = (weather.type === 'clear' && !opts.lowSpec) ? dayness : 0;
-  for (const b of sunShafts) { b.material.opacity = 0.26 * s; b.visible = s > 0.02; }
+  for (const b of sunShafts) { b.material.opacity = 0.26 * s * (b.userData.opMul ?? 1); b.visible = s > 0.02; }
   for (const p of sunMotes) { p.material.opacity = 0.55 * s; p.visible = s > 0.02; }
 }
 function updateWindowSkies() {
@@ -1018,24 +1043,42 @@ function stdWall(len, h, mat, opts = {}) {
     winSkyMats.push(sky.material);
     sky.position.set(winX, winY, -0.02);
     g.add(sky);
-    // 창가 빛기둥 (TLOU 무드): 창 상단 모서리에서 방(+z) 안쪽 바닥으로 비스듬히 떨어지는
-    // 가산 시트. 벽 그룹에 부모라 벽 배치/회전을 그대로 따라간다. 쨍한 낮에만 보인다.
+    // 창가 빛기둥 (TLOU 무드): 창 상단에서 방(+z) 안쪽 바닥으로 떨어지는 산란광.
+    // 단일 사각 시트는 유리판처럼 보인다(유저 신고) — 사다리꼴 확산 + 3겹 헤이즈 + 착지광으로.
     const x1 = winX - winW / 2, x2 = winX + winW / 2;
-    const yT = winY + winH / 2;
+    const cx = winX, yT = winY + winH / 2;
     const zL = yT * 1.05; // 바닥 착지 깊이 ≈ 45° 남짓
-    const bg = new THREE.BufferGeometry();
-    bg.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
-      x1, yT, 0.13, x2, yT, 0.13, x1, 0.03, zL, x2, 0.03, zL,
-    ]), 3));
-    bg.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), 2));
-    bg.setIndex([0, 2, 1, 2, 3, 1]);
-    const beam = new THREE.Mesh(bg, new THREE.MeshBasicMaterial({
-      map: beamTex(), color: 0xffedc4, transparent: true, opacity: 0,
-      blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false,
+    // 겹: [폭 배율, 착지 확산 배율, 투명도 배율, z 오프셋] — 본체 + 넓고 옅은 반그림자 + 중간 겹
+    const LAYERS = [[1.0, 1.35, 1.0, 0], [1.25, 1.8, 0.45, 0.05], [0.7, 1.0, 0.7, -0.03]];
+    for (const [wTop, wBot, opMul, zOff] of LAYERS) {
+      const hw1 = (winW / 2) * wTop, hw2 = (winW / 2) * wBot; // 바닥에서 퍼진다
+      const bg = new THREE.BufferGeometry();
+      bg.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+        cx - hw1, yT, 0.13 + zOff, cx + hw1, yT, 0.13 + zOff,
+        cx - hw2, 0.03, zL + zOff, cx + hw2, 0.03, zL + zOff,
+      ]), 3));
+      bg.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), 2));
+      bg.setIndex([0, 2, 1, 2, 3, 1]);
+      const beam = new THREE.Mesh(bg, new THREE.MeshBasicMaterial({
+        map: beamTex(), color: 0xffedc4, transparent: true, opacity: 0,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false,
+      }));
+      beam.visible = false;
+      beam.userData.opMul = opMul;
+      g.add(beam);
+      sunShafts.push(beam);
+    }
+    // 착지광: 빛이 뚝 끊기는 대신 바닥에 부드러운 웅덩이로 풀어진다
+    const pool = new THREE.Mesh(new THREE.PlaneGeometry(winW * 1.9, winW * 1.15), new THREE.MeshBasicMaterial({
+      map: floorGlowTex(), color: 0xffe6b8, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
     }));
-    beam.visible = false;
-    g.add(beam);
-    sunShafts.push(beam);
+    pool.rotation.x = -Math.PI / 2;
+    pool.position.set(cx, 0.025, zL * 0.82);
+    pool.visible = false;
+    pool.userData.opMul = 0.8;
+    g.add(pool);
+    sunShafts.push(pool);
     // 빛기둥 속 먼지 입자 20개 — 프리즘 내부에 고정 분포, 렌더 루프에서 느리게 부유
     const N = 20, pos = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) {
@@ -6827,9 +6870,10 @@ if (isPcInput) $('render-panel').style.display = 'none';
 // 먼저 평가되어야 한다. 선언이 뒤에 있으면 불러오기 부팅이 TDZ로 죽는다.
 const UI_BASE_FONT = 11;   // .panel 계열 기본 폰트 크기(px) — 이 값 자체가 이미 최소 가독 크기
 const UI_MIN_FONT = 11;    // 스케일 후에도 유지해야 할 최소 렌더 폰트(px)
-// P0: 전 UI 15% 확대(가독성)를 JS에서 곱한다 — CSS zoom은 var(--uiz)만 쓰므로
+// P0: 전 UI 확대(가독성)를 JS에서 곱한다 — CSS zoom은 var(--uiz)만 쓰므로
 // 렌더 배율과 드래그/클램프 좌표 보정 배율이 항상 동일한 단일 소스(--uiz)로 일치한다.
-const TEXT_BOOST = 1.15;
+// v0.9.5: 1.15→1.25 — "안 보인다" 다수 피드백. cozy는 작은 글씨가 아니라 따뜻한 색에서 나온다.
+const TEXT_BOOST = 1.25;
 
 // 타이틀 / 인트로 (자리 비운 사이 끝난 탐험 정산은 hideTitle에서 — 타이틀에선 집만 보여준다)
 $('t-continue').addEventListener('click', hideTitle);
