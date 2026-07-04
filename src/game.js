@@ -3107,83 +3107,91 @@ function normalizeCatGlb(root) {
   return { wrap, bones, rest };
 }
 
+// 마인크래프트 고양이 스타일 — 각진 박스만으로 구성 (B 헬퍼 전용, 곡면 없음)
+// 단위: PX = 0.02 월드유닛/px (MC 원본 텍스처 px 그대로 치수 대입)
+//   머리 5×4×5px, 몸통 4×4×12px(낮고 긴 수평 박스), 다리 2×6×2px×4, 꼬리 1×1×6px×2마디
+//   배색 = 치즈 태비: 몸통 주황 / 등 줄무늬 진주황(파묻힘) / 주둥이·가슴·배·발·꼬리끝 흰색 / 눈 초록+검은 동공
 function buildCatMesh() {
   const g = new THREE.Group();
-  const fur = 0xc98d4e, dk = shade(fur, 0.72), lt = shade(fur, 1.15), cream = 0xece0c8, pink = 0xcf9088;
+  const PX = 0.02;
+  const fur = 0xdf9038, stripe = 0xb96f24, white = 0xf2eee4, pink = 0xcf9088, eyeGreen = 0x5daa4d, pupil = 0x1a1712;
   const P = {};
-  // 곡면 헬퍼 (Sphere/Cone은 helpers.js에 없어 여기서 로컬로 생성)
-  const Sph = (parent, r, c, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1, seg = 8) => {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(r, seg, Math.max(6, seg - 2)), lamb(c));
-    m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true;
-    parent.add(m); return m;
-  };
-  const Cone = (parent, r, h, c, x = 0, y = 0, z = 0, rot = 0, seg = 5) => {
-    const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), lamb(c));
-    m.position.set(x, y, z); m.rotation.x = rot; m.castShadow = true;
-    parent.add(m); return m;
-  };
-  // ── 몸통 (피벗 = 엉덩이 관절: 앉기/기지개 때 여기를 축으로 기운다) — 겹친 구 2개로 통통·컴팩트한 실루엣
+  // ── 몸통 (피벗 = 엉덩이/골반 관절, 4×4×12px 낮고 긴 수평 박스) — 앉기/기지개 때 이 지점을 축으로 기운다
+  //   기립 시 어깨~골반 높이 0.13 부근에 박스 중심을 두고, 몸이 앞(+z)으로 길게 뻗도록 배치
   const body = new THREE.Group();
-  body.position.set(0, 0.14, -0.13);
+  body.position.set(0, 0.13, -0.15);
   g.add(body); P.body = body;
-  Sph(body, 0.095, fur, 0, 0.005, 0.05, 1.0, 0.9, 1.15, 8);    // 엉덩이 (최고점 ≈ +0.09)
-  Sph(body, 0.085, fur, 0, 0.01, 0.21, 1.0, 0.9, 1.1, 8);      // 가슴 쪽 (엉덩이와 충분히 겹침)
-  Sph(body, 0.06, lt, 0, -0.04, 0.13, 1.0, 0.6, 1.4, 8);       // 아랫배 (밝은 털 — 몸 안쪽에 파묻어 배 아래만 살짝)
-  Sph(body, 0.055, cream, 0, -0.01, 0.27, 0.95, 0.8, 0.8, 8);  // 가슴 크림 패치 (납작)
-  const md = shade(fur, 0.82);                                  // 등 줄무늬 3개 — 아주 납작, 90% 파묻힘, 저대비
-  for (const [sz, sy, tilt] of [[0.02, 0.080, 0.18], [0.10, 0.074, 0.02], [0.18, 0.075, -0.16]])
-    Sph(body, 0.05, md, 0, sy, sz, 1, 0.25, 0.55, 6).rotation.x = tilt;
-  // ── 머리 (그루밍/두리번거림)
+  B(body, 4 * PX, 4 * PX, 12 * PX, fur, 0, 0, 6 * PX);              // 몸통 본체 (피벗에서 +z로 12px 길이, 중심 +6px)
+  B(body, 4.06 * PX, 1.6 * PX, 10 * PX, white, 0, -1.6 * PX, 6 * PX); // 배쪽 흰색 밴드 (아랫면에 얇게 덧대어 파묻힘 없이 보이게)
+  for (const [sz, w] of [[3 * PX, 4.2 * PX], [7 * PX, 4.2 * PX], [10.5 * PX, 4.06 * PX]])
+    B(body, w, 3.2 * PX, 2.2 * PX, stripe, 0, 0.3 * PX, sz);          // 등 줄무늬 3개 — 몸통보다 살짝만 얇게(파묻히게)
+  // ── 머리 (5×4×5px, 몸통 앞쪽에 자식으로 부착)
   const head = new THREE.Group();
-  head.position.set(0, 0.09, 0.33);
+  head.position.set(0, 1.5 * PX, 12 * PX + 2.5 * PX);   // 몸통 앞면(6+6=12px)에서 머리 반경(2.5px)만큼 더 앞
   body.add(head); P.head = head;
-  Sph(head, 0.095, fur, 0, 0.05, 0.015, 1.25, 1.05, 1.05, 8);  // 두상 (볼살, x로 넓게)
-  Sph(head, 0.045, cream, 0, 0.005, 0.09, 1.1, 0.85, 1, 7);    // 짧은 주둥이
-  Sph(head, 0.014, pink, 0, 0.03, 0.125, 1, 0.9, 0.8, 6);      // 코
-  Sph(head, 0.015, 0x2a2a20, -0.042, 0.062, 0.098, 1, 1.2, 0.7, 6); // 눈
-  Sph(head, 0.015, 0x2a2a20, 0.042, 0.062, 0.098, 1, 1.2, 0.7, 6);
-  Sph(head, 0.006, 0xf4f0e4, -0.047, 0.069, 0.104, 1, 1, 0.7, 6); // 눈 하이라이트
-  Sph(head, 0.006, 0xf4f0e4, 0.047, 0.069, 0.104, 1, 1, 0.7, 6);
-  const earL = new THREE.Group(); earL.position.set(-0.055, 0.11, 0.01); head.add(earL); P.earL = earL;
-  const earR = new THREE.Group(); earR.position.set(0.055, 0.11, 0.01); head.add(earR); P.earR = earR;
-  Cone(earL, 0.028, 0.06, fur, 0, 0.02, 0, 0, 5);              // 귀 (그룹 원점 근처, 머리 양옆에서 살짝 돌출)
-  Cone(earL, 0.015, 0.03, pink, 0, 0.02, 0.007, 0, 5);         // 귓속
-  Cone(earR, 0.028, 0.06, fur, 0, 0.02, 0, 0, 5);
-  Cone(earR, 0.015, 0.03, pink, 0, 0.02, 0.007, 0, 5);
-  // ── 꼬리 2마디 (S자 컬/살랑임) — 끝으로 갈수록 가늘어지는 실린더
+  B(head, 5 * PX, 4 * PX, 5 * PX, fur, 0, 0, 0);                     // 두상
+  B(head, 3 * PX, 2 * PX, 1 * PX, white, 0, -1.2 * PX, 2.5 * PX + 0.5 * PX); // 주둥이 (흰색, 얼굴 앞면 밖으로 살짝)
+  B(head, 0.8 * PX, 0.6 * PX, 0.3 * PX, pink, 0, -0.2 * PX, 2.5 * PX + 1 * PX); // 코 (분홍)
+  B(head, 1 * PX, 1 * PX, 0.3 * PX, eyeGreen, -1.6 * PX, 0.6 * PX, 2.5 * PX + 0.16 * PX); // 눈(초록) 좌
+  B(head, 1 * PX, 1 * PX, 0.3 * PX, eyeGreen, 1.6 * PX, 0.6 * PX, 2.5 * PX + 0.16 * PX);  // 눈(초록) 우
+  B(head, 0.45 * PX, 0.45 * PX, 0.32 * PX, pupil, -1.6 * PX, 0.5 * PX, 2.5 * PX + 0.17 * PX); // 동공 좌
+  B(head, 0.45 * PX, 0.45 * PX, 0.32 * PX, pupil, 1.6 * PX, 0.5 * PX, 2.5 * PX + 0.17 * PX);  // 동공 우
+  // ── 귀 (1×2×1px 두 개, 머리 위 모서리)
+  const earL = new THREE.Group(); earL.position.set(-1.7 * PX, 2 * PX + 1 * PX, -1.7 * PX); head.add(earL); P.earL = earL;
+  const earR = new THREE.Group(); earR.position.set(1.7 * PX, 2 * PX + 1 * PX, -1.7 * PX); head.add(earR); P.earR = earR;
+  B(earL, 1 * PX, 2 * PX, 1 * PX, fur, 0, 0, 0);
+  B(earR, 1 * PX, 2 * PX, 1 * PX, fur, 0, 0, 0);
+  // ── 꼬리 2마디 (1×1×6px, 매우 길게, body 자식·-z 방향, 기본각은 살짝 아래로 처짐)
   const tail1 = new THREE.Group();
-  tail1.position.set(0, 0.05, -0.01);
+  tail1.position.set(0, 1 * PX, 0);   // 몸통 뒷면(로컬 z=0)에 바로 접합
   body.add(tail1); P.tail1 = tail1;
-  Cyl(tail1, 0.018, 0.022, 0.1, fur, 0, 0, -0.08, 7).rotation.x = Math.PI / 2; // 몸통 뒤 표면(z≈-0.033) 밖에서 시작
+  B(tail1, 1 * PX, 1 * PX, 6 * PX, fur, 0, 0, -3 * PX);  // 첫 마디 (피벗에서 -z로 6px, 중심 -3px)
   const tail2 = new THREE.Group();
-  tail2.position.set(0, 0, -0.13);
+  tail2.position.set(0, 0, -6 * PX);        // 첫 마디 끝에서 이어짐
   tail1.add(tail2); P.tail2 = tail2;
-  Cyl(tail2, 0.013, 0.017, 0.1, fur, 0, 0, -0.05, 7).rotation.x = Math.PI / 2;
-  Sph(tail2, 0.017, dk, 0, 0, -0.105, 1, 1, 1.2, 6);           // 꼬리 끝 (짙은 색, 둥근 팁)
-  // ── 다리 4개 (어깨/골반 피벗 — 걸을 때 스윙, 앉을 때 접힘) — 가는 캡슐형 실린더 + 양말 발
+  B(tail2, 1 * PX, 1 * PX, 6 * PX, fur, 0, 0, -3 * PX);
+  B(tail2, 1.05 * PX, 1.05 * PX, 1.2 * PX, white, 0, 0, -6 * PX + 0.6 * PX); // 꼬리 끝 흰색 팁
+  // ── 다리 4개 (2×6×2px, 가늘고 짧게 — 어깨/골반 피벗, 발끝 흰색)
+  //   기립 시 다리 상단(피벗)을 어깨높이 6px(=0.12)에 두면 다리 박스(6px 길이, 중심 -3px)의 하단이 y=0(바닥)에 닿는다
   P.legs = {};
-  for (const [key, x, z] of [['fl', -0.055, 0.17], ['fr', 0.055, 0.17], ['bl', -0.055, -0.1], ['br', 0.055, -0.1]]) {
+  for (const [key, x, z] of [['fl', -1.4 * PX, 5 * PX], ['fr', 1.4 * PX, 5 * PX], ['bl', -1.4 * PX, -5 * PX], ['br', 1.4 * PX, -5 * PX]]) {
     const leg = new THREE.Group();
-    leg.position.set(x, 0.15, z);
+    leg.position.set(x, 6 * PX, z);
     g.add(leg); P.legs[key] = leg;
-    Cyl(leg, 0.04, 0.032, 0.1, fur, 0, -0.05, 0, 6);         // 윗다리
-    Cyl(leg, 0.03, 0.026, 0.075, lt, 0, -0.115, 0.004, 6);   // 아랫다리
-    Sph(leg, 0.026, cream, 0, -0.146, 0.01, 1.05, 0.75, 1.15, 6); // 흰 양말 발 (바닥까지 닿는 둥근 발)
+    B(leg, 2 * PX, 6 * PX, 2 * PX, fur, 0, -3 * PX, 0);           // 다리 (피벗에서 -y로 6px, 중심 -3px)
+    B(leg, 2.05 * PX, 1.4 * PX, 2.05 * PX, white, 0, -6 * PX + 0.7 * PX, 0); // 흰 발끝 (다리 하단에 덧대어짐)
   }
   g.traverse(o => { if (o.isMesh) o.castShadow = true; });
   return { g, parts: P };
 }
-/* 고양이 무브셋: walk(다리 스윙 보행) · sit(앉아 두리번+귀 털기) · sleep(식빵 자세 숨쉬기)
-   · groom(앞발/가슴 핥기) · stretch(기지개) · play(제자리 콩콩 사냥놀이) */
+/* 고양이 무브셋: walk(다리 스윙 보행) · sit(마인크래프트 시그니처 앉기) · sleep(식빵 자세 숨쉬기)
+   · groom(앞발/가슴 핥기) · stretch(기지개) · play(제자리 콩콩 사냥놀이)
+   새 지오메트리(PX=0.02): 몸통 4×4×12px(피벗=엉덩이, 박스는 로컬 z 0~12px 즉 pivot에서 +z로 전개),
+   다리 2×6×2px(루트 자식, 피벗=어깨/골반 높이 6px=0.12, 서있을 때 발끝이 y=0에 닿음),
+   꼬리 1×1×6px×2마디(t1 음수=아래로 처짐, 기존 부호 유지) */
 // 다리 rotation.x: 음수 = 앞(+z)으로 접힘(배 밑으로 튐), 양수 = 뒤로 뻗음
+// body.rotation.x 부호: box가 로컬 +z(전방)에 있으므로 음수 회전 = 전방(가슴/머리)이 들림, 양수 = 전방이 숙여짐(엎드림)
 const CAT_POSES = {
   //          bodyY   bodyRX     headRX      legF        legB        tail1RX
-  walk:    { by: 0.14,  brx: 0,    hrx: 0,    legF: 0,     legB: 0,     t1: -0.5 },
-  sit:     { by: 0.075, brx: -0.45, hrx: 0.15, legF: 0.15, legB: -1.15, t1: -1.0 },
-  sleep:   { by: 0.05,  brx: 0,    hrx: 0.45, legF: -1.35, legB: -1.35, t1: -1.3 },
-  groom:   { by: 0.075, brx: -0.3, hrx: 0.9,  legF: 0.15,  legB: -1.15, t1: -1.0 },
-  stretch: { by: 0.12,  brx: 0.5,  hrx: -0.5, legF: -0.85, legB: 0.15,  t1: 0.35 },
-  play:    { by: 0.11,  brx: 0.12, hrx: 0.15, legF: 0,     legB: -0.3,  t1: -0.8 },
+  // walk: 서있는 기본 높이(다리 피벗 0.12와 거의 일치하는 0.13), 수평 자세 — stride 오버레이가 다리를 흔든다
+  walk:    { by: 0.13,  brx: 0,     hrx: 0,    legF: 0,     legB: 0,     t1: -0.5 },
+  // sit: 마인크래프트 식 — 엉덩이(피벗)를 바닥에 붙이고 가슴을 크게 들어올림.
+  //   기하 검증(box 로컬 코너 y=±0.04, z=0/0.24 를 brx만큼 회전 후 +by):
+  //     brx=-1.0, by=0.025 → 엉덩이쪽(z=0) 바닥 코너 y≈0.008(거의 접지), 가슴쪽(z=0.24) 최고점 y≈0.264
+  //   앞다리는 거의 수직 유지(legF≈0, 몸이 들려도 어깨 피벗은 고정이라 다리는 그대로 뻗은 자세로 보임),
+  //   뒷다리는 -1.5rad 로 완전히 접어 배(들린 엉덩이) 밑으로 숨김(다리 끝 y≈0.11, z가 몸쪽으로 당겨짐).
+  //   (라이브 튜닝 확정 2026-07-04: 57°는 가슴이 앞다리에서 벗어나 공중부양으로 보임 → 35°)
+  sit:     { by: 0.045, brx: -0.62, hrx: 0.45, legF: 0,     legB: -1.5,  t1: -0.85 },
+  // sleep: 식빵 — 몸통 수평(brx=0)으로 낮춰 배가 바닥에 닿게(by=0.03 → 바닥면 y≈-0.01, 살짝 파묻혀 접지감),
+  //   네 다리 전부 -1.5rad 로 접어 몸 밑에 숨김(legF=legB), 머리는 살짝 숙임(hrx 양수)
+  sleep:   { by: 0.03,  brx: 0,     hrx: 0.5,  legF: -1.5,  legB: -1.5,  t1: -1.3 },
+  // groom: sit과 같은 앉음 실루엣 위에 오버레이(updateCat의 headRX 사인파/앞발 들기)가 얹힌다
+  groom:   { by: 0.045, brx: -0.62, hrx: 0.55, legF: 0,     legB: -1.5,  t1: -0.85 },
+  // stretch: 다운독 — brx=+0.6, by=0.17 → 가슴쪽(z=0.24) 바닥 코너 y=0(접지), 엉덩이쪽 y≈0.14(번쩍 들림)
+  //   앞다리는 앞으로 쭉 뻗고(legF 음수, 접힘 부호를 반대로 써 전방으로 펴짐), 뒷다리는 곧게 편 채 지지(legB≈0)
+  stretch: { by: 0.17,  brx: 0.6,   hrx: -0.4, legF: -0.9,  legB: 0.1,   t1: 0.35 },
+  // play: 사냥 자세 — 몸을 살짝 낮추고(by 표준보다 조금 아래) 앞으로 약간 웅크림, hop 오버레이가 콩콩 튀게 함
+  play:    { by: 0.11,  brx: 0.15,  hrx: 0.15, legF: 0.1,   legB: -0.4,  t1: -0.8 },
 };
 function pickNextCatMode(c) {
   const roll = Math.random();
@@ -3210,12 +3218,16 @@ function catFreeSpot() {
   }
   return { x: 0, z: 0, y: 0 };
 }
+// 사용자 결정: GLB 리깅 고양이는 앉기 실루엣 불만족으로 보류.
+// 마인크래프트풍 각진 복셀 고양이가 이 복셀 게임 스타일에 더 자연스럽다고 판단해 기본 비활성.
+// GLB 관련 코드(loadCatGlbScene/normalizeCatGlb/updateCatBones 등)는 향후 재검토를 위해 삭제하지 않고 보존한다.
+const USE_RIGGED_CAT = false;
 async function spawnCat() {
   if (!state.cat || catObj || _catSpawning) return;
   _catSpawning = true;
   const s = catFreeSpot();
   let g, parts = null, rig = null;
-  const glbScene = await loadCatGlbScene();
+  const glbScene = USE_RIGGED_CAT ? await loadCatGlbScene() : null;
   // 로드 대기 중 상태가 바뀌었으면 취소
   if (!state.cat || catObj) { _catSpawning = false; if (glbScene) disposeDeep(glbScene); return; }
   if (glbScene) {
@@ -3277,7 +3289,7 @@ function updateCat(t, dt) {
   // ── 목표 포즈로 부드럽게 — 기본값(pv)을 따로 lerp하고, 오버레이는 매 프레임 합산만 한다
   const pose = CAT_POSES[c.mode] || CAT_POSES.sit;
   const k = Math.min(1, dt * 6);
-  const pv = c.pv || (c.pv = { by: 0.14, brx: 0, hrx: 0, hry: 0, fl: 0, fr: 0, bl: 0, br: 0, t1: -0.5 });
+  const pv = c.pv || (c.pv = { by: 0.13, brx: 0, hrx: 0, hry: 0, fl: 0, fr: 0, bl: 0, br: 0, t1: -0.5 });
   pv.by += (pose.by - pv.by) * k;
   pv.brx += (pose.brx - pv.brx) * k;
   pv.hrx += (pose.hrx - pv.hrx) * k;
