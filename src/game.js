@@ -2937,7 +2937,7 @@ function moveCostFor(id) {
   if (cross) { cost.food = (cost.food || 0) + BAL.economy.moveCrossFood; cost.water = (cost.water || 0) + BAL.economy.moveCrossWater; }
   return { cost, cross, renov: !state.renovated[id] };
 }
-function moveToShelter(id) {
+async function moveToShelter(id) {
   if (paused) { toast(t('pause.blocked')); return; }
   if (id === state.current) { closeModal(); return; }
   const { cost, cross, renov } = moveCostFor(id);
@@ -2947,7 +2947,7 @@ function moveToShelter(id) {
   }
   // 이주 확인: 현 거처에 배치된 가구가 있으면 "남는다"고 안내 (인벤토리 공유라 손실 아님)
   const placedN = items.length;
-  if (placedN >= 1 && !confirm(t('move.confirmFurniture', { n: placedN }))) return;
+  if (placedN >= 1 && !(await gameConfirm(t('move.confirmFurniture', { n: placedN }), t('confirm.move'), t('confirm.stay')))) return;
   resConsumeAll(cost);
   if (renov) {
     state.renovated[id] = true;
@@ -3258,7 +3258,7 @@ function openPrepModal(regionId) {
   openModal(t('prep.title', { emoji: r.emoji, name: LName(r) }), '');
   render();
 }
-function departExpedition(regionId, prep, opts2 = {}) {
+async function departExpedition(regionId, prep, opts2 = {}) {
   if (paused) { toast(t('pause.blocked')); return; }
   if (state.exp) return;
   // 준비 모달을 열어둔 사이 상태가 나빠졌을 수도 있다 — 출발 직전 재검사
@@ -3267,8 +3267,8 @@ function departExpedition(regionId, prep, opts2 = {}) {
   if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); closeModal(); return; }
   const r = REGIONS[regionId];
   const p = rateParts(regionId, prep);
-  // 저성공률 출발 확인 — 수동 클릭 경로에서만 (자동진행/blackout에선 confirm 금지: 게임이 멈춘다)
-  if (!opts2.auto && p.eff < 0.5 && !confirm(t('exp.confirmRisky', { p: Math.round(p.eff * 100) }))) return;
+  // 저성공률 출발 확인 — 수동 클릭 경로에서만 (자동진행/blackout에선 확인창 금지: 게임이 멈춘다)
+  if (!opts2.auto && p.eff < 0.5 && !(await gameConfirm(t('exp.confirmRisky', { p: Math.round(p.eff * 100) }), t('confirm.depart'), t('confirm.no')))) return;
   for (const id of prep) resConsumeAll(PREPS[id].cost);
   const dur = expDuration(r) * 1000;
   // 탐험도 몸을 쓴다 (소모 절반으로 완화) + 에너지 소모
@@ -5135,9 +5135,9 @@ function openSlotModal(mode) {
       </div>`);
   }
   openModal(mode === 'new' ? t('slot.new') : t('slot.load'), cards.join(''));
-  $('modal-body').querySelectorAll('.sl-del').forEach(b => b.addEventListener('click', ev => {
+  $('modal-body').querySelectorAll('.sl-del').forEach(b => b.addEventListener('click', async ev => {
     ev.stopPropagation();
-    if (!confirm(t('slot.delConfirm', { n: b.dataset.del }))) return;
+    if (!(await gameConfirm(t('slot.delConfirm', { n: b.dataset.del }), t('confirm.delete'), t('confirm.cancel')))) return;
     localStorage.removeItem(slotKey(+b.dataset.del));
     localStorage.removeItem(slotKey(+b.dataset.del) + '-bak'); // P1-B: 롤링 백업도 함께 삭제
     // 삭제한 슬롯을 가리키던 lastslot 포인터도 정리 (빈 슬롯을 이어하기 대상으로 잡지 않도록)
@@ -5145,7 +5145,7 @@ function openSlotModal(mode) {
     if (titleVisible) showTitle();                              // P1-B: '이어하기' 표시 즉시 갱신
     openSlotModal(mode);
   }));
-  $('modal-body').querySelectorAll('.slot-card').forEach(c => c.addEventListener('click', () => {
+  $('modal-body').querySelectorAll('.slot-card').forEach(c => c.addEventListener('click', async () => {
     const n = +c.dataset.slot, has = c.dataset.has === '1';
     if (mode === 'load') {
       if (!has) { toast(t('toast.emptySlot')); return; }
@@ -5153,8 +5153,8 @@ function openSlotModal(mode) {
       sessionStorage.setItem('ps-load', '1'); // 리로드 후 타이틀 건너뛰고 바로 게임 (밀린 결산 표시)
       location.reload();
     } else {
-      // 덮어쓰기 confirm은 슬롯 클릭 시점에만 (모드 화면 뒤 재선택 시 재확인은 허용)
-      if (has && !confirm(t('slot.newConfirm', { n }))) return;
+      // 덮어쓰기 확인은 슬롯 클릭 시점에만 (모드 화면 뒤 재선택 시 재확인은 허용)
+      if (has && !(await gameConfirm(t('slot.newConfirm', { n }), t('confirm.overwrite'), t('confirm.cancel')))) return;
       openModeModal(n);
     }
   }));
@@ -5935,6 +5935,39 @@ function closeModal() {
 $('modal-close').addEventListener('click', closeModal);
 $('modal-back').addEventListener('click', e => { if (e.target === $('modal-back')) closeModal(); });
 
+// ── 인게임 확인창: window.confirm(브라우저 네이티브 알림창)은 게임 미학을 깨므로 전면 대체 ──
+// 버튼은 "확인/취소"가 아니라 행동 동사("출발한다/그만둔다")로 — 실수 방지 + 게임 문법.
+// 하네스용: window.__autoConfirm이 정의돼 있으면 그 값으로 즉시 응답.
+let confirmResolve = null;
+function gameConfirm(msg, yesLabel, noLabel) {
+  if (window.__autoConfirm !== undefined) return Promise.resolve(!!window.__autoConfirm);
+  return new Promise(resolve => {
+    if (confirmResolve) confirmResolve(false); // 겹침 방지: 이전 창은 취소로 정리
+    confirmResolve = resolve;
+    $('confirm-msg').textContent = msg;
+    $('confirm-yes').textContent = yesLabel || t('confirm.yes');
+    $('confirm-no').textContent = noLabel || t('confirm.no');
+    const back = $('confirm-back');
+    back.style.display = '';
+    back.classList.add('show');
+  });
+}
+function settleConfirm(v) {
+  const back = $('confirm-back');
+  back.classList.remove('show');
+  back.style.display = 'none';
+  const r = confirmResolve; confirmResolve = null;
+  if (r) r(v);
+}
+$('confirm-yes').addEventListener('click', () => settleConfirm(true));
+$('confirm-no').addEventListener('click', () => settleConfirm(false));
+$('confirm-back').addEventListener('click', e => { if (e.target === $('confirm-back')) settleConfirm(false); });
+addEventListener('keydown', e => {
+  if (!confirmResolve) return;
+  if (e.key === 'Escape') { e.stopImmediatePropagation(); settleConfirm(false); }
+  if (e.key === 'Enter') { e.stopImmediatePropagation(); settleConfirm(true); }
+}, true); // 캡처 단계: 게임 전역 ESC(설정 토글 등)보다 먼저 소비
+
 function shelterUnlocked(id) {
   return state.successes >= SHELTERS[id].unlockAt || (state.layouts[id]?.length > 0);
 }
@@ -6270,11 +6303,11 @@ function importSave() {
     const file = input.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       let data;
       try { data = JSON.parse(reader.result); } catch (e) { toast(t('save.invalidFile')); return; }
       if (!data?.state || data.state.ver == null || data.state.day == null) { toast(t('save.invalidFile')); return; }
-      if (!confirm(t('save.overwrite', { n: currentSlot }))) return;
+      if (!(await gameConfirm(t('save.overwrite', { n: currentSlot }), t('confirm.overwrite'), t('confirm.cancel')))) return;
       try {
         localStorage.setItem(slotKey(currentSlot), JSON.stringify(data));
         localStorage.setItem('project-shelter-lastslot', String(currentSlot));
@@ -6424,10 +6457,10 @@ $('opt-bgidle').addEventListener('change', e => {
   scheduleSave();
 });
 // 언어 전환: 저장 후 재로딩 (라이브 리렌더 대신 단순하게) — veil로 암전 후 전환
-$('opt-lang').addEventListener('change', e => {
+$('opt-lang').addEventListener('change', async e => {
   const next = e.target.value === 'en' ? 'en' : 'ko';
   if (next === (opts.lang || 'ko')) return;
-  if (!confirm(t('lang.confirm'))) { e.target.value = opts.lang || 'ko'; return; }
+  if (!(await gameConfirm(t('lang.confirm'), t('confirm.change'), t('confirm.cancel')))) { e.target.value = opts.lang || 'ko'; return; }
   opts.lang = next;
   flushSave();               // 즉시 저장 후
   reloadWithVeil();          // 재로딩하며 부팅 시 setLang(opts.lang) 적용
@@ -6524,9 +6557,9 @@ $('opt-lang').addEventListener('change', e => {
   });
 
   let clickThroughTimer = null;
-  elClick.addEventListener('change', e => {
+  elClick.addEventListener('change', async e => {
     if (e.target.checked) {
-      if (!confirm(t('widget.clickthrough.confirm'))) { e.target.checked = false; return; }
+      if (!(await gameConfirm(t('widget.clickthrough.confirm'), t('confirm.enable'), t('confirm.cancel')))) { e.target.checked = false; return; }
       wopts.clickThrough = true;
       api.setClickThrough(true);
       toast(t('widget.clickthrough.toast'));
@@ -7104,7 +7137,7 @@ function _simDaysInner(n, opt) {
 // 디버그/테스트용 핸들
 window.__shelter = {
   simDays, simReset, expectedLoot,
-  isHard, hardLoot, loadSave,
+  isHard, hardLoot, loadSave, gameConfirm,
   items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather,
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,

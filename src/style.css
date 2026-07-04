@@ -482,6 +482,21 @@
   .panel.collapsed .p-head { margin-bottom: 0; border-bottom: none; }
   .panel.dragging { opacity: 0.85; }
 
+  /* ── 인게임 확인창 (window.confirm 대체) — 모달(50)·쪽지(55)·수첩(60)보다 위 ── */
+  #confirm-back {
+    position: fixed; inset: 0; z-index: 70;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(5, 6, 9, 0.55);
+  }
+  #confirm-back.show { display: flex; }
+  #confirm-panel {
+    position: relative; max-width: min(86vw, 380px); padding: 14px 16px;
+    zoom: var(--uiz);
+  }
+  #confirm-msg { font-size: 12px; line-height: 1.7; margin-bottom: 12px; word-break: keep-all; overflow-wrap: break-word; }
+  #confirm-panel .close-row { display: flex; gap: 8px; }
+  #confirm-panel .pixel-btn { flex: 1; }
+
   /* ── 전자시계 (LCD) ── */
   #clock-panel { top: 12px; right: 210px; padding: 8px 10px; }
   #lcd {
@@ -613,6 +628,8 @@
   /* [치명 버그 수정 v0.9.1] #modal도 .panel이라 위 규칙에 걸려, 타이틀에서 여는
      새 게임/불러오기/도움말 창이 전 플랫폼에서 투명해지던 문제 — 모달은 예외 처리 */
   body.title-mode #modal-back .panel { display: block !important; }
+  /* 확인창도 동일 예외 — 타이틀에서 슬롯 덮어쓰기/삭제 확인이 떠야 한다 */
+  body.title-mode #confirm-back .panel { display: block !important; }
   body.title-mode #title-screen {
     background: radial-gradient(ellipse at 50% 62%, rgba(10,12,17,0.08) 0%, rgba(8,9,13,0.66) 88%);
   }

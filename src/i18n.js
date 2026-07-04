@@ -126,6 +126,17 @@ export const STR = {
   'lang.confirm':     { ko: '언어를 바꾸면 게임을 다시 불러옵니다. 계속할까요?', en: 'Changing the language will reload the game. Continue?' },
 
   /* ── 위젯 모드 (Electron 전용) ── */
+  /* ── 인게임 확인창 버튼 (행동 동사 원칙) ── */
+  'confirm.yes':      { ko: '그렇게 한다', en: 'Do it' },
+  'confirm.no':       { ko: '그만둔다', en: 'Never mind' },
+  'confirm.move':     { ko: '이주한다', en: 'Move' },
+  'confirm.stay':     { ko: '남는다', en: 'Stay' },
+  'confirm.depart':   { ko: '출발한다', en: 'Set out' },
+  'confirm.delete':   { ko: '삭제한다', en: 'Delete' },
+  'confirm.overwrite':{ ko: '덮어쓴다', en: 'Overwrite' },
+  'confirm.cancel':   { ko: '취소', en: 'Cancel' },
+  'confirm.change':   { ko: '바꾼다', en: 'Change' },
+  'confirm.enable':   { ko: '켠다', en: 'Turn on' },
   'display.title':       { ko: '🖥️ 디스플레이', en: '🖥️ Display' },
   'opt.dispmode':        { ko: '화면 모드', en: 'Screen mode' },
   'disp.windowed':       { ko: '창 화면', en: 'Windowed' },
@@ -208,7 +219,7 @@ export const STR = {
   'current':              { ko: '(현재)', en: '(current)' },
 
   /* ── 취침 ── */
-  'sleep.cantDuringExp':  { ko: '탐험대가 돌아오기 전엔 잘 수 없습니다', en: 'You cannot sleep until the expedition returns' },
+  'sleep.cantDuringExp':  { ko: '탐험에서 돌아오기 전엔 잘 수 없습니다', en: "You can't sleep until you return from the expedition" },
   'sleep.noteBed':        { ko: '😴 침대에서 푹 잤습니다. (에너지 {e})', en: '😴 Slept soundly in the bed. (energy {e})' },
   'sleep.noteFloor':      { ko: '😴 바닥에서 웅크리고 잤습니다. (에너지 {e})', en: '😴 Curled up and slept on the floor. (energy {e})' },
   'sleep.autoBed':        { ko: '😴 지쳐 곯아떨어졌다... 침대에서 아침을 맞았다 (⚡{e})', en: '😴 Collapsed from exhaustion... woke in the bed to morning (⚡{e})' },
@@ -747,7 +758,7 @@ export const STR = {
   'quest.drink.text': { ko: '💧 게이지를 클릭해 물을 마셔보자', en: 'Click the 💧 gauge to drink water' },
   'quest.eat.text': { ko: '🥫 게이지를 클릭해 뭔가 먹어보자', en: 'Click the 🥫 gauge to eat something' },
   'quest.place.text': { ko: '🔧 배치 모드를 켜고 가구를 1개 놓아보자 (침대 추천)', en: 'Turn on 🔧 edit mode and place 1 furnishing (bed recommended)' },
-  'quest.depart.text': { ko: '🎒 지도를 열어 첫 탐험을 보내보자', en: 'Open the 🎒 map and send your first expedition' },
+  'quest.depart.text': { ko: '🎒 지도를 열어 첫 탐험을 나서보자', en: 'Open the 🎒 map and set out on your first expedition' },
   'quest.sleep.text': { ko: '🛌 취침으로 하루를 마무리하자', en: 'End the day with 🛌 sleep' },
   'quest.craft.text': { ko: '🔨 제작대에서 무엇이든 1개 만들어보자', en: 'Craft anything once at the 🔨 workbench' },
   'quest.clean.text': { ko: '🧹 청소를 1회 해보자', en: 'Clean the shelter 🧹 once' },

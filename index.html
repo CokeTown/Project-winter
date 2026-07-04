@@ -164,6 +164,16 @@
   <div class="q-check" id="quest-check">✅</div>
 </div>
 
+<!-- 인게임 확인창 — window.confirm(브라우저 네이티브 알림창) 대체. 모달 위에도 뜬다(z 70) -->
+<div id="confirm-back" style="display:none">
+  <div class="panel" id="confirm-panel">
+    <div id="confirm-msg"></div>
+    <div class="close-row">
+      <button class="pixel-btn primary" id="confirm-yes"></button>
+      <button class="pixel-btn" id="confirm-no"></button>
+    </div>
+  </div>
+</div>
 <div id="modal-back">
   <div class="panel" id="modal">
     <h2 id="modal-title"></h2>
