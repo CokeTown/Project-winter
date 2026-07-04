@@ -2409,6 +2409,7 @@ function sleepUntilMorning(auto = false) {
     state.energy = energy;
     const e = Math.round(state.energy);
     state.dayLog.notes.push(t(hasBed ? 'sleep.noteBed' : 'sleep.noteFloor', { e }));
+    questProgress('sleep'); // 온보딩: 취침으로 하루 마무리 → 기상 후 아침 보고가 결산을 가르친다
     // 기상 토스트·'dawn' SFX는 페이드아웃(눈 뜨는 시점)에
     toast(auto
       ? t(hasBed ? 'sleep.autoBed' : 'sleep.autoFloor', { e })
@@ -5507,6 +5508,7 @@ function tickTime(dt) {
           state.energy = Math.max(state.energy, energy);
           const e = Math.round(state.energy);
           state.dayLog.notes.push(t('day.napMorning', { e }));
+          questProgress('sleep'); // 취침 버튼을 안 눌러도 잠들면 온보딩이 막히지 않게
           updateHud(); updateClock();
         });
       }
@@ -5656,7 +5658,6 @@ function openModal(title, html, kind = null) {
 }
 function closeModal() {
   $('modal-back').classList.remove('show');
-  if (modalKind === 'report') questProgress('report');
   modalKind = null;
 }
 $('modal-close').addEventListener('click', closeModal);
@@ -5728,15 +5729,20 @@ function paperTextureURL() {
 // P2: 프로시저럴 텍스처 → AI 생성 에셋(public/img/*.png)으로 교체. makePaperTexture는 폴백/미래용 유지.
 // kind: 'journal'(수첩) | 'tip'(쪽지). 이미지 로드 실패 시 프로시저럴 데이터URL로 폴백.
 function applyPaperBg(el, kind = 'journal') {
-  const asset = kind === 'tip' ? 'img/tip_scrap.png' : 'img/paper_note.png';
-  // 진한 종이 이미지 위 잉크(#3a3026) 대비 확보용 밝은 오버레이 한 겹
-  const overlay = 'linear-gradient(rgba(255,250,240,.14), rgba(255,250,240,.14))';
+  // 쪽지는 박스 비율(가로형)에 맞춘 전용 스트립 — 정사각 조각을 cover로 깔면
+  // 투명 여백과 오버레이가 사각형으로 삐져나온다 (유저 신고)
+  const asset = kind === 'tip' ? 'img/tip_strip.png' : 'img/paper_note.png';
+  // 진한 종이 이미지 위 잉크(#3a3026) 대비 확보용 밝은 오버레이 한 겹 — 투명 PNG인 쪽지엔 금지
+  const overlay = kind === 'tip' ? '' : 'linear-gradient(rgba(255,250,240,.14), rgba(255,250,240,.14)), ';
   const img = new Image();
-  img.onload = () => { el.style.backgroundImage = `${overlay}, url(${asset})`; };
+  img.onload = () => {
+    el.style.backgroundImage = `${overlay}url(${asset})`;
+    if (kind === 'tip') el.style.backgroundSize = '100% 100%'; // 찢긴 테두리가 박스에 정확히 맞도록
+  };
   img.onerror = () => { el.style.backgroundImage = `url(${paperTextureURL()})`; }; // 폴백: 절차적 종이
   img.src = asset;
-  // 먼저 프로시저럴을 깔아두면 로드 지연 중에도 빈 배경이 보이지 않는다
-  el.style.backgroundImage = `url(${paperTextureURL()})`;
+  // 먼저 프로시저럴을 깔아두면 로드 지연 중에도 빈 배경이 보이지 않는다 (쪽지는 투명 유지)
+  if (kind !== 'tip') el.style.backgroundImage = `url(${paperTextureURL()})`;
 }
 
 let journalKeyHandler = null;
@@ -5819,7 +5825,9 @@ const QUESTS = [
   { id: 'eat',    icon: '🥫', textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
   { id: 'place',  icon: '🛏️', textId: 'quest.place.text',  loreId: 'quest.place.lore',  doneId: 'quest.place.done',  reward: { cloth: 1 } },
   { id: 'depart', icon: '🎒', textId: 'quest.depart.text', loreId: 'quest.depart.lore', doneId: 'quest.depart.done', reward: {} },
-  { id: 'report', icon: '📋', textId: 'quest.report.text', loreId: 'quest.report.lore', doneId: 'quest.report.done', reward: { bandage: 1 } },
+  // '결산 리포트 확인' 단계였음 — 거점 UI에 그런 화면이 없어 유저가 길을 잃었다.
+  // 취침 유도로 교체: 자고 일어나면 아침 보고가 뜨는 흐름 자체가 결산을 가르친다.
+  { id: 'sleep', icon: '🛌', textId: 'quest.sleep.text', loreId: 'quest.sleep.lore', doneId: 'quest.sleep.done', reward: { bandage: 1 } },
   { id: 'craft',  icon: '🔨', textId: 'quest.craft.text',  loreId: 'quest.craft.lore',  doneId: 'quest.craft.done',  reward: { parts: 1 } },
   { id: 'clean',  icon: '🧹', textId: 'quest.clean.text',  loreId: 'quest.clean.lore',  doneId: 'quest.clean.done',  reward: { water: 1 } },
 ];
@@ -5833,6 +5841,9 @@ function renderQuestCard() {
   const lore = $('quest-lore');
   if (lore) lore.textContent = q.loreId ? t(q.loreId) : '';
   $('quest-text').textContent = t(q.textId);
+  // 배치 단계 동안 🔧 버튼 시선 유도 (툴바가 배치 모드 전용이 되면서 진입점을 가르쳐야 한다)
+  const eb = $('btn-edit');
+  if (eb) eb.classList.toggle('pulse', q.id === 'place');
   $('quest-prog').textContent = t('quest.progress', { cur: state.questIdx, total: QUESTS.length });
   card.classList.remove('done-flash');
   card.classList.add('show');
@@ -6098,6 +6109,8 @@ function toggleEditMode(force) {
   editMode = force === undefined ? !editMode : !!force;
   const b = $('btn-edit');
   if (b) b.classList.toggle('primary', editMode);
+  // 하단 인벤토리 바는 배치 모드 전용 (CSS: body:not(.edit-mode) #toolbar 숨김)
+  document.body.classList.toggle('edit-mode', editMode);
   if (editMode) {
     toast(t('edit.on'));
   } else {
@@ -6160,6 +6173,44 @@ $('opt-lang').addEventListener('change', e => {
     return; // 웹/모바일: 섹션 숨김, 아래 로직 전부 skip
   }
   if (section) section.style.display = 'block';
+
+  // ── 디스플레이 모드/해상도 (Electron 전용, #42) ──
+  // 주의: Chromium엔 배타적 전체화면이 없어 fullscreen과 borderless는 동일 동작(라벨만 관례상 구분).
+  {
+    const dsec = $('display-section');
+    if (dsec) dsec.style.display = 'block';
+    const RES_PRESETS = [
+      [1152, 768], [1366, 768], [1440, 900], [1600, 900], [1440, 960], [1680, 1050],
+      [1920, 1080], [2048, 1080], [1920, 1200], [2560, 1080], [2560, 1440], [3840, 2160],
+    ];
+    const DKEY = 'nw-display';
+    let dopts = { mode: 'windowed', w: 1280, h: 800 };
+    try { Object.assign(dopts, JSON.parse(localStorage.getItem(DKEY) || '{}')); } catch (e) { /* */ }
+    const elMode = $('opt-dispmode');
+    const elRes = $('opt-dispres');
+    if (elMode && elRes) {
+      elRes.innerHTML = RES_PRESETS.map(([w, h]) => `<option value="${w}x${h}">${w} × ${h}</option>`).join('');
+      // 저장값이 프리셋에 없으면(기본 1280x800 등) 가장 가까운 프리셋으로 표시만 맞춘다
+      const cur = `${dopts.w}x${dopts.h}`;
+      elRes.value = RES_PRESETS.some(([w, h]) => `${w}x${h}` === cur) ? cur : '1366x768';
+      elMode.value = dopts.mode;
+      const applyDisplay = () => {
+        const [w, h] = elRes.value.split('x').map(Number);
+        dopts = { mode: elMode.value, w, h };
+        try { localStorage.setItem(DKEY, JSON.stringify(dopts)); } catch (e) { /* */ }
+        api.setDisplay({ mode: dopts.mode, width: w, height: h });
+        // 해상도 select는 창 모드에서만 의미 있다
+        $('dispres-row').style.display = dopts.mode === 'windowed' ? '' : 'none';
+      };
+      elMode.addEventListener('change', applyDisplay);
+      elRes.addEventListener('change', applyDisplay);
+      // 부팅 시 저장된 디스플레이 상태 복원 (기본값 그대로면 창 크기를 건드리지 않는다)
+      $('dispres-row').style.display = dopts.mode === 'windowed' ? '' : 'none';
+      if (api.setDisplay && (dopts.mode !== 'windowed' || `${dopts.w}x${dopts.h}` !== '1280x800')) {
+        api.setDisplay({ mode: dopts.mode, width: dopts.w, height: dopts.h });
+      }
+    }
+  }
 
   const WKEY = 'nw-widget';
   let wopts = { opacity: 1, alwaysOnTop: false, mini: false, clickThrough: false };
@@ -6486,10 +6537,15 @@ if (sessionStorage.getItem('ps-intro')) {
 // (UI_BASE_FONT/UI_MIN_FONT/TEXT_BOOST 상수는 부팅 분기 위에서 선언 — TDZ 방지)
 function updateUiScale() {
   let s = Math.min(innerWidth / 1400, innerHeight / 860);
-  s = THREE.MathUtils.clamp(s, 0.85, 2.1);
-  // 스케일 후 기준 폰트(11px)가 최소 가독 크기(11px) 밑으로 내려가지 않게 보정
-  const minScale = UI_MIN_FONT / UI_BASE_FONT; // = 1.0
-  if (s < minScale) s = minScale;
+  // 초소형 창(위젯 미니 480x300 등): 최소 가독 폰트 하한을 고집하면 UI가 화면을 넘어버린다.
+  // 기준(960x600) 미만에선 하한을 창 크기 비례로 풀어 "작아도 다 보이는" 쪽을 택한다.
+  const tiny = innerWidth < 960 || innerHeight < 600;
+  s = THREE.MathUtils.clamp(s, tiny ? 0.35 : 0.85, 2.1);
+  if (!tiny) {
+    // 스케일 후 기준 폰트(11px)가 최소 가독 크기(11px) 밑으로 내려가지 않게 보정
+    const minScale = UI_MIN_FONT / UI_BASE_FONT; // = 1.0
+    if (s < minScale) s = minScale;
+  }
   s *= TEXT_BOOST; // 가독성 부스트를 배율에 흡수 (CSS와 JS가 같은 --uiz를 공유)
   document.documentElement.style.setProperty('--uiz', s.toFixed(3));
   return s;
