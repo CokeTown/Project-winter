@@ -140,6 +140,226 @@
       "fit": "cover",
       "dest": "assets-src/art/out/event_card_frame.png",
       "prompt": "A decorative frame/border for an encounter event illustration, designed so the wide center area is left empty (plain, neutral, near-transparent-looking dark or blank space) for another scene image to be composited underneath later. Around that empty center, render a heavy dark vignette fading in from all edges, styled like an old weathered Polaroid photo border crossed with a torn survivor's note: soft rounded photo-corner shapes, faint scorch and water-stain marks along the border, subtle rough torn-paper texture at the outer edge, a warm candlelight tone glowing faintly at the frame's inner edge where it meets the empty center. Weathered, crumpled paper, post-apocalyptic survivor's note aesthetic, warm candlelight tone, subtle pixel-art grain, soft dithering, no text."
+    },
+    {
+      "id": "icon_res_food",
+      "purpose": "UI 아이콘: res_food",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_food.png",
+      "prompt": "a fresh apple with a small leaf, slightly bruised. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_canned",
+      "purpose": "UI 아이콘: res_canned",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_canned.png",
+      "prompt": "a dented tin can of preserved food with a worn paper label. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_water",
+      "purpose": "UI 아이콘: res_water",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_water.png",
+      "prompt": "a clear water droplet with a tiny highlight. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_cloth",
+      "purpose": "UI 아이콘: res_cloth",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_cloth.png",
+      "prompt": "a folded stack of rough gray-beige cloth. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_candle",
+      "purpose": "UI 아이콘: res_candle",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_candle.png",
+      "prompt": "a stubby white candle with a small warm flame and melted wax. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_battery",
+      "purpose": "UI 아이콘: res_battery",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_battery.png",
+      "prompt": "a chunky AA battery, olive body with copper top. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_fuel",
+      "purpose": "UI 아이콘: res_fuel",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_fuel.png",
+      "prompt": "a small red jerry can of fuel with a cross-brace pattern. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_parts",
+      "purpose": "UI 아이콘: res_parts",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_parts.png",
+      "prompt": "a steel gear with a small wrench crossed behind it. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_material",
+      "purpose": "UI 아이콘: res_material",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_material.png",
+      "prompt": "a short stack of salvaged planks and a brick. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_bandage",
+      "purpose": "UI 아이콘: res_bandage",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_bandage.png",
+      "prompt": "a rolled white bandage with a loose end. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_antiseptic",
+      "purpose": "UI 아이콘: res_antiseptic",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_antiseptic.png",
+      "prompt": "a small brown antiseptic bottle with a cork and cross label. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_painkiller",
+      "purpose": "UI 아이콘: res_painkiller",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_painkiller.png",
+      "prompt": "a small pill bottle with two tablets beside it. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_g_hunger",
+      "purpose": "UI 아이콘: g_hunger",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_g_hunger.png",
+      "prompt": "a rustic bowl of warm stew with a spoon, gentle steam. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_g_thirst",
+      "purpose": "UI 아이콘: g_thirst",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_g_thirst.png",
+      "prompt": "a dented metal canteen with a water droplet. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_g_energy",
+      "purpose": "UI 아이콘: g_energy",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_g_energy.png",
+      "prompt": "a yellow lightning bolt, slightly angled. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_act_explore",
+      "purpose": "UI 아이콘: act_explore",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_act_explore.png",
+      "prompt": "a worn red hiking backpack with rolled blanket on top. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_act_move",
+      "purpose": "UI 아이콘: act_move",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_act_move.png",
+      "prompt": "a small wooden shelter house with a chimney. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_act_craft",
+      "purpose": "UI 아이콘: act_craft",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_act_craft.png",
+      "prompt": "a claw hammer crossed over a hand saw. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_act_clean",
+      "purpose": "UI 아이콘: act_clean",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_act_clean.png",
+      "prompt": "a straw broom leaning at an angle. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_act_sleep",
+      "purpose": "UI 아이콘: act_sleep",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_act_sleep.png",
+      "prompt": "a simple bed with a patched blanket and pillow. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_act_journal",
+      "purpose": "UI 아이콘: act_journal",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_act_journal.png",
+      "prompt": "a worn leather journal with a pencil. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_act_help",
+      "purpose": "UI 아이콘: act_help",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_act_help.png",
+      "prompt": "a folded paper map with a small compass. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
     }
   ]
 }

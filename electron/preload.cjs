@@ -7,4 +7,6 @@ contextBridge.exposeInMainWorld('nineWidget', {
   setAlwaysOnTop: (v) => ipcRenderer.send('widget:alwaysOnTop', v),
   setMini: (v) => ipcRenderer.send('widget:mini', v),
   setClickThrough: (v) => ipcRenderer.send('widget:clickThrough', v),
+  // 디스플레이 모드/해상도 (PC 전용 설정 UI에서 호출)
+  setDisplay: (cfg) => ipcRenderer.send('display:set', cfg),
 });

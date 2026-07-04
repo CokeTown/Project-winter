@@ -73,13 +73,36 @@ ipcMain.on('widget:mini', (evt, v) => {
     const wa = display.workArea;
     const x = wa.x + wa.width - MINI_W - 12;
     const y = wa.y + wa.height - MINI_H - 12;
+    // 최소 크기(960x600)가 축소를 가로막아 어정쩡한 크기가 되던 버그 — 미니 동안 해제
+    win.setMinimumSize(1, 1);
     win.setResizable(false);
     win.setBounds({ x, y, width: MINI_W, height: MINI_H });
     isMini = true;
   } else {
     win.setResizable(true);
+    win.setMinimumSize(960, 600);
     if (savedBounds) win.setBounds(savedBounds);
     isMini = false;
+  }
+});
+
+// ── 디스플레이 모드/해상도 IPC ──
+// mode: 'fullscreen' | 'borderless' | 'windowed' (+ windowed일 때 width/height)
+// 주의: Chromium엔 배타적 전체화면이 없다 — fullscreen과 borderless는 동일하게
+// "테두리 없는 전체화면"으로 동작한다 (라벨만 구분, PC 게임 관례상 옵션은 둘 다 노출).
+ipcMain.on('display:set', (evt, cfg) => {
+  const win = BrowserWindow.fromWebContents(evt.sender);
+  if (!win || isMini) return; // 미니 모드 중엔 무시 (해제 후 적용)
+  const { mode, width, height } = cfg || {};
+  if (mode === 'fullscreen' || mode === 'borderless') {
+    win.setFullScreen(true);
+  } else if (mode === 'windowed') {
+    win.setFullScreen(false);
+    const w = Math.max(640, Number(width) || 1280);
+    const h = Math.max(400, Number(height) || 800);
+    win.setMinimumSize(Math.min(960, w), Math.min(600, h));
+    win.setSize(w, h);
+    win.center();
   }
 });
 
