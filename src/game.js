@@ -21,6 +21,30 @@ const LColor = (o, i) => (lang === 'en' && o.colorNamesEn ? o.colorNamesEn[i] : 
 const buffLabel = (b) => b ? (b.labelId ? t(b.labelId) : (b.label || '')) : '';
 
 /* ============================================================
+   생성 아트 아이콘 (public/img/icons) — 이모지 UI 교체 (#19)
+   테이블(RESOURCES/DEFS 등) 원본 필드는 불변, 렌더 시점에만 아이콘 우선.
+   이미지 로드 실패 시 onerror로 이모지 텍스트 폴백(오프라인 PWA 캐시 미스 대비).
+============================================================ */
+// HTML 속성값 안전화 (이모지/따옴표를 onerror 인라인 폴백에 넣기 위함)
+const _iconEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// icon(name, emojiFallback, cls) → <img class="px-icon …"> 문자열. emoji 폴백 필수(로드 실패 시 텍스트로 대체).
+function icon(name, emoji = '', cls = '') {
+  const fb = _iconEsc(emoji);
+  return `<img class="px-icon${cls ? ' ' + cls : ''}" src="img/icons/${name}.png" alt="" draggable="false"`
+    + ` onerror="this.replaceWith(document.createTextNode('${fb}'))">`;
+}
+// ID→아이콘명 매핑 (테이블 원본 대신 별도 객체). 대부분 ID가 파일명과 직결되나 예외(region slum→slums)만 명시.
+const REGION_ICON = { residential: 'icon_region_residential', commercial: 'icon_region_commercial', industrial: 'icon_region_industrial', slum: 'icon_region_slums' };
+const GAUGE_ICON = { hunger: 'icon_g_hunger', thirst: 'icon_g_thirst', energy: 'icon_g_energy' };
+const WEATHER_ICON = { clear: 'icon_weather_clear', snow: 'icon_weather_snow', rain: 'icon_weather_rain', ash: 'icon_weather_ash', storm: 'icon_weather_storm' };
+// 렌더 편의 래퍼 (테이블 객체를 받아 아이콘 우선, emoji 폴백)
+const resIcon   = (id, cls = '') => icon(`icon_res_${id}`, RESOURCES[id]?.emoji || '', cls);
+const furnIcon  = (id, cls = '') => icon(`icon_furn_${id}`, DEFS[id]?.emoji || '', cls);
+const shIcon    = (id, cls = '') => icon(`icon_shelter_${id}`, SHELTERS[id]?.emoji || '', cls);
+const regionIcon= (id, cls = '') => icon(REGION_ICON[id] || `icon_region_${id}`, REGIONS[id]?.emoji || '', cls);
+const wxIcon    = (type, cls = '') => icon(WEATHER_ICON[type] || `icon_weather_${type}`, WEATHERS[type]?.icon || '', cls);
+
+/* ============================================================
    기본 설정
 ============================================================ */
 const GRID = 0.25;
@@ -3111,7 +3135,7 @@ function openMapModal() {
   for (const [rid, r] of Object.entries(REGIONS)) {
     const el = document.createElement('div');
     el.className = 'map-marker region';
-    el.textContent = r.emoji;
+    el.innerHTML = regionIcon(rid, 'px-lg');
     el.title = LName(r);
     Object.assign(el.style, pct(MAP.regions[rid]));
     el.addEventListener('click', () => {
@@ -3121,8 +3145,8 @@ function openMapModal() {
       const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC); // 실초→게임 시간 표기
       const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
       $('map-info').innerHTML = `
-        ${t('map.regionLine', { emoji: r.emoji, pct: Math.round(p.eff * 100), name: LName(r), desc: LDesc(r) })}<br>
-        ${t('map.riskLine', { risk: LRisk(r), dur, mult: regionDistMult(rid).toFixed(2), wicon: WEATHERS[weather.type].icon, wname: LName(WEATHERS[weather.type]), forecast: fc })}
+        ${t('map.regionLine', { emoji: regionIcon(rid), pct: Math.round(p.eff * 100), name: LName(r), desc: LDesc(r) })}<br>
+        ${t('map.riskLine', { risk: LRisk(r), dur, mult: regionDistMult(rid).toFixed(2), wicon: wxIcon(weather.type), wname: LName(WEATHERS[weather.type]), forecast: fc })}
         <div style="margin-top:6px"><button class="pixel-btn primary" id="btn-map-go" style="width:100%">${t('map.go')}</button></div>`;
       $('btn-map-go').addEventListener('click', () => { closeModal(); startExpedition(rid); }); // 에너지/탈진/횟수 검사를 거친다
     });
@@ -3172,7 +3196,7 @@ function hasForecast() {
 function forecastText() {
   const nextDayStart = (Math.floor(state.gameMin / 1440) + 1) * 1440;
   return state.weatherUntil > nextDayStart
-    ? t('forecast.tomorrowSame', { icon: WEATHERS[state.weatherType].icon, name: LName(WEATHERS[state.weatherType]) })
+    ? t('forecast.tomorrowSame', { icon: wxIcon(state.weatherType), name: LName(WEATHERS[state.weatherType]) })
     : t('forecast.tomorrowChange');
 }
 // 탐험은 준비 단계를 거친다 (기획서 v0.2: 지역 → 날씨/위험 확인 → 준비물 → 출발)
@@ -3399,10 +3423,10 @@ function resolveExpedition() {
     }
   }
   const resHtml = Object.keys(gotRes).length
-    ? `<div class="loot-list">${Object.entries(gotRes).map(([id, n]) => `<div class="loot-item">${RESOURCES[id].emoji} ${LName(RESOURCES[id])} +${n}</div>`).join('')}</div>`
+    ? `<div class="loot-list">${Object.entries(gotRes).map(([id, n]) => `<div class="loot-item">${resIcon(id)} ${LName(RESOURCES[id])} +${n}</div>`).join('')}</div>`
     : '';
   const lootHtml = got.length
-    ? `<div class="loot-list">${got.map(id => `<div class="loot-item">${DEFS[id].emoji} ${LName(DEFS[id])}</div>`).join('')}</div>`
+    ? `<div class="loot-list">${got.map(id => `<div class="loot-item">${furnIcon(id)} ${LName(DEFS[id])}</div>`).join('')}</div>`
     : '';
   const prepHtml = prep.length
     ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">${t('exp.usedPrep', { list: prep.map(p => `${PREPS[p].emoji}${LName(PREPS[p])}`).join(', ') })}</div>`
@@ -4000,7 +4024,11 @@ function showEvent(id) {
   playSfx('sting');
   state.activeEvent = id; // 현재 떠 있는 이벤트 (내리기 대상)
   const evTitle = t(ev.titleId);
-  const body = `
+  // 이벤트 일러스트 파일럿 (#19): wanderer/thief만 상단 일러스트, 다른 이벤트는 현행 유지
+  const illust = (id === 'wanderer' || id === 'thief')
+    ? `<img class="ev-illust" src="img/events/ev_${id}.png" alt="" draggable="false" onerror="this.remove()">`
+    : '';
+  const body = `${illust}
     <div class="modal-body" style="line-height:2">${t(ev.textId)}</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
       ${ev.choices.map((c, i) => {
@@ -4165,8 +4193,8 @@ function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
   const rows = CRAFTS.map((c, i) => {
     const outLabel = c.out.res
-      ? `${RESOURCES[c.out.res].emoji} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`
-      : `${DEFS[c.out.furn].emoji} ${LName(DEFS[c.out.furn])}`;
+      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`
+      : `${furnIcon(c.out.furn)} ${LName(DEFS[c.out.furn])}`;
     const ok = resHasAll(c.cost);
     return `
       <div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
@@ -5226,8 +5254,8 @@ function updateClock() {
   const se = seasonOf();
   $('lcd-day').textContent = t('clock.dayLine', { day: String(state.day).padStart(2, '0'), sicon: se.icon, sname: LName(se), sd: seasonDay(), total: SEASON_DAYS });
   $('lcd-time').innerHTML = `${String(h).padStart(2, '0')}<span id="lcd-colon">:</span>${String(m).padStart(2, '0')}`;
-  const [icon, label] = timeLabel();
-  $('lcd-sub').textContent = `${icon} ${label} · ${WEATHERS[weather.type].icon}${state.injury ? ' · ' + INJURIES[state.injury.type].icon : ''}`;
+  const [timeIcon, label] = timeLabel();
+  $('lcd-sub').innerHTML = `${timeIcon} ${label} · ${wxIcon(weather.type)}${state.injury ? ' · ' + INJURIES[state.injury.type].icon : ''}`;
 }
 
 function updateHud() {
@@ -5261,17 +5289,17 @@ function updateHud() {
     ((state.winters || 0) >= 1
       ? ` · <span class="hud-winters${state.winters > 9 ? ' beyond' : ''}" title="${t('winter.badge.tip', { n: state.winters })}">❄️${state.winters}/9</span>`
       : '');
-  renderGauge('g-hunger', state.hunger, '🥫');
-  renderGauge('g-thirst', state.thirst, '💧');
-  renderGauge('g-energy', state.energy, '⚡');
+  renderGauge('g-hunger', state.hunger, 'hunger', '🥫');
+  renderGauge('g-thirst', state.thirst, 'thirst', '💧');
+  renderGauge('g-energy', state.energy, 'energy', '⚡');
 }
-function renderGauge(id, val, emoji) {
+function renderGauge(id, val, gkey, emoji) {
   const g = $(id);
   if (!g) return;
   const fill = g.querySelector('.g-fill');
   fill.style.width = Math.max(0, Math.round(val)) + '%';
   fill.className = 'g-fill' + (val < 25 ? ' crit' : val < 45 ? ' warn' : '');
-  g.querySelector('.g-label').textContent = `${emoji} ${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
+  g.querySelector('.g-label').innerHTML = `${icon(GAUGE_ICON[gkey], emoji)} ${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
 }
 let lastResSnapshot = {};
 function renderResBar() {
@@ -5280,7 +5308,7 @@ function renderResBar() {
     const n = state.res[id] || 0;
     const changed = lastResSnapshot[id] != null && lastResSnapshot[id] !== n;
     return `<div class="res-chip ${n === 0 ? 'zero' : ''} ${changed ? 'flash' : ''}" title="${LName(r)}">
-      <span class="re">${r.emoji}</span><span class="rname">${LName(r)}</span><span class="rn">${n}</span>
+      <span class="re">${resIcon(id)}</span><span class="rname">${LName(r)}</span><span class="rn">${n}</span>
     </div>`;
   }).join('');
   lastResSnapshot = { ...state.res };
@@ -5787,7 +5815,7 @@ function renderInventoryBar() {
     const cnt = state.inventory[id] || 0;
     const el = document.createElement('div');
     el.className = 'tool-item' + (cnt <= 0 ? ' empty' : '');
-    el.innerHTML = `<span class="emoji">${def.emoji}</span><span>${LName(def)}</span><span class="cnt">${cnt}</span>`;
+    el.innerHTML = `<span class="emoji">${furnIcon(id)}</span><span>${LName(def)}</span><span class="cnt">${cnt}</span>`;
     el.title = cnt > 0 ? t('inv.place', { name: LName(def) }) : t('inv.getByExp');
     el.addEventListener('click', () => startPlacing(id));
     bar.appendChild(el);
@@ -5926,7 +5954,7 @@ function openShelterModal() {
         const chips = Object.entries(cost).map(([rid, need]) => {
           const have = state.res[rid] || 0;
           const okItem = have >= need;
-          return `<span class="req-chip ${okItem ? 'ok' : 'lack'}">${RESOURCES[rid].emoji} ${have}/${need}</span>`;
+          return `<span class="req-chip ${okItem ? 'ok' : 'lack'}">${resIcon(rid)} ${have}/${need}</span>`;
         }).join('');
         costLine = chips
           ? `<div class="s-desc" style="color:var(--text-dim)">${t('shelter.reqLabel')}</div><div class="req-chips">${chips}</div>`
@@ -5936,7 +5964,7 @@ function openShelterModal() {
       }
       return `
       <div class="shelter-card ${cur ? 'current' : ''} ${unlocked ? '' : 'locked'}">
-        <div class="s-emoji">${unlocked ? sh.emoji : '🔒'}</div>
+        <div class="s-emoji">${unlocked ? shIcon(id, 'px-lg') : '🔒'}</div>
         <div class="s-body">
           <div class="s-name">${LName(sh)} ${cur ? `<span style="color:var(--accent)">${t('current')}</span>` : ''}${unlocked && !state.renovated[id] ? t('shelter.unrefit') : ''}</div>
           <div class="s-desc">${unlocked ? LDesc(sh) : t('shelter.locked', { need: sh.unlockAt, cur: state.successes })}</div>
