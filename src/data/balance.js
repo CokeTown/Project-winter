@@ -112,6 +112,23 @@ export const BAL = {
 
     /* 지역 인센티브 확정 보장 */
     industrialGuaranteedFuel: 1, // 공업지대 fuel 최소 확정 획득
+
+    /* 돔 벙커 리워크 (#36) */
+    bunkerRoofCost: { material: 6 },  // 천장 수리 프로젝트 총비용 (2단계 합산: 임시 덮개 2 + 완전 수리 4)
+    bunkerRoofStage1: { material: 2 },// 1단계 임시 덮개 (빗물 새기 멎음)
+    bunkerRoofStage2: { material: 4 },// 2단계 완전 수리 (쾌적 +4)
+    bunkerRoofComfort: 4,             // 천장 완전 수리 시 벙커 쾌적 가산
+    bunkerStorageComfort: 4,          // 절단기 뒷문 저장고 개방 시 벙커 쾌적 가산
+    bunkerRoofDirtPerDay: 1,          // 천장 구멍 방치 시 비 오는 날 청결 추가 감소
+  },
+
+  /* ── 인카운터 / 수집 (Phase D #12·#35) ── */
+  events: {
+    dailyChance: 0.60,     // 아침 결산 시 랜덤 인카운터 발동 확률 (기존 하드코딩 0.60 이관)
+    midExpChance: 0.10,    // 탐험 중간(50% 지점) 인카운터 발동 확률 (기존 0.10 이관)
+    memoDropChance: 0.12,  // 탐험 성공 시 지역 메모 1개 드랍 확률
+    willDropChance: 0.02,  // 탐험 성공 시 생존자 유서 드랍 확률 (극저확률, REQ-LORE-01: 1.5~2.5% 밴드)
+    radioListenChance: 0.18, // 라디오 ON 상태 하루 1회 방송 청취 확률
   },
 
   /* ── 쾌적함 4요소 분해 (Living Shelter #29) ──

@@ -779,8 +779,12 @@ function comfortDetail() {
   // 온풍기(heater) 가동 시 겨울 쾌적 보너스
   let heatMod = 0;
   if (seasonOf().id === 'winter' && items.some(i => i.on !== false && DEFS[i.defId]?.appliance?.effect === 'heat')) heatMod += BAL.economy.heaterWinterComfort;
-  const score = THREE.MathUtils.clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod + heatMod, 0, 100);
-  return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, heatMod, clean, score };
+  // 인카운터 안정감 여운(moodBuff) — 며칠간 지속되는 일시 쾌적. 만난 뒤의 정적이 남긴 온기/불안.
+  const moodMod = (state.moodBuff && state.day <= state.moodBuff.until) ? (state.moodBuff.amt || 0) : 0;
+  // 돔 벙커 리워크(#36): 천장 완전 수리 + 뒷문 저장고가 갖춰지면 벙커 쾌적 가산.
+  const bunkerMod = bunkerComfortBonus();
+  const score = THREE.MathUtils.clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod + heatMod + moodMod + bunkerMod, 0, 100);
+  return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, heatMod, moodMod, bunkerMod, clean, score };
 }
 /* ── 쾌적함 4요소 분해 (#29 Living Shelter) ──
    comfortDetail()의 원본 컴포넌트를 온기/청결/안정감/분위기 4축으로 "재분류"만 한다.
@@ -816,7 +820,8 @@ function comfortBreakdown() {
   // ── 4축 합산 (합 = cd.score의 기저 18 포함) ──
   const warmth = lightWarmth + cd.heatMod + cd.catMod + warmthLimit;
   const clean = cd.cleanMod;
-  const security = 18 + cd.shelterMod + cd.settled + cd.injuryMod;
+  // moodBuff(만남의 여운)와 벙커 수리 가산은 안정감 축으로 귀속 — 합계는 score 불변.
+  const security = 18 + cd.shelterMod + cd.settled + cd.injuryMod + (cd.moodMod || 0) + (cd.bunkerMod || 0);
   const mood = cd.furn + lightMood + darkPen;
   // ── 원인 로그 (각 축 2~3줄) ──
   const logs = { warmth: [], clean: [], security: [], mood: [] };
@@ -832,6 +837,8 @@ function comfortBreakdown() {
   if (cd.shelterMod) logs.security.push({ icon: sh.emoji, name: t('comfort.log.shelter'), v: `+${cd.shelterMod}` });
   if (cd.settled) logs.security.push({ icon: '🪺', name: t('comfort.log.settled', { n: cd.settled }), v: `+${cd.settled}` });
   if (cd.injuryMod) logs.security.push({ icon: '🩹', name: t('comfort.log.injury'), v: `${cd.injuryMod}` });
+  if (cd.bunkerMod) logs.security.push({ icon: '🛖', name: t('comfort.log.bunkerRoof'), v: `+${cd.bunkerMod}` });
+  if (cd.moodMod) logs.security.push({ icon: cd.moodMod > 0 ? '🫧' : '💭', name: t('comfort.log.mood'), v: `${cd.moodMod > 0 ? '+' : ''}${cd.moodMod}` });
   // 분위기
   if (cd.furn) logs.mood.push({ icon: '🪑', name: t('comfort.log.furn'), v: `+${cd.furn}` });
   for (const s of moodSrc) logs.mood.push({ icon: DEFS[s.id].emoji, name: LName(DEFS[s.id]), v: `+${Math.round(s.v * (rawSum ? (cd.light / rawSum) : 1))}` });
@@ -860,6 +867,18 @@ function comfortBreakdownHtml() {
     </div>`;
   }).join('');
   return `<div class="report-sec"><span class="r-title">${t('comfort.breakdownTitle', { score: b.score })}</span>${rows}</div>`;
+}
+// 돔 벙커 리워크(#36): 천장 완전 수리(+4) + 절단기 뒷문 저장고(+4). 벙커에서만 유효.
+function bunkerComfortBonus() {
+  if (state.current !== 'bunker') return 0;
+  let b = 0;
+  if (state.bunkerRoof === 'full') b += BAL.economy.bunkerRoofComfort;
+  if (state.bunkerBackdoor) b += BAL.economy.bunkerStorageComfort;
+  return b;
+}
+// 인카운터 안정감 여운 — amt(±) 를 days 일간 부여. 같은 부호면 이어붙이지 않고 더 강한 쪽/새 것으로 갱신.
+function addMoodBuff(amt, days = 3) {
+  state.moodBuff = { amt, until: state.day + days };
 }
 function comfortLevel() { return Math.min(5, Math.round(comfortDetail().score / 20)); }
 // 기획서 쾌적함 티어: 50+ → +3%, 75+ → +6%, 90+ → +10%
@@ -1302,15 +1321,17 @@ const SHELTERS = {
       const shellCols = [0xb5b1a6, 0xa8a49a, 0x99958b, 0x8f8b82];
       const grassPal = [0x6a7f4a, 0x8a8a4f, 0xa3703f, 0x5f7a45];
       const zBack = -d / 2 - 0.4;
+      const roofFixed = state.bunkerRoof === 'full';   // 완전 수리 시 외피 갈라짐 메움
+      const roofTemp = state.bunkerRoof === 'temp';    // 임시 덮개 시 일부만 보강
       const mkHalf = (thetaFrom, seed) => {
         const g = new THREE.Group();
         const rand = seededRand(seed);
         for (let i = 0; i < SEG; i++) {
           const th = thetaFrom + (i + 0.5) * (Math.PI / 2) / SEG;
-          // 갈라진 외피: 일부 조각은 짧거나 없음
-          if (rand() < 0.1 && th > 0.5 && th < Math.PI - 0.5) continue;
+          // 갈라진 외피: 일부 조각은 짧거나 없음 (천장 수리하면 메워진다)
+          if (!roofFixed && rand() < 0.1 && th > 0.5 && th < Math.PI - 0.5) continue;
           let dep = d + 1.0;
-          if (rand() < 0.34) dep *= 0.5 + rand() * 0.32;
+          if (!roofFixed && rand() < 0.34) dep *= 0.5 + rand() * 0.32; // 수리하면 짧은(뚫린) 조각 없음
           const arcLen = R * (Math.PI / 2) / SEG + 0.1;
           const col = rand() < 0.16 ? 0x5d594f : shellCols[Math.floor(rand() * shellCols.length)];
           const m = new THREE.Mesh(new THREE.BoxGeometry(arcLen, T, dep), lamb(col));
@@ -1337,6 +1358,41 @@ const SHELTERS = {
       wallDefs.push({ group: right, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(1, 0, 0) });
       wallDefs.push({ group: left, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(-1, 0, 0) });
       makeWalls(wallDefs);
+
+      // 천장 임시 덮개(temp): 정점 부근에 방수포 한 장. 완전 수리(full)는 mkHalf 에서 외피가 이미 메워짐.
+      if (roofTemp) {
+        const tarp = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.06, d + 0.6), lamb(0x53616a));
+        tarp.position.set(0, R - 0.15, zBack + (d + 0.6) / 2 + 0.2);
+        tarp.rotation.z = 0.04;
+        tarp.castShadow = tarp.receiveShadow = true;
+        roomGroup.add(tarp);
+        for (let k = -1; k <= 1; k++) Cyl(roomGroup, 0.03, 0.03, 0.5, 0x2f2a24, k * 1.0, R - 0.4, zBack + 0.6, 5);
+      }
+      // 완전 수리(full): 아치 안쪽에 매끈한 콘크리트 라이너를 덧대 '온전한 천장' 느낌.
+      if (roofFixed) {
+        const liner = new THREE.Mesh(new THREE.CylinderGeometry(R - 0.3, R - 0.3, d + 0.9, 16, 1, true, 0, Math.PI), wallPhong({ map: concreteTex }));
+        liner.rotation.z = Math.PI / 2; liner.rotation.y = Math.PI / 2;
+        liner.position.set(0, 0, zBack + (d + 0.9) / 2);
+        liner.material.side = THREE.BackSide;
+        roomGroup.add(liner);
+      }
+      // 절단기 뒷문 저장고(backdoor): 뒷벽에 개구부 + 뒤편에 작은 저장 공간(선반/상자).
+      if (state.bunkerBackdoor) {
+        const conc2 = wallPhong({ map: concreteTex }); conc2.userData.shared = true;
+        const store = new THREE.Group();
+        // 개구부 틀 (뚫린 뒷벽 표현: 밝은 문틀)
+        const frameM = lamb(0x3a3530);
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.1, 0.12), frameM);
+        fr.position.set(-w / 4, 1.05, -d / 2 - 0.02); store.add(fr);
+        const opening = new THREE.Mesh(new THREE.BoxGeometry(1.24, 1.9, 0.14), lamb(0x14110d));
+        opening.position.set(-w / 4, 1.0, -d / 2 - 0.06); store.add(opening);
+        // 뒤편 저장고 볼륨 (바닥/벽/선반)
+        const back2 = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.2, 1.8), conc2);
+        back2.position.set(-w / 4, 0.0, -d / 2 - 1.0); back2.receiveShadow = true; store.add(back2);
+        for (let s = 0; s < 2; s++) B(store, 2.0, 0.06, 0.5, 0x77543a, -w / 4, 0.7 + s * 0.6, -d / 2 - 1.2);
+        for (let c = 0; c < 3; c++) { const cr = B(store, 0.4, 0.4, 0.4, [0x8a6a48, 0x6a5a40, 0x7a6a54][c], -w / 4 - 0.6 + c * 0.6, 0.4, -d / 2 - 0.7); cr.castShadow = true; }
+        roomGroup.add(store);
+      }
 
       // 천장 펜던트 램프 (컨셉아트) — 아치 정점에서 늘어짐
       Cyl(roomGroup, 0.015, 0.015, 1.3, 0x2a2622, 0, 3.5, -0.6, 5);
@@ -2464,6 +2520,19 @@ const state = {
   winterSnap: null,    // 현재/직전 겨울 시작 시점 스냅샷 (memoir 차분 계산용)
   pendingWinterMemoir: [], // 표시 대기 중인 "그 해 겨울" 수첩 페이지 큐 (봄 첫 아침 보고 뒤로 미룸)
   doctorRadioPending: false, // 9겨울 마일스톤 후 박사 무전 대기 (라디오 미보유 시 다음 배치까지 보류)
+  // ── Phase D (#12 · #35 · #36) ──
+  evHistory: [],          // 최근 인카운터 발화 이력 [{id,day}] — 반복 억제(REQ-EVT-02)
+  moodBuff: null,         // 인카운터 안정감 여운 { amt, until:day } — comfort 일시 가감
+  memos: {},              // 수집한 세계관 메모/유서 { id: 수집일 } (#35)
+  broadcasts: {},         // 수집한 라디오 방송 { id: 수집일 } (#12)
+  distantLight: null,     // 먼 불빛 목격 기록 { count, lastDay, places:{} } (REQ-EVT-03)
+  pendingMemoPopup: null, // 결산 뒤 열 메모 팝업 { id, will }
+  pendingBroadcast: null, // 결산 뒤 열 방송 모달 id
+  lastBroadcastDay: 0,    // 방송 청취한 마지막 날 (하루 1회 제한)
+  pipeFrozenUntil: 0,     // 수도관 동파 방치 시 정수기 정지 기한 (day)
+  bunkerRoof: 'hole',     // 돔 벙커 천장 상태: 'hole'(구멍)|'temp'(임시덮개)|'full'(완전수리) (#36)
+  bunkerBackdoor: false,  // 절단기로 뒷문 저장고 개방 여부 (#36)
+  hasCutter: false,       // 절단기 보유 (공업지대 드랍)
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -2710,6 +2779,19 @@ function loadSave() {
       if (data.state.winterSnap === undefined) state.winterSnap = null;   // 스냅샷 없음 → 다음 겨울 시작 때 생성
       if (!Array.isArray(state.pendingWinterMemoir)) state.pendingWinterMemoir = [];
       if (data.state.doctorRadioPending == null) state.doctorRadioPending = false;
+      // Phase D 마이그레이션 (#12·#35·#36) — 구세이브에 없던 필드는 기본값으로 보정
+      if (!Array.isArray(state.evHistory)) state.evHistory = [];
+      if (state.moodBuff === undefined) state.moodBuff = null;
+      if (state.memos == null || typeof state.memos !== 'object') state.memos = {};
+      if (state.broadcasts == null || typeof state.broadcasts !== 'object') state.broadcasts = {};
+      if (state.distantLight === undefined) state.distantLight = null;
+      if (state.pendingMemoPopup === undefined) state.pendingMemoPopup = null;
+      if (state.pendingBroadcast === undefined) state.pendingBroadcast = null;
+      if (state.lastBroadcastDay == null) state.lastBroadcastDay = 0;
+      if (state.pipeFrozenUntil == null) state.pipeFrozenUntil = 0;
+      if (state.bunkerRoof == null) state.bunkerRoof = 'hole';
+      if (state.bunkerBackdoor == null) state.bunkerBackdoor = false;
+      if (state.hasCutter == null) state.hasCutter = false;
       if (data.state.questIdx === undefined) state.questIdx = (state.day > 1 || state.successes > 0) ? -1 : 0;
       if (!SHELTERS[state.current]) state.current = 'container';
       // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
@@ -3390,6 +3472,18 @@ function resolveExpedition() {
       got.push(pickFurniture(r.pool));
       notes.push(t('exp.note.furniture'));
     }
+    // 절단기 특수 드랍 (#36) — 공업지대 성공 탐험 10%, 미보유 시 1회. 벙커 뒷문 프로젝트 재료.
+    if (exp.region === 'industrial' && !state.hasCutter && Math.random() < 0.10) {
+      state.hasCutter = true;
+      notes.push(t('cutter.foundNote'));
+    }
+    // 세계관 메모/유서 드랍 (#35) — 성공 탐험에서만. 수집 시 결산 노트 + 닫은 뒤 쪽지 팝업 예약.
+    const drop = tryDropMemoOnExpedition();
+    if (drop) {
+      const tbl = drop.will ? WILLS : MEMOS;
+      notes.push(t(drop.will ? 'memo.foundWillNote' : 'memo.foundNote', { title: LN(tbl[drop.id]) }));
+      state.pendingMemoPopup = { id: drop.id, will: drop.will };
+    }
     state.successes++;
     state.stats.success++;
     title = t('exp.successTitle', { name: LName(r) });
@@ -4032,6 +4126,245 @@ function updateCatBones(c, a, dt) {
   _setBone(rig, B.earR, 0, 0, a.earSide === 'earR' ? -a.earKickV : 0);
 }
 
+/* ============================================================
+   세계관 메모 & 라디오 방송 수집 (#35 · #12의 축)
+   ------------------------------------------------------------
+   [연표] 캐논 타임라인 — 모든 문안은 이 축과 모순되지 않는다.
+     ㆍ붕괴 3년 전(겨울) = 현재(intro: "세상이 무너진 지 3년").
+     ㆍT-6년경  판데믹 발생 → 도시 부분 봉쇄 시작.
+     ㆍT-5년경  전국 봉쇄. 사재기·상점 약탈·폭동 (상업지구).
+     ㆍT-4년경  공장 폐쇄 명령. 마지막 교대. 물류 정지 (공업지대).
+     ㆍT-3.5년  백신 루머·가짜 배급표. 대피령. 남겨진 사람들 (슬럼가).
+     ㆍT-3.2년  국가 간 최후통첩 → 핵 사용 결정.
+     ㆍT-3년    핵겨울. 하늘이 잿빛으로. — 여기서 현재까지 3년.
+   메모는 지역 성격(주거=일상의 붕괴 / 상업=사재기·폭동 / 공업=폐쇄 명령 /
+   슬럼=버려진 사람들)에 맞춰 배치. 유서 6종은 지역 무관 별도 풀(극저확률).
+   테이블 스키마: { name/nameEn(제목), desc/descEn(본문), region } — LN/LD 재사용.
+============================================================ */
+const MEMOS = {
+  // ── 주거 (residential) 8: 일상의 붕괴 ──
+  res1: { region: 'residential', name: '냉장고 쪽지', nameEn: 'Fridge Note', desc: '우유 사올 것. 애들 학원비. 다음 주 부모님 생신.\n적어둔 목록은 그대로인데, 마트는 열흘째 문을 닫았다.', descEn: 'Buy milk. Kids’ tuition. Mom’s birthday next week.\nThe list is still here. The store has been shut ten days.' },
+  res2: { region: 'residential', name: '현관의 신발', nameEn: 'Shoes at the Door', desc: '아이 운동화가 문 앞에 그대로 있다. 사이즈가 작아 새로 사주기로 했었다.\n결국 못 사줬다.', descEn: 'A child’s sneakers, still by the door. Too small — we meant to buy new ones.\nWe never did.' },
+  res3: { region: 'residential', name: '봉쇄 첫날 일기', nameEn: 'Lockdown Day One', desc: '봉쇄 첫날. 다들 며칠이면 끝난다고 했다.\n베란다에서 옆 동 사람과 손을 흔들었다. 그게 마지막 인사였다.', descEn: 'First day of lockdown. Everyone said a few days, that’s all.\nWaved to a neighbor across the way. That was the last hello.' },
+  res4: { region: 'residential', name: '아파트 방송문', nameEn: 'Building Announcement', desc: '주민 여러분께. 엘리베이터 운행을 중단합니다. 물은 하루 두 시간만 나옵니다.\n관리사무소는 오늘부로 비웁니다. 부디 몸조심하십시오.', descEn: 'To all residents. The elevator is stopped. Water runs two hours a day.\nThe office closes today. Please, take care of yourselves.' },
+  res5: { region: 'residential', name: '벽에 그은 키', nameEn: 'Height Marks', desc: '문틀에 연필로 그은 키 눈금. 작년 봄까지는 촘촘하다.\n그 위로는 없다.', descEn: 'Pencil height marks on the door frame, close together — until last spring.\nNothing above them.' },
+  res6: { region: 'residential', name: '반쯤 싼 이민 가방', nameEn: 'Half-Packed Suitcase', desc: '옷 몇 벌, 사진첩, 여권. 떠날 준비를 하다 멈춘 가방.\n어디로 가려 했는지는 적혀 있지 않다.', descEn: 'A few clothes, a photo album, passports. A bag packed halfway, then abandoned.\nWhere they meant to go isn’t written anywhere.' },
+  res7: { region: 'residential', name: '식탁 위 편지', nameEn: 'Letter on the Table', desc: '먼저 간다. 물자 받으러 갔다가 자리가 나면 연락할게.\n식탁 위에 그대로 놓여 있다. 답장은 없다.', descEn: 'Going ahead. I’ll send word once I find us a spot at the supply line.\nStill on the table. No reply ever came.' },
+  res8: { region: 'residential', name: '마지막 배달 영수증', nameEn: 'Last Delivery Slip', desc: '쌀 10kg, 생수 두 박스, 통조림. 배달 완료.\n영수증 날짜 이후로 이 집에서 나간 사람은 없다.', descEn: '10kg rice, two cases of water, canned goods. Delivered.\nAfter this date, no one left this house.' },
+
+  // ── 상업 (commercial) 8: 사재기와 폭동 ──
+  com1: { region: 'commercial', name: '텅 빈 진열대 팻말', nameEn: 'Empty Shelf Sign', desc: '1인 1개. 새치기 신고 즉시 퇴장.\n팻말만 남고 진열대는 사흘 만에 뼈대뿐이었다.', descEn: 'One per customer. Cutting the line means removal.\nThe sign stayed. The shelves were bones in three days.' },
+  com2: { region: 'commercial', name: '점장의 메모', nameEn: 'Manager’s Memo', desc: '직원들에게. 오늘 문을 닫는다. 남은 물건은 각자 가져가라.\n너희를 지켜주지 못해 미안하다.', descEn: 'To my staff. We close today. Take what’s left, split it fairly.\nI’m sorry I couldn’t keep you safe.' },
+  com3: { region: 'commercial', name: '깨진 쇼윈도 낙서', nameEn: 'Graffiti on Broken Glass', desc: '깨진 유리 위에 스프레이로 적혔다. "여긴 이미 털렸다. 헛수고 마라."\n그 아래 누군가 덧썼다. "그래도 확인했다."', descEn: 'Sprayed across shattered glass: "Already cleaned out. Don’t bother."\nBelow it someone added: "Checked anyway."' },
+  com4: { region: 'commercial', name: '현금은 안 받습니다', nameEn: 'No Cash Accepted', desc: '종이에 매직으로. 현금 안 받음. 물, 약, 연료만 교환.\n돈이 종이가 되는 데 일주일이 걸렸다.', descEn: 'Marker on cardboard: No cash. Trade only — water, meds, fuel.\nIt took a week for money to become paper.' },
+  com5: { region: 'commercial', name: '약국 셔터의 호소', nameEn: 'Plea on the Pharmacy Shutter', desc: '약이 필요하면 문을 두드리지 말고 목록을 적어 넣으세요. 있으면 내놓겠습니다.\n마지막 줄: 이제 아무것도 없습니다.', descEn: 'Need meds? Don’t knock — slip a list under the door. If we have it, it’s yours.\nLast line: We have nothing left now.' },
+  com6: { region: 'commercial', name: '폭동의 밤 전단', nameEn: 'Riot Night Flyer', desc: '오늘 밤 배급소 앞으로. 더는 순서를 기다리지 않는다.\n전단은 젖어 뭉개졌고, 배급소는 그 밤 이후 불탔다.', descEn: 'Tonight, at the ration depot. We wait our turn no longer.\nThe flyer is pulped with rain. The depot burned that night.' },
+  com7: { region: 'commercial', name: 'ATM 화면', nameEn: 'ATM Screen', desc: '거래를 완료할 수 없습니다. 잠시 후 다시 시도해 주십시오.\n같은 문장이 몇 달째 켜져 있다.', descEn: 'Transaction cannot be completed. Please try again later.\nThe same line, lit for months now.' },
+  com8: { region: 'commercial', name: '백화점 안내방송 대본', nameEn: 'Department Store Script', desc: '고객 여러분, 영업을 종료합니다. 침착하게 가까운 출구로.\n대본 여백에 손글씨. "3번 출구 막힘. 통제 불가."', descEn: 'Dear customers, we are closing. Calmly proceed to the nearest exit.\nHandwritten in the margin: "Exit 3 blocked. No control."' },
+
+  // ── 공업 (industrial) 7: 폐쇄 명령·마지막 교대 ──
+  ind1: { region: 'industrial', name: '공장 폐쇄 명령서', nameEn: 'Plant Shutdown Order', desc: '본 공장은 정부 명령에 따라 조업을 전면 중단한다. 설비 전원을 내리고 즉시 귀가하라.\n도장이 찍힌 날 이후, 라인은 멈춘 채다.', descEn: 'By government order, all operations cease. Power down and go home at once.\nSince the stamp on this page, the line has not moved.' },
+  ind2: { region: 'industrial', name: '마지막 교대 일지', nameEn: 'Last Shift Log', desc: '야간조 3명 출근. 주간조 인수인계 없음 — 아무도 오지 않음.\n마지막 줄: 문 잠그고 나감. 불은 켜둔다.', descEn: 'Night shift: 3 in. No day-shift handover — no one came.\nLast line: Locking up. Leaving a light on.' },
+  ind3: { region: 'industrial', name: '안전모의 이름표', nameEn: 'Name on a Hard Hat', desc: '먼지 앉은 안전모 안쪽에 이름과 사번. 그 아래 작게. "27년 근속. 이제 집에 간다."\n걸이엔 아직 열두 개가 그대로다.', descEn: 'Name and badge number inside a dusty hard hat. Below, small: "27 years. Going home now."\nTwelve more still hang on the pegs.' },
+  ind4: { region: 'industrial', name: '급여 미지급 공고', nameEn: 'Unpaid Wages Notice', desc: '이번 달 급여 지급이 불가함을 알린다. 회사가 존속하는 한 반드시 정산하겠다.\n회사는 존속하지 않았다.', descEn: 'This month’s wages cannot be paid. So long as the company stands, you will be made whole.\nThe company did not stand.' },
+  ind5: { region: 'industrial', name: '보일러실 낙서', nameEn: 'Boiler Room Scrawl', desc: '배관공이 파이프에 분필로. "밸브 잠갔음. 여기 온기는 내가 마지막까지 지켰다."\n온기는 오래전에 식었다.', descEn: 'Chalked on a pipe by the fitter: "Valves shut. I kept this heat going till the end."\nThe warmth went cold long ago.' },
+  ind6: { region: 'industrial', name: '출근 카드 뭉치', nameEn: 'Stack of Time Cards', desc: '타임카드가 한 날짜에서 멈췄다. 그날 이후로 찍힌 카드가 없다.\n기계는 아직 자정을 가리키고 있다.', descEn: 'The time cards all stop on one date. None punched after.\nThe clock still points to midnight.' },
+  ind7: { region: 'industrial', name: '창고 재고표', nameEn: 'Warehouse Inventory', desc: '연료 드럼 40 → 6. 부품 상자 전량 반출.\n표 맨 아래: "가져갈 수 있는 건 다 가져갔다. 미안."', descEn: 'Fuel drums 40 → 6. Parts crates all removed.\nBottom of the sheet: "Took everything we could carry. Sorry."' },
+
+  // ── 슬럼 (slum) 7: 버려진 사람들 ──
+  slum1: { region: 'slum', name: '배급 명단', nameEn: 'Ration List', desc: '이름 옆에 체크. 절반쯤에서 펜이 멈췄다. 그 아래는 줄만 그어져 있다.\n명단에 없는 사람은 받지 못했다.', descEn: 'Checkmarks beside names. The pen stops halfway. Below, only ruled lines.\nThose not on the list got nothing.' },
+  slum2: { region: 'slum', name: '판자벽 낙서', nameEn: 'Scrawl on the Plank Wall', desc: '"우리는 명단에 없었다."\n페인트가 흘러내린 채 굳었다.', descEn: '"We were not on the list."\nThe paint ran and set that way.' },
+  slum3: { region: 'slum', name: '가짜 배급표', nameEn: 'Forged Ration Coupon', desc: '진짜와 똑같이 인쇄된 배급표. 뒷면에 손글씨. "이거 열 장에 물 한 통. 속는 셈 치고."\n결국 아무 데서도 통하지 않았다.', descEn: 'A ration coupon printed to look real. On the back: "Ten of these for a jug of water. Worth a shot."\nIn the end they were good nowhere.' },
+  slum4: { region: 'slum', name: '아이의 그림', nameEn: 'A Child’s Drawing', desc: '크레용으로 그린 집과 사람 넷. 그 위에 회색으로 온통 덧칠했다.\n한 귀퉁이에 삐뚤빼뚤. "우리 집."', descEn: 'A house and four people in crayon, painted over all in grey.\nIn one corner, uneven letters: "Our home."' },
+  slum5: { region: 'slum', name: '대피령 벽보', nameEn: 'Evacuation Notice', desc: '해당 구역은 지원 대상에서 제외되었습니다. 자력으로 이동하십시오.\n어디로 가라는 말은 없었다.', descEn: 'This zone is excluded from assistance. Relocate by your own means.\nIt never said where to go.' },
+  slum6: { region: 'slum', name: '공동 우물의 규칙', nameEn: 'Rules of the Shared Well', desc: '한 집에 하루 한 통. 순서 지킬 것. 싸우지 말 것.\n맨 아래 다른 글씨. "우물 말랐음. 미안."', descEn: 'One jug per household a day. Keep the order. No fighting.\nIn a different hand at the bottom: "Well’s dry. Sorry."' },
+  slum7: { region: 'slum', name: '남겨진 담요', nameEn: 'The Left-Behind Blanket', desc: '골목 끝에 개켜진 담요 한 장과 빈 그릇. 누군가 여기 오래 앉아 있었다.\n일어나 어디로 갔는지는 아무도 모른다.', descEn: 'A folded blanket and an empty bowl at the alley’s end. Someone sat here a long while.\nWhere they rose and went, no one knows.' },
+};
+// 유서 6종 — 지역 무관 별도 풀, 극저확률 (REQ-LORE-01)
+const WILLS = {
+  will1: { will: true, name: '창턱의 유서', nameEn: 'Note on the Sill', desc: '더는 기다릴 힘이 없다. 창밖에 봄이 오면 누군가 이 방을 쓰길.\n미워하지 마라. 나는 오래 버텼다.', descEn: 'No strength left to wait. When spring comes to that window, may someone use this room.\nDon’t hate me. I held on a long time.' },
+  will2: { will: true, name: '아버지의 마지막 말', nameEn: 'Father’s Last Words', desc: '아들아, 연료는 다락에 숨겨뒀다. 봄까지만 아끼면 산다.\n나는 너 몫까지 먹지 않으려 한다. 부디 살아라.', descEn: 'Son, the fuel is hid in the attic. Ration it to spring and you’ll live.\nI won’t eat your share. Please — live.' },
+  will3: { will: true, name: '두 사람의 편지', nameEn: 'Letter for Two', desc: '우린 함께 가기로 했다. 따로 남는 것보다 낫다고.\n이 집을 찾은 당신은, 부디 혼자가 아니길.', descEn: 'We chose to go together. Better than being left apart.\nWhoever finds this house — may you not be alone.' },
+  will4: { will: true, name: '간호사의 수첩', nameEn: 'The Nurse’s Notebook', desc: '마지막 환자까지 곁을 지켰다. 약은 진작 떨어졌고, 손을 잡아주는 것밖엔 없었다.\n이제 내 차례다. 두렵지 않다면 거짓말이다.', descEn: 'I stayed to the last patient. The medicine ran out long ago; all I had left was a held hand.\nNow it’s my turn. I’d be lying if I said I wasn’t afraid.' },
+  will5: { will: true, name: '개에게 남긴 말', nameEn: 'A Word for the Dog', desc: '문은 열어뒀다. 너는 나보다 오래 살아라.\n누구든 이 녀석을 보거든, 착한 개다. 겁이 많을 뿐이다.', descEn: 'I left the door open. Outlive me.\nWhoever meets this one — he’s a good dog. Just easily frightened.' },
+  will6: { will: true, name: '전하지 못한 답장', nameEn: 'The Reply Never Sent', desc: '네 편지 잘 받았다. 나도 보고 싶었다고, 그 말을 꼭 하고 싶었다.\n부칠 곳이 이제 없구나.', descEn: 'I got your letter. I wanted to say I missed you too — I needed to say it.\nThere’s nowhere left to send this now.' },
+};
+const MEMO_REGIONS = ['residential', 'commercial', 'industrial', 'slum'];
+// 지역별 메모 id 목록 (미리 그룹핑)
+const MEMOS_BY_REGION = MEMO_REGIONS.reduce((o, rg) => { o[rg] = Object.keys(MEMOS).filter(id => MEMOS[id].region === rg); return o; }, {});
+
+/* ── 라디오 방송 12종 (REQ-RADIO-01) ──
+   예보 3(계절)/행상 예고 1/과거 정부 안내 2/정체불명 음악 1/생존자 사연 2/기계 자동 방송 1/박사 일지 조각 2.
+   박사 조각(doctor:true) 2종 모두 수집 시 9겨울 doctor_radio 문안에 한 줄 추가된다. */
+const BROADCASTS = {
+  fc_spring: { kind: 'forecast', name: '봄 기상 안내', nameEn: 'Spring Weather Notice', desc: '…낮 기온 오름. 남은 눈 녹아 길 질척임. 이른 풀 돋음. 파종을 서두르라는 옛 방송의 잔향뿐이다.', descEn: '…daytime warming. What snow remains melts to mud. Early grass. Only the echo of an old broadcast urging you to sow.' },
+  fc_summer: { kind: 'forecast', name: '여름 기상 안내', nameEn: 'Summer Weather Notice', desc: '…연일 무더위. 식수 관리 각별히. 신선한 것은 곧 상함. 통조림을 아끼라던 목소리가 지직거린다.', descEn: '…relentless heat, days on end. Guard your water. Fresh food spoils fast. A voice crackles: save the cans.' },
+  fc_winter: { kind: 'forecast', name: '겨울 기상 안내', nameEn: 'Winter Weather Notice', desc: '…한파 주의보. 연료와 단열을 점검하라. 이 방송이 언제 녹음됐는지는 아무도 모른다.', descEn: '…cold-snap warning. Check your fuel and insulation. No one knows when this was recorded.' },
+  merchant_ad: { kind: 'merchant', name: '행상 예고', nameEn: 'Peddler’s Notice', desc: '…돌아다니는 장수요. 있는 것과 없는 것을 바꿉니다. 겨울 전엔 연료가 비싸요. 가을에 챙겨두쇼.', descEn: '…a traveling trader here. I swap what I have for what I don’t. Fuel runs dear before winter. Stock up in autumn.' },
+  gov_curfew: { kind: 'gov', name: '통행 제한 안내 (반복)', nameEn: 'Curfew Notice (looped)', desc: '…해당 구역은 통행이 제한됩니다. 지정된 대피소로 이동하십시오. …구역은 통행이 제한됩니다. 이동하십시오. …제한됩니다…', descEn: '…this zone is under curfew. Proceed to a designated shelter. …zone is under curfew. Proceed. …under curfew…' },
+  gov_ration: { kind: 'gov', name: '배급 안내 (반복)', nameEn: 'Ration Notice (looped)', desc: '…배급표를 지참하십시오. 한 사람당 하루 한 통. 질서를 지켜주십시오. 같은 문장이 끝없이 되풀이된다.', descEn: '…bring your ration coupon. One jug per person a day. Please keep order. The same lines loop without end.' },
+  music_unknown: { kind: 'music', name: '정체불명의 음악', nameEn: 'Music from Nowhere', desc: '가사 없는 낡은 곡이 흐른다. 누가, 왜 아직도 이걸 송출하는지 알 수 없다. 그래도 잠시, 혼자가 아닌 것 같다.', descEn: 'An old tune, no words, drifting through. Who plays it, and why, no one can say. Still — for a moment, you feel less alone.' },
+  survivor1: { kind: 'survivor', name: '생존자 사연 · 등대', nameEn: 'Survivor’s Story · Lighthouse', desc: '"바닷가에 있어요. 밤마다 불을 켜둡니다. 지나는 배가 있으면… 혼자가 아니라고 말해주고 싶어서."', descEn: '"I’m by the sea. I keep a light burning each night. If a ship passes… I just want to say — you’re not alone."' },
+  survivor2: { kind: 'survivor', name: '생존자 사연 · 아이', nameEn: 'Survivor’s Story · The Child', desc: '"딸이 라디오를 좋아했어요. 그래서 계속 틀어둡니다. 언젠가 이 소릴 듣고 찾아올지도 모르니까요."', descEn: '"My daughter loved the radio. So I keep it on. Maybe one day she hears it and finds her way back."' },
+  auto_beacon: { kind: 'machine', name: '자동 관측 신호', nameEn: 'Automated Beacon', desc: '…관측소 자동 송신. 좌표 기록 중. 지상 신호 감지 시 보고. 사람의 목소리는 한 마디도 섞이지 않는다.', descEn: '…observatory auto-transmit. Logging coordinates. Report on surface-signal detection. Not one human word in it.' },
+  doctor1: { kind: 'doctor', doctor: true, name: '박사의 일지 · 조각 하나', nameEn: 'Doctor’s Log · Fragment One', desc: '"…겨울이 아홉 번 지나면, 대기가 가라앉는다고 계산했다. 그 전까지 버틴 신호가 있다면, 그건 우연이 아니다. — 계속 관측한다."', descEn: '"…by my count, after nine winters the air settles. If a signal holds out that long, it is no accident. — I keep watching."' },
+  doctor2: { kind: 'doctor', doctor: true, name: '박사의 일지 · 조각 둘', nameEn: 'Doctor’s Log · Fragment Two', desc: '"관측 위성은 아직 돈다. 지상에 불빛 하나가 아홉 해를 버티면, 우리는 내려갈 이유를 얻는다. 그 하나를 기다린다."', descEn: '"The satellite still turns. If one light on the ground lasts nine years, we are given a reason to come down. I wait for that one."' },
+};
+
+/* ── 수집 상태/드랍 로직 (state.memos / state.broadcasts / state.distantSeen) ── */
+function memosCollected() { return Object.keys(state.memos || {}).length; }
+function memosTotal() { return Object.keys(MEMOS).length + Object.keys(WILLS).length; }
+function broadcastsCollected() { return Object.keys(state.broadcasts || {}).length; }
+function broadcastsTotal() { return Object.keys(BROADCASTS).length; }
+// 미수집 메모 1개 뽑기 (지역 지정 시 그 지역 풀에서, 없으면 현재 셸터 지역, 그것도 다 모았으면 전체). 없으면 null.
+function pickUncollectedMemo(region) {
+  const owned = state.memos || {};
+  const tryPool = pool => pool.filter(id => !owned[id]);
+  let region0 = region || (['residential', 'commercial', 'industrial', 'slum'].includes(districtRegionOf(state.current)) ? districtRegionOf(state.current) : null);
+  if (region0) { const p = tryPool(MEMOS_BY_REGION[region0] || []); if (p.length) return p[Math.floor(Math.random() * p.length)]; }
+  const all = tryPool(Object.keys(MEMOS));
+  if (all.length) return all[Math.floor(Math.random() * all.length)];
+  return null;
+}
+// 셸터가 속한 '탐험 지역 성격' 추정 — 메모 지역과 맞추기 위한 매핑. 셸터→구역→선호 region.
+function districtRegionOf(shelterId) {
+  const d = districtOf(shelterId);
+  // 구역별 대표 메모 성격 (도심=상업/슬럼, 외곽/초원=주거, 숲=공업, 해안=슬럼)
+  const map = { city: 'commercial', outskirts: 'residential', meadow: 'residential', forest: 'industrial', coast: 'slum' };
+  return map[d] || 'residential';
+}
+function collectMemo(id, silent) {
+  if (!state.memos) state.memos = {};
+  if (state.memos[id]) return false;
+  state.memos[id] = state.day;
+  return true;
+}
+// 이벤트(과거 달력 등)에서 메모 1개 확정 드랍 — 호출 자체가 게이트다. 미수집 메모 id or null.
+function dropMemo() {
+  const id = pickUncollectedMemo();
+  if (id) { collectMemo(id); return id; }
+  return null;
+}
+// 탐험 결산에서 호출 — 확률 게이트를 여기서 관리. 수집 시 id(+will 여부) 반환.
+function tryDropMemoOnExpedition() {
+  // 유서 우선 롤
+  if (Math.random() < BAL.events.willDropChance) {
+    const un = Object.keys(WILLS).filter(id => !(state.memos || {})[id]);
+    if (un.length) { const id = un[Math.floor(Math.random() * un.length)]; collectMemo(id); return { id, will: true }; }
+  }
+  if (Math.random() < BAL.events.memoDropChance) {
+    const id = pickUncollectedMemo(districtRegionOf(state.current));
+    if (id) { collectMemo(id); return { id, will: false }; }
+  }
+  return null;
+}
+// 미수집 방송 1개 청취/수집. 수집 시 id 반환, 없으면 null. (doctor 조각 2종 수집되면 무전 분기)
+function dropBroadcast() {
+  if (!state.broadcasts) state.broadcasts = {};
+  const un = Object.keys(BROADCASTS).filter(id => !state.broadcasts[id]);
+  if (!un.length) return null;
+  const id = un[Math.floor(Math.random() * un.length)];
+  state.broadcasts[id] = state.day;
+  return id;
+}
+// 박사 조각 2종 모두 수집됐는가 (9겨울 무전 문안 분기)
+function doctorFragmentsComplete() {
+  const b = state.broadcasts || {};
+  return Object.keys(BROADCASTS).filter(id => BROADCASTS[id].doctor).every(id => b[id]);
+}
+// 먼 불빛 목격 기록 (장소별 문안 변형용 카운트 + 마지막 목격일)
+function recordDistantLight() {
+  if (!state.distantLight) state.distantLight = { count: 0, lastDay: 0, places: {} };
+  state.distantLight.count++;
+  state.distantLight.lastDay = state.day;
+  state.distantLight.places[state.current] = (state.distantLight.places[state.current] || 0) + 1;
+}
+
+/* ============================================================
+   인카운터 엔진 (ARC-01: 콘텐츠는 테이블, 로직은 엔진)
+   - 조건은 선언적 when 필드로 표준화한다: when.{ seasons, shelters, districts,
+     weather, night, day(낮 한정), minDay, needsRadio, needsCat }.
+   - eventMatches(id, ctx): 후보 자격 판정. eventWeight: 반복 억제 가중치.
+   - drawEvent(ctx): 자격+가중치로 하나 뽑아 예약. 두 호출부(아침 결산/탐험 중간)가 공유.
+   - state.evHistory: 최근 발화 id 로그(최근 12건). 같은 이벤트 3연속 금지 +
+     최근 7일 창 동일 이벤트 ≤2회로 가중치 감쇄 (REQ-EVT-02).
+============================================================ */
+const EV_HISTORY_MAX = 12;
+// ctx: { season, district, weather, night, day } — 없으면 현재 상태에서 유도
+function eventCtx() {
+  const h = gameHour();
+  return {
+    season: seasonOf().id,
+    district: districtOf(state.current),
+    shelter: state.current,
+    weather: weather.type,
+    night: h >= 21 || h < 6, // 야간(밤~새벽). 아침 결산 draw는 '지난밤' 사건 허용 위해 caller가 override.
+    day: state.day,
+  };
+}
+// 선언적 조건 판정. when 이 없으면 무조건 후보. cond(레거시 자유함수)도 그대로 존중.
+function eventMatches(id, ctx) {
+  const ev = EVENTS[id];
+  if (!ev || ev.special) return false;
+  const w = ev.when;
+  if (w) {
+    if (w.seasons && !w.seasons.includes(ctx.season)) return false;
+    if (w.shelters && !w.shelters.includes(ctx.shelter)) return false;
+    if (w.districts && !w.districts.includes(ctx.district)) return false;
+    if (w.weather && !w.weather.includes(ctx.weather)) return false;
+    if (w.night === true && !ctx.night) return false;
+    if (w.dayOnly === true && ctx.night) return false; // 낮 한정(caravan_pass 등)
+    if (w.minDay != null && ctx.day < w.minDay) return false;
+    if (w.needsRadio && !items.some(i => i.defId === 'radio')) return false;
+    if (w.needsCat && !state.cat) return false;
+    if (w.hasMod && !hasMod(w.hasMod)) return false;
+  }
+  if (ev.cond && !ev.cond()) return false; // 레거시/추가 자유조건
+  return true;
+}
+// 반복 억제 가중치: 직전 발화면 강한 감쇄, 7일 창 2회 이상이면 사실상 제외.
+function eventWeight(id) {
+  const hist = state.evHistory || [];
+  const last = hist[hist.length - 1];
+  if (last && last.id === id) return 0.15;              // 연속 등장 강한 억제
+  const recent7 = hist.filter(h => state.day - h.day <= 7 && h.id === id).length;
+  if (recent7 >= 2) return 0.05;                        // 7일 창 2회 이상 → 거의 안 뜸
+  if (recent7 === 1) return 0.4;
+  const base = EVENTS[id].weight || 1;
+  return base;
+}
+// 하드 가드 (REQ-EVT-02): ①최근 2건이 모두 같은 id면 3연속 금지, ②최근 7일 창에 이미 2회면 후보 제외.
+function eventThreePeatBlocked(id) {
+  const hist = state.evHistory || [];
+  const n = hist.length;
+  if (n >= 2 && hist[n - 1].id === id && hist[n - 2].id === id) return true;
+  // 7일 창(오늘 포함 직전 6일) 내 동일 이벤트가 이미 2회면 3번째 발화 차단 (REQ-EVT-02).
+  const recent7 = hist.filter(h => state.day - h.day <= 6 && h.id === id).length;
+  if (recent7 >= 2) return true;
+  return false;
+}
+function pushEvHistory(id) {
+  if (!Array.isArray(state.evHistory)) state.evHistory = [];
+  state.evHistory.push({ id, day: state.day });
+  if (state.evHistory.length > EV_HISTORY_MAX) state.evHistory.shift();
+}
+// 후보 풀에서 가중 추첨해 pendingEvent 예약. 성공 시 뽑힌 id, 없으면 null.
+function drawEvent(ctx = eventCtx()) {
+  const cands = Object.keys(EVENTS).filter(id =>
+    !EVENTS[id].special && eventMatches(id, ctx) && !eventThreePeatBlocked(id));
+  if (!cands.length) return null;
+  const weights = cands.map(eventWeight);
+  let sum = weights.reduce((a, b) => a + b, 0);
+  if (sum <= 0) return null;
+  let roll = Math.random() * sum;
+  let pick = cands[cands.length - 1];
+  for (let i = 0; i < cands.length; i++) { roll -= weights[i]; if (roll <= 0) { pick = cands[i]; break; } }
+  state.pendingEvent = pick;
+  state.lastEventDay = state.day;
+  pushEvHistory(pick);
+  return pick;
+}
+
 // title/text/choice label 은 언어 전환 시점(showEvent) 에 t() 로 해석하므로 id 로 보관한다.
 const EVENTS = {
   wanderer: {
@@ -4095,12 +4428,153 @@ const EVENTS = {
   },
   radio_sig: {
     icon: '📡', titleId: 'ev.radio.title', textId: 'ev.radio.text',
-    cond: () => items.some(i => i.defId === 'radio'),
+    when: { needsRadio: true }, // (구 cond: 라디오 보유 시에만) — 동작 불변, 스키마 이관
     choices: [
       { labelId: 'ev.radio.c0', run() { state.buff = { loot: 2, labelId: 'buff.radio' }; return t('ev.radio.r0'); } },
       { labelId: 'ev.radio.c1', run() { return t('ev.radio.r1'); } },
     ],
   },
+  /* ── Phase D 신규 인카운터 12종 (#12) — 조건은 when 스키마로 선언 ── */
+  // 1. 겨울+한파: 문 밖에 쓰러진 낯선 이. 데워 보내기 / 못 본 척.
+  coldsnap_stranger: {
+    icon: '🧊', titleId: 'ev.coldstranger.title', textId: 'ev.coldstranger.text',
+    when: { seasons: ['winter'] }, cond: () => coldSnapActive(),
+    choices: [
+      { labelId: 'ev.coldstranger.c0', cost: { fuel: 2 }, run() { addMoodBuff(3, 3); state.dayLog.notes.push(t('ev.coldstranger.note0')); return t('ev.coldstranger.r0'); } },
+      { labelId: 'ev.coldstranger.c1', run() { addMoodBuff(-2, 2); state.dayLog.notes.push(t('ev.coldstranger.note1')); return t('ev.coldstranger.r1'); } },
+    ],
+  },
+  // 2. 여름: 상한 것 반값에 떠넘기려는 행상. 간파 / 속아 삼(식중독).
+  spoil_merchant: {
+    icon: '🥴', titleId: 'ev.spoilmerchant.title', textId: 'ev.spoilmerchant.text',
+    when: { seasons: ['summer'] },
+    choices: [
+      { labelId: 'ev.spoilmerchant.c0', run() { state.dayLog.notes.push(t('ev.spoilmerchant.note0')); return t('ev.spoilmerchant.r0'); } },
+      { labelId: 'ev.spoilmerchant.c1', cost: { battery: 1 }, run() {
+        resAdd('canned', 2);
+        if (Math.random() < 0.5) { const msg = applyInjury('infection', false); state.dayLog.notes.push(msg); return t('ev.spoilmerchant.r1bad'); }
+        return t('ev.spoilmerchant.r1ok');
+      } },
+    ],
+  },
+  // 3. 비/폭우 + 비 새는 셸터: 지붕 물 새기. 건축재 응급 / 방치(청결↓).
+  leaky_roof: {
+    icon: '💧', titleId: 'ev.leakyroof.title', textId: 'ev.leakyroof.text',
+    when: { weather: ['rain', 'storm'], shelters: ['container', 'rooftop', 'subway', 'ship'] },
+    choices: [
+      { labelId: 'ev.leakyroof.c0', cost: { material: 1 }, run() { return t('ev.leakyroof.r0'); } },
+      { labelId: 'ev.leakyroof.c1', run() { state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 12); return t('ev.leakyroof.r1'); } },
+    ],
+  },
+  // 4. 눈+아침: 밤새 셸터를 돌고 간 발자국. 따라가기(소득/부상) / 지우기(안정감+).
+  snow_prints: {
+    icon: '👣', titleId: 'ev.snowprints.title', textId: 'ev.snowprints.text',
+    when: { weather: ['snow'] },
+    choices: [
+      { labelId: 'ev.snowprints.c0', run() {
+        if (Math.random() < 0.55) { resAdd('canned', 1); resAdd('cloth', 1); state.dayLog.notes.push(t('ev.snowprints.note0')); return t('ev.snowprints.r0good'); }
+        const msg = applyInjury('minor', false); state.dayLog.notes.push(msg); return t('ev.snowprints.r0bad');
+      } },
+      { labelId: 'ev.snowprints.c1', run() { addMoodBuff(2, 2); return t('ev.snowprints.r1'); } },
+    ],
+  },
+  // 5. 등대 전용+밤: 먼바다의 불빛 신호. 응답 점등 / 침묵. (1.1 항구 복선)
+  lighthouse_ship: {
+    icon: '🚢', titleId: 'ev.lighthouseship.title', textId: 'ev.lighthouseship.text',
+    when: { shelters: ['lighthouse'], night: true },
+    choices: [
+      { labelId: 'ev.lighthouseship.c0', cost: { fuel: 1 }, run() { addMoodBuff(2, 3); state.dayLog.notes.push(t('ev.lighthouseship.note0')); return t('ev.lighthouseship.r0'); } },
+      { labelId: 'ev.lighthouseship.c1', run() { return t('ev.lighthouseship.r1'); } },
+    ],
+  },
+  // 6. 온실 전용: 씨앗 훔치는 새들. 쫓기 / 나눠주기(분위기+, 반짝이).
+  greenhouse_birds: {
+    icon: '🐦', titleId: 'ev.greenhousebirds.title', textId: 'ev.greenhousebirds.text',
+    when: { shelters: ['greenhouse'] },
+    choices: [
+      { labelId: 'ev.greenhousebirds.c0', run() { return t('ev.greenhousebirds.r0'); } },
+      { labelId: 'ev.greenhousebirds.c1', cost: { food: 1 }, run() {
+        addMoodBuff(2, 3);
+        if (Math.random() < 0.5) { resAdd('parts', 1); state.dayLog.notes.push(t('ev.greenhousebirds.note1')); return t('ev.greenhousebirds.r1shiny'); }
+        return t('ev.greenhousebirds.r1');
+      } },
+    ],
+  },
+  // 7. 먼 불빛(REQ-EVT-03): 지상 도심계 셸터+맑음+밤. 보상 없음, 안정감 +2 1회, 목격 기록.
+  distant_light: {
+    icon: '🌆', titleId: 'ev.distantlight.title', textId: 'ev.distantlight.text',
+    when: { shelters: ['rooftop', 'cabin', 'bunker'], weather: ['clear'], night: true },
+    choices: [
+      { labelId: 'ev.distantlight.c0', run() {
+        addMoodBuff(2, 2);
+        recordDistantLight();
+        // 장소별 문안 변형 3종 (옥탑/오두막/벙커)
+        const key = { rooftop: 'ev.distantlight.r0.rooftop', cabin: 'ev.distantlight.r0.cabin', bunker: 'ev.distantlight.r0.bunker' }[state.current] || 'ev.distantlight.r0';
+        return t(key);
+      } },
+    ],
+  },
+  // 8. 라디오 배치+밤: 주파수 사이의 목소리. 미수집 방송 드랍 연동.
+  radio_ghost: {
+    icon: '📻', titleId: 'ev.radioghost.title', textId: 'ev.radioghost.text',
+    when: { needsRadio: true, night: true },
+    choices: [
+      { labelId: 'ev.radioghost.c0', run() {
+        const b = dropBroadcast();
+        if (b) { state.pendingBroadcast = b; return t('ev.radioghost.r0', { title: LN(BROADCASTS[b]) }); }
+        return t('ev.radioghost.r0none');
+      } },
+      { labelId: 'ev.radioghost.c1', run() { return t('ev.radioghost.r1'); } },
+    ],
+  },
+  // 9. 무조건부 저확률: 벽에서 발견한 과거 달력. 메모 1 드랍.
+  old_calendar: {
+    icon: '📅', titleId: 'ev.oldcalendar.title', textId: 'ev.oldcalendar.text',
+    weight: 0.5,
+    choices: [
+      { labelId: 'ev.oldcalendar.c0', run() {
+        const m = dropMemo();
+        if (m) return t('ev.oldcalendar.r0', { title: LN(MEMOS[m]) });
+        return t('ev.oldcalendar.r0none');
+      } },
+    ],
+  },
+  // 10. 고양이 보유: 고양이가 물어온 것. 잡동사니/희귀부품/죽은 쥐.
+  cat_gift: {
+    icon: '🐾', titleId: 'ev.catgift.title', textId: 'ev.catgift.text',
+    when: { needsCat: true },
+    choices: [
+      { labelId: 'ev.catgift.c0', run() {
+        const r = Math.random();
+        if (r < 0.08) { resAdd('parts', 2); return t('ev.catgift.r0rare'); }
+        if (r < 0.6) { resAdd('cloth', 1); return t('ev.catgift.r0junk'); }
+        addMoodBuff(-1, 1); return t('ev.catgift.r0rat');
+      } },
+    ],
+  },
+  // 11. 겨울: 수도관 동파. 부품 수리 / 방치(정수기 3일 정지).
+  frozen_pipe: {
+    icon: '🚰', titleId: 'ev.frozenpipe.title', textId: 'ev.frozenpipe.text',
+    when: { seasons: ['winter'] },
+    choices: [
+      { labelId: 'ev.frozenpipe.c0', cost: { parts: 1 }, run() { return t('ev.frozenpipe.r0'); } },
+      { labelId: 'ev.frozenpipe.c1', run() { state.pipeFrozenUntil = state.day + 3; state.dayLog.notes.push(t('ev.frozenpipe.note1')); return t('ev.frozenpipe.r1'); } },
+    ],
+  },
+  // 12. 봄/가을+낮: 멀리 지나가는 행렬. 관측만(만나지 않는다). 쌍안경 있으면 상세 노트.
+  caravan_pass: {
+    icon: '🛻', titleId: 'ev.caravanpass.title', textId: 'ev.caravanpass.text',
+    when: { seasons: ['spring', 'autumn'], dayOnly: true },
+    choices: [
+      { labelId: 'ev.caravanpass.c0', run() {
+        addMoodBuff(1, 2);
+        // 망원경 계열 가구(telescope)를 두었다면 행렬을 더 오래 지켜본 상세 노트. 없으면 관측만.
+        const detail = items.some(i => i.defId === 'telescope');
+        return detail ? t('ev.caravanpass.r0detail') : t('ev.caravanpass.r0');
+      } },
+    ],
+  },
+
   /* ── 특수 인카운터 (일반 풀에서 제외) ── */
   cat: {
     special: true,
@@ -4128,6 +4602,8 @@ const EVENTS = {
   doctor_radio: {
     special: true,
     icon: '📻', titleId: 'ev.doctor.title', textId: 'ev.doctor.text',
+    // 박사 일지 조각 2종을 모두 수집했다면 무전 문안에 한 줄이 이어진다 (REQ-RADIO-01 연호).
+    textFn: () => t('ev.doctor.text') + (doctorFragmentsComplete() ? '<br><br>' + t('ev.doctor.textFrag') : ''),
     choices: [
       { labelId: 'ev.doctor.c0', run() { return t('ev.doctor.r0'); } },
     ],
@@ -4153,7 +4629,7 @@ function showEvent(id) {
     ? `<img class="ev-illust" src="img/events/ev_${id}.png" alt="" draggable="false" onerror="this.remove()">`
     : '';
   const body = `${illust}
-    <div class="modal-body" style="line-height:2">${t(ev.textId)}</div>
+    <div class="modal-body" style="line-height:2">${ev.textFn ? ev.textFn() : t(ev.textId)}</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
       ${ev.choices.map((c, i) => {
         const ok = !c.cost || eventCostOk(c.cost);
@@ -4345,10 +4821,65 @@ function openCraftModal() {
           : `<button class="pixel-btn" data-mod="${id}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('craft.install')}</button>`}
       </div>`;
     }).join('');
+  // 돔 벙커 프로젝트 (#36) — 천장 수리 2단계 + 절단기 뒷문. 벙커에서만 노출.
+  let bunkerHtml = '';
+  if (state.current === 'bunker') {
+    const projRows = [];
+    const roofState = state.bunkerRoof || 'hole';
+    const stageLabel = { hole: t('bunker.roofHole'), temp: t('bunker.roofTemp'), full: t('bunker.roofFull') }[roofState];
+    if (roofState !== 'full') {
+      const next = roofState === 'hole' ? { btn: 'bunker.roofStage1Btn', cost: BAL.economy.bunkerRoofStage1, act: 'roof1' } : { btn: 'bunker.roofStage2Btn', cost: BAL.economy.bunkerRoofStage2, act: 'roof2' };
+      const ok = resHasAll(next.cost);
+      projRows.push(`<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
+        <span>🛖 ${t('bunker.roofTitle')}</span>
+        <span class="p-eff" style="font-size:10px">${stageLabel}</span>
+        <span class="p-cost">${costLabel(next.cost)}</span>
+        <button class="pixel-btn" data-bproj="${next.act}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t(next.btn)}</button>
+      </div>`);
+    } else {
+      projRows.push(`<div class="prep-row sel" style="cursor:default"><span>🛖 ${t('bunker.roofTitle')}</span><span class="p-eff" style="font-size:10px">${stageLabel}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`);
+    }
+    if (state.hasCutter && !state.bunkerBackdoor) {
+      projRows.push(`<div class="prep-row" style="cursor:default">
+        <span>🔩 ${t('bunker.backdoorFound')}</span>
+        <span class="p-cost"></span>
+        <button class="pixel-btn" data-bproj="backdoor" style="margin-left:6px">${t('bunker.backdoorBtn')}</button>
+      </div>`);
+    } else if (state.bunkerBackdoor) {
+      projRows.push(`<div class="prep-row sel" style="cursor:default"><span>🔩 ${t('bunker.backdoorBtn')}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`);
+    }
+    bunkerHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🛖 ${LName(SHELTERS.bunker)}</div>${projRows.join('')}`;
+  }
   openModal(t('craft.title'), `
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('craft.intro')}</div>${rows}
     <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>
-    <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}`);
+    <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}
+    ${bunkerHtml}`);
+  $('modal-body').querySelectorAll('button[data-bproj]').forEach(b =>
+    b.addEventListener('click', () => {
+      const act = b.dataset.bproj;
+      if (act === 'roof1') {
+        if (!resConsumeAll(BAL.economy.bunkerRoofStage1)) { toast(t('toast.needMaterial')); return; }
+        state.bunkerRoof = 'temp';
+        toast(t('bunker.roofDoneStage1')); state.dayLog.notes.push(t('bunker.roofDoneStage1'));
+      } else if (act === 'roof2') {
+        if (!resConsumeAll(BAL.economy.bunkerRoofStage2)) { toast(t('toast.needMaterial')); return; }
+        state.bunkerRoof = 'full';
+        toast(t('bunker.roofDoneStage2')); state.dayLog.notes.push(t('bunker.roofDoneStage2'));
+        rebuildBunkerGeometry(); playSfx('craft');
+        scheduleSave(); renderResBar(); updateHud();
+        return; // 지오메트리 재빌드가 모달을 닫는다
+      } else if (act === 'backdoor') {
+        state.bunkerBackdoor = true;
+        toast(t('bunker.backdoorDone')); state.dayLog.notes.push(t('bunker.backdoorDone'));
+        rebuildBunkerGeometry(); playSfx('craft');
+        scheduleSave(); renderResBar(); updateHud();
+        return;
+      }
+      playSfx('craft');
+      scheduleSave(); renderResBar(); updateHud();
+      openCraftModal();
+    }));
   $('modal-body').querySelectorAll('button[data-craft]').forEach(b =>
     b.addEventListener('click', () => {
       const c = CRAFTS[+b.dataset.craft];
@@ -4396,6 +4927,15 @@ function openCraftModal() {
     }));
 }
 
+// 벙커 지오메트리 재빌드 (#36) — 천장 수리/뒷문 상태를 반영해 방을 다시 짓는다 (extension 개조와 동일 패턴).
+function rebuildBunkerGeometry() {
+  if (state.current !== 'bunker') return;
+  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+  loadShelter('bunker');
+  closeModal();
+  shadowDirty();
+}
+
 /* ============================================================
    일지: 도감 · 업적 · 통계 (장기 동기부여 + Steam 업적 대비)
 ============================================================ */
@@ -4438,7 +4978,40 @@ function checkAchievements() {
     }
   }
 }
-function openJournalModal() {
+// 기록 탭 HTML (REQ-LORE-02) — 메모(지역 그룹)+라디오 로그+수집률. 미수집은 "…" 실루엣.
+function recordTabHtml() {
+  const owned = state.memos || {};
+  const bown = state.broadcasts || {};
+  const regionKeys = { residential: 'record.regionRes', commercial: 'record.regionCom', industrial: 'record.regionInd', slum: 'record.regionSlum' };
+  const memoRow = (id, tbl) => owned[id]
+    ? `<div class="prep-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>📄</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
+  let sections = '';
+  for (const rg of ['residential', 'commercial', 'industrial', 'slum']) {
+    const ids = MEMOS_BY_REGION[rg];
+    const gotN = ids.filter(id => owned[id]).length;
+    sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t(regionKeys[rg])} (${gotN}/${ids.length})</div>` + ids.map(id => memoRow(id, MEMOS)).join('');
+  }
+  const willIds = Object.keys(WILLS);
+  const willGot = willIds.filter(id => owned[id]).length;
+  sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
+  // 라디오 로그
+  const radioRows = Object.keys(BROADCASTS).map(id => bown[id]
+    ? `<div class="prep-row" style="cursor:pointer" data-broadcast="${id}"><span>📻</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
+  const distant = state.distantLight?.count
+    ? `<div class="report-sec"><span class="r-title">${t('record.distantTitle', { n: state.distantLight.count })}</span></div>` : '';
+  const total = memosTotal();
+  return `
+    <div class="report-sec"><span class="r-title">${t('record.memoTitle', { n: memosCollected(), total })}</span>${sections}</div>
+    <div class="report-sec"><span class="r-title">${t('record.radioTitle', { n: broadcastsCollected(), total: broadcastsTotal() })}</span>${radioRows}</div>
+    ${distant}`;
+}
+function journalTabBar(active) {
+  const tab = (id, label) => `<button class="pixel-btn ${active === id ? 'primary' : ''}" data-jtab="${id}" style="flex:1">${label}</button>`;
+  return `<div style="display:flex;gap:6px;margin-bottom:10px">${tab('journal', t('journal.title'))}${tab('record', t('record.tabTitle'))}</div>`;
+}
+function openJournalModal(tab = 'journal') {
   const se = seasonOf();
   const achsHtml = ACHS.map(a => {
     const got = state.achs?.[a.id];
@@ -4454,14 +5027,19 @@ function openJournalModal() {
       `<span title="${LColor(def, i)}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-left:3px;background:${arr[i] ? '#' + c.toString(16).padStart(6, '0') : '#22252d'};border:1px solid ${arr[i] ? 'var(--accent)' : '#333'}"></span>`).join('');
     return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${def.emoji}${sw}</span>`;
   }).join('');
-  openModal(t('journal.title'), `
+  const journalBody = `
     <div class="report-sec"><span class="r-title">${t('journal.statsTitle')}</span><br>
       ${t('journal.statsLine', { day: state.day, sicon: se.icon, exp: state.stats.exp, succ: state.stats.success, craft: state.stats.craft || 0, stay: state.stayDays || 0 })}
     </div>
     ${comfortBreakdownHtml()}
     <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount() })}</span><br>${colHtml}</div>
     <div class="report-sec"><span class="r-title">${t('journal.achTitle', { n: Object.values(state.achs || {}).filter(Boolean).length, total: ACHS.length })}</span></div>
-    ${achsHtml}`);
+    ${achsHtml}`;
+  openModal(t('journal.title'), journalTabBar(tab) + (tab === 'record' ? recordTabHtml() : journalBody));
+  const body = $('modal-body');
+  body.querySelectorAll('button[data-jtab]').forEach(b => b.addEventListener('click', () => openJournalModal(b.dataset.jtab)));
+  body.querySelectorAll('[data-memo]').forEach(el => el.addEventListener('click', () => showMemoPage(el.dataset.memo, el.dataset.will === '1')));
+  body.querySelectorAll('[data-broadcast]').forEach(el => el.addEventListener('click', () => showBroadcastModal(el.dataset.broadcast)));
 }
 
 /* ============================================================
@@ -5535,6 +6113,18 @@ function tryDoctorRadio() {
   state.pendingEvent = 'doctor_radio';
   state.lastEventDay = state.day;
 }
+// 라디오 방송 청취 시도 (#12) — 라디오 배치+ON, 하루 1회, BAL 확률로 미수집 방송 1개 예약.
+function tryRadioBroadcast(notes) {
+  if (state.lastBroadcastDay === state.day) return;      // 하루 1회
+  if (!items.some(i => i.defId === 'radio' && i.on !== false)) return; // 라디오 ON 필요
+  if (Math.random() >= BAL.events.radioListenChance) return;
+  const un = Object.keys(BROADCASTS).filter(id => !(state.broadcasts || {})[id]);
+  if (!un.length) return;                                // 다 모음
+  const id = un[Math.floor(Math.random() * un.length)];
+  state.lastBroadcastDay = state.day;
+  state.pendingBroadcast = id;                           // tickTime 이 결산 뒤 모달로 연다
+  notes.push(t('radio.heardNote', { title: LN(BROADCASTS[id]) }));
+}
 
 /* ============================================================
    하루 처리 & 일일 리포트 (기획서 v0.2: SYSTEM 03/04/07)
@@ -5630,12 +6220,15 @@ function processDay() {
     }
   }
   // 3) 생산: 정수기 / 자동 급수기 / 거처 특성 (온실 텃밭, 여객선 낚시)
+  // 수도관 동파(frozen_pipe) 방치 시 정수기 계열이 며칠 멎는다.
+  const pipeFrozen = state.day <= (state.pipeFrozenUntil || 0);
+  if (pipeFrozen) notes.push(t('ev.frozenpipe.note1'));
   for (const it of items) {
     const eff = DEFS[it.defId].appliance?.effect;
-    if (eff === 'water' && it.on !== false) {
+    if (eff === 'water' && it.on !== false && !pipeFrozen) {
       resAdd('water', BAL.economy.purifierWaterPerDay);
       notes.push(t('day.purifier'));
-    } else if (eff === 'water2' && it.on !== false) {
+    } else if (eff === 'water2' && it.on !== false && !pipeFrozen) {
       resAdd('water', BAL.economy.autoWaterPerDay);
       notes.push(t('day.autopurifier', { n: BAL.economy.autoWaterPerDay }));
     }
@@ -5677,6 +6270,11 @@ function processDay() {
   if (sh.rainCatch && wBad) {
     resAdd('water', sh.rainCatch);
     notes.push(t('day.rooftopRain', { n: sh.rainCatch }));
+  }
+  // 돔 벙커 천장 구멍(#36): 임시덮개/완전수리 전에는 비 오는 날 청결이 더 떨어진다.
+  if (state.current === 'bunker' && state.bunkerRoof === 'hole' && wBad) {
+    dirt += BAL.economy.bunkerRoofDirtPerDay;
+    notes.push(t('bunker.roofNote'));
   }
   // 거처 개조 효과
   if (hasMod('raincatch') && wBad) {
@@ -5736,13 +6334,12 @@ function processDay() {
   }
   // Nine Winters(#11): 9겨울 마일스톤 박사 무전 — 라디오 보유 시 밤에 1회 (미보유 시 다음 배치까지 보류)
   tryDoctorRadio();
-  // 랜덤 인카운터 v0.9.1: 마지막 만남 1일 경과 + 60% 확률 (기존 2일+45%에서 상향)
-  if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 1 && Math.random() < 0.60) {
-    const pool = Object.entries(EVENTS).filter(([, e]) => !e.special && (!e.cond || e.cond()));
-    if (pool.length) {
-      state.pendingEvent = pool[Math.floor(Math.random() * pool.length)][0];
-      state.lastEventDay = state.day;
-    }
+  // 라디오 방송 수집 (#12) — 라디오 ON 상태에서 하루 1회 BAL 확률로 미수집 방송 청취.
+  tryRadioBroadcast(notes);
+  // 랜덤 인카운터: 마지막 만남 1일 경과 + BAL 확률. 조건/반복억제는 drawEvent 엔진에서 판정.
+  // 아침 결산 draw 는 '지난밤/밤사이' 사건도 허용하도록 night 컨텍스트를 true 로 연다.
+  if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 1 && Math.random() < BAL.events.dailyChance) {
+    drawEvent({ ...eventCtx(), night: true });
   }
 }
 // 아침 브리핑 카드 (#29) — 결산 상단 "오늘" 섹션: 날씨 예보 + 경고 통합 + 권장 행동 1줄
@@ -5967,6 +6564,20 @@ function tickTime(dt) {
     const page = state.pendingWinterMemoir.shift();
     scheduleSave();
     openJournalPages([page]);
+  } else if (state.pendingMemoPopup && !reportQueued && !state.pendingEvent && !state.pendingTutorial && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
+    // 세계관 메모/유서 수집 팝업 (#35) — 탐험 결산을 닫은 뒤 쪽지 문법으로 1회 열람.
+    const { id, will } = state.pendingMemoPopup;
+    state.pendingMemoPopup = null;
+    scheduleSave();
+    showMemoPage(id, will);
+  } else if (state.pendingBroadcast && !reportQueued && !state.pendingEvent && !state.pendingTutorial && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
+    // 라디오 방송 청취 모달 (#12) — 결산 뒤 지지직 SFX와 함께 1회. 수집은 여기서 확정.
+    const id = state.pendingBroadcast;
+    state.pendingBroadcast = null;
+    if (!state.broadcasts) state.broadcasts = {};
+    if (!state.broadcasts[id]) state.broadcasts[id] = state.day;
+    scheduleSave();
+    showBroadcastModal(id);
   }
   tickInjury();
   settlingOffline = false; // 첫 틱(오프라인 정산) 소화 완료 — 이후엔 정상 암전 경로
@@ -6022,15 +6633,11 @@ function tickExpeditionUI() {
   if (state.exp) {
     const remain = state.exp.end - Date.now();
     const total = state.exp.dur || (REGIONS[state.exp.region].time * 1000);
-    // 탐험 중간 이벤트: 진행률 50% 통과 시점에 1회, 10% 확률로 일반 인카운터 예약
+    // 탐험 중간 이벤트: 진행률 50% 통과 시점에 1회, BAL 확률로 일반 인카운터 예약 (현재 시각 컨텍스트).
     if (!state.exp.midRolled && (1 - remain / total) >= 0.5) {
       state.exp.midRolled = true;
-      if (!state.pendingEvent && Math.random() < 0.10) {
-        const pool = Object.entries(EVENTS).filter(([, e]) => !e.special && (!e.cond || e.cond()));
-        if (pool.length) {
-          state.pendingEvent = pool[Math.floor(Math.random() * pool.length)][0];
-          state.lastEventDay = state.day;
-        }
+      if (!state.pendingEvent && Math.random() < BAL.events.midExpChance) {
+        drawEvent();
       }
     }
     if (remain <= 0) { resolveExpedition(); return; }
@@ -6226,8 +6833,9 @@ function openJournalPages(pages, opts = {}) {
 
   const render = () => {
     const p = pages[i];
-    titleEl.innerHTML = p.titleId ? t(p.titleId, p.titleArgs) : '';
-    bodyEl.innerHTML = p.bodyId ? t(p.bodyId, p.bodyArgs) : '';
+    // titleId/bodyId 는 i18n 키, title/body 는 이미 해석된 원문(메모 등 데이터 테이블 문안)
+    titleEl.innerHTML = p.titleId ? t(p.titleId, p.titleArgs) : (p.title || '');
+    bodyEl.innerHTML = p.bodyId ? t(p.bodyId, p.bodyArgs) : (p.body || '');
     indEl.textContent = t('journalpg.indicator', { cur: i + 1, total: pages.length });
     prevBtn.style.display = i > 0 ? '' : 'none';
     nextBtn.textContent = i === pages.length - 1 ? t('journalpg.close') : t('journalpg.next');
@@ -6266,6 +6874,114 @@ function openHelpModal(opts) {
     { titleId: 'jnl.help.p4.title', bodyId: 'jnl.help.p4.body' },
     { titleId: 'jnl.help.p5.title', bodyId: 'jnl.help.p5.body' },
   ], opts);
+}
+
+// 세계관 메모/유서 열람 (쪽지 톤) — 수집 시 팝업 + 수첩 기록 탭에서 재열람 시 공용.
+function showMemoPage(id, will) {
+  const tbl = will ? WILLS : MEMOS;
+  const m = tbl[id];
+  if (!m) return;
+  const tag = will ? t('memo.tagWill') : t('memo.tagRegion.' + m.region);
+  const body = `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${tag}</div>` +
+    `<div style="white-space:pre-line;line-height:1.9">${LD(m)}</div>`;
+  openJournalPages([{ title: LN(m), body }]);
+}
+/* ── 라디오 방송 연출 (좀보이드식 자막 버블, #12 코디 지시) ──
+   모달 대신 배치된 라디오 위에 초록 자막 박스를 띄운다. 라디오 월드 좌표를 매 프레임
+   화면에 투영해 고정. radio_broadcast.ogg 를 2~3회 반복 재생(원샷 스케줄, 루프 채널 미사용). */
+let radioBubble = null;         // { el, item, text, shown, ttl, fading, sfxTimers } — 활성 방송 상태
+const RADIO_SFX_CLIP = 1.85;    // radio_broadcast.ogg 길이(초) — 반복 간격
+function ensureRadioBubbleEl() {
+  let el = document.getElementById('radio-bubble');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'radio-bubble';
+    el.style.display = 'none';
+    document.body.appendChild(el);
+  }
+  return el;
+}
+// 가장 최근 배치된 라디오 아이템 (없으면 null)
+function latestRadioItem() {
+  const radios = items.filter(i => i.defId === 'radio' && i.group);
+  return radios.length ? radios[radios.length - 1] : null;
+}
+// 방송 자막 버블 시작 — id 방송을 라디오 위에 타자기식으로 출력하고 지지직을 2~3회 재생.
+function showBroadcastModal(id) { // 이름 유지(기존 호출부 호환), 실제로는 버블 연출
+  const b = BROADCASTS[id];
+  if (!b) return;
+  const radio = latestRadioItem();
+  if (!radio) return; // 라디오 없으면 발화하지 않음 (기존 조건 유지)
+  // 이전 버블 정리
+  clearRadioBubble();
+  const el = ensureRadioBubbleEl();
+  const full = `📻 ${LN(b)}`;
+  const bodyText = LD(b).replace(/\s+/g, ' ');
+  el.className = '';
+  el.innerHTML = `<div class="rb-title"></div><div class="rb-body"></div>`;
+  el.style.display = 'block';
+  radioBubble = { el, item: radio, ttl: 0, fading: false, sfxTimers: [], typeTimer: null };
+  positionRadioBubble(); // 첫 배치
+  // 지지직 2~3회 반복 (원샷 스케줄) — 볼륨은 기존 radio_noise 수준(0.5)
+  const reps = 2 + (Math.random() < 0.5 ? 1 : 0);
+  dbgSfx = 'radio_broadcast';
+  for (let k = 0; k < reps; k++) {
+    const tm = setTimeout(() => playSfx('radio_broadcast', { vol: 0.5, jitter: 0 }), k * RADIO_SFX_CLIP * 1000);
+    radioBubble.sfxTimers.push(tm);
+  }
+  // 타자기 출력 (제목 먼저 즉시, 본문 1글자씩)
+  el.querySelector('.rb-title').textContent = full;
+  const bodyEl = el.querySelector('.rb-body');
+  let ci = 0;
+  const type = () => {
+    if (!radioBubble) return;
+    bodyEl.textContent = bodyText.slice(0, ci);
+    ci++;
+    if (ci <= bodyText.length) radioBubble.typeTimer = setTimeout(type, 32);
+    else radioBubble.ttl = performance.now() + 4000; // 완료 후 4초 유지
+  };
+  type();
+  // 수집 처리는 호출부(pendingBroadcast 드레인)에서 이미 확정 — 여기선 토스트만
+  toast(t('radio.logged'));
+}
+// 라디오 월드 좌표 → 화면 px 투영 후 버블 위치 갱신 (renderFrame 루프에서 매 프레임 호출)
+function positionRadioBubble() {
+  if (!radioBubble || !radioBubble.item?.group) return;
+  const el = radioBubble.el;
+  const p = new THREE.Vector3();
+  radioBubble.item.group.getWorldPosition(p);
+  p.y += 0.9; // 라디오 머리 위
+  p.project(camera);
+  // NDC → 시각 px (picking 과 동일 매핑: (ndc*0.5+0.5)*innerWidth)
+  let x = (p.x * 0.5 + 0.5) * innerWidth;
+  let y = (-p.y * 0.5 + 0.5) * innerHeight;
+  // 뷰포트 밖이면 가장자리에 클램프
+  const margin = 20;
+  x = Math.max(margin, Math.min(innerWidth - margin, x));
+  y = Math.max(margin, Math.min(innerHeight - margin, y));
+  // #radio-bubble 은 zoom:var(--uiz) 적용 → left/top 은 uiz 로 나눠 보정 (visual px 정합)
+  const uiz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--uiz')) || 1;
+  el.style.left = (x / uiz) + 'px';
+  el.style.top = (y / uiz) + 'px';
+}
+// 방송 버블 페이드/정리 (renderFrame 훅에서 ttl 경과 시 페이드아웃)
+function tickRadioBubble() {
+  if (!radioBubble) return;
+  positionRadioBubble();
+  if (!radioBubble.fading && radioBubble.ttl && performance.now() > radioBubble.ttl) {
+    radioBubble.fading = true;
+    radioBubble.el.classList.add('fade');
+    setTimeout(clearRadioBubble, 600);
+  }
+}
+function clearRadioBubble() {
+  if (!radioBubble) return;
+  radioBubble.sfxTimers.forEach(clearTimeout);
+  if (radioBubble.typeTimer) clearTimeout(radioBubble.typeTimer);
+  const el = radioBubble.el;
+  el.style.display = 'none';
+  el.classList.remove('fade');
+  radioBubble = null;
 }
 
 /* ── 첫 3일 튜토리얼 (신규 게임 한정) ── */
@@ -6943,7 +7659,7 @@ $('btn-auto').addEventListener('click', () => {
 });
 syncAutoBtn();
 $('btn-craft').addEventListener('click', openCraftModal);
-$('btn-journal').addEventListener('click', openJournalModal);
+$('btn-journal').addEventListener('click', () => openJournalModal('journal'));
 $('g-hunger').addEventListener('click', eatFood);
 $('g-thirst').addEventListener('click', drinkWater);
 $('g-energy').addEventListener('click', () => sleepUntilMorning());
@@ -7113,6 +7829,7 @@ function renderFrame() {
   updateEnvironment(t, dt);
   updateWeather(dt, t);
   updateCat(t, dt);
+  tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   for (const it of items) {
     if (it.lightObj && it.on !== false && DEFS[it.defId].light?.flicker) {
       const k = 0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23);
@@ -7315,6 +8032,13 @@ window.__shelter = {
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, // Nine Winters(#11) QA
   seasonOf, SEASONS, openMapModal, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
+  // Phase D (#12 · #35 · #36) QA 훅
+  MEMOS, WILLS, BROADCASTS, MEMOS_BY_REGION, eventCtx, eventMatches, drawEvent, eventWeight,
+  dropMemo, dropBroadcast, tryDropMemoOnExpedition, tryRadioBroadcast, doctorFragmentsComplete,
+  collectMemo, memosCollected, broadcastsCollected, recordDistantLight, addMoodBuff,
+  showMemoPage, showBroadcastModal, openJournalModal, bunkerComfortBonus, rebuildBunkerGeometry,
+  tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
+  radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
   renderFrame: () => renderFrame(),
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
