@@ -22,7 +22,7 @@
     position: absolute; background: var(--panel-bg);
     border: 2px solid var(--panel-border); border-radius: 4px;
     padding: 10px 12px;
-    zoom: var(--uiz);
+    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
     word-break: keep-all; overflow-wrap: break-word;
   }
   button.pixel-btn {
@@ -231,7 +231,7 @@
     padding: 7px 16px; font-size: 12px; color: var(--accent);
     opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 55;
     text-align: center;
-    zoom: var(--uiz);
+    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
   }
   #toast.show { opacity: 1; }
 
@@ -246,7 +246,7 @@
     display: flex; align-items: center; justify-content: center;
     background: radial-gradient(ellipse at 50% 62%, rgba(10,12,17,0.25) 0%, rgba(8,9,13,0.82) 78%);
   }
-  #title-inner { text-align: center; zoom: var(--uiz); }
+  #title-inner { text-align: center; zoom: calc(var(--uiz, 1) * var(--textboost, 1.15)); }
   #title-logo {
     font-size: 52px; line-height: 1.05; letter-spacing: 6px; color: var(--accent);
     text-shadow: 0 0 18px rgba(232,168,108,0.35), 3px 3px 0 #1a1408;
@@ -282,7 +282,7 @@
     max-width: 480px; font-size: 15px; line-height: 2.1; color: var(--text);
     text-align: center; margin-bottom: 40px; min-height: 100px;
     animation: introfade 1.2s ease-out;
-    zoom: var(--uiz);
+    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
   }
   @keyframes introfade { from { opacity: 0; transform: translateY(8px); } }
   #intro-next { padding: 10px 26px; font-size: 13px; }
@@ -312,7 +312,7 @@
     transform: translateY(26px) rotate(-1deg);
     opacity: 0;
     transition: transform .38s cubic-bezier(.2,.8,.3,1.1), opacity .32s ease-out;
-    zoom: var(--uiz);
+    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
   }
   #journal-screen.show #journal-paper { transform: translateY(0) rotate(-1deg); opacity: 1; }
   #journal-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; letter-spacing: 1px; }
@@ -341,7 +341,7 @@
     box-shadow: 0 8px 22px rgba(0,0,0,0.45);
     transform: translate(120%, 40%) rotate(4deg);
     transition: transform .4s cubic-bezier(.2,.8,.3,1.05);
-    zoom: var(--uiz);
+    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
   }
   #tip-note.show { transform: translate(0, 0) rotate(2deg); }
   body.title-mode #tip-note { display: none !important; } /* 타이틀 화면에선 쪽지 숨김 (안전망) */
@@ -390,7 +390,7 @@
   #cam-ctrl {
     position: absolute; right: 12px; bottom: 12px; z-index: 5;
     display: flex; flex-direction: column; gap: 5px;
-    zoom: var(--uiz);
+    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
   }
   .cam-btn {
     width: 40px; height: 40px; font-size: 17px; line-height: 1;
@@ -403,7 +403,7 @@
   #btn-cancel-place {
     position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
     display: none; z-index: 6; padding: 9px 18px; font-size: 12px;
-    zoom: var(--uiz);
+    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
   }
   #btn-cancel-place.show { display: block; }
 
@@ -473,7 +473,7 @@
     color: var(--accent); background: rgba(14,16,20,0.82);
     border: 2px solid var(--panel-border); border-radius: 4px;
     animation: pauseblink 1.6s ease-in-out infinite;
-    zoom: var(--uiz);
+    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
   }
   @keyframes pauseblink { 50% { opacity: 0.45; } }
   body.paused #pause-ind { display: block; }
@@ -498,7 +498,7 @@
     max-width: 520px; font-size: 15px; line-height: 2.1; color: var(--text);
     text-align: center; margin-bottom: 40px; min-height: 100px;
     animation: introfade 1.2s ease-out;
-    zoom: var(--uiz);
+    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
   }
   #ending-next { padding: 10px 26px; font-size: 13px; }
 
@@ -510,3 +510,7 @@
     border: 2px solid var(--panel-border); border-radius: 3px;
     font-family: inherit; font-size: inherit; padding: 2px 4px;
   }
+
+  /* ── v0.9.1: 가독성 — 전 UI 15% 확대 (베타 피드백: 폰트가 작다) ──
+     --textboost 하나로 전체 UI 배율 조절. 반응형 --uiz와 곱으로 동작 */
+  :root { --textboost: 1.15; }
