@@ -335,6 +335,18 @@ function lerpHex(h1, h2, f, target) {
   return target.copy(_tc.a).lerp(_tc.b, f);
 }
 let dayness = 0;
+// 창문 하늘판 재질 — 낮/밤/날씨 따라 밝기 갱신 (loadShelter마다 재수집)
+const winSkyMats = [];
+function updateWindowSkies() {
+  if (!winSkyMats.length) return;
+  const dark = weather.type === 'rain' || weather.type === 'storm' ? 0.35
+    : weather.type === 'snow' ? 0.7 : weather.type === 'ash' ? 0.55 : 1;
+  _tc.a.setHex(0xcfe0ee); // 맑은 낮 하늘
+  for (const m of winSkyMats) {
+    _tc.b.setHex(m.userData.baseHex);
+    m.color.copy(_tc.b).lerp(_tc.a, dayness * dark);
+  }
+}
 function gameHour() { return (state.gameMin % 1440) / 60; }
 function applyTimeLighting() {
   // 지하 셸터: 시간대와 무관하게 고유 무드 고정
@@ -368,6 +380,7 @@ function applyTimeLighting() {
   stars.material.opacity = starsBase * (weather.type === 'clear' ? 1 : 0.25);
   dayness = THREE.MathUtils.clamp((hemi.intensity - 0.7) / 0.35, 0, 1);
   moonMesh.visible = dayness < 0.35;
+  updateWindowSkies();
 }
 function timeLabel() {
   const h = gameHour();
@@ -819,6 +832,9 @@ function stdWall(len, h, mat, opts = {}) {
     const f4 = f3.clone(); f4.position.x = winX + winW / 2; g.add(f4);
     const sky = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH),
       new THREE.MeshBasicMaterial({ color: opts.skyColor ?? 0x36435c }));
+    // 창밖 하늘은 시간대에 따라 밝아져야 한다 (낮인데 창이 깜깜하면 뒤집힌 느낌)
+    sky.material.userData.baseHex = opts.skyColor ?? 0x36435c;
+    winSkyMats.push(sky.material);
     sky.position.set(winX, winY, -0.02);
     g.add(sky);
   }
@@ -2534,6 +2550,7 @@ function loadShelter(id) {
   disposeDeep(envRoot); envRoot.clear();
   wallList = []; blockers = []; envDyn = {};
   weatherFx.caps = []; wetApplied = -1;
+  winSkyMats.length = 0; // 창문 하늘판 재수집
   // 초봄(Day 1~2) 시작: 겨울의 끝자락 잔설이 남아있다가 서서히 녹는다 (최초 입장 1회만 시딩)
   if (!snowSeeded && state.day <= 2 && seasonOf().id === 'spring') { snowCover = 0.25; snowSeeded = true; }
 
@@ -5479,28 +5496,63 @@ function bgmContext() {
   if (seasonOf().id === 'winter') pool = pool.concat(BGM_LIB.winter);
   return { key: `w:${weather.type}|e:${isEveningHour() ? 1 : 0}|s:${seasonOf().id}`, pool, loop: false, vol: 1 };
 }
-function playBgmTrack(name, ctx) {
+/* ── BGM 트랜지션 규칙 (v2.8)
+ *  · 일반 컨텍스트 변화(날씨/저녁/계절): 지금 곡은 끝까지 재생 → 곡 말미 3초 페이드아웃
+ *    → 다음 곡(새 풀에서)이 페이드인. 곡 중간에 뚝 끊지 않는다.
+ *  · 특수 컨텍스트(타이틀/고양이 날/엔딩) 진입·이탈: 0.9초 페이드아웃 후 즉시 전환(페이드인).
+ */
+let bgmFadeTimer = null, bgmTail = false;
+function bgmTargetVol(ctx) { return (opts.bgmVol ?? 0.15) * ctx.vol; }
+function bgmFade(to, ms, done) {
+  clearInterval(bgmFadeTimer);
+  const from = bgm.volume, t0 = performance.now();
+  bgmFadeTimer = setInterval(() => {
+    const u = Math.min(1, (performance.now() - t0) / ms);
+    bgm.volume = from + (to - from) * u;
+    if (u >= 1) { clearInterval(bgmFadeTimer); bgmFadeTimer = null; if (done) done(); }
+  }, 50);
+}
+function playBgmTrack(name, ctx, fadeIn = true) {
   bgmTrack = name;
+  bgmTail = false;
   bgm.loop = ctx.loop;
-  bgm.volume = (opts.bgmVol ?? 0.15) * ctx.vol;
   bgm.src = `BGM/${name}.mp3`;
+  bgm.volume = fadeIn ? 0 : bgmTargetVol(ctx);
   if (opts.bgm) bgm.play().catch(() => { /* 사용자 제스처 대기 (자동재생 정책) */ });
+  if (fadeIn) bgmFade(bgmTargetVol(ctx), 1600);
 }
 function pickBgmTrack(ctx) {
   const cands = ctx.pool.filter(n => n !== bgmTrack);
   return cands.length ? cands[Math.floor(Math.random() * cands.length)] : ctx.pool[0];
 }
+const BGM_SPECIAL = key => key === 'title' || key === 'cat' || key === 'ending';
 function syncBgm(forcePlay = false) {
   const ctx = bgmContext();
   if (ctx.key !== bgmCtxKey) {
+    const crossNow = BGM_SPECIAL(ctx.key) || BGM_SPECIAL(bgmCtxKey) || bgm.paused || !bgm.src;
     bgmCtxKey = ctx.key;
-    playBgmTrack(pickBgmTrack(ctx), ctx);
-  } else {
-    bgm.volume = (opts.bgmVol ?? 0.15) * ctx.vol; // 음량 슬라이더 즉시 반영
+    if (crossNow) bgmFade(0, 900, () => playBgmTrack(pickBgmTrack(ctx), ctx));
+    // 일반 변화는 여기서 곡을 끊지 않는다 — ended 시점에 새 풀로 넘어간다
+  } else if (!bgmFadeTimer && !bgmTail) {
+    bgm.volume = bgmTargetVol(ctx); // 음량 슬라이더 즉시 반영
     if (forcePlay && opts.bgm && bgm.paused && bgm.src) bgm.play().catch(() => {});
   }
 }
-bgm.addEventListener('ended', () => { const ctx = bgmContext(); playBgmTrack(pickBgmTrack(ctx), ctx); });
+// 곡 자연 종료 → 현재 컨텍스트 풀에서 다음 곡 페이드인
+bgm.addEventListener('ended', () => {
+  const ctx = bgmContext();
+  bgmCtxKey = ctx.key;
+  playBgmTrack(pickBgmTrack(ctx), ctx);
+});
+// 곡 말미 3초 페이드아웃 (루프 곡 제외)
+bgm.addEventListener('timeupdate', () => {
+  if (bgm.loop || !bgm.duration || bgmFadeTimer) return;
+  const remain = bgm.duration - bgm.currentTime;
+  if (remain < 3) {
+    bgmTail = true;
+    bgm.volume = bgmTargetVol(bgmContext()) * Math.max(0, remain / 3);
+  } else bgmTail = false;
+});
 // 셸터별 빗소리 앰비언스 (지역 재질감 반영) — storm은 셸터 무관 rain_heavy로 통일
 const RAIN_AMB = {
   container: 'rain_roof', bunker: 'rain_roof', ship: 'rain_roof', lighthouse: 'rain_roof',
