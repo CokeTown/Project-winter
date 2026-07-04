@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // base 경로는 배포 대상에 따라 다르다:
 // - GitHub Pages(기본 build): 프로젝트 사이트 하위 경로 /Project-winter-Rep/
@@ -16,4 +17,38 @@ export default defineConfig(({ command, mode }) => ({
     port: process.env.PORT ? Number(process.env.PORT) : 8420,
     strictPort: !!process.env.PORT,
   },
+  plugins: [
+    VitePWA({
+      registerType: 'autoUpdate',
+      // 기존 public/manifest.webmanifest 링크를 그대로 사용 — 플러그인이 manifest를 새로 생성하지 않도록 false.
+      manifest: false,
+      // 앱 오프라인 셸 프리캐시. **BGM(mp3, 114MB)은 절대 프리캐시하지 않는다** — glob에서 mp3 제외.
+      // ogg(sfx ~4MB)는 포함 OK.
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,png,svg,woff,woff2,ogg,webmanifest}'],
+        navigateFallback: 'index.html',
+        // 대용량 오디오/모델 등 프리캐시 대상에서 확실히 배제
+        globIgnores: ['**/BGM/**', '**/*.mp3'],
+        // 개별 파일 크기 상한을 넉넉히 (스크립트/텍스처 대비)
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            // BGM(mp3)은 런타임 CacheFirst — 재생 시점에만 캐시.
+            urlPattern: /\/BGM\/.*\.mp3$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'bgm-audio',
+              expiration: {
+                maxEntries: 40,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30일
+              },
+              // 오디오 range 요청 대응
+              rangeRequests: true,
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
+    }),
+  ],
 }));

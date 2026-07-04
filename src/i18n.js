@@ -71,7 +71,7 @@ export const STR = {
   'title.new':      { ko: '✚ 새 게임', en: '✚ New Game' },
   'title.load':     { ko: '💾 불러오기', en: '💾 Load' },
   'title.help':     { ko: '📖 생존 수첩', en: '📖 Survivor\'s Journal' },
-  'title.ver':      { ko: 'Nine Winters · web build', en: 'Nine Winters · web build' },
+  'title.ver':      { ko: 'Nine Winters · v0.9 Beta', en: 'Nine Winters · v0.9 Beta' },
   'intro.next':     { ko: '계속 ▸', en: 'Continue ▸' },
   'loading':        { ko: 'SHELTER LOADING . . .', en: 'SHELTER LOADING . . .' },
   'hud.shelter':    { ko: '🏚️ 셸터', en: '🏚️ Shelter' },
