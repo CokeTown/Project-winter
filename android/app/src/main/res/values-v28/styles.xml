@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- v0.9.1: API 28+ 전용 — 노치/펀치홀(cutout) 영역까지 콘텐츠를 확장해 완전한 전체화면을 만든다.
+         android:windowFullscreen(상태바 숨김) 자체는 values/styles.xml의 AppTheme.NoActionBar에서 처리. -->
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>

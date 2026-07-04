@@ -13,6 +13,8 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- v0.9.1: 상태바를 완전히 숨겨 전체화면으로 실행 (터치 간섭 방지) -->
+        <item name="android:windowFullscreen">true</item>
     </style>
 
 

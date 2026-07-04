@@ -201,6 +201,7 @@ const DEFS = {
   },
   candle: {
     name: '캔들 스툴', nameEn: 'Candle Stool', emoji: '🕯️', fp: { w: 0.5, d: 0.5 },
+    stackable: true, // 상자·테이블 등 표면 위에도 올릴 수 있다
     colorNames: ['우드', '화이트', '블랙', '라벤더'],
     colorNamesEn: ['Wood', 'White', 'Black', 'Lavender'],
     colors: [0x8a6a48, 0xd4cfc2, 0x46484a, 0x9a8aa8],

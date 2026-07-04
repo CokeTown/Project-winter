@@ -648,7 +648,7 @@ function comfortDetail() {
   const injuryMod = (state.injury ? -5 : 0) + ((state.hunger < 25 || state.thirst < 25) ? -5 : 0);
   // 정든 집: 한 거처에 연속으로 머물수록 아늑해진다 (하루 +1, 최대 +8) — 굳이 이주하지 않을 이유
   const settled = Math.min(8, state.stayDays || 0);
-  const catMod = state.cat ? 6 : 0; // 고양이가 있는 집은 따뜻하다
+  const catMod = (state.cat && !state.catHungry) ? 6 : 0; // 고양이가 있는 집은 따뜻하다 (배고파하면 정지)
   // 현실 제약: 단열 취약(악천후 시) / 어둠(조명 필수)
   let limitMod = 0;
   if (sh.cold && (weather.type === 'rain' || weather.type === 'snow' || weather.type === 'storm') && !hasMod('insulation')) limitMod -= sh.cold;
@@ -2123,7 +2123,8 @@ function districtOf(shelterId) {
 ============================================================ */
 // ---- 자원 (기획서 v0.2: 자원 보유량 및 소비) ----
 const RESOURCES = {
-  food:       { name: '음식',     nameEn: 'Food',        emoji: '🥫' },
+  food:       { name: '신선식품', nameEn: 'Fresh Food',  emoji: '🍎' },
+  canned:     { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫' },
   water:      { name: '깨끗한 물', nameEn: 'Clean Water', emoji: '💧' },
   cloth:      { name: '천',       nameEn: 'Cloth',       emoji: '🧵' },
   bandage:    { name: '붕대',     nameEn: 'Bandage',     emoji: '🩹' },
@@ -2158,7 +2159,7 @@ const state = {
   successes: 0,
   inventory: { bed: 1, rug: 1, candle: 1 },
   // 초기 자원 (기획서 밸런싱 권장값)
-  res: { food: 3, water: 3, cloth: 2, bandage: 1, antiseptic: 0, painkiller: 0, candle: 2, battery: 1, fuel: 0, parts: 0, material: 0 },
+  res: { food: 2, canned: 2, water: 3, cloth: 2, bandage: 1, antiseptic: 0, painkiller: 0, candle: 2, battery: 1, fuel: 0, parts: 0, material: 0 },
   layouts: { container: [{ d: 'crate', c: 1, x: 2.5, z: -0.75, r: 0 }], bunker: [], rooftop: [], cabin: [] },
   exp: null,             // { region, end(실시간ms), rate, prep:[] }
   injury: null,          // { type, untilMin, }
@@ -2182,8 +2183,10 @@ const state = {
   lastEventDay: 0,
   mods: {},            // 거처 개조 { shelterId: [modId] }
   stayDays: 0,         // 현재 거처 연속 거주일 (정든 집 보너스)
-  cat: 0,              // 고양이 입양 여부 (Day 100+ 인카운터)
+  cat: 0,              // 고양이 입양 여부 (Day 9+ 인카운터)
   catMusicDay: 0,      // 고양이 인카운터가 뜬 날 — 그날은 Cat OST만 재생
+  catEventSeen: false, // 고양이 인카운터가 이미 한 번 등장했는지 (거절해도 재등장 없음)
+  catHungry: false,    // 유지비(3일마다 음식1)를 내지 못해 쾌적 보너스가 정지된 상태
   endingSeen: false,   // Day 10000 엔딩 감상 여부
   tutDay: 0,           // 신규 게임 첫 3일 튜토리얼 진행 단계 (0~3)
   tipsSeen: {},        // 찢어진 쪽지(1회성 팁) 열람 여부 { 'tip.rain': true, ... }
@@ -2214,31 +2217,44 @@ function resConsumeAll(cost) {
 function costLabel(cost) {
   return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(' + ');
 }
-const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko', fpsCap: 60, lowSpec: false, bgIdle: true };
+// 신선식품 우선 → 통조림 순으로 food n개를 대체 소비 (부족하면 아무것도 소비하지 않고 false)
+function hasAnyFood(n = 1) { return ((state.res.food || 0) + (state.res.canned || 0)) >= n; }
+function consumeAnyFood(n = 1) {
+  if (!hasAnyFood(n)) return false;
+  let remain = n;
+  const fromFresh = Math.min(remain, state.res.food || 0);
+  if (fromFresh > 0) { resConsume('food', fromFresh); remain -= fromFresh; }
+  if (remain > 0) resConsume('canned', remain);
+  return true;
+}
+const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, autoPlay: false, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko', fpsCap: 60, lowSpec: false, bgIdle: true };
 
 /* ============================================================
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
 ============================================================ */
 function decayGauges(gm) {
   const winterMult = seasonOf().id === 'winter' ? 1.25 : 1; // 겨울엔 열량 소모가 크다
-  state.hunger = Math.max(0, state.hunger - gm * 0.017 * winterMult); // 만복 → 0까지 약 4게임일
-  state.thirst = Math.max(0, state.thirst - gm * 0.027);              // 약 2.5게임일
+  state.hunger = Math.max(0, state.hunger - gm * 0.01326 * winterMult); // v0.9.1: 22% 완화 (×0.78) — 만복 → 0까지 약 5게임일
+  state.thirst = Math.max(0, state.thirst - gm * 0.02106);              // v0.9.1: 22% 완화 (×0.78)
   if (opts.autoEat) {
     let g = 0;
-    while (state.hunger < 40 && (state.res.food || 0) > 0 && g++ < 9) { resConsume('food', 1); state.hunger = Math.min(100, state.hunger + 45); }
+    while (state.hunger < 40 && hasAnyFood(1) && g++ < 9) { consumeAnyFood(1); state.hunger = Math.min(100, state.hunger + 45); }
     g = 0;
     while (state.thirst < 40 && (state.res.water || 0) > 0 && g++ < 9) { resConsume('water', 1); state.thirst = Math.min(100, state.thirst + 45); }
   }
 }
 function eatFood() {
-  if ((state.res.food || 0) < 1) { toast(t('eat.noFood')); return; }
+  if (paused) { toast(t('pause.blocked')); return; }
+  if (!hasAnyFood(1)) { toast(t('eat.noFood')); return; }
   if (state.hunger > 85) { toast(t('eat.full')); return; }
-  resConsume('food', 1);
+  const usedFresh = (state.res.food || 0) > 0;
+  consumeAnyFood(1);
   state.hunger = Math.min(100, state.hunger + 45);
-  toast(t('eat.done'));
+  toast(t(usedFresh ? 'eat.done' : 'eat.doneCanned'));
   renderResBar(); updateHud(); scheduleSave();
 }
 function drinkWater() {
+  if (paused) { toast(t('pause.blocked')); return; }
   if ((state.res.water || 0) < 1) { toast(t('drink.noWater')); return; }
   if (state.thirst > 85) { toast(t('drink.full')); return; }
   resConsume('water', 1);
@@ -2250,13 +2266,19 @@ function isExhausted() { return state.hunger <= 0 || state.thirst <= 0; }
 
 /* ── 취침 (의무 휴식 — 자원 인플레이션 방지 + 침대의 가치) ── */
 const EXP_PER_DAY = 5;
-function sleepUntilMorning(auto = false) {
-  if (state.exp) { toast(t('sleep.cantDuringExp')); return; }
+// 취침/쪽잠 공통 에너지 회복 공식 (침대 유무 + 쾌적함 보너스)
+function restEnergyValue() {
   const hasBed = items.some(i => i.defId === 'bed');
   const cozy = comfortDetail().score;
+  return { hasBed, energy: Math.min(100, (hasBed ? 90 : 65) + (cozy >= 75 ? 10 : 0)) };
+}
+function sleepUntilMorning(auto = false) {
+  if (!auto && paused) { toast(t('pause.blocked')); return; }
+  if (state.exp) { toast(t('sleep.cantDuringExp')); return; }
+  const { hasBed, energy } = restEnergyValue();
   // 내일 아침 07:00으로 — 하루 정산(processDay)은 tickTime이 처리
   state.gameMin = (Math.floor(state.gameMin / 1440) + 1) * 1440 + 7 * 60;
-  state.energy = Math.min(100, (hasBed ? 90 : 65) + (cozy >= 75 ? 10 : 0));
+  state.energy = energy;
   const e = Math.round(state.energy);
   state.dayLog.notes.push(t(hasBed ? 'sleep.noteBed' : 'sleep.noteFloor', { e }));
   toast(auto
@@ -2428,11 +2450,16 @@ function addItem(defId, colorIdx, x, z, rot, on = true, y = 0) {
   return item;
 }
 // 조명 전원 (기획서 v0.2: 조명 ON/OFF + 일일 소비)
-function setItemPower(item, on) {
+// silent=false(사용자가 직접 토글할 때만)이면 촛불류(candle/lantern) 켜고 끌 때 성냥음 재생.
+// 연료 부족 자동 꺼짐(processDay)이나 배치/로드 시 초기화에서는 silent 기본값(true)이라 재생되지 않는다.
+function setItemPower(item, on, { silent = true } = {}) {
   item.on = on;
   if (item.lightObj) item.lightObj.visible = on;
   for (const m of (item.glowMeshes || [])) {
     m.material.emissiveIntensity = on ? m.userData.origEmissiveI : 0.03;
+  }
+  if (!silent && ['candle', 'lantern'].includes(item.defId)) {
+    playSfx('candle_light', { vol: 0.6, jitter: 0.04 });
   }
   shadowDirty();
 }
@@ -2609,6 +2636,7 @@ function moveCostFor(id) {
   return { cost, cross, renov: !state.renovated[id] };
 }
 function moveToShelter(id) {
+  if (paused) { toast(t('pause.blocked')); return; }
   if (id === state.current) { closeModal(); return; }
   const { cost, cross, renov } = moveCostFor(id);
   if (!resHasAll(cost)) {
@@ -2641,28 +2669,29 @@ const REGIONS = {
     name: '주거지역', nameEn: 'Residential', emoji: '🏘️', rate: 0.8, time: 20,
     pool: ['bed', 'chair', 'rug', 'dresser', 'candle', 'cushion', 'bookstack'], furnChance: 0.02,
     desc: '음식·물·천·양초 · 생활 가구', descEn: 'Food, water, cloth, candles · household furniture', risk: '낮음', riskEn: 'Low',
-    lootRes: [['food', 1, 2], ['cloth', 0, 1], ['candle', 0, 1], ['water', 1, 2], ['bandage', 1, 1, 0.25]],
+    // v0.9.1: 최소 획득량 +1 가중(대박 상한은 유지) + 신선/통조림 대략 4:6 분배
+    lootRes: [['food', 2, 3], ['canned', 1, 2, 0.6], ['cloth', 1, 1], ['candle', 1, 1], ['water', 2, 3], ['bandage', 1, 1, 0.25]],
     injuries: ['minor'],
   },
   commercial: {
     name: '상업지구', nameEn: 'Commercial', emoji: '🏬', rate: 0.6, time: 35,
     pool: ['sofa', 'table', 'bookshelf', 'radio', 'plant', 'fridge', 'teatable', 'clock', 'lantern'], furnChance: 0.02,
     desc: '배터리·의약품 · 상점 가구', descEn: 'Batteries, medicine · store furniture', risk: '보통', riskEn: 'Medium',
-    lootRes: [['battery', 0, 2], ['parts', 0, 1], ['food', 0, 1], ['water', 0, 1], ['antiseptic', 1, 1, 0.25], ['painkiller', 1, 1, 0.2]],
+    lootRes: [['battery', 1, 2], ['parts', 1, 1], ['canned', 1, 1, 0.6], ['water', 1, 1], ['antiseptic', 1, 1, 0.25], ['painkiller', 1, 1, 0.2]],
     injuries: ['minor', 'minor', 'sprain'],
   },
   industrial: {
     name: '공업지대', nameEn: 'Industrial', emoji: '🏭', rate: 0.4, time: 50,
     pool: ['lamp', 'crate', 'radio', 'dresser', 'purifier', 'generator', 'stove'], furnChance: 0.01,
     desc: '부품·건축재·연료', descEn: 'Parts, building material, fuel', risk: '높음 — 장갑 권장', riskEn: 'High — gloves advised',
-    lootRes: [['parts', 1, 3], ['material', 1, 3], ['fuel', 0, 2]],
+    lootRes: [['parts', 2, 3], ['material', 2, 3], ['fuel', 1, 2]],
     injuries: ['deep', 'deep', 'sprain'],
   },
   slum: {
     name: '슬럼가', nameEn: 'Slums', emoji: '🏚️', rate: 0.25, time: 70,
     pool: Object.keys(DEFS), furnChance: 0.03,
     desc: '뭐든 나올 수 있다 · 희귀 가구', descEn: 'Anything might turn up · rare furniture', risk: '매우 높음 — 응급키트 권장', riskEn: 'Very high — first-aid kit advised',
-    lootRes: [['parts', 1, 2], ['cloth', 1, 2], ['painkiller', 1, 1, 0.15], ['antiseptic', 1, 1, 0.15]],
+    lootRes: [['parts', 2, 2], ['cloth', 2, 2], ['painkiller', 1, 1, 0.15], ['antiseptic', 1, 1, 0.15]],
     injuries: ['deep', 'sprain', 'infection'],
   },
 };
@@ -2807,6 +2836,7 @@ function forecastText() {
 }
 // 탐험은 준비 단계를 거친다 (기획서 v0.2: 지역 → 날씨/위험 확인 → 준비물 → 출발)
 function startExpedition(regionId) {
+  if (paused) { toast(t('pause.blocked')); return; }
   if (state.exp) return;
   if (isExhausted()) { toast(t('toast.exhausted')); return; }
   if (state.energy < 20) { toast(t('toast.tooTired')); return; }
@@ -2864,6 +2894,7 @@ function openPrepModal(regionId) {
   render();
 }
 function departExpedition(regionId, prep) {
+  if (paused) { toast(t('pause.blocked')); return; }
   if (state.exp) return;
   // 준비 모달을 열어둔 사이 상태가 나빠졌을 수도 있다 — 출발 직전 재검사
   if (isExhausted()) { toast(t('toast.exhausted')); closeModal(); return; }
@@ -3568,6 +3599,15 @@ const EVENTS = {
     ],
   },
 };
+// 이벤트 선택지 비용 판정/소비: food가 섞인 cost는 신선+통조림 합산으로 취급 (신선 우선 소비 후 통조림 폴백)
+function eventCostOk(cost) {
+  return Object.entries(cost).every(([id, n]) => id === 'food' ? hasAnyFood(n) : (state.res[id] || 0) >= n);
+}
+function eventCostConsume(cost) {
+  if (!eventCostOk(cost)) return false;
+  for (const [id, n] of Object.entries(cost)) { if (id === 'food') consumeAnyFood(n); else resConsume(id, n); }
+  return true;
+}
 function showEvent(id) {
   const ev = EVENTS[id];
   if (!ev) return;
@@ -3577,7 +3617,7 @@ function showEvent(id) {
     <div class="modal-body" style="line-height:2">${t(ev.textId)}</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
       ${ev.choices.map((c, i) => {
-        const ok = !c.cost || resHasAll(c.cost);
+        const ok = !c.cost || eventCostOk(c.cost);
         return `<button class="pixel-btn" data-ch="${i}" ${ok ? '' : 'disabled'}>${t(c.labelId)}${c.cost && !ok ? t('ev.noResource') : ''}</button>`;
       }).join('')}
     </div>`;
@@ -3585,7 +3625,7 @@ function showEvent(id) {
   $('modal-body').querySelectorAll('button[data-ch]').forEach(b =>
     b.addEventListener('click', () => {
       const c = ev.choices[+b.dataset.ch];
-      if (c.cost && !resConsumeAll(c.cost)) { toast(t('toast.needResource')); return; }
+      if (c.cost && !eventCostConsume(c.cost)) { toast(t('toast.needResource')); return; }
       const result = c.run();
       state.dayLog.notes.push(t('event.metNote', { icon: ev.icon, title: evTitle }));
       openModal(`${ev.icon} ${evTitle}`, `<div style="line-height:2">${result}</div>`);
@@ -3690,6 +3730,7 @@ const CRAFTS = [
   { out: { furn: 'fridge' }, cost: { parts: 4, material: 2, battery: 1 }, hint: '음식 부패 방지 (전력 필요)', hintEn: 'Prevents food spoilage (needs power)' },
 ];
 function openCraftModal() {
+  if (paused) { toast(t('pause.blocked')); return; }
   const rows = CRAFTS.map((c, i) => {
     const outLabel = c.out.res
       ? `${RESOURCES[c.out.res].emoji} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`
@@ -3848,6 +3889,7 @@ function applyInjury(type, hasBottle) {
   return t('injury.applied', { icon: inj.icon, name: LName(inj), pen: Math.round(inj.pen * 100), h: Math.round(restH) });
 }
 function treatInjury() {
+  if (paused) { toast(t('pause.blocked')); return; }
   if (!state.injury) return;
   const inj = INJURIES[state.injury.type];
   if (!resConsumeAll(inj.cure)) { toast(t('injury.needCure', { cost: costLabel(inj.cure) })); return; }
@@ -3949,6 +3991,7 @@ function moveGhost(item, e) {
   item._valid = !bad;
 }
 function startPlacing(defId) {
+  if (paused) { toast(t('pause.blocked')); return; }
   if ((state.inventory[defId] || 0) <= 0) {
     toast(t('place.noStock', { name: LName(DEFS[defId]) }));
     return;
@@ -3986,15 +4029,17 @@ function finishPlacing() {
   markCollection(item.defId, item.colorIdx);
   if (DEFS[item.defId].surface) tipOnce('tip.stack'); // 찢어진 쪽지: 첫 스태킹 가능 가구(테이블 등) 배치
   renderInventoryBar();
-  select(item);
+  select(item, true); // 배치 확정음(아래 playSfx('place'))과 중복되지 않게 select의 클릭음은 생략
   scheduleSave();
   playSfx('place');
 }
-function select(item) {
+function select(item, silent = false) {
   deselect();
   selected = item;
   showSelPanel(item);
   updateSelRing();
+  // 아이템 클릭 상호작용음 (가벼운 '톡') — 라디오는 radio_noise가 별도로 재생되므로 중복 방지 위해 생략
+  if (!silent && item.defId !== 'radio') playSfx('place', { vol: 0.25, rate: 1.5, jitter: 0.1 });
 }
 function deselect() {
   selected = null;
@@ -4129,6 +4174,8 @@ canvas.addEventListener('wheel', e => {
 
 // v2.4: PC 판정 — 포인터가 정밀(마우스)하고 터치 지원이 없는 기기만 "PC"로 취급.
 const isPcInput = matchMedia('(pointer: fine)').matches && !('ontouchstart' in window);
+// v0.9.1: 모바일(터치 기기/Capacitor 포함) 판정 — 백그라운드 오디오 정책 분기에 사용.
+const isMobileEnv = ('ontouchstart' in window) || /Android|iPhone|iPad/i.test(navigator.userAgent);
 function toggleSettingsPanel() {
   const rp = $('render-panel');
   const willShow = rp.style.display === 'none';
@@ -4358,7 +4405,21 @@ function clampPanel(el) {
   el.style.bottom = 'auto';
   el.style.transform = 'none';
 }
+// 창 관리자: 패널 겹침 시 마지막으로 만진 패널이 항상 맨 앞에 오도록 z-index를 올려준다.
+// 계층: .panel 10~40 < #modal-back 50 < .tip-note 55 < 수첩(journal) 60 < #fade-veil 99
+let panelZTop = 10;
+function bringPanelToFront(el) {
+  panelZTop++;
+  if (panelZTop > 40) {
+    // 상한 도달 — 모달/수첩/베일 계층을 침범하지 않도록 전 패널 z를 재정규화
+    const panels = [...document.querySelectorAll('.panel')].sort((a, b) => (+a.style.zIndex || 10) - (+b.style.zIndex || 10));
+    panelZTop = 10;
+    for (const p of panels) p.style.zIndex = ++panelZTop;
+  }
+  el.style.zIndex = panelZTop;
+}
 function makeDraggablePanel(el, key, title) {
+  el.addEventListener('pointerdown', () => bringPanelToFront(el), true); // 캡처 단계: 패널 어디를 눌러도 최상단으로
   const head = document.createElement('div');
   head.className = 'p-head';
   head.innerHTML = `<span class="p-title">⠿ ${title}</span><button class="p-min" title="${t('panel.collapse')}">–</button>`;
@@ -4497,6 +4558,7 @@ function hideTitle() {
   titleVisible = false;
   gameStarted = true;
   document.body.classList.remove('title-mode');
+  $('render-panel').classList.remove('show-in-title'); // 타이틀 전용 설정 열람 상태 초기화
   $('title-screen').style.display = 'none';
   // 타이틀 화면에선 .panel이 display:none이라 이전 onResize() 때 패널 크기가 0으로 측정됐다.
   // 실제 패널이 보이기 시작한 지금 다시 계산해 자동 배치를 맞춘다.
@@ -4669,6 +4731,7 @@ function renderResBar() {
   lastResSnapshot = { ...state.res };
 }
 function cleanShelter() {
+  if (paused) { toast(t('pause.blocked')); return; }
   const c = state.cleanBy[state.current] ?? 70;
   if (c >= 100) { toast(t('clean.already')); return; }
   if (state.energy < 10) { toast(t('clean.tooTired')); return; }
@@ -4726,10 +4789,12 @@ function processDay() {
   }
   const consumeFuel = (fuelId, n = 1) => (fuelId === 'battery' && freePower) ? true : resConsume(fuelId, n);
   // 2) 켜진 조명·가전의 일일 연료 소비 (부족 시 자동 꺼짐)
+  // v0.9.1: 캔들 스툴(candle 가구)만 이틀에 1개 소비로 완화 — 그 외(랜턴 등)는 매일 그대로
   for (const it of items) {
     const def = DEFS[it.defId];
     const fuelId = def.light?.fuel || (def.appliance?.effect !== 'power' ? def.appliance?.fuel : null);
     if (!fuelId || it.on === false) continue;
+    if (it.defId === 'candle' && state.day % 2 === 0) continue; // 캔들 스툴은 격일 소비
     if (!consumeFuel(fuelId, 1)) {
       setItemPower(it, false);
       notes.push(t('day.fuelOut', { fuel: LName(RESOURCES[fuelId]), name: LName(def) }));
@@ -4753,7 +4818,7 @@ function processDay() {
       }
     }
   }
-  // 4) 음식 부패: 가동 중인 냉장고가 없으면 매일 음식 -1
+  // 4) 음식 부패: 가동 중인 냉장고가 없으면 매일 신선식품만 -1 (통조림은 부패하지 않음)
   const fridgeOn = items.some(it => DEFS[it.defId].appliance?.effect === 'fridge' && it.on !== false);
   if (!fridgeOn && (state.res.food || 0) > 0) {
     resConsume('food', 1);
@@ -4764,7 +4829,7 @@ function processDay() {
   // 청결도 일일 감소 + 거처별 현실 제약
   const sh = SHELTERS[state.current];
   const wBad = state.weatherType === 'rain' || state.weatherType === 'snow' || state.weatherType === 'storm';
-  let dirt = 2;
+  let dirt = 1; // v0.9.1: 일일 청결 감소 2 → 1 완화
   if (sh.dailyDirt) { dirt += sh.dailyDirt; notes.push(t('day.seaDamp')); }
   if (sh.weatherDirt && wBad) { dirt += sh.weatherDirt; notes.push(t('day.openWet', { icon: WEATHERS[state.weatherType].icon })); }
   if (sh.stormRepair && sh.stormRepair.includes(state.weatherType) && !hasMod('roof')) {
@@ -4806,11 +4871,21 @@ function processDay() {
   if (state.cat && Math.random() < 0.22) {
     notes.push(t(['day.cat0', 'day.cat1', 'day.cat2', 'day.cat3'][Math.floor(Math.random() * 4)]));
   }
-  // 특수 인카운터 ①: 야윈 고양이 — Day 100+, 하루 1% (아직 입양 전일 때만)
-  if (!state.pendingEvent && !state.cat && state.day >= 100 && Math.random() < 0.01) {
+  // 고양이 유지비: 입양 후 3일마다 음식 1 소모 (신선 우선 → 통조림 폴백). 둘 다 없으면 쾌적 보너스 정지
+  if (state.cat && state.day % 3 === 0) {
+    if (consumeAnyFood(1)) {
+      state.catHungry = false;
+    } else {
+      state.catHungry = true;
+      notes.push(t('day.catHungry'));
+    }
+  }
+  // 특수 인카운터 ①: 야윈 고양이 — v0.9.1: Day 9+, 하루 15% (아직 입양 전 + 최초 1회 등장 후 재등장 없음)
+  if (!state.pendingEvent && !state.cat && !state.catEventSeen && state.day >= 9 && Math.random() < 0.15) {
     state.pendingEvent = 'cat';
     state.lastEventDay = state.day;
     state.catMusicDay = state.day; // 당첨된 날은 하루 종일 Cat OST
+    state.catEventSeen = true; // 거절해도 다시는 뜨지 않음
     notes.push(t('day.catHint'));
   }
   // 특수 인카운터 ②: 구조 — Day 10000 초과, 하루 5%
@@ -4818,8 +4893,8 @@ function processDay() {
     state.pendingEvent = 'ending';
     state.lastEventDay = state.day;
   }
-  // 랜덤 인카운터 (마지막 만남 후 2일 이상 지나면 45% 확률)
-  if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 2 && Math.random() < 0.45) {
+  // 랜덤 인카운터 v0.9.1: 마지막 만남 1일 경과 + 60% 확률 (기존 2일+45%에서 상향)
+  if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 1 && Math.random() < 0.60) {
     const pool = Object.entries(EVENTS).filter(([, e]) => !e.special && (!e.cond || e.cond()));
     if (pool.length) {
       state.pendingEvent = pool[Math.floor(Math.random() * pool.length)][0];
@@ -4865,14 +4940,55 @@ function setPaused(p) {
   if (b) b.textContent = p ? '▶' : '⏸';
 }
 let reportQueued = false;
+let lastAutoHour = -1;
+// 자동 진행 모드 (Day 10+ 해금): 매 게임 내 정시마다 간단한 생존 루틴을 대신 처리
+function runAutoPlay() {
+  if (paused || titleVisible || !opts.autoPlay || state.day < 10) return;
+  if (state.injury && resHasAll(INJURIES[state.injury.type].cure)) {
+    const name = LName(INJURIES[state.injury.type]);
+    treatInjury();
+    state.dayLog.notes.push(t('auto.treat', { name }));
+  }
+  if ((state.cleanBy[state.current] ?? 70) < 50 && (state.res.water || 0) > 1) {
+    cleanShelter();
+    state.dayLog.notes.push(t('auto.clean'));
+  }
+  if (!state.exp && (state.expToday || 0) < 4 && state.energy >= 30 && !isExhausted()) {
+    let bestId = null, bestEff = -1;
+    for (const id of Object.keys(REGIONS)) {
+      const eff = rateParts(id, []).eff;
+      if (eff > bestEff) { bestEff = eff; bestId = id; }
+    }
+    if (bestId) {
+      departExpedition(bestId, []);
+      state.dayLog.notes.push(t('auto.depart', { emoji: REGIONS[bestId].emoji, name: LName(REGIONS[bestId]) }));
+    }
+  }
+}
 function tickTime(dt) {
   state.gameMin += dt * GAME_MIN_PER_SEC;
   decayGauges(dt * GAME_MIN_PER_SEC);
+  const curHour = Math.floor(state.gameMin / 60);
+  if (curHour !== lastAutoHour) {
+    lastAutoHour = curHour;
+    runAutoPlay();
+  }
   const newDay = Math.floor(state.gameMin / 1440) + 1;
   while (state.day < newDay) {
     state.day++;
+    refreshAutoplayLock();
     processDay();
     reportQueued = true;
+    // 자정을 자연 경과(취침이 아님)로 넘긴 경우: 아침 08:00으로 점프 + 쪽잠 회복
+    // (sleepUntilMorning은 스스로 다음날 07:00 이후로 세팅하므로, 그 경우 아래 조건이 걸리지 않는다)
+    const morning8 = (state.day - 1) * 1440 + 8 * 60;
+    if (state.gameMin < morning8) {
+      state.gameMin = morning8;
+      const { energy } = restEnergyValue();
+      state.energy = Math.max(state.energy, energy);
+      const e = Math.round(state.energy);
+      state.dayLog.notes.push(t('day.napMorning', { e }));
+    }
   }
   if (reportQueued && !journalOpen && !$('modal-back').classList.contains('show')) {
     reportQueued = false;
@@ -4943,9 +5059,20 @@ function renderExpPanel() {
 function tickExpeditionUI() {
   if (state.exp) {
     const remain = state.exp.end - Date.now();
+    const total = state.exp.dur || (REGIONS[state.exp.region].time * 1000);
+    // 탐험 중간 이벤트: 진행률 50% 통과 시점에 1회, 10% 확률로 일반 인카운터 예약
+    if (!state.exp.midRolled && (1 - remain / total) >= 0.5) {
+      state.exp.midRolled = true;
+      if (!state.pendingEvent && Math.random() < 0.10) {
+        const pool = Object.entries(EVENTS).filter(([, e]) => !e.special && (!e.cond || e.cond()));
+        if (pool.length) {
+          state.pendingEvent = pool[Math.floor(Math.random() * pool.length)][0];
+          state.lastEventDay = state.day;
+        }
+      }
+    }
     if (remain <= 0) { resolveExpedition(); return; }
     const bar = $('exp-bar'), eta = $('exp-eta');
-    const total = state.exp.dur || (REGIONS[state.exp.region].time * 1000);
     if (bar) {
       bar.style.width = `${100 * (1 - remain / total)}%`;
       eta.textContent = t('exp.timeLeft', { n: Math.ceil(remain / 1000) });
@@ -4985,7 +5112,7 @@ function showSelPanel(item) {
       ${t('power.fuelLine', { emoji: RESOURCES[fuel].emoji, name: LName(RESOURCES[fuel]), have, status: have === 0 ? t('power.empty') : t('power.lasts', { n: have }) })}`;
     $('sel-swatches').after(div);
     $('btn-power').addEventListener('click', () => {
-      setItemPower(item, item.on === false);
+      setItemPower(item, item.on === false, { silent: false });
       showSelPanel(item);
       scheduleSave();
       toast(item.on ? t('power.turnedOn', { name: LName(def) }) : t('power.turnedOff', { name: LName(def) }));
@@ -5226,8 +5353,8 @@ $('btn-reset').addEventListener('click', () => {
   setTimeout(() => location.reload(), 500);        // 타이틀로
 });
 
-// 세이브 내보내기: 현재 슬롯의 원본 JSON을 파일로 다운로드
-$('btn-save-exp').addEventListener('click', () => {
+// 세이브 내보내기: 현재 슬롯의 원본 JSON을 파일로 다운로드 (설정 패널 + 타이틀 화면 공용)
+function exportSave() {
   flushSave(); // 예약된 저장을 즉시 반영해 최신 상태를 내보낸다
   const raw = localStorage.getItem(slotKey(currentSlot));
   if (!raw) { toast(t('save.exportNone')); return; }
@@ -5241,10 +5368,9 @@ $('btn-save-exp').addEventListener('click', () => {
   a.remove();
   URL.revokeObjectURL(url);
   toast(t('save.exported'));
-});
-
-// 세이브 가져오기: 파일에서 읽어 검증 후 현재 슬롯에 덮어쓰기
-$('btn-save-imp').addEventListener('click', () => {
+}
+// 세이브 가져오기: 파일에서 읽어 검증 후 현재 슬롯에 덮어쓰기 (설정 패널 + 타이틀 화면 공용)
+function importSave() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.json';
@@ -5266,7 +5392,11 @@ $('btn-save-imp').addEventListener('click', () => {
     reader.readAsText(file);
   });
   input.click();
-});
+}
+$('btn-save-exp').addEventListener('click', exportSave);
+$('btn-save-imp').addEventListener('click', importSave);
+$('t-export').addEventListener('click', exportSave);
+$('t-import').addEventListener('click', importSave);
 
 const toastEl = $('toast');
 let toastTimer = null;
@@ -5340,14 +5470,30 @@ function applyLowSpec() {
   shadowDirty();
   if (weather.pts.visible) weather.pts.geometry.setDrawRange(0, weatherDrawCount(weather.type));
 }
+// 자동 진행 체크박스: index.html에 정적 마크업이 없어 JS로 동적 주입 (Day 10 해금)
+const autoplayLabel = document.createElement('label');
+autoplayLabel.id = 'autoplay-row';
+autoplayLabel.innerHTML = `<span data-i18n="opt.autoplay">자동 진행</span> <input type="checkbox" id="opt-autoplay">`;
+$('opt-autoeat').closest('label').after(autoplayLabel);
+function refreshAutoplayLock() {
+  const cb = $('opt-autoplay');
+  const locked = state.day < 10;
+  cb.disabled = locked;
+  autoplayLabel.title = locked ? t('opt.autoplay.locked') : t('opt.autoplay.title');
+  if (locked && opts.autoPlay) { opts.autoPlay = false; cb.checked = false; }
+}
 function applyOpts() {
   $('opt-pixel').value = opts.pixel; $('opt-quant').checked = opts.quant;
   $('opt-dither').checked = opts.dither; $('opt-ceil').checked = opts.ceil;
   $('opt-autoeat').checked = opts.autoEat !== false;
+  $('opt-autoplay').checked = !!opts.autoPlay;
+  refreshAutoplayLock();
   $('opt-lang').value = opts.lang || 'ko';
   $('opt-fps').value = String(opts.fpsCap || 60);
   $('opt-lowspec').checked = !!opts.lowSpec;
   $('opt-bgidle').checked = opts.bgIdle !== false;
+  // 모바일에선 항상 백그라운드 오디오를 끄므로(위 visibilitychange 참고) 옵션 자체를 숨긴다 (데스크톱 위젯 전용 옵션)
+  const bgidleRow = $('bgidle-row'); if (bgidleRow) bgidleRow.style.display = isMobileEnv ? 'none' : '';
   postMat.uniforms.uQuant.value = opts.quant ? 1 : 0;
   postMat.uniforms.uDither.value = opts.dither ? 1 : 0;
   ceilLight.visible = opts.ceil;
@@ -5360,6 +5506,7 @@ $('opt-quant').addEventListener('change', e => { opts.quant = e.target.checked; 
 $('opt-dither').addEventListener('change', e => { opts.dither = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; scheduleSave(); });
+$('opt-autoplay').addEventListener('change', e => { opts.autoPlay = e.target.checked; scheduleSave(); });
 $('opt-fps').addEventListener('change', e => { opts.fpsCap = +e.target.value || 60; scheduleSave(); });
 $('opt-lowspec').addEventListener('change', e => { opts.lowSpec = e.target.checked; applyLowSpec(); scheduleSave(); });
 $('opt-bgidle').addEventListener('change', e => {
@@ -5577,7 +5724,9 @@ function syncSfxAmbience() {
   } else {
     setAmbience(null);
   }
-  const fireOn = items.some(it => ['stove', 'candle', 'lantern'].includes(it.defId) && it.on !== false);
+  // v0.9.1: 캔들/랜턴은 타닥거리는 fire 루프에서 제외 — 장작 난로(stove)만 fire 루프 재생.
+  // 캔들 전용 타닥 소리는 사용자 파일 제공 시 별도 채널로 추가 예정.
+  const fireOn = items.some(it => it.defId === 'stove' && it.on !== false);
   setFire(fireOn);
 }
 // 모바일 대응: 재생은 반드시 사용자 제스처 안에서 시작 (자동재생 정책)
@@ -5659,6 +5808,12 @@ $('lang-en').addEventListener('click', () => pickTitleLang('en'));
 $('t-new').addEventListener('click', () => openSlotModal('new'));
 $('t-load').addEventListener('click', () => openSlotModal('load'));
 $('t-help').addEventListener('click', openHelpModal);
+// 타이틀에서 설정 패널 열람: body.title-mode가 .panel을 숨기므로 show-in-title로 예외 처리
+$('t-settings').addEventListener('click', () => {
+  const panel = $('render-panel');
+  panel.classList.toggle('show-in-title');
+  if (panel.classList.contains('show-in-title')) clampPanel(panel);
+});
 if (sessionStorage.getItem('ps-intro')) {
   sessionStorage.removeItem('ps-intro');
   showIntro();
@@ -5736,17 +5891,25 @@ function logicTick() {
 }
 let hiddenTimer = null;
 function stopHiddenTimer() { if (hiddenTimer) { clearInterval(hiddenTimer); hiddenTimer = null; } }
+// [버그 수정] 탭이 처음부터 숨겨진 채 로드되면 visibilitychange가 안 울려
+// 로직 틱이 영영 설치되지 않아 게임이 동결됨 — 상태 기반으로 보장한다.
+function ensureHiddenTicker() {
+  if (document.hidden && !hiddenTimer) hiddenTimer = setInterval(logicTick, 1000);
+  if (!document.hidden) stopHiddenTimer();
+}
+// v0.9.1: 모바일에서는 백그라운드 전환 시 opt-bgidle 설정과 무관하게 항상 오디오를 끈다
+// (데스크톱 위젯 모드처럼 계속 재생시키면 배터리/사용자 경험에 불리하다). isMobileEnv는 위쪽에서 선언.
 document.addEventListener('visibilitychange', () => {
+  ensureHiddenTicker();
   if (document.hidden) {
-    stopHiddenTimer();
-    hiddenTimer = setInterval(logicTick, 1000);
-    if (!opts.bgIdle) { bgm.pause(); setAmbience(null); setFire(false); }
+    if (isMobileEnv || !opts.bgIdle) { bgm.pause(); setAmbience(null); setFire(false); }
   } else {
-    stopHiddenTimer();
     clock.getDelta(); // 숨김 동안 쌓인 델타를 한 번 버려 rAF 복귀 시 이중 진행 방지
-    if (!opts.bgIdle) syncSfxAmbience(); // 백그라운드 소리 껐던 경우 복귀 시 재개
+    if (isMobileEnv) { if (opts.bgm) syncBgm(true); syncSfxAmbience(); }
+    else if (!opts.bgIdle) syncSfxAmbience(); // 백그라운드 소리 껐던 경우 복귀 시 재개
   }
 });
+ensureHiddenTicker(); // 부팅 시점이 이미 숨김 상태일 수 있다 (백그라운드 탭에서 열기/최소화 중 리로드)
 let lastFrameTime = 0;
 function animate(now) {
   requestAnimationFrame(animate);

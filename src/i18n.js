@@ -72,6 +72,9 @@ export const STR = {
   'title.load':     { ko: '💾 불러오기', en: '💾 Load' },
   'title.help':     { ko: '📖 생존 수첩', en: '📖 Survivor\'s Journal' },
   'title.ver':      { ko: 'Nine Winters · v0.9 Beta', en: 'Nine Winters · v0.9 Beta' },
+  'title.tools.export':  { ko: '세이브 내보내기', en: 'Export save' },
+  'title.tools.import':  { ko: '세이브 가져오기', en: 'Import save' },
+  'title.tools.settings':{ ko: '설정', en: 'Settings' },
   'intro.next':     { ko: '계속 ▸', en: 'Continue ▸' },
   'loading':        { ko: 'SHELTER LOADING . . .', en: 'SHELTER LOADING . . .' },
   'hud.shelter':    { ko: '🏚️ 셸터', en: '🏚️ Shelter' },
@@ -205,14 +208,27 @@ export const STR = {
   'sleep.autoFloor':      { ko: '😴 지쳐 곯아떨어졌다... 바닥에서 아침을 맞았다 (⚡{e})', en: '😴 Collapsed from exhaustion... woke on the floor to morning (⚡{e})' },
   'sleep.wakeBed':        { ko: '😴 침대에서 푹 잤다 — 아침이 밝았다 (⚡{e})', en: '😴 Slept soundly in the bed — morning has come (⚡{e})' },
   'sleep.wakeFloor':      { ko: '😴 바닥에서 웅크리고 잤다 — 아침이 밝았다 (⚡{e})', en: '😴 Curled up on the floor — morning has come (⚡{e})' },
+  'day.napMorning':       { ko: '🌅 쪽잠으로 아침을 맞았습니다 (에너지 회복, ⚡{e})', en: '🌅 A short nap carried you into morning (energy restored, ⚡{e})' },
 
   /* ── 먹기/마시기 ── */
   'eat.noFood':    { ko: '음식이 없습니다 — 주거지역을 탐험하세요', en: 'No food — explore the residential district' },
   'eat.full':      { ko: '아직 배부릅니다', en: 'Still full' },
-  'eat.done':      { ko: '🥫 식사했습니다 (+45)', en: '🥫 Had a meal (+45)' },
+  'eat.done':      { ko: '🍎 식사했습니다 (+45)', en: '🍎 Had a meal (+45)' },
+  'eat.doneCanned':{ ko: '🥫 통조림으로 식사했습니다 (+45)', en: '🥫 Had a meal of canned food (+45)' },
   'drink.noWater': { ko: '깨끗한 물이 없습니다', en: 'No clean water' },
   'drink.full':    { ko: '목마르지 않습니다', en: 'Not thirsty' },
   'drink.done':    { ko: '💧 물을 마셨습니다 (+45)', en: '💧 Drank water (+45)' },
+
+  /* ── 일시정지 차단 ── */
+  'pause.blocked': { ko: '일시정지 중입니다', en: 'Game is paused' },
+
+  /* ── 자동 진행 모드 (v0.9.1) ── */
+  'opt.autoplay':       { ko: '자동 진행', en: 'Auto-play' },
+  'opt.autoplay.title': { ko: 'Day 10부터 사용 가능 — 치료·청소·탐험을 자동으로 처리합니다', en: 'Available from Day 10 — automatically handles treatment, cleaning, and expeditions' },
+  'opt.autoplay.locked':{ ko: 'Day 10부터', en: 'From Day 10' },
+  'auto.treat':   { ko: '🤖 [자동] {name}을(를) 치료했습니다', en: '🤖 [Auto] Treated {name}' },
+  'auto.clean':   { ko: '🤖 [자동] 셸터를 청소했습니다', en: '🤖 [Auto] Cleaned the shelter' },
+  'auto.depart':  { ko: '🤖 [자동] {emoji} {name}(으)로 탐험을 떠났습니다', en: '🤖 [Auto] Departed for {emoji} {name}' },
 
   /* ── 드래그 패널 제목 ── */
   'panel.collapse':   { ko: '접기/펼치기', en: 'Collapse / expand' },
@@ -412,7 +428,7 @@ export const STR = {
   'day.purifier':     { ko: '🚰 정수기가 깨끗한 물을 만들었습니다. (+1)', en: '🚰 The purifier produced clean water. (+1)' },
   'day.gardenFrozen': { ko: '❄️ 겨울 — 텃밭이 얼어 수확이 없습니다.', en: '❄️ Winter — the garden is frozen; no harvest.' },
   'day.produce':      { ko: '{note} ({emoji}+{n})', en: '{note} ({emoji}+{n})' },
-  'day.foodSpoiled':  { ko: '🥫 냉장고가 없어 음식이 상했습니다. (-1)', en: '🥫 Without a fridge, food spoiled. (-1)' },
+  'day.foodSpoiled':  { ko: '🍎 냉장고가 없어 신선식품이 상했습니다. (-1)', en: '🍎 Without a fridge, fresh food spoiled. (-1)' },
   'day.foodFresh':    { ko: '🧊 냉장고 덕분에 음식이 신선하게 보관됐습니다.', en: '🧊 Thanks to the fridge, food stayed fresh.' },
   'day.seaDamp':      { ko: '💧 바다의 습기로 셸터가 눅눅해집니다.', en: '💧 Sea damp leaves the shelter clammy.' },
   'day.openWet':      { ko: '{icon} 노천 거처가 비바람에 그대로 젖었습니다.', en: '{icon} The open-air shelter was soaked by the weather.' },
@@ -433,6 +449,7 @@ export const STR = {
   'day.cat2':         { ko: '🐈 고양이가 침대 한가운데를 차지하고 잤습니다. 당신은 구석에서.', en: '🐈 The cat claimed the middle of the bed. You slept in the corner.' },
   'day.cat3':         { ko: '🐈 고양이가 어디선가 실뭉치를 물어 와 밤새 굴리며 놀았습니다.', en: '🐈 The cat found a ball of yarn and batted it around all night.' },
   'day.catJoined':    { ko: '🐈 고양이가 함께 살게 되었습니다.', en: '🐈 The cat has come to live with you.' },
+  'day.catHungry':    { ko: '🐈 고양이가 배고파합니다... (먹이가 없어 쾌적 보너스가 멈췄습니다)', en: '🐈 The cat looks hungry... (no food — its comfort bonus has paused)' },
 
   /* ── 결산 리포트 ── */
   'report.title':     { ko: '📋 Day {day} 결산', en: '📋 Day {day} Report' },
@@ -529,7 +546,7 @@ export const STR = {
   'ev.cat.c0':          { ko: '🥫 음식 1개를 내어준다 (가족으로 맞이하기)', en: '🥫 Offer 1 food (welcome it as family)' },
   'ev.cat.c1':          { ko: '조용히 지켜본다', en: 'Watch quietly' },
   'ev.cat.r0':          { ko: '고양이는 그릇을 싹 비우더니, 당연하다는 듯 가장 아늑한 자리를 차지했다.<br>이제 이 집엔 심장이 두 개 뛴다. <b>(쾌적함 +6)</b>', en: 'The cat licks the bowl clean and claims the coziest spot as if it were owed.<br>Now two hearts beat in this home. <b>(comfort +6)</b>' },
-  'ev.cat.r1':          { ko: '고양이는 한동안 서성이다가 어둠 속으로 사라졌다.<br>...언젠가 다시 찾아올지도 모른다.', en: 'The cat lingers a while, then slips away into the dark.<br>...perhaps it will return someday.' },
+  'ev.cat.r1':          { ko: '고양이는 어둠 속으로 사라졌다. 다시는 볼 수 없을 것 같다.', en: 'The cat vanished into the dark. It seems you will never see it again.' },
   'cat.pet':            { ko: '🐈 그르릉...', en: '🐈 Purr...' },
 
   'ev.ending.title':    { ko: '하늘에서 온 손님', en: 'A Visitor from the Sky' },

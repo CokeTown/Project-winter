@@ -24,6 +24,11 @@
     padding: 10px 12px;
     zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
     word-break: keep-all; overflow-wrap: break-word;
+    /* v0.9.1: 각 패널이 자체 스태킹 컨텍스트를 갖게 해 자식 요소(슬라이더 등)가
+       다른 패널을 뚫고 보이는 문제를 막는다. 실제 앞뒤 순서는 game.js의
+       bringPanelToFront()가 10~40 범위 안에서 관리한다.
+       계층: .panel 10~40 < #modal-back 50 < .tip-note 55 < 수첩(journal) 60 < #fade-veil 99 */
+    z-index: 10;
   }
   button.pixel-btn {
     font-family: inherit; font-size: 11px; color: var(--text);
@@ -368,7 +373,7 @@
   .panel.collapsed { padding-bottom: 0; }
   .panel.collapsed > :not(.p-head) { display: none !important; }
   .panel.collapsed .p-head { margin-bottom: -10px; border-bottom: none; }
-  .panel.dragging { opacity: 0.85; z-index: 15; }
+  .panel.dragging { opacity: 0.85; }
 
   /* ── 전자시계 (LCD) ── */
   #clock-panel { top: 12px; right: 210px; padding: 8px 10px; }
@@ -514,3 +519,11 @@
   /* ── v0.9.1: 가독성 — 전 UI 15% 확대 (베타 피드백: 폰트가 작다) ──
      --textboost 하나로 전체 UI 배율 조절. 반응형 --uiz와 곱으로 동작 */
   :root { --textboost: 1.15; }
+
+  /* ── v0.9.1: 타이틀 화면 — 저장/불러오기/설정 아이콘 버튼 ── */
+  #title-tools { display: flex; gap: 8px; margin-top: 8px; }
+  #title-tools .pixel-btn { flex: 1; font-size: 14px; padding: 6px 0; }
+
+  /* ── v0.9.1: 타이틀에서 설정 패널을 열람 (t-settings 버튼 전용) ──
+     body.title-mode는 기본적으로 .panel을 숨기지만, show-in-title이 붙은 패널만 예외로 보여준다. */
+  body.title-mode #render-panel.show-in-title { display: block !important; z-index: 60; }

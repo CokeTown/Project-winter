@@ -34,6 +34,11 @@
         <button class="pixel-btn lang-btn" id="lang-ko">한국어</button>
         <button class="pixel-btn lang-btn" id="lang-en">English</button>
       </div>
+      <div id="title-tools">
+        <button class="pixel-btn" id="t-export" data-i18n-title="title.tools.export" title="세이브 내보내기">💾</button>
+        <button class="pixel-btn" id="t-import" data-i18n-title="title.tools.import" title="세이브 가져오기">📂</button>
+        <button class="pixel-btn" id="t-settings" data-i18n-title="title.tools.settings" title="설정">⚙️</button>
+      </div>
     </div>
     <div id="title-ver" data-i18n="title.ver">Nine Winters · web build</div>
   </div>
@@ -104,7 +109,7 @@
   <label data-i18n-title="opt.autoeat.title" title="배고픔/갈증이 40 아래로 내려가면 자동으로 먹고 마십니다"><span data-i18n="opt.autoeat">자동 섭취</span> <input type="checkbox" id="opt-autoeat" checked></label>
   <label><span data-i18n="opt.fps">FPS 제한</span> <select id="opt-fps"><option value="60">60</option><option value="30">30</option></select></label>
   <label><span data-i18n="opt.lowspec">저사양 모드</span> <input type="checkbox" id="opt-lowspec"></label>
-  <label><span data-i18n="opt.bgidle">백그라운드 소리</span> <input type="checkbox" id="opt-bgidle" checked></label>
+  <label id="bgidle-row"><span data-i18n="opt.bgidle">백그라운드 소리</span> <input type="checkbox" id="opt-bgidle" checked></label>
   <label id="bgm-row" style="display:none"><span data-i18n="opt.bgm">BGM</span> <input type="checkbox" id="opt-bgm"></label>
   <label id="bgmvol-row"><span data-i18n="opt.bgmvol">🔊 음량</span> <input type="range" id="opt-bgmvol" min="0" max="100" step="5" value="15"></label>
   <label id="sfxvol-row"><span data-i18n="opt.sfxvol">🔔 효과음</span> <input type="range" id="opt-sfxvol" min="0" max="100" step="5" value="70"></label>
