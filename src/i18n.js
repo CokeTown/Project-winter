@@ -121,6 +121,17 @@ export const STR = {
   /* ── 언어 전환 확인 ── */
   'lang.confirm':     { ko: '언어를 바꾸면 게임을 다시 불러옵니다. 계속할까요?', en: 'Changing the language will reload the game. Continue?' },
 
+  /* ── 위젯 모드 (Electron 전용) ── */
+  'widget.title':        { ko: '🪟 위젯 모드', en: '🪟 Widget Mode' },
+  'widget.opacity':       { ko: '투명도', en: 'Opacity' },
+  'widget.alwaysontop':   { ko: '항상 위', en: 'Always on top' },
+  'widget.mini':          { ko: '미니 창', en: 'Mini window' },
+  'widget.clickthrough':  { ko: '클릭 통과', en: 'Click-through' },
+  'widget.clickthrough.title': { ko: '켜면 게임 조작이 불가능해집니다. 해제는 트레이/작업표시줄에서 하세요.', en: 'While on, you cannot interact with the game. Turn it off from the tray/taskbar.' },
+  'widget.clickthrough.confirm': { ko: '클릭 통과를 켜면 마우스 조작이 게임을 그대로 통과합니다. 10초 후 안전을 위해 자동으로 꺼집니다. 계속할까요?', en: 'Turning on click-through lets mouse clicks pass through the game. It will auto-disable after 10 seconds for safety. Continue?' },
+  'widget.clickthrough.toast': { ko: '10초 후 클릭 통과가 자동으로 해제됩니다', en: 'Click-through will auto-disable in 10 seconds' },
+  'widget.clickthrough.restored': { ko: '클릭 통과가 자동으로 해제되었습니다', en: 'Click-through has been auto-disabled' },
+
   /* ── 시간대 라벨 (timeLabel) ── */
   'time.night': { ko: '밤',   en: 'Night' },
   'time.dawn':  { ko: '새벽', en: 'Dawn' },

@@ -88,6 +88,8 @@
   #render-panel input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
   #render-panel .btn-row { display: flex; gap: 6px; margin-top: 10px; }
   #render-panel .btn-row .pixel-btn { flex: 1; }
+  #widget-section { border-top: 1px solid rgba(255,255,255,0.12); margin-top: 10px; padding-top: 8px; }
+  #widget-section h2 { font-size: 12px; color: var(--accent); margin-bottom: 6px; }
 
   /* ── 하단 인벤토리 바 ── */
   #toolbar {

@@ -5305,6 +5305,82 @@ $('opt-lang').addEventListener('change', e => {
 });
 
 /* ============================================================
+   위젯 모드 (Electron 전용) — window.nineWidget (preload contextBridge)
+   설정은 슬롯 세이브와 분리해 localStorage('nw-widget')에 저장 (기기 종속).
+============================================================ */
+(function initWidgetMode() {
+  const api = window.nineWidget;
+  const section = $('widget-section');
+  if (!api || !api.available) {
+    if (section) section.style.display = 'none';
+    return; // 웹/모바일: 섹션 숨김, 아래 로직 전부 skip
+  }
+  if (section) section.style.display = 'block';
+
+  const WKEY = 'nw-widget';
+  let wopts = { opacity: 1, alwaysOnTop: false, mini: false, clickThrough: false };
+  try { Object.assign(wopts, JSON.parse(localStorage.getItem(WKEY) || '{}')); } catch (e) { /* */ }
+  const saveWopts = () => { try { localStorage.setItem(WKEY, JSON.stringify(wopts)); } catch (e) { /* */ } };
+
+  const elOpacity = $('opt-widget-opacity');
+  const elAot = $('opt-widget-aot');
+  const elMini = $('opt-widget-mini');
+  const elClick = $('opt-widget-clickthrough');
+
+  // 부팅 시 저장된 설정 복원 (클릭 통과는 안전을 위해 항상 꺼진 채로 시작)
+  elOpacity.value = String(Math.round((wopts.opacity ?? 1) * 100));
+  elAot.checked = !!wopts.alwaysOnTop;
+  elMini.checked = !!wopts.mini;
+  elClick.checked = false;
+  wopts.clickThrough = false;
+
+  api.setOpacity(wopts.opacity ?? 1);
+  api.setAlwaysOnTop(!!wopts.alwaysOnTop);
+  api.setMini(!!wopts.mini);
+  api.setClickThrough(false);
+
+  elOpacity.addEventListener('input', e => {
+    const v = Math.min(1, Math.max(0.3, (+e.target.value || 100) / 100));
+    wopts.opacity = v;
+    api.setOpacity(v);
+    saveWopts();
+  });
+  elAot.addEventListener('change', e => {
+    wopts.alwaysOnTop = e.target.checked;
+    api.setAlwaysOnTop(wopts.alwaysOnTop);
+    saveWopts();
+  });
+  elMini.addEventListener('change', e => {
+    wopts.mini = e.target.checked;
+    api.setMini(wopts.mini);
+    saveWopts();
+  });
+
+  let clickThroughTimer = null;
+  elClick.addEventListener('change', e => {
+    if (e.target.checked) {
+      if (!confirm(t('widget.clickthrough.confirm'))) { e.target.checked = false; return; }
+      wopts.clickThrough = true;
+      api.setClickThrough(true);
+      toast(t('widget.clickthrough.toast'));
+      clearTimeout(clickThroughTimer);
+      clickThroughTimer = setTimeout(() => {
+        wopts.clickThrough = false;
+        api.setClickThrough(false);
+        elClick.checked = false;
+        toast(t('widget.clickthrough.restored'));
+      }, 10000);
+    } else {
+      clearTimeout(clickThroughTimer);
+      wopts.clickThrough = false;
+      api.setClickThrough(false);
+    }
+    saveWopts(); // clickThrough 자체는 항상 false로 저장돼 다음 부팅 시 안전 시작
+    wopts.clickThrough = false;
+  });
+})();
+
+/* ============================================================
    BGM (v1.9) — 날씨/시간대/계절/상황 기반 OST (public/BGM/*.mp3)
    · Main_theme: 타이틀/불러오기 화면 (잔잔하게)
    · Sunny/Raining/Snowing/Gloomy: 현재 날씨 풀
