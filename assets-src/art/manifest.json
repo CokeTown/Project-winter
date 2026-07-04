@@ -360,6 +360,16 @@
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_act_help.png",
       "prompt": "a folded paper map with a small compass. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "tip_strip",
+      "purpose": "Tip 쪽지 전용 가로형 찢어진 종이 스트립 (박스 비율 3:1에 꽉 차게, 투명 배경)",
+      "w": 1500,
+      "h": 520,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/tip_strip.png",
+      "prompt": "A single WIDE horizontal strip of very old ruled notebook paper, hand-torn along all four edges with rough fibrous irregular tears (no straight cut sides), centered on a fully transparent background. The strip is much wider than tall, filling almost the full width of the frame, roughly 3:1 aspect, like a long ribbon torn across a page. Pale desaturated ivory and light gray-beige paper (NOT orange, low saturation), fine visible paper fibers, one or two faint washed-out blue-gray ruled lines running along its length, a soft fold crease, small age spots near one end. Keep the central band clean and even so a line or two of tip text can sit on it. Realistic aged-paper material, soft even light, no text, no handwriting. Background fully transparent, not white."
     }
   ]
 }
