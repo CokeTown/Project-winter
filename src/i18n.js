@@ -148,6 +148,8 @@ export const STR = {
   'disp.fullscreen':     { ko: '전체화면', en: 'Fullscreen' },
   'disp.borderless':     { ko: '창없는 전체화면', en: 'Borderless fullscreen' },
   'opt.dispres':         { ko: '해상도', en: 'Resolution' },
+  'disp.apply':          { ko: '✓ 적용', en: '✓ Apply' },
+  'disp.applied':        { ko: '🖥️ 디스플레이 설정 적용됨', en: '🖥️ Display settings applied' },
   'widget.title':        { ko: '🪟 위젯 모드', en: '🪟 Widget Mode' },
   'widget.opacity':       { ko: '투명도', en: 'Opacity' },
   'widget.alwaysontop':   { ko: '항상 위', en: 'Always on top' },

@@ -3815,6 +3815,9 @@ function updateCat(t, dt) {
       stride = Math.sin(c.gait) * 0.65;
       c.g.position.x += dx / dist * 0.5 * dt;
       c.g.position.z += dz / dist * 0.5 * dt;
+      // 그림자맵은 autoUpdate=false(배터리) — 이동 중엔 10Hz로 갱신해 그림자가 실시간으로 따라온다
+      c._shT = (c._shT || 0) + dt;
+      if (c._shT > 0.1) { c._shT = 0; shadowDirty(); }
       // 부드러운 방향 전환
       const want = Math.atan2(dx, dz);
       let dr = want - c.g.rotation.y;
@@ -6569,11 +6572,12 @@ $('opt-lang').addEventListener('change', async e => {
         dopts = { mode: elMode.value, w, h };
         try { localStorage.setItem(DKEY, JSON.stringify(dopts)); } catch (e) { /* */ }
         api.setDisplay({ mode: dopts.mode, width: w, height: h });
-        // 해상도 select는 창 모드에서만 의미 있다
-        $('dispres-row').style.display = dopts.mode === 'windowed' ? '' : 'none';
+        toast(t('disp.applied'));
       };
-      elMode.addEventListener('change', applyDisplay);
-      elRes.addEventListener('change', applyDisplay);
+      // 게임 설정 문법: 셀렉트는 고르기만, 반영은 ✓ 적용 버튼으로 (즉시 반영은 실수 유발)
+      elMode.addEventListener('change', () => { $('dispres-row').style.display = elMode.value === 'windowed' ? '' : 'none'; });
+      const applyBtn = $('btn-disp-apply');
+      if (applyBtn) applyBtn.addEventListener('click', applyDisplay);
       // 부팅 시 저장된 디스플레이 상태 복원 (기본값 그대로면 창 크기를 건드리지 않는다)
       $('dispres-row').style.display = dopts.mode === 'windowed' ? '' : 'none';
       if (api.setDisplay && (dopts.mode !== 'windowed' || `${dopts.w}x${dopts.h}` !== '1280x800')) {
