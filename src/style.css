@@ -22,7 +22,10 @@
     position: absolute; background: var(--panel-bg);
     border: 2px solid var(--panel-border); border-radius: 4px;
     padding: 10px 12px;
-    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    zoom: var(--uiz);
+    /* P1-F: 라운드 코너 기준 내부 클리핑 — p-head의 음수 마진/줌 반올림으로 생기는
+       가장자리 1px 투명 틈(다른 패널이 비쳐 보임)을 막는다. 드래그 핸들/내용은 전부 내부라 무영향. */
+    overflow: hidden;
     word-break: keep-all; overflow-wrap: break-word;
     /* v0.9.1: 각 패널이 자체 스태킹 컨텍스트를 갖게 해 자식 요소(슬라이더 등)가
        다른 패널을 뚫고 보이는 문제를 막는다. 실제 앞뒤 순서는 game.js의
@@ -236,7 +239,7 @@
     padding: 7px 16px; font-size: 12px; color: var(--accent);
     opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 55;
     text-align: center;
-    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    zoom: var(--uiz);
   }
   #toast.show { opacity: 1; }
 
@@ -251,7 +254,7 @@
     display: flex; align-items: center; justify-content: center;
     background: radial-gradient(ellipse at 50% 62%, rgba(10,12,17,0.25) 0%, rgba(8,9,13,0.82) 78%);
   }
-  #title-inner { text-align: center; zoom: calc(var(--uiz, 1) * var(--textboost, 1.15)); }
+  #title-inner { text-align: center; zoom: var(--uiz); }
   #title-logo {
     font-size: 52px; line-height: 1.05; letter-spacing: 6px; color: var(--accent);
     text-shadow: 0 0 18px rgba(232,168,108,0.35), 3px 3px 0 #1a1408;
@@ -287,7 +290,7 @@
     max-width: 480px; font-size: 15px; line-height: 2.1; color: var(--text);
     text-align: center; margin-bottom: 40px; min-height: 100px;
     animation: introfade 1.2s ease-out;
-    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    zoom: var(--uiz);
   }
   @keyframes introfade { from { opacity: 0; transform: translateY(8px); } }
   #intro-next { padding: 10px 26px; font-size: 13px; }
@@ -317,7 +320,7 @@
     transform: translateY(26px) rotate(-1deg);
     opacity: 0;
     transition: transform .38s cubic-bezier(.2,.8,.3,1.1), opacity .32s ease-out;
-    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    zoom: var(--uiz);
   }
   #journal-screen.show #journal-paper { transform: translateY(0) rotate(-1deg); opacity: 1; }
   #journal-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; letter-spacing: 1px; }
@@ -346,7 +349,7 @@
     box-shadow: 0 8px 22px rgba(0,0,0,0.45);
     transform: translate(120%, 40%) rotate(4deg);
     transition: transform .4s cubic-bezier(.2,.8,.3,1.05);
-    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    zoom: var(--uiz);
   }
   #tip-note.show { transform: translate(0, 0) rotate(2deg); }
   body.title-mode #tip-note { display: none !important; } /* 타이틀 화면에선 쪽지 숨김 (안전망) */
@@ -358,7 +361,7 @@
     width: 220px; padding: 8px 10px;
     background: rgba(12, 13, 17, 0.88);
     border: 2px solid var(--panel-border); border-radius: 4px;
-    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    zoom: var(--uiz);
     cursor: default;
     box-shadow: 0 6px 16px rgba(0,0,0,0.35);
   }
@@ -366,6 +369,14 @@
   #quest-card .q-head {
     font-size: 10px; color: var(--accent); letter-spacing: 1px; margin-bottom: 5px;
   }
+  /* 퀘스트 서사 줄 — 이전 거주자 수첩 인용 (종이 톤: 딤·이탤릭·작게) */
+  #quest-card .q-lore {
+    font-size: 10px; line-height: 1.45; font-style: italic;
+    color: var(--text-dim); margin-bottom: 6px;
+    padding-bottom: 6px; border-bottom: 1px dashed var(--panel-border);
+  }
+  #quest-card .q-lore:empty { display: none; }
+  #quest-card.done-flash .q-lore { display: none; }
   #quest-card .q-body { display: flex; align-items: center; gap: 8px; }
   #quest-card .q-icon { font-size: 20px; line-height: 1; }
   #quest-card .q-text { flex: 1; font-size: 11px; line-height: 1.4; }
@@ -429,7 +440,7 @@
   #cam-ctrl {
     position: absolute; right: 12px; bottom: 12px; z-index: 5;
     display: flex; flex-direction: column; gap: 5px;
-    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    zoom: var(--uiz);
   }
   .cam-btn {
     width: 40px; height: 40px; font-size: 17px; line-height: 1;
@@ -442,7 +453,7 @@
   #btn-cancel-place {
     position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
     display: none; z-index: 6; padding: 9px 18px; font-size: 12px;
-    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    zoom: var(--uiz);
   }
   #btn-cancel-place.show { display: block; }
 
@@ -512,7 +523,7 @@
     color: var(--accent); background: rgba(14,16,20,0.82);
     border: 2px solid var(--panel-border); border-radius: 4px;
     animation: pauseblink 1.6s ease-in-out infinite;
-    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    zoom: var(--uiz);
   }
   @keyframes pauseblink { 50% { opacity: 0.45; } }
   body.paused #pause-ind { display: block; }
@@ -537,7 +548,7 @@
     max-width: 520px; font-size: 15px; line-height: 2.1; color: var(--text);
     text-align: center; margin-bottom: 40px; min-height: 100px;
     animation: introfade 1.2s ease-out;
-    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    zoom: var(--uiz);
   }
   #ending-next { padding: 10px 26px; font-size: 13px; }
 
@@ -551,8 +562,8 @@
   }
 
   /* ── v0.9.1: 가독성 — 전 UI 15% 확대 (베타 피드백: 폰트가 작다) ──
-     --textboost 하나로 전체 UI 배율 조절. 반응형 --uiz와 곱으로 동작 */
-  :root { --textboost: 1.15; }
+     P0 수정: 배율은 JS(updateUiScale)에서 TEXT_BOOST를 곱해 --uiz 단일 소스로 통합.
+     CSS zoom은 항상 var(--uiz) 만 사용 → 드래그/클램프 좌표 보정과 렌더 배율이 정확히 일치. */
 
   /* ── v0.9.1: 타이틀 화면 — 저장/불러오기/설정 아이콘 버튼 ── */
   #title-tools { display: flex; gap: 8px; margin-top: 8px; }
@@ -565,7 +576,7 @@
   /* ── v0.9.1: 모바일 설정 진입 = 우측 상단 톱니 (PC는 ESC 전용) ── */
   #btn-gear {
     position: fixed; top: 96px; right: 10px; z-index: 45;
-    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    zoom: var(--uiz);
   }
   @media (max-height: 420px) { #btn-gear { top: 64px; right: 6px; } }
   body.title-mode #btn-gear { display: none !important; }

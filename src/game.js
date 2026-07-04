@@ -720,7 +720,7 @@ function deadTreeGeo(rand, s, c = 0x3a332c) {
   }
   return mergeGeometries(parts);
 }
-function buildCarWreck(parent, x, z, rotY, rand) {
+function buildCarWreck(parent, x, z, rotY, rand, groundY = 0) {
   const g = new THREE.Group();
   const body = 0x5f4a3a, rust = 0x6e3e28, dark = 0x2a2622;
   B(g, 2.6, 0.5, 1.2, body, 0, 0.55, 0);
@@ -736,7 +736,7 @@ function buildCarWreck(parent, x, z, rotY, rand) {
   wheel(0.85, 0.62); wheel(-0.85, 0.62); wheel(0.85, -0.62, true); wheel(-0.85, -0.62);
   g.rotation.y = rotY;
   g.rotation.z = 0.03;
-  g.position.set(x, 0, z);
+  g.position.set(x, groundY, z); // P2-c: 지형 높이에 접지 (컨테이너 폐차 부양 수정)
   parent.add(g);
 }
 function buildPowerPole(parent, x, z, tilt, groundY) {
@@ -960,8 +960,8 @@ const SHELTERS = {
         envRoot.add(m);
       }
       // 폐차 & 전신주 & 잔해
-      buildCarWreck(envRoot, 6.2, 3.4, -0.7, rand);
-      buildCarWreck(envRoot, -8.5, -5.5, 2.1, rand);
+      buildCarWreck(envRoot, 6.2, 3.4, -0.7, rand, gh(6.2, 3.4));
+      buildCarWreck(envRoot, -8.5, -5.5, 2.1, rand, gh(-8.5, -5.5));
       buildPowerPole(envRoot, -5.5, 6.5, 0.14, GY);
       buildPowerPole(envRoot, 4.5, -8.5, -0.1, GY);
       buildPowerPole(envRoot, 13, 2, 0.22, gh(13, 2));
@@ -2313,11 +2313,19 @@ function slotMeta(n) {
 }
 let saveTimer = null;
 function doSaveNow() {
+  // P1-A: 게임을 시작한 적 없는 첫 실행에서 타이틀 조작(언어/설정)이
+  // 유령 세이브('이어하기' 오노출)를 만들지 않게 — 슬롯이 없고 아직 타이틀이면 옵션만 전역 키에 저장
+  const slotExists = !!localStorage.getItem(slotKey(currentSlot));
+  if (titleVisible && !slotExists) {
+    try { localStorage.setItem('nw-opts', JSON.stringify(opts)); } catch (e) { /* 저장 불가 무시 */ }
+    return;
+  }
   state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2) }));
   state.savedAt = Date.now();
   try {
     localStorage.setItem(slotKey(currentSlot), JSON.stringify({ state, opts }));
     localStorage.setItem('project-shelter-lastslot', String(currentSlot));
+    localStorage.setItem('nw-opts', JSON.stringify(opts)); // 전역 옵션 동기화 (언어/음량 승계용)
   } catch (e) { /* file:// 등 저장 불가 환경 */ }
   checkAchievements();               // 업적 체크 (모든 변화는 저장을 거친다)
   updateHud();                       // 쾌적함 반영
@@ -4187,7 +4195,44 @@ function toggleSettingsPanel() {
   const rp = $('render-panel');
   const willShow = rp.style.display === 'none';
   rp.style.display = willShow ? '' : 'none';
-  if (willShow) { clampPanel(rp); reclampAllPanels(); }
+  // P1-C: 토글 경로는 화면 밖 이탈 방지 클램프만 — 자동 스택/상대 재배치는 하지 않는다(연타 시 누적 이동 방지)
+  if (willShow) {
+    // 인라인 위치가 과거 버그로 0,0에 깔려 있어도 저장된 위치로 자가 복구
+    const saved = uiState.render;
+    if (saved && saved.l != null) {
+      rp.style.left = saved.l + 'px'; rp.style.top = saved.t + 'px';
+      rp.style.right = 'auto'; rp.style.bottom = 'auto'; rp.style.transform = 'none';
+    }
+    clampPanel(rp); reclampAllPanels();
+  }
+}
+// P1-D: 모바일 톱니(gear)로 설정을 열 때 — 항상 펼침 + 우상단 안전 위치로 교정
+function openSettingsFromGear() {
+  const rp = $('render-panel');
+  const wasHidden = rp.style.display === 'none';
+  if (!wasHidden) { rp.style.display = 'none'; return; } // 이미 열려 있으면 닫기(토글 동작 유지)
+  rp.style.display = '';
+  rp.classList.remove('collapsed'); // 1) gear 경로는 항상 펼침 상태로
+  const min = rp.querySelector('.p-min');
+  if (min) min.textContent = '–';
+  // 2) 저장된 위치가 좌상단(0,0) 부근(상단 24px 이내)이면 무시하고 우상단 안전 위치로 강제
+  const savedT = uiState.render?.t;
+  const rect = rp.getBoundingClientRect();
+  const z = getUiz();
+  // 저장값뿐 아니라 "실제로 열린 위치"도 본다 — 인라인 스타일이 0,0으로 깔린 채
+  // 저장값만 정상인 경우(clampPanel 과거 버그의 잔재)를 구제
+  const nearTop = savedT == null || savedT <= 24 || (rect.top / z) <= 24;
+  const preW = rect.width / z;
+  const safeTop = 28;                                   // 상태바 회피 고정 마진
+  const safeLeft = Math.max(6, innerWidth - preW - 8);  // 우측 여백 8px 기준 left 계산
+  if (nearTop) {
+    rp.style.left = safeLeft + 'px';
+    rp.style.top = safeTop + 'px';
+    rp.style.right = 'auto'; rp.style.bottom = 'auto'; rp.style.transform = 'none';
+    uiState.render = { l: safeLeft, t: safeTop, c: false };
+    saveUiState();
+  }
+  clampPanel(rp);
 }
 // 설정 진입 문법(v0.9.1): PC = ESC 전용 / 모바일 = 우측 상단 톱니 전용 — 인게임에선 양쪽 다 기본 숨김
 // ($ 헬퍼는 이 시점에 TDZ라 getElementById 직접 사용)
@@ -4195,7 +4240,7 @@ function toggleSettingsPanel() {
   const gear = document.getElementById('btn-gear');
   if (gear) {
     if (!isPcInput) gear.style.display = '';   // 터치 기기에서만 노출
-    gear.addEventListener('click', toggleSettingsPanel);
+    gear.addEventListener('click', openSettingsFromGear); // P1-D: 모바일 안전 위치/펼침 보장
   }
   if (!isPcInput) document.getElementById('render-panel').style.display = 'none'; // 모바일도 기본 숨김
 }
@@ -4412,10 +4457,15 @@ function getUiz() {
 function clampPanel(el) {
   const z = getUiz();
   const r = el.getBoundingClientRect();
+  // 숨김 패널(rect 0×0)은 절대 클램프하지 않는다 — 0,0으로 위치가 파괴되어
+  // 다음에 열 때 좌상단(모바일 상태바 밑)에 깔리는 근본 원인이었다
+  if (r.width === 0 && r.height === 0) return;
   // pre-zoom 좌표계로 환산
   const preL = r.left / z, preT = r.top / z, preW = r.width / z;
+  // P1-D: 터치 기기에선 상단 상태바/펀치홀 회피용 최소 top 24px (몰입 모드 실패 대비 이중 안전장치)
+  const minTop = isPcInput ? 0 : 24;
   const l = THREE.MathUtils.clamp(preL, 0, Math.max(0, innerWidth - Math.min(preW, 120)));
-  const t = THREE.MathUtils.clamp(preT, 0, Math.max(0, innerHeight - 30));
+  const t = THREE.MathUtils.clamp(preT, minTop, Math.max(minTop, innerHeight - 30));
   el.style.left = l + 'px';
   el.style.top = t + 'px';
   el.style.right = 'auto';
@@ -4602,6 +4652,10 @@ function openSlotModal(mode) {
     ev.stopPropagation();
     if (!confirm(t('slot.delConfirm', { n: b.dataset.del }))) return;
     localStorage.removeItem(slotKey(+b.dataset.del));
+    localStorage.removeItem(slotKey(+b.dataset.del) + '-bak'); // P1-B: 롤링 백업도 함께 삭제
+    // 삭제한 슬롯을 가리키던 lastslot 포인터도 정리 (빈 슬롯을 이어하기 대상으로 잡지 않도록)
+    if (localStorage.getItem('project-shelter-lastslot') === b.dataset.del) localStorage.removeItem('project-shelter-lastslot');
+    if (titleVisible) showTitle();                              // P1-B: '이어하기' 표시 즉시 갱신
     openSlotModal(mode);
   }));
   $('modal-body').querySelectorAll('.slot-card').forEach(c => c.addEventListener('click', () => {
@@ -4839,6 +4893,8 @@ function processDay() {
   }
   // 4) 음식 부패: 가동 중인 냉장고가 없으면 매일 신선식품만 -1 (통조림은 부패하지 않음)
   const fridgeOn = items.some(it => DEFS[it.defId].appliance?.effect === 'fridge' && it.on !== false);
+  // 찢어진 쪽지: 냉장고 없이 신선식품을 보유한 첫 순간 — 오늘 먹으라는 조언 (1회성)
+  if (!fridgeOn && (state.res.food || 0) > 0) tipOnce('tip.freshfood');
   if (!fridgeOn && (state.res.food || 0) > 0) {
     resConsume('food', 1);
     notes.push(t('day.foodSpoiled'));
@@ -5213,8 +5269,18 @@ function paperTextureURL() {
   return journalPaperURL;
 }
 
-// 종이 질감 배경을 붙인 오버레이(수첩 패널 / 쪽지)에 텍스처를 씌운다
-function applyPaperBg(el) {
+// 종이 질감 배경을 붙인 오버레이(수첩 패널 / 쪽지)에 텍스처를 씌운다.
+// P2: 프로시저럴 텍스처 → AI 생성 에셋(public/img/*.png)으로 교체. makePaperTexture는 폴백/미래용 유지.
+// kind: 'journal'(수첩) | 'tip'(쪽지). 이미지 로드 실패 시 프로시저럴 데이터URL로 폴백.
+function applyPaperBg(el, kind = 'journal') {
+  const asset = kind === 'tip' ? 'img/tip_scrap.png' : 'img/paper_note.png';
+  // 진한 종이 이미지 위 잉크(#3a3026) 대비 확보용 밝은 오버레이 한 겹
+  const overlay = 'linear-gradient(rgba(255,250,240,.14), rgba(255,250,240,.14))';
+  const img = new Image();
+  img.onload = () => { el.style.backgroundImage = `${overlay}, url(${asset})`; };
+  img.onerror = () => { el.style.backgroundImage = `url(${paperTextureURL()})`; }; // 폴백: 절차적 종이
+  img.src = asset;
+  // 먼저 프로시저럴을 깔아두면 로드 지연 중에도 빈 배경이 보이지 않는다
   el.style.backgroundImage = `url(${paperTextureURL()})`;
 }
 
@@ -5294,13 +5360,13 @@ function showTutorialPage(day) {
    기존 세이브는 loadSave()에서 -1로 마이그레이션해 표시하지 않는다.
 ============================================================ */
 const QUESTS = [
-  { id: 'drink',  icon: '💧', textId: 'quest.drink.text',  reward: { water: 1 } },
-  { id: 'eat',    icon: '🥫', textId: 'quest.eat.text',    reward: { canned: 1 } },
-  { id: 'place',  icon: '🛏️', textId: 'quest.place.text',  reward: { cloth: 1 } },
-  { id: 'depart', icon: '🎒', textId: 'quest.depart.text', reward: {} },
-  { id: 'report', icon: '📋', textId: 'quest.report.text', reward: { bandage: 1 } },
-  { id: 'craft',  icon: '🔨', textId: 'quest.craft.text',  reward: { parts: 1 } },
-  { id: 'clean',  icon: '🧹', textId: 'quest.clean.text',  reward: { water: 1 } },
+  { id: 'drink',  icon: '💧', textId: 'quest.drink.text',  loreId: 'quest.drink.lore',  doneId: 'quest.drink.done',  reward: { water: 1 } },
+  { id: 'eat',    icon: '🥫', textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
+  { id: 'place',  icon: '🛏️', textId: 'quest.place.text',  loreId: 'quest.place.lore',  doneId: 'quest.place.done',  reward: { cloth: 1 } },
+  { id: 'depart', icon: '🎒', textId: 'quest.depart.text', loreId: 'quest.depart.lore', doneId: 'quest.depart.done', reward: {} },
+  { id: 'report', icon: '📋', textId: 'quest.report.text', loreId: 'quest.report.lore', doneId: 'quest.report.done', reward: { bandage: 1 } },
+  { id: 'craft',  icon: '🔨', textId: 'quest.craft.text',  loreId: 'quest.craft.lore',  doneId: 'quest.craft.done',  reward: { parts: 1 } },
+  { id: 'clean',  icon: '🧹', textId: 'quest.clean.text',  loreId: 'quest.clean.lore',  doneId: 'quest.clean.done',  reward: { water: 1 } },
 ];
 function questActive() { return state.questIdx >= 0 && state.questIdx < QUESTS.length; }
 function renderQuestCard() {
@@ -5309,6 +5375,8 @@ function renderQuestCard() {
   if (!questActive()) { card.classList.remove('show'); return; }
   const q = QUESTS[state.questIdx];
   $('quest-icon').textContent = q.icon;
+  const lore = $('quest-lore');
+  if (lore) lore.textContent = q.loreId ? t(q.loreId) : '';
   $('quest-text').textContent = t(q.textId);
   $('quest-prog').textContent = t('quest.progress', { cur: state.questIdx, total: QUESTS.length });
   card.classList.remove('done-flash');
@@ -5326,14 +5394,14 @@ function questProgress(id) {
   const rewardMsg = Object.keys(q.reward).length
     ? ' +' + Object.entries(q.reward).map(([rid, n]) => `${RESOURCES[rid].emoji}${n}`).join(' ')
     : '';
-  toast(t(q.textId) + rewardMsg);
+  // 완료 payoff — 수첩 주인의 목소리 (없으면 목표 문구 폴백)
+  toast((q.doneId ? t(q.doneId) : t(q.textId)) + rewardMsg);
   state.questIdx++;
   renderResBar(); updateHud(); scheduleSave();
   setTimeout(() => {
     if (state.questIdx >= QUESTS.length) {
-      state.questIdx = -1; // 체인 완료 — 트래커 퇴장
+      state.questIdx = -1; // 체인 완료 — 트래커 퇴장 (마지막 payoff는 위 doneId가 이미 출력)
       renderQuestCard();
-      toast(t('quest.doneToast'));
       scheduleSave();
     } else {
       renderQuestCard();
@@ -5348,7 +5416,7 @@ let tipShowing = false;
 let tipTimer = null;
 function showTipNote(id) {
   const note = $('tip-note');
-  applyPaperBg(note);
+  applyPaperBg(note, 'tip');
   note.textContent = t(id);
   note.style.display = 'block';
   void note.offsetWidth;
@@ -5473,8 +5541,7 @@ function importSave() {
   });
   input.click();
 }
-$('btn-save-exp').addEventListener('click', exportSave);
-$('btn-save-imp').addEventListener('click', importSave);
+// P2-a: 인게임 내보내기/가져오기 버튼 제거 — 세이브 파일 관리는 타이틀(t-export/t-import)에서만
 $('t-export').addEventListener('click', exportSave);
 $('t-import').addEventListener('click', importSave);
 
@@ -5550,17 +5617,20 @@ function applyLowSpec() {
   shadowDirty();
   if (weather.pts.visible) weather.pts.geometry.setDrawRange(0, weatherDrawCount(weather.type));
 }
-// 자동 진행 체크박스: index.html에 정적 마크업이 없어 JS로 동적 주입 (Day 10 해금)
-const autoplayLabel = document.createElement('label');
-autoplayLabel.id = 'autoplay-row';
-autoplayLabel.innerHTML = `<span data-i18n="opt.autoplay">자동 진행</span> <input type="checkbox" id="opt-autoplay">`;
-$('opt-autoeat').closest('label').after(autoplayLabel);
+// 자동 진행 체크박스는 index.html 정적 마크업(#opt-autoplay, #autoplay-row)으로 이전됨 (P2-b)
 function refreshAutoplayLock() {
   const cb = $('opt-autoplay');
   const locked = state.day < 10;
-  cb.disabled = locked;
-  autoplayLabel.title = locked ? t('opt.autoplay.locked') : t('opt.autoplay.title');
-  if (locked && opts.autoPlay) { opts.autoPlay = false; cb.checked = false; }
+  if (cb) cb.disabled = locked;
+  const row = $('autoplay-row');
+  if (row) row.title = locked ? t('opt.autoplay.locked') : t('opt.autoplay.title');
+  if (locked && opts.autoPlay) { opts.autoPlay = false; if (cb) cb.checked = false; }
+  syncAutoBtn();
+}
+// P2-b: cam-ctrl의 자동진행 토글 버튼 상태 동기화 (켜짐 → .primary 하이라이트)
+function syncAutoBtn() {
+  const b = $('btn-auto');
+  if (b) b.classList.toggle('primary', !!opts.autoPlay);
 }
 function applyOpts() {
   $('opt-pixel').value = opts.pixel; $('opt-quant').checked = opts.quant;
@@ -5586,7 +5656,7 @@ $('opt-quant').addEventListener('change', e => { opts.quant = e.target.checked; 
 $('opt-dither').addEventListener('change', e => { opts.dither = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; scheduleSave(); });
-$('opt-autoplay').addEventListener('change', e => { opts.autoPlay = e.target.checked; scheduleSave(); });
+$('opt-autoplay').addEventListener('change', e => { opts.autoPlay = e.target.checked; syncAutoBtn(); scheduleSave(); });
 $('opt-fps').addEventListener('change', e => { opts.fpsCap = +e.target.value || 60; scheduleSave(); });
 $('opt-lowspec').addEventListener('change', e => { opts.lowSpec = e.target.checked; applyLowSpec(); scheduleSave(); });
 $('opt-bgidle').addEventListener('change', e => {
@@ -5839,7 +5909,17 @@ $('opt-sfxvol').addEventListener('input', e => {
 /* ============================================================
    시작 & 메인 루프
 ============================================================ */
-loadSave();
+if (!loadSave()) {
+  // P1-A: 세이브가 없는 첫 실행 — 타이틀에서 골랐던 전역 옵션(언어/음량)을 승계
+  try {
+    const raw = localStorage.getItem('nw-opts');
+    if (raw) {
+      Object.assign(opts, JSON.parse(raw));
+      if (opts.sfxVol === 0.7) opts.sfxVol = 0.07;   // 구 기본값 하향 마이그레이션
+      if (opts.bgmVol === 0.35) opts.bgmVol = 0.15;
+    }
+  } catch (e) { /* 손상된 nw-opts 무시 */ }
+}
 setLang(opts.lang || 'ko');   // 세이브된 언어 적용 (기본 ko)
 applyStaticI18n();             // index.html 정적 텍스트 치환
 loadShelter(state.current);
@@ -5852,6 +5932,16 @@ updateClock();
 renderQuestCard();
 $('btn-clean').addEventListener('click', cleanShelter);
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
+// P2-b: 자동 진행 토글 버튼 (cam-ctrl) — Day 10 미만이면 잠금 토스트, 아니면 opts.autoPlay 토글 + 체크박스 양방향 동기화
+$('btn-auto').addEventListener('click', () => {
+  if (state.day < 10) { toast(t('auto.locked')); return; }
+  opts.autoPlay = !opts.autoPlay;
+  const cb = $('opt-autoplay'); if (cb) cb.checked = opts.autoPlay;
+  syncAutoBtn();
+  scheduleSave();
+  toast(t(opts.autoPlay ? 'auto.on' : 'auto.off'));
+});
+syncAutoBtn();
 $('btn-craft').addEventListener('click', openCraftModal);
 $('btn-journal').addEventListener('click', openJournalModal);
 $('g-hunger').addEventListener('click', eatFood);
@@ -5912,12 +6002,16 @@ if (sessionStorage.getItem('ps-intro')) {
 ============================================================ */
 const UI_BASE_FONT = 11;   // .panel 계열 기본 폰트 크기(px) — 이 값 자체가 이미 최소 가독 크기
 const UI_MIN_FONT = 11;    // 스케일 후에도 유지해야 할 최소 렌더 폰트(px)
+// P0: 전 UI 15% 확대(가독성)를 JS에서 곱한다 — CSS zoom은 var(--uiz)만 쓰므로
+// 렌더 배율과 드래그/클램프 좌표 보정 배율이 항상 동일한 단일 소스(--uiz)로 일치한다.
+const TEXT_BOOST = 1.15;
 function updateUiScale() {
   let s = Math.min(innerWidth / 1400, innerHeight / 860);
   s = THREE.MathUtils.clamp(s, 0.85, 2.1);
   // 스케일 후 기준 폰트(11px)가 최소 가독 크기(11px) 밑으로 내려가지 않게 보정
   const minScale = UI_MIN_FONT / UI_BASE_FONT; // = 1.0
   if (s < minScale) s = minScale;
+  s *= TEXT_BOOST; // 가독성 부스트를 배율에 흡수 (CSS와 JS가 같은 --uiz를 공유)
   document.documentElement.style.setProperty('--uiz', s.toFixed(3));
   return s;
 }
@@ -6017,8 +6111,117 @@ document.getElementById('loading').style.display = 'none';
   }
 }
 
+/* ============================================================
+   전역 크래시 방어 (v0.9.1 안정화)
+   - error / unhandledrejection 을 잡아 토스트 + 콘솔 기록
+   - 5초 스로틀로 스팸 방지, 게임 루프는 계속 돈다
+============================================================ */
+let __lastGlobalErrAt = 0;
+function handleGlobalError(kind, detail) {
+  console.error(`[shelter:${kind}]`, detail);
+  const now = Date.now();
+  if (now - __lastGlobalErrAt < 5000) return; // 5초 스로틀
+  __lastGlobalErrAt = now;
+  try { toast(t('err.global')); } catch (e) { /* 토스트조차 실패해도 무시 */ }
+}
+window.addEventListener('error', e => {
+  handleGlobalError('error', e.error || e.message || e);
+});
+window.addEventListener('unhandledrejection', e => {
+  handleGlobalError('promise', e.reason || e);
+});
+
+/* ============================================================
+   밸런스 시뮬레이션 하네스 (디버그 전용)
+   - 실시간 대기/사운드/UI 없이 하루 단위로 n일 기대값 정산
+   - rateParts 최고 지역 + 준비물 없음으로 매일 EXP_PER_DAY회 탐험
+   - resolveExpedition 의 lootRes 수량 로직을 기대값으로 재현
+============================================================ */
+// lootRes 한 지역의 1회 탐험 기대 획득량 (mult=성공1.0 / 부분0.5)
+function expectedLoot(regionId, mult = 1) {
+  const r = REGIONS[regionId];
+  const out = {};
+  for (const [id, min, max, chance] of r.lootRes) {
+    const c = chance != null ? chance : 1;
+    // resolveExpedition: n = round((min + rand*(max-min)) * mult), n>0만 반영
+    const evN = ((min + max) / 2) * mult;
+    const contrib = c * evN;
+    if (contrib > 0) out[id] = (out[id] || 0) + contrib;
+  }
+  return out;
+}
+// 시뮬 전 state 를 신규 게임 스냅샷으로 초기화 (실 UI/아이템은 건드리지 않음)
+function simReset() {
+  const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  Object.assign(state, fresh);
+}
+function simDays(n = 30, opt = {}) {
+  if (opt.reset !== false) simReset();
+  const seed = opt.seed;
+  if (seed != null) { // 재현 가능한 시드 (간이 LCG로 Math.random 대체)
+    let s = seed >>> 0;
+    const orig = Math.random;
+    Math.random = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+    try { return _simDaysInner(n, opt); } finally { Math.random = orig; }
+  }
+  return _simDaysInner(n, opt);
+}
+function _simDaysInner(n, opt) {
+  const snaps = [];
+  const expPerDay = opt.expPerDay ?? EXP_PER_DAY;
+  for (let d = 0; d < n; d++) {
+    // 1) 오늘의 탐험 — 최고 eff 지역 선택 (준비물 없음)
+    let bestId = null, bestEff = -1;
+    for (const id of Object.keys(REGIONS)) {
+      const eff = rateParts(id, []).eff;
+      if (eff > bestEff) { bestEff = eff; bestId = id; }
+    }
+    for (let k = 0; k < expPerDay; k++) {
+      if (isExhausted()) break; // 탈진하면 더 못 나감
+      // 탐험 비용(에너지/게이지) — departExpedition 로직 요약
+      state.hunger = Math.max(0, state.hunger - 4);
+      state.thirst = Math.max(0, state.thirst - 5);
+      state.energy = Math.max(0, state.energy - 20);
+      const eff = rateParts(bestId, []).eff;
+      const roll = Math.random();
+      const success = roll < eff;
+      const partial = !success && roll < eff + (1 - eff) * 0.5;
+      const mult = success ? 1 : partial ? 0.5 : 0;
+      if (mult > 0) {
+        const loot = expectedLoot(bestId, mult);
+        for (const [id, ev] of Object.entries(loot)) resAdd(id, ev);
+      }
+      state.expToday = (state.expToday || 0) + 1;
+      // 취침으로 에너지가 회복되는 구조라, 탐험 사이 간이 휴식
+      if (state.energy < 20) state.energy = Math.min(100, state.energy + 20);
+    }
+    // 2) 하루치 게이지 소모 (decayGauges: 1일=1440분) + autoEat
+    decayGauges(1440);
+    // 3) 하루 정산
+    state.day++;
+    state.expToday = 0;
+    processDay();
+    // 4) 취침으로 에너지 리셋 (실게임의 sleepUntilMorning 대응)
+    const { energy } = restEnergyValue();
+    state.energy = energy;
+    // 5) 스냅샷
+    const cd = comfortDetail();
+    snaps.push({
+      day: state.day,
+      res: { ...state.res },
+      hunger: Math.round(state.hunger),
+      thirst: Math.round(state.thirst),
+      energy: Math.round(state.energy),
+      comfort: cd.score,
+      starving: state.hunger <= 0 || state.thirst <= 0,
+    });
+  }
+  return snaps;
+}
+
 // 디버그/테스트용 핸들
 window.__shelter = {
+  simDays, simReset, expectedLoot,
   items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather,
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,

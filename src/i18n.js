@@ -230,6 +230,10 @@ export const STR = {
   'auto.treat':   { ko: '🤖 [자동] {name}을(를) 치료했습니다', en: '🤖 [Auto] Treated {name}' },
   'auto.clean':   { ko: '🤖 [자동] 셸터를 청소했습니다', en: '🤖 [Auto] Cleaned the shelter' },
   'auto.depart':  { ko: '🤖 [자동] {emoji} {name}(으)로 탐험을 떠났습니다', en: '🤖 [Auto] Departed for {emoji} {name}' },
+  'auto.locked':  { ko: 'Day 10부터 사용 가능', en: 'Unlocks on Day 10' },
+  'auto.on':      { ko: '🤖 자동 진행 켜짐', en: '🤖 Auto-play on' },
+  'auto.off':     { ko: '🤖 자동 진행 꺼짐', en: '🤖 Auto-play off' },
+  'btn.auto.title': { ko: '자동 진행 (Day 10+)', en: 'Auto-play (Day 10+)' },
 
   /* ── 드래그 패널 제목 ── */
   'panel.collapse':   { ko: '접기/펼치기', en: 'Collapse / expand' },
@@ -253,6 +257,7 @@ export const STR = {
 
   /* ── 세이브 파일 ── */
   'save.corrupt':      { ko: '⚠️ 세이브가 손상되어 어제 백업으로 복구했습니다', en: '⚠️ Save was corrupted — restored from yesterday’s backup' },
+  'err.global':        { ko: '⚠️ 오류가 발생했지만 세이브는 안전합니다', en: '⚠️ An error occurred, but your save is safe' },
   'save.exportNone':   { ko: '내보낼 세이브가 없습니다', en: 'No save to export' },
   'save.exported':     { ko: '💾 세이브 파일을 내보냈습니다', en: '💾 Save file exported' },
   'save.invalidFile':  { ko: '올바른 세이브 파일이 아닙니다', en: 'Not a valid save file' },
@@ -619,6 +624,7 @@ export const STR = {
   'tip.energy': { ko: '"눈이 침침해질 때까지 버티지 마라. 그만 자라는 뜻이다." — 에너지가 낮으면 취침으로 회복해야 한다.', en: '"Don\'t push on until your eyes blur. That\'s your body telling you to sleep." — rest with sleep once energy runs low.' },
   'tip.winter': { ko: '"겨울이 왔다. 곳간을 미리 채워두지 않은 자에게는 길고 매서운 계절이다." — 겨울엔 허기가 더 빨리 지고 텃밭도 얼어붙는다.', en: '"Winter\'s here. For those who didn\'t stock up, it\'s a long, bitter season." — hunger drains faster and gardens freeze in winter.' },
   'tip.stack':  { ko: '"상판이 있는 가구 위엔 작은 소품을 올려둘 수 있다." — 테이블 같은 가구 위에 다른 소품을 겹쳐 배치해보자.', en: '"Furniture with a flat top can hold smaller things on it." — try placing small items on top of tables and the like.' },
+  'tip.freshfood': { ko: '신선식품은 오래 못 간다. 냉장고가 없다면 — 오늘 먹는 게 남는 것이다.', en: "Fresh food doesn't keep. No fridge? Eating it today is how you save it." },
 
   /* ── 퀘스트 트래커 (신규 게임 온보딩) ── */
   'quest.head': { ko: '할 일', en: 'To Do' },
@@ -631,4 +637,19 @@ export const STR = {
   'quest.clean.text': { ko: '🧹 청소를 1회 해보자', en: 'Clean the shelter 🧹 once' },
   'quest.progress': { ko: '{cur}/{total}', en: '{cur}/{total}' },
   'quest.doneToast': { ko: '🎉 이제 스스로 살아남을 차례', en: '🎉 Now it\'s up to you to survive' },
+  // ── 퀘스트 서사 (이전 거주자의 수첩 목소리) — lore(도입) / done(완료 payoff) ──
+  'quest.drink.lore':  { ko: "수첩 첫 장 — '눈 뜨면 제일 먼저 물부터. 목이 마르면 판단력이 먼저 죽는다.'", en: "First page — 'Water first, always. Thirst kills your judgment before it kills you.'" },
+  'quest.drink.done':  { ko: '몸이 조금 깨어난다. 수첩 주인의 말이 맞았다.', en: "Your body wakes a little. The notebook's owner was right." },
+  'quest.eat.lore':    { ko: "'빈속으로는 반나절도 못 버틴다. 그리고 신선한 건 먼저 먹어라 — 냉장고가 없으면 내일이면 상한다.'", en: "'An empty stomach won't last half a day. And eat the fresh stuff first — without a fridge, it won't see tomorrow.'" },
+  'quest.eat.done':    { ko: '끔찍한 통조림 맛. 하지만 살아있다는 맛이기도 하다.', en: 'The can tastes awful. It also tastes like being alive.' },
+  'quest.place.lore':  { ko: "'집이라 부르려면 뭐라도 놓아야지. 나는 침대부터 들였다. 잘 곳이 정해지면 마음도 정해진다.'", en: "'To call it home, put something in it. I started with a bed. Settle where you sleep, and the heart follows.'" },
+  'quest.place.done':  { ko: '방이 조금 덜 비어 보인다. 이상하게 든든하다.', en: 'The room looks a little less empty. Strangely reassuring.' },
+  'quest.depart.lore': { ko: "'해가 높을 때 나가라. 가까운 주거지역부터. 욕심은 부상으로 돌아온다.'", en: "'Go out while the sun is high. Start with the houses nearby. Greed comes back as injuries.'" },
+  'quest.depart.done': { ko: '문을 나선다 — 하루의 절반은 바깥에 있다.', en: 'Out the door. Half of every day lives outside.' },
+  'quest.report.lore': { ko: "'하루의 끝엔 장부를 봐라. 뭘 얻고 잃었는지 모르면, 폐허가 너를 계산한다.'", en: "'Read the ledger at day's end. If you don't count your gains and losses, the ruins will count you.'" },
+  'quest.report.done': { ko: '숫자들이 하루를 말해준다. 내일은 조금 더 낫게.', en: 'The numbers tell the story of the day. Tomorrow, a little better.' },
+  'quest.craft.lore':  { ko: "'주운 것은 재료일 뿐. 손을 움직여야 물건이 된다. 천 두 장이면 붕대 하나.'", en: "'What you scavenge is only material. Hands make it into things. Two cloth makes one bandage.'" },
+  'quest.craft.done':  { ko: '손끝에서 뭔가 만들어지는 감각 — 오랜만이다.', en: "The feeling of making something. It's been a while." },
+  'quest.clean.lore':  { ko: "'마지막으로 — 집을 닦아라. 더러운 집엔 병이 먼저 이사 온다.'", en: "'Last — keep it clean. Sickness moves into a dirty home before you do.'" },
+  'quest.clean.done':  { ko: '수첩의 첫 장이 끝났다. 이제 이 하루의 리듬은 당신의 것이다.', en: "The notebook's first chapter ends here. The rhythm of these days is yours now." },
 };
