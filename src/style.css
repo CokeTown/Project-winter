@@ -43,6 +43,19 @@
   button.pixel-btn.danger:hover { border-color: var(--bad); color: var(--bad); }
   button.pixel-btn.primary { border-color: #6b5a40; color: var(--accent); }
   button.pixel-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  /* 이주 가능 배지 — #btn-move 우상단 절대배치 (버튼에 relative 부여) */
+  button.pixel-btn { position: relative; }
+  .btn-badge {
+    position: absolute; top: -5px; right: -5px;
+    min-width: 15px; height: 15px; padding: 0 3px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bad); color: #fff; font-size: 10px; line-height: 1;
+    border-radius: 50%; border: 1px solid #1a1408; font-weight: bold;
+    box-shadow: 0 0 5px rgba(201, 106, 95, 0.9);
+    animation: badgepulse 1.4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes badgepulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
 
   /* ── 좌상단 상태 패널 ── */
   #hud { top: 12px; left: 12px; width: 250px; max-width: min(90vw, 300px); }
@@ -158,6 +171,14 @@
   .shelter-card .s-desc { font-size: 10px; color: var(--text-dim); line-height: 1.5; }
   .shelter-card.current { border-color: var(--accent); }
   .shelter-card.locked { opacity: 0.5; }
+  /* 이주 비용 보유/필요 대조 칩 — 좁은 폭에서 줄바꿈 */
+  .req-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .req-chip {
+    font-size: 10px; padding: 1px 5px; border-radius: 3px;
+    border: 1px solid var(--panel-border); background: #14161d; white-space: nowrap;
+  }
+  .req-chip.ok { color: var(--good); border-color: var(--good); }
+  .req-chip.lack { color: var(--bad); border-color: var(--bad); }
   .loot-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
   .loot-item {
     border: 2px solid var(--panel-border); border-radius: 4px;
@@ -453,6 +474,19 @@
     display: flex; flex-direction: column; gap: 5px;
     zoom: var(--uiz);
   }
+  /* 내려둔 이벤트 칩 — cam-ctrl 위쪽 우하단 (quest-card는 좌측이라 겹치지 않음) */
+  #event-chip {
+    position: absolute; right: 12px; bottom: 400px; z-index: 31;
+    max-width: 220px; padding: 7px 11px; font-size: 12px;
+    background: rgba(12, 13, 17, 0.92); border-color: var(--accent); color: var(--accent);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    overflow: hidden; text-overflow: ellipsis;
+    animation: chipin 0.28s ease-out;
+    zoom: var(--uiz);
+  }
+  #event-chip .ev-bang { color: var(--bad); font-weight: bold; margin-left: 2px; }
+  @keyframes chipin { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  body.title-mode #event-chip { display: none !important; }
   .cam-btn {
     width: 40px; height: 40px; font-size: 17px; line-height: 1;
     background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 4px;
@@ -592,3 +626,5 @@
   }
   @media (max-height: 420px) { #btn-gear { top: 64px; right: 6px; } }
   body.title-mode #btn-gear { display: none !important; }
+  /* 인게임 전용 💾 저장 버튼 — 타이틀 설정(show-in-title)에선 숨김 (유령 세이브 방지) */
+  body.title-mode #btn-save-now { display: none !important; }

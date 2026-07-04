@@ -2677,6 +2677,9 @@ function moveToShelter(id) {
     toast(t('move.needSupplies', { cost: costLabel(cost) }));
     return;
   }
+  // 이주 확인: 현 거처에 배치된 가구가 있으면 "남는다"고 안내 (인벤토리 공유라 손실 아님)
+  const placedN = items.length;
+  if (placedN >= 1 && !confirm(t('move.confirmFurniture', { n: placedN }))) return;
   resConsumeAll(cost);
   if (renov) {
     state.renovated[id] = true;
@@ -2693,6 +2696,36 @@ function moveToShelter(id) {
   renderResBar();
   closeModal();
   toast(t('move.done', { emoji: SHELTERS[id].emoji, name: LName(SHELTERS[id]), journey: cross ? t('move.journeyTag') : '' }));
+}
+// 이주 가능 판정: 해금 && 비현재 && 전체 비용 충족인 거처가 하나라도 있으면 true.
+// 비용은 moveCostFor(1의 칩 렌더)와 동일 소스 — 로직/표시 불일치 방지.
+function canMoveSomewhere() {
+  for (const id of Object.keys(SHELTERS)) {
+    if (id === state.current || !shelterUnlocked(id)) continue;
+    if (resHasAll(moveCostFor(id).cost)) return true;
+  }
+  return false;
+}
+// #btn-move 배지 점등/소등 + 신규 해금 1회 토스트. renderResBar(자원 변동)에서 매번 호출.
+let moveBadgeShown = false;
+function updateMoveBadge() {
+  const badge = document.getElementById('move-badge');
+  // 신규 해금 토스트: 이주 가능한(해금·비현재) 거처 수가 늘어난 순간 1회
+  let unlockedElsewhere = 0;
+  for (const id of Object.keys(SHELTERS)) {
+    if (id !== state.current && shelterUnlocked(id)) unlockedElsewhere++;
+  }
+  if (state.lastUnlockCount == null) state.lastUnlockCount = unlockedElsewhere;
+  else if (unlockedElsewhere > state.lastUnlockCount) {
+    state.lastUnlockCount = unlockedElsewhere;
+    if (!titleVisible) toast(t('move.newShelter'));
+  } else if (unlockedElsewhere < state.lastUnlockCount) {
+    state.lastUnlockCount = unlockedElsewhere; // 이주로 현재지가 바뀌면 감소 — 재점등 방지용 동기화
+  }
+  if (!badge) return;
+  const on = !titleVisible && canMoveSomewhere();
+  badge.style.display = on ? '' : 'none';
+  moveBadgeShown = on;
 }
 
 /* ============================================================
@@ -2935,7 +2968,7 @@ function openPrepModal(regionId) {
   openModal(t('prep.title', { emoji: r.emoji, name: LName(r) }), '');
   render();
 }
-function departExpedition(regionId, prep) {
+function departExpedition(regionId, prep, opts2 = {}) {
   if (paused) { toast(t('pause.blocked')); return; }
   if (state.exp) return;
   // 준비 모달을 열어둔 사이 상태가 나빠졌을 수도 있다 — 출발 직전 재검사
@@ -2943,8 +2976,10 @@ function departExpedition(regionId, prep) {
   if (state.energy < 20) { toast(t('toast.tooTired')); closeModal(); return; }
   if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); closeModal(); return; }
   const r = REGIONS[regionId];
-  for (const id of prep) resConsumeAll(PREPS[id].cost);
   const p = rateParts(regionId, prep);
+  // 저성공률 출발 확인 — 수동 클릭 경로에서만 (자동진행/blackout에선 confirm 금지: 게임이 멈춘다)
+  if (!opts2.auto && p.eff < 0.5 && !confirm(t('exp.confirmRisky', { p: Math.round(p.eff * 100) }))) return;
+  for (const id of prep) resConsumeAll(PREPS[id].cost);
   const dur = expDuration(r) * 1000;
   // 탐험도 몸을 쓴다 (소모 절반으로 완화) + 에너지 소모
   const expMul = isHard() ? 1.5 : 1; // 하드: 탐험 게이지 소모 +50%
@@ -3669,6 +3704,7 @@ function showEvent(id) {
   const ev = EVENTS[id];
   if (!ev) return;
   playSfx('sting');
+  state.activeEvent = id; // 현재 떠 있는 이벤트 (내리기 대상)
   const evTitle = t(ev.titleId);
   const body = `
     <div class="modal-body" style="line-height:2">${t(ev.textId)}</div>
@@ -3677,6 +3713,7 @@ function showEvent(id) {
         const ok = !c.cost || eventCostOk(c.cost);
         return `<button class="pixel-btn" data-ch="${i}" ${ok ? '' : 'disabled'}>${t(c.labelId)}${c.cost && !ok ? t('ev.noResource') : ''}</button>`;
       }).join('')}
+      <button class="pixel-btn" id="event-minimize" data-i18n="event.minimize">${t('event.minimize')}</button>
     </div>`;
   openModal(`${ev.icon} ${evTitle}`, body);
   $('modal-body').querySelectorAll('button[data-ch]').forEach(b =>
@@ -3685,12 +3722,48 @@ function showEvent(id) {
       if (c.cost && !eventCostConsume(c.cost)) { toast(t('toast.needResource')); return; }
       const result = c.run();
       state.dayLog.notes.push(t('event.metNote', { icon: ev.icon, title: evTitle }));
+      state.activeEvent = null;
+      state.minimizedEvent = null; // 선택 완료 → 내려둔 상태도 해제
+      hideEventChip();
       openModal(`${ev.icon} ${evTitle}`, `<div style="line-height:2">${result}</div>`);
       scheduleSave();
       renderResBar();
       updateHud();
     }));
+  // 내리기: 모달만 숨기고 이벤트 상태는 보존 → 하단 칩으로 복원 가능 (부수효과 없음, 소진 아님)
+  const minBtn = document.getElementById('event-minimize');
+  if (minBtn) minBtn.addEventListener('click', () => {
+    state.minimizedEvent = id;
+    state.activeEvent = null;
+    closeModal();
+    showEventChip(id);
+    scheduleSave();
+  });
   tipOnce('tip.event'); // 찢어진 쪽지: 첫 인카운터 직후
+}
+// 내려둔 이벤트 칩 — 클릭 시 showEvent(id)로 선택지 그대로 복원
+function showEventChip(id) {
+  const ev = EVENTS[id];
+  if (!ev) return;
+  let chip = document.getElementById('event-chip');
+  if (!chip) {
+    chip = document.createElement('button');
+    chip.id = 'event-chip';
+    chip.className = 'pixel-btn';
+    document.body.appendChild(chip);
+  }
+  chip.title = t('event.chip.title');
+  chip.innerHTML = `${ev.icon} ${t(ev.titleId)} <span class="ev-bang">!</span>`;
+  chip.style.display = '';
+  chip.onclick = () => {
+    hideEventChip();
+    state.minimizedEvent = null;
+    showEvent(id);
+  };
+}
+function hideEventChip() {
+  const chip = document.getElementById('event-chip');
+  if (chip) chip.style.display = 'none';
 }
 
 /* ============================================================
@@ -4127,6 +4200,10 @@ function deselect() {
 }
 function reclaimSelected() {
   if (!selected) return;
+  // 지속효과 가전(냉장고/정수기/발전기)이 가동 중이면 회수 시 효과 중단을 안내 (비파괴 — 토스트만)
+  const app = DEFS[selected.defId].appliance;
+  const wasOn = app && selected.on !== false;
+  const utilName = LName(DEFS[selected.defId]);
   if (DEFS[selected.defId].surface) dropChildrenOf(selected);
   state.inventory[selected.defId] = (state.inventory[selected.defId] || 0) + 1;
   removeItem(selected);
@@ -4134,6 +4211,7 @@ function reclaimSelected() {
   renderInventoryBar();
   scheduleSave();
   playSfx('whoosh');
+  if (wasOn) toast(t('reclaim.utilityOff', { name: utilName, effect: t(`reclaim.eff.${app.effect}`) }));
 }
 
 // 멀티터치 추적: 한 손가락 = 선택/이동/빈 곳 드래그 회전, 두 손가락 = 핀치 줌 + 회전
@@ -4894,6 +4972,7 @@ function renderResBar() {
     </div>`;
   }).join('');
   lastResSnapshot = { ...state.res };
+  updateMoveBadge();
 }
 function cleanShelter() {
   if (paused) { toast(t('pause.blocked')); return; }
@@ -5160,7 +5239,7 @@ function runAutoPlay() {
       if (eff > bestEff) { bestEff = eff; bestId = id; }
     }
     if (bestId) {
-      departExpedition(bestId, []);
+      departExpedition(bestId, [], { auto: true });
       state.dayLog.notes.push(t('auto.depart', { emoji: REGIONS[bestId].emoji, name: LName(REGIONS[bestId]) }));
     }
   }
@@ -5219,8 +5298,8 @@ function tickTime(dt) {
     scheduleSave();
     renderResBar();
     renderExpPanel();
-  } else if (state.pendingEvent && !reportQueued && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
-    // 리포트를 닫은 다음에 인카운터 등장 (탐험 부재/암전 중엔 보류)
+  } else if (state.pendingEvent && !state.minimizedEvent && !reportQueued && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
+    // 리포트를 닫은 다음에 인카운터 등장 (탐험 부재/암전 중, 내려둔 이벤트가 있으면 보류)
     const ev = state.pendingEvent;
     state.pendingEvent = null;
     showEvent(ev);
@@ -5376,10 +5455,15 @@ function openShelterModal() {
       let btn = '';
       if (unlocked && !cur) {
         const { cost, cross, renov } = moveCostFor(id);
-        const parts = [];
-        if (renov) parts.push(t('shelter.refitPart', { cost: costLabel(sh.moveCost || {}) || t('free') }));
-        if (cross) parts.push(t('shelter.journeyPart'));
-        costLine = parts.length ? `<div class="s-desc" style="color:var(--accent)">${t('shelter.moveCost', { parts: parts.join(' · ') })}</div>` : '';
+        // 보유/필요 대조 칩 — 이주 로직이 소비하는 동일한 cost 객체에서 렌더 (하드코딩 금지)
+        const chips = Object.entries(cost).map(([rid, need]) => {
+          const have = state.res[rid] || 0;
+          const okItem = have >= need;
+          return `<span class="req-chip ${okItem ? 'ok' : 'lack'}">${RESOURCES[rid].emoji} ${have}/${need}</span>`;
+        }).join('');
+        costLine = chips
+          ? `<div class="s-desc" style="color:var(--text-dim)">${t('shelter.reqLabel')}</div><div class="req-chips">${chips}</div>`
+          : '';
         const ok = resHasAll(cost);
         btn = `<button class="pixel-btn" data-shelter="${id}" ${ok ? '' : 'disabled'} title="${ok ? '' : t('shelter.noCostNeed', { cost: costLabel(cost) })}">${renov ? t('shelter.moveRefit') : t('shelter.move')}</button>`;
       }
@@ -5646,8 +5730,14 @@ $('btn-help').addEventListener('click', openHelpModal);
 $('btn-rotate').addEventListener('click', rotateActive);
 $('btn-delete').addEventListener('click', reclaimSelected);
 $('btn-reset').addEventListener('click', () => {
-  scheduleSave();                                  // 마지막 상태 저장 후
+  flushSave();                                     // 마지막 상태를 즉시 기록 후
   setTimeout(() => location.reload(), 500);        // 타이틀로
+});
+// 인게임 💾 저장 — 즉시 슬롯에 기록해 로비에서 불러올 세이브를 확정 (타이틀 모드에선 버튼 숨김 처리됨)
+$('btn-save-now').addEventListener('click', () => {
+  if (titleVisible) return; // 안전 가드 — 유령 세이브 방지 (버튼은 CSS로도 숨겨짐)
+  flushSave();
+  toast(t('save.done', { n: currentSlot }));
 });
 
 // 세이브 내보내기: 현재 슬롯의 원본 JSON을 파일로 다운로드 (설정 패널 + 타이틀 화면 공용)
@@ -6091,6 +6181,7 @@ applyOpts();
 updateHud();
 updateClock();
 renderQuestCard();
+if (state.minimizedEvent && EVENTS[state.minimizedEvent]) showEventChip(state.minimizedEvent); // 로드 후 내려둔 이벤트 칩 복원
 $('btn-clean').addEventListener('click', cleanShelter);
 $('btn-edit').addEventListener('click', () => toggleEditMode());
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
@@ -6423,4 +6514,8 @@ window.__shelter = {
   resetSfx: () => { dbgSfx = null; },
   pickItemAt: (cx, cy) => pickItem({ clientX: cx, clientY: cy }),
   funcClickItem,
+  // 편의성 배치 v0.9.2
+  canMoveSomewhere, updateMoveBadge, showEventChip, hideEventChip, reclaimSelected,
+  currentSlot: () => currentSlot, doSaveNow, flushSave,
+  setLang, applyStaticI18n, t,
 };

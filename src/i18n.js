@@ -267,6 +267,9 @@ export const STR = {
   'save.invalidFile':  { ko: '올바른 세이브 파일이 아닙니다', en: 'Not a valid save file' },
   'save.overwrite':    { ko: '슬롯 {n}(현재)의 세이브를 덮어쓸까요?', en: 'Overwrite the save in slot {n} (current)?' },
   'save.failed':       { ko: '저장에 실패했습니다', en: 'Failed to save' },
+  'save.done':         { ko: '💾 저장 완료 (슬롯 {n})', en: '💾 Saved (slot {n})' },
+  'btn.saveNow':       { ko: '💾 저장', en: '💾 Save' },
+  'btn.saveNow.title': { ko: '지금 저장 — 로비에서 이 세이브를 불러올 수 있습니다', en: 'Save now — this save can be loaded from the lobby' },
 
   /* ── 슬롯 모달 ── */
   'slot.new':         { ko: '✚ 새 게임 — 슬롯 선택', en: '✚ New Game — choose a slot' },
@@ -344,6 +347,7 @@ export const STR = {
   'exp.note.wet3':    { ko: '{icon} 젖은 채로 돌아와 청결도가 떨어졌습니다. (-3)', en: '{icon} You came back soaked and cleanliness dropped. (-3)' },
   'exp.unlock':       { ko: '<div style="margin-top:10px;color:var(--accent)">🔓 새로운 거처 발견: <b>{emoji} {name}</b> — [🏠 이주] 메뉴에서 이동할 수 있습니다!</div>', en: '<div style="margin-top:10px;color:var(--accent)">🔓 New shelter discovered: <b>{emoji} {name}</b> — relocate via the [🏠 Relocate] menu!</div>' },
   'exp.usedPrep':     { ko: '사용한 준비물: {list}', en: 'Prep used: {list}' },
+  'exp.confirmRisky': { ko: '성공률 {p}%. 그래도 출발할까요?', en: 'Success rate {p}%. Depart anyway?' },
 
   /* ── 부상 ── */
   'injury.applied':   { ko: '{icon} <b>{name}</b>을(를) 입었습니다 — 탐험 성공률 -{pen}%p, 자연 회복까지 약 {h}시간(게임).', en: '{icon} You suffered <b>{name}</b> — expedition success -{pen}%p, ~{h}h (game) until natural recovery.' },
@@ -362,6 +366,9 @@ export const STR = {
   'move.journeyNote': { ko: '🚶 {name}(으)로 이동 — 여정에 3시간이 걸렸습니다.', en: '🚶 Traveled to {name} — the journey took 3 hours.' },
   'move.done':        { ko: '{emoji} {name}(으)로 이주했습니다{journey}', en: 'Relocated to {emoji} {name}{journey}' },
   'move.journeyTag':  { ko: ' (여정 3시간)', en: ' (3h journey)' },
+  'move.confirmFurniture':{ ko: '배치된 가구 {n}개는 이 거처에 남습니다. 이주할까요?', en: 'Your {n} placed furnishings will stay behind. Move anyway?' },
+  'move.newShelter':  { ko: '🏠 새 거처 발견 — 이주 지도를 확인하자', en: '🏠 New shelter found — check the relocation map' },
+  'move.badge.title': { ko: '이주 가능한 거처가 있습니다', en: 'A shelter is ready to relocate to' },
 
   /* ── 거처 모달 ── */
   'shelter.modalTitle':{ ko: '🗺️ 구역과 거처', en: '🗺️ Districts & Shelters' },
@@ -377,6 +384,7 @@ export const STR = {
   'shelter.moveRefit':{ ko: '정비 후 이주', en: 'Refit & move' },
   'shelter.move':     { ko: '이주', en: 'Move' },
   'shelter.noCostNeed':{ ko: '자원 부족: {cost}', en: 'Not enough: {cost}' },
+  'shelter.reqLabel': { ko: '필요 물자', en: 'Required' },
   'upkeep.none':      { ko: '없음', en: 'none' },
 
   /* ── 제작대 ── */
@@ -406,6 +414,8 @@ export const STR = {
   /* ── 이벤트 결과 공용 ── */
   'event.metNote':    { ko: '{icon} {title} — 만남이 있었다.', en: '{icon} {title} — an encounter.' },
   'event.stolen':     { ko: '어두운 틈을 타 <b>{name} 1개</b>를 도둑맞았다.<br>밤에는 조명을 켜두는 게 좋겠다.', en: 'Under cover of darkness, <b>1 {name}</b> was stolen.<br>Best to keep a light on at night.' },
+  'event.minimize':   { ko: '⌄ 잠시 내려두기', en: '⌄ Set aside' },
+  'event.chip.title': { ko: '내려둔 이벤트 — 클릭해서 다시 열기', en: 'Set-aside event — click to reopen' },
 
   /* ── 배치 / 회수 / 전원 ── */
   'place.noStock':    { ko: '{name} 재고가 없습니다 — 🎒 탐험으로 획득하세요', en: 'No {name} in stock — 🎒 obtain it on an expedition' },
@@ -413,6 +423,10 @@ export const STR = {
   'place.cantHere':   { ko: '그 자리엔 놓을 수 없어요', en: 'You can’t place it there' },
   'inv.place':        { ko: '{name} 배치하기', en: 'Place {name}' },
   'inv.getByExp':     { ko: '탐험으로 획득하세요', en: 'Obtain it on an expedition' },
+  'reclaim.utilityOff':{ ko: '{name} 회수 — {effect} 중단', en: '{name} reclaimed — {effect} stopped' },
+  'reclaim.eff.fridge':{ ko: '부패 방지', en: 'spoilage prevention' },
+  'reclaim.eff.water':{ ko: '물 생산', en: 'water production' },
+  'reclaim.eff.power':{ ko: '전력 공급', en: 'power supply' },
   'power.on':         { ko: '🔆 켜짐 — 끄기', en: '🔆 On — turn off' },
   'power.off':        { ko: '🌑 꺼짐 — 켜기', en: '🌑 Off — turn on' },
   'power.fuelLine':   { ko: '{emoji} {name} {have}개 보유 · 켜두면 1일 1개 소비 {status}', en: '{emoji} {name} ×{have} · consumes 1/day while on {status}' },
