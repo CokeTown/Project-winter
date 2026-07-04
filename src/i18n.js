@@ -126,6 +126,11 @@ export const STR = {
   'lang.confirm':     { ko: '언어를 바꾸면 게임을 다시 불러옵니다. 계속할까요?', en: 'Changing the language will reload the game. Continue?' },
 
   /* ── 위젯 모드 (Electron 전용) ── */
+  /* ── 자동 진행 해금 안내 (Day 10, 1회) ── */
+  'auto.unlocked.title': { ko: '🤖 자동 진행 해금', en: '🤖 Auto-Play Unlocked' },
+  'auto.unlocked.body':  { ko: '열흘을 버텨냈다. 이제 몸이 루틴을 기억한다.<br><br>자동 진행을 켜면 매 정시마다 <b>치료 → 청소 → 최적 지역 탐험</b>을 알아서 처리한다. 우측의 🤖 버튼이나 설정에서 언제든 켜고 끌 수 있다.', en: 'Ten days survived. The routine lives in your hands now.<br><br>With auto-play on, every hour handles <b>treating → cleaning → the best expedition</b> for you. Toggle it anytime with the 🤖 button or in settings.' },
+  'auto.unlocked.on':    { ko: '🤖 지금 켠다', en: '🤖 Turn it on now' },
+  'auto.unlocked.toast': { ko: '🤖 자동 진행 시작 — 이제 거처가 스스로 굴러간다', en: '🤖 Auto-play on — the shelter runs itself now' },
   /* ── 인게임 확인창 버튼 (행동 동사 원칙) ── */
   'confirm.yes':      { ko: '그렇게 한다', en: 'Do it' },
   'confirm.no':       { ko: '그만둔다', en: 'Never mind' },

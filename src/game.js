@@ -5746,6 +5746,8 @@ function tickTime(dt) {
   while (state.day < newDay) {
     state.day++;
     refreshAutoplayLock();
+    // Day 10 도달(또는 이미 지난 구세이브 첫 부팅 이후 롤오버): 자동 진행 해금 1회 안내
+    if (state.day >= 10 && !state.autoNoticeShown) { state.autoNoticeShown = true; state.pendingAutoNotice = true; }
     processDay();
     reportQueued = true;
     rolledOver = true;
@@ -5798,6 +5800,24 @@ function tickTime(dt) {
     const day = state.pendingTutorial;
     state.pendingTutorial = null;
     showTutorialPage(day);
+  } else if (state.pendingAutoNotice && !reportQueued && !state.pendingEvent && !state.pendingTutorial && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
+    // Day 10 자동 진행 해금 안내 — 아무도 존재/조건을 모른다는 피드백으로 1회 전용 팝업
+    state.pendingAutoNotice = false;
+    scheduleSave();
+    openModal(t('auto.unlocked.title'), `
+      <div style="line-height:1.8">${t('auto.unlocked.body')}</div>
+      <div class="close-row" style="margin-top:10px">
+        <button class="pixel-btn primary" id="btn-auto-now">${t('auto.unlocked.on')}</button>
+      </div>`);
+    const bn = $('btn-auto-now');
+    if (bn) bn.addEventListener('click', () => {
+      opts.autoPlay = true;
+      const cb = $('opt-autoplay'); if (cb) cb.checked = true;
+      syncAutoBtn();
+      flushSave();
+      closeModal();
+      toast(t('auto.unlocked.toast'));
+    });
   } else if (state.pendingWinterMemoir?.length && !reportQueued && !state.pendingEvent && !state.pendingTutorial && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
     // Nine Winters(#11): 봄 첫 아침 보고를 모두 닫은 뒤 "그 해 겨울" 수첩 페이지를 순서대로 편다.
     // (오프라인 정산으로 겨울 여러 번을 지났으면 큐에 쌓인 순서대로 한 번에 한 장씩.)
@@ -6751,6 +6771,11 @@ if (!loadSave()) {
 }
 setLang(opts.lang || 'ko');   // 세이브된 언어 적용 (기본 ko)
 applyStaticI18n();             // index.html 정적 텍스트 치환
+// 카메라 열 버튼: 브라우저 네이티브 툴팁(title) 대신 게임 스타일 좌측 라벨(::before, data-label).
+// PC=호버 시 표시, 모바일=호버가 없으니 퀘스트 유도(pulse) 중에만 상시 표시 + 토글 토스트가 보조.
+for (const b of document.querySelectorAll('#cam-ctrl .cam-btn, #btn-gear')) {
+  if (b.title) { b.dataset.label = b.title; b.removeAttribute('title'); }
+}
 loadShelter(state.current);
 renderInventoryBar();
 renderResBar();
