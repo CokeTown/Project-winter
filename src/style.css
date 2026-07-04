@@ -351,6 +351,40 @@
   #tip-note.show { transform: translate(0, 0) rotate(2deg); }
   body.title-mode #tip-note { display: none !important; } /* 타이틀 화면에선 쪽지 숨김 (안전망) */
 
+  /* ── v2.5: 퀘스트 트래커 (신규 게임 온보딩 체크리스트, 좌하단 툴바 위) ── */
+  #quest-card {
+    display: none;
+    position: absolute; left: 12px; bottom: 90px; z-index: 30;
+    width: 220px; padding: 8px 10px;
+    background: rgba(12, 13, 17, 0.88);
+    border: 2px solid var(--panel-border); border-radius: 4px;
+    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+    cursor: default;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+  }
+  #quest-card.show { display: block; }
+  #quest-card .q-head {
+    font-size: 10px; color: var(--accent); letter-spacing: 1px; margin-bottom: 5px;
+  }
+  #quest-card .q-body { display: flex; align-items: center; gap: 8px; }
+  #quest-card .q-icon { font-size: 20px; line-height: 1; }
+  #quest-card .q-text { flex: 1; font-size: 11px; line-height: 1.4; }
+  #quest-card .q-prog { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  #quest-card .q-check {
+    display: none; text-align: center; font-size: 13px; color: var(--good);
+    animation: questcheck 0.6s ease;
+  }
+  #quest-card.done-flash .q-body { display: none; }
+  #quest-card.done-flash .q-check { display: block; }
+  @keyframes questcheck { 0% { opacity: 0; transform: scale(0.6); } 40% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+  body.title-mode #quest-card { display: none !important; }
+  @media (max-width: 720px) {
+    #quest-card { bottom: 78px; width: 190px; padding: 6px 8px; left: 8px; }
+  }
+  @media (max-height: 420px) {
+    #quest-card { bottom: 46px; width: 168px; }
+  }
+
 
   /* ── 이동/접기 가능한 패널 ── */
   #c { touch-action: none; }
@@ -527,3 +561,11 @@
   /* ── v0.9.1: 타이틀에서 설정 패널을 열람 (t-settings 버튼 전용) ──
      body.title-mode는 기본적으로 .panel을 숨기지만, show-in-title이 붙은 패널만 예외로 보여준다. */
   body.title-mode #render-panel.show-in-title { display: block !important; z-index: 60; }
+
+  /* ── v0.9.1: 모바일 설정 진입 = 우측 상단 톱니 (PC는 ESC 전용) ── */
+  #btn-gear {
+    position: fixed; top: 96px; right: 10px; z-index: 45;
+    zoom: calc(var(--uiz, 1) * var(--textboost, 1.15));
+  }
+  @media (max-height: 420px) { #btn-gear { top: 64px; right: 6px; } }
+  body.title-mode #btn-gear { display: none !important; }

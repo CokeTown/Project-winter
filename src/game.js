@@ -2191,6 +2191,7 @@ const state = {
   tutDay: 0,           // 신규 게임 첫 3일 튜토리얼 진행 단계 (0~3)
   tipsSeen: {},        // 찢어진 쪽지(1회성 팁) 열람 여부 { 'tip.rain': true, ... }
   pendingTutorial: null, // 표시 대기 중인 튜토리얼 수첩 페이지 단계 (day-report 뒤로 미룸)
+  questIdx: 0,         // 퀘스트 체인 진행 인덱스 (QUESTS 배열 기준, -1=비활성/완료, QUESTS.length=전체 완료)
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -2251,6 +2252,7 @@ function eatFood() {
   consumeAnyFood(1);
   state.hunger = Math.min(100, state.hunger + 45);
   toast(t(usedFresh ? 'eat.done' : 'eat.doneCanned'));
+  questProgress('eat');
   renderResBar(); updateHud(); scheduleSave();
 }
 function drinkWater() {
@@ -2260,6 +2262,7 @@ function drinkWater() {
   resConsume('water', 1);
   state.thirst = Math.min(100, state.thirst + 45);
   toast(t('drink.done'));
+  questProgress('drink');
   renderResBar(); updateHud(); scheduleSave();
 }
 function isExhausted() { return state.hunger <= 0 || state.thirst <= 0; }
@@ -2391,6 +2394,7 @@ function loadSave() {
       if (state.tutDay == null) state.tutDay = 0;
       if (!state.tipsSeen) state.tipsSeen = {};
       if (state.pendingTutorial === undefined) state.pendingTutorial = null;
+      if (data.state.questIdx === undefined) state.questIdx = (state.day > 1 || state.successes > 0) ? -1 : 0;
       if (!SHELTERS[state.current]) state.current = 'container';
       // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
       const elapsed = Math.max(0, (Date.now() - (state.savedAt || Date.now())) / 1000);
@@ -2918,6 +2922,7 @@ function departExpedition(regionId, prep) {
   renderResBar();
   $('exp-panel').classList.add('show'); // 진행 상황 표시
   toast(t('exp.start', { emoji: r.emoji, name: LName(r), pct: Math.round(p.eff * 100) }));
+  questProgress('depart');
   playSfx('door');
   setTimeout(() => playSfx(seasonOf().id === 'winter' ? 'steps_snow' : 'steps_hard'), 400);
 }
@@ -3779,6 +3784,7 @@ function openCraftModal() {
       }
       state.stats.craft = (state.stats.craft || 0) + 1;
       state.dayLog.notes.push(t('craft.noteRes', { name: c.out.res ? LName(RESOURCES[c.out.res]) : LName(DEFS[c.out.furn]) }));
+      questProgress('craft');
       scheduleSave();
       renderResBar();
       playSfx('craft');
@@ -4030,6 +4036,7 @@ function finishPlacing() {
   if (DEFS[item.defId].surface) tipOnce('tip.stack'); // 찢어진 쪽지: 첫 스태킹 가능 가구(테이블 등) 배치
   renderInventoryBar();
   select(item, true); // 배치 확정음(아래 playSfx('place'))과 중복되지 않게 select의 클릭음은 생략
+  questProgress('place');
   scheduleSave();
   playSfx('place');
 }
@@ -4181,6 +4188,16 @@ function toggleSettingsPanel() {
   const willShow = rp.style.display === 'none';
   rp.style.display = willShow ? '' : 'none';
   if (willShow) { clampPanel(rp); reclampAllPanels(); }
+}
+// 설정 진입 문법(v0.9.1): PC = ESC 전용 / 모바일 = 우측 상단 톱니 전용 — 인게임에선 양쪽 다 기본 숨김
+// ($ 헬퍼는 이 시점에 TDZ라 getElementById 직접 사용)
+{
+  const gear = document.getElementById('btn-gear');
+  if (gear) {
+    if (!isPcInput) gear.style.display = '';   // 터치 기기에서만 노출
+    gear.addEventListener('click', toggleSettingsPanel);
+  }
+  if (!isPcInput) document.getElementById('render-panel').style.display = 'none'; // 모바일도 기본 숨김
 }
 addEventListener('keydown', e => {
   if (titleVisible) return;
@@ -4741,6 +4758,7 @@ function cleanShelter() {
   state.cleanBy[state.current] = Math.min(100, c + 20);
   toast(t('clean.done', { n: Math.round(state.cleanBy[state.current]) }));
   state.dayLog.notes.push(t('clean.note'));
+  questProgress('clean');
   scheduleSave();
   renderResBar();
   updateHud();
@@ -4760,7 +4778,8 @@ function processDay() {
   state.expToday = 0; // 새 하루, 새 걸음
   // 첫 3일 튜토리얼: Day 2/3 아침에 다음 페이지를 표시 대기열에 넣는다 (day-report 뒤로 미룸)
   // tutDay>=1: Day 1 페이지(신규 게임)를 이미 본 경우에만 이어서 진행 — 구세이브는 tutDay 0 그대로라 대상 아님
-  if ((state.day === 2 || state.day === 3) && state.tutDay >= 1 && state.tutDay < state.day) {
+  // 퀘스트 트래커가 아직 진행 중이면(questActive) 온보딩 중복을 피하려고 자동 페이지를 띄우지 않는다
+  if ((state.day === 2 || state.day === 3) && state.tutDay >= 1 && state.tutDay < state.day && !questActive()) {
     state.pendingTutorial = state.day; // 이틀치가 한 번에 지나가면(오프라인 정산) 최신 페이지로 갱신
   }
   // 정든 집
@@ -4922,7 +4941,7 @@ function showDayReport() {
     ${warns.length ? `<div class="report-sec report-warn">${t('report.warn', { list: warns.map(id => RESOURCES[id].emoji + LName(RESOURCES[id])).join(', ') })}</div>` : ''}
     <div class="report-sec">${forecast}</div>
     ${tips.length ? `<div class="report-sec report-tip">💡 ${tips.slice(0, 2).join('<br>💡 ')}</div>` : ''}
-  `);
+  `, 'report');
   state.dayLog = { gain: {}, spend: {}, notes: [] };
   playSfx('pen');
   // 자원(물/음식) 고갈 경고음 — 하루 1회 제한
@@ -5122,12 +5141,18 @@ function showSelPanel(item) {
 }
 function hideSelPanel() { selPanel.classList.remove('show'); }
 
-function openModal(title, html) {
+let modalKind = null; // 마지막으로 연 모달 종류 (닫힘 시 퀘스트 훅 판별용, 예: 'report')
+function openModal(title, html, kind = null) {
+  modalKind = kind;
   $('modal-title').innerHTML = title;
   $('modal-body').innerHTML = html;
   $('modal-back').classList.add('show');
 }
-function closeModal() { $('modal-back').classList.remove('show'); }
+function closeModal() {
+  $('modal-back').classList.remove('show');
+  if (modalKind === 'report') questProgress('report');
+  modalKind = null;
+}
 $('modal-close').addEventListener('click', closeModal);
 $('modal-back').addEventListener('click', e => { if (e.target === $('modal-back')) closeModal(); });
 
@@ -5260,6 +5285,61 @@ function showTutorialPage(day) {
   state.tutDay = day; // 표시 즉시 기록 — 닫기 전에 리로드해도 같은 페이지가 중복되지 않게
   scheduleSave();
   openJournalPages(pages);
+}
+
+/* ============================================================
+   퀘스트 트래커 (v2.5) — 신규 게임 온보딩 체크리스트
+   생존 수첩 텍스트를 읽지 않는 유저를 위해, 첫 1~2일을 눈에 보이는
+   할 일 카드로 유도한다. state.questIdx로 진행 단계를 추적하며,
+   기존 세이브는 loadSave()에서 -1로 마이그레이션해 표시하지 않는다.
+============================================================ */
+const QUESTS = [
+  { id: 'drink',  icon: '💧', textId: 'quest.drink.text',  reward: { water: 1 } },
+  { id: 'eat',    icon: '🥫', textId: 'quest.eat.text',    reward: { canned: 1 } },
+  { id: 'place',  icon: '🛏️', textId: 'quest.place.text',  reward: { cloth: 1 } },
+  { id: 'depart', icon: '🎒', textId: 'quest.depart.text', reward: {} },
+  { id: 'report', icon: '📋', textId: 'quest.report.text', reward: { bandage: 1 } },
+  { id: 'craft',  icon: '🔨', textId: 'quest.craft.text',  reward: { parts: 1 } },
+  { id: 'clean',  icon: '🧹', textId: 'quest.clean.text',  reward: { water: 1 } },
+];
+function questActive() { return state.questIdx >= 0 && state.questIdx < QUESTS.length; }
+function renderQuestCard() {
+  const card = $('quest-card');
+  if (!card) return;
+  if (!questActive()) { card.classList.remove('show'); return; }
+  const q = QUESTS[state.questIdx];
+  $('quest-icon').textContent = q.icon;
+  $('quest-text').textContent = t(q.textId);
+  $('quest-prog').textContent = t('quest.progress', { cur: state.questIdx, total: QUESTS.length });
+  card.classList.remove('done-flash');
+  card.classList.add('show');
+}
+// 퀘스트 진행 훅 — 해당 id가 현재 진행 중인 퀘스트일 때만 완료 처리
+function questProgress(id) {
+  if (!questActive()) return;
+  const q = QUESTS[state.questIdx];
+  if (q.id !== id) return;
+  for (const [rid, n] of Object.entries(q.reward)) resAdd(rid, n);
+  const card = $('quest-card');
+  if (card) card.classList.add('done-flash');
+  playSfx('place', { vol: 0.2 });
+  const rewardMsg = Object.keys(q.reward).length
+    ? ' +' + Object.entries(q.reward).map(([rid, n]) => `${RESOURCES[rid].emoji}${n}`).join(' ')
+    : '';
+  toast(t(q.textId) + rewardMsg);
+  state.questIdx++;
+  renderResBar(); updateHud(); scheduleSave();
+  setTimeout(() => {
+    if (state.questIdx >= QUESTS.length) {
+      state.questIdx = -1; // 체인 완료 — 트래커 퇴장
+      renderQuestCard();
+      toast(t('quest.doneToast'));
+      scheduleSave();
+    } else {
+      renderQuestCard();
+      paperSfx();
+    }
+  }, 600);
 }
 
 /* ── 찢어진 쪽지 (1회성 팁) ── */
@@ -5769,6 +5849,7 @@ renderExpPanel();
 applyOpts();
 updateHud();
 updateClock();
+renderQuestCard();
 $('btn-clean').addEventListener('click', cleanShelter);
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
 $('btn-craft').addEventListener('click', openCraftModal);
@@ -5956,4 +6037,6 @@ window.__shelter = {
   envFx: () => ({ snowCover, wetness }),
   cat: () => catObj,
   camera, THREE, CAT_POSES,
+  // 퀘스트 트래커
+  QUESTS, questProgress, renderQuestCard, questActive,
 };

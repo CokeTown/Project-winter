@@ -92,6 +92,7 @@
   <button class="cam-btn" id="btn-pause" data-i18n-title="btn.pause.title" title="일시정지 (P)">⏸</button>
 </div>
 <div id="pause-ind" data-i18n="pause.ind">⏸ 일시정지</div>
+<button class="cam-btn" id="btn-gear" data-i18n-title="btn.gear.title" title="설정" style="display:none">⚙️</button>
 
 <button class="pixel-btn danger" id="btn-cancel-place" data-i18n="btn.cancelPlace">✖ 배치 취소</button>
 
@@ -140,6 +141,18 @@
 </div>
 
 <div class="panel" id="toolbar"></div>
+
+<div id="quest-card">
+  <div class="q-head">📌 <span data-i18n="quest.head">할 일</span></div>
+  <div class="q-body">
+    <div class="q-icon" id="quest-icon"></div>
+    <div>
+      <div class="q-text" id="quest-text"></div>
+      <div class="q-prog" id="quest-prog"></div>
+    </div>
+  </div>
+  <div class="q-check" id="quest-check">✅</div>
+</div>
 
 <div id="modal-back">
   <div class="panel" id="modal">

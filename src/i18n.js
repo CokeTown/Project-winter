@@ -95,6 +95,7 @@ export const STR = {
   'cam.zout.title':   { ko: '줌 아웃', en: 'Zoom out' },
   'cam.home.title':   { ko: '시점 초기화', en: 'Reset view' },
   'btn.pause.title':  { ko: '일시정지 (P)', en: 'Pause (P)' },
+  'btn.gear.title':   { ko: '설정', en: 'Settings' },
   'pause.ind':        { ko: '⏸ 일시정지', en: '⏸ Paused' },
   'btn.cancelPlace':  { ko: '✖ 배치 취소', en: '✖ Cancel placement' },
   'exp.panel.title':  { ko: '■ 지역 탐험', en: '■ Regional Expedition' },
@@ -618,4 +619,16 @@ export const STR = {
   'tip.energy': { ko: '"눈이 침침해질 때까지 버티지 마라. 그만 자라는 뜻이다." — 에너지가 낮으면 취침으로 회복해야 한다.', en: '"Don\'t push on until your eyes blur. That\'s your body telling you to sleep." — rest with sleep once energy runs low.' },
   'tip.winter': { ko: '"겨울이 왔다. 곳간을 미리 채워두지 않은 자에게는 길고 매서운 계절이다." — 겨울엔 허기가 더 빨리 지고 텃밭도 얼어붙는다.', en: '"Winter\'s here. For those who didn\'t stock up, it\'s a long, bitter season." — hunger drains faster and gardens freeze in winter.' },
   'tip.stack':  { ko: '"상판이 있는 가구 위엔 작은 소품을 올려둘 수 있다." — 테이블 같은 가구 위에 다른 소품을 겹쳐 배치해보자.', en: '"Furniture with a flat top can hold smaller things on it." — try placing small items on top of tables and the like.' },
+
+  /* ── 퀘스트 트래커 (신규 게임 온보딩) ── */
+  'quest.head': { ko: '할 일', en: 'To Do' },
+  'quest.drink.text': { ko: '💧 게이지를 클릭해 물을 마셔보자', en: 'Click the 💧 gauge to drink water' },
+  'quest.eat.text': { ko: '🥫 게이지를 클릭해 뭔가 먹어보자', en: 'Click the 🥫 gauge to eat something' },
+  'quest.place.text': { ko: '가구를 1개 배치해보자 (침대를 추천)', en: 'Place 1 piece of furniture (a bed is recommended)' },
+  'quest.depart.text': { ko: '🎒 지도를 열어 첫 탐험을 보내보자', en: 'Open the 🎒 map and send your first expedition' },
+  'quest.report.text': { ko: '탐험 결산 리포트를 확인해보자', en: 'Check the expedition results report' },
+  'quest.craft.text': { ko: '🔨 제작대에서 무엇이든 1개 만들어보자', en: 'Craft anything once at the 🔨 workbench' },
+  'quest.clean.text': { ko: '🧹 청소를 1회 해보자', en: 'Clean the shelter 🧹 once' },
+  'quest.progress': { ko: '{cur}/{total}', en: '{cur}/{total}' },
+  'quest.doneToast': { ko: '🎉 이제 스스로 살아남을 차례', en: '🎉 Now it\'s up to you to survive' },
 };
