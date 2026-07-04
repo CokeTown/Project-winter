@@ -719,6 +719,85 @@ function comfortDetail() {
   const score = THREE.MathUtils.clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod + heatMod, 0, 100);
   return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, heatMod, clean, score };
 }
+/* ── 쾌적함 4요소 분해 (#29 Living Shelter) ──
+   comfortDetail()의 원본 컴포넌트를 온기/청결/안정감/분위기 4축으로 "재분류"만 한다.
+   각 축 값의 합 = comfortDetail().score (기저 18 포함) — 총점 불변, 원인 로그만 추가.
+   반환: { warmth, clean, security, mood, score, logs:{warmth:[],clean:[],security:[],mood:[]} } */
+function comfortBreakdown() {
+  const cd = comfortDetail();
+  // 조명(light) 총점을 온기(열원) vs 분위기(전기)로 배분 — 합은 cd.light 그대로
+  const CM = BAL.comfort;
+  let lightWarmth = 0, lightMood = 0;
+  const warmSrc = [], moodSrc = [];
+  const lm = SHELTERS[state.current].perk?.lightMult || 1;
+  // 캡(24*lm) 적용 전 원자 기여도를 축별로 나눈 뒤, cd.light와 비율 맞춰 스케일 (캡 반영)
+  let rawWarm = 0, rawMood = 0;
+  for (const it of items) {
+    const L = DEFS[it.defId]?.light;
+    if (!L || it.on === false) continue;
+    const c = (L.comfort ?? 5);
+    const axis = CM.lightAxis[it.defId] || CM.lightAxisDefault;
+    if (axis === 'warmth') { rawWarm += c; warmSrc.push({ id: it.defId, v: c }); }
+    else { rawMood += c; moodSrc.push({ id: it.defId, v: c }); }
+  }
+  const rawSum = rawWarm + rawMood;
+  if (rawSum > 0) {
+    lightWarmth = cd.light * (rawWarm / rawSum);
+    lightMood = cd.light - lightWarmth; // 나머지 전부 — 반올림 오차로 합 어긋나지 않게
+  }
+  // limitMod(한파/단열/추위 페널티)는 온기 결핍으로 귀속, needsLight 어둠 페널티는 분위기로 분리
+  const sh = SHELTERS[state.current];
+  let darkPen = 0;
+  if (sh.needsLight && cd.light <= 0) darkPen = -sh.needsLight;
+  const warmthLimit = cd.limitMod - darkPen; // 나머지(추위/단열/한파) → 온기
+  // ── 4축 합산 (합 = cd.score의 기저 18 포함) ──
+  const warmth = lightWarmth + cd.heatMod + cd.catMod + warmthLimit;
+  const clean = cd.cleanMod;
+  const security = 18 + cd.shelterMod + cd.settled + cd.injuryMod;
+  const mood = cd.furn + lightMood + darkPen;
+  // ── 원인 로그 (각 축 2~3줄) ──
+  const logs = { warmth: [], clean: [], security: [], mood: [] };
+  // 온기
+  for (const s of warmSrc) logs.warmth.push({ icon: DEFS[s.id].emoji, name: LName(DEFS[s.id]), v: `+${Math.round(s.v * (rawSum ? (cd.light / rawSum) : 1))}` });
+  if (cd.heatMod) logs.warmth.push({ icon: '♨️', name: t('comfort.log.heater'), v: `+${cd.heatMod}` });
+  if (cd.catMod) logs.warmth.push({ icon: '🐈', name: t('comfort.log.cat'), v: `+${cd.catMod}` });
+  if (warmthLimit < 0) logs.warmth.push({ icon: coldSnapNetSeverity() > 0 ? '🥶' : '❄️', name: coldSnapNetSeverity() > 0 ? t('comfort.log.coldsnap') : t('comfort.log.cold'), v: `${warmthLimit}` });
+  // 청결
+  if (cd.cleanMod) logs.clean.push({ icon: '🧹', name: t('comfort.log.cleanState', { n: Math.round(cd.clean) }), v: `${cd.cleanMod > 0 ? '+' : ''}${cd.cleanMod}` });
+  // 안정감
+  logs.security.push({ icon: '🏠', name: t('comfort.log.base'), v: '+18' });
+  if (cd.shelterMod) logs.security.push({ icon: sh.emoji, name: t('comfort.log.shelter'), v: `+${cd.shelterMod}` });
+  if (cd.settled) logs.security.push({ icon: '🪺', name: t('comfort.log.settled', { n: cd.settled }), v: `+${cd.settled}` });
+  if (cd.injuryMod) logs.security.push({ icon: '🩹', name: t('comfort.log.injury'), v: `${cd.injuryMod}` });
+  // 분위기
+  if (cd.furn) logs.mood.push({ icon: '🪑', name: t('comfort.log.furn'), v: `+${cd.furn}` });
+  for (const s of moodSrc) logs.mood.push({ icon: DEFS[s.id].emoji, name: LName(DEFS[s.id]), v: `+${Math.round(s.v * (rawSum ? (cd.light / rawSum) : 1))}` });
+  if (darkPen) logs.mood.push({ icon: '🌑', name: t('comfort.log.dark'), v: `${darkPen}` });
+  return { warmth, clean, security, mood, score: cd.score, logs };
+}
+// 일지 통계용: 4요소 막대 + 각 요소 원인 로그 (report-sec 문법 재사용)
+function comfortBreakdownHtml() {
+  const b = comfortBreakdown();
+  const axes = [
+    { key: 'warmth',   icon: '🔥', label: t('comfort.warmth'),   v: b.warmth,   col: '#c97a4a' },
+    { key: 'clean',    icon: '🧹', label: t('comfort.clean'),    v: b.clean,    col: '#5f9ac0' },
+    { key: 'security', icon: '🛡️', label: t('comfort.security'), v: b.security, col: '#8fbb7a' },
+    { key: 'mood',     icon: '🕯️', label: t('comfort.mood'),     v: b.mood,     col: '#c79a5f' },
+  ];
+  // 막대 스케일: 각 축 최대 기여 폭을 40점 기준으로 정규화 (음수는 0폭, 색만 경고)
+  const rows = axes.map(a => {
+    const pct = Math.max(0, Math.min(100, (a.v / 40) * 100));
+    const logs = (b.logs[a.key] || []).slice(0, 3).map(l =>
+      `<div style="font-size:10px;color:var(--text-dim);line-height:1.6">${l.icon} ${l.name} <span style="color:${String(l.v).startsWith('-') ? 'var(--bad)' : 'var(--good)'}">${l.v}</span></div>`).join('');
+    return `<div style="margin:7px 0">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+        <span>${a.icon} ${a.label}</span><span style="color:${a.v < 0 ? 'var(--bad)' : 'var(--accent)'}">${a.v < 0 ? '' : '+'}${Math.round(a.v)}</span></div>
+      <div style="height:8px;background:#22252d;border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${a.col};border-radius:4px"></div></div>
+      ${logs}
+    </div>`;
+  }).join('');
+  return `<div class="report-sec"><span class="r-title">${t('comfort.breakdownTitle', { score: b.score })}</span>${rows}</div>`;
+}
 function comfortLevel() { return Math.min(5, Math.round(comfortDetail().score / 20)); }
 // 기획서 쾌적함 티어: 50+ → +3%, 75+ → +6%, 90+ → +10%
 function comfortExpBonus() {
@@ -2436,6 +2515,7 @@ function slotMeta(n) {
   return {
     day: st.day || 1, season: se, shelter: SHELTERS[st.current] ? SHELTERS[st.current] : SHELTERS.container,
     successes: st.successes || 0, mode: st.mode === 'hard' ? 'hard' : 'normal',
+    qaUsed: !!st.qaUsed,
     saved: st.savedAt ? new Date(st.savedAt).toLocaleString(lang === 'en' ? 'en-US' : 'ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-',
   };
 }
@@ -3169,6 +3249,10 @@ function resolveExpedition() {
   playSfx('door');
   const r = REGIONS[exp.region];
   const prep = exp.prep || [];
+  const startedInjured = !!state.injury;        // 다친 몸으로 출발했는가 (인과문용)
+  const departWeather = weather.type;            // 출발 시점 날씨
+  const departColdSnap = coldSnapNetSeverity() > 0; // 한파 중 출발
+  let injuryRolled = false, injuryAvoided = false; // 부상 판정 발생/회피 (장갑 인과문용)
   state.exp = null;
   state.stats.exp++;
   // 탐험을 다녀오면 하루가 그만큼 흘러 있다 (거리 비례 2~5시간)
@@ -3241,6 +3325,7 @@ function resolveExpedition() {
   }
   // 부상 판정: 실패 시 확정, 부분 성공 시 40%
   if (!success && (partial ? Math.random() < BAL.pity.injuryPartialChance : true)) {
+    injuryRolled = true; // 부상 위험이 실제로 있었다 (장갑 인과문 조건)
     let injChance = 1;
     if (prep.includes('gloves')) injChance -= BAL.pity.glovesReduce;
     if (Math.random() < injChance) {
@@ -3251,6 +3336,7 @@ function resolveExpedition() {
       }
       notes.push(applyInjury(type, prep.includes('bottle')));
     } else if (prep.includes('gloves')) {
+      injuryAvoided = true; // 부상 위험이 있었는데 장갑으로 피했다
       notes.push(t('exp.note.gloves'));
     }
   }
@@ -3260,6 +3346,20 @@ function resolveExpedition() {
       state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 3);
       notes.push(t('exp.note.wet3', { icon: WEATHERS[weather.type].icon }));
     }
+  }
+  // ── 준비물/상태 인과문 (#29) — 조건 걸린 것 중 우선순위 상위 2개만, 남발 금지 ──
+  {
+    const causal = []; // [priority-ordered]
+    // 역경(상태) — 준비 부족이 결과를 갈랐음을 체감
+    if (startedInjured) causal.push(t('exp.cause.injured'));
+    if (departColdSnap) causal.push(t('exp.cause.coldsnap'));
+    // 준비물이 값을 했음 (해당 시에만)
+    if (prep.includes('flashlight') && success) causal.push(t('exp.cause.flashlight'));
+    if (prep.includes('raincoat') && (departWeather === 'rain' || departWeather === 'snow' || departWeather === 'storm'))
+      causal.push(t('exp.cause.raincoat', { icon: WEATHERS[departWeather].icon }));
+    if (prep.includes('bottle')) causal.push(t('exp.cause.bottle'));
+    if (prep.includes('canned') && success) causal.push(t('exp.cause.canned'));
+    for (const c of causal.slice(0, 2)) notes.push(c);
   }
   for (const id of got) state.inventory[id] = (state.inventory[id] || 0) + 1;
   // 해금 체크
@@ -4138,6 +4238,7 @@ const ACHS = [
 ];
 function checkAchievements() {
   if (!state.achs) state.achs = {};
+  if (state.qaUsed) return; // QA 치트로 오염된 세이브는 신규 업적 해금 무시 (기존 해금은 유지)
   for (const a of ACHS) {
     if (!state.achs[a.id] && a.chk()) {
       state.achs[a.id] = true;
@@ -4167,6 +4268,7 @@ function openJournalModal() {
     <div class="report-sec"><span class="r-title">${t('journal.statsTitle')}</span><br>
       ${t('journal.statsLine', { day: state.day, sicon: se.icon, exp: state.stats.exp, succ: state.stats.success, craft: state.stats.craft || 0, stay: state.stayDays || 0 })}
     </div>
+    ${comfortBreakdownHtml()}
     <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount() })}</span><br>${colHtml}</div>
     <div class="report-sec"><span class="r-title">${t('journal.achTitle', { n: Object.values(state.achs || {}).filter(Boolean).length, total: ACHS.length })}</span></div>
     ${achsHtml}`);
@@ -4956,6 +5058,7 @@ function openSlotModal(mode) {
     cards.push(`
       <div class="slot-card ${m ? '' : 'empty'}" data-slot="${n}" data-has="${m ? 1 : 0}">
         ${m && m.mode === 'hard' ? `<span class="sl-mode-hard" title="${t('slot.hardBadge.title')}">🔥</span>` : ''}
+        ${m && m.qaUsed ? `<span class="sl-qa" title="QA 치트 사용됨" style="position:absolute;top:4px;left:4px;font-size:9px;background:#6b5a40;color:#1a1408;padding:1px 4px;border-radius:3px;font-weight:bold">QA</span>` : ''}
         <span class="sl-no">${n}</span>
         <div class="sl-body">${m
           ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}<br><span class="sl-meta">${t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
@@ -5357,6 +5460,31 @@ function processDay() {
     }
   }
 }
+// 아침 브리핑 카드 (#29) — 결산 상단 "오늘" 섹션: 날씨 예보 + 경고 통합 + 권장 행동 1줄
+function briefingHtml(forecast, prep, warns) {
+  const se = seasonOf();
+  const lines = [];
+  // 날씨 예보 (라디오/등대 특성 있으면 실제 예보, 없으면 감각적 문구)
+  lines.push(`<div style="font-size:11px;margin-bottom:2px">${forecast}</div>`);
+  // 경고 (Phase B 카드 통합 — 중복 방지: 여기 한 곳에서만)
+  let warn = '';
+  const coldExposed = coldSnapActive() && coldSnapNetSeverity() > 0;
+  const coldIncoming = state.coldSnapForecast > 0 && se.id === 'winter';
+  if (coldExposed) warn = t('brief.coldNow');
+  else if (coldSnapActive()) warn = t('brief.coldDefended');
+  else if (coldIncoming) warn = t('brief.coldSoon', { n: Math.max(0, state.coldSnapForecast - state.day) });
+  else if (se.id === 'winter') warn = t('brief.winter');
+  else if (prep) warn = t('brief.winterSoon', { n: prep.daysLeft });
+  if (warn) lines.push(`<div style="font-size:11px;color:var(--accent);margin-bottom:2px">${warn}</div>`);
+  // 권장 행동 1줄 — 우선순위: 한파 대비 > 겨울 준비 > 자원 부족 > 평온
+  let advice;
+  if (coldExposed || (coldIncoming && coldDefenseLevel() < 1)) advice = t('brief.advice.cold');
+  else if (prep && (!prep.fuelOk || !prep.cannedOk)) advice = t('brief.advice.winterPrep');
+  else if (warns.length) advice = t('brief.advice.shortage', { list: warns.map(id => RESOURCES[id].emoji + LName(RESOURCES[id])).join(', ') });
+  else advice = t('brief.advice.calm');
+  lines.push(`<div style="font-size:11px;color:var(--good)">▸ ${advice}</div>`);
+  return `<div class="report-sec" style="border-color:#6b5a40"><span class="r-title">${t('brief.title')}</span>${lines.join('')}</div>`;
+}
 function showDayReport() {
   const log = state.dayLog;
   const fmt = obj => Object.entries(obj).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(', ');
@@ -5380,18 +5508,13 @@ function showDayReport() {
         canned: prepChip(prep.cannedHave, prep.cannedNeed, prep.cannedOk),
       })}</div>`
     : '';
-  // 한파 예보 카드 (발동 D-리드타임)
-  const coldForecastHtml = (state.coldSnapForecast > 0 && seasonOf().id === 'winter')
-    ? `<div class="report-sec report-warn">${t('coldsnap.forecast', { n: Math.max(0, state.coldSnapForecast - state.day) })}</div>`
-    : '';
   openModal(t('report.title', { day: state.day - 1 }), `
+    ${briefingHtml(forecast, prep, warns)}
     <div class="report-sec"><span class="r-title">${t('report.gain')}</span><br>${Object.keys(log.gain).length ? fmt(log.gain) : t('none')}</div>
     <div class="report-sec"><span class="r-title">${t('report.spend')}</span><br>${Object.keys(log.spend).length ? fmt(log.spend) : t('none')}</div>
     ${log.notes.length ? `<div class="report-sec"><span class="r-title">${t('report.notes')}</span><br>${log.notes.join('<br>')}</div>` : ''}
     ${prepHtml}
-    ${coldForecastHtml}
     ${warns.length ? `<div class="report-sec report-warn">${t('report.warn', { list: warns.map(id => RESOURCES[id].emoji + LName(RESOURCES[id])).join(', ') })}</div>` : ''}
-    <div class="report-sec">${forecast}</div>
     ${tips.length ? `<div class="report-sec report-tip">💡 ${tips.slice(0, 2).join('<br>💡 ')}</div>` : ''}
   `, 'report');
   state.dayLog = { gain: {}, spend: {}, notes: [] };
@@ -6519,6 +6642,65 @@ $('t-settings').addEventListener('click', () => {
   panel.classList.toggle('show-in-title');
   if (panel.classList.contains('show-in-title')) clampPanel(panel);
 });
+/* ============================================================
+   QA 치트 모드 (#43) — 배포본 숨은 진입점
+   진입: 타이틀 버전 표기(#title-ver) 5연타(2초 내). 인게임 미노출(타이틀에서만).
+   라벨은 QA 전용이므로 한국어만 (i18n 예외).
+============================================================ */
+let _qaTaps = [];
+$('title-ver').addEventListener('click', () => {
+  if (!titleVisible) return; // 인게임/인트로에선 반응 없음
+  const now = Date.now();
+  _qaTaps.push(now);
+  _qaTaps = _qaTaps.filter(t => now - t <= 2000); // 2초 창
+  if (_qaTaps.length >= 5) { _qaTaps = []; openQaPanel(); }
+});
+function markQa() { state.qaUsed = true; } // 오염 방지 플래그 — 업적 해금 무시용
+function openQaPanel() {
+  const btn = (id, label) => `<button class="pixel-btn" data-qa="${id}" style="margin:3px;font-size:11px">${label}</button>`;
+  const body = `
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">⚙️ QA 전용 · 사용 시 이 세이브의 신규 업적은 잠깁니다 (qaUsed)</div>
+    <div style="display:flex;flex-wrap:wrap">
+      ${btn('res100', '자원 전종 +100')}
+      ${btn('gauges', '게이지 풀')}
+      ${btn('unlockAll', '전 셸터 해금')}
+      ${btn('day1', 'Day +1')}
+      ${btn('day10', 'Day +10')}
+      ${btn('day35', '겨울 직전(Day 35)')}
+      ${btn('w_clear', '날씨 맑음')}
+      ${btn('w_snow', '날씨 눈')}
+      ${btn('w_rain', '날씨 비')}
+      ${btn('w_storm', '날씨 폭풍')}
+      ${btn('w_ash', '날씨 재')}
+      ${btn('coldsnap', '한파 즉시 발동')}
+      ${btn('cat', '고양이 소환')}
+      ${btn('questSkip', '온보딩 스킵')}
+    </div>
+    <div id="qa-status" style="font-size:11px;color:var(--good);margin-top:8px;min-height:16px"></div>`;
+  openModal('🛠️ QA 치트 패널', body);
+  const status = m => { const el = $('qa-status'); if (el) el.textContent = m; };
+  $('modal-body').querySelectorAll('[data-qa]').forEach(b => b.addEventListener('click', () => {
+    markQa();
+    const k = b.dataset.qa;
+    switch (k) {
+      case 'res100': for (const id of Object.keys(RESOURCES)) state.res[id] = (state.res[id] || 0) + 100; status('자원 전종 +100'); break;
+      case 'gauges': state.hunger = state.thirst = state.energy = 100; if (state.injury) state.injury = null; status('게이지 풀 + 부상 치료'); break;
+      case 'unlockAll': { const maxUnlock = Math.max(...Object.values(SHELTERS).map(s => s.unlockAt || 0)); state.successes = Math.max(state.successes, maxUnlock); status('전 셸터 해금 (successes=' + state.successes + ')'); break; }
+      case 'day1': state.day += 1; state.gameMin += 1440; status('Day → ' + state.day); break;
+      case 'day10': state.day += 10; state.gameMin += 1440 * 10; status('Day → ' + state.day); break;
+      case 'day35': { const d = 35; state.gameMin += (d - state.day) * 1440; state.day = d; status('Day → 35 (겨울 직전)'); break; }
+      case 'w_clear': setWeather('clear'); status('날씨 = 맑음'); break;
+      case 'w_snow': setWeather('snow'); status('날씨 = 눈'); break;
+      case 'w_rain': setWeather('rain'); status('날씨 = 비'); break;
+      case 'w_storm': setWeather('storm'); status('날씨 = 폭풍'); break;
+      case 'w_ash': setWeather('ash'); status('날씨 = 재'); break;
+      case 'coldsnap': state.coldSnap = { until: state.day + 2, severity: 1 }; state.coldSnapForecast = 0; status('한파 발동 (until Day ' + (state.day + 2) + ')'); break;
+      case 'cat': state.cat = true; spawnCat(); status('고양이 소환'); break;
+      case 'questSkip': state.questIdx = -1; renderQuestCard(); status('온보딩 퀘스트 스킵'); break;
+    }
+    updateHud(); renderResBar(); if (!state.exp) renderExpPanel(); scheduleSave();
+  }));
+}
 if (sessionStorage.getItem('ps-intro')) {
   sessionStorage.removeItem('ps-intro');
   showIntro();
@@ -6777,7 +6959,7 @@ window.__shelter = {
   items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather,
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,
-  comfortDetail, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
+  comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   seasonOf, SEASONS, openMapModal, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
   renderFrame: () => renderFrame(),

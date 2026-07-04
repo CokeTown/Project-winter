@@ -111,4 +111,20 @@ export const BAL = {
     /* 지역 인센티브 확정 보장 */
     industrialGuaranteedFuel: 1, // 공업지대 fuel 최소 확정 획득
   },
+
+  /* ── 쾌적함 4요소 분해 (Living Shelter #29) ──
+     comfortDetail()의 기존 컴포넌트를 4개 축으로 "재분류"만 한다.
+     총점(score) 계산식은 불변 — 여기 표는 오직 "어느 축에 귀속시킬지" 매핑이다.
+     (밸런스 diff 0 보장: score는 기존 그대로, 이 표는 UI 원인표시용 버킷팅) */
+  comfort: {
+    /* 조명 가구의 comfort 값을 온기(warmth) vs 분위기(mood)로 배분.
+       열원(불꽃/발열) 계열은 온기, 전기 조명은 분위기. (합계는 원래 light 총점과 동일) */
+    lightAxis: {
+      stove: 'warmth',    // 장작 난로 — 열원
+      candle: 'warmth',   // 캔들 — 촛불 열
+      lantern: 'warmth',  // 걸이 랜턴 — 등불 열
+      lamp: 'mood',       // 스탠드 조명 — 전기, 분위기
+    },
+    lightAxisDefault: 'mood', // 표에 없는 조명은 분위기로
+  },
 };

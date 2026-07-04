@@ -1,0 +1,232 @@
+{
+  "state": {
+    "ver": 3,
+    "current": "container",
+    "successes": 22,
+    "inventory": {
+      "bed": 3,
+      "rug": 2,
+      "candle": 1,
+      "stove": 2,
+      "lamp": 2,
+      "plant": 2,
+      "radio": 1,
+      "sofa": 1,
+      "bookshelf": 1
+    },
+    "res": {
+      "food": 200,
+      "canned": 200,
+      "water": 200,
+      "cloth": 200,
+      "bandage": 200,
+      "antiseptic": 200,
+      "painkiller": 200,
+      "candle": 200,
+      "battery": 200,
+      "fuel": 200,
+      "parts": 200,
+      "material": 200
+    },
+    "layouts": {
+      "container": [
+        {
+          "d": "crate",
+          "c": 1,
+          "x": 2.5,
+          "z": -0.75,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        },
+        {
+          "d": "stove",
+          "c": 0,
+          "x": -1.5,
+          "z": 1,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        },
+        {
+          "d": "lamp",
+          "c": 0,
+          "x": 1.5,
+          "z": 1,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        },
+        {
+          "d": "plant",
+          "c": 0,
+          "x": 0,
+          "z": 1.5,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        },
+        {
+          "d": "radio",
+          "c": 0,
+          "x": 2,
+          "z": 0.5,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        },
+        {
+          "d": "bed",
+          "c": 0,
+          "x": -2,
+          "z": -1.5,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        },
+        {
+          "d": "sofa",
+          "c": 0,
+          "x": -1.2,
+          "z": -1.5,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        },
+        {
+          "d": "stove",
+          "c": 0,
+          "x": -0.4,
+          "z": -1.5,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        },
+        {
+          "d": "rug",
+          "c": 0,
+          "x": 0.4,
+          "z": -1.5,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        },
+        {
+          "d": "plant",
+          "c": 0,
+          "x": 1.2,
+          "z": -1.5,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        },
+        {
+          "d": "bookshelf",
+          "c": 0,
+          "x": 2,
+          "z": -1.5,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        },
+        {
+          "d": "lamp",
+          "c": 0,
+          "x": 2.8,
+          "z": -1.5,
+          "r": 0,
+          "o": 1,
+          "y": 0
+        }
+      ],
+      "bunker": [],
+      "rooftop": [],
+      "cabin": [],
+      "bus": [],
+      "subway": [],
+      "greenhouse": [],
+      "ship": [],
+      "lighthouse": []
+    },
+    "exp": null,
+    "injury": null,
+    "gameMin": 56640,
+    "day": 40,
+    "savedAt": 1783181042067,
+    "weatherType": "storm",
+    "weatherUntil": 58970.15,
+    "cleanBy": {
+      "container": 27,
+      "bunker": 70,
+      "rooftop": 70,
+      "cabin": 70,
+      "bus": 70,
+      "subway": 70,
+      "greenhouse": 70,
+      "ship": 70,
+      "lighthouse": 70
+    },
+    "renovated": {
+      "container": true
+    },
+    "hunger": 100,
+    "thirst": 100,
+    "energy": 100,
+    "expToday": 3,
+    "expFailStreak": 0,
+    "upkeepOk": true,
+    "dayLog": {
+      "gain": {},
+      "spend": {},
+      "notes": []
+    },
+    "helpSeen": true,
+    "stats": {
+      "exp": 3,
+      "success": 3
+    },
+    "buff": null,
+    "pendingEvent": null,
+    "lastEventDay": 1,
+    "mods": {},
+    "stayDays": 0,
+    "cat": 1,
+    "catMusicDay": 0,
+    "catEventSeen": false,
+    "catHungry": false,
+    "endingSeen": false,
+    "tutDay": 1,
+    "tipsSeen": {
+      "tip.rain": true,
+      "tip.event": true
+    },
+    "pendingTutorial": null,
+    "questIdx": 0,
+    "mode": "normal",
+    "coldSnap": null,
+    "coldSnapForecast": 41,
+    "coldSnapsThisWinter": 0,
+    "coldSnapWinterKey": -1,
+    "lastUnlockCount": 8,
+    "achs": {
+      "first": true
+    },
+    "activeEvent": "wanderer",
+    "qaUsed": true
+  },
+  "opts": {
+    "pixel": 3,
+    "quant": true,
+    "dither": true,
+    "ceil": true,
+    "autoEat": true,
+    "autoPlay": false,
+    "bgm": true,
+    "bgmVol": 0.15,
+    "sfxVol": 0.07,
+    "lang": "ko",
+    "fpsCap": 60,
+    "lowSpec": false,
+    "bgIdle": true
+  }
+}
