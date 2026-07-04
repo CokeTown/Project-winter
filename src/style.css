@@ -267,6 +267,9 @@
     padding: 7px 16px; font-size: 12px; color: var(--accent);
     opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 55;
     text-align: center;
+    /* 장문 토스트가 화면 밖으로 나가지 않게 폭 상한 + 어절 단위 줄바꿈 */
+    max-width: min(88vw, 420px);
+    word-break: keep-all; overflow-wrap: break-word;
     zoom: var(--uiz);
   }
   #toast.show { opacity: 1; }
@@ -328,6 +331,7 @@
   #intro-text {
     max-width: 480px; font-size: 15px; line-height: 2.1; color: var(--text);
     text-align: center; margin-bottom: 40px; min-height: 100px;
+    word-break: keep-all; overflow-wrap: break-word;
     animation: introfade 1.2s ease-out;
     zoom: var(--uiz);
   }
@@ -363,7 +367,7 @@
   }
   #journal-screen.show #journal-paper { transform: translateY(0) rotate(-1deg); opacity: 1; }
   #journal-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; letter-spacing: 1px; }
-  #journal-body { font-size: 12px; line-height: 1.9; min-height: 90px; }
+  #journal-body { font-size: 12px; line-height: 1.9; min-height: 90px; word-break: keep-all; overflow-wrap: break-word; }
   #journal-body kbd { background: rgba(58,48,38,0.12); border: 1px solid rgba(58,48,38,0.4); border-radius: 3px; padding: 0 5px; font-family: inherit; color: #3a3026; }
   #journal-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
   #journal-page-ind { font-size: 11px; color: rgba(58,48,38,0.65); letter-spacing: 1px; }
@@ -381,6 +385,7 @@
        배경색/클립패스/박스섀도는 투명 PNG 밖으로 사각형이 비쳐서 금지 */
     background: transparent no-repeat center / 100% 100%;
     color: #3a3026; font-size: 11px; line-height: 1.7;
+    word-break: keep-all; overflow-wrap: break-word;
     font-family: 'DungGeunMo', 'Malgun Gothic', sans-serif;
     cursor: pointer; user-select: none;
     filter: drop-shadow(0 6px 14px rgba(0,0,0,0.4));
@@ -398,6 +403,7 @@
     width: 220px; padding: 8px 10px;
     background: rgba(12, 13, 17, 0.88);
     border: 2px solid var(--panel-border); border-radius: 4px;
+    word-break: keep-all; overflow-wrap: break-word;
     zoom: var(--uiz);
     cursor: default;
     box-shadow: 0 6px 16px rgba(0,0,0,0.35);
@@ -487,7 +493,10 @@
     max-width: 220px; padding: 7px 11px; font-size: 12px;
     background: rgba(12, 13, 17, 0.92); border-color: var(--accent); color: var(--accent);
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    /* 칩 계열: 장문 제목은 어절 단위 줄바꿈 후 2줄 말줄임 (세로로 자라 화면을 밀지 않게) */
+    word-break: keep-all; overflow-wrap: break-word;
     overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
     animation: chipin 0.28s ease-out;
     zoom: var(--uiz);
   }
@@ -600,6 +609,7 @@
   #ending-text {
     max-width: 520px; font-size: 15px; line-height: 2.1; color: var(--text);
     text-align: center; margin-bottom: 40px; min-height: 100px;
+    word-break: keep-all; overflow-wrap: break-word;
     animation: introfade 1.2s ease-out;
     zoom: var(--uiz);
   }

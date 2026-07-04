@@ -385,7 +385,7 @@ export const STR = {
 
   /* ── 거처 모달 ── */
   'shelter.modalTitle':{ ko: '🗺️ 구역과 거처', en: '🗺️ Districts & Shelters' },
-  'shelter.intro':    { ko: '같은 구역 안에서는 자유롭게 오가지만, <b>다른 구역으로의 이주는 물자(🥫1+💧1)와 시간(3시간)</b>이 듭니다. 처음 입주하는 거처는 <b>정비 자원</b>이 필요합니다. 배치한 가구는 각 거처에 남고 인벤토리는 공유됩니다.', en: 'You can move freely within a district, but <b>relocating to another district costs supplies (🥫1+💧1) and time (3h)</b>. Moving into a shelter for the first time requires <b>refit resources</b>. Placed furniture stays with each shelter; your inventory is shared.' },
+  'shelter.intro':    { ko: '같은 구역 안에서는 자유롭게 오갑니다. 하지만 <b>다른 구역으로 이주하려면 물자(🥫1+💧1)와 시간(3시간)</b>이 듭니다. 처음 들어가는 거처는 <b>정비 자원</b>이 필요합니다. 배치한 가구는 각 거처에 남고 인벤토리는 함께 씁니다.', en: 'You can move freely within a district, but <b>relocating to another district costs supplies (🥫1+💧1) and time (3h)</b>. Moving into a shelter for the first time requires <b>refit resources</b>. Placed furniture stays with each shelter; your inventory is shared.' },
   'shelter.districtHeader':{ ko: '{emoji} <b>{name}</b>{here}<span style="font-size:10px"> · {bonus}</span><br><span style="font-size:10px;color:var(--text-dim)">{desc}</span>', en: '{emoji} <b>{name}</b>{here}<span style="font-size:10px"> · {bonus}</span><br><span style="font-size:10px;color:var(--text-dim)">{desc}</span>' },
   'shelter.hereTag':  { ko: ' — 현재 구역', en: ' — current district' },
   'shelter.unrefit':  { ko: ' <span style="color:var(--text-dim);font-size:10px">(미정비)</span>', en: ' <span style="color:var(--text-dim);font-size:10px">(unrefit)</span>' },
