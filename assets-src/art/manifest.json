@@ -810,6 +810,206 @@
       "fit": "cover",
       "dest": "assets-src/art/out/map_paper.png",
       "prompt": "A weathered hand-drawn survivor's paper map of a ruined city region, spread flat, filling the frame. Aged ivory paper with fold creases, burnt corner, coffee stain, drawn in ink and faded colored pencil: a winding main road crossing the map, a river with a broken bridge, and four distinct districts sketched as clusters - small suburban houses (upper left area), dense downtown ruins with tall broken buildings (upper right), a factory zone with smokestacks (lower left), and cramped shanty slums (lower right). Small hand annotations like arrows, X marks, circled areas, tiny warning symbols, a simple compass rose in a corner, dashed travel routes between districts. Muted desaturated palette with warm sepia ink and sparse red-pencil accents, subtle pixel-art grain, readable at a glance. Keep each district cluster visually separated with open paper space between them for UI markers. No text, no letters, no words - symbols and drawings only."
+    },
+    {
+      "id": "ev_trader",
+      "purpose": "이벤트 일러스트: trader",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_trader.png",
+      "prompt": "A traveling trader with a huge overloaded backpack of pots and tools standing at a snowy path near a small shelter, lantern light between them, ready to move on. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_dog",
+      "purpose": "이벤트 일러스트: dog",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_dog.png",
+      "prompt": "A thin stray dog with hopeful eyes sitting at the edge of a shelter's light in falling snow, tail making a small sweep in the snow. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_storm",
+      "purpose": "이벤트 일러스트: storm",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_storm.png",
+      "prompt": "Violent wind bending bare trees around a small shelter at dusk, loose boards and a tarp flapping, warm window light holding against the dark. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_broken",
+      "purpose": "이벤트 일러스트: broken",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_broken.png",
+      "prompt": "A workbench corner with a disassembled water purifier, scattered screws and a wrench in warm candlelight, tools laid out on a cloth. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_seeds",
+      "purpose": "이벤트 일러스트: seeds",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_seeds.png",
+      "prompt": "A small rusted tin box opened on a table revealing paper seed packets, lit by warm lamp light, dust motes in the air. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_radio_sig",
+      "purpose": "이벤트 일러스트: radio_sig",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_radio_sig.png",
+      "prompt": "An old radio on a crate glowing with dial light in a dark room, static-lit face of the room, a hand-drawn frequency note pinned beside it. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_cat",
+      "purpose": "이벤트 일러스트: cat",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_cat.png",
+      "prompt": "An orange tabby cat stepping carefully through snow toward a warm doorway light at dusk, small paw prints trailing behind. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_doctor_radio",
+      "purpose": "이벤트 일러스트: doctor_radio",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_doctor_radio.png",
+      "prompt": "A radio in a dark shelter at night emitting a faint green glow, snow outside the window, the room lit only by the dial — as if the voice itself has weight. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_coldsnap_stranger",
+      "purpose": "이벤트 일러스트: coldsnap_stranger",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_coldsnap_stranger.png",
+      "prompt": "A bundled stranger collapsed against a shelter door in a blizzard at night, warm light spilling through the door crack onto them. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_spoil_merchant",
+      "purpose": "이벤트 일러스트: spoil_merchant",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_spoil_merchant.png",
+      "prompt": "A shifty merchant in summer opening a crate of suspiciously discolored canned goods, heat haze, flies, the cans catching too-bright sunlight. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_leaky_roof",
+      "purpose": "이벤트 일러스트: leaky_roof",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_leaky_roof.png",
+      "prompt": "Rainwater dripping from a corrugated ceiling into a metal bucket in a dim shelter, ripples in the bucket, wet stain spreading on the wall. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_snow_prints",
+      "purpose": "이벤트 일러스트: snow_prints",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_snow_prints.png",
+      "prompt": "Fresh deep footprints circling a small shelter in morning snow, no one in sight, pale dawn light, the door still closed. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_lighthouse_ship",
+      "purpose": "이벤트 일러스트: lighthouse_ship",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_lighthouse_ship.png",
+      "prompt": "View from a lighthouse gallery at night — a faint ship light far out on a dark sea, the lighthouse beam sweeping, snow drifting. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_greenhouse_birds",
+      "purpose": "이벤트 일러스트: greenhouse_birds",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_greenhouse_birds.png",
+      "prompt": "Small birds perched inside a broken greenhouse pecking at seed trays, morning light through cracked glass panes. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_distant_light",
+      "purpose": "이벤트 일러스트: distant_light",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_distant_light.png",
+      "prompt": "Night view from a rooftop railing across a ruined city skyline — one distant window lit warm among dark towers, stars faint above. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_radio_ghost",
+      "purpose": "이벤트 일러스트: radio_ghost",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_radio_ghost.png",
+      "prompt": "An old radio at night with its dial glowing between stations, the room dark, a notebook and pencil beside it mid-note. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_old_calendar",
+      "purpose": "이벤트 일러스트: old_calendar",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_old_calendar.png",
+      "prompt": "A faded wall calendar from before the collapse hanging crooked on a peeling wall, one date circled in red, dust in a shaft of light. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_cat_gift",
+      "purpose": "이벤트 일러스트: cat_gift",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_cat_gift.png",
+      "prompt": "An orange tabby cat sitting proudly beside a small \"gift\" left on the doorstep at dawn, tail curled, innocent expression. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_frozen_pipe",
+      "purpose": "이벤트 일러스트: frozen_pipe",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_frozen_pipe.png",
+      "prompt": "A burst frozen pipe under a sink with icicles formed at the crack, a wrench and cloth laid ready, cold blue morning light. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_caravan_pass",
+      "purpose": "이벤트 일러스트: caravan_pass",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_caravan_pass.png",
+      "prompt": "Seen from afar: a small caravan of silhouetted figures with a cart crossing a distant ridge at golden hour, never coming closer, power lines in the foreground. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
     }
   ]
 }
