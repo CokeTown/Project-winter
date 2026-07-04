@@ -471,7 +471,7 @@ function setWeather(type) {
     weather.pts.visible = true;
     weather.pts.material.color.setHex(W.color);
     weather.pts.material.size = W.size;
-    weather.pts.geometry.setDrawRange(0, W.count);
+    weather.pts.geometry.setDrawRange(0, weatherDrawCount(type));
   }
   updateHud();
   if (!state.exp) renderExpPanel();
@@ -2197,7 +2197,7 @@ function resConsumeAll(cost) {
 function costLabel(cost) {
   return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(' + ');
 }
-const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko' };
+const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko', fpsCap: 60, lowSpec: false, bgIdle: true };
 
 /* ============================================================
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
@@ -3864,11 +3864,25 @@ canvas.addEventListener('wheel', e => {
   camState.zoom = THREE.MathUtils.clamp(camState.zoom * (e.deltaY < 0 ? 1.1 : 0.9), 0.25, 3.2);
 }, { passive: false });
 
+// v2.4: PC 판정 — 포인터가 정밀(마우스)하고 터치 지원이 없는 기기만 "PC"로 취급.
+const isPcInput = matchMedia('(pointer: fine)').matches && !('ontouchstart' in window);
+function toggleSettingsPanel() {
+  const rp = $('render-panel');
+  const willShow = rp.style.display === 'none';
+  rp.style.display = willShow ? '' : 'none';
+  if (willShow) { clampPanel(rp); reclampAllPanels(); }
+}
 addEventListener('keydown', e => {
   if (titleVisible) return;
   if (e.key === 'q' || e.key === 'Q') camState.targetYaw -= Math.PI / 4;
   if (e.key === 'e' || e.key === 'E') camState.targetYaw += Math.PI / 4;
-  if (e.key === 'Escape') { cancelPlacing(); deselect(); closeModal(); }
+  if (e.key === 'Escape') {
+    // 우선순위: 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 패널 토글
+    if (placing) { cancelPlacing(); }
+    else if (selected) { deselect(); }
+    else if ($('modal-back').classList.contains('show')) { closeModal(); }
+    else if (isPcInput) { toggleSettingsPanel(); }
+  }
   if (e.key === 'r' || e.key === 'R') rotateActive();
   if (e.key === 'p' || e.key === 'P') setPaused(!paused);
   if ((e.key === 'Delete' || e.key === 'Backspace') && selected && !placing) reclaimSelected();
@@ -3988,7 +4002,7 @@ function updateEnvironment(t, dt) {
     }
     if (envDyn.buildings) for (const b of envDyn.buildings) b.obj.visible = b.dir.dot(cd) < 0.4;
   }
-  if (envDyn.leaves) {
+  if (envDyn.leaves && !opts.lowSpec) {
     for (const L of envDyn.leaves) {
       const p = L.pts.geometry.attributes.position;
       for (let i = 0; i < L.meta.length; i++) {
@@ -4013,7 +4027,7 @@ function updateEnvironment(t, dt) {
     }
     p.needsUpdate = true;
   }
-  if (envDyn.fireflies) {
+  if (envDyn.fireflies && !opts.lowSpec) {
     const f = envDyn.fireflies;
     const p = f.pts.geometry.attributes.position;
     for (let i = 0; i < f.base.length; i++) {
@@ -4030,8 +4044,8 @@ function updateEnvironment(t, dt) {
   if (envDyn.fire) {
     envDyn.fire.intensity = envDyn.fireBase * (0.75 + 0.3 * Math.sin(t * 9) * Math.sin(t * 4.7) + 0.12 * Math.sin(t * 21));
   }
-  // 실내 먼지 모트 느린 부유
-  {
+  // 실내 먼지 모트 느린 부유 (저사양 모드에선 갱신 스킵)
+  if (!opts.lowSpec) {
     const p = dust.pts.geometry.attributes.position;
     for (let i = 0; i < p.count; i++) {
       p.setY(i, p.getY(i) + Math.sin(t * 0.35 + dust.phase[i]) * 0.0009);
@@ -5042,30 +5056,63 @@ const postMat = new THREE.ShaderMaterial({
 });
 postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
 
+// v2.4: 언어 전환 시 흰 화면 번쩍임 방지 — veil을 올리고 트랜지션이 끝난 뒤 재로딩한다.
+function reloadWithVeil() {
+  const veil = $('fade-veil');
+  if (veil) {
+    veil.style.transition = '';
+    veil.style.pointerEvents = 'auto';
+    veil.style.opacity = '1';
+  }
+  setTimeout(() => { sessionStorage.setItem('nw-veil', '1'); location.reload(); }, 300);
+}
+// v2.4: 저사양 모드 — 그림자맵 끄기 + 날씨 파티클 drawRange 50%
+function weatherDrawCount(type) {
+  const W = WEATHERS[type];
+  if (!W || !W.count) return 0;
+  return opts.lowSpec ? Math.round(W.count * 0.5) : W.count;
+}
+function applyLowSpec() {
+  renderer.shadowMap.enabled = !opts.lowSpec;
+  shadowDirty();
+  if (weather.pts.visible) weather.pts.geometry.setDrawRange(0, weatherDrawCount(weather.type));
+}
 function applyOpts() {
   $('opt-pixel').value = opts.pixel; $('opt-quant').checked = opts.quant;
   $('opt-dither').checked = opts.dither; $('opt-ceil').checked = opts.ceil;
   $('opt-autoeat').checked = opts.autoEat !== false;
   $('opt-lang').value = opts.lang || 'ko';
+  $('opt-fps').value = String(opts.fpsCap || 60);
+  $('opt-lowspec').checked = !!opts.lowSpec;
+  $('opt-bgidle').checked = opts.bgIdle !== false;
   postMat.uniforms.uQuant.value = opts.quant ? 1 : 0;
   postMat.uniforms.uDither.value = opts.dither ? 1 : 0;
   ceilLight.visible = opts.ceil;
   shadowDirty();
   makeRT();
+  applyLowSpec();
 }
 $('opt-pixel').addEventListener('input', e => { opts.pixel = +e.target.value; applyOpts(); scheduleSave(); });
 $('opt-quant').addEventListener('change', e => { opts.quant = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-dither').addEventListener('change', e => { opts.dither = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; scheduleSave(); });
-// 언어 전환: 저장 후 재로딩 (라이브 리렌더 대신 단순하게)
+$('opt-fps').addEventListener('change', e => { opts.fpsCap = +e.target.value || 60; scheduleSave(); });
+$('opt-lowspec').addEventListener('change', e => { opts.lowSpec = e.target.checked; applyLowSpec(); scheduleSave(); });
+$('opt-bgidle').addEventListener('change', e => {
+  opts.bgIdle = e.target.checked;
+  if (!opts.bgIdle && document.hidden) { bgm.pause(); setAmbience(null); setFire(false); }
+  else if (opts.bgIdle && document.hidden) syncSfxAmbience();
+  scheduleSave();
+});
+// 언어 전환: 저장 후 재로딩 (라이브 리렌더 대신 단순하게) — veil로 암전 후 전환
 $('opt-lang').addEventListener('change', e => {
   const next = e.target.value === 'en' ? 'en' : 'ko';
   if (next === (opts.lang || 'ko')) return;
   if (!confirm(t('lang.confirm'))) { e.target.value = opts.lang || 'ko'; return; }
   opts.lang = next;
   flushSave();               // 즉시 저장 후
-  location.reload();         // 재로딩하며 부팅 시 setLang(opts.lang) 적용
+  reloadWithVeil();          // 재로딩하며 부팅 시 setLang(opts.lang) 적용
 });
 
 /* ============================================================
@@ -5220,6 +5267,9 @@ makeDraggablePanel($('exp-panel'), 'exp', t('panel.exp'));
 makeDraggablePanel($('render-panel'), 'render', t('panel.render'));
 makeDraggablePanel($('clock-panel'), 'clock', t('panel.clock'));
 makeDraggablePanel($('res-bar'), 'res', t('panel.res'));
+// v2.4: PC는 설정 패널을 기본 숨김 — ESC로 토글 (게임 문법). 터치 기기는 항상 표시(현행 유지).
+// display만 제어하므로 $('opt-...') 접근/이벤트는 숨겨진 상태에서도 정상 동작한다.
+if (isPcInput) $('render-panel').style.display = 'none';
 
 // 타이틀 / 인트로 (자리 비운 사이 끝난 탐험 정산은 hideTitle에서 — 타이틀에선 집만 보여준다)
 $('t-continue').addEventListener('click', hideTitle);
@@ -5228,7 +5278,7 @@ function pickTitleLang(next) {
   if (next === (opts.lang || 'ko')) return;
   opts.lang = next;
   flushSave();
-  location.reload();
+  reloadWithVeil();
 }
 $('lang-ko').addEventListener('click', () => pickTitleLang('ko'));
 $('lang-en').addEventListener('click', () => pickTitleLang('en'));
@@ -5302,9 +5352,40 @@ function renderFrame() {
   renderer.render(postScene, postCam);
   updateScreenFx(dt, t);
 }
-function animate() { requestAnimationFrame(animate); renderFrame(); }
-animate();
-setInterval(() => { if (document.hidden) renderFrame(); }, 500);
+// v2.4: 숨김(document.hidden) 상태에서는 3D 렌더/카메라/환경/FX를 전부 건너뛰고
+// 로직(시간 진행 + BGM 상태 동기화)만 1초 간격으로 처리한다 (배터리/CPU 절약).
+function logicTick() {
+  const dt = Math.min(clock.getDelta(), 1.5); // 숨김 중엔 긴 델타 허용 (1초 간격 폴링)
+  if (!titleVisible && !paused && !endingActive) tickTime(dt);
+  else if (state.exp) state.exp.end += dt * 1000;
+  syncBgm();
+}
+let hiddenTimer = null;
+function stopHiddenTimer() { if (hiddenTimer) { clearInterval(hiddenTimer); hiddenTimer = null; } }
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopHiddenTimer();
+    hiddenTimer = setInterval(logicTick, 1000);
+    if (!opts.bgIdle) { bgm.pause(); setAmbience(null); setFire(false); }
+  } else {
+    stopHiddenTimer();
+    clock.getDelta(); // 숨김 동안 쌓인 델타를 한 번 버려 rAF 복귀 시 이중 진행 방지
+    if (!opts.bgIdle) syncSfxAmbience(); // 백그라운드 소리 껐던 경우 복귀 시 재개
+  }
+});
+let lastFrameTime = 0;
+function animate(now) {
+  requestAnimationFrame(animate);
+  if (document.hidden) return; // 숨김 중엔 hiddenTimer(logicTick)가 대신 처리
+  const capFps = opts.fpsCap || 60;
+  if (capFps < 60) {
+    const minDelta = 1000 / capFps;
+    if (now - lastFrameTime < minDelta) return;
+    lastFrameTime = now;
+  }
+  renderFrame();
+}
+requestAnimationFrame(animate);
 document.getElementById('loading').style.display = 'none';
 
 // 디버그/테스트용 핸들

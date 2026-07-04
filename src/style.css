@@ -458,6 +458,12 @@
   /* ── v1.9: 화면 날씨 오버레이 (빗방울/서리) ── */
   #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
 
+  /* ── v2.4: 언어 전환 암전 베일 (깜빡임 제거) ── */
+  #fade-veil {
+    position: fixed; inset: 0; background: #07080b; opacity: 0;
+    pointer-events: none; transition: opacity .28s; z-index: 99;
+  }
+
   /* ── v1.9: 일시정지 ── */
   #pause-ind {
     display: none; position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
