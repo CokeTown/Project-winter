@@ -337,6 +337,28 @@ function lerpHex(h1, h2, f, target) {
 let dayness = 0;
 // 창문 하늘판 재질 — 낮/밤/날씨 따라 밝기 갱신 (loadShelter마다 재수집)
 const winSkyMats = [];
+// 쨍한 낮 전용 창가 빛기둥/먼지 (loadShelter마다 재수집, updateSunShafts가 투명도 구동)
+const sunShafts = [];
+const sunMotes = [];
+let _beamTex = null;
+function beamTex() {
+  if (_beamTex) return _beamTex;
+  const cv = document.createElement('canvas'); cv.width = 8; cv.height = 64;
+  const g2 = cv.getContext('2d');
+  const gr = g2.createLinearGradient(0, 0, 0, 64); // v0=창가(밝음) → v1=바닥(소멸)
+  gr.addColorStop(0, 'rgba(255,255,255,0.95)');
+  gr.addColorStop(0.55, 'rgba(255,255,255,0.4)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g2.fillStyle = gr; g2.fillRect(0, 0, 8, 64);
+  _beamTex = new THREE.CanvasTexture(cv);
+  return _beamTex;
+}
+function updateSunShafts() {
+  if (!sunShafts.length && !sunMotes.length) return;
+  const s = (weather.type === 'clear' && !opts.lowSpec) ? dayness : 0;
+  for (const b of sunShafts) { b.material.opacity = 0.26 * s; b.visible = s > 0.02; }
+  for (const p of sunMotes) { p.material.opacity = 0.55 * s; p.visible = s > 0.02; }
+}
 function updateWindowSkies() {
   if (!winSkyMats.length) return;
   const dark = weather.type === 'rain' || weather.type === 'storm' ? 0.35
@@ -360,6 +382,7 @@ function applyTimeLighting() {
     stars.material.opacity = 0;
     dayness = 0;
     moonMesh.visible = false;
+    updateSunShafts(); // 지하: dayness=0 → 빛기둥 소등
     return;
   }
   const h = gameHour();
@@ -379,8 +402,13 @@ function applyTimeLighting() {
   const starsBase = A.stars + (B.stars - A.stars) * f;
   stars.material.opacity = starsBase * (weather.type === 'clear' ? 1 : 0.25);
   dayness = THREE.MathUtils.clamp((hemi.intensity - 0.7) / 0.35, 0, 1);
+  // 날씨 광량 대비: 맑은 날은 쨍하게(+6%), 궂은 날은 태양광을 깎는다 — 낮에만 체감(dayness 가중)
+  const wSun = { clear: 1.06, snow: 0.8, rain: 0.55, ash: 0.62, storm: 0.42 }[weather.type] ?? 1;
+  moon.intensity *= 1 + (wSun - 1) * dayness;
+  hemi.intensity *= 1 + (wSun - 1) * 0.45 * dayness;
   moonMesh.visible = dayness < 0.35;
   updateWindowSkies();
+  updateSunShafts();
 }
 function timeLabel() {
   const h = gameHour();
@@ -837,6 +865,42 @@ function stdWall(len, h, mat, opts = {}) {
     winSkyMats.push(sky.material);
     sky.position.set(winX, winY, -0.02);
     g.add(sky);
+    // 창가 빛기둥 (TLOU 무드): 창 상단 모서리에서 방(+z) 안쪽 바닥으로 비스듬히 떨어지는
+    // 가산 시트. 벽 그룹에 부모라 벽 배치/회전을 그대로 따라간다. 쨍한 낮에만 보인다.
+    const x1 = winX - winW / 2, x2 = winX + winW / 2;
+    const yT = winY + winH / 2;
+    const zL = yT * 1.05; // 바닥 착지 깊이 ≈ 45° 남짓
+    const bg = new THREE.BufferGeometry();
+    bg.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+      x1, yT, 0.13, x2, yT, 0.13, x1, 0.03, zL, x2, 0.03, zL,
+    ]), 3));
+    bg.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), 2));
+    bg.setIndex([0, 2, 1, 2, 3, 1]);
+    const beam = new THREE.Mesh(bg, new THREE.MeshBasicMaterial({
+      map: beamTex(), color: 0xffedc4, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false,
+    }));
+    beam.visible = false;
+    g.add(beam);
+    sunShafts.push(beam);
+    // 빛기둥 속 먼지 입자 20개 — 프리즘 내부에 고정 분포, 렌더 루프에서 느리게 부유
+    const N = 20, pos = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) {
+      const u = Math.random(), v = Math.random();
+      pos[i * 3] = x1 + (x2 - x1) * u;
+      pos[i * 3 + 1] = 0.05 + (yT - 0.05) * (1 - v);
+      pos[i * 3 + 2] = 0.13 + (zL - 0.13) * v + (Math.random() - 0.5) * 0.1;
+    }
+    const pg = new THREE.BufferGeometry();
+    pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const motes = new THREE.Points(pg, new THREE.PointsMaterial({
+      color: 0xfff3d6, size: 0.05, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
+    }));
+    motes.visible = false;
+    motes.userData.phase = Math.random() * Math.PI * 2;
+    g.add(motes);
+    sunMotes.push(motes);
   }
   return g;
 }
@@ -2448,6 +2512,20 @@ function footprintOf(item) {
   const fp = DEFS[item.defId].fp;
   return item.rot % 2 ? { w: fp.d, d: fp.w } : { w: fp.w, d: fp.d };
 }
+// 발광 가구 공용 헤일로 텍스처 (방사형 그라데이션) — 광원 주위에 "빛나는 티"를 내는 스프라이트용
+let _glowTex = null;
+function glowTex() {
+  if (_glowTex) return _glowTex;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const g2 = cv.getContext('2d');
+  const gr = g2.createRadialGradient(32, 32, 2, 32, 32, 31);
+  gr.addColorStop(0, 'rgba(255,255,255,0.9)');
+  gr.addColorStop(0.35, 'rgba(255,255,255,0.32)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g2.fillStyle = gr; g2.fillRect(0, 0, 64, 64);
+  _glowTex = new THREE.CanvasTexture(cv);
+  return _glowTex;
+}
 function buildItemGroup(item) {
   const def = DEFS[item.defId];
   const g = def.build(def.colors[item.colorIdx], item.colorIdx);
@@ -2465,6 +2543,17 @@ function buildItemGroup(item) {
     g.add(L);
     item.lightObj = L;
     item.lightBase = def.light.intensity;
+    // 헤일로: 포인트 라이트만으론 광원 자체가 빛나 보이지 않는다 — 가산 스프라이트로 발광체 표식
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTex(), color: def.light.color, blending: THREE.AdditiveBlending,
+      transparent: true, opacity: 0.3, depthWrite: false,
+    }));
+    const sc = Math.max(0.85, def.light.dist * 0.16);
+    sp.scale.set(sc, sc, 1);
+    sp.position.set(0, def.light.y, 0);
+    g.add(sp);
+    item.glowSprite = sp;
+    item.glowBase = 0.3;
   }
   g.userData.item = item;
   return g;
@@ -2489,6 +2578,7 @@ function addItem(defId, colorIdx, x, z, rot, on = true, y = 0) {
 function setItemPower(item, on, { silent = true } = {}) {
   item.on = on;
   if (item.lightObj) item.lightObj.visible = on;
+  if (item.glowSprite) item.glowSprite.visible = on;
   for (const m of (item.glowMeshes || [])) {
     m.material.emissiveIntensity = on ? m.userData.origEmissiveI : 0.03;
   }
@@ -2612,6 +2702,7 @@ function loadShelter(id) {
   wallList = []; blockers = []; envDyn = {};
   weatherFx.caps = []; wetApplied = -1;
   winSkyMats.length = 0; // 창문 하늘판 재수집
+  sunShafts.length = 0; sunMotes.length = 0; // 빛기둥/먼지도 재수집 (envRoot dispose와 함께 소멸)
   // 초봄(Day 1~2) 시작: 겨울의 끝자락 잔설이 남아있다가 서서히 녹는다 (최초 입장 1회만 시딩)
   if (!snowSeeded && state.day <= 2 && seasonOf().id === 'spring') { snowCover = 0.25; snowSeeded = true; }
 
@@ -6303,8 +6394,16 @@ function renderFrame() {
   updateCat(t, dt);
   for (const it of items) {
     if (it.lightObj && it.on !== false && DEFS[it.defId].light?.flicker) {
-      it.lightObj.intensity = it.lightBase * (0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23));
+      const k = 0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23);
+      it.lightObj.intensity = it.lightBase * k;
+      if (it.glowSprite) it.glowSprite.material.opacity = it.glowBase * (0.6 + 0.4 * k); // 헤일로도 함께 일렁임
     }
+  }
+  // 빛기둥 먼지 부유 (그룹 오프셋만 — 정점 갱신 없이 공짜)
+  for (const p of sunMotes) {
+    if (!p.visible) continue;
+    p.position.y = 0.03 * Math.sin(t * 0.4 + p.userData.phase);
+    p.position.x = 0.02 * Math.sin(t * 0.23 + p.userData.phase * 1.7);
   }
   if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); syncBgm(); syncSfxAmbience(); }
   renderer.setRenderTarget(rt);

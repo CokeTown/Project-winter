@@ -137,8 +137,9 @@ const DEFS = {
       Cyl(g, 0.16, 0.2, 0.06, 0x3f3a33, 0, 0.03, 0);
       Cyl(g, 0.025, 0.025, 1.25, 0x565049, 0, 0.68, 0);
       const sh = Cyl(g, 0.16, 0.24, 0.4, c, 0, 1.5, 0);
-      sh.material.emissive = new THREE.Color(c);
-      sh.material.emissiveIntensity = 0.25;
+      // 갓은 "안에서 빛이 차오르는" 웜톤으로 — 갓 색 그대로 약하게 빛내면(0.25) 켜진 티가 안 난다
+      sh.material.emissive = new THREE.Color(0xffc070);
+      sh.material.emissiveIntensity = 0.85;
       sh.userData.glow = true;
       const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6),
         new THREE.MeshLambertMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 1 }));
