@@ -18,19 +18,9 @@
 <canvas id="c"></canvas>
 <canvas id="fx"></canvas>
 <div id="loading" data-i18n="loading">SHELTER LOADING . . .</div>
-<div id="fade-veil"></div>
-<script>
-  // v2.4: 언어 전환 암전 — 재로딩 직전 veil을 올려둔 상태를 sessionStorage로 넘겨받아
-  // 부팅 시 즉시 veil을 opacity:1로 시작해 흰 화면 번쩍임을 막는다.
-  // (메인 루프 시작 지점에서 0으로 페이드아웃 — src/game.js 참고)
-  if (sessionStorage.getItem('nw-veil')) {
-    sessionStorage.removeItem('nw-veil');
-    var _veil = document.getElementById('fade-veil');
-    _veil.style.transition = 'none';
-    _veil.style.opacity = '1';
-    _veil.style.pointerEvents = 'auto';
-  }
-</script>
+<!-- 모든 페이지 로드는 암전에서 시작 — 스타일시트/JS 로드 전의 맨 HTML이 절대 보이지 않도록
+     핵심 스타일을 인라인으로 박는다. 부팅 완료 시 game.js가 페이드아웃. -->
+<div id="fade-veil" style="position:fixed;inset:0;background:#07080b;opacity:1;pointer-events:auto;z-index:999"></div>
 
 <div id="title-screen" style="display:none">
   <div id="title-inner">

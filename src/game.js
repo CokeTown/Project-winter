@@ -3125,6 +3125,8 @@ function buildCatMesh() {
   B(body, 4.06 * PX, 1.6 * PX, 10 * PX, white, 0, -1.6 * PX, 6 * PX); // 배쪽 흰색 밴드 (아랫면에 얇게 덧대어 파묻힘 없이 보이게)
   for (const [sz, w] of [[3 * PX, 4.2 * PX], [7 * PX, 4.2 * PX], [10.5 * PX, 4.06 * PX]])
     B(body, w, 3.2 * PX, 2.2 * PX, stripe, 0, 0.3 * PX, sz);          // 등 줄무늬 3개 — 몸통보다 살짝만 얇게(파묻히게)
+  // 가슴 필러 (흰색) — 앉아서 가슴이 들려도 어깨와 앞다리 사이가 비어 보이지 않게 몸통 앞쪽 아래를 채움
+  B(body, 3.4 * PX, 3 * PX, 3.2 * PX, white, 0, -2 * PX, 10.2 * PX);
   // ── 머리 (5×4×5px, 몸통 앞쪽에 자식으로 부착)
   const head = new THREE.Group();
   head.position.set(0, 1.5 * PX, 12 * PX + 2.5 * PX);   // 몸통 앞면(6+6=12px)에서 머리 반경(2.5px)만큼 더 앞
@@ -3143,13 +3145,14 @@ function buildCatMesh() {
   B(earR, 1 * PX, 2 * PX, 1 * PX, fur, 0, 0, 0);
   // ── 꼬리 2마디 (1×1×6px, 매우 길게, body 자식·-z 방향, 기본각은 살짝 아래로 처짐)
   const tail1 = new THREE.Group();
-  tail1.position.set(0, 1 * PX, 0);   // 몸통 뒷면(로컬 z=0)에 바로 접합
+  tail1.position.set(0, 0.5 * PX, 0.5 * PX);   // 몸통 뒷면 안쪽에서 시작 (회전해도 틈 없음)
   body.add(tail1); P.tail1 = tail1;
-  B(tail1, 1 * PX, 1 * PX, 6 * PX, fur, 0, 0, -3 * PX);  // 첫 마디 (피벗에서 -z로 6px, 중심 -3px)
+  // 마디 박스를 관절 쪽으로 0.6px 연장해 겹침 — 회전 시 관절 틈이 벌어지지 않는다
+  B(tail1, 1 * PX, 1 * PX, 6.6 * PX, fur, 0, 0, -2.7 * PX);
   const tail2 = new THREE.Group();
   tail2.position.set(0, 0, -6 * PX);        // 첫 마디 끝에서 이어짐
   tail1.add(tail2); P.tail2 = tail2;
-  B(tail2, 1 * PX, 1 * PX, 6 * PX, fur, 0, 0, -3 * PX);
+  B(tail2, 1 * PX, 1 * PX, 6.6 * PX, fur, 0, 0, -2.7 * PX);
   B(tail2, 1.05 * PX, 1.05 * PX, 1.2 * PX, white, 0, 0, -6 * PX + 0.6 * PX); // 꼬리 끝 흰색 팁
   // ── 다리 4개 (2×6×2px, 가늘고 짧게 — 어깨/골반 피벗, 발끝 흰색)
   //   기립 시 다리 상단(피벗)을 어깨높이 6px(=0.12)에 두면 다리 박스(6px 길이, 중심 -3px)의 하단이 y=0(바닥)에 닿는다
@@ -3192,6 +3195,8 @@ const CAT_POSES = {
   stretch: { by: 0.17,  brx: 0.6,   hrx: -0.4, legF: -0.9,  legB: 0.1,   t1: 0.35 },
   // play: 사냥 자세 — 몸을 살짝 낮추고(by 표준보다 조금 아래) 앞으로 약간 웅크림, hop 오버레이가 콩콩 튀게 함
   play:    { by: 0.11,  brx: 0.15,  hrx: 0.15, legF: 0.1,   legB: -0.4,  t1: -0.8 },
+  // hop: 가구 오르내리는 점프 중 — 네 다리 웅크림 + 꼬리 들어 균형
+  hop:     { by: 0.13,  brx: -0.12, hrx: -0.1, legF: -0.85, legB: -0.85, t1: 0.35 },
 };
 function pickNextCatMode(c) {
   const roll = Math.random();
@@ -3202,12 +3207,27 @@ function pickNextCatMode(c) {
   else if (roll < 0.9) { c.mode = 'play'; c.timer = 3.5 + Math.random() * 2; }
   else { c.mode = 'sit'; c.timer = 8 + Math.random() * 14; }
 }
+// 고양이가 올라앉을 수 있는 가구 상면 높이 (surface 정의가 없는 것들)
+const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2 };
 function catFreeSpot() {
-  // 러그·방석·침대를 좋아한다 — 없으면 빈 바닥
-  const favs = items.filter(i => ['rug', 'cushion', 'bed'].includes(i.defId));
-  if (favs.length && Math.random() < 0.55) {
-    const f = favs[Math.floor(Math.random() * favs.length)];
-    return { x: f.x + (Math.random() - 0.5) * 0.3, z: f.z + (Math.random() - 0.5) * 0.25, y: f.defId === 'bed' ? 0.63 : 0.06 };
+  // 가구 위를 좋아한다 — 테이블/상자/서랍장 상판(surface), 침대/소파/러그/방석
+  if (Math.random() < 0.45) {
+    const climbs = items.filter(i => !i.support && (DEFS[i.defId].surface || CAT_PERCH_Y[i.defId] != null));
+    if (climbs.length) {
+      const f = climbs[Math.floor(Math.random() * climbs.length)];
+      const sr = surfaceRectOf(f);
+      const topY = sr ? sr.y : CAT_PERCH_Y[f.defId];
+      const rw = sr ? sr.w : footprintOf(f).w * 0.6;
+      const rd = sr ? sr.d : footprintOf(f).d * 0.5;
+      for (let k = 0; k < 6; k++) {
+        const x = f.x + (Math.random() - 0.5) * Math.max(0.05, rw - 0.3);
+        const z = f.z + (Math.random() - 0.5) * Math.max(0.05, rd - 0.3);
+        // 상판 위에 놓인 소품과 겹침 회피
+        const clash = itemsOn(f).some(ch =>
+          Math.abs(x - ch.x) < footprintOf(ch).w / 2 + 0.16 && Math.abs(z - ch.z) < footprintOf(ch).d / 2 + 0.16);
+        if (!clash) return { x, z, y: topY };
+      }
+    }
   }
   for (let k = 0; k < 14; k++) {
     const x = (Math.random() * 2 - 1) * (ROOM.w / 2 - 0.5);
@@ -3264,13 +3284,44 @@ function updateCat(t, dt) {
   }
   // ── 걷기: 이동 + 대각 보행 (FL+BR / FR+BL 스윙)
   let stride = 0;
+  // ── 폴짝 점프 (가구 오르내리기) — 포물선 아치
+  if (c.mode === 'hop' && c.hop) {
+    const h = c.hop;
+    h.t = Math.min(1, h.t + dt / 0.32);
+    const u = h.t;
+    c.g.position.x = h.fx + (h.tx - h.fx) * u;
+    c.g.position.z = h.fz + (h.tz - h.fz) * u;
+    c.baseY = h.fy + (h.ty - h.fy) * u + Math.sin(u * Math.PI) * 0.17;
+    if (u >= 1) {
+      c.baseY = h.ty;
+      c.hop = null;
+      c.mode = c.modeAfterHop || 'sit';
+      c.modeAfterHop = null;
+      if (c.mode !== 'walk') c.timer = 8 + Math.random() * 16;
+      shadowDirty();
+    }
+  }
   if (c.mode === 'walk' && c.tgt) {
     const dx = c.tgt.x - c.g.position.x, dz = c.tgt.z - c.g.position.z;
     const dist = Math.hypot(dx, dz);
-    if (dist < 0.05) {
+    if (c.baseY > 0.12 && (c.tgt.y || 0) < c.baseY - 0.12 && dist > 0.5) {
+      // 높은 곳에서 먼 목적지로 — 먼저 바닥으로 폴짝 뛰어내리고 계속 걷는다
+      const d = dist || 1;
+      c.hop = { t: 0, fx: c.g.position.x, fz: c.g.position.z, fy: c.baseY,
+                tx: c.g.position.x + dx / d * 0.55, tz: c.g.position.z + dz / d * 0.55, ty: 0 };
+      c.modeAfterHop = 'walk';
+      c.mode = 'hop';
+    } else if (dist < 0.05) {
       c.baseY = c.tgt.y; c.tgt = null;
       c.mode = 'sit'; c.timer = 6 + Math.random() * 12;
       shadowDirty();
+    } else if (dist < 0.42 && Math.abs((c.tgt.y || 0) - c.baseY) > 0.12) {
+      // 높이가 다른 목적지 근처 — 폴짝 뛰어오르거나 내려앉는다
+      c.hop = { t: 0, fx: c.g.position.x, fz: c.g.position.z, fy: c.baseY,
+                tx: c.tgt.x, tz: c.tgt.z, ty: c.tgt.y || 0 };
+      c.tgt = null;
+      c.modeAfterHop = 'sit';
+      c.mode = 'hop';
     } else {
       c.gait += dt * 10;
       stride = Math.sin(c.gait) * 0.65;
@@ -3282,8 +3333,6 @@ function updateCat(t, dt) {
       while (dr > Math.PI) dr -= Math.PI * 2;
       while (dr < -Math.PI) dr += Math.PI * 2;
       c.g.rotation.y += dr * Math.min(1, dt * 8);
-      // 침대 등 높은 목적지엔 다가가서 폴짝
-      c.baseY = THREE.MathUtils.lerp(c.g.position.y, dist < 0.45 ? c.tgt.y : 0, Math.min(1, dt * 7));
     }
   }
   // ── 목표 포즈로 부드럽게 — 기본값(pv)을 따로 lerp하고, 오버레이는 매 프레임 합산만 한다
@@ -3343,6 +3392,14 @@ function updateCat(t, dt) {
   p.legs.fr.rotation.x = frX;
   p.legs.bl.rotation.x = pv.bl - stride;
   p.legs.br.rotation.x = pv.br + stride;
+  // 앉기/그루밍: 접힌 뒷다리 발끝이 옆으로 삐져나오지 않게 축소해 몸 아래로 숨김
+  {
+    const hs = (c.mode === 'sit' || c.mode === 'groom') ? 0.6 : 1;
+    const cur = p.legs.bl.scale.y;
+    const nv = cur + (hs - cur) * Math.min(1, dt * 6);
+    p.legs.bl.scale.y = nv;
+    p.legs.br.scale.y = nv;
+  }
   p.tail1.rotation.x = pv.t1;
   p.tail1.rotation.y = tailY0;
   p.tail2.rotation.y = tailY1;
@@ -5245,15 +5302,15 @@ const postMat = new THREE.ShaderMaterial({
 });
 postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
 
-// v2.4: 언어 전환 시 흰 화면 번쩍임 방지 — veil을 올리고 트랜지션이 끝난 뒤 재로딩한다.
+// 언어 전환 등 재로딩 전 암전 — 재로딩된 페이지는 인라인 스타일로 이미 암전 상태에서 시작 (index.html)
 function reloadWithVeil() {
   const veil = $('fade-veil');
   if (veil) {
-    veil.style.transition = '';
+    veil.style.transition = 'opacity .3s ease';
     veil.style.pointerEvents = 'auto';
     veil.style.opacity = '1';
   }
-  setTimeout(() => { sessionStorage.setItem('nw-veil', '1'); location.reload(); }, 300);
+  setTimeout(() => location.reload(), 320);
 }
 // v2.4: 저사양 모드 — 그림자맵 끄기 + 날씨 파티클 drawRange 50%
 function weatherDrawCount(type) {
@@ -5652,6 +5709,17 @@ function animate(now) {
 }
 requestAnimationFrame(animate);
 document.getElementById('loading').style.display = 'none';
+// 부팅 완료 — 암전 해제 (모든 로드는 검은 화면에서 시작하고, 준비된 게임만 보여준다)
+{
+  const veil = $('fade-veil');
+  if (veil) {
+    veil.style.transition = 'opacity .45s ease';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      veil.style.opacity = '0';
+      veil.style.pointerEvents = 'none';
+    }));
+  }
+}
 
 // 디버그/테스트용 핸들
 window.__shelter = {
