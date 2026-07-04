@@ -398,6 +398,57 @@ const DEFS = {
       return g;
     }
   },
+  /* ── 고급 제작 가전 (Phase B — 후반 인플레 싱크) ── */
+  heater: {
+    name: '온풍기', nameEn: 'Space Heater', emoji: '♨️', fp: { w: 0.62, d: 0.5 },
+    colorNames: ['오렌지', '크림', '슬레이트', '올리브'],
+    colorNamesEn: ['Orange', 'Cream', 'Slate', 'Olive'],
+    colors: [0xc9662f, 0xd9cdb2, 0x5a6068, 0x6a7047],
+    appliance: { fuel: 'fuel', effect: 'heat', label: '한파 방어 + 겨울 쾌적 (연료 1/일)', labelEn: 'Cold-snap defense + winter comfort (fuel 1/day)' },
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 0.56, 0.46, 0.42, c, 0, 0.3, 0);                        // 몸체
+      B(g, 0.6, 0.06, 0.46, shade(c, 0.8), 0, 0.04, 0);            // 받침
+      for (const x of [-0.24, 0.24]) B(g, 0.06, 0.1, 0.36, 0x2f2a24, x, 0.05, 0); // 다리
+      // 전면 발열 그릴 (달아오른 코일)
+      const grill = B(g, 0.42, 0.3, 0.03, 0xff7a2c, 0, 0.32, 0.22);
+      grill.material.emissive = new THREE.Color(0xff5a10);
+      grill.material.emissiveIntensity = 1.3; grill.userData.glow = true;
+      for (let i = 0; i < 4; i++) B(g, 0.38, 0.016, 0.01, 0x3a2418, 0, 0.22 + i * 0.06, 0.24); // 그릴살
+      B(g, 0.5, 0.05, 0.36, shade(c, 1.12), 0, 0.56, 0);           // 상판
+      Cyl(g, 0.03, 0.03, 0.09, 0x8a8f96, 0.16, 0.6, 0, 6);         // 다이얼
+      const ind = B(g, 0.06, 0.04, 0.02, 0xffcc66, -0.2, 0.52, 0.22);
+      ind.material.emissive = new THREE.Color(0xcc8822);
+      ind.material.emissiveIntensity = 1; ind.userData.glow = true;
+      return g;
+    }
+  },
+  autopurifier: {
+    name: '자동 급수기', nameEn: 'Auto Water Station', emoji: '⛲', fp: { w: 0.66, d: 0.62 },
+    colorNames: ['스틸', '화이트', '틸', '네이비'],
+    colorNamesEn: ['Steel', 'White', 'Teal', 'Navy'],
+    colors: [0x8a8f96, 0xd4cfc2, 0x4a8a8a, 0x46557a],
+    appliance: { fuel: 'battery', effect: 'water2', label: '매일 깨끗한 물 +2 (배터리 1/일)', labelEn: 'Clean water +2 daily (battery 1/day)' },
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 0.58, 0.6, 0.55, shade(c, 0.85), 0, 0.3, 0);            // 캐비닛
+      B(g, 0.62, 0.06, 0.6, shade(c, 0.7), 0, 0.03, 0);            // 받침
+      const tank = Cyl(g, 0.22, 0.24, 0.66, c, 0, 0.96, 0, 12);    // 큰 탱크
+      const wat = Cyl(g, 0.18, 0.2, 0.5, 0x4a9ac0, 0, 0.9, 0, 12); // 물
+      wat.material.emissive = new THREE.Color(0x2a5a80);
+      wat.material.emissiveIntensity = 0.5; wat.userData.glow = true;
+      Cyl(g, 0.14, 0.16, 0.08, shade(c, 0.9), 0, 1.32, 0, 12);     // 뚜껑
+      // 이중 급수구
+      Cyl(g, 0.045, 0.045, 0.14, 0x3f3a33, 0.2, 0.66, 0.16, 6).rotation.z = Math.PI / 2;
+      Cyl(g, 0.045, 0.045, 0.14, 0x3f3a33, -0.2, 0.66, 0.16, 6).rotation.z = Math.PI / 2;
+      B(g, 0.16, 0.1, 0.14, 0xd4cfc2, 0.24, 0.4, 0.16);            // 컵1
+      B(g, 0.16, 0.1, 0.14, 0xd4cfc2, -0.24, 0.4, 0.16);           // 컵2
+      const ind = B(g, 0.06, 0.04, 0.02, 0x88ccff, 0, 0.5, 0.28);
+      ind.material.emissive = new THREE.Color(0x4499dd);
+      ind.material.emissiveIntensity = 1; ind.userData.glow = true;
+      return g;
+    }
+  },
 };
 
 

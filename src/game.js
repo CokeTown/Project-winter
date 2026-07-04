@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert } from './lib/helpers.js';
 import { DEFS } from './data/furniture.js';
+import { BAL } from './data/balance.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx } from './sfx.js';
 
@@ -435,9 +436,36 @@ const SEASONS = [
   { id: 'autumn', name: '가을', nameEn: 'Autumn', icon: '🍂', tint: [1.1, 1.0, 0.86],   desc: '세상이 물든다', descEn: 'the world takes on color' },
   { id: 'winter', name: '겨울', nameEn: 'Winter', icon: '❄️', tint: [1.0, 1.02, 1.1],   desc: '혹독한 계절', descEn: 'a harsh season' },
 ];
-const SEASON_DAYS = 12;
+const SEASON_DAYS = BAL.seasons.daysPerSeason;
 function seasonOf(day = state.day) { return SEASONS[Math.floor((day - 1) / SEASON_DAYS) % 4]; }
 function seasonDay(day = state.day) { return ((day - 1) % SEASON_DAYS) + 1; }
+// 계절 절대 인덱스 (겨울 카운터 리셋 기준) — 0부터 계절마다 +1
+function seasonIndex(day = state.day) { return Math.floor((day - 1) / SEASON_DAYS); }
+/* ── 한파 (cold snap) — 겨울 보스 이벤트 (Phase B) ── */
+// 한파 방어 수단이 몇 단계 갖춰졌는가: 단열 개조 + 난방 가동(장작 난로/온풍기 ON)
+function coldDefenseLevel() {
+  let lv = 0;
+  if (hasMod('insulation') || hasMod('insulationPlus')) lv++;
+  if (hasMod('insulationPlus')) lv++; // 강화 단열재는 한 단계 더
+  // 난방 가동: 장작 난로(stove, 불빛 연료 fuel) 또는 온풍기(heater) ON
+  const heating = items.some(i => {
+    if (i.on === false) return false;
+    if (i.defId === 'stove') return true;
+    return DEFS[i.defId]?.appliance?.effect === 'heat';
+  });
+  if (heating) lv++;
+  return lv;
+}
+// 한파 활성 여부 (오늘이 coldSnap.until 이하이고 겨울)
+function coldSnapActive() {
+  return !!(state.coldSnap && seasonOf().id === 'winter' && state.day <= state.coldSnap.until);
+}
+// 한파 순 페널티 강도 (0=완전 방어). severity - 방어단계, 0~severity로 클램프
+function coldSnapNetSeverity() {
+  if (!coldSnapActive()) return 0;
+  const sev = state.coldSnap.severity || 1;
+  return Math.max(0, sev - coldDefenseLevel());
+}
 // 계절이 날씨 풀을 편향시킨다
 function seasonAdjustPool(pool) {
   const s = seasonOf().id;
@@ -637,8 +665,10 @@ function updateScreenFx(dt, t) {
     fxg.fillStyle = 'rgba(240,250,255,0.5)';  // 하이라이트
     fxg.beginPath(); fxg.arc(d.x - d.r * 0.3, d.y - d.r * 0.4, d.r * 0.3, 0, Math.PI * 2); fxg.fill();
   }
-  // ── 서리: 눈 오는 날 화면 가장자리에 성에와 눈 결정이 낀다
-  const frostTarget = (weather.type === 'snow' && !indoorSh && !titleVisible) ? 1 : 0;
+  // ── 서리: 눈 오는 날 화면 가장자리에 성에와 눈 결정이 낀다. 한파+눈이면 강도 최대
+  const cold = coldSnapActive();
+  const frostBase = (weather.type === 'snow' && !indoorSh && !titleVisible) ? 1 : 0;
+  const frostTarget = frostBase && cold ? 1.6 : frostBase; // 한파 중엔 서리 오버레이 강화 (디렉터 승인)
   fxFrost += (frostTarget - fxFrost) * Math.min(1, dt * (frostTarget ? 0.05 : 0.1));
   if (fxFrost > 0.02) {
     const m = Math.min(fxW, fxH);
@@ -679,10 +709,15 @@ function comfortDetail() {
   const catMod = (state.cat && !state.catHungry) ? 6 : 0; // 고양이가 있는 집은 따뜻하다 (배고파하면 정지)
   // 현실 제약: 단열 취약(악천후 시) / 어둠(조명 필수)
   let limitMod = 0;
-  if (sh.cold && (weather.type === 'rain' || weather.type === 'snow' || weather.type === 'storm') && !hasMod('insulation')) limitMod -= sh.cold;
+  if (sh.cold && (weather.type === 'rain' || weather.type === 'snow' || weather.type === 'storm') && !hasMod('insulation') && !hasMod('insulationPlus')) limitMod -= sh.cold;
   if (sh.needsLight && light <= 0) limitMod -= sh.needsLight;
-  const score = THREE.MathUtils.clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod, 0, 100);
-  return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, clean, score };
+  // 한파: 방어 안 된 만큼 쾌적함 페널티 (완전 방어 시 0)
+  if (coldSnapNetSeverity() > 0) limitMod -= BAL.seasons.coldSnapComfortPen;
+  // 온풍기(heater) 가동 시 겨울 쾌적 보너스
+  let heatMod = 0;
+  if (seasonOf().id === 'winter' && items.some(i => i.on !== false && DEFS[i.defId]?.appliance?.effect === 'heat')) heatMod += BAL.economy.heaterWinterComfort;
+  const score = THREE.MathUtils.clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod + heatMod, 0, 100);
+  return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, heatMod, clean, score };
 }
 function comfortLevel() { return Math.min(5, Math.round(comfortDetail().score / 20)); }
 // 기획서 쾌적함 티어: 50+ → +3%, 75+ → +6%, 90+ → +10%
@@ -710,10 +745,11 @@ function rateParts(regionId, prep = []) {
     if (b && b[regionId]) gear += b[regionId];
   }
   const injuryPen = state.injury ? INJURIES[state.injury.type].pen : 0;
-  const hungryPen = (state.hunger < 25 || state.thirst < 25) ? 0.10 : 0; // 허기/갈증
+  const hungryPen = (state.hunger < BAL.exp.hungryPenGate || state.thirst < BAL.exp.hungryPenGate) ? BAL.exp.hungryPen : 0; // 허기/갈증
   const buff = state.buff?.exp || 0; // 인카운터 버프/디버프
-  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + district + gear + buff - weatherPen - injuryPen - hungryPen, 0.05, 0.95);
-  return { base: r.rate, comfort, shelter, district, gear, buff, weatherPen, injuryPen, hungryPen, eff };
+  const coldPen = coldSnapNetSeverity() > 0 ? BAL.seasons.coldSnapExpPen : 0; // 한파: 탐험 성공률 -10%p (방어 시 0)
+  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + district + gear + buff - weatherPen - injuryPen - hungryPen - coldPen, 0.05, 0.95);
+  return { base: r.rate, comfort, shelter, district, gear, buff, weatherPen, injuryPen, hungryPen, coldPen, eff };
 }
 
 /* ============================================================
@@ -2258,6 +2294,10 @@ const state = {
   pendingTutorial: null, // 표시 대기 중인 튜토리얼 수첩 페이지 단계 (day-report 뒤로 미룸)
   questIdx: 0,         // 퀘스트 체인 진행 인덱스 (QUESTS 배열 기준, -1=비활성/완료, QUESTS.length=전체 완료)
   mode: 'normal',      // 난이도 모드 'normal' | 'hard' (하드: 전리품 -30% · 게이지 소모 +50%)
+  coldSnap: null,      // 한파 진행 상태 { until:day, severity } — 겨울 보스 이벤트 (Phase B)
+  coldSnapForecast: 0, // 한파 발동 예정일 (day). 0=예보 없음. 예보 리드타임 동안 브리핑에 표시
+  coldSnapsThisWinter: 0, // 이번 겨울 한파 발동 횟수 (겨울당 상한 제한용)
+  coldSnapWinterKey: -1,  // 카운터가 속한 겨울 식별자 (계절 인덱스). 겨울이 바뀌면 리셋
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -2304,7 +2344,7 @@ const isHard = () => state.mode === 'hard';
 // round만 쓰면 1개가 영원히 안 줄어든다 — 소수부를 확률로 처리해 기댓값(×0.7)을 지킨다.
 function hardLoot(n) {
   if (!isHard()) return n;
-  const x = n * 0.7, f = Math.floor(x);
+  const x = n * BAL.hard.lootMul, f = Math.floor(x);
   return f + (Math.random() < x - f ? 1 : 0);
 }
 
@@ -2312,24 +2352,27 @@ function hardLoot(n) {
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
 ============================================================ */
 function decayGauges(gm) {
-  const winterMult = seasonOf().id === 'winter' ? 1.25 : 1; // 겨울엔 열량 소모가 크다
-  const hardMul = isHard() ? 1.5 : 1; // 하드: 배고픔/갈증 소모 +50%
-  state.hunger = Math.max(0, state.hunger - gm * 0.01326 * winterMult * hardMul); // v0.9.1: 22% 완화 (×0.78) — 만복 → 0까지 약 5게임일
-  state.thirst = Math.max(0, state.thirst - gm * 0.02106 * hardMul);              // v0.9.1: 22% 완화 (×0.78)
+  const winterMult = seasonOf().id === 'winter' ? BAL.gauges.winterMult : 1; // 겨울엔 열량 소모가 크다
+  const hardMul = isHard() ? BAL.hard.drainMul : 1; // 하드: 배고픔/갈증 소모 +50%
+  // 한파: 방어가 안 된 만큼(netSeverity) 배고픔 감소를 가속 (완전 방어 시 1.0)
+  const coldMult = coldSnapNetSeverity() > 0 ? BAL.seasons.coldSnapHungerMult : 1;
+  const summerThirst = seasonOf().id === 'summer' ? BAL.seasons.summerThirstMult : 1; // 여름 갈증 압박
+  state.hunger = Math.max(0, state.hunger - gm * BAL.gauges.hungerPerMin * winterMult * hardMul * coldMult); // v0.9.1: 22% 완화 (×0.78) — 만복 → 0까지 약 5게임일
+  state.thirst = Math.max(0, state.thirst - gm * BAL.gauges.thirstPerMin * hardMul * summerThirst);          // v0.9.1: 22% 완화 (×0.78)
   if (opts.autoEat) {
     let g = 0;
-    while (state.hunger < 40 && hasAnyFood(1) && g++ < 9) { consumeAnyFood(1); state.hunger = Math.min(100, state.hunger + 45); }
+    while (state.hunger < BAL.gauges.autoEatThreshold && hasAnyFood(1) && g++ < BAL.gauges.autoEatGuard) { consumeAnyFood(1); state.hunger = Math.min(100, state.hunger + BAL.gauges.autoEatRestore); }
     g = 0;
-    while (state.thirst < 40 && (state.res.water || 0) > 0 && g++ < 9) { resConsume('water', 1); state.thirst = Math.min(100, state.thirst + 45); }
+    while (state.thirst < BAL.gauges.autoEatThreshold && (state.res.water || 0) > 0 && g++ < BAL.gauges.autoEatGuard) { resConsume('water', 1); state.thirst = Math.min(100, state.thirst + BAL.gauges.autoEatRestore); }
   }
 }
 function eatFood() {
   if (paused) { toast(t('pause.blocked')); return; }
   if (!hasAnyFood(1)) { toast(t('eat.noFood')); return; }
-  if (state.hunger > 85) { toast(t('eat.full')); return; }
+  if (state.hunger > BAL.gauges.eatFullGate) { toast(t('eat.full')); return; }
   const usedFresh = (state.res.food || 0) > 0;
   consumeAnyFood(1);
-  state.hunger = Math.min(100, state.hunger + 45);
+  state.hunger = Math.min(100, state.hunger + BAL.gauges.eatRestore);
   toast(t(usedFresh ? 'eat.done' : 'eat.doneCanned'));
   questProgress('eat');
   renderResBar(); updateHud(); scheduleSave();
@@ -2337,9 +2380,9 @@ function eatFood() {
 function drinkWater() {
   if (paused) { toast(t('pause.blocked')); return; }
   if ((state.res.water || 0) < 1) { toast(t('drink.noWater')); return; }
-  if (state.thirst > 85) { toast(t('drink.full')); return; }
+  if (state.thirst > BAL.gauges.drinkFullGate) { toast(t('drink.full')); return; }
   resConsume('water', 1);
-  state.thirst = Math.min(100, state.thirst + 45);
+  state.thirst = Math.min(100, state.thirst + BAL.gauges.drinkRestore);
   toast(t('drink.done'));
   questProgress('drink');
   renderResBar(); updateHud(); scheduleSave();
@@ -2347,12 +2390,12 @@ function drinkWater() {
 function isExhausted() { return state.hunger <= 0 || state.thirst <= 0; }
 
 /* ── 취침 (의무 휴식 — 자원 인플레이션 방지 + 침대의 가치) ── */
-const EXP_PER_DAY = 5;
+const EXP_PER_DAY = BAL.exp.perDay;
 // 취침/쪽잠 공통 에너지 회복 공식 (침대 유무 + 쾌적함 보너스)
 function restEnergyValue() {
   const hasBed = items.some(i => i.defId === 'bed');
   const cozy = comfortDetail().score;
-  return { hasBed, energy: Math.min(100, (hasBed ? 90 : 65) + (cozy >= 75 ? 10 : 0)) };
+  return { hasBed, energy: Math.min(100, (hasBed ? BAL.rest.bedEnergy : BAL.rest.floorEnergy) + (cozy >= BAL.rest.cozyThreshold ? BAL.rest.cozyBonus : 0)) };
 }
 function sleepUntilMorning(auto = false) {
   if (!auto && paused) { toast(t('pause.blocked')); return; }
@@ -2757,7 +2800,7 @@ function moveCostFor(id) {
     for (const [rid, n] of Object.entries(SHELTERS[id].moveCost || {})) cost[rid] = (cost[rid] || 0) + n;
   }
   const cross = districtOf(id) !== districtOf(state.current);
-  if (cross) { cost.food = (cost.food || 0) + 1; cost.water = (cost.water || 0) + 1; }
+  if (cross) { cost.food = (cost.food || 0) + BAL.economy.moveCrossFood; cost.water = (cost.water || 0) + BAL.economy.moveCrossWater; }
   return { cost, cross, renov: !state.renovated[id] };
 }
 function moveToShelter(id) {
@@ -2777,7 +2820,7 @@ function moveToShelter(id) {
     state.dayLog.notes.push(t('move.renovNote', { name: LName(SHELTERS[id]), cost: costLabel(SHELTERS[id].moveCost || {}) || t('free') }));
   }
   if (cross) {
-    state.gameMin += 180; // 구역 간 여정 3시간
+    state.gameMin += BAL.economy.moveCrossTimeMin; // 구역 간 여정 3시간
     state.dayLog.notes.push(t('move.journeyNote', { name: LName(DISTRICTS[districtOf(id)]) }));
   }
   state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2) }));
@@ -2827,22 +2870,24 @@ const REGIONS = {
     name: '주거지역', nameEn: 'Residential', emoji: '🏘️', rate: 0.8, time: 20,
     pool: ['bed', 'chair', 'rug', 'dresser', 'candle', 'cushion', 'bookstack'], furnChance: 0.02,
     desc: '음식·물·천·양초 · 생활 가구', descEn: 'Food, water, cloth, candles · household furniture', risk: '낮음', riskEn: 'Low',
-    // v0.9.1: 최소 획득량 +1 가중(대박 상한은 유지) + 신선/통조림 대략 4:6 분배
-    lootRes: [['food', 2, 3], ['canned', 1, 2, 0.6], ['cloth', 1, 1], ['candle', 1, 1], ['water', 2, 3], ['bandage', 1, 1, 0.25]],
+    // Phase B: 주거지역 food/water 소폭 하향(max -1) — "주거 단일 최적해" 해소
+    lootRes: [['food', 2, 2], ['canned', 1, 2, 0.6], ['cloth', 1, 1], ['candle', 1, 1], ['water', 2, 2], ['bandage', 1, 1, 0.25]],
     injuries: ['minor'],
   },
   commercial: {
     name: '상업지구', nameEn: 'Commercial', emoji: '🏬', rate: 0.6, time: 35,
     pool: ['sofa', 'table', 'bookshelf', 'radio', 'plant', 'fridge', 'teatable', 'clock', 'lantern'], furnChance: 0.02,
     desc: '배터리·의약품 · 상점 가구', descEn: 'Batteries, medicine · store furniture', risk: '보통', riskEn: 'Medium',
-    lootRes: [['battery', 1, 2], ['parts', 1, 1], ['canned', 1, 1, 0.6], ['water', 1, 1], ['antiseptic', 1, 1, 0.25], ['painkiller', 1, 1, 0.2]],
+    // Phase B: 배터리/의약 특화 상향 (배터리 확정 1 + 의약 확률/양 상향)
+    lootRes: [['battery', 1, 2], ['parts', 1, 1], ['canned', 1, 1, 0.6], ['water', 1, 1], ['antiseptic', 1, 1, 0.35], ['painkiller', 1, 1, 0.3]],
     injuries: ['minor', 'minor', 'sprain'],
   },
   industrial: {
     name: '공업지대', nameEn: 'Industrial', emoji: '🏭', rate: 0.4, time: 50,
     pool: ['lamp', 'crate', 'radio', 'dresser', 'purifier', 'generator', 'stove'], furnChance: 0.01,
     desc: '부품·건축재·연료', descEn: 'Parts, building material, fuel', risk: '높음 — 장갑 권장', riskEn: 'High — gloves advised',
-    lootRes: [['parts', 2, 3], ['material', 2, 3], ['fuel', 1, 2]],
+    // Phase B: parts/fuel 상향 + fuel 확정 1 보장 (parts/fuel 공급 목적성)
+    lootRes: [['parts', 2, 4], ['material', 2, 3], ['fuel', 2, 3]],
     injuries: ['deep', 'deep', 'sprain'],
   },
   slum: {
@@ -2990,6 +3035,26 @@ function fmtGameDur(min) {
   const h = Math.floor(m / 60), mm = m % 60;
   return mm === 0 ? t('dur.h', { h }) : t('dur.hm', { h, m: mm });
 }
+// 가을 비축 경고: 겨울 시작 N일 전이면 권장 연료·보존식과 현 보유를 대조한 조언 객체 반환 (아니면 null)
+function winterPrepAdvice(day = state.day) {
+  const S = BAL.seasons;
+  const idx = seasonIndex(day);
+  // 다음 겨울 시작일 = 다음 겨울 계절의 첫날. 계절 순서 spring(0)summer(1)autumn(2)winter(3)
+  const cyclePos = idx % 4;                       // 0봄1여름2가을3겨울
+  if (cyclePos !== 2) return null;                // 가을에만 (겨울 직전)
+  const winterStart = (idx + 1) * SEASON_DAYS + 1; // 다음 계절(겨울) 첫날
+  const daysLeft = winterStart - day;
+  if (daysLeft > S.prepWarnDaysBefore || daysLeft <= 0) return null;
+  const winterDays = SEASON_DAYS;
+  const fuelNeed = Math.ceil(winterDays * S.prepFuelPerDay * S.prepBufferMult);
+  const cannedNeed = Math.ceil(winterDays * S.prepCannedPerDay * S.prepBufferMult);
+  const fuelHave = state.res.fuel || 0;
+  const cannedHave = (state.res.canned || 0) + (state.res.food || 0);
+  return {
+    daysLeft, fuelNeed, cannedNeed, fuelHave, cannedHave,
+    fuelOk: fuelHave >= fuelNeed, cannedOk: cannedHave >= cannedNeed,
+  };
+}
 // 날씨 예보 (라디오 배치 또는 등대 특성)
 function hasForecast() {
   return (state.upkeepOk && !!SHELTERS[state.current].perk?.forecast) || items.some(i => i.defId === 'radio');
@@ -3005,7 +3070,7 @@ function startExpedition(regionId) {
   if (paused) { toast(t('pause.blocked')); return; }
   if (state.exp) return;
   if (isExhausted()) { toast(t('toast.exhausted')); return; }
-  if (state.energy < 20) { toast(t('toast.tooTired')); return; }
+  if (state.energy < BAL.exp.minEnergy) { toast(t('toast.tooTired')); return; }
   if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); return; }
   openPrepModal(regionId);
 }
@@ -3095,7 +3160,7 @@ function departExpedition(regionId, prep, opts2 = {}) {
 // 표기 73%에서 3연속 실패=2%지만 체감은 "사기" — 플레이어 신뢰 보호용 숨은 보정.
 // 노말 +4%p 상시 + pity(연속 실패당 +8%p, 캡3). 하드는 상시 보정 없이 pity만. 상한 0.95.
 function expActualRate(rate, streak) {
-  return Math.min(0.95, rate + (isHard() ? 0 : 0.04) + 0.08 * Math.min(3, streak || 0));
+  return Math.min(BAL.pity.ceiling, rate + (isHard() ? 0 : BAL.pity.normalBonus) + BAL.pity.perStreak * Math.min(BAL.pity.streakCap, streak || 0));
 }
 function resolveExpedition() {
   const exp = state.exp;
@@ -3133,7 +3198,7 @@ function resolveExpedition() {
     return pool[pool.length - 1];
   };
   const success = roll < actual;
-  const partial = !success && roll < actual + (1 - actual) * 0.5;
+  const partial = !success && roll < actual + (1 - actual) * BAL.pity.partialFactor;
   // pity streak 갱신: 성공하면 리셋, 실패(부분 포함)면 증가
   if (success) state.expFailStreak = 0;
   else state.expFailStreak = (state.expFailStreak || 0) + 1;
@@ -3164,7 +3229,7 @@ function resolveExpedition() {
     title = t('exp.failTitle', { name: LName(r) });
     body = t('exp.failBody');
     if (SHELTERS[state.current].perk?.failSalvage) {
-      rollRes(0.3);
+      rollRes(BAL.pity.failSalvageMult);
       if (Object.keys(gotRes).length) {
         body = t('exp.failSalvageBody');
         notes.push(t('exp.note.shipSalvage'));
@@ -3174,9 +3239,9 @@ function resolveExpedition() {
     notes.push(t('exp.note.dirty5'));
   }
   // 부상 판정: 실패 시 확정, 부분 성공 시 40%
-  if (!success && (partial ? Math.random() < 0.4 : true)) {
+  if (!success && (partial ? Math.random() < BAL.pity.injuryPartialChance : true)) {
     let injChance = 1;
-    if (prep.includes('gloves')) injChance -= 0.3;
+    if (prep.includes('gloves')) injChance -= BAL.pity.glovesReduce;
     if (Math.random() < injChance) {
       let type = r.injuries[Math.floor(Math.random() * r.injuries.length)];
       if (type === 'deep' && prep.includes('firstaid')) {
@@ -3869,11 +3934,16 @@ const SHELTER_MODS = {
   solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '🔆', cost: { parts: 4, battery: 1 },  desc: '이틀에 한 번 배터리 +1', descEn: 'Battery +1 every other day', not: ['subway'] },
   roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '🛠️', cost: { material: 4 },      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
   extension:  { name: '증축',        nameEn: 'Extension',    emoji: '🧱', cost: { material: 6, parts: 2 },  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
+  // Phase B 개조 2단계 (비용 곡선 상향: 1단계의 2~2.5배)
+  insulationPlus: { name: '강화 단열재', nameEn: 'Reinforced Insulation', emoji: '🧥', cost: { cloth: 7, material: 5, parts: 1 }, desc: '한파 방어 강화 (단열재 위에)', descEn: 'Stronger cold-snap defense (over insulation)', req: 'insulation' },
+  bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '🛢️', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
 };
 function modAvailable(id, shelterId) {
   const m = SHELTER_MODS[id];
   if (m.only && !m.only.includes(shelterId)) return false;
   if (m.not && m.not.includes(shelterId)) return false;
+  // 2단계 개조: 선행 개조(req)가 설치돼 있어야 목록에 노출
+  if (m.req && !(state.mods?.[shelterId] || []).includes(m.req)) return false;
   return true;
 }
 function hasMod(id) { return (state.mods?.[state.current] || []).includes(id); }
@@ -3949,6 +4019,9 @@ const CRAFTS = [
   { out: { furn: 'purifier' }, cost: { parts: 4, material: 2 }, hint: '매일 물 +1 (전력 필요)', hintEn: 'Water +1 daily (needs power)' },
   { out: { furn: 'generator' }, cost: { parts: 5, material: 3 }, hint: '배터리 소비 무료화 (연료 필요)', hintEn: 'Free battery use (needs fuel)' },
   { out: { furn: 'fridge' }, cost: { parts: 4, material: 2, battery: 1 }, hint: '음식 부패 방지 (전력 필요)', hintEn: 'Prevents food spoilage (needs power)' },
+  // Phase B 고급 제작 (후반 인플레 싱크) — 희귀부품(parts) 고비용 사용처
+  { out: { furn: 'autopurifier' }, cost: { parts: 6, material: 3, battery: 1 }, hint: '매일 물 +2 (배터리 1/일)', hintEn: 'Water +2 daily (battery 1/day)' },
+  { out: { furn: 'heater' }, cost: { parts: 5, material: 3, cloth: 2 }, hint: '한파 방어 + 겨울 쾌적 (연료 1/일)', hintEn: 'Cold-snap defense + winter comfort (fuel 1/day)' },
 ];
 function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
@@ -5112,6 +5185,38 @@ function processDay() {
     rollWeather(); // 새 계절의 날씨로
     if (se.id === 'winter') tipOnce('tip.winter'); // 찢어진 쪽지: 첫 겨울
   }
+  // ── 한파 (겨울 보스): 예보 → 발동 → 지속 → 종료 (Phase B) ──
+  {
+    const wk = seasonIndex(state.day);
+    if (state.coldSnapWinterKey !== wk) { state.coldSnapWinterKey = wk; state.coldSnapsThisWinter = 0; } // 겨울 바뀌면 카운터 리셋
+    const inWinter = seasonOf(state.day).id === 'winter';
+    const S = BAL.seasons;
+    // 1) 예보된 한파가 도래하면 발동
+    if (inWinter && state.coldSnapForecast > 0 && state.day >= state.coldSnapForecast && !state.coldSnap) {
+      const dur = S.coldSnapMinDur + Math.floor(Math.random() * (S.coldSnapMaxDur - S.coldSnapMinDur + 1));
+      state.coldSnap = { until: state.day + dur - 1, severity: 1 };
+      state.coldSnapForecast = 0;
+      state.coldSnapsThisWinter++;
+      notes.push(t('coldsnap.hit'));
+      toast(t('coldsnap.toast'));
+    }
+    // 2) 진행 중인 한파: 오늘 방어 여부에 따른 서사 (하루 1회)
+    if (state.coldSnap && inWinter && state.day <= state.coldSnap.until) {
+      notes.push(coldSnapNetSeverity() > 0 ? t('coldsnap.exposed') : t('coldsnap.defended'));
+    }
+    // 3) 한파 종료
+    if (state.coldSnap && (!inWinter || state.day > state.coldSnap.until)) {
+      state.coldSnap = null;
+      notes.push(t('coldsnap.ended'));
+    }
+    // 4) 예보 발령: 겨울 중, 미발동·미예보, 겨울당 상한 미만, 확률 판정 → 리드타임 뒤로 예약
+    if (inWinter && !state.coldSnap && state.coldSnapForecast === 0 &&
+        state.coldSnapsThisWinter < S.coldSnapMaxPerWinter &&
+        seasonDay(state.day) <= SEASON_DAYS - S.coldSnapForecastDays - 1 && // 겨울 끝에 걸치지 않게
+        Math.random() < S.coldSnapChancePerDay) {
+      state.coldSnapForecast = state.day + S.coldSnapForecastDays;
+    }
+  }
   // 1) 발전기: 연료를 태우면 그날 배터리 소비가 무료
   let freePower = false;
   for (const it of items) {
@@ -5137,11 +5242,15 @@ function processDay() {
       notes.push(t('day.fuelOut', { fuel: LName(RESOURCES[fuelId]), name: LName(def) }));
     }
   }
-  // 3) 생산: 정수기 / 거처 특성 (온실 텃밭, 여객선 낚시)
+  // 3) 생산: 정수기 / 자동 급수기 / 거처 특성 (온실 텃밭, 여객선 낚시)
   for (const it of items) {
-    if (DEFS[it.defId].appliance?.effect === 'water' && it.on !== false) {
-      resAdd('water', 1);
+    const eff = DEFS[it.defId].appliance?.effect;
+    if (eff === 'water' && it.on !== false) {
+      resAdd('water', BAL.economy.purifierWaterPerDay);
       notes.push(t('day.purifier'));
+    } else if (eff === 'water2' && it.on !== false) {
+      resAdd('water', BAL.economy.autoWaterPerDay);
+      notes.push(t('day.autopurifier', { n: BAL.economy.autoWaterPerDay }));
     }
   }
   if (perk.produce) {
@@ -5160,15 +5269,18 @@ function processDay() {
   // 찢어진 쪽지: 냉장고 없이 신선식품을 보유한 첫 순간 — 오늘 먹으라는 조언 (1회성)
   if (!fridgeOn && (state.res.food || 0) > 0) tipOnce('tip.freshfood');
   if (!fridgeOn && (state.res.food || 0) > 0) {
-    resConsume('food', 1);
-    notes.push(t('day.foodSpoiled'));
+    // 여름엔 부패 가속 (×summerSpoilMult, 소수부는 확률 반올림으로 기댓값 보존)
+    let spoil = BAL.economy.foodSpoilPerDay;
+    if (seasonOf().id === 'summer') { const x = spoil * BAL.seasons.summerSpoilMult; spoil = Math.floor(x) + (Math.random() < x - Math.floor(x) ? 1 : 0); }
+    resConsume('food', spoil);
+    notes.push(t(seasonOf().id === 'summer' ? 'day.foodSpoiledSummer' : 'day.foodSpoiled'));
   } else if (fridgeOn) {
     notes.push(t('day.foodFresh'));
   }
   // 청결도 일일 감소 + 거처별 현실 제약
   const sh = SHELTERS[state.current];
   const wBad = state.weatherType === 'rain' || state.weatherType === 'snow' || state.weatherType === 'storm';
-  let dirt = 1; // v0.9.1: 일일 청결 감소 2 → 1 완화
+  let dirt = BAL.economy.dailyDirt; // v0.9.1: 일일 청결 감소 2 → 1 완화
   if (sh.dailyDirt) { dirt += sh.dailyDirt; notes.push(t('day.seaDamp')); }
   if (sh.weatherDirt && wBad) { dirt += sh.weatherDirt; notes.push(t('day.openWet', { icon: WEATHERS[state.weatherType].icon })); }
   if (sh.stormRepair && sh.stormRepair.includes(state.weatherType) && !hasMod('roof')) {
@@ -5180,7 +5292,10 @@ function processDay() {
     notes.push(t('day.rooftopRain', { n: sh.rainCatch }));
   }
   // 거처 개조 효과
-  if (hasMod('raincatch') && wBad) { resAdd('water', 1); notes.push(t('day.raincatch')); }
+  if (hasMod('raincatch') && wBad) {
+    const n = hasMod('bigraincatch') ? BAL.economy.bigRaincatchWater : 1;
+    resAdd('water', n); notes.push(t(hasMod('bigraincatch') ? 'day.bigraincatch' : 'day.raincatch', { n }));
+  }
   if (hasMod('garden') && state.day % 2 === 0) {
     if (seasonOf().id === 'winter') notes.push(t('day.gardenBoxFrozen'));
     else { resAdd('food', 1); notes.push(t('day.gardenBox')); }
@@ -5211,8 +5326,8 @@ function processDay() {
     notes.push(t(['day.cat0', 'day.cat1', 'day.cat2', 'day.cat3'][Math.floor(Math.random() * 4)]));
   }
   // 고양이 유지비: 입양 후 3일마다 음식 1 소모 (신선 우선 → 통조림 폴백). 둘 다 없으면 쾌적 보너스 정지
-  if (state.cat && state.day % 3 === 0) {
-    if (consumeAnyFood(1)) {
+  if (state.cat && state.day % BAL.economy.catFeedEvery === 0) {
+    if (consumeAnyFood(BAL.economy.catFeedFood)) {
       state.catHungry = false;
     } else {
       state.catHungry = true;
@@ -5254,10 +5369,26 @@ function showDayReport() {
   const forecast = hasForecast()
     ? t('report.forecast', { text: forecastText() })
     : t('report.noForecast');
+  // 가을 비축 경고 카드 (겨울 3일 전부터) — 이주 칩과 같은 ok/lack 문법
+  const prep = winterPrepAdvice();
+  const prepChip = (have, need, ok) => `<span style="color:${ok ? 'var(--good)' : 'var(--bad)'}">${have}/${need}${ok ? ' ✓' : ''}</span>`;
+  const prepHtml = prep
+    ? `<div class="report-sec report-warn" style="border-color:var(--accent)">${t('report.winterPrep', {
+        n: prep.daysLeft,
+        fuel: prepChip(prep.fuelHave, prep.fuelNeed, prep.fuelOk),
+        canned: prepChip(prep.cannedHave, prep.cannedNeed, prep.cannedOk),
+      })}</div>`
+    : '';
+  // 한파 예보 카드 (발동 D-리드타임)
+  const coldForecastHtml = (state.coldSnapForecast > 0 && seasonOf().id === 'winter')
+    ? `<div class="report-sec report-warn">${t('coldsnap.forecast', { n: Math.max(0, state.coldSnapForecast - state.day) })}</div>`
+    : '';
   openModal(t('report.title', { day: state.day - 1 }), `
     <div class="report-sec"><span class="r-title">${t('report.gain')}</span><br>${Object.keys(log.gain).length ? fmt(log.gain) : t('none')}</div>
     <div class="report-sec"><span class="r-title">${t('report.spend')}</span><br>${Object.keys(log.spend).length ? fmt(log.spend) : t('none')}</div>
     ${log.notes.length ? `<div class="report-sec"><span class="r-title">${t('report.notes')}</span><br>${log.notes.join('<br>')}</div>` : ''}
+    ${prepHtml}
+    ${coldForecastHtml}
     ${warns.length ? `<div class="report-sec report-warn">${t('report.warn', { list: warns.map(id => RESOURCES[id].emoji + LName(RESOURCES[id])).join(', ') })}</div>` : ''}
     <div class="report-sec">${forecast}</div>
     ${tips.length ? `<div class="report-sec report-tip">💡 ${tips.slice(0, 2).join('<br>💡 ')}</div>` : ''}
@@ -6525,20 +6656,27 @@ function simDays(n = 30, opt = {}) {
 function _simDaysInner(n, opt) {
   const snaps = [];
   const expPerDay = opt.expPerDay ?? EXP_PER_DAY;
+  // opt.regions: 지역 로테이션 리스트 (예: 4지역 순환). 미지정이면 매일 최고 eff 지역.
+  const rotation = Array.isArray(opt.regions) && opt.regions.length ? opt.regions : null;
   for (let d = 0; d < n; d++) {
-    // 1) 오늘의 탐험 — 최고 eff 지역 선택 (준비물 없음)
-    let bestId = null, bestEff = -1;
-    for (const id of Object.keys(REGIONS)) {
-      const eff = rateParts(id, []).eff;
-      if (eff > bestEff) { bestEff = eff; bestId = id; }
+    // 1) 오늘의 탐험 지역 선택 (준비물 없음)
+    let bestId;
+    if (rotation) {
+      bestId = rotation[d % rotation.length]; // 로테이션: 날짜별 순환
+    } else {
+      bestId = null; let bestEff = -1; // 최고 eff 지역
+      for (const id of Object.keys(REGIONS)) {
+        const eff = rateParts(id, []).eff;
+        if (eff > bestEff) { bestEff = eff; bestId = id; }
+      }
     }
     for (let k = 0; k < expPerDay; k++) {
       if (isExhausted()) break; // 탈진하면 더 못 나감
       // 탐험 비용(에너지/게이지) — departExpedition 로직 요약
-      const expMul = isHard() ? 1.5 : 1; // 하드: 탐험 게이지 소모 +50%
-      state.hunger = Math.max(0, state.hunger - 4 * expMul);
-      state.thirst = Math.max(0, state.thirst - 5 * expMul);
-      state.energy = Math.max(0, state.energy - 20);
+      const expMul = isHard() ? BAL.hard.expMul : 1; // 하드: 탐험 게이지 소모 +50%
+      state.hunger = Math.max(0, state.hunger - BAL.exp.hungerCost * expMul);
+      state.thirst = Math.max(0, state.thirst - BAL.exp.thirstCost * expMul);
+      state.energy = Math.max(0, state.energy - BAL.exp.energyCost);
       const eff = rateParts(bestId, []).eff;
       const roll = Math.random();
       const success = roll < eff;
@@ -6550,7 +6688,7 @@ function _simDaysInner(n, opt) {
       }
       state.expToday = (state.expToday || 0) + 1;
       // 취침으로 에너지가 회복되는 구조라, 탐험 사이 간이 휴식
-      if (state.energy < 20) state.energy = Math.min(100, state.energy + 20);
+      if (state.energy < BAL.exp.midRest) state.energy = Math.min(100, state.energy + BAL.exp.midRest);
     }
     // 2) 하루치 게이지 소모 (decayGauges: 1일=1440분) + autoEat
     decayGauges(1440);
@@ -6585,6 +6723,7 @@ window.__shelter = {
   startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,
   comfortDetail, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   seasonOf, SEASONS, openMapModal, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
+  coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
   renderFrame: () => renderFrame(),
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
