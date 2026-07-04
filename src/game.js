@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert } from './lib/helpers.js';
 import { DEFS } from './data/furniture.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
@@ -2999,8 +3000,113 @@ function resolveExpedition() {
 /* ============================================================
    고양이 동반자 (v1.9) — Day 100+ 인카운터로 입양
 ============================================================ */
-let catObj = null;
+let catObj = null, _catSpawning = false;
 // 관절형 치즈 태비 (v1.9.1) — 몸통(호흡)·머리·귀·꼬리 2마디·다리 4개가 따로 움직인다
+/* ============================================================
+   리깅된 GLB 고양이 (public/models/riggedcat.glb)
+   - Rigify DEF 본만 추출된 스킨드 메시, 애니 클립 없음 → 본 프로시저럴 구동
+   - 로드 실패 시 아래 buildCatMesh() 복셀 고양이로 폴백
+============================================================ */
+const CAT_GLB_URL = 'models/riggedcat.glb';
+const CAT_TARGET_H = 0.32;            // 선 자세 월드 높이 목표 (복셀 고양이 크기와 동일)
+let _catGlbBuf = null;                // 최초 1회 fetch 캐시 (ArrayBuffer)
+let _catGlbTried = false, _catGlbFailed = false;
+const _gltfLoader = new GLTFLoader();
+
+// 매핑에 쓰는 실측 본 이름 — GLTFLoader 가 노드명에서 '.' 을 제거하므로 로드 후 이름 기준
+// (GLB 원본: DEF-spine.001, DEF-thigh.L 등 → 로드 후: DEF-spine001, DEF-thighL)
+const CAT_BONES = {
+  spine:   ['DEF-spine', 'DEF-spine001', 'DEF-spine002', 'DEF-spine003', 'DEF-spine004', 'DEF-spine005'],
+  head:    'DEF-spine006',                            // 두개골 (얼굴/귀 본은 로드 시 이 밑으로 attach)
+  tail:    ['DEF-tail004', 'DEF-tail003', 'DEF-tail002', 'DEF-tail001'],   // 루트→끝 순
+  legFL:   'DEF-upper_armL', legFR: 'DEF-upper_armR', // 앞다리(어깨)
+  foreFL:  'DEF-forearmL',   foreFR: 'DEF-forearmR',
+  legBL:   'DEF-thighL',     legBR: 'DEF-thighR',     // 뒷다리(골반)
+  shinBL:  'DEF-shinL',      shinBR: 'DEF-shinR',
+  earL:    'DEF-earL',       earR:  'DEF-earR',
+};
+// 회전 부호 실측 결과 (scratchpad/bone-axes.mjs: rest×offset 적용 후 말단 본 월드 이동 측정):
+//   thigh +X = 발끝 위·뒤로 접힘 / shin -X = 발끝 앞으로 (접힘 상쇄)
+//   spine -X = 가슴·머리 세움 (+X = 숙임) / tail +X = 내림, ±Z = 좌우 스윙 (Y는 축 트위스트라 안 보임)
+//   모델 정면 = 월드 -z (머리 z<0, 꼬리 z>0) → 래퍼 안에서 180° 회전시켜 +z 진행 코드와 일치시킴
+//   얼굴/귀/턱 본은 rig 직속(두개골 체인 밖) → 척추 회전 시 얼굴이 남겨지므로 스컬 본에 attach 필수
+
+async function loadCatGlbScene() {
+  if (_catGlbFailed) return null;
+  if (!_catGlbBuf) {
+    if (_catGlbTried) return null;
+    _catGlbTried = true;
+    try {
+      const res = await fetch(CAT_GLB_URL);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      _catGlbBuf = await res.arrayBuffer();
+    } catch (e) { _catGlbFailed = true; console.warn('[cat] GLB fetch 실패, 복셀 폴백:', e.message); return null; }
+  }
+  // 매 스폰마다 새 스켈레톤을 얻기 위해 캐시된 버퍼를 재파싱 (인스턴스 1개뿐이라 비용 무시 가능)
+  let gltf;
+  try {
+    gltf = await _gltfLoader.parseAsync(_catGlbBuf.slice(0), '');
+  } catch (e) { _catGlbFailed = true; console.warn('[cat] GLB decode 실패, 복셀 폴백:', e.message); return null; }
+  return gltf.scene;
+}
+
+// 로드된 씬을 래퍼에 넣고 크기/발바닥 정규화, 본 참조·rest 쿼터니언 수집
+function normalizeCatGlb(root) {
+  const wrap = new THREE.Group();
+  wrap.add(root);
+  root.rotation.y = Math.PI;   // 모델 정면(-z) → 래퍼 +z (걷기 heading 코드와 일치)
+  // 머티리얼 정리 + 컬링/그림자, 부위 색 (원본 텍스처 없음 → 턱시도 단색)
+  root.traverse(o => {
+    if (o.isSkinnedMesh || o.isMesh) {
+      o.frustumCulled = false; o.castShadow = true; o.receiveShadow = false;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        if (!m) continue;
+        if ('metalness' in m) m.metalness = 0;
+        if ('roughness' in m) m.roughness = 1;
+        if (m.emissive) m.emissive.setRGB(0, 0, 0);
+        const nm = (m.name || '').toLowerCase();
+        if (nm === 'eye') { m.color && m.color.setHex(0x2a2a20); }   // 눈/짙은 부위
+        else { m.color && m.color.setHex(0xe8e4da); }                // 몸통 흰색(턱시도)
+        m.flatShading = false;
+      }
+    }
+  });
+  wrap.updateMatrixWorld(true);
+  // 실측 → 목표 높이로 스케일 (rig 노드 자체 scale 4.7153 을 Box3 실측이 자동 흡수)
+  let box = new THREE.Box3().setFromObject(root);
+  let h = box.max.y - box.min.y;
+  if (!isFinite(h) || h <= 1e-4) h = CAT_TARGET_H;   // 실측 불가 시 무보정
+  const s = CAT_TARGET_H / h;
+  wrap.scale.setScalar(s);
+  wrap.updateMatrixWorld(true);
+  // 발바닥 y=0 정렬 (스케일 적용 후 재실측)
+  box = new THREE.Box3().setFromObject(root);
+  root.position.y -= box.min.y / (wrap.scale.y || 1);
+  wrap.updateMatrixWorld(true);
+  // 본 수집 (혹시 로더가 '.' 을 보존하는 버전이어도 매핑이 살도록 정규화 키를 함께 인덱스)
+  const bones = {};
+  root.traverse(o => {
+    if (!o.isBone) return;
+    bones[o.name] = o;
+    const alt = o.name.replace(/\./g, '');
+    if (!(alt in bones)) bones[alt] = o;
+  });
+  // 얼굴/귀/턱 본은 rig 직속(스컬 체인 밖)이라 척추를 돌리면 얼굴이 제자리에 남는다
+  // → 두개골 본(spine006) 밑으로 attach (월드 변환 보존) 해서 머리를 따라오게 한다
+  const skull = bones[CAT_BONES.head];
+  if (skull) {
+    const faceRe = /^DEF-(forehead|temple|brow|lid|nose|cheek|jaw|chin|lip|tongue|ear)/;
+    const faceBones = [];
+    root.traverse(o => { if (o.isBone && faceRe.test(o.name)) faceBones.push(o); });
+    for (const fb of faceBones) skull.attach(fb);
+    wrap.updateMatrixWorld(true);
+  }
+  const rest = {};   // 이름 → rest quaternion(clone). 매 프레임 rest×offset 으로 재계산 (누적 금지)
+  for (const name in bones) rest[name] = bones[name].quaternion.clone();
+  return { wrap, bones, rest };
+}
+
 function buildCatMesh() {
   const g = new THREE.Group();
   const fur = 0xc98d4e, dk = shade(fur, 0.72), lt = shade(fur, 1.15), cream = 0xece0c8, pink = 0xcf9088;
@@ -3073,7 +3179,7 @@ function buildCatMesh() {
 const CAT_POSES = {
   //          bodyY   bodyRX     headRX      legF        legB        tail1RX
   walk:    { by: 0.14,  brx: 0,    hrx: 0,    legF: 0,     legB: 0,     t1: -0.5 },
-  sit:     { by: 0.075, brx: -0.3, hrx: 0.15, legF: 0.15,  legB: -1.15, t1: -1.0 },
+  sit:     { by: 0.075, brx: -0.45, hrx: 0.15, legF: 0.15, legB: -1.15, t1: -1.0 },
   sleep:   { by: 0.05,  brx: 0,    hrx: 0.45, legF: -1.35, legB: -1.35, t1: -1.3 },
   groom:   { by: 0.075, brx: -0.3, hrx: 0.9,  legF: 0.15,  legB: -1.15, t1: -1.0 },
   stretch: { by: 0.12,  brx: 0.5,  hrx: -0.5, legF: -0.85, legB: 0.15,  t1: 0.35 },
@@ -3104,17 +3210,30 @@ function catFreeSpot() {
   }
   return { x: 0, z: 0, y: 0 };
 }
-function spawnCat() {
-  if (!state.cat || catObj) return;
-  const { g, parts } = buildCatMesh();
+async function spawnCat() {
+  if (!state.cat || catObj || _catSpawning) return;
+  _catSpawning = true;
   const s = catFreeSpot();
+  let g, parts = null, rig = null;
+  const glbScene = await loadCatGlbScene();
+  // 로드 대기 중 상태가 바뀌었으면 취소
+  if (!state.cat || catObj) { _catSpawning = false; if (glbScene) disposeDeep(glbScene); return; }
+  if (glbScene) {
+    const n = normalizeCatGlb(glbScene);
+    g = n.wrap; rig = { bones: n.bones, rest: n.rest };
+  } else {
+    const built = buildCatMesh();
+    g = built.g; parts = built.parts;
+  }
   g.position.set(s.x, s.y, s.z);
   g.rotation.y = Math.random() * Math.PI * 2;
   scene.add(g);
   catObj = {
-    g, p: parts, mode: 'sit', timer: 5 + Math.random() * 8, tgt: null,
+    g, p: parts, rig, rigged: !!rig,
+    mode: 'sit', timer: 5 + Math.random() * 8, tgt: null,
     gait: 0, earKick: 0, earNext: 2 + Math.random() * 5, baseY: s.y,
   };
+  _catSpawning = false;
   shadowDirty();
 }
 function despawnCat() {
@@ -3171,23 +3290,39 @@ function updateCat(t, dt) {
   let headRX = pv.hrx, headRY = 0, flX = pv.fl + stride, frX = pv.fr - stride;
   const walkBob = c.mode === 'walk' ? Math.abs(Math.sin(c.gait)) * 0.018 : 0;
   const hop = c.mode === 'play' ? Math.abs(Math.sin(t * 7.5)) * 0.055 : 0; // 사냥놀이 콩콩
-  c.g.position.y = c.baseY + walkBob + hop;
-  if (c.mode === 'sleep') {
-    const br = 1 + Math.sin(t * 1.7) * 0.035;          // 식빵 자세 숨쉬기
-    p.body.scale.set(br, br, 1);
-  } else {
-    p.body.scale.set(1, 1, 1);
-    if (c.mode === 'groom') {
-      // 가슴/앞발을 핥는 고갯짓 + 한쪽 앞발 들기
-      headRX += Math.sin(t * 7.5) * 0.16;
-      headRY = Math.sin(t * 0.9) > 0 ? 0.4 : -0.4;
-      flX += Math.max(0, Math.sin(t * 0.9)) * -0.5;
-    } else if (c.mode === 'sit') {
-      headRY = Math.sin(t * 0.4) * 0.55;               // 느긋한 두리번
-    } else if (c.mode === 'play') {
-      headRY = Math.sin(t * 5) * 0.3;                  // 사냥감 쫓는 시선
-    }
+  let bodyBr = 1;
+  if (c.mode === 'sleep') bodyBr = 1 + Math.sin(t * 1.7) * 0.035;          // 식빵 자세 숨쉬기
+  else if (c.mode === 'groom') {
+    headRX += Math.sin(t * 7.5) * 0.16;                                    // 가슴/앞발 핥는 고갯짓
+    headRY = Math.sin(t * 0.9) > 0 ? 0.4 : -0.4;
+    flX += Math.max(0, Math.sin(t * 0.9)) * -0.5;                          // 한쪽 앞발 들기
+  } else if (c.mode === 'sit') headRY = Math.sin(t * 0.4) * 0.55;          // 느긋한 두리번
+  else if (c.mode === 'play') headRY = Math.sin(t * 5) * 0.3;              // 사냥감 쫓는 시선
+  // rigged: CAT_POSES.by 의 기립값(0.14) 대비 편차 ×2.0 을 래퍼 y 하강으로
+  //   → sit 0.075 = -0.13 (기립높이 0.32 의 41% ↓, 골반이 바닥에 닿음), sleep 0.05 = -0.18
+  const rigDrop = c.rigged ? Math.max(0, 0.14 - pv.by) * 2.0 : 0;
+  c.g.position.y = c.baseY + walkBob + hop - rigDrop;
+  // ── 꼬리 살랑 파라미터 (양 경로 공용)
+  const tailSpd = c.mode === 'play' ? 9 : c.mode === 'walk' ? 4.5 : c.mode === 'sleep' ? 0.7 : 1.6;
+  const tailAmp = c.mode === 'play' ? 0.7 : c.mode === 'sleep' ? 0.12 : 0.4;
+  const tailY0 = Math.sin(t * tailSpd) * tailAmp;
+  const tailY1 = Math.sin(t * tailSpd - 0.9) * tailAmp * 1.3;
+  const tailX0 = Math.sin(t * tailSpd * 0.6) * 0.2 - (c.mode === 'walk' ? 0.4 : 0);
+  // ── 귀 털기 타이머 (양 경로 공용)
+  c.earNext -= dt;
+  if (c.earNext <= 0) { c.earKick = 1; c.earNext = 3 + Math.random() * 8; c.earSide = Math.random() < 0.5 ? 'earL' : 'earR'; }
+  if (c.earKick > 0) c.earKick = Math.max(0, c.earKick - dt * 4);
+  const earKickV = c.earKick > 0 ? Math.sin(c.earKick * 28) * 0.35 * c.earKick : 0;
+
+  if (c.rigged) {
+    updateCatBones(c, {
+      pv, stride, headRX, headRY, flX, frX, bodyBr,
+      tailY0, tailY1, tailX0, earKickV, earSide: c.earSide,
+    }, dt);
+    return;
   }
+  // ── 복셀 폴백: 기존 메시 포즈 적용
+  p.body.scale.set(bodyBr, bodyBr, 1);
   p.body.position.y = pv.by;
   p.body.rotation.x = pv.brx;
   p.head.rotation.x = headRX;
@@ -3197,19 +3332,61 @@ function updateCat(t, dt) {
   p.legs.bl.rotation.x = pv.bl - stride;
   p.legs.br.rotation.x = pv.br + stride;
   p.tail1.rotation.x = pv.t1;
-  // ── 꼬리 살랑 (모드별 속도/진폭) — 2마디가 위상차를 두고 S자로
-  const tailSpd = c.mode === 'play' ? 9 : c.mode === 'walk' ? 4.5 : c.mode === 'sleep' ? 0.7 : 1.6;
-  const tailAmp = c.mode === 'play' ? 0.7 : c.mode === 'sleep' ? 0.12 : 0.4;
-  p.tail1.rotation.y = Math.sin(t * tailSpd) * tailAmp;
-  p.tail2.rotation.y = Math.sin(t * tailSpd - 0.9) * tailAmp * 1.3;
-  p.tail2.rotation.x = Math.sin(t * tailSpd * 0.6) * 0.2 - (c.mode === 'walk' ? 0.4 : 0);
-  // ── 귀 털기 (이따금 빠르게 파르르)
-  c.earNext -= dt;
-  if (c.earNext <= 0) { c.earKick = 1; c.earNext = 3 + Math.random() * 8; c.earSide = Math.random() < 0.5 ? 'earL' : 'earR'; }
-  if (c.earKick > 0) {
-    c.earKick = Math.max(0, c.earKick - dt * 4);
-    p[c.earSide || 'earL'].rotation.z = Math.sin(c.earKick * 28) * 0.35 * c.earKick;
-  }
+  p.tail1.rotation.y = tailY0;
+  p.tail2.rotation.y = tailY1;
+  p.tail2.rotation.x = tailX0;
+  p[c.earSide || 'earL'].rotation.z = earKickV;
+}
+
+// rest 쿼터니언에서 오프셋을 곱해 본을 구동 (누적 금지: 매 프레임 rest×offset 재계산)
+const _qOff = new THREE.Quaternion(), _eul = new THREE.Euler();
+function _setBone(rig, name, rx, ry, rz) {
+  const b = rig.bones[name], r = rig.rest[name];
+  if (!b || !r) return;
+  _eul.set(rx || 0, ry || 0, rz || 0, 'XYZ');
+  _qOff.setFromEuler(_eul);
+  b.quaternion.copy(r).multiply(_qOff);
+}
+function updateCatBones(c, a, dt) {
+  const rig = c.rig, B = CAT_BONES;
+  // 척추: CAT_POSES.brx ×2.0 을 6마디에 균등 분산 (실측: -X = 가슴·머리 세움)
+  //   sit brx -0.3 → 총 -0.6rad: 골반(래퍼 하강으로 바닥) 위로 가슴이 들려 '앉음' 삼각 실루엣
+  const perSpine = a.pv.brx * 2.0 / B.spine.length;
+  for (const sn of B.spine) _setBone(rig, sn, perSpine, 0, 0);
+  // sleep 숨쉬기: 척추 루트 스케일 (얼굴 본이 스컬에 attach 돼 있어 머리도 함께 따라옴)
+  const spineRoot = rig.bones[B.spine[0]];
+  if (spineRoot) spineRoot.scale.setScalar(a.bodyBr);
+  // 머리(두개골 spine006): 끄덕임(+X=숙임, 복셀과 동일 부호) + 두리번(Y)
+  //   척추 세움만큼 고개를 되숙여 시선을 수평으로 보정
+  c._hry = (c._hry || 0) + (a.headRY - (c._hry || 0)) * Math.min(1, dt * 4);
+  _setBone(rig, B.head, a.headRX - a.pv.brx * 1.4, c._hry, 0);
+  // 앞다리(어깨+앞무릎) — 복셀 부호(-=앞으로 접힘)를 실측 부호로 변환:
+  //   기본 게인 -0.9 (접힘 → +X: 발이 몸 뒤·아래로 턱 = 웅크림), stretch 만 +0.9 (발 앞으로 뻗는 플레이보우)
+  const fgTgt = c.mode === 'stretch' ? 0.9 : -0.9;
+  c._fg = (c._fg === undefined ? -0.9 : c._fg) + (fgTgt - c._fg) * Math.min(1, dt * 6);
+  _setBone(rig, B.legFL, c._fg * a.flX, 0, 0);
+  _setBone(rig, B.legFR, c._fg * a.frX, 0, 0);
+  _setBone(rig, B.foreFL, 0.55 * Math.min(0, a.flX), 0, 0);   // 접을 때만 앞무릎 역굽힘
+  _setBone(rig, B.foreFR, 0.55 * Math.min(0, a.frX), 0, 0);
+  // 뒷다리 — 실측: thigh +X = 접힘(발끝 위·뒤), shin -X = 발끝 앞 (상쇄 굽힘)
+  //   sit legB -1.15 → thigh +1.32rad(76°) 접힘 + shin -0.80: 다리가 내려앉은 몸 밑에 숨음
+  _setBone(rig, B.legBL, -(a.pv.bl - a.stride) * 1.15, 0, 0);
+  _setBone(rig, B.legBR, -(a.pv.br + a.stride) * 1.15, 0, 0);
+  _setBone(rig, B.shinBL, 1.0 * Math.min(0, a.pv.bl), 0, 0);
+  _setBone(rig, B.shinBR, 1.0 * Math.min(0, a.pv.br), 0, 0);
+  // 꼬리 4마디 (루트 tail004 → 끝 tail001) — 실측: +X=내림, ±Z=좌우 스윙
+  //   CAT_POSES.t1(음수=내림) ×-0.45 를 루트 X 로, 살랑임은 Z 위상 지연 사행,
+  //   sit/groom/sleep 은 옆으로 감기(컬) 를 마디별로 누진 가산 → 바닥에 일자로 안 끌림
+  const curlTgt = (c.mode === 'sit' || c.mode === 'groom' || c.mode === 'sleep') ? 0.85 : 0;
+  c._curl = (c._curl || 0) + (curlTgt - c._curl) * Math.min(1, dt * 3);
+  const T = B.tail, cu = c._curl;
+  _setBone(rig, T[0], -a.pv.t1 * 0.45, 0, a.tailY0 * 0.5 + cu * 0.5);
+  _setBone(rig, T[1], a.tailX0 * 0.3, 0, a.tailY1 * 0.6 + cu * 0.8);
+  _setBone(rig, T[2], 0, 0, a.tailY0 * 0.7 + cu * 1.0);
+  _setBone(rig, T[3], 0, 0, a.tailY1 * 0.8 + cu * 1.1);
+  // 귀 털기 (z축 파르르)
+  _setBone(rig, B.earL, 0, 0, a.earSide === 'earL' ? a.earKickV : 0);
+  _setBone(rig, B.earR, 0, 0, a.earSide === 'earR' ? -a.earKickV : 0);
 }
 
 // title/text/choice label 은 언어 전환 시점(showEvent) 에 t() 로 해석하므로 id 로 보관한다.
