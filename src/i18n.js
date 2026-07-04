@@ -71,7 +71,7 @@ export const STR = {
   'title.new':      { ko: '✚ 새 게임', en: '✚ New Game' },
   'title.load':     { ko: '💾 불러오기', en: '💾 Load' },
   'title.help':     { ko: '📖 생존 수첩', en: '📖 Survivor\'s Journal' },
-  'title.ver':      { ko: 'Nine Winters · v0.9 Beta', en: 'Nine Winters · v0.9 Beta' },
+  'title.ver':      { ko: 'Nine Winters · v0.9.1 Beta', en: 'Nine Winters · v0.9.1 Beta' },
   'title.tools.export':  { ko: '세이브 내보내기', en: 'Export save' },
   'title.tools.import':  { ko: '세이브 가져오기', en: 'Import save' },
   'title.tools.settings':{ ko: '설정', en: 'Settings' },
