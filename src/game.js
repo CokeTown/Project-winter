@@ -1428,6 +1428,15 @@ function attachToWall(nx, ny, nz, ...objs) {
   if (!w) return;
   for (const o of objs) if (o && o.parent !== w.group) w.group.attach(o); // 월드 변환 보존 재부모화
 }
+// #87: 지붕 거치 소품(태양광 등)을 천장 컬링/페이드 단위에 편입 — 부감에서 지붕이 사라질 때
+//   패널+브래킷이 실내 위 허공에 남던 실기기 신고의 교정. 근접 높이의 지붕 그룹이 없으면(개방 갑판 조타실 등,
+//   컬링 자체가 없는 지붕) 그대로 둔다 — 그 지붕은 사라지지 않으므로 소품도 남는 게 맞다.
+function attachToRoofCull(y, ...objs) {
+  let best = null;
+  for (const rf of ceilCullList) if (!best || Math.abs(rf.y - y) < Math.abs(best.y - y)) best = rf;
+  if (!best || Math.abs(best.y - y) > 1.2) return;
+  for (const o of objs) if (o && o.parent !== best.group) best.group.attach(o);
+}
 // ⑥-a (전 셸터 공통): 실내를 덮는 천장/지붕을 컬링 목록에 등록한다. obj는 이미 씬에 붙은 Mesh/Group.
 //   y = 천장 대략 높이(카메라가 이보다 확실히 위에 있으면=부감 → 숨김). 셸터별 buildRoom에서 천장 메시 생성 직후 호출.
 //   (ARC: 셸터별 복붙 컬링 로직 없이, 태그만 붙이면 updateWallCulling의 공통 루프가 일괄 처리)
@@ -1635,13 +1644,15 @@ const SHELTERS = {
       //   hole  = 구멍 열림(별이 보임) · temp = 방수포로 덮임 · full = 콘크리트로 메워 완전 연속.
       //   랜덤 슬랫 틈/한쪽 개방은 없앤다(⑤). 손상은 정점 구멍 + 표면 크랙 판으로만.
       const apexGap = roofFixed ? 0 : 0.34; // 라디안. full이면 구멍 없음(완전 연속).
-      const mkHalf = (thetaFrom, seed) => {
+      // #87 ①: 돔 셸을 상/하 밴드로 분리 — 하부(벽 높이대)는 좌우 벽 컬링에, 상부(머리 위 아치)는 천장 컬링에.
+      //   연속 셸(#81)이 '먼 쪽 반'의 머리 위 구간까지 한 덩어리라, 회전해도 상부가 실내를 가리던 실기기 신고의 교정.
+      //   quadBase는 스테이브 격자의 사분면 기준각(0=우측, π/2=좌측) — 밴드가 갈라져도 판 배열은 이어져 보인다.
+      const mkArc = (tFrom, tTo, seed, quadBase) => {
         const g = new THREE.Group();
         const rand = seededRand(seed);
-        // 이 반쪽의 base 곡면 각 범위: 정점 쪽을 apexGap/2 만큼 잘라 구멍을 만든다.
-        const isRight = thetaFrom < 0.01;               // right: 0→π/2 (정점은 끝) / left: π/2→π (정점은 시작)
-        const tStart = isRight ? thetaFrom : thetaFrom + apexGap / 2;
-        const tLen = Math.PI / 2 - apexGap / 2;
+        const tStart = tFrom;
+        const tLen = tTo - tFrom;
+        if (tLen <= 0.01) return g;
         // ── 연속 반원통 base 셸 (axis=z). 이음매 없음. ──
         const baseCol = roofFixed ? 0xaeaaa0 : 0x9a968c;
         const shell = new THREE.Mesh(
@@ -1658,9 +1669,9 @@ const SHELTERS = {
         inner.material.side = THREE.BackSide;
         inner.rotation.x = Math.PI / 2; inner.position.set(0, 0, zBack + depFull / 2);
         g.add(inner);
-        // ── 표면 스테이브(콘크리트 판 질감) — 틈 없이 겹치게 덧댐 (구멍 각도 범위는 건너뜀) ──
+        // ── 표면 스테이브(콘크리트 판 질감) — 틈 없이 겹치게 덧댐 (구멍/밴드 밖 각도는 건너뜀) ──
         for (let i = 0; i < SEG; i++) {
-          const th = thetaFrom + (i + 0.5) * (Math.PI / 2) / SEG;
+          const th = quadBase + (i + 0.5) * (Math.PI / 2) / SEG;
           if (th < tStart - 0.02 || th > tStart + tLen + 0.02) continue; // 구멍 자리엔 판 없음
           let dep = depFull;
           // 손상: 판이 짧게 갈라진 '크랙 자국' — base 셸은 뒤에 그대로라 하늘은 막힘.
@@ -1685,11 +1696,42 @@ const SHELTERS = {
         }
         return g;
       };
-      const right = mkHalf(0, 21);           // x>0 쪽
-      const left = mkHalf(Math.PI / 2, 43);  // x<0 쪽
-      roomGroup.add(right); roomGroup.add(left);
-      wallDefs.push({ group: right, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(1, 0, 0) });
-      wallDefs.push({ group: left, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(-1, 0, 0) });
+      // 밴드 경계각: 하부 상단 y = R·sin(0.62) ≈ 2.53 — 벽 높이대에서 상/하가 갈라진다.
+      const THS = 0.62;
+      const rightLow = mkArc(0, THS, 21, 0);                                    // x>0 하부 (벽 컬링)
+      const rightUp = mkArc(THS, Math.PI / 2 - apexGap / 2, 22, 0);             // x>0 상부 (천장 컬링)
+      const leftUp = mkArc(Math.PI / 2 + apexGap / 2, Math.PI - THS, 43, Math.PI / 2); // x<0 상부
+      const leftLow = mkArc(Math.PI - THS, Math.PI, 44, Math.PI / 2);           // x<0 하부
+      roomGroup.add(rightLow); roomGroup.add(rightUp); roomGroup.add(leftUp); roomGroup.add(leftLow);
+      tagCeiling(rightUp, R * Math.sin(THS) + 0.2);
+      tagCeiling(leftUp, R * Math.sin(THS) + 0.2);
+      wallDefs.push({ group: rightLow, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(1, 0, 0) });
+      wallDefs.push({ group: leftLow, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(-1, 0, 0) });
+      // #87 ②: 정면 파사드 — 반달 콘크리트 벽 + 닫힌 철문. "벙커인데 앞이 뻥 뚫려있다" 실기기 신고.
+      //   다른 셸터의 벽과 동일하게 컬링 참여: 기본(정면) 뷰에선 열려 실내가 보이고, 회전하면 벽 실체가 보인다.
+      {
+        const fR = R - 0.04;
+        const shp = new THREE.Shape();
+        shp.moveTo(fR, 0);
+        shp.absarc(0, 0, fR, 0, Math.PI, false); // 반달 외곽 (CCW)
+        shp.lineTo(-fR, 0);
+        const doorHole = new THREE.Path(); // 출입구 (CW — 외곽 반대 감김)
+        doorHole.moveTo(-0.72, 0.01); doorHole.lineTo(-0.72, 2.0); doorHole.lineTo(0.72, 2.0); doorHole.lineTo(0.72, 0.01); doorHole.closePath();
+        shp.holes.push(doorHole);
+        const facade = new THREE.Group();
+        const fm = new THREE.Mesh(new THREE.ExtrudeGeometry(shp, { depth: 0.24, bevelEnabled: false }), wallPhong({ color: 0xa39f94 }));
+        fm.position.set(0, 0, d / 2 + 0.32); fm.castShadow = fm.receiveShadow = true; facade.add(fm);
+        // 닫힌 철문 두 짝 + 가로 빗장 (후면 잠긴문과 같은 문법 — 여긴 '정문')
+        const steel2 = wallPhong({ map: metalTex }); steel2.userData.shared = true;
+        for (const sx of [-1, 1]) {
+          const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.66, 1.92, 0.1), steel2);
+          leaf.position.set(sx * 0.35, 0.97, d / 2 + 0.3); leaf.castShadow = leaf.receiveShadow = true; facade.add(leaf);
+        }
+        B(facade, 1.3, 0.14, 0.1, 0x55504a, 0, 1.12, d / 2 + 0.43);
+        B(facade, 1.8, 0.24, 0.34, 0x8f8b82, 0, 2.14, d / 2 + 0.44).castShadow = true; // 상인방
+        roomGroup.add(facade);
+        wallDefs.push({ group: facade, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(0, 0, 1) });
+      }
       makeWalls(wallDefs);
 
       // #81 ⑥ 천장 수리 단계별 실메시 — 정점 구멍(apexGap)을 실제로 메운다.
@@ -1820,12 +1862,14 @@ const SHELTERS = {
         // store는 back 그룹 좌표계라 back의 위치/컬링을 그대로 따른다
         back.add(store);
 
-        // #81 ⑦ 디렉터 구조안: 후면 소형 돔(전실+하강 계단실 외피) + 짧은 연결 통로.
-        //   외부 4앵글에서 '2돔 실루엣'이 성립하도록, 소형 돔 외피는 roomGroup에 직접 붙여 항상 노출(컬링 무관).
-        //   지오메트리만 추가 — clearPassage/계단 로직/비용/1.4 통로 연결은 불변(계단 실물은 위 store에 그대로).
+      }
+      // #81 ⑦→#87 ③ 격상: 후면 소형 돔(전실+하강 계단실 외피) + 짧은 연결 통로 — 뒷문 개방 여부와 무관하게 '상시' 존재.
+      //   디렉터 원안: 뒷문을 딸 수 있으려면 그 뒤에 물리 공간이 먼저 있어야 한다. E-2가 개방 후에만 세우던 것을 교정.
+      //   개방 전에는 잠긴 철문(위 lock) 뒤의 밀폐 공간으로 읽히고, 개방하면 전실(store)이 그 내부가 된다.
+      {
         {
-          const anteCXw = DX;                              // 소형 돔 가로 중심 (전실과 동일)
-          const zFarW = -d / 2 - 0.13 + zFar;              // 전실 안쪽 벽 월드 z
+          const anteCXw = -w / 4;                          // 소형 돔 가로 중심 (전실 자리와 동일)
+          const zFarW = -d / 2 - 0.13 - 2.5;               // 전실 안쪽 벽 월드 z (zNear -0.1 - 깊이 2.4)
           const smallCz = zFarW + 0.5;                     // 소형 돔 중심 z (전실 안쪽 위)
           const sR = 1.95, sT = 0.34;                      // 소형 돔 반경/두께
           const domeCol = 0x9a968c;
@@ -1862,7 +1906,8 @@ const SHELTERS = {
           }
           roomGroup.add(smallDome); // 컬링 무관: 후면 외부에서 항상 2돔 실루엣 성립
         }
-      } else {
+      }
+      if (!state.bunkerBackdoor) {
         // ⑥-b 개방 전: 돔 후면에 "잠긴 철문 + 콘크리트 프레임" 매스를 뚜렷이 세운다.
         //   유저 신고("뒤가 허전하다 / 뭔가 있어야 게이트를 인지한다") 해소 — 순수 비주얼(게이트 로직/비용 불변).
         //   ★ back(뒷벽) 그룹은 카메라가 후면에 오면 벽 컬링으로 통째로 숨는다(실내가 보이게). 그러면 문이 안 보이므로
@@ -3483,6 +3528,7 @@ const state = {
   thirst: 80,   // 갈증 (0=탈진)
   energy: 100,  // 에너지 — 탐험/노동으로 소모, 취침으로 회복
   expToday: 0,  // 오늘 탐험 횟수 (하루 5회 제한)
+  expFatigue: null, // #88 탐험 피로: 한도 소진일(day). 자면 해소 — 밤샘 취침 페널티 가중(강제 정산 대체)
   expFailStreak: 0, // 연속 탐험 실패 횟수 (성공률 체감 보정 pity용, 캡3)
   upkeepOk: true,
   dayLog: { gain: {}, spend: {}, notes: [] },
@@ -3815,7 +3861,10 @@ function restEnergyValue(atHour, collapse = false) {
   }
   const onsenRest = hasMod('onsen') ? BAL.highland.onsenRestBonus : 0; // 1.3 온천: 취침 에너지 회복 보너스(대형)
   const base = (hasBed ? BAL.rest.bedEnergy : BAL.rest.floorEnergy) + (cozy >= BAL.rest.cozyThreshold ? BAL.rest.cozyBonus : 0) + onsenRest;
-  const energy = Math.max(0, Math.min(100, base + restHourMod(hour)));
+  // #88 탐험 피로: 한도까지 탐험한 날은 밤샘 페널티가 가중된다(이른 취침 보너스는 그대로 — 일찍 자면 무손해).
+  let hourMod = restHourMod(hour);
+  if (state.expFatigue != null && hourMod < 0) hourMod *= BAL.rest.expFatigueLateMult;
+  const energy = Math.max(0, Math.min(100, base + hourMod));
   return { hasBed, collapse: false, energy };
 }
 function sleepUntilMorning(auto = false, opt = {}) {
@@ -3832,6 +3881,7 @@ function sleepUntilMorning(auto = false, opt = {}) {
     const wakeToday = dayStart + WAKE_HOUR * 60;
     state.gameMin = state.gameMin < wakeToday ? wakeToday : dayStart + 1440 + WAKE_HOUR * 60;
     state.energy = energy;
+    state.expFatigue = null; // #88: 잠들면 탐험 피로 해소
     const e = Math.round(state.energy);
     // 05시 쓰러짐은 전용 문구 — 자발적 취침과 톤을 구분한다.
     const noteKey = collapse ? 'sleep.noteCollapse' : (hasBed ? 'sleep.noteBed' : 'sleep.noteFloor');
@@ -5089,7 +5139,9 @@ function resolveExpedition() {
   renderExpPanel();
   updateHud();
   // 하루 5회를 채우면 몸이 버티지 못한다 — 강제 취침
-  if (state.expToday >= EXP_PER_DAY) sleepUntilMorning(true);
+  // #88(디렉터): 탐험 한도 소진 시 강제 취침·정산을 없앤다 — 정산은 유저가 의도한 취침 때(전 모드 공통).
+  //   대신 '탐험 피로': 오늘 자지 않고 버티면 밤샘 취침 페널티가 가중된다(restEnergyValue) — 일찍 잘 이유를 만드는 쪽.
+  if (state.expToday >= EXP_PER_DAY) { state.expFatigue = state.day; toast(t('exp.fatigue')); }
 }
 
 /* ============================================================
@@ -5502,57 +5554,72 @@ const MOD_MOUNT = {
 //  roof:  { y(지붕 상면), cx, cz(지붕 중심), hw, hd(지붕 반폭/반깊이), pitch?(경사지붕이면 +z로 내려가는 기울기 rad) }
 //  eave:  { y(처마 높이), x, z(모서리), dir(파이프가 뻗는 방향 [±1,±1]) }
 //  wall:  { face:'-z'|'+z'|'-x'|'+x', y(벽 높이), len(벽 길이), off(벽 바깥면까지 거리) }
+//  groundY: 벽 바깥 지형 높이(레이캐스트 실측, #87) — 물통/텃밭/온천 등 지면 소품의 발밑.
+//    방 바닥(y0)과 지형이 다른 셸터(오두막 기단 -1.3, 예인선 수면 -2.7 등)에서 y0 배치가 공중 부양하던 실기기 신고의 교정값.
+//  ground: 텃밭 전용 배치 앵커 { x, z, y?(기본 groundY), rot? } — 보트=갑판 위, 등대=등지기실 실내 화분.
 // 앵커가 없는 셸터의 개조는 addModProp의 폴백(벽 밀착 지면 배치)을 쓴다.
 const SHELTER_MOUNTS = {
-  container: { // 6.4×2.9×2.4 평지붕, 벽 off 0.11
-    roof: { y: 2.42, cx: 0, cz: 0, hw: 3.0, hd: 1.3 },
+  container: { // 6.4×2.9×2.4 평지붕, 벽 off 0.11. 바닥이 다리 위 — 지형 -0.73.
+    roof: { y: 2.42, cx: 0, cz: 0, hw: 3.0, hd: 1.3, cullJoin: true },
     eave: { y: 2.4, x: 3.31, z: 1.45, dir: [1, 1] },
     wall: { face: '+z', y: 2.4, len: 6.4, off: 1.45 },
+    groundY: -0.73, ground: { x: 4.4, z: 1.2, rot: Math.PI / 2 },
   },
-  bunker: { // 돔 아치 R4.35 — 평지붕 없음. 앞 포치(+z) 위 경사 거치.
+  bunker: { // 돔 아치 R4.35 — 평지붕 없음. 앞 포치(+z) 위 경사 거치. 지형 -0.82.
     roof: { y: 2.7, cx: 0, cz: 3.4, hw: 2.4, hd: 0.7 },
     eave: { y: 3.0, x: 4.25, z: 3.0, dir: [1, 1] },
+    groundY: -0.82, ground: { x: 5.6, z: 2.1, rot: Math.PI / 2 },
   },
-  rooftop: { // 옥탑 리워크(#53): 5.6×4.4×2.4 가벽 방 + 슬레이트 지붕(상면 ~2.5). 태양광=슬레이트 위, 빗물받이=방 처마.
-    roof: { y: 2.52, cx: 0, cz: 0, hw: 2.5, hd: 1.9 },
+  rooftop: { // 옥탑 리워크(#53): 5.6×4.4×2.4 가벽 방 + 슬레이트 지붕(상면 ~2.5). 옥상 바닥 = y0.
+    roof: { y: 2.52, cx: 0, cz: 0, hw: 2.5, hd: 1.9, cullJoin: true },
     eave: { y: 2.4, x: 2.88, z: 2.48, dir: [1, 1] }, // 방 앞모서리(+x/+z) 처마
     wall: { face: '+x', y: 2.4, len: 4.4, off: 2.9 }, // 마당 쪽 외벽 (단열재 등 폴백)
+    groundY: 0,
   },
-  cabin: { // 10×8×2.7 풀지붕(평평). 벽 off 0.11
-    roof: { y: 2.85, cx: 0, cz: 0, hw: 4.6, hd: 3.6 },
+  cabin: { // 10×8×2.7 풀지붕(평평). 벽 off 0.11. 기단 위 오두막 — 지형 -1.3.
+    roof: { y: 2.85, cx: 0, cz: 0, hw: 4.6, hd: 3.6, cullJoin: true },
     eave: { y: 2.7, x: 5.11, z: 4.11, dir: [1, 1] },
+    groundY: -1.3, ground: { x: 6.5, z: 1.6, rot: Math.PI / 2 },
   },
-  bus: { // 6.8×2.4×2.2 평지붕, 상단 띠 2.17. 벽 off 0.09
-    roof: { y: 2.2, cx: 0, cz: 0, hw: 3.1, hd: 1.1 },
+  bus: { // 6.8×2.4×2.2 평지붕, 상단 띠 2.17. 벽 off 0.09. 차체 바닥 — 지형 -0.69.
+    roof: { y: 2.2, cx: 0, cz: 0, hw: 3.1, hd: 1.1, cullJoin: true },
     eave: { y: 2.15, x: 3.49, z: 1.29, dir: [1, 1] },
     wall: { face: '+z', y: 2.1, len: 6.8, off: 1.29 },
+    groundY: -0.69, ground: { x: 5.4, z: 0.8, rot: Math.PI / 2 },
   },
-  subway: { // 지하 — 지붕/처마 무의미. 뒷벽(-z)에 지면 배치.
+  subway: { // 지하 — 지붕/처마 무의미. 뒷벽(-z)에 지면 배치. eave.y=0 → 물통만(천장 누수 받이).
     eave: { y: 0, x: 4.6, z: -2.7, dir: [1, -1] },
+    groundY: 0,
   },
-  greenhouse: { // 9×6×2.4 유리 프레임 상단 y2.4. 벽 off 0.08
-    roof: { y: 2.44, cx: 0, cz: 0, hw: 4.1, hd: 2.6 },
+  greenhouse: { // 9×6×2.4 유리 프레임 상단 y2.4. 벽 off 0.08. 지형 -0.73.
+    roof: { y: 2.44, cx: 0, cz: 0, hw: 4.1, hd: 2.6, cullJoin: true },
     eave: { y: 2.4, x: 4.58, z: 3.08, dir: [1, 1] },
+    groundY: -0.73, ground: { x: 5.8, z: 2.0, rot: Math.PI / 2 },
   },
-  ship: { // 개방 갑판 — 선실 벽(-z, 상단 2.5)에 거치.
+  ship: { // 개방 갑판 — 선실 벽(-z, 상단 2.5)에 거치. 텃밭은 갑판 위 화단(물 위 부양 금지).
     roof: { y: 2.55, cx: 0, cz: -3.5, hw: 4.5, hd: 0.9 },
     eave: { y: 2.5, x: 4.7, z: -3.0, dir: [1, -1] },
+    groundY: 0, ground: { x: 3.4, z: 2.1, y: 0, rot: 0 },
   },
-  lighthouse: { // 원통 — 랜턴 데크(반경 2.2, y3.0)가 정상부를 덮으므로 태양광은 바다쪽(-z) 벽 상단으로 오프셋(렌즈 관통 방지). 자체 홈통 존재(raincatch not).
+  lighthouse: { // 원통 — 방(등지기실)이 탑 정상: 바깥 지형은 암반 -8 허공. 텃밭=실내 화분. 자체 홈통 존재(raincatch not).
     roof: { y: 2.55, cx: 0, cz: -2.9, hw: 1.6, hd: 1.0 },
+    groundY: 0, ground: { x: 2.1, z: -2.2, y: 0, rot: Math.PI / 2 },
   },
   // #79 ④: 아래 3셸터(예인선/관제탑/로지)는 앵커 미선언이라 태양광이 바닥 폴백으로 실내 부유했다 → 실측 지붕/처마 앵커 부여.
-  tugboat: { // 6.4×4.2×2.2 개방 갑판 + 뒤쪽(-z) 조타실(상단 2.2, z≈-2.36). 태양광=조타실 지붕, 처마=갑판 앞모서리.
+  tugboat: { // 6.4×4.2×2.2 개방 갑판 + 뒤쪽(-z) 조타실(상단 2.2, z≈-2.36). 수면 -2.7 — 텃밭/물통은 갑판 위.
     roof: { y: 2.3, cx: 0, cz: -1.6, hw: 2.2, hd: 0.9 },
-    eave: { y: 2.1, x: 3.4, z: 2.0, dir: [1, 1] },
+    eave: { y: 2.1, x: 3.02, z: 2.0, dir: [1, 1] }, // #87: x3.4는 갑판(반폭 3.2) 밖 — 물통이 물에 뜨던 것 → 갑판 안쪽으로
+    groundY: 0, ground: { x: 2.0, z: 1.3, y: 0, rot: 0 },
   },
-  controltower: { // 6.6×6.6×2.6 유리 전망 평지붕(중앙 회전등 h+0.4). 태양광=지붕 +z로 오프셋(등 회피), 처마=앞모서리.
-    roof: { y: 2.62, cx: 0, cz: 1.7, hw: 2.6, hd: 1.2 },
+  controltower: { // 6.6×6.6×2.6 유리 전망 평지붕(중앙 회전등 h+0.4). 방 밖은 좁은 발코니(-0.2), 그 너머 -16 허공.
+    roof: { y: 2.62, cx: 0, cz: 1.7, hw: 2.6, hd: 1.2, cullJoin: true },
     eave: { y: 2.6, x: 3.38, z: 3.38, dir: [1, 1] },
+    groundY: -0.2, ground: { x: 3.72, z: 0, rot: Math.PI / 2 },
   },
-  lodge: { // 8.4×6.4×3 A자형 경사 지붕(용마루 h+0.7=3.7, +z면 기울기 atan2(1.4,3.5)≈0.38). 태양광=앞(+z) 경사면 밀착.
+  lodge: { // 8.4×6.4×3 A자형 경사 지붕(용마루 h+0.7=3.7, +z면 기울기 atan2(1.4,3.5)≈0.38). 지형 -0.88 (온천도 이 값).
     roof: { y: 3.15, cx: 0, cz: 1.55, hw: 2.6, hd: 1.1, pitch: 0.38 },
     eave: { y: 3.0, x: 4.31, z: 3.31, dir: [1, 1] },
+    groundY: -0.88, ground: { x: 5.5, z: 1.7, rot: Math.PI / 2 },
   },
 };
 function modAvailable(id, shelterId) {
@@ -5592,28 +5659,40 @@ function buildSolarProp(roof) {
   g.position.set(roof.cx, roof.y, roof.cz);
   if (roof.pitch) g.rotation.x = roof.pitch;
   roomGroup.add(g);
+  // #87: 지붕이 부감 컬링으로 사라지는 셸터(cullJoin)만 지붕과 함께 페이드 — 패널이 실내 위 허공에 남지 않게.
+  //   외피가 항상 보이는 셸터(로지 A자/벙커 돔/보트 조타실)는 편입하면 패널만 사라지는 역효과(로지 실측) — 제외.
+  if (roof.cullJoin) attachToRoofCull(roof.y, g);
   return g;
 }
 // 빗물받이: 처마 홈통(가는 박스) + 모서리 세로 파이프 + 지면 물통. big이면 홈통 2변 + 큰 물통.
-function buildRainProp(eave, big) {
+//   #87: 홈통/파이프는 붙은 벽의 컬링 단위에 편입(벽이 숨으면 골조가 허공에 남지 않게), 물통은 지면(groundY) 잔류.
+//   eave.y가 낮으면(지하철 승강장) 홈통/파이프 생략 — 천장 누수 받이 물통만.
+function buildRainProp(eave, big, gy = 0) {
   const g = new THREE.Group();
   const [dx, dz] = eave.dir;
   const gutMat = 0x6a7076;
-  // 홈통: 모서리에서 안쪽으로 뻗는 가로 박스 (처마 라인)
-  const gutLen = big ? 3.4 : 2.2;
-  const gutA = B(g, 0.12, 0.1, gutLen, gutMat, eave.x, eave.y - 0.05, eave.z - dz * gutLen / 2);
-  gutA.castShadow = true;
-  if (big) {
-    const gutB = B(g, gutLen, 0.1, 0.12, gutMat, eave.x - dx * gutLen / 2, eave.y - 0.05, eave.z);
-    gutB.castShadow = true;
+  if (eave.y >= 0.5) {
+    const gWall = new THREE.Group(); // 벽 컬링 편입분: 홈통 A + 세로 파이프
+    const gutLen = big ? 3.4 : 2.2;
+    const gutA = B(gWall, 0.12, 0.1, gutLen, gutMat, eave.x, eave.y - 0.05, eave.z - dz * gutLen / 2);
+    gutA.castShadow = true;
+    // 세로 파이프: 처마 모서리 → 지형(groundY)
+    Cyl(gWall, 0.055, 0.055, eave.y - gy, gutMat, eave.x, (eave.y + gy) / 2, eave.z, 6);
+    roomGroup.add(gWall);
+    attachToWall(Math.sign(eave.x) || 1, 0, 0, gWall);
+    if (big) {
+      const gWall2 = new THREE.Group(); // 홈통 B는 직교 벽을 따라 — 그 벽의 컬링 단위로
+      const gutB = B(gWall2, gutLen, 0.1, 0.12, gutMat, eave.x - dx * gutLen / 2, eave.y - 0.05, eave.z);
+      gutB.castShadow = true;
+      roomGroup.add(gWall2);
+      attachToWall(0, 0, Math.sign(eave.z) || 1, gWall2);
+    }
   }
-  // 세로 파이프: 처마 모서리 → 지면
-  Cyl(g, 0.055, 0.055, eave.y, gutMat, eave.x, eave.y / 2, eave.z, 6);
-  // 물통 (모서리 바로 아래)
+  // 물통 (모서리 바로 아래, 지형 위)
   const br = big ? 0.44 : 0.32, bh = big ? 0.95 : 0.66;
-  const barrel = Cyl(g, br, br * 0.9, bh, big ? 0x4a6a5c : 0x5a7a8c, eave.x, bh / 2, eave.z, 12);
+  const barrel = Cyl(g, br, br * 0.9, bh, big ? 0x4a6a5c : 0x5a7a8c, eave.x, gy + bh / 2, eave.z, 12);
   barrel.castShadow = true;
-  B(g, br * 1.5, 0.04, br * 1.5, 0x3a4a55, eave.x, bh + 0.02, eave.z);
+  B(g, br * 1.5, 0.04, br * 1.5, 0x3a4a55, eave.x, gy + bh + 0.02, eave.z);
   roomGroup.add(g);
   return g;
 }
@@ -5670,8 +5749,9 @@ function addModProp(id) {
   }
   if (id === 'raincatch' || id === 'bigraincatch') {
     const big = id === 'bigraincatch';
-    if (mounts.eave) return buildRainProp(mounts.eave, big);
-    return buildRainProp({ y: ROOM.h * 0.9, x: w / 2 + 0.4, z: d / 2 + 0.4, dir: [1, 1] }, big);
+    const gy = mounts.groundY ?? 0; // #87: 물통/파이프 발밑 = 실측 지형
+    if (mounts.eave) return buildRainProp(mounts.eave, big, gy);
+    return buildRainProp({ y: ROOM.h * 0.9, x: w / 2 + 0.4, z: d / 2 + 0.4, dir: [1, 1] }, big, gy);
   }
   if (id === 'insulation' || id === 'insulationPlus') {
     const plus = id === 'insulationPlus';
@@ -5689,7 +5769,10 @@ function addModProp(id) {
       sp.castShadow = true;
       g.add(sp);
     }
-    g.position.set(w / 2 + 1.1, 0, -d / 2 + 1.2);
+    // #87: 셸터별 ground 앵커 — 지형 높이(오두막 기단 등) + 벽 평행 회전. 보트=갑판 위, 등대=실내 화분.
+    const ga = mounts.ground;
+    if (ga && ga.rot) g.rotation.y = ga.rot;
+    g.position.set(ga ? ga.x : w / 2 + 1.1, ga ? (ga.y ?? mounts.groundY ?? 0) : (mounts.groundY ?? 0), ga ? ga.z : -d / 2 + 1.2);
     roomGroup.add(g);
   } else if (id === 'rooftopGarden') {
     buildRooftopGarden();
@@ -5711,7 +5794,7 @@ function addModProp(id) {
       const s = new THREE.Mesh(new THREE.SphereGeometry(0.16 + pr() * 0.1, 6, 5), new THREE.MeshLambertMaterial({ color: 0xeef4f6, transparent: true, opacity: 0.28 }));
       s.position.set((pr() - 0.5) * 1.4, 0.5 + pr() * 0.7, (pr() - 0.5) * 1.0); g.add(s);
     }
-    g.position.set(w / 2 + 1.4, 0, -d / 2 + 1.6);
+    g.position.set(w / 2 + 1.4, mounts.groundY ?? 0, -d / 2 + 1.6); // #87: 온천도 지형 위 (로지 -0.88)
     roomGroup.add(g);
   } else if (id === 'shelf') {
     B(roomGroup, 0.06, 1.4, ROOM.d * 0.7, 0x77543a, -w / 2 + 0.12, 0.7, 0);

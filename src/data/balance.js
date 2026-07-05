@@ -40,6 +40,7 @@ export const BAL = {
     latePerHour: 7,      // 01시 이후 매 1시간당 회복 -7
     lateCap: 28,         // 늦잠 페널티 누적 하한 (최대 -28)
     collapseHour: 5,     // 이 시각(05시)에 도달하면 자동으로 쓰러지듯 취침
+    expFatigueLateMult: 2, // #88 탐험 피로: 한도까지 탐험한 날 밤샘 페널티 배수 (강제 정산 폐지의 대가 — 일찍 자면 무손해)
   },
 
   /* ── 탐험 (startExpedition / _simDaysInner 탐험 비용) ── */

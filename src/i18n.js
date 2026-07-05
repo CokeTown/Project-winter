@@ -271,6 +271,8 @@ export const STR = {
   'toast.exhausted':      { ko: '탈진 상태입니다 — 먹고 마셔야 움직일 수 있습니다', en: 'You are exhausted — eat and drink before you can move' },
   'toast.tooTired':       { ko: '⚡ 너무 지쳤습니다 — 🛌 취침으로 회복하세요', en: '⚡ Too tired — 🛌 sleep to recover' },
   'toast.expLimit':       { ko: '오늘은 이미 {n}번 나갔다 왔습니다 — 🛌 쉬어야 합니다', en: 'You have already been out {n} times today — 🛌 you must rest' },
+  // #88 탐험 피로 — 한도 소진 시 강제 취침 대신 안내만. 밤을 새우면 취침 회복 페널티가 커진다.
+  'exp.fatigue':          { ko: '몸이 납덩이 같습니다 — 오늘은 일찍 눕는 게 좋겠습니다', en: 'Dead tired — better turn in early tonight' },
   'toast.emptySlot':      { ko: '빈 슬롯입니다', en: 'Empty slot' },
   'none':                 { ko: '없음', en: 'None' },
   'free':                 { ko: '무료', en: 'free' },
