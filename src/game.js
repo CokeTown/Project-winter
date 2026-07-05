@@ -344,7 +344,9 @@ function applyMood(m) {
 // 밤은 셸터 고유 무드를 그대로 사용, 나머지는 전역 팔레트
 const DAY_PHASES = {
   dawn: { fog: 0x4a4238, skyH: 0x8a5f4a, skyZ: 0x2a3045, sunC: 0xffb27a, sunInt: 0.55, hemiC: 0x9a8f88, hemiG: 0x4a423a, hemiInt: 0.8, stars: 0.25 },
-  day:  { fog: 0x788292, skyH: 0x8c9dae, skyZ: 0x54687e, sunC: 0xfff0d0, sunInt: 1.15, hemiC: 0xc8d2de, hemiG: 0x6a625a, hemiInt: 1.05, stars: 0 },
+  // #54: "낮인데 낮인지 모르겠다" — 정오 광량·하늘 밝기 상향 (새벽/황혼은 유지해 하루 리듬 대비 확보.
+  // 재(ash)의 뿌연 정체성은 wSun 감쇠가 담당 — 맑은 낮이 확실히 밝아야 재 날씨의 존재감도 산다)
+  day:  { fog: 0x8b95a3, skyH: 0xa9bccb, skyZ: 0x6d8398, sunC: 0xfff2d6, sunInt: 1.5, hemiC: 0xd6dfe8, hemiG: 0x77706a, hemiInt: 1.28, stars: 0 },
   dusk: { fog: 0x50403c, skyH: 0xa05a38, skyZ: 0x2f2c4c, sunC: 0xff9a5a, sunInt: 0.6, hemiC: 0xa08a80, hemiG: 0x4a3f38, hemiInt: 0.8, stars: 0.2 },
 };
 const DAY_KEYS = [[0, 'night'], [4.5, 'night'], [6.5, 'dawn'], [9, 'day'], [16.5, 'day'], [19, 'dusk'], [21, 'night'], [24, 'night']];
@@ -452,6 +454,13 @@ function applyTimeLighting() {
   const starsBase = A.stars + (B.stars - A.stars) * f;
   stars.material.opacity = starsBase * (weather.type === 'clear' ? 1 : 0.25);
   dayness = THREE.MathUtils.clamp((hemi.intensity - 0.7) / 0.35, 0, 1);
+  // #54: 지역(지구)별 무드 틴트 — 어디에 있는지가 색으로 읽히게. 낮에만 은은하게(18%×dayness).
+  // 외곽=갈색 헤이즈 / 도심=차가운 회청 / 초원=옅은 초록기 / 숲=짙은 초록 / 해안=푸른 습기
+  const _dt = { outskirts: 0x9a8368, city: 0x7e8ea6, meadow: 0x93a67e, forest: 0x7a9678, coast: 0x7e9aac }[districtOf(state.current)];
+  if (_dt && dayness > 0.01) {
+    scene.fog.color.lerp(_tc.b.setHex(_dt), 0.18 * dayness);
+    hemi.color.lerp(_tc.b, 0.10 * dayness);
+  }
   // 날씨 광량 대비: 맑은 날은 쨍하게(+6%), 궂은 날은 태양광을 깎는다 — 낮에만 체감(dayness 가중)
   const wSun = { clear: 1.06, snow: 0.8, rain: 0.55, ash: 0.62, storm: 0.42 }[weather.type] ?? 1;
   moon.intensity *= 1 + (wSun - 1) * dayness;
