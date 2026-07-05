@@ -6,6 +6,7 @@ import { DEFS } from './data/furniture.js';
 import { BAL } from './data/balance.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx } from './sfx.js';
+import { Platform, bindPlatform } from './lib/platform.js';
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -2789,9 +2790,17 @@ function consumeAnyFood(n = 1) {
   if (remain > 0) resConsume('canned', remain);
   return true;
 }
-const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, autoPlay: false, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko', fpsCap: 60, lowSpec: false, bgIdle: true };
+const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, autoPlay: false, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko', fpsCap: 60, lowSpec: false, bgIdle: true,
+  // 접근성 (REQ-ACC-01): 폰트 3단(1/1.12/1.25) · 색약 팔레트 · 흔들림/깜빡임 감소
+  fontScale: 1, colorblind: false, reduceMotion: false };
 // #52: 설정 창 [기본값] 버튼용 — 선언부 값의 스냅샷 (탭별 부분 복원)
 const OPTS_DEFAULT = { ...opts };
+// REQ-STEAM-01: 플랫폼 어댑터에 상태 접근자 주입 (순환 import 회피). 동작 불변 위임.
+bindPlatform({
+  getAchs: () => (state.achs || {}),
+  setAch: (id) => { if (!state.achs) state.achs = {}; state.achs[id] = true; },
+  getLang: () => opts.lang || 'ko',
+});
 
 /* ============================================================
    난이도 모드 (v0.9.2) — 하드: 전리품 -30% · 게이지 소모 +50%
@@ -2911,11 +2920,10 @@ function doSaveNow() {
   }
   state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2) }));
   state.savedAt = Date.now();
-  try {
-    localStorage.setItem(slotKey(currentSlot), JSON.stringify({ state, opts }));
-    localStorage.setItem('project-shelter-lastslot', String(currentSlot));
-    localStorage.setItem('nw-opts', JSON.stringify(opts)); // 전역 옵션 동기화 (언어/음량 승계용)
-  } catch (e) { /* file:// 등 저장 불가 환경 */ }
+  // REQ-STEAM-01: 세이브 경로를 클라우드 어댑터 경유 (현재 localStorage 위임 — 동작 불변, Steam Cloud 미러 지점).
+  Platform.cloud.save(slotKey(currentSlot), JSON.stringify({ state, opts }));
+  Platform.cloud.save('project-shelter-lastslot', String(currentSlot));
+  Platform.cloud.save('nw-opts', JSON.stringify(opts)); // 전역 옵션 동기화 (언어/음량 승계용)
   checkAchievements();               // 업적 체크 (모든 변화는 저장을 거친다)
   updateHud();                       // 쾌적함 반영
   if (!state.exp) renderExpPanel();  // 보정된 성공률 반영
@@ -5464,7 +5472,7 @@ function checkAchievements() {
   if (state.qaUsed) return; // QA 치트로 오염된 세이브는 신규 업적 해금 무시 (기존 해금은 유지)
   for (const a of ACHS) {
     if (!state.achs[a.id] && a.chk()) {
-      state.achs[a.id] = true;
+      Platform.achievements.unlock(a.id); // 어댑터 경유(로컬 state.achs 위임 + Steam 중계 지점) — 동작 불변
       toast(t('ach.unlocked', { icon: a.icon, name: LName(a) }));
       state.dayLog.notes.push(t('ach.note', { name: LName(a) }));
       playSfx('ring');
@@ -5930,18 +5938,61 @@ function switchSettingsTab(name) {
   document.querySelectorAll('#settings-tabs .settings-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('#settings-tabbody .settings-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
 }
-// 컨트롤 탭 안내표 — PC/모바일 분기. (리바인딩은 Phase E 자리 표시)
+// 컨트롤 탭 — PC = 실제 리바인딩 UI(#14), 모바일 = 제스처 안내표.
+const KEYBIND_LABEL = {
+  map: 'ctrl.act.map', migrate: 'ctrl.act.migrate', craft: 'ctrl.act.craft', clean: 'ctrl.act.clean',
+  sleep: 'ctrl.act.sleep', journal: 'ctrl.act.journal', pause: 'ctrl.act.pause', editMode: 'ctrl.act.editMode',
+  rotViewL: 'ctrl.act.rotViewL', rotViewR: 'ctrl.act.rotViewR', rotateItem: 'ctrl.act.rotateItem', reclaim: 'ctrl.act.reclaim',
+};
 function renderControlsGuide() {
   const el = $('controls-guide'); if (!el) return;
-  const row = (k, d) => `<div class="cg-row"><span class="cg-key">${k}</span><span class="cg-desc">${d}</span></div>`;
-  let html;
   if (isPcInput) {
-    html = row('ESC', t('ctrl.esc')) + row('P', t('ctrl.pause')) + row('Q / E', t('ctrl.rotview'))
-      + row('R', t('ctrl.rotate')) + row('Del', t('ctrl.reclaim'));
+    // ESC 시스템 예약 행(리바인딩 불가) + 액션 12행(클릭→키 대기)
+    const escRow = `<div class="cg-row"><span class="cg-key cg-fixed">ESC</span><span class="cg-desc">${t('ctrl.esc')} <span class="cg-reserved">${t('ctrl.reserved')}</span></span></div>`;
+    const rows = KEYBIND_ORDER.map(a => {
+      const waiting = awaitingRebind === a;
+      const label = waiting ? t('ctrl.pressKey') : keyLabel(KEYBINDS[a]);
+      return `<div class="cg-row"><button class="cg-key cg-bind${waiting ? ' waiting' : ''}" data-rebind="${a}">${label}</button><span class="cg-desc">${t(KEYBIND_LABEL[a])}</span></div>`;
+    }).join('');
+    el.innerHTML = escRow + rows + `<div class="btn-row" style="margin-top:10px"><button class="pixel-btn" id="btn-keys-default">${t('ctrl.rebindDefault')}</button></div>`;
+    el.querySelectorAll('.cg-bind').forEach(b => b.addEventListener('click', () => startRebind(b.dataset.rebind)));
+    const bd = el.querySelector('#btn-keys-default');
+    if (bd) bd.addEventListener('click', () => { awaitingRebind = null; resetKeybinds(); renderControlsGuide(); toast(t('ctrl.rebindDone')); });
   } else {
-    html = row(t('ctrl.tap.k'), t('ctrl.tap')) + row(t('ctrl.drag.k'), t('ctrl.drag')) + row(t('ctrl.pinch.k'), t('ctrl.pinch'));
+    const row = (k, d) => `<div class="cg-row"><span class="cg-key cg-fixed">${k}</span><span class="cg-desc">${d}</span></div>`;
+    el.innerHTML = row(t('ctrl.tap.k'), t('ctrl.tap')) + row(t('ctrl.drag.k'), t('ctrl.drag')) + row(t('ctrl.pinch.k'), t('ctrl.pinch'))
+      + `<div class="cg-note">${t('ctrl.mobileNote')}</div>`;
   }
-  el.innerHTML = html + `<div class="cg-note">${t('ctrl.rebindSoon')}</div>`;
+}
+function startRebind(action) {
+  awaitingRebind = action;
+  renderControlsGuide();
+}
+// 리바인딩 캡처: ESC 취소, 중복 시 스왑 확인. 성공 시 저장·재렌더.
+async function captureRebind(e) {
+  e.preventDefault();
+  const action = awaitingRebind;
+  if (e.key === 'Escape') { awaitingRebind = null; renderControlsGuide(); return; }
+  // ESC/시스템키 외 아무 키나 code로 캡처. reclaim에 Backspace도 유효.
+  const code = e.code;
+  if (!code || code === 'Escape') return;
+  // 이미 이 액션이면 그대로 유지하고 종료
+  if (KEYBINDS[action] === code) { awaitingRebind = null; renderControlsGuide(); return; }
+  // 중복 검사: 다른 액션이 이 code를 이미 쓰는가?
+  const conflict = KEYBIND_ORDER.find(a => a !== action && KEYBINDS[a] === code);
+  awaitingRebind = null; // 캡처는 여기서 종료 (확인창 동안 추가 캡처 금지)
+  if (conflict) {
+    renderControlsGuide(); // '키 입력 대기' 라벨 원복 후 확인창
+    const ok = await gameConfirm(
+      t('ctrl.swapConfirm', { key: keyLabel(code), from: t(KEYBIND_LABEL[conflict]), to: t(KEYBIND_LABEL[action]) }),
+      t('ctrl.swap'), t('confirm.cancel'));
+    if (!ok) { renderControlsGuide(); return; }
+    KEYBINDS[conflict] = KEYBINDS[action]; // 기존 액션의 키를 충돌 액션에 넘겨 스왑
+  }
+  KEYBINDS[action] = code;
+  saveKeybinds();
+  renderControlsGuide();
+  toast(t('ctrl.rebindDone'));
 }
 // 설정 진입 문법: PC = ESC / 모바일 = 우측 상단 톱니. 창은 중앙 고정.
 // ($ 헬퍼는 이 시점에 TDZ라 getElementById 직접 사용)
@@ -5967,6 +6018,8 @@ function resetSettingsTabToDefault() {
   if (active === 'graphics') {
     opts.pixel = D.pixel; opts.quant = D.quant; opts.dither = D.dither;
     opts.ceil = D.ceil; opts.lowSpec = D.lowSpec; opts.fpsCap = D.fpsCap;
+    // 접근성도 그래픽 탭에 배치되므로 함께 기본값 복원
+    opts.fontScale = D.fontScale; opts.colorblind = D.colorblind; opts.reduceMotion = D.reduceMotion;
     applyOpts(); applyLowSpec();
   } else if (active === 'sound') {
     opts.bgm = D.bgm; opts.bgmVol = D.bgmVol; opts.sfxVol = D.sfxVol; opts.bgIdle = D.bgIdle;
@@ -5985,10 +6038,80 @@ function resetSettingsTabToDefault() {
   scheduleSave();
   toast(t('settings.defaultDone'));
 }
+/* ============================================================
+   #14 키 리바인딩 (REQ-INP-01) — 액션 12종. 엔진 1곳(runAction) 경유.
+   ------------------------------------------------------------
+   · KEYBINDS: 액션 → 기본 KeyboardEvent.code. code 기반(레이아웃 독립)이지만
+     Delete/Backspace만 예외적으로 둘 다 허용(관례).
+   · 사용자 오버라이드는 localStorage('nw-keys')에 { action: code } 로 저장.
+   · ESC는 시스템 예약(설정/취소/닫기 스택) — 리바인딩 대상 아님.
+   ============================================================ */
+const KEYBIND_DEFAULT = {
+  map: 'KeyM',        // 탐험 지도
+  migrate: 'KeyG',    // 이주 (Go)
+  craft: 'KeyC',      // 제작
+  clean: 'KeyX',      // 청소
+  sleep: 'KeyZ',      // 취침
+  journal: 'KeyJ',    // 일지
+  pause: 'KeyP',      // 일시정지
+  editMode: 'KeyB',   // 배치 모드 (Build)
+  rotViewL: 'KeyQ',   // 시점 회전 좌
+  rotViewR: 'KeyE',   // 시점 회전 우
+  rotateItem: 'KeyR', // 가구 회전
+  reclaim: 'Delete',  // 회수
+};
+// 리바인딩 UI/안내표 순서 (선언 순서 고정)
+const KEYBIND_ORDER = ['map', 'migrate', 'craft', 'clean', 'sleep', 'journal', 'pause', 'editMode', 'rotViewL', 'rotViewR', 'rotateItem', 'reclaim'];
+// const로 두고 항상 제자리 변경(reassign 금지) — 외부(QA/export) 참조가 항상 라이브 상태를 본다.
+const KEYBINDS = { ...KEYBIND_DEFAULT };
+try {
+  const saved = JSON.parse(localStorage.getItem('nw-keys') || 'null');
+  if (saved && typeof saved === 'object') for (const a of KEYBIND_ORDER) if (typeof saved[a] === 'string') KEYBINDS[a] = saved[a];
+} catch (e) { /* 손상 시 기본값 */ }
+function saveKeybinds() { try { localStorage.setItem('nw-keys', JSON.stringify(KEYBINDS)); } catch (e) { /* */ } }
+function resetKeybinds() { Object.assign(KEYBINDS, KEYBIND_DEFAULT); saveKeybinds(); }
+function keyForAction(a) { return KEYBINDS[a]; }
+// 표시용 라벨: 'KeyM'→'M', 'Delete'→'Del', 'Backspace'→'⌫', 'Digit1'→'1' 등
+function keyLabel(code) {
+  if (!code) return '—';
+  if (code.startsWith('Key')) return code.slice(3);
+  if (code.startsWith('Digit')) return code.slice(5);
+  const map = { Delete: 'Del', Backspace: '⌫', Space: 'Space', Enter: 'Enter', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Minus: '-', Equal: '=', Backquote: '`' };
+  return map[code] || code;
+}
+// 이벤트 → 액션. reclaim은 Delete/Backspace 양쪽 허용(관례).
+function actionForEvent(e) {
+  for (const a of KEYBIND_ORDER) {
+    if (e.code === KEYBINDS[a]) return a;
+    if (a === 'reclaim' && (e.code === 'Delete' || e.code === 'Backspace') && (KEYBINDS[a] === 'Delete' || KEYBINDS[a] === 'Backspace')) return a;
+  }
+  return null;
+}
+// 엔진 1곳: 모든 액션 실행은 여기로 (키/게임패드 공용). 버튼 클릭 동작과 정합.
+function runAction(a) {
+  switch (a) {
+    case 'map':
+      if (state.exp || state.injury) { $('exp-panel').classList.toggle('show'); renderExpPanel(); }
+      else openMapModal();
+      break;
+    case 'migrate': openShelterModal(); break;
+    case 'craft': openCraftModal(); break;
+    case 'clean': cleanShelter(); break;
+    case 'sleep': sleepUntilMorning(); break;
+    case 'journal': openJournalModal('journal'); break;
+    case 'pause': setPaused(!paused); break;
+    case 'editMode': toggleEditMode(); break;
+    case 'rotViewL': camState.targetYaw -= Math.PI / 4; break;
+    case 'rotViewR': camState.targetYaw += Math.PI / 4; break;
+    case 'rotateItem': rotateActive(); break;
+    case 'reclaim': if (selected && !placing) reclaimSelected(); break;
+  }
+}
+let awaitingRebind = null; // 리바인딩 대기 중인 액션 (설정 창)
 addEventListener('keydown', e => {
+  // 리바인딩 캡처 모드: ESC 취소, 그 외 키는 해당 액션에 배정
+  if (awaitingRebind) { captureRebind(e); return; }
   if (titleVisible) return;
-  if (e.key === 'q' || e.key === 'Q') camState.targetYaw -= Math.PI / 4;
-  if (e.key === 'e' || e.key === 'E') camState.targetYaw += Math.PI / 4;
   if (e.key === 'Escape') {
     // 우선순위: 설정 창 닫기 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
     if (settingsOpen()) { closeSettings(); }
@@ -5996,10 +6119,12 @@ addEventListener('keydown', e => {
     else if (selected) { deselect(); }
     else if ($('modal-back').classList.contains('show')) { closeModal(); }
     else if (isPcInput) { openSettings(); }
+    return;
   }
-  if (e.key === 'r' || e.key === 'R') rotateActive();
-  if (e.key === 'p' || e.key === 'P') setPaused(!paused);
-  if ((e.key === 'Delete' || e.key === 'Backspace') && selected && !placing) reclaimSelected();
+  // 설정 창이 열려 있으면(입력 필드 등) 게임 액션 단축키 무시 — 오작동 방지
+  if (settingsOpen()) return;
+  const act = actionForEvent(e);
+  if (act) { e.preventDefault(); runAction(act); }
 });
 // 지지대 회전 시 위 소품도 함께 90° 공전 (dir=+1: rot+1과 동일 방향)
 function rotateChildren(item, dir) {
@@ -7855,6 +7980,10 @@ function applyOpts() {
   $('opt-fps').value = String(opts.fpsCap || 60);
   $('opt-lowspec').checked = !!opts.lowSpec;
   $('opt-bgidle').checked = opts.bgIdle !== false;
+  // 접근성 (REQ-ACC-01) UI 동기화
+  const ef = $('opt-fontscale'); if (ef) ef.value = String(opts.fontScale || 1);
+  const ecb = $('opt-colorblind'); if (ecb) ecb.checked = !!opts.colorblind;
+  const erm = $('opt-reducemotion'); if (erm) erm.checked = !!opts.reduceMotion;
   // 모바일에선 항상 백그라운드 오디오를 끄므로(위 visibilitychange 참고) 옵션 자체를 숨긴다 (데스크톱 위젯 전용 옵션)
   const bgidleRow = $('bgidle-row'); if (bgidleRow) bgidleRow.style.display = isMobileEnv ? 'none' : '';
   postMat.uniforms.uQuant.value = opts.quant ? 1 : 0;
@@ -7863,6 +7992,15 @@ function applyOpts() {
   shadowDirty();
   makeRT();
   applyLowSpec();
+  applyAccessibility();
+}
+// 접근성 body 클래스 + 폰트 배율 반영 (REQ-ACC-01). 게임 3D는 불변 — CSS 오버라이드/폰트만.
+function applyAccessibility() {
+  document.body.classList.toggle('cb-mode', !!opts.colorblind);
+  document.body.classList.toggle('reduce-motion', !!opts.reduceMotion);
+  // fontScale → --uiz 재계산. 단, 부팅 중(첫 applyOpts) UI 스케일 상수 TDZ 이전엔 건너뛴다.
+  // 부팅 경로는 이후 onResize→updateUiScale이 fontScale까지 반영하므로 손실 없음.
+  try { updateUiScale(); } catch (e) { /* 부팅 TDZ — onResize가 곧 재적용 */ }
 }
 $('opt-pixel').addEventListener('input', e => { opts.pixel = +e.target.value; applyOpts(); scheduleSave(); });
 $('opt-quant').addEventListener('change', e => { opts.quant = e.target.checked; applyOpts(); scheduleSave(); });
@@ -7872,6 +8010,12 @@ $('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.check
 $('opt-autoplay').addEventListener('change', e => { opts.autoPlay = e.target.checked; syncAutoBtn(); scheduleSave(); });
 $('opt-fps').addEventListener('change', e => { opts.fpsCap = +e.target.value || 60; scheduleSave(); });
 $('opt-lowspec').addEventListener('change', e => { opts.lowSpec = e.target.checked; applyLowSpec(); scheduleSave(); });
+// 접근성 (REQ-ACC-01)
+{
+  const ef = $('opt-fontscale'); if (ef) ef.addEventListener('change', e => { opts.fontScale = +e.target.value || 1; applyAccessibility(); scheduleSave(); });
+  const ecb = $('opt-colorblind'); if (ecb) ecb.addEventListener('change', e => { opts.colorblind = e.target.checked; applyAccessibility(); scheduleSave(); });
+  const erm = $('opt-reducemotion'); if (erm) erm.addEventListener('change', e => { opts.reduceMotion = e.target.checked; applyAccessibility(); scheduleSave(); });
+}
 $('opt-bgidle').addEventListener('change', e => {
   opts.bgIdle = e.target.checked;
   if (!opts.bgIdle && document.hidden) { bgm.pause(); setAmbience(null); setFire(false); }
@@ -8334,7 +8478,7 @@ function updateUiScale() {
     const minScale = UI_MIN_FONT / UI_BASE_FONT; // = 1.0
     if (s < minScale) s = minScale;
   }
-  s *= TEXT_BOOST; // 가독성 부스트를 배율에 흡수 (CSS와 JS가 같은 --uiz를 공유)
+  s *= TEXT_BOOST * (opts.fontScale || 1); // 가독성 부스트 + 접근성 폰트 3단(REQ-ACC-01)
   document.documentElement.style.setProperty('--uiz', s.toFixed(3));
   return s;
 }
@@ -8356,9 +8500,88 @@ onResize();
 
 const clock = new THREE.Clock();
 let uiTick = 0;
+
+/* ============================================================
+   #14 게임패드 (REQ-INP-02) — Gamepad API 폴링 (renderFrame 훅)
+   ------------------------------------------------------------
+   좌스틱=가상 커서 · 우스틱=카메라 회전 · A=클릭(elementFromPoint 합성)
+   B=닫기/ESC · LB/RB=줌 · Start=일시정지 · Y=배치모드.
+   커서는 패드 입력 시에만 표시, 마우스 이동 시 숨김.
+   ============================================================ */
+const padState = {
+  active: false,        // 패드 커서 표시 중 (마우스 이동 시 false)
+  x: window.innerWidth / 2, y: window.innerHeight / 2,
+  prev: {},             // 버튼 엣지 검출 (직전 프레임 pressed 상태)
+  lastPollTime: 0,
+};
+// 표준 매핑 버튼 인덱스 (Standard Gamepad)
+const PAD_BTN = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, START: 9 };
+function padDead(v) { return Math.abs(v) < BAL.input.padDeadzone ? 0 : v; }
+function showPadCursor(show) {
+  padState.active = show;
+  const c = $('pad-cursor'); if (!c) return;
+  c.classList.toggle('show', show);
+  if (show) { c.style.left = padState.x + 'px'; c.style.top = padState.y + 'px'; }
+}
+// 커서 위치에 클릭 합성 (A 버튼) — elementFromPoint로 대상 요소에 pointer/click 이벤트 발생.
+// 모달/확인창도 이 합성 경로로 자동 조작 가능(위치만 맞으면).
+function padSynthClick() {
+  const el = document.elementFromPoint(padState.x, padState.y);
+  if (!el) return;
+  const opt = { bubbles: true, cancelable: true, clientX: padState.x, clientY: padState.y, view: window };
+  el.dispatchEvent(new PointerEvent('pointerdown', { ...opt, pointerId: 1, pointerType: 'mouse' }));
+  el.dispatchEvent(new MouseEvent('mousedown', opt));
+  el.dispatchEvent(new PointerEvent('pointerup', { ...opt, pointerId: 1, pointerType: 'mouse' }));
+  el.dispatchEvent(new MouseEvent('mouseup', opt));
+  el.dispatchEvent(new MouseEvent('click', opt));
+  if (typeof el.focus === 'function') { try { el.focus(); } catch (e) { /* */ } }
+}
+// B = 닫기/ESC: 기존 ESC 우선순위 스택 재사용
+function padBack() {
+  if (settingsOpen()) { closeSettings(); }
+  else if (placing) { cancelPlacing(); }
+  else if (selected) { deselect(); }
+  else if ($('modal-back').classList.contains('show')) { closeModal(); }
+  else if ($('confirm-back').classList.contains('show')) { settleConfirm(false); }
+}
+function pollGamepad(dt) {
+  const pads = (typeof navigator.getGamepads === 'function') ? navigator.getGamepads() : [];
+  let pad = null;
+  for (const p of pads) { if (p && p.connected !== false) { pad = p; break; } }
+  if (!pad) return;
+  const ax = pad.axes || [], btn = pad.buttons || [];
+  const pressed = i => !!(btn[i] && (btn[i].pressed || btn[i].value > 0.5));
+  const edge = i => { const now = pressed(i); const was = !!padState.prev[i]; padState.prev[i] = now; return now && !was; };
+  // 좌스틱 → 가상 커서
+  const lx = padDead(ax[0] || 0), ly = padDead(ax[1] || 0);
+  const anyStick = lx || ly || padDead(ax[2] || 0) || padDead(ax[3] || 0);
+  const anyBtn = btn.some(b => b && (b.pressed || b.value > 0.5));
+  if (anyStick || anyBtn) { if (!padState.active) showPadCursor(true); }
+  if (lx || ly) {
+    const sp = BAL.input.padCursorSpeed * dt;
+    padState.x = Math.max(0, Math.min(window.innerWidth, padState.x + lx * sp));
+    padState.y = Math.max(0, Math.min(window.innerHeight, padState.y + ly * sp));
+    const c = $('pad-cursor'); if (c) { c.style.left = padState.x + 'px'; c.style.top = padState.y + 'px'; }
+  }
+  // 우스틱 → 카메라 회전
+  const rx = padDead(ax[2] || 0);
+  if (rx) camState.targetYaw += rx * BAL.input.padCameraSpeed * dt;
+  // LB/RB → 줌 (홀드 연속)
+  if (pressed(PAD_BTN.RB)) camState.zoom = THREE.MathUtils.clamp(camState.zoom * BAL.input.padZoomStep, 0.25, 3.2);
+  if (pressed(PAD_BTN.LB)) camState.zoom = THREE.MathUtils.clamp(camState.zoom / BAL.input.padZoomStep, 0.25, 3.2);
+  // 버튼 엣지 액션
+  if (edge(PAD_BTN.A)) padSynthClick();
+  if (edge(PAD_BTN.B)) padBack();
+  if (edge(PAD_BTN.START)) setPaused(!paused);
+  if (edge(PAD_BTN.Y)) { if (!titleVisible && !settingsOpen()) toggleEditMode(); }
+}
+// 마우스가 움직이면 패드 커서 숨김 (실제 마우스로 복귀)
+addEventListener('pointermove', () => { if (padState.active) showPadCursor(false); });
+
 function renderFrame() {
   const dt = Math.min(clock.getDelta(), 0.1);
   const t = clock.elapsedTime;
+  pollGamepad(dt);
   if (!titleVisible && !paused && !endingActive) tickTime(dt); // 타이틀·일시정지·엔딩 중엔 시간 정지
   else if (state.exp) state.exp.end += dt * 1000; // 탐험 실시간 타이머도 함께 멈춘다
   applyTimeLighting();
@@ -8613,4 +8836,7 @@ window.__shelter = {
   // #52 설정 창 (하네스/QA용)
   openSettings, closeSettings, toggleSettingsPanel, switchSettingsTab,
   settingsOpen, resetSettingsTabToDefault, opts,
+  // Phase E (#14 입력 · #34 Steam · 접근성) QA 훅
+  Platform, KEYBINDS, keyForAction, actionForEvent, saveKeybinds, resetKeybinds,
+  applyAccessibility, gamepad: () => padState,
 };

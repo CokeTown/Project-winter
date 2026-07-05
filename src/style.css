@@ -175,6 +175,17 @@
   }
   #controls-guide .cg-desc { flex: 1 1 auto; }
   #controls-guide .cg-note { font-size: 10px; opacity: 0.7; margin-top: 10px; }
+  /* #14 리바인딩 UI: 클릭 가능한 키 버튼 + 시스템 예약 표기 */
+  #controls-guide .cg-fixed { align-self: center; }
+  #controls-guide button.cg-bind {
+    flex: 0 0 auto; min-width: 62px; color: var(--accent);
+    font-family: inherit; font-size: 10px; border: 1px solid var(--panel-border);
+    border-radius: 3px; padding: 2px 5px; text-align: center; background: #20242e;
+    cursor: pointer; align-self: center;
+  }
+  #controls-guide button.cg-bind:hover { border-color: var(--accent); }
+  #controls-guide button.cg-bind.waiting { color: #1a1408; background: var(--accent); border-color: var(--accent); }
+  #controls-guide .cg-reserved { font-size: 9px; opacity: 0.6; margin-left: 4px; }
   #settings-foot {
     display: flex; gap: 6px; flex-wrap: wrap;
     padding: 8px 12px 10px; border-top: 2px solid var(--panel-border);
@@ -780,3 +791,43 @@
   #hud-stat .hud-winters { color: #a9c4d6; white-space: nowrap; }
   #hud-stat .hud-winters.beyond { color: var(--accent); font-weight: bold; } /* 9 초과 = 약속을 넘어선 시간 */
   .slot-card .sl-winters { color: #a9c4d6; font-size: 11px; white-space: nowrap; }
+
+  /* ============================================================
+     #14 게임패드 가상 커서 — 패드 입력 시에만 표시 (JS가 .show 토글)
+     ============================================================ */
+  #pad-cursor {
+    position: fixed; left: 0; top: 0; width: 22px; height: 22px; z-index: 90;
+    pointer-events: none; display: none; transform: translate(-3px, -3px);
+    background: no-repeat center/contain;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+    /* 화살표 커서 (SVG 인라인) */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'><path d='M2 2 L2 17 L6.5 13 L9.5 20 L12.5 18.8 L9.5 12 L15 12 Z' fill='%23e8a86c' stroke='%231a1408' stroke-width='1.2' stroke-linejoin='round'/></svg>");
+  }
+  #pad-cursor.show { display: block; }
+
+  /* ============================================================
+     접근성 (REQ-ACC-01)
+     ① 색약 팔레트: ok/lack(초록·빨강) → 파랑·주황. 게임 3D는 불변.
+     ============================================================ */
+  body.cb-mode {
+    --good: #4aa3e0;  /* 초록 → 파랑 (ok / 충족) */
+    --bad:  #e08a30;  /* 빨강 → 주황 (lack / 부족) */
+  }
+  /* 게이지 fill: 원래 정상=녹, 경고=황, 위기=적. 색약에선 청/황/주로 재매핑. */
+  body.cb-mode .gauge .g-fill { background: #3f7fb0; }
+  body.cb-mode .gauge .g-fill.warn { background: #b08a2f; }
+  body.cb-mode .gauge .g-fill.crit { background: #d06a1f; }
+  /* 지역/맵 성공률 칩·개조 요구칩은 var(--good/--bad) 를 이미 참조 → 위 변수 재정의로 자동 반영.
+     리터럴 색을 쓰는 몇 지점만 추가 오버라이드. */
+  body.cb-mode .region-card .r-rate { color: var(--good); }
+
+  /* ② 흔들림/깜빡임 감소: 게이지 crit 블링크·배지 pulse·editPulse·기타 무한 애니 정지 */
+  body.reduce-motion .btn-badge,
+  body.reduce-motion .gauge .g-fill.crit,
+  body.reduce-motion .cam-btn.pulse,
+  body.reduce-motion .map-pin.here::after,
+  body.reduce-motion #pause-ind,
+  body.reduce-motion #lcd-colon {
+    animation: none !important;
+  }
+  body.reduce-motion .btn-badge { transform: none; }

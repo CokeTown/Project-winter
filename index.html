@@ -94,6 +94,8 @@
   <button class="cam-btn" id="btn-auto" data-i18n-title="btn.auto.title" title="자동 진행">🤖</button>
 </div>
 <div id="pause-ind" data-i18n="pause.ind">⏸ 일시정지</div>
+<!-- #14 게임패드 가상 커서 — 패드 입력 시에만 표시(마우스 이동 시 숨김) -->
+<div id="pad-cursor" aria-hidden="true"></div>
 <button class="cam-btn" id="btn-gear" data-i18n-title="btn.gear.title" title="설정" style="display:none">⚙️</button>
 
 <button class="pixel-btn danger" id="btn-cancel-place" data-i18n="btn.cancelPlace">✖ 배치 취소</button>
@@ -125,6 +127,14 @@
         <label><span data-i18n="opt.ceil">실내 조명</span> <input type="checkbox" id="opt-ceil" checked></label>
         <label><span data-i18n="opt.lowspec">저사양 모드</span> <input type="checkbox" id="opt-lowspec"></label>
         <label><span data-i18n="opt.fps">FPS 제한</span> <select id="opt-fps"><option value="60">60</option><option value="30">30</option></select></label>
+        <h2 data-i18n="acc.title">♿ 접근성</h2>
+        <label><span data-i18n="opt.fontscale">글자 크기</span> <select id="opt-fontscale">
+          <option value="1" data-i18n="acc.font.normal">보통</option>
+          <option value="1.12" data-i18n="acc.font.large">크게</option>
+          <option value="1.25" data-i18n="acc.font.max">최대</option>
+        </select></label>
+        <label data-i18n-title="opt.colorblind.title" title="게이지와 요구 표시의 초록/빨강을 파랑/주황으로 바꿉니다"><span data-i18n="opt.colorblind">색약 팔레트</span> <input type="checkbox" id="opt-colorblind"></label>
+        <label data-i18n-title="opt.reducemotion.title" title="게이지 깜빡임·배지 흔들림 등 반복 애니메이션을 멈춥니다"><span data-i18n="opt.reducemotion">흔들림 · 깜빡임 감소</span> <input type="checkbox" id="opt-reducemotion"></label>
         <div id="display-section" style="display:none">
           <h2 data-i18n="display.title">🖥️ 디스플레이</h2>
           <label><span data-i18n="opt.dispmode">화면 모드</span> <select id="opt-dispmode">

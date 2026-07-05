@@ -138,6 +138,14 @@ export const BAL = {
     radioListenChance: 0.18, // 라디오 ON 상태 하루 1회 방송 청취 확률
   },
 
+  /* ── 입력 / 게임패드 (#14 REQ-INP-02) ── */
+  input: {
+    padDeadzone: 0.15,      // 스틱 데드존 (미만은 0 처리)
+    padCursorSpeed: 780,    // 가상 커서 속도 (px/초, 스틱 최대 기울기 기준)
+    padCameraSpeed: 2.6,    // 우스틱 카메라 회전 속도 (rad/초 계수)
+    padZoomStep: 1.06,      // LB/RB 줌 스텝 (프레임당 배수, 홀드 연속 줌)
+  },
+
   /* ── 쾌적함 4요소 분해 (Living Shelter #29) ──
      comfortDetail()의 기존 컴포넌트를 4개 축으로 "재분류"만 한다.
      총점(score) 계산식은 불변 — 여기 표는 오직 "어느 축에 귀속시킬지" 매핑이다.
