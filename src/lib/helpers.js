@@ -27,5 +27,8 @@ function paintGeo(geo, hex) {
 }
 const vcLambert = new THREE.MeshLambertMaterial({ vertexColors: true });
 vcLambert.userData.shared = true;
+// ① 컬링 페이드: 전역 계절/적설 틴트로 색이 매 프레임 갱신되는 공유 재질 — 그룹별 클론 금지.
+//   (클론하면 페이드 그룹의 지붕 색이 계절 갱신에서 누락됨) → cullFadeSkip 으로 원본 유지.
+vcLambert.userData.cullFadeSkip = true;
 
 export { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert };

@@ -71,6 +71,9 @@ async function generateOnce(asset) {
         size: asset.genSize,
         quality: 'high',
         n: 1,
+        // 프롬프트의 "transparent background"만으로는 모델이 체커보드를 그려버릴 수 있다(gpt-image-2 실측 사고).
+        // 아이콘류는 API 파라미터로 투명 배경을 강제한다. 일러(1536 가로형)는 꽉 찬 장면이라 불필요.
+        ...(asset.genSize === '1024x1024' ? { background: 'transparent' } : {}),
       }),
     });
 

@@ -477,7 +477,8 @@ function disposeDeep(root) {
     if (o.isMesh || o.isPoints) {
       o.geometry.dispose();
       const mats = Array.isArray(o.material) ? o.material : [o.material];
-      for (const m of mats) if (!m.userData.shared && !m.map) m.dispose();
+      // ① 컬링 페이드용 그룹별 재질 클론(perGroupClone)은 map이 있어도 이 그룹 전용이라 해제한다.
+      for (const m of mats) if (!m.userData.shared && (!m.map || m.userData.perGroupClone)) m.dispose();
     }
   });
 }
@@ -558,6 +559,41 @@ const winSkyMats = [];
 // 쨍한 낮 전용 창가 빛기둥/먼지 (loadShelter마다 재수집, updateSunShafts가 투명도 구동)
 const sunShafts = [];
 const sunMotes = [];
+// ③ 한파 실내 침투(GD-THESIS L2): 무방비 한파 시 창유리 안쪽에 성에 오버레이. loadShelter마다 재수집.
+//   updateEnvironment가 coldSnapNetSeverity로 목표 투명도를 구하고 서서히 페이드(종료 시 서서히 사라짐).
+const winFrostMats = [];
+let _frostTex = null;
+function frostTex() {
+  if (_frostTex) return _frostTex;
+  // 절차적 성에: 가장자리 짙고 중앙 옅은 결정 서리 (창 모서리부터 얼어붙는 결)
+  const W = 128, H = 128;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  g.clearRect(0, 0, W, H);
+  // 가장자리 비네트: 네 변에서 안쪽으로 흰 서리
+  const grd = g.createRadialGradient(W / 2, H / 2, W * 0.18, W / 2, H / 2, W * 0.72);
+  grd.addColorStop(0, 'rgba(233,244,252,0.05)');
+  grd.addColorStop(0.55, 'rgba(224,238,250,0.34)');
+  grd.addColorStop(1, 'rgba(238,247,255,0.82)');
+  g.fillStyle = grd; g.fillRect(0, 0, W, H);
+  // 서리 결정 가지 (모서리 근처에서 안쪽으로 뻗는 흰 선)
+  g.strokeStyle = 'rgba(245,251,255,0.5)'; g.lineWidth = 1;
+  const rnd = seededRand(1373);
+  for (let i = 0; i < 90; i++) {
+    const edge = Math.floor(rnd() * 4);
+    let x, y;
+    if (edge === 0) { x = rnd() * W; y = rnd() * H * 0.22; }
+    else if (edge === 1) { x = rnd() * W; y = H - rnd() * H * 0.22; }
+    else if (edge === 2) { x = rnd() * W * 0.22; y = rnd() * H; }
+    else { x = W - rnd() * W * 0.22; y = rnd() * H; }
+    const a = rnd() * Math.PI * 2, len = 4 + rnd() * 12;
+    g.beginPath(); g.moveTo(x, y);
+    g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
+  }
+  _frostTex = new THREE.CanvasTexture(cv);
+  _frostTex.colorSpace = THREE.SRGBColorSpace;
+  return _frostTex;
+}
 let _beamTex = null;
 function beamTex() {
   if (_beamTex) return _beamTex;
@@ -1294,9 +1330,19 @@ function stdWall(len, h, mat, opts = {}) {
       new THREE.MeshBasicMaterial({ color: opts.skyColor ?? 0x36435c }));
     // 창밖 하늘은 시간대에 따라 밝아져야 한다 (낮인데 창이 깜깜하면 뒤집힌 느낌)
     sky.material.userData.baseHex = opts.skyColor ?? 0x36435c;
+    sky.material.userData.cullFadeSkip = true; // ① 외부(winSkyMats)에서 추적하는 재질 — 클론 금지
     winSkyMats.push(sky.material);
     sky.position.set(winX, winY, -0.02);
     g.add(sky);
+    // ③ 한파 성에 오버레이 — 창유리 안쪽(방 방향 +z) 살짝 앞에 창 크기 평면. 기본 투명(opacity 0),
+    //   updateEnvironment가 무방비 한파일 때만 서서히 드러낸다. cullFadeSkip: winFrostMats로 별도 추적.
+    const frost = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH),
+      new THREE.MeshBasicMaterial({ map: frostTex(), transparent: true, opacity: 0, depthWrite: false, fog: false }));
+    frost.material.userData.cullFadeSkip = true;
+    frost.position.set(winX, winY, 0.03); // 유리(-0.02)보다 방 안쪽으로 — 실내에서 보이게
+    frost.visible = false;
+    g.add(frost);
+    winFrostMats.push(frost);
     // 창가 빛기둥 (TLOU 무드): 창 상단에서 방(+z) 안쪽 바닥으로 떨어지는 산란광.
     // 단일 사각 시트는 유리판처럼 보인다(유저 신고) — 사다리꼴 확산 + 3겹 헤이즈 + 착지광으로.
     const x1 = winX - winW / 2, x2 = winX + winW / 2;
@@ -1319,6 +1365,7 @@ function stdWall(len, h, mat, opts = {}) {
       }));
       beam.visible = false;
       beam.userData.opMul = opMul;
+      beam.material.userData.cullFadeSkip = true; // ① sunShafts에서 추적 — 클론 금지
       g.add(beam);
       sunShafts.push(beam);
     }
@@ -1331,6 +1378,7 @@ function stdWall(len, h, mat, opts = {}) {
     pool.position.set(cx, 0.025, zL * 0.82);
     pool.visible = false;
     pool.userData.opMul = 0.8;
+    pool.material.userData.cullFadeSkip = true; // ① sunShafts에서 추적 — 클론 금지
     g.add(pool);
     sunShafts.push(pool);
     // 빛기둥 속 먼지 입자 20개 — 프리즘 내부에 고정 분포, 렌더 루프에서 느리게 부유
@@ -1376,6 +1424,7 @@ const weatherFx = { caps: [] };
 const snowCapMat = new THREE.MeshLambertMaterial({ color: 0xe9f2fa, transparent: true, opacity: 0.96 });
 snowCapMat.userData.noWet = true;
 snowCapMat.userData.shared = true; // loadShelter의 disposeDeep에서 살아남아야 함
+snowCapMat.userData.cullFadeSkip = true; // ① 공유 캡 재질 — 클론 금지(캡은 snowCover로 별도 제어)
 function addWallWeatherFx(wallGroup) {
   const bb = new THREE.Box3().setFromObject(wallGroup);
   const len = bb.max.x - bb.min.x, h = bb.max.y - bb.min.y;
@@ -3876,6 +3925,110 @@ function glowTex() {
   _glowTex = new THREE.CanvasTexture(cv);
   return _glowTex;
 }
+/* ④ 제작 손맛 연출 (GD-THESIS L1): 제작 완료 시 결과물 아이콘 스프라이트가 작업대 위로 ~1초
+   떠올랐다 사라지고, 반짝임 입자 3~4개가 함께 튄다. 기존 craft 사운드는 호출부에서 유지. */
+const _emojiTexCache = new Map();
+function emojiTex(emoji) {
+  if (_emojiTexCache.has(emoji)) return _emojiTexCache.get(emoji);
+  const S = 128;
+  const cv = document.createElement('canvas'); cv.width = cv.height = S;
+  const g2 = cv.getContext('2d');
+  g2.font = `${Math.floor(S * 0.72)}px "Segoe UI Emoji","Apple Color Emoji",sans-serif`;
+  g2.textAlign = 'center'; g2.textBaseline = 'middle';
+  g2.fillText(emoji || '📦', S / 2, S / 2 + S * 0.04);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  _emojiTexCache.set(emoji, tex);
+  return tex;
+}
+let _sparkTex = null;
+function sparkTex() {
+  if (_sparkTex) return _sparkTex;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 32;
+  const g2 = cv.getContext('2d');
+  const gr = g2.createRadialGradient(16, 16, 0, 16, 16, 15);
+  gr.addColorStop(0, 'rgba(255,247,214,1)');
+  gr.addColorStop(0.4, 'rgba(255,230,150,0.7)');
+  gr.addColorStop(1, 'rgba(255,220,120,0)');
+  g2.fillStyle = gr; g2.fillRect(0, 0, 32, 32);
+  _sparkTex = new THREE.CanvasTexture(cv);
+  return _sparkTex;
+}
+const craftFx = []; // 진행 중인 제작 연출 { grp, sprites[], t, dur }
+const CRAFT_FX_DUR = 1.05; // 아이콘 떠오름 지속(~1초). 렌더 연출 상수.
+// 작업대 위치: 배치된 table 가구가 있으면 그 위, 없으면 셸터 중앙 낮은 지점.
+function craftAnchor() {
+  let best = null;
+  for (const it of items) {
+    const surf = DEFS[it.defId]?.surface; // 상판 있는 가구(테이블/작업대 등)
+    if (surf) {
+      // 화면 중앙에 가장 가까운 상판을 우선(여러 개면)
+      const d = Math.hypot(it.x - camCenter.x, it.z - camCenter.z);
+      if (!best || d < best.d) best = { x: it.x, z: it.z, y: (it.y || 0) + (surf.y ?? 0.5) + 0.12, d };
+    }
+  }
+  if (best) return best;
+  return { x: camCenter.x, z: camCenter.z, y: 0.7 };
+}
+function spawnCraftFx(emoji) {
+  if (opts.reduceMotion) return; // 접근성: 흔들림·깜빡임 감소 시 연출 생략
+  const a = craftAnchor();
+  const grp = new THREE.Group();
+  grp.position.set(a.x, a.y, a.z);
+  // 결과물 아이콘 스프라이트
+  const icon = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: emojiTex(emoji), transparent: true, opacity: 0, depthWrite: false, depthTest: false,
+  }));
+  icon.scale.set(0.5, 0.5, 1);
+  grp.add(icon);
+  // 반짝임 입자 3~4개
+  const sprites = [];
+  const nSpark = 3 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < nSpark; i++) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: sparkTex(), transparent: true, opacity: 0, depthWrite: false, depthTest: false,
+      blending: THREE.AdditiveBlending,
+    }));
+    const ang = Math.random() * Math.PI * 2, rad = 0.12 + Math.random() * 0.18;
+    sp.userData.ox = Math.cos(ang) * rad;
+    sp.userData.oz = Math.sin(ang) * rad;
+    sp.userData.oy = 0.1 + Math.random() * 0.35;
+    sp.userData.ph = Math.random();
+    sp.scale.set(0.14, 0.14, 1);
+    grp.add(sp);
+    sprites.push(sp);
+  }
+  scene.add(grp);
+  craftFx.push({ grp, icon, sprites, t: 0, dur: CRAFT_FX_DUR });
+}
+function updateCraftFx(dt) {
+  for (let i = craftFx.length - 1; i >= 0; i--) {
+    const fx = craftFx[i];
+    fx.t += dt;
+    const u = fx.t / fx.dur; // 0→1
+    if (u >= 1) {
+      scene.remove(fx.grp);
+      fx.icon.material.map = null; fx.icon.material.dispose(); // 스프라이트 재질만 해제(공유 텍스처는 캐시 유지)
+      for (const sp of fx.sprites) sp.material.dispose();
+      craftFx.splice(i, 1);
+      continue;
+    }
+    // 아이콘: 위로 떠오르며(0→0.55) 페이드 인(0~0.25) 후 유지, 후반(0.7~1) 페이드 아웃
+    fx.icon.position.y = 0.55 * (1 - Math.pow(1 - u, 2)); // 이즈아웃 상승
+    const inA = Math.min(1, u / 0.22);
+    const outA = u > 0.7 ? Math.max(0, 1 - (u - 0.7) / 0.3) : 1;
+    fx.icon.material.opacity = inA * outA;
+    const pop = u < 0.3 ? 0.5 + Math.sin(u / 0.3 * Math.PI) * 0.12 : 0.5; // 등장 시 살짝 팝
+    fx.icon.scale.set(pop, pop, 1);
+    // 반짝임: 바깥·위로 튀며 반짝 명멸 후 소멸
+    for (const sp of fx.sprites) {
+      const su = Math.min(1, u * 1.3);
+      sp.position.set(sp.userData.ox * su, sp.userData.oy * su + 0.15, sp.userData.oz * su);
+      const flick = 0.6 + 0.4 * Math.sin((u * 12 + sp.userData.ph * 6));
+      sp.material.opacity = Math.max(0, (1 - su)) * flick;
+    }
+  }
+}
 function buildItemGroup(item) {
   const def = DEFS[item.defId];
   const g = def.build(def.colors[item.colorIdx], item.colorIdx);
@@ -4054,6 +4207,7 @@ function loadShelter(id) {
   weatherFx.caps = []; wetApplied = -1;
   winSkyMats.length = 0; // 창문 하늘판 재수집
   sunShafts.length = 0; sunMotes.length = 0; // 빛기둥/먼지도 재수집 (envRoot dispose와 함께 소멸)
+  winFrostMats.length = 0; // ③ 창유리 성에 오버레이 재수집
   // 초봄(Day 1~2) 시작: 겨울의 끝자락 잔설이 남아있다가 서서히 녹는다 (최초 입장 1회만 시딩)
   if (!snowSeeded && state.day <= 2 && seasonOf().id === 'spring') { snowCover = 0.25; snowSeeded = true; }
 
@@ -4106,7 +4260,7 @@ function loadShelter(id) {
   camState.yaw = camState.targetYaw;
   lastWallMask = -1;
   updateCamera();
-  updateWallCulling();
+  updateWallCulling(0, true); // 로드 시점: 페이드 없이 즉시 확정
   shadowDirty();
   updateHud();
   if (typeof syncBgm === 'function') syncBgm();
@@ -4901,6 +5055,29 @@ function catFaceTex() {
   _catFaceTex.wrapS = _catFaceTex.wrapT = THREE.ClampToEdgeWrapping;
   return _catFaceTex;
 }
+// ② 클로즈업 쓰다듬기 연출용 — 눈 감은 얼굴(만족). 기존 얼굴 문법 재사용(눈 픽셀만 감은 호선으로 교체).
+let _catFaceHappyTex = null;
+function catFaceHappyTex() {
+  if (_catFaceHappyTex) return _catFaceHappyTex;
+  _catFaceHappyTex = makeCanvasTex((g2, w, h) => {
+    const cell = w / 16;
+    const px = (cx, cy, cw, ch, col) => { g2.fillStyle = col; g2.fillRect(cx * cell, cy * cell, cw * cell, ch * cell); };
+    px(0, 0, 16, 16, '#df9038');  // 바탕 = 털색
+    px(5, 10, 6, 4, '#f2eee4');   // 주둥이 흰 패치
+    // 감은 눈 = 아래로 볼록한 호(∪): 가운데 1px 내려 만족한 실눈. 좌 x=3, 우 x=11
+    const lid = '#3a2c18';
+    for (const ex of [3, 11]) {
+      px(ex, 7, 2, 1, lid);        // 눈꺼풀 윗선
+      px(ex - 0, 8, 1, 1, lid); px(ex + 1, 8, 1, 1, lid); // 살짝 처진 양끝
+    }
+    // 입 라인 (기본과 동일)
+    px(6, 12, 4, 1, '#5a3a24');
+    px(7, 13, 1, 1, '#5a3a24'); px(8, 13, 1, 1, '#5a3a24');
+  }, 16, 16);
+  _catFaceHappyTex.repeat.set(1, 1);
+  _catFaceHappyTex.wrapS = _catFaceHappyTex.wrapT = THREE.ClampToEdgeWrapping;
+  return _catFaceHappyTex;
+}
 function buildCatMesh() {
   const g = new THREE.Group();
   const PX = 0.02;
@@ -4931,6 +5108,7 @@ function buildCatMesh() {
       [furMat, furMat, furMat, furMat, faceMat, furMat]);
     headMesh.castShadow = true;
     head.add(headMesh);
+    P.faceMat = faceMat; // ② 쓰다듬기 눈 감김 연출용 — map 스왑 대상
   }
   B(head, 0.8 * PX, 0.6 * PX, 0.3 * PX, pink, 0, -0.2 * PX, 2.5 * PX + 1 * PX); // 튀어나온 코 (분홍, 디렉터 승인 유지)
   // ── 귀 (1×2×1px 두 개, 머리 위 모서리)
@@ -5214,9 +5392,21 @@ function updateCat(t, dt) {
   //   → sit 0.075 = -0.13 (기립높이 0.32 의 41% ↓, 골반이 바닥에 닿음), sleep 0.05 = -0.18
   const rigDrop = c.rigged ? Math.max(0, 0.14 - pv.by) * 2.0 : 0;
   c.g.position.y = c.baseY + walkBob + hop - rigDrop;
-  // ── 꼬리 살랑 파라미터 (양 경로 공용)
-  const tailSpd = c.mode === 'play' ? 9 : c.mode === 'walk' ? 4.5 : c.mode === 'sleep' ? 0.7 : 1.6;
-  const tailAmp = c.mode === 'play' ? 0.7 : c.mode === 'sleep' ? 0.12 : 0.4;
+  // ② 쓰다듬기 반응 타이머: 눈 감김(petHappy)·꼬리 가속(petPurr) 감쇠
+  if (c.petHappy > 0) {
+    c.petHappy = Math.max(0, c.petHappy - dt);
+    if (c.petHappy === 0 && p && p.faceMat) { p.faceMat.map = catFaceTex(); p.faceMat.needsUpdate = true; }
+  }
+  if (c.petPurr > 0) c.petPurr = Math.max(0, c.petPurr - dt / (PET_HAPPY_MS / 1000));
+  // 눈 감은 얼굴로 스왑 (활성 동안 유지). 복셀 경로 전용(faceMat) — 리깅 경로는 사운드/꼬리만.
+  if (p && p.faceMat) {
+    const want = c.petHappy > 0 ? catFaceHappyTex() : catFaceTex();
+    if (p.faceMat.map !== want) { p.faceMat.map = want; p.faceMat.needsUpdate = true; }
+  }
+  // ── 꼬리 살랑 파라미터 (양 경로 공용) — 쓰다듬기 중엔 속도·진폭을 키워 만족한 살랑임
+  const petBoost = c.petPurr > 0 ? 1 + c.petPurr * 1.4 : 1; // ② 꼬리 가속(최대 ×2.4)
+  const tailSpd = (c.mode === 'play' ? 9 : c.mode === 'walk' ? 4.5 : c.mode === 'sleep' ? 0.7 : 1.6) * petBoost;
+  const tailAmp = (c.mode === 'play' ? 0.7 : c.mode === 'sleep' ? 0.12 : 0.4) * (c.petPurr > 0 ? 1 + c.petPurr * 0.5 : 1);
   const tailY0 = Math.sin(t * tailSpd) * tailAmp;
   const tailY1 = Math.sin(t * tailSpd - 0.9) * tailAmp * 1.3;
   const tailX0 = Math.sin(t * tailSpd * 0.6) * 0.2 - (c.mode === 'walk' ? 0.4 : 0);
@@ -6783,12 +6973,15 @@ function openCraftModal() {
     b.addEventListener('click', () => {
       const c = CRAFTS[+b.dataset.craft];
       if (!resConsumeAll(c.cost)) { toast(t('toast.needMaterial')); return; }
+      let craftEmoji;
       if (c.out.res) {
         resAdd(c.out.res, c.out.n);
-        toast(t('craft.doneRes', { emoji: RESOURCES[c.out.res].emoji, name: LName(RESOURCES[c.out.res]), n: c.out.n }));
+        craftEmoji = RESOURCES[c.out.res].emoji;
+        toast(t('craft.doneRes', { emoji: craftEmoji, name: LName(RESOURCES[c.out.res]), n: c.out.n }));
       } else {
         state.inventory[c.out.furn] = (state.inventory[c.out.furn] || 0) + 1;
-        toast(t('craft.doneFurn', { emoji: DEFS[c.out.furn].emoji, name: LName(DEFS[c.out.furn]) }));
+        craftEmoji = DEFS[c.out.furn].emoji;
+        toast(t('craft.doneFurn', { emoji: craftEmoji, name: LName(DEFS[c.out.furn]) }));
         renderInventoryBar();
       }
       state.stats.craft = (state.stats.craft || 0) + 1;
@@ -6797,6 +6990,7 @@ function openCraftModal() {
       scheduleSave();
       renderResBar();
       playSfx('craft');
+      spawnCraftFx(craftEmoji); // ④ 제작 손맛: 결과물 아이콘 떠오름 + 반짝임
       openCraftModal(); // 갱신
     }));
   $('modal-body').querySelectorAll('button[data-mod]').forEach(b =>
@@ -7289,9 +7483,19 @@ function pickCat(e) {
   if (petDay !== state.day) { petDay = state.day; petCount = 0; }
   if (petCount >= 3) return true; // 히트는 소비하되 보상 없음(오늘 한도 초과)
   petCount++;
-  playSfx(['meow1', 'meow2', 'meow3'][Math.floor(Math.random() * 3)]);
+  petCatResponse(); // ② 쓰다듬기 연계 연출(눈 감김·갸르릉·꼬리 가속) — 클로즈업에서 완성, 평상시에도 동작
   toast(t('cat.pet'));
   return true;
+}
+// ② 쓰다듬기 반응: 눈 감은 얼굴 2초 + 갸르릉(전용 사운드 없어 야옹 저피치로 대체) + 꼬리 살랑 가속.
+//   클로즈업(catCam.active) 여부와 무관하게 동작하되, 연출은 클로즈업에서 완성되도록 설계.
+const PET_HAPPY_MS = 2000; // 눈 감김 지속(2초). 렌더 연출 상수.
+function petCatResponse() {
+  if (!catObj) return;
+  catObj.petHappy = PET_HAPPY_MS / 1000; // 남은 눈감김 시간(초)
+  catObj.petPurr = 1;                     // 꼬리 가속 계수(1→0 감쇠)
+  // 갸르릉: assets-src/Cat_sound에 전용 파일 없음 → 기존 야옹을 저피치(rate<1)로 재생해 그르릉 톤 근사.
+  playSfx(['meow1', 'meow2', 'meow3'][Math.floor(Math.random() * 3)], { rate: 0.55, jitter: 0.03, vol: 0.85 });
 }
 function pickItem(e) {
   pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
@@ -7780,27 +7984,119 @@ function rotateActive() {
 /* ============================================================
    벽면 컬링 & 환경 애니메이션
 ============================================================ */
+// ① 컬링 페이드 (디렉터 승인, GD-THESIS L1/L5 손맛): 벽/천장이 뚝 사라지는 대신 투명도로 부드럽게 소멸.
+//   렌더 상수(BAL 아님) — 순수 시각 튜닝값.
+const CULL_FADE_MS = 175;                 // 페이드 지속(150~200ms 범위)
+const CULL_FADE_RATE = 1000 / CULL_FADE_MS; // opacity/초 변화율
+// 페이드 상태를 각 컬링 그룹(벽/천장)에 lazy 부착: group.userData.cull = { fade, target, mats }
+//   fade: 현재 표시도(1=완전 보임, 0=숨김) / target: 목표(1 보임, 0 숨김)
+//   mats: 이 그룹이 소유한 페이드 대상 재질 배열 (공유 재질을 그룹 단위로 클론해 독립 페이드).
+//   페이드 아웃 완료 시 visible=false + transparent 복귀(상시 draw call·렌더순서 아티팩트 방지, 방치형 성능 캐논).
+function cullFadeState(group) {
+  let cs = group.userData.cull;
+  if (cs) return cs;
+  // 그룹 소유 재질 수집 — 공유(다중 벽 공용) 재질을 그룹별로 클론해 독립적으로 페이드.
+  //   클론은 userData(isWallMat/baseMap/deco 태그·wetDry 등)를 그대로 물려받아 applyDeco/applyWetness가
+  //   클론에도 벽지·젖음을 바른다(traverse 대상이 클론이므로 자동). perGroupClone 태그로 disposeDeep이 해제.
+  const mats = [];
+  group.traverse(o => {
+    if (!o.isMesh) return;
+    const arr = Array.isArray(o.material) ? o.material : [o.material];
+    for (let i = 0; i < arr.length; i++) {
+      const m = arr[i];
+      if (!m || m.userData.cullFadeSkip) continue;
+      if (!m.userData.perGroupClone) {
+        const cl = m.clone();
+        cl.userData = Object.assign({}, m.userData); // 태그 승계 (isWallMat/baseMap/shared 등)
+        cl.userData.shared = false;                  // 이 그룹 전용 (셸터 리로드 시 해제 대상)
+        cl.userData.perGroupClone = true;            // disposeDeep이 map 있어도 해제하도록 표식
+        cl.userData.opaqueOpacity = m.opacity;       // 원래 불투명 opacity 보존(반투명 유리 등)
+        if (Array.isArray(o.material)) o.material[i] = cl; else o.material = cl;
+        mats.push(cl);
+      } else if (!mats.includes(m)) {
+        if (m.userData.opaqueOpacity == null) m.userData.opaqueOpacity = m.opacity;
+        mats.push(m);
+      }
+    }
+  });
+  cs = { fade: group.visible ? 1 : 0, target: group.visible ? 1 : 0, mats };
+  group.userData.cull = cs;
+  return cs;
+}
+// 컬링 그룹 표시/숨김을 페이드 목표로 전달. reduce-motion 이면 즉시 전환(기존 하드컷 유지).
+function setCullTarget(group, show, instant) {
+  if (opts.reduceMotion || instant) {
+    if (group.visible !== show) { group.visible = show; shadowDirty(); }
+    const cs = group.userData.cull;
+    if (cs) { cs.fade = show ? 1 : 0; cs.target = cs.fade; applyCullFade(cs, group); }
+    return;
+  }
+  const cs = cullFadeState(group);
+  const tgt = show ? 1 : 0;
+  if (cs.target === tgt) return;
+  cs.target = tgt;
+  if (show && !group.visible) { group.visible = true; shadowDirty(); } // 페이드 인은 즉시 보이게 하고 opacity로 등장
+}
+// 페이드 재질 상태 반영: 페이드 중이면 transparent+opacity, 완료면 원상 복귀.
+function applyCullFade(cs, group) {
+  const mid = cs.fade > 0.001 && cs.fade < 0.999;
+  for (const m of cs.mats) {
+    if (mid) {
+      m.transparent = true;
+      m.opacity = (m.userData.opaqueOpacity ?? 1) * cs.fade;
+      m.depthWrite = false; // 페이드 중 반투명 정렬 아티팩트 완화
+      m.needsUpdate = true;
+    } else {
+      // 완료 상태: 불투명 복귀 (원래 반투명 유리는 opaqueOpacity로 되돌림)
+      const base = m.userData.opaqueOpacity ?? 1;
+      const wasTransparent = base < 1;
+      if (m.transparent !== wasTransparent || m.opacity !== base) {
+        m.transparent = wasTransparent;
+        m.opacity = base;
+        m.depthWrite = true;
+        m.needsUpdate = true;
+      }
+    }
+  }
+}
+// 매 프레임 페이드 진행 (dt 초). 완료(fade==target) 시 visible 확정.
+function tickCullFade(cs, group, dt) {
+  if (cs.fade === cs.target) return;
+  const step = dt * CULL_FADE_RATE;
+  if (cs.fade < cs.target) cs.fade = Math.min(cs.target, cs.fade + step);
+  else cs.fade = Math.max(cs.target, cs.fade - step);
+  applyCullFade(cs, group);
+  if (cs.fade === 0 && !cs.target) { group.visible = false; shadowDirty(); } // 아웃 완료 → 실제 숨김
+}
 let lastWallMask = -1;
-function updateWallCulling() {
+// instant=true(셸터 로드 직후): 페이드 없이 즉시 확정 — 입장 시 벽이 서서히 나타나는 어색함 방지.
+function updateWallCulling(dt = 0, instant = false) {
   if (!wallList.length) return;
   const dir = new THREE.Vector3().subVectors(camera.position, camCenter).normalize();
   let mask = 0;
   wallList.forEach((w, i) => {
-    w.group.visible = w.normal.dot(dir) < 0.25;
-    if (w.group.visible) mask |= 1 << i;
+    const show = w.normal.dot(dir) < 0.25;
+    setCullTarget(w.group, show, instant);
+    // 마스크는 "표시 목표" 기준(그림자 갱신 트리거) — 페이드 완료 대기 없이 그림자가 따라오게.
+    if (show) mask |= 1 << i;
   });
   if (mask !== lastWallMask) { lastWallMask = mask; shadowDirty(); }
-  updateCeilCulling();
+  updateCeilCulling(instant);
+  // 진행 중인 페이드 전진
+  if (dt > 0 && !opts.reduceMotion) {
+    for (const w of wallList) { const cs = w.group.userData.cull; if (cs) tickCullFade(cs, w.group, dt); }
+    for (const rf of ceilCullList) { const cs = rf.group.userData.cull; if (cs) tickCullFade(cs, rf.group, dt); }
+  }
 }
 // ⑥-a (전 셸터 공통): 천장/지붕 투시 컬링.
 //   벽 컬링과 동일 사상 — 카메라를 '마주보지 않는' 면은 감춘다. 천장은 위를 향하므로 카메라가 천장보다
 //   위(부감/사선)에 있을 때 숨겨 실내를 보이게 한다. 수평 앵글(카메라가 천장 높이 아래)에서는 천장이 보여
 //   아늑함이 유지된다. 임계각은 렌더 상수(아래 CEIL_CULL_MARGIN)로 실측 튜닝 — BAL이 아니라 순수 렌더 값.
 const CEIL_CULL_MARGIN = 0.3; // 카메라 y가 (천장y + 이 여유)보다 높으면 부감으로 보고 천장을 숨긴다.
-function updateCeilCulling() {
+function updateCeilCulling(instant = false) {
   for (const rf of ceilCullList) {
     const above = camera.position.y > rf.y + CEIL_CULL_MARGIN;
-    if (rf.group.visible === above) { rf.group.visible = !above; shadowDirty(); }
+    setCullTarget(rf.group, !above, instant); // above(부감)=숨김 목표 → show=false
   }
 }
 // 날씨-환경 상호작용: 눈이 쌓이고(지면·수풀·지붕 풀 서리 톤), 악천후엔 바람이 거세짐
@@ -7808,6 +8104,7 @@ let snowCover = 0, windLevel = 1;
 let snowSeeded = false; // 초봄 잔설 초기값은 최초 1회만 세팅 (셸터 재입장/개조 시 덮어쓰지 않도록)
 // 비가 오면 셸터 겉면이 젖어 어두워진다
 let wetness = 0, wetApplied = -1;
+let frostLevel = 0; // ③ 창유리 성에 현재 투명도(0~0.72). updateEnvironment가 한파 상태로 구동.
 function applyWetness() {
   wetApplied = wetness;
   const seen = new Set();
@@ -7855,6 +8152,18 @@ function updateEnvironment(t, dt) {
   for (const cap of weatherFx.caps) {
     cap.visible = !indoorSh && snowCover > 0.05;
     if (cap.visible) cap.scale.y = Math.min(1, snowCover * 1.1);
+  }
+  // ③ 한파 실내 침투: 무방비(coldSnapNetSeverity>0) 한파 시 창유리 안쪽 성에가 서서히 짙어지고,
+  //   방어 성공/한파 종료 시 서서히 사라진다. 강도는 순 페널티에 비례(방어 단계만큼 옅어짐).
+  if (winFrostMats.length) {
+    const netSev = coldSnapNetSeverity();
+    const frostTarget = netSev > 0 ? Math.min(0.72, 0.34 + netSev * 0.19) : 0; // 방어 부족분 비례
+    frostLevel += (frostTarget - frostLevel) * Math.min(1, dt * (frostTarget > frostLevel ? 0.2 : 0.35));
+    if (frostLevel < 0.004) frostLevel = 0;
+    for (const fm of winFrostMats) {
+      fm.material.opacity = frostLevel;
+      fm.visible = frostLevel > 0.004;
+    }
   }
   if (envDyn.trees || envDyn.buildings) {
     const cd = new THREE.Vector2(camera.position.x - camCenter.x, camera.position.z - camCenter.z).normalize();
@@ -10326,10 +10635,11 @@ function renderFrame() {
   else if (state.exp) state.exp.end += dt * 1000; // 탐험 실시간 타이머도 함께 멈춘다
   applyTimeLighting();
   updateCamera();
-  updateWallCulling();
+  updateWallCulling(dt);
   updateEnvironment(t, dt);
   updateWeather(dt, t);
   updateCat(t, dt);
+  updateCraftFx(dt); // ④ 제작 손맛 아이콘/반짝임 연출
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   for (const it of items) {
     if (it.lightObj && it.on !== false && DEFS[it.defId].light?.flicker) {
@@ -10552,6 +10862,8 @@ window.__shelter = {
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
+  // ③ 창유리 성에 QA 훅: 현재 성에 강도 + 창별 오버레이 투명도
+  frostState: () => ({ frostLevel, netSev: coldSnapNetSeverity(), panes: winFrostMats.map(m => +m.material.opacity.toFixed(3)) }),
   renderFrame: () => renderFrame(),
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
@@ -10573,6 +10885,9 @@ window.__shelter = {
   // ④ 고양이 클로즈업 QA 훅
   enterCatCloseup, exitCatCloseup, catCamState: () => ({ active: catCam.active, saved: catCam.saved, center: catCam.center.toArray(), zoom: camState.zoom, dist: camState.dist }),
   setCatMode: (m) => { if (catObj) { catObj.mode = m; catObj.timer = 999; } },
+  // ② 쓰다듬기 연출 QA 훅: 눈 감김·갸르릉·꼬리 가속 트리거 + 상태 조회
+  petCat: () => petCatResponse(),
+  catPetState: () => catObj ? { petHappy: catObj.petHappy || 0, petPurr: catObj.petPurr || 0, eyesClosed: !!(catObj.p && catObj.p.faceMat && catObj.p.faceMat.map === _catFaceHappyTex) } : null,
   // 퀘스트 트래커
   QUESTS, questProgress, renderQuestCard, questActive,
   // v0.9.2 개연성 패스 (1부)
@@ -10591,6 +10906,8 @@ window.__shelter = {
   resetSfx: () => { dbgSfx = null; },
   // #13 꾸미기 확장 + 사운드 QA 훅
   WALLPAPERS, FLOORINGS, THEME_SETS, DECO_THEME_COMFORT, applyDecoChoice, applyDeco,
+  // ④ 제작 손맛 연출 QA 훅: 임의 이모지로 연출 트리거 + 진행 중 연출 수 조회
+  spawnCraftFx: (emoji = '🥫') => spawnCraftFx(emoji), craftFxCount: () => craftFx.length,
   themeSetActive, activeThemeSets, currentDeco, EVENT_STING, playEventSting,
   setSeasonAmbience, seasonAmbienceName,
   pickItemAt: (cx, cy) => pickItem({ clientX: cx, clientY: cy }),
