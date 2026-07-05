@@ -51,31 +51,47 @@ if (targets.length === 0) {
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
+// 모델 우선순위 (디렉터 승인 2026-07-05: 퀄리티 우선 gpt-image-2, 미지원 시 gpt-image-1 자동 폴백).
+// 폴백은 세션당 1회만 판정해 이후 요청은 확정된 모델로 나간다(불필요한 실패 요청 방지 = 비용 효율).
+const MODEL_CHAIN = ['gpt-image-2', 'gpt-image-1'];
+let modelIdx = 0;
+
 async function generateOnce(asset) {
-  const res = await fetch('https://api.openai.com/v1/images/generations', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-image-1',
-      prompt: asset.prompt,
-      size: asset.genSize,
-      quality: 'high',
-      n: 1,
-    }),
-  });
+  for (; modelIdx < MODEL_CHAIN.length; modelIdx++) {
+    const model = MODEL_CHAIN[modelIdx];
+    const res = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        prompt: asset.prompt,
+        size: asset.genSize,
+        quality: 'high',
+        n: 1,
+      }),
+    });
 
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`HTTP ${res.status} ${res.statusText} — ${body.slice(0, 500)}`);
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      // 모델 자체를 못 쓰는 오류(404/모델명 오류)면 다음 모델로 폴백. 그 외(레이트리밋 등)는 그대로 throw.
+      const modelErr = res.status === 404 || /model|does not exist|unknown/i.test(body);
+      if (modelErr && modelIdx < MODEL_CHAIN.length - 1) {
+        console.warn(`  모델 ${model} 미지원 — ${MODEL_CHAIN[modelIdx + 1]}로 폴백`);
+        continue;
+      }
+      throw new Error(`HTTP ${res.status} ${res.statusText} — ${body.slice(0, 500)}`);
+    }
+
+    const json = await res.json();
+    const b64 = json?.data?.[0]?.b64_json;
+    if (!b64) throw new Error('응답에 b64_json이 없습니다');
+    if (modelIdx > 0 || model !== 'gpt-image-1') console.log(`  (모델: ${model})`);
+    return Buffer.from(b64, 'base64');
   }
-
-  const json = await res.json();
-  const b64 = json?.data?.[0]?.b64_json;
-  if (!b64) throw new Error('응답에 b64_json이 없습니다');
-  return Buffer.from(b64, 'base64');
+  throw new Error('사용 가능한 이미지 모델이 없습니다');
 }
 
 async function generateWithRetry(asset) {
