@@ -932,8 +932,38 @@ export const STR = {
   'proj.clearPassage.workNote':  { ko: '지하 계단 아래 돌무더기를 하나씩 걷어냈다.', en: 'Cleared the rubble at the foot of the undercroft stairs, stone by stone.' },
   'proj.clearPassage.doneToast': { ko: '돌무더기를 다 치웠다. 통로 저편에서 서늘한 바람이 새어 든다. …아직 들어갈 순 없다.', en: 'The rubble is all cleared. A cold draft seeps from beyond the passage. …I can’t go in yet.' },
   'proj.clearPassage.memoir':    { ko: '{day}일째. 지하 계단 아래를 막고 있던 돌무더기를 며칠에 걸쳐 다 걷어냈다. 통로 저편은 아직 어둠이지만, 이제 바람이 지나간다. 언젠가 저 아래로 내려갈 날이 올까.', en: 'Day {day}. Over several days I cleared the rubble that blocked the foot of the undercroft stairs. Beyond is still dark, but now the air moves through. Will there come a day I go down there?' },
-  'comfort.log.bunkerRoof':{ ko: '벙커 수리', en: 'Bunker repairs' },
-  'comfort.log.mood':   { ko: '만남의 여운', en: 'The wake of an encounter' },
+  // 1.1 방파제 오두막 (대형 프로젝트)
+  'proj.breakwaterHut.name':      { ko: '방파제 오두막', en: 'Breakwater Hut' },
+  'proj.breakwaterHut.stage1':    { ko: '방파제 끝에 밀려온 잔해를 걷어낸다. 터를 고르는 일부터다.', en: 'I clear the debris washed up at the breakwater’s end. First, level the ground.' },
+  'proj.breakwaterHut.stage2':    { ko: '주워 모은 각목으로 뼈대를 세운다. 바닷바람에 흔들리지 않게.', en: 'I raise a frame from salvaged timber — braced against the sea wind.' },
+  'proj.breakwaterHut.stage3':    { ko: '벽을 두르고 지붕을 인다. 방수천을 덧대 마감한다.', en: 'I wall it in and lay the roof, sealing it with tarp.' },
+  'proj.breakwaterHut.workNote':  { ko: '방파제 끝 오두막 공사를 조금 진척시켰다.', en: 'Made some progress on the hut at the breakwater’s end.' },
+  'proj.breakwaterHut.doneToast': { ko: '방파제 오두막을 완성했다. 이제 부두 일이 한결 빨라지고, 얼음낚시 구멍도 하나 더 뚫을 수 있다.', en: 'The breakwater hut is done. Dock work goes faster now, and I can cut one more ice-fishing hole.' },
+  'proj.breakwaterHut.memoir':    { ko: '{day}일째. 방파제 끝에 작은 오두막을 세웠다. 잔해를 고르고, 뼈대를 세우고, 지붕을 이는 데 며칠이 걸렸다. 이제 이 항구는 조금 더 내 것 같다.', en: 'Day {day}. I built a small hut at the end of the breakwater. Days of leveling rubble, raising a frame, laying a roof. This harbor feels a little more like mine now.' },
+
+  // 1.1 지역 (항구)
+  'map.regionUnlockHarbor':{ ko: '항구 구역이 지도에 나타났다.', en: 'The harbor district appears on the map.' },
+
+  // 1.1 얼음낚시
+  'icefish.title':      { ko: '얼음낚시', en: 'Ice Fishing' },
+  'icefish.action':     { ko: '빙판에 구멍을 뚫고 낚싯줄을 드리운다', en: 'Cut a hole in the ice and drop a line' },
+  'icefish.hint':       { ko: '에너지 {e} · 스팟 {left}/{spots}', en: 'Energy {e} · spots {left}/{spots}' },
+  'icefish.go':         { ko: '🎣 낚시', en: '🎣 Fish' },
+  'icefish.caught':     { ko: '얼음 구멍에서 물고기를 {n} 낚았다.', en: 'Pulled {n} fish from the ice hole.' },
+  'icefish.salt':       { ko: '구멍 가장자리에서 소금 결정을 {n} 긁어냈다.', en: 'Scraped {n} salt crystal from the hole’s rim.' },
+  'icefish.bottle':     { ko: '낚싯줄에 낡은 병이 걸려 올라왔다. 안에 젖은 쪽지가 들어 있다.', en: 'An old bottle came up on the line. A damp note inside.' },
+  'icefish.noSpot':     { ko: '오늘은 더 뚫을 구멍이 없다.', en: 'No more holes to cut today.' },
+
+  // 1.1 밀수꾼 행상인
+  'ev.smuggler.title':  { ko: '밀수꾼', en: 'The Smuggler' },
+  'ev.smuggler.text':   { ko: '부두에 낯선 배가 잠깐 닿는다. 후드를 쓴 사내가 짐을 풀며 나를 힐끗 본다. 오래 머물 사람은 아니다.', en: 'A strange boat touches the pier a moment. A hooded man unpacks his cargo, glancing at me. Not one to linger.' },
+  'ev.smuggler.c0':     { ko: '연료를 산다 (배터리)', en: 'Buy fuel (batteries)' },
+  'ev.smuggler.c1':     { ko: '소금 3으로 부품을 바꾼다', en: 'Trade 3 salt for parts' },
+  'ev.smuggler.c2':     { ko: '고개만 젓는다', en: 'Just shake my head' },
+  'ev.smuggler.r0':     { ko: '연료 한 통을 받아 들었다. 그는 값을 세더니 배로 돌아간다.', en: 'I take a can of fuel. He counts his price and heads back to the boat.' },
+  'ev.smuggler.r0winter':{ ko: '겨울값이라며 그가 배를 세 배로 부른다. 연료 한 통이 이렇게 비쌌던 적은 없다.', en: 'Winter rates, he says — triple the price. Fuel has never cost me this much.' },
+  'ev.smuggler.r1':     { ko: '소금 자루를 넘기자 그가 부품 두 개를 던져준다. 항구의 소금은 값이 나간다.', en: 'I hand over the salt; he tosses me two parts. Harbor salt is worth something.' },
+  'ev.smuggler.r2':     { ko: '그는 어깨를 으쓱하곤 닻을 올린다. 배는 안개 속으로 사라진다.', en: 'He shrugs and weighs anchor. The boat vanishes into the fog.' },
 
   /* ── BGM ── */
   'bgm.notFound':     { ko: 'BGM 파일을 찾을 수 없습니다 (BGM 폴더)', en: 'BGM files not found (BGM folder)' },

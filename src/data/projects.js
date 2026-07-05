@@ -55,6 +55,25 @@ export const PROJECTS = {
     ],
     doneSiteStage: 3,
   },
+
+  /* ── 1.1 「얼어붙은 항구」 대형 프로젝트: 방파제 오두막 ──
+     항구 셸터(예인선/관제탑) 거주 시 노출. 잔해정리→뼈대→마감 3단계.
+     완공 효과(harbor.breakwater.done): 항구 파밍 시간 -25% + 얼음낚시 스팟 +1.
+     효과 판정은 상태 플래그(state.breakwaterHut)로 — game.js applyProjectEffect가 세운다.
+     현장 오브젝트(site='breakwaterHut')는 항구 셸터 buildRoom에서 siteStage로 표현. */
+  breakwaterHut: {
+    id: 'breakwaterHut',
+    when: { shelters: ['tugboat', 'controltower'] },
+    site: 'breakwaterHut',
+    icon: '🛖',
+    memoirKey: 'proj.breakwaterHut.memoir',
+    stages: [
+      { costKey: 'breakwater1', need: 4, siteStage: 1, effectKey: null },              // 잔해 정리
+      { costKey: 'breakwater2', need: 3, siteStage: 2, effectKey: null },              // 뼈대 세우기
+      { costKey: 'breakwater3', need: 3, siteStage: 3, effectKey: 'harbor.breakwater.done' }, // 마감 → 효과 발동
+    ],
+    doneSiteStage: 4,
+  },
 };
 
 /* ── 1.2~1.4 확장 수용성 증명 (설계 노트, 이번 배치 미구현) ────────

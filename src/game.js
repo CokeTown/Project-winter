@@ -2786,7 +2786,205 @@ const SHELTERS = {
       delete envDyn._beam;
     },
   },
+
+  /* ── 1.1 「얼어붙은 항구」 셸터 1: 예인선 ──
+     물 위에 뜬 작은 예인선. 흔들림 앰비언트(envDyn.sea 파동) + 낚시 퍽(매일 음식 +1). */
+  tugboat: {
+    name: '예인선', nameEn: 'Tugboat', emoji: '🚤', unlockAt: 25, viewH: 16, ceilY: 2.3,
+    desc: '부두에 매인 작은 예인선. 발밑이 늘 흔들리지만, 물 위에서는 낚싯줄이 마르지 않는다.',
+    descEn: 'A small tugboat moored at the pier. The deck always sways, but on the water the line never runs dry.',
+    room: { w: 6.4, d: 4.2, h: 2.2 },
+    baseComfort: 6,
+    mood: { fog: 0x15222c, fogNear: 18, fogFar: 52, skyH: 0x1c2e3e, skyZ: 0x0a1018, hemiSky: 0x7a92ae, hemiGround: 0x36393c, hemiInt: 0.66, moonC: 0xa6bed6, moonInt: 0.78, stars: 0.85 },
+    weatherPool: ['clear', 'snow', 'rain', 'snow'],
+    perk: { produce: { food: 1 }, produceNote: '🎣 뱃전에서 물고기를 낚았습니다', produceNoteEn: '🎣 Caught a fish off the gunwale', label: '🎣 물 위의 거처 — 매일 음식 +1 (얼음낚시 가능)', labelEn: '🎣 Home on the water — food +1 daily (ice fishing available)' },
+    upkeep: { res: 'fuel', n: 1, every: 2, label: '연료 1 / 2일 (엔진 예열)', labelEn: 'Fuel 1 / 2 days (engine warmup)' },
+    dailyDirt: 2, moveCost: { parts: 3, material: 2 }, limits: '💧 뱃전의 습기 — 청결이 매일 2 더 빨리 떨어짐', limitsEn: '💧 Deck damp — cleanliness drops 2 faster each day',
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const hullC = 0x384a55, deckC = 0x6a5a44;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.28, d + 0.6), wallPhong({ color: deckC }));
+      floor.position.y = -0.14; floor.receiveShadow = true;
+      roomGroup.add(floor);
+      // 갑판 널
+      for (let i = 0; i < 6; i++) B(roomGroup, w + 0.6, 0.02, 0.05, 0x54452f, 0, 0.015, -d / 2 + 0.5 + i * 0.7);
+      // 선체 (물속으로 이어지는 통통한 예인선 몸통)
+      B(roomGroup, w + 1.2, 2.2, d + 1.2, hullC, 0, -1.2, 0);
+      B(roomGroup, w + 1.4, 0.4, d + 1.4, 0x1f2a30, 0, -2.4, 0);
+      // 뱃머리 방현재(타이어) + 빨간 흘수선 띠
+      B(roomGroup, w + 1.25, 0.18, d + 1.25, 0x8a4535, 0, -0.35, 0);
+      for (const fz of [-d / 2, 0, d / 2]) {
+        const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.1, 6, 10), lamb(0x1c1a18));
+        tyre.rotation.y = Math.PI / 2; tyre.position.set(w / 2 + 0.62, -0.2, fz); roomGroup.add(tyre);
+      }
+      // 조타실 (뒤쪽 벽 — 컬링 대상) + 둥근 창
+      const wheelhouse = new THREE.Group();
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 2.2, 0.28), wallPhong({ color: 0xc4c0b4 }));
+      wall.position.y = 1.1; wall.castShadow = wall.receiveShadow = true;
+      wheelhouse.add(wall);
+      for (let i = 0; i < 3; i++) {
+        const port = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.1, 12), lamb(0x7f858c));
+        port.rotation.x = Math.PI / 2; port.position.set(-2 + i * 2, 1.4, 0.16); wheelhouse.add(port);
+        const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.12, 12), lamb(0x27343f));
+        glass.rotation.x = Math.PI / 2; glass.position.set(-2 + i * 2, 1.4, 0.17); wheelhouse.add(glass);
+      }
+      makeWalls([{ group: wheelhouse, pos: [0, 0, -d / 2 - 0.26], rotY: 0, normal: new THREE.Vector3(0, 0, -1) }]);
+      // 굴뚝 + 타륜 소품
+      const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.4, 1.8, 10), lamb(0x2a2622));
+      stack.position.set(-1.2, 3.0, -d / 2 - 0.9); stack.castShadow = true; roomGroup.add(stack);
+      B(stack, 0.5, 0.16, 0.5, 0xa84a3f, 0, 0.9, 0);
+      const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.05, 6, 14), lamb(0x6a4f33));
+      wheel.position.set(1.6, 1.0, -d / 2 - 0.1); wheel.rotation.x = 0.5; roomGroup.add(wheel);
+      // 구명튜브
+      const buoy = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.09, 6, 12), lamb(0xc45540));
+      buoy.position.set(-w / 2 + 0.3, 1.2, -d / 2 - 0.05); roomGroup.add(buoy);
+      // ── 대형 프로젝트 현장: 방파제 오두막 (site='breakwaterHut') — 뱃전 밖(부두 방향)에 단계별 표현 ──
+      buildBreakwaterSite(roomGroup, w / 2 + 2.4, 0, d / 2 - 0.5);
+      blockers = [{ x: 1.6, z: -d / 2 - 0.1, w: 0.8, d: 0.8 }];
+    },
+    buildEnv() {
+      const rand = seededRand(909);
+      const sea = new THREE.Mesh(new THREE.PlaneGeometry(320, 320, 24, 24), lamb(0x13202b));
+      sea.geometry.rotateX(-Math.PI / 2);
+      const sp = sea.geometry.attributes.position;
+      for (let i = 0; i < sp.count; i++) sp.setY(i, Math.sin(sp.getX(i) * 0.3) * Math.cos(sp.getZ(i) * 0.27) * 0.16);
+      sea.geometry.computeVertexNormals();
+      sea.position.y = -2.6; envRoot.add(sea);
+      // 부두(콘크리트 안벽) — 예인선이 매인 곳
+      const quay = new THREE.Group();
+      B(quay, 12, 2.4, 6, 0x4a4640, 0, -1.2, 0);
+      B(quay, 12, 0.3, 6, 0x565149, 0, 0.05, 0);
+      for (let i = 0; i < 5; i++) { const bol = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.7, 8), lamb(0x2a2824)); bol.position.set(-4.5 + i * 2.2, 0.35, -2.6); quay.add(bol); }
+      quay.position.set(-ROOM.w / 2 - 7, 0, 0); envRoot.add(quay);
+      // 크레인 실루엣 + 컨테이너 스택 (야적장 방향)
+      const crane = new THREE.Group();
+      Cyl(crane, 0.2, 0.2, 8, 0x6a5a30, 0, 4, 0, 6);
+      B(crane, 6, 0.4, 0.4, 0x7a6a3a, 2, 7.6, 0);
+      crane.position.set(-16, -2.4, -8); envRoot.add(crane);
+      const contPal = [0x8a4535, 0x3a5a6a, 0x6a6a3a, 0x555049];
+      for (let i = 0; i < 10; i++) {
+        const cc = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2, 1.2), lamb(contPal[Math.floor(rand() * contPal.length)]));
+        cc.position.set(-20 + rand() * 8, -1.8 + Math.floor(rand() * 2) * 1.25, -12 + rand() * 8); cc.rotation.y = rand() * 0.3; envRoot.add(cc);
+      }
+      // 좌초 화물선 실루엣 (수평선)
+      const wreck = new THREE.Group();
+      B(wreck, 20, 4.5, 4, 0x171d24, 0, 2.2, 0);
+      B(wreck, 5, 3, 3, 0x141920, -4, 5.5, 0);
+      wreck.rotation.z = -0.12; wreck.rotation.y = 0.5; wreck.position.set(24, -2.6, -22); envRoot.add(wreck);
+      envDyn = { sea, seaBase: sea.position.y };
+    },
+  },
+
+  /* ── 1.1 「얼어붙은 항구」 셸터 2: 항만 관제탑 ──
+     항구를 내려다보는 고층 관제탑. 넓은 전망 창(viewH 큼) + 예보 리드타임 +1일 퍽. */
+  controltower: {
+    name: '항만 관제탑', nameEn: 'Harbor Control Tower', emoji: '🗼', unlockAt: 29, viewH: 21, ceilY: 2.6,
+    desc: '항구를 내려다보는 관제탑 꼭대기. 사방이 유리라 바람 소리가 크지만, 다가오는 날씨가 가장 먼저 보인다.',
+    descEn: 'The top of a control tower over the harbor. Glass on all sides makes the wind loud, but the coming weather shows here first.',
+    room: { w: 6.6, d: 6.6, h: 2.6 },
+    baseComfort: 7,
+    mood: { fog: 0x18242f, fogNear: 24, fogFar: 66, skyH: 0x203348, skyZ: 0x0a0f18, hemiSky: 0x8aa0c0, hemiGround: 0x3a3d40, hemiInt: 0.7, moonC: 0xa8c0d8, moonInt: 0.8, stars: 0.95 },
+    weatherPool: ['clear', 'snow', 'rain', 'clear'],
+    perk: { forecast: true, forecastLead: 1, expBonus: 0.02, label: '🔭 고층 전망 — 날씨 예보 · 한파 예보 +1일 · 성공률 +2%p', labelEn: '🔭 High vantage — weather forecast · cold-snap lead +1 day · success +2%p' },
+    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (관제 콘솔)', labelEn: 'Battery 1 / day (control console)' },
+    moveCost: { parts: 3, material: 3 }, limits: '🌬️ 사방 유리 — 비/눈 오는 날 쾌적함 -6', limitsEn: '🌬️ Glass on all sides — comfort -6 on rainy/snowy days', cold: 6,
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), wallPhong({ map: concreteTex }));
+      floor.position.y = -0.15; floor.receiveShadow = true; roomGroup.add(floor);
+      // 지지 기둥(탑 몸통) — 방 아래로 길게
+      B(roomGroup, w * 0.7, 16, d * 0.7, 0x4a4640, 0, -8, 0);
+      B(roomGroup, w + 1.2, 0.4, d + 1.2, 0x2a2824, 0, -0.4, 0);
+      // 유리 전망 벽 4면 (프레임 + 어두운 유리) — 컬링 대상
+      const mkGlassWall = (len) => {
+        const g = new THREE.Group();
+        BP(g, len, h, 0.1, 0x2a343e, 0, h / 2, 0); // 유리판
+        BP(g, len, 0.14, 0.16, 0x55504a, 0, h - 0.05, 0); // 상부 프레임
+        BP(g, len, 0.16, 0.16, 0x55504a, 0, 0.08, 0);      // 하부 프레임
+        const nMul = Math.max(2, Math.floor(len / 1.6));
+        for (let i = 0; i <= nMul; i++) B(g, 0.1, h, 0.14, 0x55504a, -len / 2 + i * (len / nMul), h / 2, 0); // 멀리언
+        return g;
+      };
+      makeWalls([
+        { group: mkGlassWall(w), pos: [0, 0, -d / 2 - 0.08], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+        { group: mkGlassWall(w), pos: [0, 0, d / 2 + 0.08], rotY: Math.PI, normal: new THREE.Vector3(0, 0, 1) },
+        { group: mkGlassWall(d), pos: [-w / 2 - 0.08, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+        { group: mkGlassWall(d), pos: [w / 2 + 0.08, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
+      ]);
+      // 관제 콘솔 + 회전 지붕등
+      const console_ = new THREE.Group();
+      B(console_, 2.2, 0.9, 0.7, 0x33383f, 0, 0.45, 0);
+      B(console_, 2.0, 0.14, 0.5, 0x1c2836, 0, 0.95, 0.02); // 스크린 패널
+      console_.position.set(0, 0, -d / 2 + 0.6); roomGroup.add(console_);
+      const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.4, 0.4, 10),
+        new THREE.MeshLambertMaterial({ color: 0xd9b06a, emissive: 0x8a6a20, emissiveIntensity: 0.7 }));
+      beacon.position.set(0, h + 0.4, 0); roomGroup.add(beacon);
+      // ── 대형 프로젝트 현장: 방파제 오두막 — 탑에서 내려다보이도록 방 밖 아래쪽에 배치 ──
+      buildBreakwaterSite(roomGroup, -w / 2 - 3.0, -2.0, d / 2 + 1.0);
+      blockers = [{ x: 0, z: -d / 2 + 0.6, w: 2.4, d: 0.9 }];
+    },
+    buildEnv() {
+      const rand = seededRand(1010);
+      const GY = -16;
+      // 아래로 펼쳐진 항만 (부감)
+      const sea = new THREE.Mesh(new THREE.PlaneGeometry(360, 360, 20, 20), lamb(0x121e28));
+      sea.geometry.rotateX(-Math.PI / 2);
+      const sp = sea.geometry.attributes.position;
+      for (let i = 0; i < sp.count; i++) sp.setY(i, Math.sin(sp.getX(i) * 0.25) * Math.cos(sp.getZ(i) * 0.22) * 0.2);
+      sea.geometry.computeVertexNormals(); sea.position.y = GY; envRoot.add(sea);
+      // 부두 안벽 + 컨테이너 야적 (저 아래)
+      B(envRoot, 40, 1.2, 14, 0x413d37, 0, GY + 0.8, 10).receiveShadow = true;
+      const contPal = [0x8a4535, 0x3a5a6a, 0x6a6a3a, 0x555049];
+      for (let i = 0; i < 26; i++) {
+        const cc = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2, 1.2), lamb(contPal[Math.floor(rand() * contPal.length)]));
+        cc.position.set(-18 + rand() * 36, GY + 2 + Math.floor(rand() * 3) * 1.25, 4 + rand() * 12); envRoot.add(cc);
+      }
+      // 크레인 두 대
+      for (const cx of [-12, 10]) { const cr = new THREE.Group(); Cyl(cr, 0.3, 0.3, 12, 0x6a5a30, 0, 6, 0, 6); B(cr, 9, 0.5, 0.5, 0x7a6a3a, 3, 11.4, 0); cr.position.set(cx, GY, 8); envRoot.add(cr); }
+      // 좌초선 실루엣
+      const wreck = new THREE.Group();
+      B(wreck, 22, 5, 4.5, 0x151b22, 0, 2.5, 0); wreck.rotation.z = -0.1; wreck.rotation.y = 0.4; wreck.position.set(-28, GY, -18); envRoot.add(wreck);
+      buildRuinCity(envRoot, rand, { count: 10, rMin: 34, rMax: 52, hMin: 5, hMax: 14, baseY: GY, litChance: 0.14 });
+      envDyn = { sea, seaBase: sea.position.y };
+    },
+  },
 };
+
+/* ── 1.1 방파제 오두막 현장 오브젝트 (site='breakwaterHut') ──
+   projectSiteStage('breakwaterHut')에 따라 단계별로 자란다: 0 잔해 → 1 정리된 터 → 2 뼈대 → 3 벽 → 4 완성 오두막.
+   항구 셸터 buildRoom에서 호출. 현재 셸터가 항구 셸터면 investProject가 loadShelter로 재빌드해 갱신한다. */
+function buildBreakwaterSite(parent, ox, oy, oz) {
+  const stage = projectSiteStage('breakwaterHut');
+  const g = new THREE.Group();
+  const rrand = seededRand(414);
+  // 방파제 기단 돌축대 (항상 존재)
+  for (let i = 0; i < 6; i++) {
+    const bs = 0.5 + rrand() * 0.4;
+    B(g, bs, bs * 0.7, bs, [0x5a564e, 0x4e4a43, 0x6a655a][Math.floor(rrand() * 3)], -1.5 + i * 0.6, bs * 0.35 + oy - 0.2, rrand() * 0.4);
+  }
+  if (stage === 0) {
+    // 잔해 더미
+    for (let i = 0; i < 9; i++) { const rs = 0.18 + rrand() * 0.24; B(g, rs, rs * 0.7, rs, 0x574f42, -1.2 + rrand() * 2.4, oy + rs * 0.5, rrand() * 0.5).rotation.y = rrand() * 3; }
+  } else {
+    if (stage >= 2) { // 뼈대(기둥)
+      for (const px of [-1.0, 1.0]) for (const pz of [-0.4, 0.6]) Cyl(g, 0.08, 0.08, 1.8, 0x6a4f33, px, oy + 0.9, pz, 6);
+    }
+    if (stage >= 3) { // 벽
+      B(g, 2.4, 1.2, 0.12, 0x8a7a5a, 0, oy + 0.9, -0.5);
+      B(g, 0.12, 1.2, 1.2, 0x8a7a5a, -1.15, oy + 0.9, 0.1);
+    }
+    if (stage >= 4) { // 완성: 지붕 + 문
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.9, 0.9, 4), lamb(0x5a4535));
+      roof.rotation.y = Math.PI / 4; roof.position.set(0, oy + 2.1, 0.05); g.add(roof);
+      B(g, 2.4, 1.4, 0.12, 0x9a8a68, 0, oy + 1.0, 0.65); // 앞벽
+      B(g, 0.5, 1.0, 0.06, 0x4a3826, 0, oy + 0.7, 0.72); // 문
+      const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 5), new THREE.MeshLambertMaterial({ color: 0xffcc66, emissive: 0xcc8822, emissiveIntensity: 1 }));
+      lamp.position.set(0.4, oy + 1.5, 0.75); g.add(lamp);
+    }
+  }
+  g.position.set(ox, 0, oz);
+  parent.add(g);
+}
 
 /* ============================================================
    구역 시스템 — 한 지역 안에 여러 셸터, 지역 간 이동은 비용이 든다
@@ -2827,6 +3025,14 @@ const DISTRICTS = {
     regionBonus: { slum: 0.05 },
     bonusLabel: '슬럼가 접근성 +5%p', bonusLabelEn: 'Slum access +5%p',
   },
+  // 1.1 「얼어붙은 항구」 — 강 하구를 따라 내려간 얼어붙은 항구. 예인선/관제탑 셸터가 이 구역.
+  harbor: {
+    name: '얼어붙은 항구', nameEn: 'Frozen Harbor', emoji: '⚓', shelters: ['tugboat', 'controltower'],
+    desc: '강 하구의 죽은 항만. 바다는 얼었어도 죽지 않았다.',
+    descEn: 'A dead port at the river mouth. The sea is frozen, but not dead.',
+    regionBonus: { harborYard: 0.05, fishMarket: 0.05 },
+    bonusLabel: '항구 지역 접근성 +5%p', bonusLabelEn: 'Harbor region access +5%p',
+  },
 };
 function districtOf(shelterId) {
   for (const [id, d] of Object.entries(DISTRICTS)) if (d.shelters.includes(shelterId)) return id;
@@ -2850,6 +3056,7 @@ const RESOURCES = {
   fuel:       { name: '연료',     nameEn: 'Fuel',        emoji: '⛽' },
   parts:      { name: '부품',     nameEn: 'Parts',       emoji: '⚙️' },
   material:   { name: '건축재',   nameEn: 'Material',    emoji: '🧱' },
+  salt:       { name: '소금',     nameEn: 'Salt',        emoji: '🧂' }, // 1.1 항구: 수산시장/야적장 전리품 · 염장 재료
 };
 // ---- 부상 (기획서 v0.2: 부상 치료 시스템) ----
 const INJURIES = {
@@ -2874,7 +3081,7 @@ const state = {
   successes: 0,
   inventory: { bed: 1, rug: 1, candle: 1 },
   // 초기 자원 (기획서 밸런싱 권장값)
-  res: { food: 2, canned: 2, water: 3, cloth: 2, bandage: 1, antiseptic: 0, painkiller: 0, candle: 2, battery: 1, fuel: 0, parts: 0, material: 0 },
+  res: { food: 2, canned: 2, water: 3, cloth: 2, bandage: 1, antiseptic: 0, painkiller: 0, candle: 2, battery: 1, fuel: 0, parts: 0, material: 0, salt: 0 },
   layouts: { container: [{ d: 'crate', c: 1, x: 2.5, z: -0.75, r: 0 }], bunker: [], rooftop: [], cabin: [] },
   exp: null,             // { region, end(실시간ms), rate, prep:[] }
   injury: null,          // { type, untilMin, }
@@ -2935,6 +3142,8 @@ const state = {
   rooftopSlate: 'gapped', // 옥탑 슬레이트 지붕: 'gapped'(2장 빠짐)|'full'(보수 완료) (#53)
   rooftopGardenStage: 0,  // 옥상 텃밭 성장 단계 0=새싹 1=줄기 2=결실 (겨울엔 휴면, 시각만) (#53)
   projects: {},           // 대형 프로젝트 진행 (1.1 ARC-02): { [id]: { stage, invested } }. 미착수 프로젝트는 키 없음.
+  breakwaterHut: false,   // 1.1: 방파제 오두막 완공 여부 (항구 파밍 -25% + 얼음낚시 스팟 +1)
+  icefishToday: 0,        // 1.1: 오늘 얼음낚시 횟수 (하루 스팟 제한)
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -3206,6 +3415,9 @@ function loadSave() {
       if (state.rooftopSlate == null) state.rooftopSlate = 'gapped'; // #53
       if (state.rooftopGardenStage == null) state.rooftopGardenStage = 0; // #53
       if (state.projects == null || typeof state.projects !== 'object') state.projects = {}; // 1.1 대형 프로젝트 (ARC-02): 구세이브(부재) → {}
+      if (state.breakwaterHut == null) state.breakwaterHut = false; // 1.1 항구: 방파제 오두막 완공 플래그
+      if (state.icefishToday == null) state.icefishToday = 0;       // 1.1 항구: 얼음낚시 하루 스팟
+      if (state.res.salt == null) state.res.salt = 0;               // 1.1 항구: 신규 자원 소금 (구세이브)
       if (state.deco == null || typeof state.deco !== 'object') state.deco = {}; // #13 꾸미기
       if (data.state.questIdx === undefined) state.questIdx = (state.day > 1 || state.successes > 0) ? -1 : 0;
       if (!SHELTERS[state.current]) state.current = 'container';
@@ -3584,6 +3796,24 @@ const REGIONS = {
     lootRes: [['parts', 2, 2], ['cloth', 2, 2], ['painkiller', 1, 1, 0.15], ['antiseptic', 1, 1, 0.15]],
     injuries: ['deep', 'sprain', 'infection'],
   },
+  // ── 1.1 항구 지역 2종 (harbor 해금 = 항구 셸터 해금 이후. 지도 마커 항구 구역) ──
+  harborYard: {
+    name: '항만 야적장', nameEn: 'Harbor Yard', emoji: '🚢', rate: 0.5, time: 45,
+    pool: ['crate', 'dresser', 'radio', 'lamp', 'clock'], furnChance: 0.02,
+    desc: '컨테이너 화물 · 오늘 바다가 준 것', descEn: 'Container cargo · what the sea gave today', risk: '보통', riskEn: 'Medium',
+    // 랜덤 편중 드랍: 매일 1종이 부스트됨(rollRes의 yardBoost 훅). 기본은 얕고 넓게.
+    lootRes: [['cloth', 1, 2], ['parts', 1, 2], ['material', 1, 2], ['salt', 1, 1, 0.5], ['canned', 1, 1, 0.4]],
+    injuries: ['minor', 'sprain'],
+    harborYard: true, // rollRes 일일 부스트 표식
+  },
+  fishMarket: {
+    name: '수산시장 폐허', nameEn: 'Fish Market Ruins', emoji: '🐟', rate: 0.7, time: 35,
+    pool: ['crate', 'table', 'clock'], furnChance: 0.01,
+    desc: '신선식품 · 소금 산지 (겨울엔 결빙)', descEn: 'Fresh food · salt source (frozen in winter)', risk: '낮음', riskEn: 'Low',
+    lootRes: [['food', 2, 3], ['salt', 1, 2], ['water', 1, 1], ['canned', 1, 1, 0.4]],
+    injuries: ['minor'],
+    fishMarket: true, // 겨울 결빙 드랍 절반 표식
+  },
 };
 for (const [k, v] of Object.entries(REGIONS)) v.id = k;
 
@@ -3592,13 +3822,13 @@ for (const [k, v] of Object.entries(REGIONS)) v.id = k;
 ============================================================ */
 const MAP = {
   W: 40, H: 28, TILE: 8,
-  districts: { coast: { x: 6, y: 13 }, city: { x: 16, y: 8 }, outskirts: { x: 15, y: 21 }, forest: { x: 31, y: 6 }, meadow: { x: 31, y: 19 } },
-  regions: { residential: { x: 24, y: 16 }, commercial: { x: 12, y: 10 }, industrial: { x: 8, y: 23 }, slum: { x: 21, y: 12 } },
+  districts: { coast: { x: 6, y: 13 }, city: { x: 16, y: 8 }, outskirts: { x: 15, y: 21 }, forest: { x: 31, y: 6 }, meadow: { x: 31, y: 19 }, harbor: { x: 4, y: 24 } },
+  regions: { residential: { x: 24, y: 16 }, commercial: { x: 12, y: 10 }, industrial: { x: 8, y: 23 }, slum: { x: 21, y: 12 }, harborYard: { x: 5, y: 26 }, fishMarket: { x: 9, y: 25 } },
 };
 // 거리 → 탐험 소요 시간 계수 (가까우면 빨리, 멀면 오래)
 function regionDistMult(regionId) {
-  const a = MAP.districts[districtOf(state.current)];
-  const b = MAP.regions[regionId];
+  const a = MAP.districts[districtOf(state.current)] || MAP.districts.outskirts; // 신규 구역 안전 폴백
+  const b = MAP.regions[regionId] || MAP.districts[districtOf(state.current)] || MAP.districts.outskirts;
   const dist = Math.hypot(a.x - b.x, a.y - b.y);
   return 0.8 + Math.min(1, dist / 26) * 0.55; // 0.8x ~ 1.35x
 }
@@ -3673,6 +3903,7 @@ function openMapModal() {
   for (const [rid, r] of Object.entries(REGIONS)) {
     const p = MAP_MARKERS[rid];
     if (!p) continue;
+    if (!regionUnlocked(rid)) continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
     const el = document.createElement('div');
     el.className = 'map-pin region';
     el.style.left = p.x + '%'; el.style.top = p.y + '%';
@@ -3692,7 +3923,22 @@ const MAP_MARKERS = {
   commercial:  { x: 74, y: 18 },  // 우상 무너진 빌딩(도심)
   industrial:  { x: 18, y: 56 },  // 좌하 공장
   slum:        { x: 78, y: 57 },  // 우하 판자촌
+  // 1.1 항구 구역 — 지도 하단(해안/부두 쪽). 기존 4지역과 같은 마커 스타일. (map_paper 하단 항구 그림 기준 조정 예정)
+  harborYard:  { x: 44, y: 82 },  // 하단 중앙 야적장(컨테이너 부두)
+  fishMarket:  { x: 62, y: 86 },  // 하단 우측 수산시장(선착장)
 };
+// 항구 지역 해금 게이트: 항구 셸터(예인선)를 해금한 뒤부터 지도에 항구 구역이 뜬다.
+// 기존 4지역은 항상 해금(true). ARC-03 마커 문법 그대로, 노출 조건만 얹는다.
+function regionUnlocked(rid) {
+  if (rid === 'harborYard' || rid === 'fishMarket') return state.successes >= SHELTERS.tugboat.unlockAt;
+  return true;
+}
+// 항만 야적장 "오늘 바다가 준 것": 날짜로 결정론적으로 부스트 전리품 1종 선택(복권 파밍, 매일 리롤).
+// 결정론(day 기반) → 왕복 저장/시뮬 재현성 유지. 후보는 BAL.harbor.yardBoostPool.
+function harborYardBoostId(day) {
+  const pool = BAL.harbor.yardBoostPool;
+  return pool[(day * 2654435761 >>> 0) % pool.length];
+}
 function showMapInfo(rid) {
   const r = REGIONS[rid];
   const p = rateParts(rid);
@@ -3708,6 +3954,8 @@ function expDuration(r) {
   let t = r.time * regionDistMult(r.id);
   if (state.injury?.type === 'sprain') t *= 1.3;
   t *= SHELTERS[state.current].perk?.timeMult || 1;
+  // 1.1 방파제 오두막 완공: 항구 지역 파밍 시간 -25% (전초기지)
+  if (state.breakwaterHut && (r.id === 'harborYard' || r.id === 'fishMarket')) t *= 0.75;
   return Math.round(t);
 }
 // 게임 시간 포매터 — 게임 '분'을 받아 "N분 / N시간 / N시간 N분"으로 표기 (5분 단위 반올림).
@@ -3869,10 +4117,14 @@ function resolveExpedition() {
   let title, body;
   // hard=true인 기본 획득에만 하드 -30%를 적용한다. 은닉처 loot×2 버프는 hard=false로 호출해
   // 온전한 2배를 보장 — 유저가 얻은 "2배" 버프의 체감 가치를 하드가 깎지 않도록.
+  // 1.1 항만 야적장: 그날 부스트되는 전리품 1종(결정론적, 왕복/시뮬 재현) · 수산시장: 겨울 결빙 절반.
+  const yardBoostId = r.harborYard ? harborYardBoostId(state.day) : null;
+  const harborMult = (r.fishMarket && seasonOf().id === 'winter') ? BAL.harbor.marketWinterMult : 1;
   const rollRes = (mult = 1, hard = true) => {
     for (const [id, min, max, chance] of r.lootRes) {
       if (chance != null && Math.random() > chance) continue;
-      let n = Math.round((min + Math.random() * (max - min)) * mult);
+      let n = Math.round((min + Math.random() * (max - min)) * mult * harborMult);
+      if (id === yardBoostId) n = Math.round(n * BAL.harbor.yardBoostMult); // 오늘 바다가 준 것
       if (hard) n = hardLoot(n);
       if (n > 0) { gotRes[id] = (gotRes[id] || 0) + n; resAdd(id, n); }
     }
@@ -4834,6 +5086,20 @@ const EVENTS = {
       { labelId: 'ev.dog.c1', run() { return t('ev.dog.r1'); } },
     ],
   },
+  // 1.1 밀수꾼 행상인 — 항구 한정, 지나가는 존재(캐논: 타인은 흐른다). 계절 가격 극단(겨울 연료 프리미엄).
+  smuggler: {
+    icon: '🚢', titleId: 'ev.smuggler.title', textId: 'ev.smuggler.text',
+    when: { districts: ['harbor'], dayOnly: true },
+    choices: [
+      // 겨울이면 연료 프리미엄(배터리 3), 평시엔 배터리 1 — 계절로 대가가 갈린다.
+      { labelId: 'ev.smuggler.c0',
+        cost() { return { battery: seasonOf().id === 'winter' ? BAL.harbor.smugglerFuelWinter : BAL.harbor.smugglerFuelNormal }; },
+        run() { resAdd('fuel', 1); return t(seasonOf().id === 'winter' ? 'ev.smuggler.r0winter' : 'ev.smuggler.r0'); } },
+      // 소금 3 → 희귀부품 2 (항구 특산의 교환 가치)
+      { labelId: 'ev.smuggler.c1', cost: { salt: 3 }, run() { resAdd('parts', BAL.harbor.smugglerPartsGet); return t('ev.smuggler.r1'); } },
+      { labelId: 'ev.smuggler.c2', run() { return t('ev.smuggler.r2'); } },
+    ],
+  },
   storm: {
     icon: '🌪️', titleId: 'ev.storm.title', textId: 'ev.storm.text',
     choices: [
@@ -5076,8 +5342,9 @@ function showEvent(id) {
     <div class="modal-body" style="line-height:2">${ev.textFn ? ev.textFn() : t(ev.textId)}</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
       ${ev.choices.map((c, i) => {
-        const ok = !c.cost || eventCostOk(c.cost);
-        return `<button class="pixel-btn" data-ch="${i}" ${ok ? '' : 'disabled'}>${t(c.labelId)}${c.cost && !ok ? t('ev.noResource') : ''}</button>`;
+        const cost = typeof c.cost === 'function' ? c.cost() : c.cost; // 계절 가변 비용(밀수꾼) 지원
+        const ok = !cost || eventCostOk(cost);
+        return `<button class="pixel-btn" data-ch="${i}" ${ok ? '' : 'disabled'}>${t(c.labelId)}${cost && !ok ? t('ev.noResource') : ''}</button>`;
       }).join('')}
       <button class="pixel-btn" id="event-minimize" data-i18n="event.minimize">${t('event.minimize')}</button>
     </div>`;
@@ -5085,7 +5352,8 @@ function showEvent(id) {
   $('modal-body').querySelectorAll('button[data-ch]').forEach(b =>
     b.addEventListener('click', () => {
       const c = ev.choices[+b.dataset.ch];
-      if (c.cost && !eventCostConsume(c.cost)) { toast(t('toast.needResource')); return; }
+      const cCost = typeof c.cost === 'function' ? c.cost() : c.cost; // 계절 가변 비용 해석
+      if (cCost && !eventCostConsume(cCost)) { toast(t('toast.needResource')); return; }
       const result = c.run();
       state.dayLog.notes.push(t('event.metNote', { icon: ev.icon, title: evTitle }));
       state.activeEvent = null;
@@ -5519,6 +5787,8 @@ const CRAFTS = [
   // Phase B 고급 제작 (후반 인플레 싱크) — 희귀부품(parts) 고비용 사용처
   { out: { furn: 'autopurifier' }, cost: { parts: 6, material: 3, battery: 1 }, hint: '매일 물 +2 (배터리 1/일)', hintEn: 'Water +2 daily (battery 1/day)' },
   { out: { furn: 'heater' }, cost: { parts: 5, material: 3, cloth: 2 }, hint: '한파 방어 + 겨울 쾌적 (연료 1/일)', hintEn: 'Cold-snap defense + winter comfort (fuel 1/day)' },
+  // 1.1 염장 — 신선식품 2 + 소금 1 → 보존식 2. 냉장고 없는 초반의 부패 카운터(여름 대비).
+  { out: { res: 'canned', n: BAL.harbor.saltCureOut }, cost: { food: BAL.harbor.saltCureFood, salt: BAL.harbor.saltCureSalt }, hint: '소금으로 절인 보존식 — 여름 부패를 이긴다', hintEn: 'Salt-cured preserves — beats summer spoilage' },
 ];
 function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
@@ -5638,6 +5908,22 @@ function openCraftModal() {
     }
     rooftopHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🏙️ ${LName(SHELTERS.rooftop)}</div>${projRows.join('')}`;
   }
+  // 1.1 얼음낚시 — 겨울 한정, 물가 셸터(예인선/여객선/등대). 겨울이 처음으로 '받는 계절'이 되는 장치.
+  let icefishHtml = '';
+  if (icefishAvailable()) {
+    const H = BAL.harbor;
+    const spots = 1 + (state.breakwaterHut ? 1 : 0); // 방파제 오두막: 스팟 +1
+    const used = state.icefishToday || 0;
+    const left = Math.max(0, spots - used);
+    const canEnergy = state.energy >= H.icefishEnergy && !isExhausted();
+    const ok = left > 0 && canEnergy;
+    icefishHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🎣 ${t('icefish.title')}</div>
+      <div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
+        <span>🎣 ${t('icefish.action')}</span>
+        <span class="p-eff" style="font-size:10px;flex:1">${t('icefish.hint', { e: H.icefishEnergy, spots, left })}</span>
+        <button class="pixel-btn" id="btn-icefish" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('icefish.go')}</button>
+      </div>`;
+  }
   // 꾸미기(#13): 벽지/바닥재 스와치. 현재 셸터의 벽/바닥 재질을 교체 (셸터 지오메트리 불변).
   const dcur = currentDeco();
   const decoSwatches = (kind, table, sel) => Object.entries(table).map(([id, def]) => {
@@ -5665,7 +5951,7 @@ function openCraftModal() {
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('craft.intro')}</div>${rows}
     <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>
     <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}
-    ${bunkerHtml}${rooftopHtml}${projHtml}${decoHtml}`);
+    ${bunkerHtml}${rooftopHtml}${icefishHtml}${projHtml}${decoHtml}`);
   $('modal-body').querySelectorAll('button[data-deco]').forEach(b =>
     b.addEventListener('click', () => {
       const [kind, id] = b.dataset.deco.split(':');
@@ -5731,6 +6017,7 @@ function openCraftModal() {
       // investProject가 벙커 재빌드로 모달을 닫았을 수 있음 → 열려 있을 때만 갱신
       if ($('modal-back').classList.contains('show')) openCraftModal();
     }));
+  { const ibf = $('btn-icefish'); if (ibf) ibf.addEventListener('click', () => { doIceFish(); openCraftModal(); }); }
   $('modal-body').querySelectorAll('button[data-craft]').forEach(b =>
     b.addEventListener('click', () => {
       const c = CRAFTS[+b.dataset.craft];
@@ -5786,6 +6073,14 @@ function rebuildBunkerGeometry() {
   closeModal();
   shadowDirty();
 }
+// 1.1: 현재 셸터 지오메트리 재빌드 (현장 오브젝트 단계 교체용, 벙커 외 항구 셸터). 배치 보존 후 loadShelter.
+function rebuildShelterGeometry() {
+  const id = state.current;
+  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+  loadShelter(id);
+  closeModal();
+  shadowDirty();
+}
 
 /* ============================================================
    대형 프로젝트 엔진 (1.1 ARC-02) — 범용. 콘텐츠는 projects.js PROJECTS 테이블.
@@ -5829,6 +6124,7 @@ function applyProjectEffect(effectKey) {
   if (!effectKey) return;
   switch (effectKey) {
     case 'clearPassage.done': break; // 코스메틱 + 수첩 기록만 (1.4 복선). 부수효과 없음.
+    case 'harbor.breakwater.done': state.breakwaterHut = true; break; // 항구 파밍 -25% + 얼음낚시 스팟 +1 (플래그로 판정)
     default: break; // 1.2~1.4 확장이 여기에 case를 추가한다.
   }
 }
@@ -5865,9 +6161,42 @@ function investProject(id) {
       result = 'done';
     }
   }
-  // 현장 오브젝트가 벙커 지오메트리에 있으면 재빌드로 단계 교체 (현재 셸터 한정).
+  // 현장 오브젝트가 현재 셸터 지오메트리에 있으면 재빌드로 단계 교체 (현재 셸터 한정).
   if (p.site === 'stairRubble' && state.current === 'bunker') rebuildBunkerGeometry();
+  else if (p.site === 'breakwaterHut' && (state.current === 'tugboat' || state.current === 'controltower')) rebuildShelterGeometry();
   return result;
+}
+
+/* ── 1.1 얼음낚시 (겨울 전용, 물가 셸터) ──
+   겨울이 처음으로 '받는 계절'이 되는 장치. 예인선/여객선/등대에서만, 하루 스팟 수만큼(+방파제 1).
+   에너지·시간 소모 후 신선식품 1~3 + 확률로 소금 + 극저확률 "이상한 병"(메모 드랍). 전부 BAL.harbor. */
+const ICEFISH_SHELTERS = ['tugboat', 'ship', 'lighthouse'];
+function icefishAvailable() {
+  return seasonOf().id === 'winter' && ICEFISH_SHELTERS.includes(state.current);
+}
+function doIceFish() {
+  if (!icefishAvailable()) return false;
+  const H = BAL.harbor;
+  const spots = 1 + (state.breakwaterHut ? 1 : 0);
+  if ((state.icefishToday || 0) >= spots) { toast(t('icefish.noSpot')); return false; }
+  if (state.energy < H.icefishEnergy || isExhausted()) { toast(t('toast.tooTired')); return false; }
+  state.energy = Math.max(0, state.energy - H.icefishEnergy);
+  state.gameMin += H.icefishTimeMin;
+  state.icefishToday = (state.icefishToday || 0) + 1;
+  const food = H.icefishFoodMin + Math.floor(Math.random() * (H.icefishFoodMax - H.icefishFoodMin + 1));
+  resAdd('food', food);
+  const notes = [t('icefish.caught', { n: food })];
+  if (Math.random() < H.icefishSaltChance) { resAdd('salt', H.icefishSalt); notes.push(t('icefish.salt', { n: H.icefishSalt })); }
+  if (Math.random() < H.icefishBottleChance) {
+    const mid = dropMemo();
+    if (mid) { state.pendingMemoPopup = { id: mid, will: false }; notes.push(t('icefish.bottle')); }
+  }
+  for (const nt of notes) state.dayLog.notes.push(nt);
+  toast(notes[0]);
+  playSfx('craft');
+  state.stats.craft = (state.stats.craft || 0) + 1;
+  scheduleSave(); renderResBar(); updateHud();
+  return true;
 }
 
 /* ============================================================
@@ -7229,6 +7558,7 @@ function processDay() {
   const notes = state.dayLog.notes;
   const perk = SHELTERS[state.current].perk || {};
   state.expToday = 0; // 새 하루, 새 걸음
+  state.icefishToday = 0; // 1.1: 얼음낚시 하루 스팟 리셋
   // 첫 3일 튜토리얼: Day 2/3 아침에 다음 페이지를 표시 대기열에 넣는다 (day-report 뒤로 미룸)
   // tutDay>=1: Day 1 페이지(신규 게임)를 이미 본 경우에만 이어서 진행 — 구세이브는 tutDay 0 그대로라 대상 아님
   // 퀘스트 트래커가 아직 진행 중이면(questActive) 온보딩 중복을 피하려고 자동 페이지를 띄우지 않는다
@@ -7285,7 +7615,9 @@ function processDay() {
         state.coldSnapsThisWinter < snapCap &&
         seasonDay(state.day) <= SEASON_DAYS - S.coldSnapForecastDays - 1 && // 겨울 끝에 걸치지 않게
         Math.random() < snapChance) {
-      state.coldSnapForecast = state.day + S.coldSnapForecastDays;
+      // 관제탑 퍽(forecastLead): 고층 전망으로 한파 예보 리드타임 +N일. 없으면 0.
+      const lead = SHELTERS[state.current].perk?.forecastLead || 0;
+      state.coldSnapForecast = state.day + S.coldSnapForecastDays + lead;
     }
   }
   // 1) 발전기: 연료를 태우면 그날 배터리 소비가 무료
@@ -9248,6 +9580,8 @@ window.__shelter = {
   showMemoPage, showBroadcastModal, openJournalModal, bunkerComfortBonus, rebuildBunkerGeometry,
   // 1.1 대형 프로젝트 (ARC-02) QA 훅
   PROJECTS, projectAvailable, projectRec, projectDone, projectSiteStage, investProject,
+  // 1.1 항구 QA 훅
+  regionUnlocked, harborYardBoostId, icefishAvailable, doIceFish,
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
