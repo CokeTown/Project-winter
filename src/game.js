@@ -12,6 +12,8 @@ import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT
 import { makeEvents } from './data/events.js';
 import { makeDecoTex } from './data/decotex.js';
 import { makeCatSystem } from './systems/cat.js';
+import { makeWildlifeSystem } from './systems/wildlife.js';
+import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wildlife.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
 import { Platform, bindPlatform } from './lib/platform.js';
@@ -1433,6 +1435,13 @@ function tagCeiling(obj, y) {
   if (obj) ceilCullList.push({ group: obj, y });
   return obj;
 }
+// F-1a [B]: 흔들리는 천 — 기존 방수포/천 소품에 미세 sway(신규 소품 금지). buildRoom/buildEnv에서 태그,
+//   tickEnv가 바람세기(windLevel)에 비례해 base 회전 주변으로 살랑인다. loadShelter가 목록 초기화.
+let swayProps = [];
+function tagSway(mesh, baseZ = 0, amp = 0.05) {
+  if (mesh) swayProps.push({ mesh, baseZ, amp, phase: Math.random() * Math.PI * 2 });
+  return mesh;
+}
 function groundPlane(colFn, hFn, size = 300, seg = 52) {
   const gGeo = new THREE.PlaneGeometry(size, size, seg, seg);
   gGeo.rotateX(-Math.PI / 2);
@@ -1490,6 +1499,7 @@ const SHELTERS = {
         roofG.add(tarp);
         const tarp2 = new THREE.Mesh(new THREE.BoxGeometry(w * 0.22, 0.06, d + 0.6), lamb(0x3f4954));
         tarp2.position.set(-w * 0.32, h + 0.06, 0); tarp2.rotation.z = 0.16; tarp2.castShadow = true; // 접힌 자락
+        tagSway(tarp2, 0.16); // F-1a [B]: 늘어진 방수포 자락 미세 sway (있는 소품만)
         roofG.add(tarp2);
         tagCeiling(roofG, h + 0.02); roomGroup.add(roofG);
         // ⑤ 아래 부착물은 전부 +z(뒷벽) 바깥면 소품 → +z 벽 컬링과 동기화 (허공 부유 방지).
@@ -3837,6 +3847,11 @@ function sleepUntilMorning(auto = false, opt = {}) {
     updateHud();
     updateClock();
     playSfx('dawn');
+    // F-1a [B] 고양이 티저: 새벽 울음 1회 (등장은 Day9 불변 — 기대감). meow 저피치로 먼 울음 느낌.
+    if (state.catTeaserMeow) {
+      state.catTeaserMeow = false;
+      setTimeout(() => { try { playSfx(['meow1', 'meow2', 'meow3'][Math.floor(Math.random() * 3)], { rate: 0.7, jitter: 0.04, vol: 0.55 }); } catch (e) {} }, 900);
+    }
   });
 }
 
@@ -4347,6 +4362,29 @@ gridHelper.visible = false;
 scene.add(gridHelper);
 let gridObj = gridHelper; // 재생성 대상
 
+// F-1a [B]: 창밖 원거리 연기 기둥 1개 — 먼 생존 흔적. 도심/외곽 방향(-z 지평선) 고정.
+//   기존 도심 연기(city buildEnv) 문법 재사용. envDyn.smoke 미설정 셸터에만 1개 추가(indoor 제외).
+//   tickEnv 의 envDyn.smoke 애니메이터가 baseX 기준으로 상승/사행시킨다.
+function addDistantSmoke() {
+  if (envDyn.smoke) return;                 // 이미 있는 셸터(도심 등)는 건드리지 않음
+  if (!!SHELTERS[state.current]?.indoor) return; // 실내(지하철)는 하늘/지평선 없음
+  const baseX = -20, baseZ = -34;           // 먼 지평선(-z 방향, 도심 쪽), 병치 공식과 어긋나지 않게 원거리
+  const n = 12, arr = new Float32Array(n * 3), sPhase = [];
+  const srand = seededRand(701);
+  for (let i = 0; i < n; i++) {
+    const y = 2 + (i / n) * 13;
+    arr.set([baseX + Math.sin(i * 1.7) * 0.8, y, baseZ + Math.cos(i * 1.3) * 0.8], i * 3);
+    sPhase.push(srand() * Math.PI * 2);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+    color: 0x6a6f78, size: 6, sizeAttenuation: false, transparent: true, opacity: 0.24, fog: false,
+  }));
+  envRoot.add(pts);
+  envDyn.smoke = { pts, phase: sPhase, baseX };
+}
+
 function loadShelter(id) {
   cancelPlacing();
   deselect();
@@ -4358,7 +4396,7 @@ function loadShelter(id) {
   }
   disposeDeep(roomGroup); roomGroup.clear();
   disposeDeep(envRoot); envRoot.clear();
-  wallList = []; ceilCullList = []; blockers = []; envDyn = {};
+  wallList = []; ceilCullList = []; blockers = []; envDyn = {}; swayProps = [];
   bunkerStairsObj = null; // #55: 계단 히트 대상 재수집
   weatherFx.caps = []; wetApplied = -1;
   winSkyMats.length = 0; // 창문 하늘판 재수집
@@ -4373,6 +4411,7 @@ function loadShelter(id) {
   if ((state.mods?.[id] || []).includes('extension')) ROOM.w += 2; // 증축
   sh.buildRoom();
   sh.buildEnv();
+  addDistantSmoke(); // F-1a [B]: 창밖 원거리 연기 기둥(먼 생존 흔적) — 없는 셸터에만 1개
   buildModProps(); // 설치된 개조 소품
   applyDeco();     // 꾸미기(#13): 벽지/바닥재 재질 적용 (셸터 원본 map 위에 오버레이)
   scatterDust();   // 실내 먼지 모트 재배치
@@ -4409,6 +4448,8 @@ function loadShelter(id) {
   }
   despawnCat();
   if (state.cat) spawnCat(); // 고양이는 이사할 때도 함께 간다
+  // F-1a: 야생동물 재구성 — 셸터(구역)별 종·로밍 존으로 상시 1~2마리 스폰(개막 새 착지 포함).
+  if (typeof wildlifeSys !== 'undefined') wildlifeSys.respawn(id);
   fitZoomForShelter();
   // 벽 컬링을 로드 시점에 동기로 확정한다 (실기기 신고: 부팅 직후 컨테이너 벽 하나가 사라져 T자로 보이다
   // 나중에 정상화되던 버그). 원인: 첫 프레임 전 camera.position가 아직 갱신 안 된 상태로 mask가 잘못 잡히고,
@@ -5072,6 +5113,16 @@ const catSys = makeCatSystem({
   getRoom: () => ROOM, catCam, exitCatCloseup,
 });
 const { spawnCat, despawnCat, updateCat, catPointBlocked, catSupportValid, catFaceTex, catFaceHappyTex } = catSys;
+// F-1a 야생동물 로밍 시스템 (「세계가 살아 있다」) — cat.js 선례와 동일한 팩토리+주입.
+//   순수 연출/엔티티: 이벤트·밸런스 무참조. 상시 1~2마리(저사양 1) + 개막 새 착지 연출.
+const wildlifeSys = makeWildlifeSystem({
+  THREE, B, lamb, disposeDeep, makeCanvasTex, BAL,
+  scene, state, opts,
+  getRoom: () => ROOM, districtOf, playSfx, shadowDirty,
+  gameHour, seasonId: () => seasonOf().id, camCenter,
+  getGameMin: () => state.gameMin || 0, getSnowCover: () => snowCover,
+  WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE,
+});
 
 /* ============================================================
    세계관 메모 & 라디오 방송 수집 (#35 · #12의 축)
@@ -7617,11 +7668,12 @@ function updateEnvironment(t, dt) {
   }
   if (envDyn.smoke) {
     const p = envDyn.smoke.pts.geometry.attributes.position;
+    const bx = envDyn.smoke.baseX ?? 24; // 기둥 기준 x (기존 도심 연기 = 24, F-1a 공용 기둥은 자체 값)
     for (let i = 0; i < p.count; i++) {
       let y = p.getY(i) + 0.9 * dt;
       if (y > 15.5) y = 2;
       p.setY(i, y);
-      p.setX(i, 24 + Math.sin(y * 0.5 + envDyn.smoke.phase[i]) * (0.5 + y * 0.09));
+      p.setX(i, bx + Math.sin(y * 0.5 + envDyn.smoke.phase[i]) * (0.5 + y * 0.09));
     }
     p.needsUpdate = true;
   }
@@ -7655,6 +7707,11 @@ function updateEnvironment(t, dt) {
   if (envDyn.windmill) envDyn.windmill.rotation.z += dt * 0.5;      // 풍차
   if (envDyn.beam) envDyn.beam.rotation.y = t * 0.55;               // 등대 탐조등
   if (envDyn.sea) envDyn.sea.position.y = envDyn.seaBase + Math.sin(t * 0.5) * 0.08; // 파도
+  // F-1a [B]: 흔들리는 천 — 바람세기 비례 미세 sway (있는 소품만). 저사양에서도 저비용(회전 1축).
+  if (swayProps.length) {
+    for (const s of swayProps)
+      s.mesh.rotation.z = s.baseZ + Math.sin(t * (1.1 + windLevel * 0.4) + s.phase) * s.amp * (0.5 + windLevel * 0.5);
+  }
 }
 
 /* ============================================================
@@ -8458,6 +8515,15 @@ function processDay() {
       state.catHungry = true;
       notes.push(t('day.catHungry'));
     }
+  }
+  // F-1a [B] 고양이 티저(Day2~3): 눈/흙 위 발자국 + 새벽 울음 1회 — 등장은 Day9 불변(기대감 장치).
+  //   비영속 원칙: state 플래그 1개만(catTeaserDone) — 세이브돼도 무해한 부울, 스키마 확장 최소.
+  //   발자국은 wildlifeSys가 아침에 남기고, 울음은 tickTime의 새벽 시점에 1회 재생(아래 큐).
+  if (!state.cat && (state.day === 2 || state.day === 3) && !state.catTeaserDone) {
+    state.catTeaserDone = true;
+    state.catTeaserMeow = true; // tickTime 새벽(WAKE 직후)에 소비 → meow 1회
+    if (typeof wildlifeSys !== 'undefined') { try { wildlifeSys._forceNightPrints(); } catch (e) {} }
+    notes.push(t('day.catPrints'));
   }
   // 특수 인카운터 ①: 야윈 고양이 — v0.9.1: Day 9+, 하루 15% (아직 입양 전 + 최초 1회 등장 후 재등장 없음)
   if (!state.pendingEvent && !state.cat && !state.catEventSeen && state.day >= 9 && Math.random() < 0.15) {
@@ -10167,6 +10233,7 @@ function renderFrame() {
   updateEnvironment(t, dt);
   updateWeather(dt, t);
   updateCat(t, dt);
+  wildlifeSys.update(t, dt); // F-1a: 야생동물 로밍/개막 연출
   updateCraftFx(dt); // ④ 제작 손맛 아이콘/반짝임 연출
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   for (const it of items) {
@@ -10428,6 +10495,14 @@ window.__shelter = {
   // ④ 고양이 클로즈업 QA 훅
   enterCatCloseup, exitCatCloseup, catCamState: () => ({ active: catCam.active, saved: catCam.saved, center: catCam.center.toArray(), zoom: camState.zoom, dist: camState.dist }),
   setCatMode: (m) => { const c = getCat(); if (c) { c.mode = m; c.timer = 999; } },
+  // F-1a 야생동물 QA 훅 (코디네이터 검증용): 상태 조회 + 강제 등장/발자국/퇴장 트리거
+  wildlifeState: () => wildlifeSys._debug(),
+  wildlifeSpawn: (opening) => wildlifeSys._forceSpawn(opening),
+  wildlifeNightPrints: () => wildlifeSys._forceNightPrints(),
+  wildlifeLeaveAll: () => wildlifeSys._forceLeaveAll(),
+  wildlifeNudge: (i, x, z) => wildlifeSys._nudge(i, x, z), // QA: 클로즈업 검수용 (팬 카메라 부재 보완)
+  wildlifeRespawn: (id) => wildlifeSys.respawn(id || state.current),
+  swayCount: () => swayProps.length,
   // ⑥ 고양이 버그픽스 QA 훅: 스폰 가드 상태(⑥b 브릭 감지) + 퍼치 지지면 유효성(⑥a)
   catSpawning: () => catSys.isSpawning(),
   catSupportState: () => { const c = getCat(); return c ? { baseY: +c.baseY.toFixed(3), mode: c.mode, supportValid: c.baseY > 0.12 ? catSupportValid(c) : null, dirty: catSys.getCatSupportDirty() } : null; },

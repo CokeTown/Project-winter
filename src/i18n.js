@@ -647,6 +647,7 @@ export const STR = {
   'day.upkeepUnpaid': { ko: '⚠️ 유지비({label}) 미납 — 거처 쾌적함 보너스가 꺼졌습니다.', en: '⚠️ Upkeep unpaid ({label}) — shelter comfort bonus is off.' },
   'day.infectWorse':  { ko: '🤒 상처를 방치해 감염 위험으로 악화되었습니다.', en: '🤒 The neglected wound worsened into an infection risk.' },
   'day.catHint':      { ko: '🐈 어디선가 가냘픈 울음소리가 들려온다...', en: '🐈 A faint mew drifts in from somewhere...' },
+  'day.catPrints':    { ko: '🐾 문 앞 눈밭에 작은 발자국이 찍혀 있다. 밤새 무언가 다녀갔다.', en: '🐾 Small paw prints dot the snow by the door. Something passed through in the night.' },
   'day.cat0':         { ko: '🐈 고양이가 창가에서 하루 종일 볕을 쬐었습니다.', en: '🐈 The cat basked by the window all day.' },
   'day.cat1':         { ko: '🐈 고양이가 문 앞에 쥐 한 마리를 놓아두었습니다. 선물인 모양입니다.', en: '🐈 The cat left a mouse at the door. A gift, it seems.' },
   'day.cat2':         { ko: '🐈 고양이가 침대 한가운데를 차지하고 잤습니다. 당신은 구석에서.', en: '🐈 The cat claimed the middle of the bed. You slept in the corner.' },
