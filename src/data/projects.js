@@ -123,6 +123,42 @@ export const PROJECTS = {
     ],
     doneSiteStage: 4,
   },
+
+  /* ── 1.3 「고요한 고원」 케이블카 복구 ──
+     스키 로지 거주 시 노출. 잔해정리→지주→케이블→완성 (site='cablecar', 로지 buildRoom에서 siteStage 표현).
+     완공 효과(resort.accessTime): 고원(리조트) 접근/탐험 시간 단축(state.cablecarDone 플래그 → expDuration).
+     고원은 겨울 접근성이 나쁜 대신 보상이 좋다는 결 — 케이블카가 그 접근 비용을 "건설로 산다"(선로 복구와 캐논 공유). */
+  cablecar: {
+    id: 'cablecar',
+    when: { shelters: ['lodge'] },
+    site: 'cablecar',
+    icon: '🚡',
+    memoirKey: 'proj.cablecar.memoir',
+    stages: [
+      { costKey: 'cablecar1', need: 3, siteStage: 1, effectKey: null },              // 잔해 정리 → 지주
+      { costKey: 'cablecar2', need: 3, siteStage: 2, effectKey: null },              // 케이블 가설
+      { costKey: 'cablecar3', need: 3, siteStage: 3, effectKey: 'resort.accessTime' }, // 곤돌라 복구 → 효과
+    ],
+    doneSiteStage: 4,
+  },
+
+  /* ── 1.3 「고요한 고원」 관측소 ──
+     스키 로지 거주 시 노출. 기초→돔 골조→완성 (site='observatory', 로지 buildRoom에서 siteStage 표현).
+     완공 효과(lodge.nightSky): 맑은 밤 밤하늘 이벤트 개방(유성우/오로라) → 수첩 "스케치" 수집(도감/기록 문법).
+     감상 보상이지 숫자 보상 아님(대형 프로젝트 원칙 준수). 1.4 복선: "저건 별이 아니다". */
+  observatory: {
+    id: 'observatory',
+    when: { shelters: ['lodge'] },
+    site: 'observatory',
+    icon: '🔭',
+    memoirKey: 'proj.observatory.memoir',
+    stages: [
+      { costKey: 'observatory1', need: 3, siteStage: 1, effectKey: null },              // 기초
+      { costKey: 'observatory2', need: 3, siteStage: 2, effectKey: null },              // 돔 골조
+      { costKey: 'observatory3', need: 3, siteStage: 3, effectKey: 'lodge.nightSky' },  // 완성 → 밤하늘 개방
+    ],
+    doneSiteStage: 4,
+  },
 };
 
 /* ── 1.2~1.4 확장 수용성 증명 (설계 노트, 이번 배치 미구현) ────────

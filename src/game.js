@@ -723,6 +723,8 @@ function coldDefenseLevel() {
     return DEFS[i.defId]?.appliance?.effect === 'heat';
   });
   if (heating) lv++;
+  // 1.3 스키 로지 붙박이 벽난로 — 유지비만 내면(upkeepOk) 항상 한 단계 방어(고도 페널티 상쇄의 핵심).
+  if (SHELTERS[state.current].hearth && state.upkeepOk) lv++;
   return lv;
 }
 // 한파 활성 여부 (오늘이 coldSnap.until 이하이고 겨울)
@@ -985,6 +987,10 @@ function comfortDetail() {
   // 온풍기(heater) 가동 시 겨울 쾌적 보너스
   let heatMod = 0;
   if (seasonOf().id === 'winter' && items.some(i => i.on !== false && DEFS[i.defId]?.appliance?.effect === 'heat')) heatMod += BAL.economy.heaterWinterComfort;
+  // 1.3 스키 로지 붙박이 벽난로 — 겨울 온기 보너스 (온풍기와 별개, 유지비가 항상 켜져 있는 정점). upkeepOk일 때만.
+  if (sh.hearth && seasonOf().id === 'winter' && state.upkeepOk) heatMod += BAL.highland.hearthWinterComfort;
+  // 1.3 온천 개조 — cozy의 정점(온기 축 대형 가산). 계절 무관 (온천은 늘 따뜻하다).
+  if (hasMod('onsen')) heatMod += BAL.highland.onsenComfort;
   // 인카운터 안정감 여운(moodBuff) — 며칠간 지속되는 일시 쾌적. 만난 뒤의 정적이 남긴 온기/불안.
   const moodMod = (state.moodBuff && state.day <= state.moodBuff.until) ? (state.moodBuff.amt || 0) : 0;
   // 돔 벙커 리워크(#36): 천장 완전 수리 + 뒷문 저장고가 갖춰지면 벙커 쾌적 가산.
@@ -1118,8 +1124,10 @@ function rateParts(regionId, prep = []) {
   const hungryPen = (state.hunger < BAL.exp.hungryPenGate || state.thirst < BAL.exp.hungryPenGate) ? BAL.exp.hungryPen : 0; // 허기/갈증
   const buff = state.buff?.exp || 0; // 인카운터 버프/디버프
   const coldPen = coldSnapNetSeverity() > 0 ? BAL.seasons.coldSnapExpPen : 0; // 한파: 탐험 성공률 -10%p (방어 시 0)
-  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + district + gear + buff - weatherPen - injuryPen - hungryPen - coldPen, 0.05, 0.95);
-  return { base: r.rate, comfort, shelter, district, gear, buff, weatherPen, injuryPen, hungryPen, coldPen, eff };
+  // 1.3 눈사태 위험 우회로: 이번 리조트 출발이 우회로면 성공률 -15%p (보상 1.5배는 정산에서). GD 준수.
+  const avalanchePen = (state._avalancheDetour && regionId === 'resort') ? BAL.highland.avalancheDetourRatePen : 0;
+  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + district + gear + buff - weatherPen - injuryPen - hungryPen - coldPen - avalanchePen, 0.05, 0.95);
+  return { base: r.rate, comfort, shelter, district, gear, buff, weatherPen, injuryPen, hungryPen, coldPen, avalanchePen, eff };
 }
 
 /* ============================================================
@@ -3121,7 +3129,160 @@ const SHELTERS = {
       envDyn = { sea, seaBase: sea.position.y };
     },
   },
+
+  /* ── 1.3 「고요한 고원」 셸터: 스키 로지 ──
+     고원 리조트의 스키 로지. 전 셸터 최고 단열(cold 0 — 악천후에도 쾌적 안 떨어짐) + 붙박이 벽난로(온기) + 큰 전망 창.
+     고도 페널티(altitude): 연료 소모 +30% · 한파 빈도 +1 — 로지의 단열/난로가 이를 상쇄하는 리스크·리워드 셸터.
+     온천(onsen) 개조로 cozy의 정점을 연다. 관측소·케이블카 대형 프로젝트 현장이 여기에 붙는다. */
+  lodge: {
+    name: '스키 로지', nameEn: 'Ski Lodge', emoji: '🏔️', unlockAt: 33, viewH: 20, ceilY: 3.0,
+    desc: '고원 리조트의 통나무 로지. 바깥은 세상에서 가장 혹독한 겨울이지만, 벽난로 앞은 어디보다 따뜻하다.',
+    descEn: 'A timber lodge at the highland resort. Outside is the harshest winter in the world; before the hearth, it is warmer than anywhere.',
+    room: { w: 8.4, d: 6.4, h: 3.0 },
+    baseComfort: 9,
+    // cold 미설정 = 악천후 단열 페널티 없음(최고 단열, 기본 방어). 벽난로 무드는 fire mood + hearth 소품으로.
+    altitude: true, // 고도 페널티 표식 (연료 소모 ×altitudeFuelMult · 한파 빈도 +altitudeColdSnapBonus)
+    hearth: true,   // 붙박이 벽난로 — 겨울 온기 보너스(hearthWinterComfort) + 한파 방어 1단계(coldDefenseLevel)
+    upkeep: { res: 'fuel', n: 1, every: 1, label: '연료 1 / 일 (벽난로·고도 난방)', labelEn: 'Fuel 1 / day (hearth & altitude heating)' },
+    moveCost: { material: 3, parts: 2 },
+    limits: '🏔️ 고도 — 연료 소모 +30% · 한파가 더 잦다 (로지 단열·벽난로가 상쇄)', limitsEn: '🏔️ Altitude — fuel use +30% · cold snaps more frequent (offset by lodge insulation & hearth)',
+    weatherPool: ['clear', 'snow', 'snow', 'snow'], // 고원은 눈이 잦다
+    mood: { fog: 0x1a2436, fogNear: 20, fogFar: 62, skyH: 0x22314a, skyZ: 0x0a1120, hemiSky: 0x94a6c8, hemiGround: 0x484038, hemiInt: 0.72, moonC: 0xaec4e0, moonInt: 0.82, stars: 1.0, fire: 0.9 },
+    perk: { cozyMult: 1.3, forecast: true, label: '🔥 벽난로 로지 — 쾌적 효과 1.3배 · 날씨 예보', labelEn: '🔥 Hearth lodge — comfort effects ×1.3 · weather forecast' },
+    buildRoom() {
+      const { w, d, h } = ROOM;
+      const fm = wallPhong({ map: floorWoodTex }); fm.userData.shared = true;
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), fm);
+      floor.position.y = -0.15; floor.receiveShadow = true;
+      tagDecoFloor(floor); roomGroup.add(floor);
+      B(roomGroup, w + 1.0, 0.5, d + 1.0, 0x2b2e36, 0, -0.55, 0);
+      // 통나무 벽 (오두막 목재 텍스처) + 큰 전망 창(고원 부감)
+      const wallMat = wallPhong({ map: wallWoodTex });
+      wallMat.userData.shared = true;
+      const mk = (len, opts) => stdWall(len, h, wallMat, opts);
+      makeWalls([
+        { group: mk(w, { window: { winW: 3.0, winH: 1.6, winY: 1.5, winX: 0 }, skyColor: 0x2c3a55 }), pos: [0, 0, -d / 2 - 0.11], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+        { group: mk(w), pos: [0, 0, d / 2 + 0.11], rotY: Math.PI, normal: new THREE.Vector3(0, 0, 1) },
+        { group: mk(d), pos: [-w / 2 - 0.11, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+        { group: mk(d, { window: { winW: 1.6, winH: 1.2, winY: 1.5, winX: 0 }, skyColor: 0x2c3a55 }), pos: [w / 2 + 0.11, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
+      ]);
+      // A자형 경사 지붕 (통나무 로지) — 천장 컬링 그룹
+      {
+        const roofG = new THREE.Group();
+        const rmat = lamb(0x4a3a2c);
+        const rlen = Math.hypot(d / 2 + 0.3, 1.4);
+        for (const side of [-1, 1]) {
+          const slab = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, 0.14, rlen * 2), rmat);
+          slab.position.set(0, h + 0.7, side * (d / 4 + 0.15));
+          slab.rotation.x = side * Math.atan2(1.4, d / 2 + 0.3);
+          slab.castShadow = true; roofG.add(slab);
+        }
+        B(roofG, w + 0.9, 1.4, 0.16, 0x554435, 0, h + 0.7, 0); // 용마루 박공
+        tagCeiling(roofG, h + 0.02); roomGroup.add(roofG);
+      }
+      // ── 붙박이 벽난로 (hearth) — 왼벽에 돌 화로 + 굴뚝 + 타오르는 불빛 ──
+      {
+        const hg = new THREE.Group();
+        B(hg, 1.4, 1.6, 0.8, 0x5a544a, 0, 0.8, 0);          // 돌 화로 몸통
+        B(hg, 0.9, 0.7, 0.3, 0x151210, 0, 0.55, 0.42);       // 아궁이(어둠)
+        B(hg, 0.5, 2.4, 0.5, 0x4e483f, 0, 2.0, -0.1);        // 굴뚝
+        const fire = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.55, 6),
+          new THREE.MeshLambertMaterial({ color: 0xffa030, emissive: 0xdd6a10, emissiveIntensity: 1.1 }));
+        fire.position.set(0, 0.55, 0.42); hg.add(fire);
+        hg.position.set(-w / 2 + 0.5, 0, -d / 4); hg.rotation.y = Math.PI / 2; roomGroup.add(hg);
+        blockers = [{ x: -w / 2 + 0.5, z: -d / 4, w: 0.9, d: 1.5 }];
+      }
+      // ── 대형 프로젝트 현장: 관측소(방 밖 뒤편 언덕) + 케이블카(방 밖 앞쪽 절벽 방향) ──
+      buildObservatorySite(roomGroup, 0, 0, -d / 2 - 3.2);
+      buildCablecarSite(roomGroup, w / 2 + 3.4, 0, d / 2 + 1.0);
+    },
+    buildEnv() {
+      const GY = -0.9;
+      const rand = seededRand(1330);
+      // 고원 설원 지형 — 봉우리로 솟는 산릉
+      const gh = (x, z) => {
+        const r = Math.hypot(x, z);
+        const n = 1.4 * Math.sin(x * 0.12 + 0.6) * Math.cos(z * 0.1)
+                + 0.7 * Math.sin(x * 0.29 + 1.5) * Math.sin(z * 0.24);
+        return GY + n * THREE.MathUtils.smoothstep(r, 9, 16) + THREE.MathUtils.smoothstep(r, 22, 52) * 6.0;
+      };
+      const cS = new THREE.Color(0xdfe6ee), cB = new THREE.Color(0xc4d0dc), cR = new THREE.Color(0x8a94a2);
+      envRoot.add(groundPlane((x, z) => {
+        const m = 0.5 + 0.5 * Math.sin(x * 0.4 + z * 0.3) * Math.cos(z * 0.33 - x * 0.2);
+        return cS.clone().lerp(cB, m * 0.7).lerp(cR, 0.3 * THREE.MathUtils.smoothstep(Math.hypot(x, z), 20, 46));
+      }, gh));
+      // 눈 덮인 침엽수 (설산) + 멀리 뾰족 봉우리 실루엣
+      const farGeos = [];
+      for (let i = 0; i < 70; i++) {
+        const a = rand() * Math.PI * 2, r = 12 + Math.pow(rand(), 0.8) * 26;
+        const x = r * Math.cos(a), z = r * Math.sin(a);
+        const geo = pineGeo(rand, 0.9 + rand() * 1.4, true);
+        geo.rotateY(rand() * Math.PI * 2);
+        geo.translate(x, gh(x, z) - 0.05, z);
+        farGeos.push(geo);
+      }
+      if (farGeos.length) envRoot.add(new THREE.Mesh(mergeGeometries(farGeos), vcLambert));
+      // 지평선 설봉 (원뿔 봉우리 몇 개)
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2 + 0.4, r = 40 + rand() * 10;
+        const pk = new THREE.Mesh(new THREE.ConeGeometry(8 + rand() * 4, 16 + rand() * 8, 5), lamb(0xd6dee8));
+        pk.position.set(r * Math.cos(a), GY + 4, r * Math.sin(a)); envRoot.add(pk);
+      }
+      envDyn = {};
+    },
+  },
 };
+
+/* ── 1.3 관측소 현장 오브젝트 (site='observatory') ──
+   projectSiteStage('observatory')에 따라 자란다: 0 터/자재 → 1 기초 → 2 돔 골조 → 3 완성(회전 돔+망원경).
+   완공(effect lodge.nightSky) 후 맑은 밤 밤하늘 이벤트가 열린다. */
+function buildObservatorySite(parent, ox, oy, oz) {
+  const stage = projectSiteStage('observatory');
+  const g = new THREE.Group();
+  const rr = seededRand(1331);
+  // 콘크리트 기단 (항상)
+  B(g, 2.6, 0.4, 2.6, 0x6a6660, 0, oy + 0.2, 0);
+  if (stage === 0) {
+    for (let i = 0; i < 7; i++) { const rs = 0.18 + rr() * 0.24; B(g, rs, rs, rs, 0x8a8680, -1 + rr() * 2, oy + 0.4 + rs * 0.5, -1 + rr() * 2).rotation.y = rr() * 3; }
+  } else {
+    if (stage >= 1) B(g, 2.2, 1.4, 2.2, 0x8a857c, 0, oy + 1.1, 0); // 원통 기초 벽
+    if (stage >= 2) { // 돔 골조 (반구 와이어 느낌 — 반투명 없이 저면 밴드)
+      for (let k = 0; k < 6; k++) { const rgeo = new THREE.TorusGeometry(1.15, 0.05, 5, 12, Math.PI); const ring = new THREE.Mesh(rgeo, lamb(0x6a655c)); ring.position.set(0, oy + 1.8, 0); ring.rotation.y = (k / 6) * Math.PI; g.add(ring); }
+    }
+    if (stage >= 3) { // 완성: 회전 돔 + 슬릿 + 망원경
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(1.2, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), lamb(0xb8c0c8));
+      dome.position.set(0, oy + 1.8, 0); g.add(dome);
+      B(g, 0.3, 1.2, 0.06, 0x2a3038, 0, oy + 2.4, 1.15); // 관측 슬릿(어둠)
+      const scope = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 1.5, 10), lamb(0x33383f));
+      scope.position.set(0, oy + 2.1, 0.4); scope.rotation.x = 0.7; g.add(scope);
+    }
+  }
+  g.position.set(ox, 0, oz); parent.add(g);
+}
+
+/* ── 1.3 케이블카 현장 오브젝트 (site='cablecar') ──
+   projectSiteStage('cablecar')에 따라 자란다: 0 잔해 → 1 지주 → 2 케이블 → 3 완성(곤돌라).
+   완공(effect resort.accessTime) 후 리조트 접근 시간이 단축된다. */
+function buildCablecarSite(parent, ox, oy, oz) {
+  const stage = projectSiteStage('cablecar');
+  const g = new THREE.Group();
+  const rr = seededRand(1332);
+  // 승강장 데크 (항상)
+  B(g, 2.2, 0.3, 1.4, 0x5a544a, 0, oy + 0.15, 0);
+  if (stage === 0) {
+    for (let i = 0; i < 6; i++) { const rs = 0.16 + rr() * 0.22; B(g, rs, rs, rs, 0x574f42, -0.9 + rr() * 1.8, oy + 0.3 + rs * 0.5, rr() * 0.6).rotation.y = rr() * 3; }
+  } else {
+    if (stage >= 1) { Cyl(g, 0.12, 0.16, 3.2, 0x6a6058, -0.7, oy + 1.6, 0, 6); Cyl(g, 0.12, 0.16, 3.2, 0x6a6058, 0.7, oy + 1.6, 0, 6); B(g, 1.8, 0.16, 0.2, 0x55504a, 0, oy + 3.1, 0); } // 지주 문
+    if (stage >= 2) { const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 8, 5), lamb(0x2a2824)); cable.position.set(0, oy + 3.2, -3.6); cable.rotation.x = 0.55; g.add(cable); } // 절벽 방향 케이블
+    if (stage >= 3) { // 완성: 곤돌라
+      const car = new THREE.Group();
+      B(car, 0.9, 0.9, 0.7, 0xc45540, 0, 0, 0); B(car, 0.7, 0.6, 0.5, 0x2a343e, 0, 0.05, 0.36); // 캐빈 + 창
+      B(car, 0.1, 0.3, 0.1, 0x55504a, 0, 0.6, 0); // 행어
+      car.position.set(0, oy + 2.7, 0); g.add(car);
+    }
+  }
+  g.position.set(ox, 0, oz); parent.add(g);
+}
 
 /* ── 1.1 방파제 오두막 현장 오브젝트 (site='breakwaterHut') ──
    projectSiteStage('breakwaterHut')에 따라 단계별로 자란다: 0 잔해 → 1 정리된 터 → 2 뼈대 → 3 벽 → 4 완성 오두막.
@@ -3205,6 +3366,14 @@ const DISTRICTS = {
     descEn: 'A dead port at the river mouth. The sea is frozen, but not dead.',
     regionBonus: { harborYard: 0.05, fishMarket: 0.05 },
     bonusLabel: '항구 지역 접근성 +5%p', bonusLabelEn: 'Harbor region access +5%p',
+  },
+  // 1.3 「고요한 고원」 — 산 위로 올라간 고원. 스키 로지 셸터가 이 구역. 겨울 접근성이 나쁜 대신 보상이 좋다.
+  highland: {
+    name: '고요한 고원', nameEn: 'Silent Highland', emoji: '🏔️', shelters: ['lodge'],
+    desc: '구름 위로 솟은 고원. 겨울이 더 혹독한 만큼, 남은 것도 더 값지다.',
+    descEn: 'A plateau above the clouds. The winters bite harder here, and what remains is worth more for it.',
+    regionBonus: { resort: 0.05 },
+    bonusLabel: '리조트 폐허 접근성 +5%p', bonusLabelEn: 'Resort ruins access +5%p',
   },
 };
 function districtOf(shelterId) {
@@ -3321,6 +3490,14 @@ const state = {
   subwayOpen: {},         // 1.2: 개통된 지하 노선 연결 지역 { [regionId]: true } (탐험 -50% + 폭설 봉쇄 예외)
   mushroomWaterTimer: 0,  // 1.2: 버섯 재배칸 물 소모 카운터 (mushroomWaterEvery일마다 물 1)
   marketToday: 0,         // 1.2: 오늘 암시장 교환 횟수 (하루 슬롯 제한)
+  // ── 1.3 「고요한 고원」 ──
+  cablecarDone: false,    // 1.3: 케이블카 복구 완공 (리조트 접근/탐험 시간 단축)
+  observatoryDone: false, // 1.3: 관측소 완공 (맑은 밤 밤하늘 이벤트 개방)
+  avalancheForecast: 0,   // 1.3: 눈사태 발령 예정일 (day). 0=예보 없음. 한파 예보 문법 재사용
+  avalancheBlockUntil: 0, // 1.3: 미대비 눈사태로 리조트가 봉쇄된 기한 (day). 0=봉쇄 없음
+  sketches: {},           // 1.3: 수집한 밤하늘 스케치 { id: 수집일 } (도감/기록 문법)
+  nightSkyToday: 0,       // 1.3: 오늘 밤하늘 이벤트 발동 여부 (하루 1회 제한)
+  pendingSketchPopup: null, // 1.3: 결산 닫은 뒤 열 스케치 팝업 id
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -3456,7 +3633,8 @@ function restEnergyValue(atHour, collapse = false) {
     // 05시 자동 취침: 몸이 버티지 못하고 쓰러진다 — 회복은 바닥 취침 수준(cozy 보너스 없음).
     return { hasBed, collapse: true, energy: Math.min(100, BAL.rest.floorEnergy) };
   }
-  const base = (hasBed ? BAL.rest.bedEnergy : BAL.rest.floorEnergy) + (cozy >= BAL.rest.cozyThreshold ? BAL.rest.cozyBonus : 0);
+  const onsenRest = hasMod('onsen') ? BAL.highland.onsenRestBonus : 0; // 1.3 온천: 취침 에너지 회복 보너스(대형)
+  const base = (hasBed ? BAL.rest.bedEnergy : BAL.rest.floorEnergy) + (cozy >= BAL.rest.cozyThreshold ? BAL.rest.cozyBonus : 0) + onsenRest;
   const energy = Math.max(0, Math.min(100, base + restHourMod(hour)));
   return { hasBed, collapse: false, energy };
 }
@@ -3651,6 +3829,14 @@ function loadSave() {
       if (state.subwayOpen == null || typeof state.subwayOpen !== 'object') state.subwayOpen = {}; // 1.2 지하: 개통 구간 맵
       if (state.mushroomWaterTimer == null) state.mushroomWaterTimer = 0; // 1.2 지하: 버섯 물 카운터
       if (state.marketToday == null) state.marketToday = 0;         // 1.2 지하: 암시장 하루 슬롯
+      // 1.3 고원 (구세이브 → 미개방/미예보)
+      if (state.cablecarDone == null) state.cablecarDone = false;
+      if (state.observatoryDone == null) state.observatoryDone = false;
+      if (state.avalancheForecast == null) state.avalancheForecast = 0;
+      if (state.avalancheBlockUntil == null) state.avalancheBlockUntil = 0;
+      if (state.sketches == null || typeof state.sketches !== 'object') state.sketches = {};
+      if (state.nightSkyToday == null) state.nightSkyToday = 0;
+      if (state.pendingSketchPopup === undefined) state.pendingSketchPopup = null;
       if (state.deco == null || typeof state.deco !== 'object') state.deco = {}; // #13 꾸미기
       if (data.state.questIdx === undefined) state.questIdx = (state.day > 1 || state.successes > 0) ? -1 : 0;
       if (!SHELTERS[state.current]) state.current = 'container';
@@ -4049,6 +4235,16 @@ const REGIONS = {
     injuries: ['minor'],
     fishMarket: true, // 겨울 결빙 드랍 절반 표식
   },
+  // ── 1.3 고원 지역: 리조트 폐허 (highland 해금 = 로지 셸터 해금 이후. 고위험·고보상 호텔 물자) ──
+  //   먼 거리(고원)라 소요·위험이 크지만 전리품 양이 넓다. 겨울엔 눈사태 리스크가 얹힌다(예보→우회).
+  resort: {
+    name: '리조트 폐허', nameEn: 'Resort Ruins', emoji: '🏨', rate: 0.4, time: 60,
+    pool: ['sofa', 'bed', 'teatable', 'clock', 'lantern', 'bookshelf', 'plant'], furnChance: 0.03,
+    desc: '산정 호텔의 잔해 · 두둑한 물자 (겨울엔 눈사태 위험)', descEn: 'Ruins of a summit hotel · rich supplies (avalanche risk in winter)', risk: '높음 — 응급키트 권장', riskEn: 'High — first-aid kit advised',
+    lootRes: [['canned', 2, 3], ['cloth', 2, 3], ['fuel', 1, 2], ['battery', 1, 2], ['parts', 1, 2], ['painkiller', 1, 1, 0.3]],
+    injuries: ['deep', 'sprain', 'minor'],
+    resort: true, // 고원 지역 표식 (눈사태 판정 대상)
+  },
 };
 for (const [k, v] of Object.entries(REGIONS)) v.id = k;
 
@@ -4057,8 +4253,8 @@ for (const [k, v] of Object.entries(REGIONS)) v.id = k;
 ============================================================ */
 const MAP = {
   W: 40, H: 28, TILE: 8,
-  districts: { coast: { x: 6, y: 13 }, city: { x: 16, y: 8 }, outskirts: { x: 15, y: 21 }, forest: { x: 31, y: 6 }, meadow: { x: 31, y: 19 }, harbor: { x: 4, y: 24 } },
-  regions: { residential: { x: 24, y: 16 }, commercial: { x: 12, y: 10 }, industrial: { x: 8, y: 23 }, slum: { x: 21, y: 12 }, harborYard: { x: 5, y: 26 }, fishMarket: { x: 9, y: 25 } },
+  districts: { coast: { x: 6, y: 13 }, city: { x: 16, y: 8 }, outskirts: { x: 15, y: 21 }, forest: { x: 31, y: 6 }, meadow: { x: 31, y: 19 }, harbor: { x: 4, y: 24 }, highland: { x: 36, y: 3 } },
+  regions: { residential: { x: 24, y: 16 }, commercial: { x: 12, y: 10 }, industrial: { x: 8, y: 23 }, slum: { x: 21, y: 12 }, harborYard: { x: 5, y: 26 }, fishMarket: { x: 9, y: 25 }, resort: { x: 37, y: 2 } },
 };
 // 거리 → 탐험 소요 시간 계수 (가까우면 빨리, 멀면 오래)
 function regionDistMult(regionId) {
@@ -4165,11 +4361,14 @@ const MAP_MARKERS = {
   // 1.1 항구 구역 — 지도 하단(해안/부두 쪽). 기존 4지역과 같은 마커 스타일. (map_paper 하단 항구 그림 기준 조정 예정)
   harborYard:  { x: 44, y: 82 },  // 하단 중앙 야적장(컨테이너 부두)
   fishMarket:  { x: 62, y: 86 },  // 하단 우측 수산시장(선착장)
+  // 1.3 고원 구역 — 지도 우상단(산맥 쪽). 리조트 폐허 한 곳. (map_paper 우상단 산 그림 기준 조정 예정)
+  resort:      { x: 88, y: 10 },  // 우상단 산정 리조트
 };
 // 항구 지역 해금 게이트: 항구 셸터(예인선)를 해금한 뒤부터 지도에 항구 구역이 뜬다.
 // 기존 4지역은 항상 해금(true). ARC-03 마커 문법 그대로, 노출 조건만 얹는다.
 function regionUnlocked(rid) {
   if (rid === 'harborYard' || rid === 'fishMarket') return state.successes >= SHELTERS.tugboat.unlockAt;
+  if (rid === 'resort') return state.successes >= SHELTERS.lodge.unlockAt; // 1.3: 리조트 폐허는 스키 로지 해금 후에만 노출
   return true;
 }
 // 항만 야적장 "오늘 바다가 준 것": 날짜로 결정론적으로 부스트 전리품 1종 선택(복권 파밍, 매일 리롤).
@@ -4197,6 +4396,11 @@ function expDuration(r) {
   if (state.breakwaterHut && (r.id === 'harborYard' || r.id === 'fishMarket')) t *= 0.75;
   // 1.2 지하 노선 개통: 연결 지역은 탐험 시간 -50% (어둠 속 지름길). 셸터 무관 — 노선이 열려 있으면 적용.
   if (subwayReaches(r.id)) t *= BAL.subway.openTimeMult;
+  // 1.3 케이블카: 리조트(고원) 접근 시간. 복구 전에는 등반으로 오래 걸리고(×1.4), 완공 후 곤돌라로 단축(×0.7).
+  //   전/후 실측용으로 두 배수를 명시적으로 나눈다(게이트: 완공 전후 접근 시간 유의미 차이).
+  if (r.id === 'resort') t *= state.cablecarDone ? BAL.highland.cablecarTimeDone : BAL.highland.cablecarTimeRaw;
+  // 1.3 눈사태 우회로 선택: 이번 출발이 우회로면 시간 증가(위험 감수 대신 안전 경로 아님 — GD: 시간 vs 위험).
+  if (state._avalancheDetour && r.id === 'resort') t *= BAL.highland.avalancheDetourTimeMult;
   return Math.round(t);
 }
 // 게임 시간 포매터 — 게임 '분'을 받아 "N분 / N시간 / N시간 N분"으로 표기 (5분 단위 반올림).
@@ -4245,7 +4449,31 @@ function startExpedition(regionId) {
   if (state.energy < BAL.exp.minEnergy) { toast(t('toast.tooTired')); return; }
   if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); return; }
   if (blizzardBlocks(regionId)) { toast(t('subway.blizzardBlocked')); return; } // 1.2 폭설 봉쇄 (개통 구간은 예외)
+  if (avalancheBlocks(regionId)) { toast(t('avalanche.blockedToast', { n: state.avalancheBlockUntil - state.day + 1 })); return; } // 1.3 눈사태 봉쇄
+  // 1.3 눈사태 예보 당일 리조트 탐험: 우회(안전·이번 예보 해소) vs 위험 감수(성공률↓·보상 1.5배·부상 위험) 선택
+  if (avalancheForecastToday(regionId)) { openAvalancheChoice(regionId); return; }
   openPrepModal(regionId);
+}
+// 1.3 눈사태 예보 당일 선택 모달 — 예보(우르릉) → 선택이 있다(원칙 준수). 사망 없음(cozy 캐논).
+function openAvalancheChoice(regionId) {
+  openModal(t('avalanche.title'), `
+    <div style="line-height:1.9;margin-bottom:10px">${t('avalanche.body')}</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <button class="pixel-btn primary" id="av-detour">${t('avalanche.detour')}</button>
+      <button class="pixel-btn" id="av-turnback">${t('avalanche.turnback')}</button>
+    </div>`);
+  $('av-detour').addEventListener('click', () => {
+    state._avalancheDetour = true;       // 이번 출발에 우회 플래그 (expDuration·resolveExpedition이 읽고 소진)
+    state.avalancheForecast = 0;         // 예보 해소 (직접 대응했다)
+    closeModal(); openPrepModal(regionId);
+  });
+  $('av-turnback').addEventListener('click', () => {
+    // 돌아섬 → 리조트가 avalancheDur일 봉쇄된다 (능동적으로 위험을 피한 대가: 접근 상실)
+    state.avalancheForecast = 0;
+    state.avalancheBlockUntil = state.day + BAL.highland.avalancheDur - 1;
+    toast(t('avalanche.turnedback'));
+    closeModal();
+  });
 }
 /* 1.2 폭설 봉쇄(최소 구현) — 겨울 '눈' 날씨엔 지상 지역 탐험 봉쇄. 개통된 지하 노선 구간은 예외(지하 우회).
    지하철 셸터 자체는 날씨가 닿지 않지만(weatherPool clear), 봉쇄는 '목적지 지상'이 눈에 파묻히는 것이라
@@ -4257,6 +4485,15 @@ function blizzardBlocks(regionId) {
   if (BLIZZARD_EXEMPT_REGIONS.includes(regionId)) return false;
   if (subwayReaches(regionId)) return false; // 개통 구간: 지하로 돌아가므로 봉쇄 무시
   return true;
+}
+// 1.3 눈사태 봉쇄: 자연 봉쇄(예보 방치)로 리조트가 닫혀 있는가. 예보 당일은 봉쇄가 아니라 '선택'(우회/감수)이다.
+function avalancheBlocks(regionId) {
+  if (regionId !== 'resort') return false;
+  return state.avalancheBlockUntil > 0 && state.day <= state.avalancheBlockUntil;
+}
+// 1.3 눈사태 예보 '당일'인가 — 리조트 탐험 시 우회/감수 선택지를 띄우는 게이트.
+function avalancheForecastToday(regionId) {
+  return regionId === 'resort' && state.avalancheForecast > 0 && state.day >= state.avalancheForecast;
 }
 function openPrepModal(regionId) {
   const r = REGIONS[regionId];
@@ -4391,11 +4628,14 @@ function resolveExpedition() {
   };
   const success = roll < actual;
   const partial = !success && roll < actual + (1 - actual) * BAL.pity.partialFactor;
+  const detour = !!state._avalancheDetour && exp.region === 'resort'; // 1.3 눈사태 위험 우회로
   // pity streak 갱신: 성공하면 리셋, 실패(부분 포함)면 증가
   if (success) state.expFailStreak = 0;
   else state.expFailStreak = (state.expFailStreak || 0) + 1;
   if (success) {
     rollRes(1);
+    // 1.3 눈사태 위험 우회로: 보상 1.5배 (추가분을 하드 감산 없이 얹는다 — 위험 감수의 대가). GD 준수.
+    if (detour) { rollRes(BAL.highland.avalancheDetourLootMult - 1, false); notes.push(t('avalanche.detourLoot')); }
     if (state.buff?.loot) { // 은닉처 좌표: 자원 2배 (하드 감산 없이 온전한 +1배)
       rollRes(1, false);
       notes.push(t('exp.note.loot2'));
@@ -4459,6 +4699,13 @@ function resolveExpedition() {
       notes.push(t('exp.note.gloves'));
     }
   }
+  // 1.3 눈사태 위험 우회로: 성공했더라도 눈길에서 미끄러질 위험(사망 없음 — 부상만). 아직 안 다쳤을 때만 롤.
+  if (detour && !state.injury && Math.random() < BAL.highland.avalancheInjuryChance) {
+    let type = prep.includes('firstaid') ? 'sprain' : (Math.random() < 0.5 ? 'sprain' : 'minor');
+    notes.push(applyInjury(type, prep.includes('bottle')));
+    notes.push(t('avalanche.detourHurt'));
+  }
+  if (state._avalancheDetour) state._avalancheDetour = false; // 우회 플래그 소진 (이번 출발 한정)
   // 비/눈 속 탐험 → 젖어서 청결도 감소
   if (weather.type === 'rain' || weather.type === 'snow' || weather.type === 'storm') {
     if (!prep.includes('raincoat')) {
@@ -5131,6 +5378,17 @@ const MEMOS = {
   sub3: { region: 'subway', name: '궤도 위의 유모차', nameEn: 'A Pram on the Tracks', desc: '선로 자갈 위에 빈 유모차 하나가 모로 넘어져 있다. 담요는 아직 개켜진 채다.\n왜 여기 두고 갔는지는, 아무도 적어두지 않았다.', descEn: 'An empty pram lies on its side in the track gravel. The blanket is still folded.\nWhy it was left here, no one wrote down.' },
   sub4: { region: 'subway', name: '마지막 열차 시각표', nameEn: 'Last Train Timetable', desc: '벽에 붙은 시각표에 누군가 빨간 펜으로 한 줄만 크게 동그라미 쳤다. 막차 23:40.\n그 밑에. "이걸 놓치면 걸어서 내려와라."', descEn: 'On the wall timetable, one line is circled hard in red pen: last train, 23:40.\nBeneath it: "Miss this and walk down."' },
   sub5: { region: 'subway', name: '터널로 이어진 발자국', nameEn: 'Footprints into the Tunnel', desc: '먼지 앉은 승강장 끝, 발자국이 어둠 속 터널로 줄지어 이어진다. 돌아 나온 자국은 없다.\n그들이 지하에서 무엇을 찾으려 했는지, 나는 이제 조금 알 것 같다.', descEn: 'At the dusty platform’s end, footprints file into the dark of the tunnel. None come back.\nWhat they hoped to find underground — I think I’m beginning to understand.' },
+
+  // ── 1.3 리조트 폐허 (resort) 8: 마지막 휴가객들 (봉쇄 전 산정에서 겨울을 보낸 사람들의 결) ──
+  //   스키 로지 거주 중 리조트 탐험에서 우선 드랍. 1인칭 발견 문법·기존 문체 유지.
+  rst1: { region: 'resort', name: '프런트의 마지막 예약', nameEn: 'The Last Booking', desc: '데스크 컴퓨터 화면이 아직 켜져 있다. 마지막 예약: 2박, 스위트, 두 사람.\n체크아웃란은 비어 있다. 그들은 끝내 내려가지 않았다.', descEn: 'The front-desk screen still glows. Last booking: two nights, a suite, for two.\nThe check-out field is blank. They never went back down.' },
+  rst2: { region: 'resort', name: '눈에 묻힌 스키', nameEn: 'Skis Under the Snow', desc: '거치대에 스키 여남은 켤레가 그대로 꽂혀 있다. 이름표가 달린 것도 있다.\n마지막으로 슬로프를 탄 사람이 누구였는지, 이제 알 길이 없다.', descEn: 'A dozen pairs of skis still stand in the rack, some with name tags.\nWho last rode the slope, there’s no way to know now.' },
+  rst3: { region: 'resort', name: '라운지의 방명록', nameEn: 'The Lounge Guestbook', desc: '난롯가 방명록에 적힌 인사들. "다시 오겠습니다." "잊지 못할 겨울."\n마지막 장엔 다른 필체. "여기 갇혔다. 그래도 따뜻하다."', descEn: 'Greetings in the guestbook by the hearth. "We’ll be back." "An unforgettable winter."\nThe last page, another hand: "Snowed in. Still — it’s warm here."' },
+  rst4: { region: 'resort', name: '케이블카 운행 중지 안내', nameEn: 'Cable Car Suspended', desc: '승강장에 붙은 안내문. 폭설로 케이블카 운행을 중단합니다. 복구 시 재개.\n복구는 오지 않았다. 산은 그대로 사람들을 품었다.', descEn: 'A notice at the platform: Cable car suspended due to heavy snow. Service resumes when restored.\nRestoration never came. The mountain kept its people as they were.' },
+  rst5: { region: 'resort', name: '객실의 크리스마스 트리', nameEn: 'A Room’s Christmas Tree', desc: '작은 트리 하나가 창가에 서 있다. 전구는 꺼졌지만 장식은 그대로다.\n선물 하나가 아직 안 뜯긴 채, 그 아래 놓여 있다.', descEn: 'A small tree stands by the window. The bulbs are dark, the ornaments intact.\nOne gift, still unopened, waits beneath it.' },
+  rst6: { region: 'resort', name: '스키 강사의 수첩', nameEn: 'The Ski Instructor’s Notebook', desc: '오전반 다섯 명, 오후반 취소. 눈이 너무 많이 온다.\n마지막 줄: 손님들을 라운지로 모았다. 내려갈 길이 막혔다. 겁주지 말자.', descEn: 'Morning class of five, afternoon cancelled. Too much snow.\nLast line: Gathered the guests in the lounge. The way down is closed. Don’t frighten them.' },
+  rst7: { region: 'resort', name: '온천 옆 수건 바구니', nameEn: 'Towel Basket by the Spring', desc: '노천탕 옆에 개켜진 수건이 아직 쌓여 있다. 김은 오래전에 걷혔다.\n누군가는 여기서, 세상이 끝나는 걸 따뜻한 물속에서 지켜봤을 것이다.', descEn: 'Folded towels still stack beside the open-air bath. The steam lifted long ago.\nSomeone, maybe, watched the world end from the warm water here.' },
+  rst8: { region: 'resort', name: '전망대의 망원경', nameEn: 'The Overlook Telescope', desc: '동전 넣는 유료 망원경이 계곡을 향해 있다. 마지막으로 넣은 동전이 아직 걸려 있다.\n무엇을 보려 했을까. 아래 도시엔 이제 불빛이 없다.', descEn: 'A coin-op telescope points down the valley, the last coin still lodged in it.\nWhat did they hope to see? There are no lights in the city below now.' },
 };
 // 유서 6종 — 지역 무관 별도 풀, 극저확률 (REQ-LORE-01)
 const WILLS = {
@@ -5146,6 +5404,8 @@ const MEMO_REGIONS = ['residential', 'commercial', 'industrial', 'slum'];
 const MEMOS_BY_REGION = MEMO_REGIONS.reduce((o, rg) => { o[rg] = Object.keys(MEMOS).filter(id => MEMOS[id].region === rg); return o; }, {});
 // 1.2 지하(subway) 메모 풀 — 지하철 셸터 거주 중 탐험에서 우선 드랍(판데믹 지하 대피 서사).
 const MEMOS_SUBWAY = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'subway');
+// 1.3 리조트(resort) 메모 풀 — 리조트 탐험에서 우선 드랍(마지막 휴가객들).
+const MEMOS_RESORT = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'resort');
 
 /* ── 라디오 방송 12종 (REQ-RADIO-01) ──
    예보 3(계절)/행상 예고 1/과거 정부 안내 2/정체불명 음악 1/생존자 사연 2/기계 자동 방송 1/박사 일지 조각 2.
@@ -5164,6 +5424,49 @@ const BROADCASTS = {
   doctor1: { kind: 'doctor', doctor: true, name: '박사의 일지 · 조각 하나', nameEn: 'Doctor’s Log · Fragment One', desc: '"…겨울이 아홉 번 지나면, 대기가 가라앉는다고 계산했다. 그 전까지 버틴 신호가 있다면, 그건 우연이 아니다. — 계속 관측한다."', descEn: '"…by my count, after nine winters the air settles. If a signal holds out that long, it is no accident. — I keep watching."' },
   doctor2: { kind: 'doctor', doctor: true, name: '박사의 일지 · 조각 둘', nameEn: 'Doctor’s Log · Fragment Two', desc: '"관측 위성은 아직 돈다. 지상에 불빛 하나가 아홉 해를 버티면, 우리는 내려갈 이유를 얻는다. 그 하나를 기다린다."', descEn: '"The satellite still turns. If one light on the ground lasts nine years, we are given a reason to come down. I wait for that one."' },
 };
+
+/* ── 1.3 밤하늘 스케치 6종 (관측소 완공 후, 맑은 밤 이벤트로 수집) ──
+   감상 보상. 각 스케치는 그날 본 하늘의 1인칭 기록 — "나는 오래 서서 하늘을 봤다"의 결. 지시조 금지.
+   맨 끝(satellite)은 1.4 복선: "저건 별이 아니다". 기록 탭에서 종이 스케치처럼 열람. */
+const SKETCHES = {
+  meteor:    { name: '유성우 스케치', nameEn: 'Meteor Shower Sketch', desc: '몇 개나 셌는지 모르겠다. 세다가 그만두고, 그냥 오래 서서 하늘을 봤다.\n떨어지는 것들에게도 소원을 빌 사람이 필요했을 텐데.', descEn: 'I lost count of how many. I stopped counting and just stood a long while, watching.\nEven the falling ones must have wanted someone to wish on them.' },
+  aurora:    { name: '오로라 스케치', nameEn: 'Aurora Sketch', desc: '초록 커튼이 산등성이 위로 천천히 흘렀다. 소리는 없었다.\n이렇게 조용한 것이 이렇게 넓을 수 있다는 게, 오늘은 위로가 됐다.', descEn: 'A green curtain drifted slow above the ridgeline. There was no sound.\nThat something so quiet could be so vast — tonight, that was a comfort.' },
+  milkyway:  { name: '은하수 스케치', nameEn: 'Milky Way Sketch', desc: '도시가 살아 있을 땐 이런 하늘을 본 적이 없다. 폐허가 준 것 중에 이건 나쁘지 않다.\n먼지 너머로, 강처럼 흐르는 별.', descEn: 'When the city still lived I never saw a sky like this. Of what the ruin gave, this one isn’t bad.\nBeyond the dust, stars flowing like a river.' },
+  moonhalo:  { name: '달무리 스케치', nameEn: 'Moon Halo Sketch', desc: '달 둘레에 흐린 고리가 걸렸다. 내일 눈이 온다는 뜻이라고, 누가 그랬던 것 같다.\n예보는 이제 하늘밖에 없다.', descEn: 'A faint ring hung round the moon. Someone once said it means snow tomorrow.\nThe sky is the only forecast left now.' },
+  comet:     { name: '혜성 스케치', nameEn: 'Comet Sketch', desc: '꼬리를 끌고 서쪽으로 낮게 지났다. 다음에 돌아올 땐 내가 없을 것이다.\n그래도 오늘 밤 그것을 본 사람이 하나는 있었다고, 적어둔다.', descEn: 'It passed low to the west, dragging its tail. When it swings back, I won’t be here.\nStill — I write it down: tonight, at least one person saw it.' },
+  satellite: { name: '궤도의 불빛 스케치', nameEn: 'Orbiting Light Sketch', desc: '별들 사이로 한 점이 일정한 속도로 미끄러졌다. 깜빡이지도, 떨어지지도 않았다.\n저건 별이 아니다. 누군가 아직 저 위에서 돌고 있다.', descEn: 'A single point slid between the stars at a steady pace. It did not blink, and it did not fall.\nThat is no star. Someone up there is still going round.' },
+};
+
+/* ── 1.3 밤하늘 스케치 수집 (state.sketches) — 관측소 완공 후 맑은 밤 이벤트로 1종씩 수집 ── */
+function sketchesCollected() { return Object.keys(state.sketches || {}).length; }
+function sketchesTotal() { return Object.keys(SKETCHES).length; }
+// 미수집 스케치 1개 뽑기 (satellite=1.4 복선은 마지막에 남도록, 다른 5종을 먼저 소진). 없으면 null.
+function pickUncollectedSketch() {
+  const owned = state.sketches || {};
+  const rest = Object.keys(SKETCHES).filter(id => id !== 'satellite' && !owned[id]);
+  if (rest.length) return rest[Math.floor(Math.random() * rest.length)];
+  return owned['satellite'] ? null : 'satellite'; // 나머지를 다 모아야 궤도의 불빛이 나온다
+}
+function collectSketch(id) {
+  if (!state.sketches) state.sketches = {};
+  if (!SKETCHES[id] || state.sketches[id]) return false;
+  state.sketches[id] = state.day;
+  return true;
+}
+// 관측소 완공 + 맑은 밤 → 밤하늘 이벤트. 하루 1회. 미수집 스케치가 있을 때만. processDay에서 호출.
+//   결산 노트에 1인칭 발견 + 닫은 뒤 스케치 팝업 예약(메모 팝업 문법 재사용). 수집률 100% 시 더는 발동 안 함.
+function tryNightSky(notes) {
+  if (!state.observatoryDone) return;
+  if (state.nightSkyToday) return;          // 하루 1회
+  if (weather.type !== 'clear') return;     // 맑은 밤만
+  if (Math.random() >= BAL.highland.nightSkyChance) return;
+  const id = pickUncollectedSketch();
+  if (!id) return;                          // 다 모았으면 조용히 끝
+  collectSketch(id);
+  state.nightSkyToday = 1;
+  notes.push(t('nightsky.foundNote', { title: LN(SKETCHES[id]) }));
+  state.pendingSketchPopup = id;            // 결산 닫은 뒤 스케치 페이지 팝업
+}
 
 /* ── 수집 상태/드랍 로직 (state.memos / state.broadcasts / state.distantSeen) ── */
 function memosCollected() { return Object.keys(state.memos || {}).length; }
@@ -5212,6 +5515,11 @@ function tryDropMemoOnExpedition() {
     if (state.current === 'subway') {
       const unSub = MEMOS_SUBWAY.filter(id => !(state.memos || {})[id]);
       if (unSub.length) { const id = unSub[Math.floor(Math.random() * unSub.length)]; collectMemo(id); return { id, will: false }; }
+    }
+    // 1.3 스키 로지 거주 중이면 리조트(resort) 메모 우선 드랍(마지막 휴가객들). 다 모았으면 지역 풀 폴백.
+    if (state.current === 'lodge') {
+      const unRst = MEMOS_RESORT.filter(id => !(state.memos || {})[id]);
+      if (unRst.length) { const id = unRst[Math.floor(Math.random() * unRst.length)]; collectMemo(id); return { id, will: false }; }
     }
     const id = pickUncollectedMemo(districtRegionOf(state.current));
     if (id) { collectMemo(id); return { id, will: false }; }
@@ -5695,6 +6003,9 @@ const SHELTER_MODS = {
   solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '🔆', cost: { parts: 4, battery: 1 },  desc: '이틀에 한 번 배터리 +1', descEn: 'Battery +1 every other day', not: ['subway'] },
   roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '🛠️', cost: { material: 4 },      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
   extension:  { name: '증축',        nameEn: 'Extension',    emoji: '🧱', cost: { material: 6, parts: 2 },  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
+  // 1.3 온천 (lodge 전용) — 고원 발견물을 개조로 개방. cozy의 정점: 쾌적 온기 대형 + 취침 에너지 회복 보너스.
+  //   고양이/개가 온천 옆에서 조는 전용 포즈(연출은 아트 폴백 — addModProp 소품 + 절차 김 파티클).
+  onsen: { name: '온천', nameEn: 'Hot Spring', emoji: '♨️', cost: { material: 4, parts: 2 }, desc: '고원의 온천을 끌어들여 — 쾌적함 대폭 + 취침 회복 보너스', descEn: 'Tap the highland hot spring — big comfort boost + restful sleep bonus', only: ['lodge'] },
   // Phase B 개조 2단계 (비용 곡선 상향: 1단계의 2~2.5배)
   insulationPlus: { name: '강화 단열재', nameEn: 'Reinforced Insulation', emoji: '🧥', cost: { cloth: 7, material: 5, parts: 1 }, desc: '한파 방어 강화 (단열재 위에)', descEn: 'Stronger cold-snap defense (over insulation)', req: 'insulation' },
   bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '🛢️', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
@@ -5705,6 +6016,7 @@ const MOD_MOUNT = {
   solar: 'roof', raincatch: 'eave', bigraincatch: 'eave',
   insulation: 'wall', insulationPlus: 'wall', garden: 'ground', rooftopGarden: 'ground',
   mushroom: 'ground', // 1.2 버섯 재배칸 — 지면(승강장) 배치. subway는 SHELTER_MOUNTS.subway.eave 폴백을 쓴다.
+  onsen: 'ground',    // 1.3 온천 — 지면(로지 옆마당) 배치. lodge에 ground 앵커 없으면 addModProp 폴백(벽 밀착).
 };
 // 셸터별 설치 앵커 실측 좌표 (buildRoom 지오메트리 기준).
 //  roof:  { y(지붕 상면), cx, cz(지붕 중심), hw, hd(지붕 반폭/반깊이), pitch?(경사지붕이면 +z로 내려가는 기울기 rad) }
@@ -5881,6 +6193,24 @@ function addModProp(id) {
     buildRooftopGarden();
   } else if (id === 'mushroom') {
     buildMushroomBed();
+  } else if (id === 'onsen') {
+    // 1.3 온천 — 로지 옆마당(방 밖 +x)에 돌 노천탕 + 절차 김 파티클. 고양이/개가 옆에서 조는 전용 포즈(폴백: 소품만).
+    const g = new THREE.Group();
+    const pr = seededRand(1333);
+    // 돌 테두리(원형) + 물
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      B(g, 0.34, 0.28, 0.34, [0x6a655c, 0x5a544a, 0x746e64][Math.floor(pr() * 3)], Math.cos(a) * 1.1, 0.14, Math.sin(a) * 0.8).rotation.y = a;
+    }
+    const water = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.12, 20), new THREE.MeshLambertMaterial({ color: 0x2f5f6a, emissive: 0x123037, emissiveIntensity: 0.4 }));
+    water.scale.z = 0.75; water.position.y = 0.18; g.add(water);
+    // 김(steam) — 반투명 흰 구 몇 개(절차 폴백, 아트 파티클 대체)
+    for (let i = 0; i < 5; i++) {
+      const s = new THREE.Mesh(new THREE.SphereGeometry(0.16 + pr() * 0.1, 6, 5), new THREE.MeshLambertMaterial({ color: 0xeef4f6, transparent: true, opacity: 0.28 }));
+      s.position.set((pr() - 0.5) * 1.4, 0.5 + pr() * 0.7, (pr() - 0.5) * 1.0); g.add(s);
+    }
+    g.position.set(w / 2 + 1.4, 0, -d / 2 + 1.6);
+    roomGroup.add(g);
   } else if (id === 'shelf') {
     B(roomGroup, 0.06, 1.4, ROOM.d * 0.7, 0x77543a, -w / 2 + 0.12, 0.7, 0);
     B(roomGroup, 0.4, 0.05, ROOM.d * 0.7, 0x8a6a48, -w / 2 + 0.28, 1.1, 0);
@@ -6560,6 +6890,10 @@ function applyProjectEffect(effectKey) {
     case 'subway.openSeg1': openSubwaySegment(1); break;
     case 'subway.openSeg2': openSubwaySegment(2); break;
     case 'subway.openSeg3': openSubwaySegment(3); break;
+    // 1.3 케이블카 완공 — 고원(리조트) 접근/탐험 시간 단축(플래그 판정, expDuration이 읽음).
+    case 'resort.accessTime': state.cablecarDone = true; break;
+    // 1.3 관측소 완공 — 맑은 밤 밤하늘 이벤트 개방(플래그 판정, processDay 밤하늘 롤이 읽음).
+    case 'lodge.nightSky': state.observatoryDone = true; break;
     default: break; // 1.2~1.4 확장이 여기에 case를 추가한다.
   }
 }
@@ -6752,6 +7086,11 @@ function recordTabHtml() {
     const sgot = MEMOS_SUBWAY.filter(id => owned[id]).length;
     if (sgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionSubway')} (${sgot}/${MEMOS_SUBWAY.length})</div>` + MEMOS_SUBWAY.map(id => memoRow(id, MEMOS)).join('');
   }
+  // 1.3: 리조트(resort) 마지막 휴가객 메모 — 발견 후에만 섹션 노출 (지하 문법 재사용)
+  {
+    const rgot = MEMOS_RESORT.filter(id => owned[id]).length;
+    if (rgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionResort')} (${rgot}/${MEMOS_RESORT.length})</div>` + MEMOS_RESORT.map(id => memoRow(id, MEMOS)).join('');
+  }
   const willIds = Object.keys(WILLS);
   const willGot = willIds.filter(id => owned[id]).length;
   sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
@@ -6761,10 +7100,20 @@ function recordTabHtml() {
     : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
   const distant = state.distantLight?.count
     ? `<div class="report-sec"><span class="r-title">${t('record.distantTitle', { n: state.distantLight.count })}</span></div>` : '';
+  // 1.3 밤하늘 스케치 — 관측소 완공 후 수집이 시작되면 섹션 노출(스포일러 방지, 벙커/지하 문법). satellite는 1.4 복선.
+  const sown = state.sketches || {};
+  let sketchSec = '';
+  if (state.observatoryDone || sketchesCollected() > 0) {
+    const rows = Object.keys(SKETCHES).map(id => sown[id]
+      ? `<div class="prep-row" style="cursor:pointer" data-sketch="${id}"><span>🌌</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+      : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
+    sketchSec = `<div class="report-sec"><span class="r-title">${t('record.sketchTitle', { n: sketchesCollected(), total: sketchesTotal() })}</span>${rows}</div>`;
+  }
   const total = memosTotal();
   return `
     <div class="report-sec"><span class="r-title">${t('record.memoTitle', { n: memosCollected(), total })}</span>${sections}</div>
     <div class="report-sec"><span class="r-title">${t('record.radioTitle', { n: broadcastsCollected(), total: broadcastsTotal() })}</span>${radioRows}</div>
+    ${sketchSec}
     ${distant}`;
 }
 function journalTabBar(active) {
@@ -6807,6 +7156,7 @@ function openJournalModal(tab = 'journal') {
   body.querySelectorAll('button[data-jtab]').forEach(b => b.addEventListener('click', () => openJournalModal(b.dataset.jtab)));
   body.querySelectorAll('[data-memo]').forEach(el => el.addEventListener('click', () => showMemoPage(el.dataset.memo, el.dataset.will === '1')));
   body.querySelectorAll('[data-broadcast]').forEach(el => el.addEventListener('click', () => showBroadcastModal(el.dataset.broadcast)));
+  body.querySelectorAll('[data-sketch]').forEach(el => el.addEventListener('click', () => showSketchPage(el.dataset.sketch)));
 }
 
 /* ============================================================
@@ -8067,6 +8417,7 @@ function processDay() {
   state.expToday = 0; // 새 하루, 새 걸음
   state.icefishToday = 0; // 1.1: 얼음낚시 하루 스팟 리셋
   state.marketToday = 0;  // 1.2: 암시장 하루 교환 슬롯 리셋
+  state.nightSkyToday = 0; // 1.3: 밤하늘 이벤트 하루 1회 리셋
   // 첫 3일 튜토리얼: Day 2/3 아침에 다음 페이지를 표시 대기열에 넣는다 (day-report 뒤로 미룸)
   // tutDay>=1: Day 1 페이지(신규 게임)를 이미 본 경우에만 이어서 진행 — 구세이브는 tutDay 0 그대로라 대상 아님
   // 퀘스트 트래커가 아직 진행 중이면(questActive) 온보딩 중복을 피하려고 자동 페이지를 띄우지 않는다
@@ -8118,7 +8469,9 @@ function processDay() {
     // 4) 예보 발령: 겨울 중, 미발동·미예보, 겨울당 상한 미만, 확률 판정 → 리드타임 뒤로 예약
     //    하드는 한파가 더 잦고(확률 ×1.6) 더 많이 온다(상한 +1) — "첫 겨울이 진짜 시험" (v1.0.0)
     const snapCap = S.coldSnapMaxPerWinter + (isHard() ? BAL.hard.coldSnapExtraPerWinter : 0);
-    const snapChance = S.coldSnapChancePerDay * (isHard() ? BAL.hard.coldSnapChanceMul : 1);
+    // 1.3 고도 페널티: 고원 셸터(altitude) 거주 시 한파가 더 잦다 (확률 배수). 로지 단열/벽난로가 페널티를 상쇄.
+    const altMul = SHELTERS[state.current].altitude ? BAL.highland.altitudeColdSnapChanceMul : 1;
+    const snapChance = S.coldSnapChancePerDay * (isHard() ? BAL.hard.coldSnapChanceMul : 1) * altMul;
     if (inWinter && !state.coldSnap && state.coldSnapForecast === 0 &&
         state.coldSnapsThisWinter < snapCap &&
         seasonDay(state.day) <= SEASON_DAYS - S.coldSnapForecastDays - 1 && // 겨울 끝에 걸치지 않게
@@ -8126,6 +8479,30 @@ function processDay() {
       // 관제탑 퍽(forecastLead): 고층 전망으로 한파 예보 리드타임 +N일. 없으면 0.
       const lead = SHELTERS[state.current].perk?.forecastLead || 0;
       state.coldSnapForecast = state.day + S.coldSnapForecastDays + lead;
+    }
+  }
+  // ── 1.3 눈사태 (겨울 고원 재난 2호): 예보(우르릉) → 당일 리조트 탐험에 우회 선택 or 봉쇄 ──
+  //   한파 예보 문법 재사용. 리조트가 해금돼 있고 겨울일 때만 의미. cozy 캐논: 사망 없음(부상/시간 손실 계열).
+  {
+    const H = BAL.highland;
+    const inWinter = seasonOf(state.day).id === 'winter';
+    const resortOpen = regionUnlocked('resort'); // 로지 해금 후에만
+    // 1) 봉쇄 만료
+    if (state.avalancheBlockUntil > 0 && state.day > state.avalancheBlockUntil) {
+      state.avalancheBlockUntil = 0;
+      notes.push(t('avalanche.cleared'));
+    }
+    // 2) 예보 발령 (겨울·리조트 개방·미예보·미봉쇄·확률). 리드타임 뒤 "당일"이 오면 그날 리조트 탐험 시 선택지.
+    if (inWinter && resortOpen && state.avalancheForecast === 0 && state.avalancheBlockUntil === 0 &&
+        Math.random() < H.avalancheChancePerDay) {
+      state.avalancheForecast = state.day + H.avalancheForecastDays;
+      notes.push(t('avalanche.forecast'));
+    }
+    // 3) 예보 당일이 지났는데 손대지 않았으면(리조트 탐험 안 함) → 자연 봉쇄로 전환 (avalancheDur일)
+    else if (state.avalancheForecast > 0 && state.day > state.avalancheForecast) {
+      state.avalancheForecast = 0;
+      state.avalancheBlockUntil = state.day + H.avalancheDur - 1;
+      notes.push(t('avalanche.blocked'));
     }
   }
   // 1) 발전기: 연료를 태우면 그날 배터리 소비가 무료
@@ -8265,6 +8642,26 @@ function processDay() {
       }
     }
   } else state.upkeepOk = true;
+  // 1.3 고도 페널티 — 고원 셸터(altitude) 거주 시 연료 소모 +30%. 그날 태운 연료(벽난로 유지비 + 연료 조명/가전)의
+  //   30%를 추가 지불한다(기댓값 = ×1.3). 소수부는 확률 반올림으로 기댓값 보존. 연료 없으면 벽난로 온기 정지(upkeepOk).
+  if (SHELTERS[state.current].altitude) {
+    let baseFuel = 0;
+    if (up && up.res === 'fuel' && state.day % up.every === 0 && state.upkeepOk) baseFuel += up.n; // 유지비 연료
+    for (const it of items) { // 연료를 태우는 조명/가전
+      if (it.on === false) continue;
+      const def = DEFS[it.defId];
+      const fuelId = def.light?.fuel || (def.appliance?.effect !== 'power' ? def.appliance?.fuel : null);
+      if (fuelId === 'fuel') baseFuel += 1;
+    }
+    if (baseFuel > 0) {
+      const x = baseFuel * (BAL.highland.altitudeFuelMult - 1);
+      const surcharge = Math.floor(x) + (Math.random() < x - Math.floor(x) ? 1 : 0);
+      if (surcharge > 0) {
+        if (resConsume('fuel', surcharge)) notes.push(t('highland.altitudeFuel', { n: surcharge }));
+        else { state.upkeepOk = false; notes.push(t('highland.altitudeCold')); } // 고도 난방 연료 부족 → 벽난로 온기 정지
+      }
+    }
+  }
   // 부상 방치 → 감염 악화
   if (state.injury && INJURIES[state.injury.type].infect && Math.random() < INJURIES[state.injury.type].infect) {
     state.injury = { type: 'infection', untilMin: state.gameMin + INJURIES.infection.restH * 60 * recoveryMult() };
@@ -8300,6 +8697,8 @@ function processDay() {
   tryDoctorRadio();
   // 라디오 방송 수집 (#12) — 라디오 ON 상태에서 하루 1회 BAL 확률로 미수집 방송 청취.
   tryRadioBroadcast(notes);
+  // 1.3 밤하늘 수집 — 관측소 완공 후 맑은 밤 하루 1회 확률로 미수집 스케치 1종.
+  tryNightSky(notes);
   // 랜덤 인카운터: 마지막 만남 1일 경과 + BAL 확률. 조건/반복억제는 drawEvent 엔진에서 판정.
   // 아침 결산 draw 는 '지난밤/밤사이' 사건도 허용하도록 night 컨텍스트를 true 로 연다.
   if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 1 && Math.random() < BAL.events.dailyChance) {
@@ -8568,6 +8967,12 @@ function tickTime(dt) {
     if (!state.broadcasts[id]) state.broadcasts[id] = state.day;
     scheduleSave();
     showBroadcastModal(id);
+  } else if (state.pendingSketchPopup && !reportQueued && !state.pendingEvent && !state.pendingTutorial && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
+    // 1.3 밤하늘 스케치 팝업 — 결산 닫은 뒤 종이 스케치 문법으로 1회 열람 (메모 팝업 문법 재사용).
+    const id = state.pendingSketchPopup;
+    state.pendingSketchPopup = null;
+    scheduleSave();
+    showSketchPage(id);
   }
   tickInjury();
   settlingOffline = false; // 첫 틱(오프라인 정산) 소화 완료 — 이후엔 정상 암전 경로
@@ -8875,6 +9280,14 @@ function showMemoPage(id, will) {
   const body = `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${tag}</div>` +
     `<div style="white-space:pre-line;line-height:1.9">${LD(m)}</div>`;
   openJournalPages([{ title: LN(m), body }]);
+}
+// 1.3 밤하늘 스케치 페이지 — 메모 페이지 문법 재사용. 관측소가 열어준 감상 보상.
+function showSketchPage(id) {
+  const s = SKETCHES[id];
+  if (!s) return;
+  const body = `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${t('sketch.tag')}</div>` +
+    `<div style="white-space:pre-line;line-height:1.9">${LD(s)}</div>`;
+  openJournalPages([{ title: LN(s), body }]);
 }
 /* ── 라디오 방송 연출 (좀보이드식 자막 버블, #12 코디 지시) ──
    모달 대신 배치된 라디오 위에 초록 자막 박스를 띄운다. 라디오 월드 좌표를 매 프레임
@@ -10133,6 +10546,9 @@ window.__shelter = {
   openSubwaySegment, subwayOpenCount, subwayReaches, blizzardBlocks,
   marketOpen, marketSlots, marketSlotsLeft, marketOfferCost, marketOfferGetN, doMarketTrade,
   MEMOS_SUBWAY,
+  // 1.3 고요한 고원 QA 훅
+  SKETCHES, MEMOS_RESORT, avalancheBlocks, avalancheForecastToday, openAvalancheChoice,
+  sketchesCollected, sketchesTotal, collectSketch, tryNightSky, showSketchPage, expDuration,
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,

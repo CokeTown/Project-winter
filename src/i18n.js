@@ -1018,6 +1018,44 @@ export const STR = {
   // 기록 탭 지하 섹션 제목
   'record.regionSubway':  { ko: '지하 노선', en: 'The Underground Line' },
 
+  /* ── 1.3 「고요한 고원」 ── */
+  // 대형 프로젝트: 케이블카 복구
+  'proj.cablecar.name':   { ko: '케이블카 복구', en: 'Cable Car Recovery' },
+  'proj.cablecar.stage1': { ko: '무너진 승강장 잔해를 걷어내고 지주를 세운다. 산바람이 세다.', en: 'Clear the collapsed platform debris and raise the pylons. The mountain wind is fierce.' },
+  'proj.cablecar.stage2': { ko: '끊어진 케이블을 절벽 너머로 다시 건다. 손이 곱는다.', en: 'String the snapped cable back across the cliff. My hands go numb.' },
+  'proj.cablecar.stage3': { ko: '곤돌라를 매달고 구동부를 손본다. 삐걱, 한 칸이 움직인다.', en: 'Hang the gondola and mend the drive. With a creak, one car moves.' },
+  'proj.cablecar.workNote': { ko: '케이블카 복구 작업을 했다.', en: 'Worked on the cable car recovery.' },
+  'proj.cablecar.doneToast':{ ko: '케이블카가 다시 움직인다. 이제 고원까지 오르는 길이 훨씬 짧아졌다.', en: 'The cable car runs again. The climb to the highland is far shorter now.' },
+  'proj.cablecar.memoir': { ko: '{day}일째. 케이블카를 되살렸다. 잔해를 걷고, 케이블을 걸고, 곤돌라를 매다는 데 며칠이 걸렸다. 산이 조금 더 가까워졌다.', en: 'Day {day}. I brought the cable car back. Days of clearing rubble, stringing cable, hanging a gondola. The mountain feels a little closer now.' },
+  // 대형 프로젝트: 관측소
+  'proj.observatory.name':   { ko: '관측소 건설', en: 'Observatory Build' },
+  'proj.observatory.stage1': { ko: '언덕 위에 콘크리트 기초를 붓는다. 밤이면 하늘이 유난히 가깝다.', en: 'Pour a concrete base on the hill. At night the sky feels unusually close.' },
+  'proj.observatory.stage2': { ko: '돔의 골조를 둥글게 세운다. 별빛이 골조 사이로 샌다.', en: 'Raise the dome frame in a ring. Starlight leaks between the ribs.' },
+  'proj.observatory.stage3': { ko: '돔을 씌우고 망원경을 앉힌다. 슬릿을 열자, 하늘이 눈에 들어온다.', en: 'Cap the dome and seat the telescope. I open the slit, and the sky comes in.' },
+  'proj.observatory.workNote': { ko: '관측소 건설 작업을 했다.', en: 'Worked on the observatory build.' },
+  'proj.observatory.doneToast':{ ko: '관측소가 완성됐다. 맑은 밤이면 이제 하늘이 무언가를 보여줄 것이다.', en: 'The observatory is done. On clear nights the sky will show me things now.' },
+  'proj.observatory.memoir': { ko: '{day}일째. 언덕 위에 관측소를 세웠다. 기초를 붓고, 돔을 올리고, 망원경을 앉혔다. 이제 맑은 밤이면 나는 오래 서서 하늘을 본다.', en: 'Day {day}. I built an observatory on the hill. Poured a base, raised a dome, seated a telescope. On clear nights now, I stand a long while and watch the sky.' },
+  // 고도 페널티 (스키 로지)
+  'highland.altitudeFuel':{ ko: '🏔️ 고도가 높아 난방에 연료가 {n} 더 들었다.', en: '🏔️ The altitude burned {n} more fuel to stay warm.' },
+  'highland.altitudeCold':{ ko: '🏔️ 고도 난방 연료가 떨어졌다 — 벽난로의 온기가 잦아든다.', en: '🏔️ Ran out of altitude heating fuel — the hearth’s warmth fades.' },
+  // 눈사태 (겨울 고원 재난)
+  'avalanche.forecast':   { ko: '🏔️ 능선에서 낮은 우르릉 소리가 난다. 눈사태가 임박했다 — 오늘 고원에 오르려면 각오해야 한다.', en: '🏔️ A low rumble rolls off the ridge. An avalanche is near — think twice before climbing today.' },
+  'avalanche.blocked':    { ko: '🏔️ 눈사태가 길을 덮었다. 고원(리조트)이 며칠간 막혔다.', en: '🏔️ An avalanche buried the path. The highland resort is closed for a few days.' },
+  'avalanche.cleared':    { ko: '🏔️ 눈이 다져졌다. 고원으로 가는 길이 다시 열렸다.', en: '🏔️ The snow has settled. The way to the highland is open again.' },
+  'avalanche.blockedToast':{ ko: '눈사태로 길이 막혔다. {n}일 뒤 다시 열린다.', en: 'The path is blocked by avalanche. It reopens in {n} days.' },
+  'avalanche.title':      { ko: '🏔️ 눈사태 경보', en: '🏔️ Avalanche Warning' },
+  'avalanche.body':       { ko: '능선이 우르릉거린다. 리조트로 가는 정규 경로가 위태롭다. 위험을 무릅쓰고 우회로로 오를 수도, 오늘은 돌아설 수도 있다.', en: 'The ridge is rumbling. The usual route to the resort is unsafe. You can take the risky detour up, or turn back for today.' },
+  'avalanche.detour':     { ko: '⚠️ 위험 우회로로 오른다 (성공률 -15%p · 시간 증가 · 보상 1.5배 · 부상 위험)', en: '⚠️ Take the risky detour (success -15%p · slower · loot ×1.5 · injury risk)' },
+  'avalanche.turnback':   { ko: '오늘은 돌아선다 (고원이 며칠 막힘)', en: 'Turn back for today (highland closed for a few days)' },
+  'avalanche.turnedback': { ko: '돌아섰다. 눈사태가 지나갈 때까지 고원은 막힌다.', en: 'You turned back. The highland is closed until the avalanche passes.' },
+  'avalanche.detourLoot': { ko: '⚠️ 위험을 무릅쓴 만큼, 남들이 못 가는 곳까지 뒤졌다 — 전리품이 넉넉하다.', en: '⚠️ The risk paid off — you reached what others couldn’t. The haul is generous.' },
+  'avalanche.detourHurt': { ko: '⚠️ 우회로의 눈길에서 미끄러졌다.', en: '⚠️ You slipped on the detour’s icy path.' },
+  // 밤하늘 수집 (관측소 완공 후 맑은 밤)
+  'nightsky.foundNote':   { ko: '🌌 맑은 밤, 하늘이 무언가를 보여줬다 — 수첩에 「{title}」을 스케치했다.', en: '🌌 On a clear night, the sky showed something — you sketched “{title}” in your notebook.' },
+  'sketch.tag':           { ko: '밤하늘 스케치', en: 'A Night-Sky Sketch' },
+  'record.sketchTitle':   { ko: '밤하늘 스케치 ({n}/{total})', en: 'Night-Sky Sketches ({n}/{total})' },
+  'record.regionResort':  { ko: '리조트 폐허', en: 'The Resort Ruins' },
+
   /* ── BGM ── */
   'bgm.notFound':     { ko: 'BGM 파일을 찾을 수 없습니다 (BGM 폴더)', en: 'BGM files not found (BGM folder)' },
 

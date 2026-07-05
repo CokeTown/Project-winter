@@ -244,6 +244,18 @@ export const BAL = {
     subRail3a: { material: 1 },             // seg3 잔해 제거 — 4회
     subRail3b: { material: 1 },             // seg3 침목 깔기 — 4회
     subRail3c: { parts: 1, material: 1 },   // seg3 개통(가장 먼 구간) — 3회
+
+    /* 1.3 케이블카 복구 — 잔해정리→지주→케이블→완성. 완공 시 리조트 접근/탐험 시간 단축.
+       총: 건축재 1×3 + (건축재1+부품1)×3 + 부품1×3 = 건축재6/부품6. 로지 해금(successes 33+) 후반 12~16일치 잉여. */
+    cablecar1: { material: 1 },             // 잔해 정리 → 지주 — 3회
+    cablecar2: { material: 1, parts: 1 },   // 케이블 가설 — 3회
+    cablecar3: { parts: 1 },                // 곤돌라 복구(개통) — 3회
+
+    /* 1.3 관측소 — 기초→돔 골조→완성. 완공 시 밤하늘 이벤트(스케치 수집) 개방. 감상 보상(숫자 아님).
+       총: 건축재 2×3 + (건축재1+부품1)×3 + (부품1+배터리1)×3 = 건축재9/부품6/배터리3. 로지 후반 잉여 싱크. */
+    observatory1: { material: 2 },              // 기초 — 3회
+    observatory2: { material: 1, parts: 1 },    // 돔 골조 — 3회
+    observatory3: { parts: 1, battery: 1 },     // 완성(광학·구동) — 3회
   },
 
   /* ── 1.1 「얼어붙은 항구」 (신규 섹션) ──
@@ -317,5 +329,38 @@ export const BAL = {
       { id: 'clothToBattery', give: { cloth: 4 }, get: 'battery', getN: 1 },   // 남는 천 → 배터리
       { id: 'partsToFuel', give: { parts: 2 }, get: 'fuel', getN: 1, winterGive: { parts: 3 } }, // 부품 → 연료 (겨울엔 부품 3 — 연료 프리미엄)
     ],
+  },
+
+  /* ── 1.3 「고요한 고원」 (신규 섹션) ──
+     고도 페널티·눈사태·온천·밤하늘 수치. 전부 신규라 기존 BAL 불가침 원칙과 무관.
+     경제 게이트: 로지는 successes 33+ 후반 셸터라 기본 시뮬(container)에 영향 없음 — Day60 밴드는 구조적으로 불변.
+     아래 수치가 Day60 노말 밴드(110~160)를 침범하면 낮춰 재캘리브레이션(기존 REGIONS/economy 수치는 손대지 않는다). */
+  highland: {
+    /* 고도 페널티 — 스키 로지 거주 시. 연료 소모 +30% · 한파 빈도 +1(리스크). 로지의 최고 단열/벽난로가 상쇄(리워드). */
+    altitudeFuelMult: 1.3,        // 로지 거주 시 연료 소모 배수 (벽난로 유지비 + 조명/가전 연료)
+    altitudeColdSnapBonus: 1,     // 로지 거주 시 겨울 한파 발동 확률 가산 단계(coldSnapChancePerDay에 ×(1+이 값×보정))
+    altitudeColdSnapChanceMul: 1.3, // 위 가산의 실제 확률 배수 (고원은 한파가 더 잦다)
+    hearthWinterComfort: 8,       // 붙박이 벽난로 겨울 쾌적 보너스 (comfortDetail — 온풍기 6보다 큰 정점)
+
+    /* 케이블카 복구 — 리조트(고원) 접근 시간. 완공 전 등반(×raw)에서 완공 후 곤돌라(×done)로 단축. */
+    cablecarTimeRaw: 1.4,         // 케이블카 복구 전 리조트 접근 시간 배수 (등반)
+    cablecarTimeDone: 0.7,        // 케이블카 복구 후 리조트 접근 시간 배수 (곤돌라 — 등반 대비 절반)
+
+    /* 눈사태(겨울 고원 한정 재난 2호) — 예보(우르릉)→ 리조트 탐험 당일 우회 선택.
+       한파 예보 문법 재사용. cozy 캐논: 사망 없음 — 결과는 부상/시간 손실 계열. */
+    avalancheChancePerDay: 0.16,  // 겨울 하루당 눈사태 예보 발령 확률 (겨울에 리조트가 열려 있을 때만 의미)
+    avalancheForecastDays: 1,     // 눈사태 예보 리드타임 (일) — 한파보다 짧다(즉각적 산악 재난)
+    avalancheDur: 3,              // 예보 미대비 시 리조트 봉쇄 지속 (일) — GD "3일 봉쇄"
+    avalancheDetourTimeMult: 1.6, // 위험 우회로 선택 시 탐험 시간 배수 (시간 증가)
+    avalancheDetourRatePen: 0.15, // 위험 우회로 성공률 페널티 (-15%p, GD 준수)
+    avalancheDetourLootMult: 1.5, // 위험 우회로 보상 배수 (1.5배, GD 준수 — 리스크·리워드)
+    avalancheInjuryChance: 0.35,  // 우회 실패 시 부상 확률 (사망 없음 — 부상/시간 손실만)
+
+    /* 온천(로지 전용 개조) — cozy의 정점. 쾌적 온기 축 대형 + 취침 에너지 회복 보너스. */
+    onsenComfort: 10,             // 온천 쾌적 보너스 (온기 축, GD "+10")
+    onsenRestBonus: 12,          // 온천 취침 에너지 회복 보너스 (restEnergyValue 가산 — 대형)
+
+    /* 밤하늘 수집(관측소 완공 후, 맑은 밤) — 유성우/오로라 이벤트 → 수첩 스케치 6종. 감상 보상. */
+    nightSkyChance: 0.30,         // 관측소 완공 후 맑은 밤 하루당 밤하늘 이벤트 발동 확률 (미수집 스케치 있을 때)
   },
 };
