@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert } from './lib/helpers.js';
+import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert, josa } from './lib/helpers.js';
 import { DEFS } from './data/furniture.js';
 import { BAL } from './data/balance.js';
 import { PROJECTS } from './data/projects.js';
@@ -861,7 +861,7 @@ function rollWeather() {
   let next = pool[Math.floor(Math.random() * pool.length)];
   // 비가 뽑히면 25% 확률로 폭우(storm)로 승격 (seasonAdjustPool의 풀에는 넣지 않음)
   if (next === 'rain' && Math.random() < 0.25) next = 'storm';
-  if (next !== weather.type) state.dayLog.notes.push(t('weather.changed', { name: LName(WEATHERS[next]) }));
+  if (next !== weather.type) { const wn = LName(WEATHERS[next]); state.dayLog.notes.push(t('weather.changed', { name: wn, josa: josa(wn, '으로/로') })); }
   setWeather(next);
   // 날씨는 하루~이틀 유지 (기획: 리얼타임 감각)
   state.weatherUntil = state.gameMin + 1440 + Math.random() * 1440;
@@ -4481,7 +4481,7 @@ async function moveToShelter(id) {
   }
   if (cross) {
     state.gameMin += BAL.economy.moveCrossTimeMin; // 구역 간 여정 3시간
-    state.dayLog.notes.push(t('move.journeyNote', { name: LName(DISTRICTS[districtOf(id)]) }));
+    const dn = LName(DISTRICTS[districtOf(id)]); state.dayLog.notes.push(t('move.journeyNote', { name: dn, josa: josa(dn, '으로/로') }));
   }
   state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2) }));
   state.stayDays = 0; // 새 집은 아직 낯설다
@@ -4489,7 +4489,7 @@ async function moveToShelter(id) {
   scheduleSave();
   renderResBar();
   closeModal();
-  toast(t('move.done', { emoji: SHELTERS[id].emoji, name: LName(SHELTERS[id]), journey: cross ? t('move.journeyTag') : '' }));
+  { const sn = LName(SHELTERS[id]); toast(t('move.done', { emoji: SHELTERS[id].emoji, name: sn, josa: josa(sn, '으로/로'), journey: cross ? t('move.journeyTag') : '' })); }
 }
 // 이주 가능 판정: 해금 && 비현재 && 전체 비용 충족인 거처가 하나라도 있으면 true.
 // 비용은 moveCostFor(1의 칩 렌더)와 동일 소스 — 로직/표시 불일치 방지.
@@ -9217,9 +9217,13 @@ function buildWinterMemoir(n) {
   const days = Math.max(1, state.day - snap.day); // 이 겨울 동안 버틴 날수 (봄 첫날 - 겨울 첫날)
   const expWon = Math.max(0, (state.stats?.success || 0) - (snap.successStart || 0));
   const catLine = state.cat ? t('winter.memoir.catYes') : t('winter.memoir.catNo');
+  // n=1은 "첫 겨울"(규칙 이탈 "1번째 겨울" 교정), 2~9는 기존 "{n}번째 겨울" 자연 표기 유지.
+  const titleId = n === 1 ? 'winter.page.title.first' : 'winter.page.title';
+  // 탐험 0회면 "0번 건졌다" 기계문 대신 "나서지 못한 겨울" 분기.
+  const bodyId = expWon === 0 ? 'winter.page.body.noexp' : 'winter.page.body';
   const page = {
-    titleId: 'winter.page.title', titleArgs: { n },
-    bodyId: 'winter.page.body',
+    titleId, titleArgs: { n },
+    bodyId,
     bodyArgs: {
       days, cold: acc.coldSnaps, defended: acc.defended, exp: expWon, fuel: acc.fuel,
       cat: catLine, closing: winterMemoirLine(n),
@@ -9353,13 +9357,15 @@ function processDay() {
     // 1.3 고도 페널티: 고원 셸터(altitude) 거주 시 한파가 더 잦다 (확률 배수). 로지 단열/벽난로가 페널티를 상쇄.
     const altMul = SHELTERS[state.current].altitude ? BAL.highland.altitudeColdSnapChanceMul : 1;
     const snapChance = S.coldSnapChancePerDay * (isHard() ? BAL.hard.coldSnapChanceMul : 1) * altMul;
+    // v1.4.1(오디트 E P1-1): 하드 한정 예보 리드 단축 → 발령 창 확대. 노말은 기존 값(2) 유지.
+    const fcDays = isHard() ? BAL.hard.coldSnapForecastDaysOverride : S.coldSnapForecastDays;
     if (inWinter && !state.coldSnap && state.coldSnapForecast === 0 &&
         state.coldSnapsThisWinter < snapCap &&
-        seasonDay(state.day) <= SEASON_DAYS - S.coldSnapForecastDays - 1 && // 겨울 끝에 걸치지 않게
+        seasonDay(state.day) <= SEASON_DAYS - fcDays - 1 && // 겨울 끝에 걸치지 않게
         Math.random() < snapChance) {
       // 관제탑 퍽(forecastLead): 고층 전망으로 한파 예보 리드타임 +N일. 없으면 0.
       const lead = SHELTERS[state.current].perk?.forecastLead || 0;
-      state.coldSnapForecast = state.day + S.coldSnapForecastDays + lead;
+      state.coldSnapForecast = state.day + fcDays + lead;
     }
   }
   // ── 1.3 눈사태 (겨울 고원 재난 2호): 예보(우르릉) → 당일 리조트 탐험에 우회 선택 or 봉쇄 ──
@@ -9740,7 +9746,7 @@ function runAutoPlay() {
     if (bestId) {
       departExpedition(bestId, [], { auto: true });
       state.lastAutoRegion = bestId; // 다음 선택에서 연속 방문 감쇠에 사용
-      state.dayLog.notes.push(t('auto.depart', { emoji: REGIONS[bestId].emoji, name: LName(REGIONS[bestId]) }));
+      { const rn = LName(REGIONS[bestId]); state.dayLog.notes.push(t('auto.depart', { emoji: REGIONS[bestId].emoji, name: rn, josa: josa(rn, '으로/로') })); }
     }
   }
 }
@@ -11439,6 +11445,7 @@ function _simDaysInner(n, opt) {
       energy: Math.round(state.energy),
       comfort: cd.score,
       starving: state.hunger <= 0 || state.thirst <= 0,
+      coldSnaps: state.coldSnapsThisWinter || 0, // v1.4.1 진단: 그 겨울 누적 한파 실현 횟수(겨울 경계에서 리셋)
     });
   }
   return snaps;
@@ -11452,7 +11459,7 @@ window.__shelter = {
   helplessNow, checkHelpless, doRescue, endRun, reclaimAll,
   readStats, writeStats, recordNormalDay, wallpaperUnlocked, slotDisplayCount,
   openModeModal, refreshAutoplayLock, runAutoPlay,
-  items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather,
+  items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather, BAL,
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
@@ -11481,6 +11488,8 @@ window.__shelter = {
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
+  // v1.4.1 QA 훅: i18n/josa/세이브 왕복 검증용 (하네스 전용, 프로덕션 무해)
+  t, LName, josa, WEATHERS, buildWinterMemoir, flushSave, loadSave, readSlot, slotKey, setLang,
   // ③ 창유리 성에 QA 훅: 현재 성에 강도 + 창별 오버레이 투명도
   frostState: () => ({ frostLevel, netSev: coldSnapNetSeverity(), panes: winFrostMats.map(m => +m.material.opacity.toFixed(3)) }),
   renderFrame: () => renderFrame(),

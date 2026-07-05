@@ -90,7 +90,10 @@
   #hud .stat { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
   #hud .btn-row { display: flex; gap: 5px; flex-wrap: wrap; }
   #hud .btn-row .pixel-btn { flex: 1 0 auto; padding: 6px 7px; min-width: 0; }
-  #hud .btn-row.icons .pixel-btn { font-size: 15px; padding: 7px 0; line-height: 1; }
+  /* v1.4.1(오디트 P2): 7버튼 아이콘 행을 균등 그리드로 → flex 래핑의 어정쩡한 늘어남 대신
+     4+3 균등 배열(마지막 줄은 좌측 정렬, 셀 크기 동일)로 의도된 래핑처럼 보이게. */
+  #hud .btn-row.icons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  #hud .btn-row.icons .pixel-btn { flex: none; font-size: 15px; padding: 7px 0; line-height: 1; min-width: 0; }
   #gauges { display: flex; gap: 6px; margin-bottom: 8px; }
   .gauge {
     position: relative; flex: 1; height: 16px; cursor: pointer;
@@ -544,7 +547,9 @@
   /* ── 찢어진 쪽지 (일회성 팁) ── */
   #tip-note {
     /* z-index 55: 모달 백드롭(50)보다 위 — 리포트/인카운터가 떠 있어도 쪽지가 보인다 (toast와 동급) */
-    position: absolute; right: 22px; bottom: 22px; z-index: 55;
+    /* v1.4.1(오디트 P2): 우측 자원바(#res-bar right:12px width:208px → 우측 220px 점유)와 겹침 해소.
+       쪽지를 자원바 컬럼 왼쪽으로 밀어(right 220px+여백) 우하단에서 세로로 겹치지 않게 한다. */
+    position: absolute; right: 232px; bottom: 22px; z-index: 55;
     width: 260px; padding: 20px 26px 24px;
     /* 전용 가로 스트립 PNG(투명 배경·찢긴 테두리·그림자 베이크) — applyPaperBg가 씌운다.
        배경색/클립패스/박스섀도는 투명 PNG 밖으로 사각형이 비쳐서 금지 */
@@ -736,6 +741,8 @@
     #cam-ctrl { bottom: 150px; }
     .cam-btn { width: 44px; height: 44px; }
     #modal { max-height: 72vh; }
+    /* 모바일 세로: 자원바가 상단(top:156px)으로 이동하므로 쪽지는 우하단 코너 유지(데스크톱용 오프셋 되돌림) */
+    #tip-note { right: 12px; width: min(260px, calc(100vw - 24px)); }
   }
 
   /* ── 가로 폰 / 저높이 뷰포트 (Galaxy S23·iPhone 가로모드 등) ── */

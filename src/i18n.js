@@ -305,7 +305,7 @@ export const STR = {
   'opt.autoplay.locked':{ ko: 'Day 10부터', en: 'From Day 10' },
   'auto.treat':   { ko: '🤖 [자동] {name}을(를) 치료했습니다', en: '🤖 [Auto] Treated {name}' },
   'auto.clean':   { ko: '🤖 [자동] 셸터를 청소했습니다', en: '🤖 [Auto] Cleaned the shelter' },
-  'auto.depart':  { ko: '🤖 [자동] {emoji} {name}(으)로 탐험을 떠났습니다', en: '🤖 [Auto] Departed for {emoji} {name}' },
+  'auto.depart':  { ko: '🤖 [자동] {emoji} {name}{josa} 탐험을 떠났습니다', en: '🤖 [Auto] Departed for {emoji} {name}' },
   'auto.locked':  { ko: 'Day 10부터 사용 가능', en: 'Unlocks on Day 10' },
   'auto.on':      { ko: '🤖 자동 진행 켜짐', en: '🤖 Auto-play on' },
   'auto.off':     { ko: '🤖 자동 진행 꺼짐', en: '🤖 Auto-play off' },
@@ -323,7 +323,7 @@ export const STR = {
   'panel.res':        { ko: '자원', en: 'Resources' },
 
   /* ── 날씨 변화 / 회전 / 회수 ── */
-  'weather.changed':  { ko: '날씨가 {name}(으)로 바뀌었습니다', en: 'The weather turned to {name}' },
+  'weather.changed':  { ko: '날씨가 {name}{josa} 바뀌었습니다', en: 'The weather turned to {name}' },
   'rotate.noSpace':   { ko: '회전할 공간이 없어요', en: 'No room to rotate' },
   'drop.child':       { ko: '{emoji} {name}이(가) 자리를 잃어 회수되었습니다', en: '{emoji} {name} lost its spot and was reclaimed' },
 
@@ -490,8 +490,8 @@ export const STR = {
   /* ── 이주 ── */
   'move.needSupplies':{ ko: '이주 물자가 부족합니다 — {cost}', en: 'Not enough supplies to relocate — {cost}' },
   'move.renovNote':   { ko: '🔧 {name} 정비 완료 ({cost})', en: '🔧 {name} refit complete ({cost})' },
-  'move.journeyNote': { ko: '🚶 {name}(으)로 이동 — 여정에 3시간이 걸렸습니다.', en: '🚶 Traveled to {name} — the journey took 3 hours.' },
-  'move.done':        { ko: '{emoji} {name}(으)로 이주했습니다{journey}', en: 'Relocated to {emoji} {name}{journey}' },
+  'move.journeyNote': { ko: '🚶 {name}{josa} 이동 — 여정에 3시간이 걸렸습니다.', en: '🚶 Traveled to {name} — the journey took 3 hours.' },
+  'move.done':        { ko: '{emoji} {name}{josa} 이주했습니다{journey}', en: 'Relocated to {emoji} {name}{journey}' },
   'move.journeyTag':  { ko: ' (여정 3시간)', en: ' (3h journey)' },
   'move.confirmFurniture':{ ko: '배치된 가구 {n}개는 이 거처에 남습니다. 이주할까요?', en: 'Your {n} placed furnishings will stay behind. Move anyway?' },
   'move.newShelter':  { ko: '🏠 새 거처 발견 — 이주 지도를 확인하자', en: '🏠 New shelter found — check the relocation map' },
@@ -688,8 +688,13 @@ export const STR = {
   'title.continueWinters': { ko: ' · ❄️{n}/9', en: ' · ❄️{n}/9' },
   // "그 해 겨울" 자동 수첩 페이지
   'winter.page.title':{ ko: '{n}번째 겨울', en: 'Winter №{n}' },
-  'winter.page.body': { ko: '거처에서 {days}일을 버텼다.<br>한파 {cold}번, 그중 {defended}일은 막아냈다.<br>탐험으로 {exp}번 무언가를 건졌다.<br>땔감 {fuel}을 태웠다.<br>{cat}<br><br>{closing}',
+  'winter.page.title.first': { ko: '첫 겨울', en: 'The First Winter' }, // n=1 전용(규칙 이탈 "1번째 겨울" 교정)
+  // 땔감 단위 명시("{fuel}개를")로 조사 오류 원천 해소.
+  'winter.page.body': { ko: '거처에서 {days}일을 버텼다.<br>한파 {cold}번, 그중 {defended}일은 막아냈다.<br>탐험으로 {exp}번 무언가를 건졌다.<br>땔감 {fuel}개를 태웠다.<br>{cat}<br><br>{closing}',
                         en: 'Held out {days} days in the shelter.<br>{cold} cold snaps, {defended} of them held off.<br>Brought something back {exp} times.<br>Burned {fuel} fuel.<br>{cat}<br><br>{closing}' },
+  // 탐험 0회 겨울: 기계문("0번 건졌다") 대신 나서지 못한 겨울을 서술.
+  'winter.page.body.noexp': { ko: '거처에서 {days}일을 버텼다.<br>한파 {cold}번, 그중 {defended}일은 막아냈다.<br>탐험은 나서지 못한 겨울이었다.<br>땔감 {fuel}개를 태웠다.<br>{cat}<br><br>{closing}',
+                        en: 'Held out {days} days in the shelter.<br>{cold} cold snaps, {defended} of them held off.<br>It was a winter you never set out to explore.<br>Burned {fuel} fuel.<br>{cat}<br><br>{closing}' },
   'winter.memoir.catYes': { ko: '고양이가 곁에 있었다.', en: 'The cat stayed close.' },
   'winter.memoir.catNo':  { ko: '혼자였다.', en: 'You were alone.' },
   // 겨울 번호별 마무리 1줄 (건조한 생존 문체, 번역투 금지)
