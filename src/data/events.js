@@ -252,10 +252,15 @@ export function makeEvents(ctx) {
       choices: [
         { labelId: 'ev.cat.c0', cost: { food: 1 }, run() {
           state.cat = 1;
+          // 코트 랜덤(입양 시 1회 확정) — spawnCat 전에 정해야 메시가 해당 코트로 빌드된다.
+          //   구세이브는 catCoat 미보유 → cat.js가 'tabby'로 폴백(외형 불변).
+          const coats = ['tabby', 'black', 'siamese', 'ragdoll'];
+          state.catCoat = coats[Math.floor(Math.random() * coats.length)];
           spawnCat();
           state.dayLog.notes.push(t('day.catJoined'));
           playSfx('meow1');
-          return t('ev.cat.r0');
+          // 결과 문구에 코트 1줄 분기(ko/en) — 어떤 털의 아이가 왔는지 알려준다.
+          return t('ev.cat.r0') + '<br>' + t('ev.cat.coat.' + state.catCoat);
         } },
         { labelId: 'ev.cat.c1', run() { return t('ev.cat.r1'); } },
       ],

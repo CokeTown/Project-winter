@@ -137,64 +137,87 @@ export function makeCatSystem(ctx) {
     return { wrap, bones, rest };
   }
 
+  // ── 코트 팔레트 (4종). 입양 시 랜덤(state.catCoat 저장, 구세이브=tabby).
+  //   각 코트는 몸통(fur)·등줄무늬(stripe)·배/가슴(belly)·귀/발끝/꼬리끝(point)·코(nose) 색과
+  //   얼굴 텍스처 파라미터(faceBg=주둥이 패치색, eyeDark/eyeHi=눈색, mask=콜러포인트 얼굴 마스크)를 가진다.
+  //   초록 눈 금지: black=앰버, siamese/ragdoll=파랑, tabby만 기존 초록 유지(불변).
+  //   tabby는 원본과 색·구조가 문자열까지 동일(point=belly=white, ear=fur, mask 없음) → 구세이브 외형 불변.
+  const CAT_COLORS = {
+    tabby:   { fur: 0xdf9038, stripe: 0xb96f24, belly: 0xf2eee4, point: 0xf2eee4, ear: 0xdf9038, nose: 0xcf9088,
+               faceBg: '#df9038', faceMuzzle: '#f2eee4', eyeDark: '#243d1c', eyeHi: '#6fae3e', mask: null, mouth: '#5a3a24', lid: '#3a2c18' },
+    // 올블랙 + 앰버 눈 (줄무늬 거의 안 보이게 fur에 근접, 배도 검정 계열 — 흰 부위 없음)
+    black:   { fur: 0x262529, stripe: 0x201f23, belly: 0x2c2b2f, point: 0x201f23, ear: 0x262529, nose: 0x3a3436,
+               faceBg: '#262529', faceMuzzle: '#2c2b2f', eyeDark: '#7a4f12', eyeHi: '#e6a52c', mask: null, mouth: '#151316', lid: '#1a181b' },
+    // 시암: 크림 바디 + 초콜릿 콜러포인트(귀/얼굴 마스크/발/꼬리) + 파란 눈
+    siamese: { fur: 0xddd2bc, stripe: 0xd3c7ad, belly: 0xefe7d4, point: 0x4a3528, ear: 0x4a3528, nose: 0x6b4a3c,
+               faceBg: '#ddd2bc', faceMuzzle: '#efe7d4', eyeDark: '#27476a', eyeHi: '#6fa8d6', mask: '#4a3528', mouth: '#3a2a20', lid: '#3a2c22' },
+    // 래그돌: 흰크림 바디 + 갈색 포인트(귀/얼굴 마스크/발/꼬리) + 파란 눈 (시암보다 밝은 포인트)
+    ragdoll: { fur: 0xefe9dd, stripe: 0xe6dfce, belly: 0xf6f2ea, point: 0x6b4f3a, ear: 0x6b4f3a, nose: 0xcf9088,
+               faceBg: '#efe9dd', faceMuzzle: '#f6f2ea', eyeDark: '#2e5074', eyeHi: '#7ab0da', mask: '#6b4f3a', mouth: '#5a4636', lid: '#4a3c2e' },
+  };
+  function catCoatId() { return CAT_COLORS[state.catCoat] ? state.catCoat : 'tabby'; }
+  function catPalette() { return CAT_COLORS[catCoatId()]; }
+
   // 마인크래프트 고양이 스타일 — 각진 박스만으로 구성 (B 헬퍼 전용, 곡면 없음)
   // 단위: PX = 0.02 월드유닛/px (MC 원본 텍스처 px 그대로 치수 대입)
   //   머리 5×4×5px, 몸통 4×4×12px(낮고 긴 수평 박스), 다리 2×6×2px×4, 꼬리 1×1×6px×2마디
-  //   배색 = 치즈 태비: 몸통 주황 / 등 줄무늬 진주황(파묻힘) / 주둥이·가슴·배·발·꼬리끝 흰색 / 눈 초록+검은 동공
   // 마인크래프트 얼룩 고양이식 얼굴 — 정면 면에 픽셀 페인팅(별도 눈 지오메트리 대신).
-  //   바탕은 털색(fur)과 동일해 박스 이음새가 안 보이고, 눈은 흰 공막 없이 진초록+검정 세로 픽셀 + 위 하이라이트.
-  //   16×16 그리드에 그려 NearestFilter로 픽셀 유지.
-  let _catFaceTex = null;
-  function catFaceTex() {
-    if (_catFaceTex) return _catFaceTex;
-    _catFaceTex = makeCanvasTex((g2, w, h) => {
-      const cell = w / 16;          // 16px 얼굴
-      const px = (cx, cy, cw, ch, col) => { g2.fillStyle = col; g2.fillRect(cx * cell, cy * cell, cw * cell, ch * cell); };
-      px(0, 0, 16, 16, '#df9038');  // 바탕 = 털색
-      // 주둥이 흰 패치 (코 지오메트리 주변 밝게 — MC 얼룩 고양이 느낌)
-      px(5, 10, 6, 4, '#f2eee4');
-      // 양 눈 (간격 넓게: 좌 x=3, 우 x=11), 폭 2px
-      const eyeDark = '#243d1c', eyeHi = '#6fae3e';
-      for (const ex of [3, 11]) {
-        px(ex, 7, 2, 3, eyeDark);   // 눈 본체 (진초록/검정 톤)
-        px(ex, 6, 2, 1, eyeHi);     // 위쪽 1px 하이라이트
-        px(ex, 8, 1, 1, '#0d0b09'); // 세로 동공 느낌의 검정 픽셀
+  //   바탕은 털색(faceBg)과 동일해 박스 이음새가 안 보이고, 눈은 흰 공막 없이 코트별 눈색 세로 픽셀 + 위 하이라이트.
+  //   콜러포인트 코트(siamese/ragdoll)는 눈 주위·이마에 mask 색을 얹어 얼굴 가면을 표현.
+  //   16×16 그리드에 그려 NearestFilter로 픽셀 유지. 코트별로 캐시(코트 바뀌면 새 텍스처).
+  const _catFaceTexByCoat = {};      // coatId → CanvasTexture (기본 눈)
+  const _catFaceHappyByCoat = {};    // coatId → CanvasTexture (감은 눈)
+  function _drawFaceCommon(g2, w, closed) {
+    const P = catPalette();
+    const cell = w / 16;
+    const px = (cx, cy, cw, ch, col) => { g2.fillStyle = col; g2.fillRect(cx * cell, cy * cell, cw * cell, ch * cell); };
+    px(0, 0, 16, 16, P.faceBg);       // 바탕 = 털색(faceBg)
+    // 콜러포인트 마스크: 눈~이마 영역을 point 색으로 덮는다 (시암/래그돌 얼굴 가면)
+    if (P.mask) {
+      px(2, 3, 12, 6, P.mask);        // 이마~눈높이 가로 밴드
+      px(2, 9, 3, 3, P.mask);         // 좌 볼로 흘러내림
+      px(11, 9, 3, 3, P.mask);        // 우 볼로 흘러내림
+    }
+    px(5, 10, 6, 4, P.faceMuzzle);    // 주둥이 밝은 패치 (코 지오메트리 주변, MC 얼룩 느낌)
+    for (const ex of [3, 11]) {       // 양 눈 (좌 x=3, 우 x=11), 폭 2px
+      if (closed) {
+        px(ex, 7, 2, 1, P.lid);       // 감은 눈(∪): 눈꺼풀 윗선
+        px(ex, 8, 1, 1, P.lid); px(ex + 1, 8, 1, 1, P.lid); // 살짝 처진 양끝
+      } else {
+        px(ex, 7, 2, 3, P.eyeDark);   // 눈 본체 (코트별 눈색)
+        px(ex, 6, 2, 1, P.eyeHi);     // 위쪽 1px 하이라이트
+        px(ex, 8, 1, 1, '#0d0b09');   // 세로 동공 느낌의 검정 픽셀
       }
-      // 콧등 아래 입 라인 (다크 1px, 코 지오메트리 아래쪽)
-      px(6, 12, 4, 1, '#5a3a24');
-      px(7, 13, 1, 1, '#5a3a24'); px(8, 13, 1, 1, '#5a3a24');
-    }, 16, 16);
-    _catFaceTex.repeat.set(1, 1);
-    _catFaceTex.wrapS = _catFaceTex.wrapT = THREE.ClampToEdgeWrapping;
-    return _catFaceTex;
+    }
+    px(6, 12, 4, 1, P.mouth);         // 콧등 아래 입 라인
+    px(7, 13, 1, 1, P.mouth); px(8, 13, 1, 1, P.mouth);
+  }
+  function catFaceTex() {
+    const id = catCoatId();
+    if (_catFaceTexByCoat[id]) return _catFaceTexByCoat[id];
+    const tex = makeCanvasTex((g2, w) => _drawFaceCommon(g2, w, false), 16, 16);
+    tex.repeat.set(1, 1);
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    _catFaceTexByCoat[id] = tex;
+    return tex;
   }
   // ② 클로즈업 쓰다듬기 연출용 — 눈 감은 얼굴(만족). 기존 얼굴 문법 재사용(눈 픽셀만 감은 호선으로 교체).
-  let _catFaceHappyTex = null;
   function catFaceHappyTex() {
-    if (_catFaceHappyTex) return _catFaceHappyTex;
-    _catFaceHappyTex = makeCanvasTex((g2, w, h) => {
-      const cell = w / 16;
-      const px = (cx, cy, cw, ch, col) => { g2.fillStyle = col; g2.fillRect(cx * cell, cy * cell, cw * cell, ch * cell); };
-      px(0, 0, 16, 16, '#df9038');  // 바탕 = 털색
-      px(5, 10, 6, 4, '#f2eee4');   // 주둥이 흰 패치
-      // 감은 눈 = 아래로 볼록한 호(∪): 가운데 1px 내려 만족한 실눈. 좌 x=3, 우 x=11
-      const lid = '#3a2c18';
-      for (const ex of [3, 11]) {
-        px(ex, 7, 2, 1, lid);        // 눈꺼풀 윗선
-        px(ex - 0, 8, 1, 1, lid); px(ex + 1, 8, 1, 1, lid); // 살짝 처진 양끝
-      }
-      // 입 라인 (기본과 동일)
-      px(6, 12, 4, 1, '#5a3a24');
-      px(7, 13, 1, 1, '#5a3a24'); px(8, 13, 1, 1, '#5a3a24');
-    }, 16, 16);
-    _catFaceHappyTex.repeat.set(1, 1);
-    _catFaceHappyTex.wrapS = _catFaceHappyTex.wrapT = THREE.ClampToEdgeWrapping;
-    return _catFaceHappyTex;
+    const id = catCoatId();
+    if (_catFaceHappyByCoat[id]) return _catFaceHappyByCoat[id];
+    const tex = makeCanvasTex((g2, w) => _drawFaceCommon(g2, w, true), 16, 16);
+    tex.repeat.set(1, 1);
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    _catFaceHappyByCoat[id] = tex;
+    return tex;
   }
   function buildCatMesh() {
     const g = new THREE.Group();
     const PX = 0.02;
-    const fur = 0xdf9038, stripe = 0xb96f24, white = 0xf2eee4, pink = 0xcf9088;
+    // 코트 팔레트에서 부위 색을 읽는다 (tabby=원본 색과 동일 → 구세이브 외형 불변).
+    //   fur=몸통/머리, stripe=등줄무늬, belly=배/가슴, point=발끝/꼬리끝, ear=귀, nose=코.
+    const C = catPalette();
+    const fur = C.fur, stripe = C.stripe, belly = C.belly, point = C.point, ear = C.ear, nose = C.nose;
     const P = {};
     // ── 몸통 (피벗 = 엉덩이/골반 관절, 4×4×12px 낮고 긴 수평 박스) — 앉기/기지개 때 이 지점을 축으로 기운다
     //   기립 시 어깨~골반 높이 0.13 부근에 박스 중심을 두고, 몸이 앞(+z)으로 길게 뻗도록 배치
@@ -202,11 +225,11 @@ export function makeCatSystem(ctx) {
     body.position.set(0, 0.13, -0.15);
     g.add(body); P.body = body;
     B(body, 4 * PX, 4 * PX, 12 * PX, fur, 0, 0, 6 * PX);              // 몸통 본체 (피벗에서 +z로 12px 길이, 중심 +6px)
-    B(body, 4.06 * PX, 1.6 * PX, 10 * PX, white, 0, -1.6 * PX, 6 * PX); // 배쪽 흰색 밴드 (아랫면에 얇게 덧대어 파묻힘 없이 보이게)
+    B(body, 4.06 * PX, 1.6 * PX, 10 * PX, belly, 0, -1.6 * PX, 6 * PX); // 배쪽 밴드 (아랫면에 얇게 덧대어 파묻힘 없이 보이게)
     for (const [sz, w] of [[3 * PX, 4.2 * PX], [7 * PX, 4.2 * PX], [10.5 * PX, 4.06 * PX]])
       B(body, w, 3.2 * PX, 2.2 * PX, stripe, 0, 0.3 * PX, sz);          // 등 줄무늬 3개 — 몸통보다 살짝만 얇게(파묻히게)
-    // 가슴 필러 (흰색) — 앉아서 가슴이 들려도 어깨와 앞다리 사이가 비어 보이지 않게 몸통 앞쪽 아래를 채움
-    B(body, 3.4 * PX, 3 * PX, 3.2 * PX, white, 0, -2 * PX, 10.2 * PX);
+    // 가슴 필러 — 앉아서 가슴이 들려도 어깨와 앞다리 사이가 비어 보이지 않게 몸통 앞쪽 아래를 채움
+    B(body, 3.4 * PX, 3 * PX, 3.2 * PX, belly, 0, -2 * PX, 10.2 * PX);
     // ── 머리 (5×4×5px, 몸통 앞쪽에 자식으로 부착)
     const head = new THREE.Group();
     head.position.set(0, 1.5 * PX, 12 * PX + 2.5 * PX);   // 몸통 앞면(6+6=12px)에서 머리 반경(2.5px)만큼 더 앞
@@ -214,7 +237,7 @@ export function makeCatSystem(ctx) {
     // 두상 — 정면(+Z=BoxGeometry 4번 면)만 얼굴 텍스처, 나머지 5면은 털색. 눈은 텍스처 픽셀로 표현.
     {
       const furMat = lamb(fur);
-      const faceMat = new THREE.MeshLambertMaterial({ map: catFaceTex() });
+      const faceMat = new THREE.MeshLambertMaterial({ map: catFaceTex() }); // 코트별 얼굴 텍스처(눈색/마스크)
       // BoxGeometry 면 순서: [+X, -X, +Y, -Y, +Z, -Z] — 고양이는 +Z를 바라본다
       const headMesh = new THREE.Mesh(
         new THREE.BoxGeometry(5 * PX, 4 * PX, 5 * PX),
@@ -223,12 +246,14 @@ export function makeCatSystem(ctx) {
       head.add(headMesh);
       P.faceMat = faceMat; // ② 쓰다듬기 눈 감김 연출용 — map 스왑 대상
     }
-    B(head, 0.8 * PX, 0.6 * PX, 0.3 * PX, pink, 0, -0.2 * PX, 2.5 * PX + 1 * PX); // 튀어나온 코 (분홍, 디렉터 승인 유지)
-    // ── 귀 (1×2×1px 두 개, 머리 위 모서리)
+    // ⑴ 코 블록 부착 수정: 종전 z=3.5px(얼굴면 2.5px 앞 0.85px 부유) → z=2.65px 로 당겨
+    //   코 뒷면(z=2.5px)이 얼굴면과 맞닿게 한다(전 포즈 공용 — head 자식이라 포즈 무관 부착).
+    B(head, 0.8 * PX, 0.6 * PX, 0.3 * PX, nose, 0, -0.2 * PX, 2.5 * PX + 0.15 * PX); // 튀어나온 코 (코트별 코색)
+    // ── 귀 (1×2×1px 두 개, 머리 위 모서리) — 콜러포인트 코트는 귀가 point/ear 색
     const earL = new THREE.Group(); earL.position.set(-1.7 * PX, 2 * PX + 1 * PX, -1.7 * PX); head.add(earL); P.earL = earL;
     const earR = new THREE.Group(); earR.position.set(1.7 * PX, 2 * PX + 1 * PX, -1.7 * PX); head.add(earR); P.earR = earR;
-    B(earL, 1 * PX, 2 * PX, 1 * PX, fur, 0, 0, 0);
-    B(earR, 1 * PX, 2 * PX, 1 * PX, fur, 0, 0, 0);
+    B(earL, 1 * PX, 2 * PX, 1 * PX, ear, 0, 0, 0);
+    B(earR, 1 * PX, 2 * PX, 1 * PX, ear, 0, 0, 0);
     // ── 꼬리 2마디 (1×1×6px, 매우 길게, body 자식·-z 방향, 기본각은 살짝 아래로 처짐)
     const tail1 = new THREE.Group();
     tail1.position.set(0, 0.5 * PX, 0.5 * PX);   // 몸통 뒷면 안쪽에서 시작 (회전해도 틈 없음)
@@ -239,7 +264,7 @@ export function makeCatSystem(ctx) {
     tail2.position.set(0, 0, -6 * PX);        // 첫 마디 끝에서 이어짐
     tail1.add(tail2); P.tail2 = tail2;
     B(tail2, 1 * PX, 1 * PX, 6.6 * PX, fur, 0, 0, -2.7 * PX);
-    B(tail2, 1.05 * PX, 1.05 * PX, 1.2 * PX, white, 0, 0, -6 * PX + 0.6 * PX); // 꼬리 끝 흰색 팁
+    B(tail2, 1.05 * PX, 1.05 * PX, 1.2 * PX, point, 0, 0, -6 * PX + 0.6 * PX); // 꼬리 끝 팁 (코트별 point)
     // ── 다리 4개 (2×6×2px, 가늘고 짧게 — 어깨/골반 피벗, 발끝 흰색)
     //   기립 시 다리 상단(피벗)을 어깨높이 6px(=0.12)에 두면 다리 박스(6px 길이, 중심 -3px)의 하단이 y=0(바닥)에 닿는다
     P.legs = {};
@@ -248,7 +273,7 @@ export function makeCatSystem(ctx) {
       leg.position.set(x, 6 * PX, z);
       g.add(leg); P.legs[key] = leg;
       B(leg, 2 * PX, 6 * PX, 2 * PX, fur, 0, -3 * PX, 0);           // 다리 (피벗에서 -y로 6px, 중심 -3px)
-      B(leg, 2.05 * PX, 1.4 * PX, 2.05 * PX, white, 0, -6 * PX + 0.7 * PX, 0); // 흰 발끝 (다리 하단에 덧대어짐)
+      B(leg, 2.05 * PX, 1.4 * PX, 2.05 * PX, point, 0, -6 * PX + 0.7 * PX, 0); // 발끝 (코트별 point — 콜러포인트는 어둡게)
     }
     g.traverse(o => { if (o.isMesh) o.castShadow = true; });
     return { g, parts: P };
@@ -274,11 +299,16 @@ export function makeCatSystem(ctx) {
     }
     return false;
   }
+  // ⑵ 걷기 → 정지 전환 시 사지 스윙 잔류를 제거한다. gait(보행 위상 누산)를 0으로 리셋하면
+  //   다음 프레임 stride=sin(gait)=0 이 되어 다리가 위로 들린 채 굳는 현상이 사라진다.
+  //   (종전: gait가 마지막 스윙값을 유지 → sit/sprawl 진입 순간 다리 한쪽이 위로 튐)
+  function resetGait(c) { c.gait = 0; c._catStuck = 0; }
   function pickNextCatMode(c) {
     const roll = Math.random();
-    if (roll < 0.34) { c.tgt = catFreeSpot(); c.mode = 'walk'; return; }
+    if (roll < 0.34) { c.tgt = catFreeSpot(); c.mode = 'walk'; resetGait(c); return; }
+    resetGait(c); // 정지 계열 진입 — 걷기 스윙 잔류 제거
     if (roll < 0.53) { c.mode = 'groom'; c.timer = 5 + Math.random() * 5; }
-    else if (roll < 0.68) { c.mode = Math.random() < 0.6 ? 'sprawl' : 'sleep'; c.timer = 25 + Math.random() * 35; } // 취침: 배 까고 드러눕기(sprawl) 6 : 식빵(sleep) 4
+    else if (roll < 0.68) { c.mode = Math.random() < 0.6 ? 'sprawl' : 'sleep'; c.timer = 25 + Math.random() * 35; } // 눕기: 엎드려 뻗기(sprawl) 6 : 식빵(sleep) 4 — 둘 다 배는 바닥(배 노출 없음)
     else if (roll < 0.8) { c.mode = 'stretch'; c.timer = 2.2; }
     else if (roll < 0.9) { c.mode = 'play'; c.timer = 3.5 + Math.random() * 2; }
     else { c.mode = 'sit'; c.timer = 8 + Math.random() * 14; }
@@ -445,6 +475,7 @@ export function makeCatSystem(ctx) {
       } else if (dist < 0.05) {
         c.baseY = c.tgt.y; c.tgt = null;
         c.mode = 'sit'; c.timer = 6 + Math.random() * 12;
+        resetGait(c); // ⑵ 도착해 앉을 때 걷기 스윙 잔류 제거(다리 위로 들림 방지)
         shadowDirty();
       } else if (dist < 0.42 && Math.abs((c.tgt.y || 0) - c.baseY) > 0.12) {
         // 높이가 다른 목적지 근처 — 폴짝 뛰어오르거나 내려앉는다
@@ -501,10 +532,10 @@ export function makeCatSystem(ctx) {
     const pose = CAT_POSES[c.mode] || CAT_POSES.sit;
     // sit/sprawl 진입은 즉시성을 높여(러프 계수 ×2) 전환 중 어색한 중간 실루엣 노출을 줄인다
     const k = Math.min(1, dt * ((c.mode === 'sit' || c.mode === 'sprawl') ? 12 : 6));
-    const pv = c.pv || (c.pv = { by: 0.13, brx: 0, brz: 0, hrx: 0, hry: 0, fl: 0, fr: 0, bl: 0, br: 0, t1: -0.5 });
+    const pv = c.pv || (c.pv = { by: 0.13, brx: 0, hrx: 0, hry: 0, fl: 0, fr: 0, bl: 0, br: 0, t1: -0.5 });
     pv.by += (pose.by - pv.by) * k;
     pv.brx += (pose.brx - pv.brx) * k;
-    pv.brz += ((pose.brz || 0) - pv.brz) * k;
+    // ⑷ 배 노출(몸통 롤 brz) 폐기 — 눕기는 엎드림(배 바닥)만. 몸통 z축 회전은 어떤 포즈에서도 걸지 않는다.
     pv.hrx += (pose.hrx - pv.hrx) * k;
     pv.fl += (pose.legF - pv.fl) * k;
     pv.fr += (pose.legF - pv.fr) * k;
@@ -562,7 +593,7 @@ export function makeCatSystem(ctx) {
     p.body.scale.set(bodyBr, bodyBr, 1);
     p.body.position.y = pv.by;
     p.body.rotation.x = pv.brx;
-    p.body.rotation.z = pv.brz;   // sprawl: 몸통을 옆으로 굴려 배를 화면 쪽으로 (다른 포즈는 brz=0)
+    p.body.rotation.z = 0;        // ⑷ 몸통 롤 없음 — 배 노출(드러눕기) 폐기, 눕기는 엎드림 계열만
     p.head.rotation.x = headRX;
     p.head.rotation.y += (headRY - p.head.rotation.y) * Math.min(1, dt * 4);
     p.legs.fl.rotation.x = flX;

@@ -86,14 +86,31 @@ const catCam = {
   active: false,
   center: new THREE.Vector3(0, 0.9, 0), // 실제 추적 중심(고양이로 지연 수렴)
   saved: null,                          // 복원용 { yaw, elev, zoom }
+  targetYaw: 0,                         // ⑶ 진입 시 1회 확정하는 목표 yaw(짧은 호 ≤45° 클램프). 매 프레임 재계산 안 함.
 };
+// ⑶ 클로즈업 진입 회전 최소화: 고양이 facing으로 스냅하지 않고, "현재 카메라 yaw 기준 최소 회전"을 쓴다.
+//   후보 = facing+yawOffset 및 facing-yawOffset(좌우 3/4 중 가까운 쪽). 현재 yaw와의 각차를 짧은 호로 접고,
+//   ±45°(π/4)로 클램프 → 줌·센터링 위주로 얼굴을 잡되 화면이 홱 돌지 않게 한다.
+function shortAngle(a) { let d = a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; }
+function computeCatCloseupYaw(facing, curYaw) {
+  const off = BAL.catCam.yawOffset;
+  const cands = [facing + off, facing - off];
+  let best = cands[0], bestAbs = Infinity;
+  for (const c of cands) { const d = Math.abs(shortAngle(c - curYaw)); if (d < bestAbs) { bestAbs = d; best = c; } }
+  const CLAMP = Math.PI / 4; // ≤45°
+  const delta = THREE.MathUtils.clamp(shortAngle(best - curYaw), -CLAMP, CLAMP);
+  return curYaw + delta;
+}
 // 고양이 시스템은 src/systems/cat.js로 분리됐다(엔지니어링 Phase 2). catObj는 그 클로저의 모듈
 // 상태라, game.js는 아래 getCat()로만 현재 고양이 인스턴스를 읽는다(catSys는 하단에서 생성).
 function getCat() { return catSys.getCat(); }
 function enterCatCloseup() {
-  if (catCam.active || !getCat()) return;
+  const _cat = getCat();
+  if (catCam.active || !_cat) return;
   catCam.saved = { yaw: camState.targetYaw, elev: camState.elev, zoom: camState.zoom };
   catCam.center.copy(camCenter); // 현재 중심에서 고양이로 부드럽게 출발
+  // ⑶ 진입 시점의 현재 카메라 yaw 기준으로 목표 yaw를 1회 확정(짧은 호 ≤45°). 이후엔 이 값으로만 글라이드.
+  catCam.targetYaw = computeCatCloseupYaw(_cat.g.rotation.y, camState.yaw);
   catCam.active = true;
 }
 function exitCatCloseup() {
@@ -117,9 +134,9 @@ function updateCamera() {
     catCam.center.y += ((p.y + C.heightAbove) - catCam.center.y) * C.glideLerp;
     catCam.center.z += (p.z - catCam.center.z) * C.glideLerp;
     center = catCam.center;
-    // 3/4 측면각: 고양이 정면(그룹 rotation.y) 기준 yaw 오프셋으로 얼굴을 비스듬히 잡는다.
-    const facing = _cat.g.rotation.y;
-    camState.targetYaw = facing + C.yawOffset;
+    // ⑶ 진입 시 확정한 목표 yaw(짧은 호 ≤45° 클램프)로만 회전한다 — 매 프레임 고양이 facing으로
+    //   스냅하지 않아 진입 회전이 과하지 않다. 줌·센터링(center lerp)이 얼굴 클로즈업을 완성한다.
+    camState.targetYaw = catCam.targetYaw;
     // 거리/줌/앙각을 클로즈업 프로필로 보간(글라이드 ~1초)
     dist = camState.dist + (C.dist - camState.dist) * C.glideLerp; camState.dist = dist;
     elev = camState.elev + (THREE.MathUtils.degToRad(C.elevDeg) - camState.elev) * C.glideLerp; camState.elev = elev;
@@ -3335,6 +3352,7 @@ const state = {
   deco: {},            // 꾸미기(#13): 셸터별 벽지/바닥재 { shelterId: { wall:id, floor:id } }
   stayDays: 0,         // 현재 거처 연속 거주일 (정든 집 보너스)
   cat: 0,              // 고양이 입양 여부 (Day 9+ 인카운터)
+  catCoat: 'tabby',    // 고양이 코트(입양 시 랜덤: tabby/black/siamese/ragdoll). 구세이브=tabby 폴백.
   catMusicDay: 0,      // 고양이 인카운터가 뜬 날 — 그날은 Cat OST만 재생
   catEventSeen: false, // 고양이 인카운터가 이미 한 번 등장했는지 (거절해도 재등장 없음)
   catHungry: false,    // 유지비(3일마다 음식1)를 내지 못해 쾌적 보너스가 정지된 상태
@@ -3640,6 +3658,10 @@ function restHourMod(atHour) {
   }
   return 0; // 00~00:59(자정 직후) 및 그 외: 보정 없음
 }
+// 정산 경로(오프라인/백그라운드) 취침을 "정상 취침"으로 회복시킬 때 쓰는 기준 시각.
+//   restHourMod의 이른 취침 보너스 구간(earlyStart~earlyEnd) 안이라 밤샘 페널티 없이 +earlyBonus가 적용된다.
+//   BAL 신설 없이 구조 상수로 둔다(시각 상수 — 밸런스 수치 아님).
+const SETTLE_REST_HOUR = 22;
 function restEnergyValue(atHour, collapse = false) {
   const hasBed = items.some(i => i.defId === 'bed');
   const cozy = comfortDetail().score;
@@ -3834,6 +3856,7 @@ function loadSave() {
       if (state.hunger == null) state.hunger = 80;
       if (state.thirst == null) state.thirst = 80;
       if (state.energy == null) state.energy = 100;
+      if (state.catCoat == null || !['tabby', 'black', 'siamese', 'ragdoll'].includes(state.catCoat)) state.catCoat = 'tabby'; // 배E-1: 구세이브 코트 폴백
       if (state.expToday == null) state.expToday = 0;
       state.expFailStreak = state.expFailStreak ?? 0; // 구세이브 마이그레이션
       if (state.tutDay == null) state.tutDay = 0;
@@ -8481,29 +8504,49 @@ function tickTime(dt) {
   // 05시에 쓰러지듯 자동 취침한다(아래 별도 트리거). 탐험/오프라인 경로만 여기서 아침으로 점프.
   if (rolledOver) {
     const morning8 = (state.day - 1) * 1440 + 8 * 60;
-    if (state.gameMin < morning8) {
-      if (state.exp) {
-        // 탐험(부재) 중 자정 경과: 밖에 있으니 암전 없음 + 쪽잠 에너지 회복 없음. 시간만 점프.
-        state.gameMin = morning8;
-        state.dayLog.notes.push(t('day.expNight'));
-      } else if (settlingOffline) {
-        // 부팅 오프라인 정산: 이미 부팅 암전이 덮고 있어 blackout을 겹치지 않는다.
-        state.gameMin = morning8;
-        const { energy } = restEnergyValue();
-        state.energy = Math.max(state.energy, energy);
-        const e = Math.round(state.energy);
-        state.dayLog.notes.push(t('day.napMorning', { e }));
-      }
-      // else(셸터 안에서 깨어 자정 경과): 아무 것도 하지 않는다 — 시간을 계속 흐르게 두고,
-      //   결산은 아침(WAKE_HOUR 이후)까지 미룬다(아래 reportQueued 게이트의 시각 조건).
+    if (state.exp) {
+      // 탐험(부재) 중 자정 경과: 밖에 있으니 암전 없음 + 쪽잠 에너지 회복 없음. 시간만 점프(아직 이르면).
+      if (state.gameMin < morning8) { state.gameMin = morning8; state.dayLog.notes.push(t('day.expNight')); }
+    } else if (settlingOffline || document.hidden) {
+      // 정산 경로(부팅 오프라인 catch-up · 백그라운드 절전 틱): "방치는 벌 받지 않는다".
+      // v1.2.0 취침 자율화가 자정 강제 취침을 없앤 뒤로 이 경로가 05시 collapse에서 제외되어
+      // 에너지 미회복 결함이 있었다(방치형 코어 결함, 디렉터 실신고). 자정을 넘긴 날의 취침을
+      // "정상 취침"으로 간주해 회복한다 — 밤샘 페널티 없이(22시 기준), 침대·쾌적·온천 보너스 포함.
+      // blackout 연출에 의존하지 않는 순수 로직. 회복은 정산 롤오버가 발생하면 착지 시각과 무관하게 항상 적용한다
+      //   (오프라인 catch-up은 임의 시각에 착지할 수 있어 '아침 이전'만 회복하면 미회복 구멍이 남는다 — 실측 확인).
+      const { energy } = restEnergyValue(SETTLE_REST_HOUR, false); // 이른 취침 기준(밤샘 페널티 없이 침대·쾌적·온천 보너스 포함)
+      state.energy = Math.max(state.energy, energy);
+      const e = Math.round(state.energy);
+      // 아직 아침 이전이면 다음 아침으로 점프(자연스러운 기상). 이미 아침 이후면 시간은 그대로 두고 회복만.
+      if (state.gameMin < morning8) state.gameMin = morning8;
+      state.dayLog.notes.push(t('day.napMorning', { e }));
     }
+    // else(셸터 안에서 깨어 자정 경과): 아무 것도 하지 않는다 — 시간을 계속 흐르게 두고,
+    //   결산은 아침(WAKE_HOUR 이후)까지 미룬다(아래 reportQueued 게이트의 시각 조건).
   }
   // 05시 자동 취침: 셸터 안에서 깨어 있고 새벽 collapseHour에 도달하면 쓰러지듯 잠든다.
-  // (탐험 중·오프라인 정산·암전 중·타이틀·일시정지 제외 — 실제 플레이 세션에서만)
-  if (!state.exp && !settlingOffline && !blackoutActive && !titleVisible && !paused
-      && Math.floor(gameHour()) >= BAL.rest.collapseHour && (state.gameMin % 1440) < BAL.rest.collapseHour * 60 + 60) {
+  // (탐험 중·오프라인 정산·백그라운드·암전 중·타이틀·일시정지 제외 — 실제(가시) 플레이 세션에서만)
+  const atCollapseHour = Math.floor(gameHour()) >= BAL.rest.collapseHour
+    && (state.gameMin % 1440) < BAL.rest.collapseHour * 60 + 60;
+  if (!state.exp && !settlingOffline && !document.hidden && !blackoutActive && !titleVisible && !paused
+      && atCollapseHour) {
     sleepUntilMorning(true, { collapse: true });
     return; // 이번 틱은 취침 처리로 종결 (아침 결산은 기상 후 다음 틱)
+  }
+  // 백그라운드 절전 틱이 자정을 넘기지 않고 05시(collapseHour)에 도달한 경우(같은 밤 방치):
+  //   "방치는 벌 받지 않는다" — collapse 페널티 대신 정상 취침으로 회복하고 아침으로 점프한다.
+  //   (자정을 넘긴 경우는 위 rolledOver 블록이 이미 처리했다.)
+  if (!state.exp && !settlingOffline && document.hidden && !blackoutActive && !titleVisible && !paused
+      && atCollapseHour) {
+    const morning8 = Math.floor(state.gameMin / 1440) * 1440 + 8 * 60;
+    if (state.gameMin < morning8) {
+      state.gameMin = morning8;
+      const { energy } = restEnergyValue(SETTLE_REST_HOUR, false); // 이른 취침 기준(밤샘 페널티 없음)
+      state.energy = Math.max(state.energy, energy);
+      const e = Math.round(state.energy);
+      state.dayLog.notes.push(t('day.napMorning', { e }));
+    }
+    return;
   }
   // 보고/이벤트 노출 게이트: 탐험(부재) 중이거나 암전 연출 중엔 하루 보고·셸터 이벤트를 띄우지 않는다.
   // v1.2.0: 자정 직후(01~04시) 깨어 있는 동안엔 결산을 미룬다 — 아침(WAKE_HOUR 이후)에만 뜬다.

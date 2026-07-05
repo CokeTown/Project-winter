@@ -806,6 +806,11 @@ export const STR = {
   'ev.cat.c1':          { ko: '조용히 지켜본다', en: 'Watch quietly' },
   'ev.cat.r0':          { ko: '고양이는 그릇을 싹 비우더니, 당연하다는 듯 가장 아늑한 자리를 차지했다.<br>이제 이 집엔 심장이 두 개 뛴다. <b>(쾌적함 +6)</b>', en: 'The cat licks the bowl clean and claims the coziest spot as if it were owed.<br>Now two hearts beat in this home. <b>(comfort +6)</b>' },
   'ev.cat.r1':          { ko: '고양이는 어둠 속으로 사라졌다. 다시는 볼 수 없을 것 같다.', en: 'The cat vanished into the dark. It seems you will never see it again.' },
+  // 코트 1줄 분기 (입양 시 랜덤 확정). 명령/지시조 금지 — 관찰 서술.
+  'ev.cat.coat.tabby':  { ko: '먼지를 털어내자 드러난 건 치즈빛 줄무늬 태비였다.', en: 'Once the dust was gone, a cheese-striped tabby coat showed through.' },
+  'ev.cat.coat.black':  { ko: '온몸이 새까만 털, 그 사이에서 앰버빛 두 눈이 반짝였다.', en: 'Its coat was all black, and two amber eyes glinted within it.' },
+  'ev.cat.coat.siamese':{ ko: '크림빛 몸에 초콜릿빛 귀와 발, 그리고 파란 눈의 샴이었다.', en: 'A cream body with chocolate ears and paws, and blue eyes—a Siamese.' },
+  'ev.cat.coat.ragdoll':{ ko: '흰크림빛 털에 갈색 포인트, 파란 눈이 맑은 래그돌이었다.', en: 'A white-cream coat with brown points and clear blue eyes—a Ragdoll.' },
   'cat.pet':            { ko: '🐈 그르릉...', en: '🐈 Purr...' },
 
   'ev.ending.title':    { ko: '하늘에서 온 손님', en: 'A Visitor from the Sky' },
