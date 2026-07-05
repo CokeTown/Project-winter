@@ -1,5 +1,9 @@
 # Nine Winters — 개선 로드맵 (작업 순서 시나리오)
 
+> **✅ 2026-07-05: v1.0.0 Early Access 달성** — Phase A~F 전 게이트 통과, 3플랫폼(웹 PWA / NSIS+포터블 / 서명 APK) 발행.
+> https://github.com/Project-winter-survival/Project-winter-Rep/releases/tag/v1.0.0
+> 현재 트랙: **1.1 「얼어붙은 항구」** (아래 확장 시나리오). REQ-BAL-02 하드 밴드는 한파 강화로 1차 처리, 원 밴드 추구 여부는 디렉터 선택 대기(BALANCE-NOTES).
+
 > 기한이 아니라 **작업 순서**다. 원칙: ①아트 생성(OpenAI API)은 코드 배치와 병렬 ②같은 수치/시스템을 만지는 작업은 한 배치로 묶는다.
 > 가격 전략: **EA $7.89** (Phase E 게이트 통과 시) → **정식 $11.49** (Phase F 완주 시). Play $3.99.
 > 관련: DESIGN-REVIEW.md(진단 근거), BALANCE-NOTES.md(시뮬 데이터), PATCHNOTES.md(릴리즈 이력).
