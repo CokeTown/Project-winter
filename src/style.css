@@ -118,16 +118,70 @@
   #exp-progress .eta { font-size: 11px; color: var(--text-dim); }
   #injury-note { font-size: 11px; color: var(--bad); text-align: center; padding: 4px 0; }
 
-  /* ── 우상단 렌더링/설정 ── */
-  #render-panel { top: 12px; right: 12px; width: 185px; max-width: min(90vw, 260px); }
-  #render-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
-  #render-panel label { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px; font-size: 11px; margin: 7px 0; cursor: pointer; }
-  #render-panel input[type=range] { width: 85px; accent-color: var(--accent); }
-  #render-panel input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
-  #render-panel .btn-row { display: flex; gap: 6px; margin-top: 10px; }
-  #render-panel .btn-row .pixel-btn { flex: 1; }
-  #widget-section { border-top: 1px solid rgba(255,255,255,0.12); margin-top: 10px; padding-top: 8px; }
-  #widget-section h2 { font-size: 12px; color: var(--accent); margin-bottom: 6px; }
+  /* ── 탭형 환경설정 창 (#52) — 중앙 고정 전용 오버레이 ── */
+  #settings-screen {
+    position: fixed; inset: 0; z-index: 65;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(5, 6, 9, 0.55);
+  }
+  #settings-screen.show { display: flex; }
+  #settings-window {
+    position: relative; zoom: var(--uiz);
+    width: 340px; max-width: 92vw;
+    max-height: 88vh; display: flex; flex-direction: column;
+    padding: 0; overflow: hidden;
+  }
+  #settings-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px 8px; border-bottom: 2px solid var(--panel-border);
+  }
+  #settings-head h2 { font-size: 13px; color: var(--accent); margin: 0; }
+  #settings-x {
+    background: none; border: none; color: var(--text-dim);
+    font-family: inherit; font-size: 15px; cursor: pointer; line-height: 1; padding: 2px 4px;
+  }
+  #settings-x:hover { color: var(--bad); }
+  #settings-tabs { display: flex; gap: 0; padding: 6px 8px 0; border-bottom: 2px solid var(--panel-border); flex-wrap: wrap; }
+  .settings-tab {
+    flex: 1 1 auto; min-width: 0;
+    font-family: inherit; font-size: 11px; color: var(--text-dim);
+    background: #20242e; border: 2px solid var(--panel-border); border-bottom: none;
+    border-radius: 4px 4px 0 0; padding: 6px 4px; margin-right: 2px; cursor: pointer;
+    white-space: nowrap;
+  }
+  .settings-tab:hover { color: var(--accent); }
+  .settings-tab.active { color: var(--accent); background: var(--panel-bg); border-color: var(--accent); position: relative; top: 2px; }
+  #settings-tabbody { padding: 10px 14px; overflow-y: auto; flex: 1 1 auto; }
+  .settings-pane { display: none; }
+  .settings-pane.active { display: block; }
+  #settings-window label {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    gap: 4px; font-size: 11px; margin: 8px 0; cursor: pointer;
+  }
+  #settings-window input[type=range] { width: 110px; accent-color: var(--accent); }
+  #settings-window input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
+  #settings-window h2 { font-size: 12px; color: var(--accent); margin: 12px 0 6px; }
+  #settings-window select {
+    background: #1c1f28; color: var(--text);
+    border: 2px solid var(--panel-border); border-radius: 3px;
+    font-family: inherit; font-size: inherit; padding: 2px 4px;
+  }
+  #controls-guide { font-size: 11px; line-height: 1.9; color: var(--text-dim); }
+  #controls-guide .cg-row { display: flex; gap: 8px; margin: 5px 0; align-items: baseline; }
+  #controls-guide .cg-key {
+    flex: 0 0 auto; min-width: 62px; color: var(--accent);
+    font-size: 10px; border: 1px solid var(--panel-border); border-radius: 3px;
+    padding: 1px 5px; text-align: center; background: #20242e;
+  }
+  #controls-guide .cg-desc { flex: 1 1 auto; }
+  #controls-guide .cg-note { font-size: 10px; opacity: 0.7; margin-top: 10px; }
+  #settings-foot {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    padding: 8px 12px 10px; border-top: 2px solid var(--panel-border);
+  }
+  #settings-foot .pixel-btn { flex: 1 1 auto; }
+  #display-section, #widget-section { border-top: 1px solid rgba(255,255,255,0.12); margin-top: 10px; padding-top: 8px; }
+  #display-section .btn-row { display: flex; gap: 6px; margin-top: 8px; }
 
   /* ── 하단 인벤토리 바 ── */
   #toolbar {
@@ -612,7 +666,7 @@
     #res-chips { grid-template-columns: 1fr; }
     #clock-panel { right: 8px; top: 8px; }
     #lcd-time { font-size: 20px; }
-    #render-panel { top: 192px; right: 8px; width: 160px; }
+    #settings-window { width: 300px; }
     #exp-panel { top: 240px; width: 210px; left: 8px; max-height: calc(100vh - 330px); }
     .tool-item { min-width: 52px; font-size: 9px; padding: 6px 3px 4px; }
     .tool-item .emoji { font-size: 17px; }
@@ -634,8 +688,7 @@
     #lcd { padding: 3px 8px; min-width: 84px; }
     #lcd-time { font-size: 17px; letter-spacing: 1px; }
     #lcd-day, #lcd-sub { font-size: 8px; }
-    #render-panel { top: auto; bottom: 6px; right: 6px; width: 148px; max-height: calc(100vh - 12px); overflow-y: auto; }
-    #render-panel label { margin: 4px 0; font-size: 10px; flex-wrap: wrap; }
+    #settings-window { max-height: calc(100vh - 12px); }
     #res-bar { top: 6px; right: 180px; width: 150px; max-height: calc(100vh - 12px); overflow-y: auto; }
     #exp-panel { top: 6px; left: 178px; width: 190px; max-height: calc(100vh - 12px); }
     #toolbar { bottom: 4px; padding: 4px; max-width: calc(100vw - 200px); }
@@ -680,6 +733,8 @@
   body.title-mode #modal-back .panel { display: block !important; }
   /* 확인창도 동일 예외 — 타이틀에서 슬롯 덮어쓰기/삭제 확인이 떠야 한다 */
   body.title-mode #confirm-back .panel { display: block !important; }
+  /* 환경설정 창(#52)도 .panel이라 위 규칙에 걸린다 — 타이틀 ⚙️에서 열려야 하므로 예외 (modal/confirm 동일 패턴) */
+  body.title-mode #settings-screen .panel { display: flex !important; }
   body.title-mode #title-screen {
     background: radial-gradient(ellipse at 50% 62%, rgba(10,12,17,0.08) 0%, rgba(8,9,13,0.66) 88%);
   }
@@ -702,11 +757,6 @@
   /* ── v2.3.1: 타이틀 언어 선택 + 셀렉트 픽셀 테마 ── */
   #title-lang { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
   #title-lang .lang-btn { font-size: 11px; padding: 6px 14px; flex: 1; }
-  #render-panel select {
-    background: #1c1f28; color: var(--text);
-    border: 2px solid var(--panel-border); border-radius: 3px;
-    font-family: inherit; font-size: inherit; padding: 2px 4px;
-  }
 
   /* ── v0.9.1: 가독성 — 전 UI 15% 확대 (베타 피드백: 폰트가 작다) ──
      P0 수정: 배율은 JS(updateUiScale)에서 TEXT_BOOST를 곱해 --uiz 단일 소스로 통합.
@@ -716,10 +766,6 @@
   #title-tools { display: flex; gap: 8px; margin-top: 8px; }
   #title-tools .pixel-btn { flex: 1; font-size: 14px; padding: 6px 0; }
 
-  /* ── v0.9.1: 타이틀에서 설정 패널을 열람 (t-settings 버튼 전용) ──
-     body.title-mode는 기본적으로 .panel을 숨기지만, show-in-title이 붙은 패널만 예외로 보여준다. */
-  body.title-mode #render-panel.show-in-title { display: block !important; z-index: 60; }
-
   /* ── v0.9.1: 모바일 설정 진입 = 우측 상단 톱니 (PC는 ESC 전용) ── */
   #btn-gear {
     position: fixed; top: 96px; right: 10px; z-index: 45;
@@ -727,7 +773,7 @@
   }
   @media (max-height: 420px) { #btn-gear { top: 64px; right: 6px; } }
   body.title-mode #btn-gear { display: none !important; }
-  /* 인게임 전용 💾 저장 버튼 — 타이틀 설정(show-in-title)에선 숨김 (유령 세이브 방지) */
+  /* 인게임 전용 💾 저장 버튼 — 타이틀 설정 창(#settings-screen)에선 숨김 (유령 세이브 방지) */
   body.title-mode #btn-save-now { display: none !important; }
 
   /* Nine Winters(#11): 넘긴 겨울 배지 — HUD stat 줄 + 슬롯 카드 */

@@ -20,6 +20,8 @@ export default defineConfig(({ command, mode }) => ({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
+      // Electron(file://)에선 SW 등록이 항상 실패해 에러 로그만 스팸 — 주입 자체를 끈다 (PWA는 웹 전용)
+      injectRegister: mode === 'electron' ? null : 'auto',
       // 기존 public/manifest.webmanifest 링크를 그대로 사용 — 플러그인이 manifest를 새로 생성하지 않도록 false.
       manifest: false,
       // 앱 오프라인 셸 프리캐시. **BGM(mp3, 114MB)은 절대 프리캐시하지 않는다** — glob에서 mp3 제외.

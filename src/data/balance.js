@@ -114,11 +114,12 @@ export const BAL = {
     industrialGuaranteedFuel: 1, // 공업지대 fuel 최소 확정 획득
 
     /* 돔 벙커 리워크 (#36) */
-    bunkerRoofCost: { material: 6 },  // 천장 수리 프로젝트 총비용 (2단계 합산: 임시 덮개 2 + 완전 수리 4)
-    bunkerRoofStage1: { material: 2 },// 1단계 임시 덮개 (빗물 새기 멎음)
-    bunkerRoofStage2: { material: 4 },// 2단계 완전 수리 (쾌적 +4)
+    bunkerRoofCost: { material: 4 },  // 천장 수리 프로젝트 총비용 (2단계 합산: 임시 덮개 1 + 완전 수리 3) — v0.9.6 하향
+    bunkerRoofStage1: { material: 1 },// 1단계 임시 덮개 (빗물 새기 멎음) — 2→1 (#55 디렉터: "건축재 1개면 될 것")
+    bunkerRoofStage2: { material: 3 },// 2단계 완전 수리 (쾌적 +4) — 4→3
+    bunkerBackdoorCost: { material: 3 },// 뒷문 개방(전실+계단) 건축재 비용 (#55)
     bunkerRoofComfort: 4,             // 천장 완전 수리 시 벙커 쾌적 가산
-    bunkerStorageComfort: 4,          // 절단기 뒷문 저장고 개방 시 벙커 쾌적 가산
+    bunkerStorageComfort: 4,          // 절단기 뒷문 전실(저장고) 개방 시 벙커 쾌적 가산
     bunkerRoofDirtPerDay: 1,          // 천장 구멍 방치 시 비 오는 날 청결 추가 감소
   },
 

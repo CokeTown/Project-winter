@@ -103,41 +103,70 @@
   <div id="exp-content"></div>
 </div>
 
-<div class="panel" id="render-panel">
-  <h2 data-i18n="settings.title">■ 설정</h2>
-  <label><span data-i18n="opt.pixel">픽셀 크기</span> <input type="range" id="opt-pixel" min="1" max="6" step="1" value="3"></label>
-  <label><span data-i18n="opt.quant">색상 양자화</span> <input type="checkbox" id="opt-quant" checked></label>
-  <label><span data-i18n="opt.dither">디더링</span> <input type="checkbox" id="opt-dither" checked></label>
-  <label><span data-i18n="opt.ceil">실내 조명</span> <input type="checkbox" id="opt-ceil" checked></label>
-  <label data-i18n-title="opt.autoeat.title" title="배고픔/갈증이 40 아래로 내려가면 자동으로 먹고 마십니다"><span data-i18n="opt.autoeat">자동 섭취</span> <input type="checkbox" id="opt-autoeat" checked></label>
-  <label><span data-i18n="opt.fps">FPS 제한</span> <select id="opt-fps"><option value="60">60</option><option value="30">30</option></select></label>
-  <label id="autoplay-row" data-i18n-title="opt.autoplay.title" title="Day 10부터 사용 가능. 매 정시마다 생존 루틴을 대신 처리합니다"><span data-i18n="opt.autoplay">자동 진행</span> <input type="checkbox" id="opt-autoplay"></label>
-  <label><span data-i18n="opt.lowspec">저사양 모드</span> <input type="checkbox" id="opt-lowspec"></label>
-  <label id="bgidle-row"><span data-i18n="opt.bgidle">백그라운드 소리</span> <input type="checkbox" id="opt-bgidle" checked></label>
-  <label id="bgm-row" style="display:none"><span data-i18n="opt.bgm">BGM</span> <input type="checkbox" id="opt-bgm"></label>
-  <label id="bgmvol-row"><span data-i18n="opt.bgmvol">🔊 음량</span> <input type="range" id="opt-bgmvol" min="0" max="100" step="5" value="15"></label>
-  <label id="sfxvol-row"><span data-i18n="opt.sfxvol">🔔 효과음</span> <input type="range" id="opt-sfxvol" min="0" max="100" step="5" value="70"></label>
-  <label id="lang-row"><span data-i18n="opt.lang">언어 / Language</span> <select id="opt-lang"><option value="ko">한국어</option><option value="en">English</option></select></label>
-  <div id="display-section" style="display:none">
-    <h2 data-i18n="display.title">🖥️ 디스플레이</h2>
-    <label><span data-i18n="opt.dispmode">화면 모드</span> <select id="opt-dispmode">
-      <option value="windowed" data-i18n="disp.windowed">창 화면</option>
-      <option value="fullscreen" data-i18n="disp.fullscreen">전체화면</option>
-      <option value="borderless" data-i18n="disp.borderless">창없는 전체화면</option>
-    </select></label>
-    <label id="dispres-row"><span data-i18n="opt.dispres">해상도</span> <select id="opt-dispres"></select></label>
-    <div class="btn-row"><button class="pixel-btn primary" id="btn-disp-apply" data-i18n="disp.apply">✓ 적용</button></div>
-  </div>
-  <div id="widget-section" style="display:none">
-    <h2 data-i18n="widget.title">🪟 위젯 모드</h2>
-    <label><span data-i18n="widget.opacity">투명도</span> <input type="range" id="opt-widget-opacity" min="30" max="100" step="5" value="100"></label>
-    <label><span data-i18n="widget.alwaysontop">항상 위</span> <input type="checkbox" id="opt-widget-aot"></label>
-    <label><span data-i18n="widget.mini">미니 창</span> <input type="checkbox" id="opt-widget-mini"></label>
-    <label data-i18n-title="widget.clickthrough.title" title="켜면 게임 조작이 불가능해집니다. 해제는 트레이/작업표시줄에서 하세요."><span data-i18n="widget.clickthrough">클릭 통과</span> <input type="checkbox" id="opt-widget-clickthrough"></label>
-  </div>
-  <div class="btn-row">
-    <button class="pixel-btn" id="btn-save-now" data-i18n="btn.saveNow" data-i18n-title="btn.saveNow.title" title="지금 저장">💾 저장</button>
-    <button class="pixel-btn" id="btn-reset" data-i18n="btn.reset">🚪 타이틀로</button>
+<!-- 탭형 환경설정 창 (#52) — 타이틀/ESC/톱니 3경로 공용 전용 오버레이. z 65 (journal 60 < settings 65 < confirm 70). -->
+<div id="settings-screen" style="display:none">
+  <div class="panel" id="settings-window">
+    <div id="settings-head">
+      <h2 data-i18n="settings.title">■ 설정</h2>
+      <button id="settings-x" aria-label="close">✕</button>
+    </div>
+    <div id="settings-tabs">
+      <button class="settings-tab active" data-tab="graphics" data-i18n="settings.tab.graphics">그래픽</button>
+      <button class="settings-tab" data-tab="sound" data-i18n="settings.tab.sound">사운드</button>
+      <button class="settings-tab" data-tab="gameplay" data-i18n="settings.tab.gameplay">게임 플레이</button>
+      <button class="settings-tab" data-tab="controls" data-i18n="settings.tab.controls">컨트롤</button>
+    </div>
+    <div id="settings-tabbody">
+      <!-- ① 그래픽 -->
+      <div class="settings-pane active" data-pane="graphics">
+        <label><span data-i18n="opt.pixel">픽셀 크기</span> <input type="range" id="opt-pixel" min="1" max="6" step="1" value="3"></label>
+        <label><span data-i18n="opt.quant">색상 양자화</span> <input type="checkbox" id="opt-quant" checked></label>
+        <label><span data-i18n="opt.dither">디더링</span> <input type="checkbox" id="opt-dither" checked></label>
+        <label><span data-i18n="opt.ceil">실내 조명</span> <input type="checkbox" id="opt-ceil" checked></label>
+        <label><span data-i18n="opt.lowspec">저사양 모드</span> <input type="checkbox" id="opt-lowspec"></label>
+        <label><span data-i18n="opt.fps">FPS 제한</span> <select id="opt-fps"><option value="60">60</option><option value="30">30</option></select></label>
+        <div id="display-section" style="display:none">
+          <h2 data-i18n="display.title">🖥️ 디스플레이</h2>
+          <label><span data-i18n="opt.dispmode">화면 모드</span> <select id="opt-dispmode">
+            <option value="windowed" data-i18n="disp.windowed">창 화면</option>
+            <option value="fullscreen" data-i18n="disp.fullscreen">전체화면</option>
+            <option value="borderless" data-i18n="disp.borderless">창없는 전체화면</option>
+          </select></label>
+          <label id="dispres-row"><span data-i18n="opt.dispres">해상도</span> <select id="opt-dispres"></select></label>
+          <div class="btn-row"><button class="pixel-btn primary" id="btn-disp-apply" data-i18n="disp.apply">✓ 적용</button></div>
+        </div>
+        <div id="widget-section" style="display:none">
+          <h2 data-i18n="widget.title">🪟 위젯 모드</h2>
+          <label><span data-i18n="widget.opacity">투명도</span> <input type="range" id="opt-widget-opacity" min="30" max="100" step="5" value="100"></label>
+          <label><span data-i18n="widget.alwaysontop">항상 위</span> <input type="checkbox" id="opt-widget-aot"></label>
+          <label><span data-i18n="widget.mini">미니 창</span> <input type="checkbox" id="opt-widget-mini"></label>
+          <label data-i18n-title="widget.clickthrough.title" title="켜면 게임 조작이 불가능해집니다. 해제는 트레이/작업표시줄에서 하세요."><span data-i18n="widget.clickthrough">클릭 통과</span> <input type="checkbox" id="opt-widget-clickthrough"></label>
+        </div>
+      </div>
+      <!-- ② 사운드 -->
+      <div class="settings-pane" data-pane="sound">
+        <label id="bgm-row" style="display:none"><span data-i18n="opt.bgm">BGM</span> <input type="checkbox" id="opt-bgm"></label>
+        <label id="bgmvol-row"><span data-i18n="opt.bgmvol">🔊 음량</span> <input type="range" id="opt-bgmvol" min="0" max="100" step="5" value="15"></label>
+        <label id="sfxvol-row"><span data-i18n="opt.sfxvol">🔔 효과음</span> <input type="range" id="opt-sfxvol" min="0" max="100" step="5" value="70"></label>
+        <label id="bgidle-row"><span data-i18n="opt.bgidle">백그라운드 소리</span> <input type="checkbox" id="opt-bgidle" checked></label>
+      </div>
+      <!-- ③ 게임 플레이 -->
+      <div class="settings-pane" data-pane="gameplay">
+        <label data-i18n-title="opt.autoeat.title" title="배고픔/갈증이 40 아래로 내려가면 자동으로 먹고 마십니다"><span data-i18n="opt.autoeat">자동 섭취</span> <input type="checkbox" id="opt-autoeat" checked></label>
+        <label id="autoplay-row" data-i18n-title="opt.autoplay.title" title="Day 10부터 사용 가능. 매 정시마다 생존 루틴을 대신 처리합니다"><span data-i18n="opt.autoplay">자동 진행</span> <input type="checkbox" id="opt-autoplay"></label>
+        <label id="lang-row"><span data-i18n="opt.lang">언어 / Language</span> <select id="opt-lang"><option value="ko">한국어</option><option value="en">English</option></select></label>
+      </div>
+      <!-- ④ 컨트롤 -->
+      <div class="settings-pane" data-pane="controls">
+        <div id="controls-guide"></div>
+      </div>
+    </div>
+    <div id="settings-foot">
+      <button class="pixel-btn" id="btn-save-now" data-i18n="btn.saveNow" data-i18n-title="btn.saveNow.title" title="지금 저장">💾 저장</button>
+      <button class="pixel-btn" id="btn-settings-default" data-i18n="settings.default">기본값</button>
+      <button class="pixel-btn" id="btn-reset" data-i18n="btn.reset">🚪 타이틀로</button>
+      <button class="pixel-btn primary" id="btn-settings-close" data-i18n="settings.close">닫기</button>
+    </div>
   </div>
 </div>
 

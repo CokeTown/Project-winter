@@ -1017,6 +1017,7 @@ let ROOM = { w: 6.4, d: 2.9, h: 2.4 };
 let wallList = [];      // { group, normal }
 let blockers = [];      // 고정 소품 충돌 영역 { x, z, w, d }
 let envDyn = {};        // 환경별 동적 요소
+let bunkerStairsObj = null; // #55: 벙커 하강 계단 상호작용 히트 대상 (없으면 null)
 
 const roomGroup = new THREE.Group(); scene.add(roomGroup);
 const envRoot = new THREE.Group(); scene.add(envRoot);
@@ -1396,22 +1397,73 @@ const SHELTERS = {
         liner.material.side = THREE.BackSide;
         roomGroup.add(liner);
       }
-      // 절단기 뒷문 저장고(backdoor): 뒷벽에 개구부 + 뒤편에 작은 저장 공간(선반/상자).
+      // #55 뒷문 개방(backdoor): 뒷벽 개구부 + 전실(콘크리트 방: 선반/램프) + 바닥에서 지하로 이어지는 하강 계단.
+      // 전실/계단은 back(뒷벽) 그룹에 붙여 뒷벽 컬링 마스크와 함께 처리한다(카메라가 앞에서 볼 때만 노출).
+      // back 그룹은 [0,0,-d/2-0.13]에 있으므로, 여기 좌표는 그 로컬 기준(더 깊은 곳 = 음의 z).
       if (state.bunkerBackdoor) {
         const conc2 = wallPhong({ map: concreteTex }); conc2.userData.shared = true;
         const store = new THREE.Group();
-        // 개구부 틀 (뚫린 뒷벽 표현: 밝은 문틀)
-        const frameM = lamb(0x3a3530);
-        const fr = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.1, 0.12), frameM);
-        fr.position.set(-w / 4, 1.05, -d / 2 - 0.02); store.add(fr);
+        const DX = -w / 4;          // 전실 가로 중심 (뒷벽 좌측)
+        const ANTE_D = 2.4;         // 전실 깊이
+        const ANTE_W = 2.8;         // 전실 폭
+        const zNear = -0.1;         // 개구부(뒷벽 안쪽) 로컬 z
+        const zFar = zNear - ANTE_D; // 전실 안쪽 벽 z
+        // 개구부 틀 (뚫린 뒷벽 표현: 문틀 + 어두운 개구부)
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.1, 0.12), lamb(0x3a3530));
+        fr.position.set(DX, 1.05, 0.02); store.add(fr);
         const opening = new THREE.Mesh(new THREE.BoxGeometry(1.24, 1.9, 0.14), lamb(0x14110d));
-        opening.position.set(-w / 4, 1.0, -d / 2 - 0.06); store.add(opening);
-        // 뒤편 저장고 볼륨 (바닥/벽/선반)
-        const back2 = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.2, 1.8), conc2);
-        back2.position.set(-w / 4, 0.0, -d / 2 - 1.0); back2.receiveShadow = true; store.add(back2);
-        for (let s = 0; s < 2; s++) B(store, 2.0, 0.06, 0.5, 0x77543a, -w / 4, 0.7 + s * 0.6, -d / 2 - 1.2);
-        for (let c = 0; c < 3; c++) { const cr = B(store, 0.4, 0.4, 0.4, [0x8a6a48, 0x6a5a40, 0x7a6a54][c], -w / 4 - 0.6 + c * 0.6, 0.4, -d / 2 - 0.7); cr.castShadow = true; }
-        roomGroup.add(store);
+        opening.position.set(DX, 1.0, -0.02); store.add(opening);
+        // 전실 바닥
+        const floor2 = new THREE.Mesh(new THREE.BoxGeometry(ANTE_W, 0.2, ANTE_D), conc2);
+        floor2.position.set(DX, -0.1, (zNear + zFar) / 2); floor2.receiveShadow = true; store.add(floor2);
+        // 전실 벽 (좌/우/안쪽) + 천장
+        const wallH = 2.4;
+        B(store, 0.16, wallH, ANTE_D, 0x8f8b82, DX - ANTE_W / 2, wallH / 2 - 0.1, (zNear + zFar) / 2).receiveShadow = true; // 좌벽
+        B(store, 0.16, wallH, ANTE_D, 0x99958b, DX + ANTE_W / 2, wallH / 2 - 0.1, (zNear + zFar) / 2).receiveShadow = true; // 우벽
+        const backWall = new THREE.Mesh(new THREE.BoxGeometry(ANTE_W, wallH, 0.16), conc2);
+        backWall.position.set(DX, wallH / 2 - 0.1, zFar); backWall.receiveShadow = true; store.add(backWall);
+        B(store, ANTE_W, 0.16, ANTE_D, 0x6f6b63, DX, wallH - 0.1, (zNear + zFar) / 2); // 천장
+        // 선반 (기존 저장고 보너스 이전) + 상자
+        for (let s = 0; s < 2; s++) B(store, 1.9, 0.06, 0.42, 0x77543a, DX, 0.7 + s * 0.62, zFar + 0.35);
+        for (let c = 0; c < 3; c++) { const cr = B(store, 0.4, 0.4, 0.4, [0x8a6a48, 0x6a5a40, 0x7a6a54][c], DX - 0.6 + c * 0.6, 0.32, zFar + 0.9); cr.castShadow = true; }
+        // 램프 1 (전실 천장에 매달린 작은 전구)
+        Cyl(store, 0.012, 0.012, 0.5, 0x2a2622, DX + 0.7, wallH - 0.35, zNear - 0.6, 5);
+        const lb2 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6),
+          new THREE.MeshLambertMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 0.9 }));
+        lb2.position.set(DX + 0.7, wallH - 0.7, zNear - 0.6); store.add(lb2);
+
+        // ── 하강 계단: 전실 바닥 우측에서 4~5단 내려가다 어둠으로 페이드 (진입 불가, 페이크 깊이) ──
+        const stairs = new THREE.Group();
+        const SX = DX + 0.55;       // 계단 가로 위치
+        const stepW = 1.1, stepD = 0.34, stepH = 0.26, steps = 5;
+        const zStart = zNear - 0.5; // 계단 시작 z (전실 앞쪽)
+        for (let i = 0; i < steps; i++) {
+          const y = -0.1 - (i + 1) * stepH;     // 바닥(-0.1) 아래로 내려감
+          const z = zStart - i * stepD;
+          const shade = 0x5a564e - i * 0x060606; // 내려갈수록 어두워짐
+          const st = B(stairs, stepW, stepH, stepD, Math.max(0x1a1816, shade), SX, y, z);
+          st.receiveShadow = true;
+        }
+        // 계단 벽(측벽) — 어둠으로 이어지는 통로 느낌
+        B(stairs, 0.14, steps * stepH + 0.4, steps * stepD, 0x4a463f, SX - stepW / 2 - 0.05, -0.1 - (steps * stepH) / 2, zStart - (steps * stepD) / 2 + 0.1);
+        B(stairs, 0.14, steps * stepH + 0.4, steps * stepD, 0x4a463f, SX + stepW / 2 + 0.05, -0.1 - (steps * stepH) / 2, zStart - (steps * stepD) / 2 + 0.1);
+        // 검은 그라데이션 박스(페이크 깊이) — 마지막 단 아래를 완전한 어둠으로 덮는다
+        const voidBox = new THREE.Mesh(
+          new THREE.BoxGeometry(stepW + 0.3, 2.2, 1.4),
+          new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.96, fog: false }));
+        voidBox.position.set(SX, -0.1 - steps * stepH - 0.9, zStart - steps * stepD - 0.5);
+        stairs.add(voidBox);
+        // 히트 판정용 투명 프록시(클릭 영역) — 계단 전체를 감싼다
+        const hit = new THREE.Mesh(
+          new THREE.BoxGeometry(stepW + 0.4, steps * stepH + 0.6, steps * stepD + 0.6),
+          new THREE.MeshBasicMaterial({ visible: false }));
+        hit.position.set(SX, -0.1 - (steps * stepH) / 2, zStart - (steps * stepD) / 2);
+        stairs.add(hit);
+        bunkerStairsObj = stairs; // 상호작용 대상
+        store.add(stairs);
+
+        // store는 back 그룹 좌표계라 back의 위치/컬링을 그대로 따른다
+        back.add(store);
       }
 
       // 천장 펜던트 램프 (컨셉아트) — 아치 정점에서 늘어짐
@@ -2632,6 +2684,8 @@ function consumeAnyFood(n = 1) {
   return true;
 }
 const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, autoPlay: false, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko', fpsCap: 60, lowSpec: false, bgIdle: true };
+// #52: 설정 창 [기본값] 버튼용 — 선언부 값의 스냅샷 (탭별 부분 복원)
+const OPTS_DEFAULT = { ...opts };
 
 /* ============================================================
    난이도 모드 (v0.9.2) — 하드: 전리품 -30% · 게이지 소모 +50%
@@ -3065,6 +3119,7 @@ function loadShelter(id) {
   disposeDeep(roomGroup); roomGroup.clear();
   disposeDeep(envRoot); envRoot.clear();
   wallList = []; blockers = []; envDyn = {};
+  bunkerStairsObj = null; // #55: 계단 히트 대상 재수집
   weatherFx.caps = []; wetApplied = -1;
   winSkyMats.length = 0; // 창문 하늘판 재수집
   sunShafts.length = 0; sunMotes.length = 0; // 빛기둥/먼지도 재수집 (envRoot dispose와 함께 소멸)
@@ -4248,6 +4303,9 @@ const MEMOS = {
   slum5: { region: 'slum', name: '대피령 벽보', nameEn: 'Evacuation Notice', desc: '해당 구역은 지원 대상에서 제외되었습니다. 자력으로 이동하십시오.\n어디로 가라는 말은 없었다.', descEn: 'This zone is excluded from assistance. Relocate by your own means.\nIt never said where to go.' },
   slum6: { region: 'slum', name: '공동 우물의 규칙', nameEn: 'Rules of the Shared Well', desc: '한 집에 하루 한 통. 순서 지킬 것. 싸우지 말 것.\n맨 아래 다른 글씨. "우물 말랐음. 미안."', descEn: 'One jug per household a day. Keep the order. No fighting.\nIn a different hand at the bottom: "Well’s dry. Sorry."' },
   slum7: { region: 'slum', name: '남겨진 담요', nameEn: 'The Left-Behind Blanket', desc: '골목 끝에 개켜진 담요 한 장과 빈 그릇. 누군가 여기 오래 앉아 있었다.\n일어나 어디로 갔는지는 아무도 모른다.', descEn: 'A folded blanket and an empty bowl at the alley’s end. Someone sat here a long while.\nWhere they rose and went, no one knows.' },
+
+  // ── 특수 (bunker) 1: 하강 계단에서만 발견 (#55, 1.4 비밀 진입로 복선) ──
+  stair1: { region: 'bunker', name: '계단참의 낙서', nameEn: 'Scrawl on the Landing', desc: '이 통로는 어디로 이어질까. 군화 자국은 아래로만 나 있다.', descEn: 'Where does this passage lead? The boot prints go only downward.' },
 };
 // 유서 6종 — 지역 무관 별도 풀, 극저확률 (REQ-LORE-01)
 const WILLS = {
@@ -4693,10 +4751,8 @@ function showEvent(id) {
   playSfx('sting');
   state.activeEvent = id; // 현재 떠 있는 이벤트 (내리기 대상)
   const evTitle = t(ev.titleId);
-  // 이벤트 일러스트 파일럿 (#19): wanderer/thief만 상단 일러스트, 다른 이벤트는 현행 유지
-  const illust = (id === 'wanderer' || id === 'thief')
-    ? `<img class="ev-illust" src="img/events/ev_${id}.png" alt="" draggable="false" onerror="this.remove()">`
-    : '';
+  // 이벤트 일러스트 전면 적용 (22종 배포 완료) — 미보유 id(ending 등)는 onerror가 조용히 제거
+  const illust = `<img class="ev-illust" src="img/events/ev_${id}.png" alt="" draggable="false" onerror="this.remove()">`;
   const body = `${illust}
     <div class="modal-body" style="line-height:2">${ev.textFn ? ev.textFn() : t(ev.textId)}</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
@@ -5041,10 +5097,11 @@ function openCraftModal() {
       projRows.push(`<div class="prep-row sel" style="cursor:default"><span>🛖 ${t('bunker.roofTitle')}</span><span class="p-eff" style="font-size:10px">${stageLabel}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`);
     }
     if (state.hasCutter && !state.bunkerBackdoor) {
-      projRows.push(`<div class="prep-row" style="cursor:default">
+      const bdOk = resHasAll(BAL.economy.bunkerBackdoorCost);
+      projRows.push(`<div class="prep-row ${bdOk ? '' : 'no'}" style="cursor:default">
         <span>🔩 ${t('bunker.backdoorFound')}</span>
-        <span class="p-cost"></span>
-        <button class="pixel-btn" data-bproj="backdoor" style="margin-left:6px">${t('bunker.backdoorBtn')}</button>
+        <span class="p-cost">${costLabel(BAL.economy.bunkerBackdoorCost)}</span>
+        <button class="pixel-btn" data-bproj="backdoor" ${bdOk ? '' : 'disabled'} style="margin-left:6px">${t('bunker.backdoorBtn')}</button>
       </div>`);
     } else if (state.bunkerBackdoor) {
       projRows.push(`<div class="prep-row sel" style="cursor:default"><span>🔩 ${t('bunker.backdoorBtn')}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`);
@@ -5071,6 +5128,7 @@ function openCraftModal() {
         scheduleSave(); renderResBar(); updateHud();
         return; // 지오메트리 재빌드가 모달을 닫는다
       } else if (act === 'backdoor') {
+        if (!resConsumeAll(BAL.economy.bunkerBackdoorCost)) { toast(t('toast.needMaterial')); return; }
         state.bunkerBackdoor = true;
         toast(t('bunker.backdoorDone')); state.dayLog.notes.push(t('bunker.backdoorDone'));
         rebuildBunkerGeometry(); playSfx('craft');
@@ -5192,6 +5250,12 @@ function recordTabHtml() {
     const ids = MEMOS_BY_REGION[rg];
     const gotN = ids.filter(id => owned[id]).length;
     sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t(regionKeys[rg])} (${gotN}/${ids.length})</div>` + ids.map(id => memoRow(id, MEMOS)).join('');
+  }
+  // #55: 벙커 하강 계단 특수 메모 — 발견 후에만 섹션 노출(스포일러 방지)
+  {
+    const bids = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'bunker');
+    const bgot = bids.filter(id => owned[id]).length;
+    if (bgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionBunker')} (${bgot}/${bids.length})</div>` + bids.map(id => memoRow(id, MEMOS)).join('');
   }
   const willIds = Object.keys(WILLS);
   const willGot = willIds.filter(id => owned[id]).length;
@@ -5342,6 +5406,26 @@ function pointerToFloor(e) {
   const p = new THREE.Vector3();
   return raycaster.ray.intersectPlane(floorPlane, p) ? p : null;
 }
+// #55 벙커 하강 계단 클릭: 1.4 복선 토스트 + 극저확률 특수 메모 발견. 진입은 불가(어둠 페이드).
+function pickStairs(e) {
+  if (!bunkerStairsObj) return false;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  // 뒷벽 컬링으로 계단이 숨은 각도에선 클릭도 무시 (조상 그룹 visible 확인)
+  let vis = true; for (let o = bunkerStairsObj; o; o = o.parent) if (o.visible === false) { vis = false; break; }
+  if (!vis) return false;
+  const hits = raycaster.intersectObject(bunkerStairsObj, true);
+  if (!hits.length) return false;
+  // 극저확률(memo willDropChance 밴드)로 계단 메모 발견 — 미수집일 때만
+  if (!(state.memos || {}).stair1 && Math.random() < 0.06) {
+    collectMemo('stair1');
+    scheduleSave();
+    showMemoPage('stair1', false);
+    return true;
+  }
+  toast(t('bunker.stairToast'));
+  return true;
+}
 // 고양이 쓰다듬기: catObj.g 대상 별도 히트테스트 (하루 3회 제한)
 let petDay = 0, petCount = 0;
 function pickCat(e) {
@@ -5491,6 +5575,7 @@ canvas.addEventListener('pointerdown', e => {
   if (e.button === 2) { orbiting = true; lastOrbX = e.clientX; return; }
   if (e.button !== 0 && e.pointerType === 'mouse') return;
   if (placing) { moveGhost(placing, e); finishPlacing(); return; }
+  if (!editMode && pickStairs(e)) return; // #55 배치 모드가 아닐 때만 계단 상호작용 (배치 중 오작동 방지)
   if (pickCat(e)) return; // 고양이를 쓰다듬은 경우 기존 가구 선택/드래그로 이어지지 않게 소비
   const hit = pickItem(e);
   if (hit) {
@@ -5589,69 +5674,94 @@ canvas.addEventListener('wheel', e => {
 const isPcInput = matchMedia('(pointer: fine)').matches && !('ontouchstart' in window);
 // v0.9.1: 모바일(터치 기기/Capacitor 포함) 판정 — 백그라운드 오디오 정책 분기에 사용.
 const isMobileEnv = ('ontouchstart' in window) || /Android|iPhone|iPad/i.test(navigator.userAgent);
-function toggleSettingsPanel() {
-  const rp = $('render-panel');
-  const willShow = rp.style.display === 'none';
-  rp.style.display = willShow ? '' : 'none';
-  // P1-C: 토글 경로는 화면 밖 이탈 방지 클램프만 — 자동 스택/상대 재배치는 하지 않는다(연타 시 누적 이동 방지)
-  if (willShow) {
-    // 인라인 위치가 과거 버그로 0,0에 깔려 있어도 저장된 위치로 자가 복구
-    const saved = uiState.render;
-    if (saved && saved.l != null) {
-      rp.style.left = saved.l + 'px'; rp.style.top = saved.t + 'px';
-      rp.style.right = 'auto'; rp.style.bottom = 'auto'; rp.style.transform = 'none';
-    }
-    clampPanel(rp); reclampAllPanels();
-  }
+// #52: 탭형 환경설정 창 — 타이틀 ⚙️ / 인게임 ESC / 모바일 톱니 3경로가 모두 이 전용 오버레이를 개폐한다.
+// 중앙 고정 창이라 clampPanel/updateUiScale 위치 로직은 호출하지 않는다(함수 자체는 존치).
+function settingsOpen() { return $('settings-screen').classList.contains('show'); }
+function openSettings(tab) {
+  const scr = $('settings-screen');
+  scr.classList.add('show');
+  scr.style.display = 'flex';
+  if (tab) switchSettingsTab(tab);
+  renderControlsGuide();
 }
-// P1-D: 모바일 톱니(gear)로 설정을 열 때 — 항상 펼침 + 우상단 안전 위치로 교정
-function openSettingsFromGear() {
-  const rp = $('render-panel');
-  const wasHidden = rp.style.display === 'none';
-  if (!wasHidden) { rp.style.display = 'none'; return; } // 이미 열려 있으면 닫기(토글 동작 유지)
-  rp.style.display = '';
-  rp.classList.remove('collapsed'); // 1) gear 경로는 항상 펼침 상태로
-  const min = rp.querySelector('.p-min');
-  if (min) min.textContent = '–';
-  // 2) 저장된 위치가 좌상단(0,0) 부근(상단 24px 이내)이면 무시하고 우상단 안전 위치로 강제
-  const savedT = uiState.render?.t;
-  const rect = rp.getBoundingClientRect();
-  const z = getUiz();
-  // 저장값뿐 아니라 "실제로 열린 위치"도 본다 — 인라인 스타일이 0,0으로 깔린 채
-  // 저장값만 정상인 경우(clampPanel 과거 버그의 잔재)를 구제
-  const nearTop = savedT == null || savedT <= 24 || (rect.top / z) <= 24;
-  const preW = rect.width / z;
-  const safeTop = 28;                                   // 상태바 회피 고정 마진
-  const safeLeft = Math.max(6, innerWidth - preW - 8);  // 우측 여백 8px 기준 left 계산
-  if (nearTop) {
-    rp.style.left = safeLeft + 'px';
-    rp.style.top = safeTop + 'px';
-    rp.style.right = 'auto'; rp.style.bottom = 'auto'; rp.style.transform = 'none';
-    uiState.render = { l: safeLeft, t: safeTop, c: false };
-    saveUiState();
-  }
-  clampPanel(rp);
+function closeSettings() {
+  const scr = $('settings-screen');
+  scr.classList.remove('show');
+  scr.style.display = 'none';
 }
-// 설정 진입 문법(v0.9.1): PC = ESC 전용 / 모바일 = 우측 상단 톱니 전용 — 인게임에선 양쪽 다 기본 숨김
+function toggleSettingsPanel() { settingsOpen() ? closeSettings() : openSettings(); }
+// 하위 호환: 기존 gear 진입점 명칭 유지 (토글)
+function openSettingsFromGear() { toggleSettingsPanel(); }
+function switchSettingsTab(name) {
+  document.querySelectorAll('#settings-tabs .settings-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('#settings-tabbody .settings-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
+}
+// 컨트롤 탭 안내표 — PC/모바일 분기. (리바인딩은 Phase E 자리 표시)
+function renderControlsGuide() {
+  const el = $('controls-guide'); if (!el) return;
+  const row = (k, d) => `<div class="cg-row"><span class="cg-key">${k}</span><span class="cg-desc">${d}</span></div>`;
+  let html;
+  if (isPcInput) {
+    html = row('ESC', t('ctrl.esc')) + row('P', t('ctrl.pause')) + row('Q / E', t('ctrl.rotview'))
+      + row('R', t('ctrl.rotate')) + row('Del', t('ctrl.reclaim'));
+  } else {
+    html = row(t('ctrl.tap.k'), t('ctrl.tap')) + row(t('ctrl.drag.k'), t('ctrl.drag')) + row(t('ctrl.pinch.k'), t('ctrl.pinch'));
+  }
+  el.innerHTML = html + `<div class="cg-note">${t('ctrl.rebindSoon')}</div>`;
+}
+// 설정 진입 문법: PC = ESC / 모바일 = 우측 상단 톱니. 창은 중앙 고정.
 // ($ 헬퍼는 이 시점에 TDZ라 getElementById 직접 사용)
 {
   const gear = document.getElementById('btn-gear');
   if (gear) {
     if (!isPcInput) gear.style.display = '';   // 터치 기기에서만 노출
-    gear.addEventListener('click', openSettingsFromGear); // P1-D: 모바일 안전 위치/펼침 보장
+    gear.addEventListener('click', () => toggleSettingsPanel());
   }
-  if (!isPcInput) document.getElementById('render-panel').style.display = 'none'; // 모바일도 기본 숨김
+  // 탭 전환 / 닫기 / 기본값 버튼 배선
+  document.querySelectorAll('#settings-tabs .settings-tab').forEach(b =>
+    b.addEventListener('click', () => switchSettingsTab(b.dataset.tab)));
+  document.getElementById('settings-x').addEventListener('click', () => closeSettings());
+  document.getElementById('btn-settings-close').addEventListener('click', () => closeSettings());
+  // 오버레이 배경 클릭 시 닫기 (창 내부 클릭은 유지)
+  document.getElementById('settings-screen').addEventListener('pointerdown', e => { if (e.target.id === 'settings-screen') closeSettings(); });
+  document.getElementById('btn-settings-default').addEventListener('click', () => resetSettingsTabToDefault());
+}
+// 현재 활성 탭의 opts만 선언부 기본값으로 복원 (전역 리셋 아님)
+function resetSettingsTabToDefault() {
+  const active = document.querySelector('#settings-tabs .settings-tab.active')?.dataset.tab;
+  const D = OPTS_DEFAULT;
+  if (active === 'graphics') {
+    opts.pixel = D.pixel; opts.quant = D.quant; opts.dither = D.dither;
+    opts.ceil = D.ceil; opts.lowSpec = D.lowSpec; opts.fpsCap = D.fpsCap;
+    applyOpts(); applyLowSpec();
+  } else if (active === 'sound') {
+    opts.bgm = D.bgm; opts.bgmVol = D.bgmVol; opts.sfxVol = D.sfxVol; opts.bgIdle = D.bgIdle;
+    // 사운드 UI + 실효 반영
+    const eb = $('opt-bgm'); if (eb) eb.checked = !!opts.bgm;
+    const ev = $('opt-bgmvol'); if (ev) ev.value = Math.round(opts.bgmVol * 100);
+    const es = $('opt-sfxvol'); if (es) es.value = Math.round(opts.sfxVol * 100);
+    const ei = $('opt-bgidle'); if (ei) ei.checked = opts.bgIdle !== false;
+    setSfxVol(opts.sfxVol); syncBgm();
+  } else if (active === 'gameplay') {
+    opts.autoEat = D.autoEat; opts.lang = D.lang;
+    // 자동 진행은 Day10 해금 상태를 존중 — 기본(off)만 복원
+    opts.autoPlay = D.autoPlay; syncAutoBtn();
+    applyOpts();
+  }
+  scheduleSave();
+  toast(t('settings.defaultDone'));
 }
 addEventListener('keydown', e => {
   if (titleVisible) return;
   if (e.key === 'q' || e.key === 'Q') camState.targetYaw -= Math.PI / 4;
   if (e.key === 'e' || e.key === 'E') camState.targetYaw += Math.PI / 4;
   if (e.key === 'Escape') {
-    // 우선순위: 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 패널 토글
-    if (placing) { cancelPlacing(); }
+    // 우선순위: 설정 창 닫기 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
+    if (settingsOpen()) { closeSettings(); }
+    else if (placing) { cancelPlacing(); }
     else if (selected) { deselect(); }
     else if ($('modal-back').classList.contains('show')) { closeModal(); }
-    else if (isPcInput) { toggleSettingsPanel(); }
+    else if (isPcInput) { openSettings(); }
   }
   if (e.key === 'r' || e.key === 'R') rotateActive();
   if (e.key === 'p' || e.key === 'P') setPaused(!paused);
@@ -5942,7 +6052,8 @@ function makeDraggablePanel(el, key, title) {
 }
 // 화면 밖으로는 절대 나가지 않게 — 사용자가 옮겼든 기본 위치든 매 리사이즈마다 전 패널에 적용
 function reclampAllPanels() {
-  for (const id of ['hud', 'exp-panel', 'render-panel', 'clock-panel', 'res-bar'])
+  // #52: render-panel 제거 — 설정은 중앙 고정 오버레이(#settings-screen)라 클램프 대상 아님
+  for (const id of ['hud', 'exp-panel', 'clock-panel', 'res-bar'])
     clampPanel($(id));
 }
 // 사용자가 드래그로 옮기지 않은(uiState 미저장) 패널은 화면 크기/스케일이 바뀔 때마다
@@ -5957,32 +6068,8 @@ function autoStackPanels() {
     const r = elm.getBoundingClientRect();
     return { left: r.left / z, top: r.top / z, right: r.right / z, bottom: r.bottom / z, width: r.width / z };
   };
-  // 설정 패널(render-panel) 자체가 카메라 컨트롤(#cam-ctrl)과 가로로 겹치지 않게:
-  // 뷰포트가 좁아 render-panel 오른쪽 경계가 cam-ctrl 왼쪽 경계를 침범하면 접어서 폭을 줄인다.
-  // (res-bar를 그 아래로 이어붙이기 전에 먼저 최종 높이를 확정해야 여백이 낭비되지 않는다)
-  if (!uiState.render) {
-    const rp = $('render-panel');
-    const cc = $('cam-ctrl');
-    if (rp && cc && !rp.classList.contains('collapsed')) {
-      const rr = rp.getBoundingClientRect();
-      const cr = cc.getBoundingClientRect();
-      const overlapsVert = rr.bottom > cr.top;
-      if (overlapsVert && rr.right > cr.left) rp.classList.add('collapsed');
-    }
-  }
-  // 자원 패널: 설정 패널(render-panel) 바로 아래로 이어붙인다 (둘 다 접혀 있으면 헤더만 겹쳐 쌓이므로
-  // 작은 창에서도 그대로 적용 — cam-ctrl과의 우발적 겹침을 피하는 데도 도움이 된다)
-  if (!uiState.res && !uiState.render && innerWidth >= 760) {
-    const rp = $('render-panel');
-    const rb = $('res-bar');
-    if (rp && rb) {
-      const r = preRect(rp);
-      const rbW = preRect(rb).width;
-      rb.style.top = Math.round(r.bottom + 10) + 'px';
-      rb.style.left = Math.round(r.right - rbW) + 'px';
-      rb.style.right = 'auto'; rb.style.bottom = 'auto'; rb.style.transform = 'none';
-    }
-  }
+  // #52: 설정이 중앙 고정 오버레이가 되면서 우상단 render-panel 자동 스택 로직은 불필요해졌다.
+  // res-bar는 자체 기본 위치(CSS)를 사용한다.
   // 탐험 패널: hud 바로 아래로
   if (!uiState.exp && !uiState.hud && innerWidth >= 760) {
     const hud = $('hud');
@@ -6025,7 +6112,7 @@ function hideTitle() {
   titleVisible = false;
   gameStarted = true;
   document.body.classList.remove('title-mode');
-  $('render-panel').classList.remove('show-in-title'); // 타이틀 전용 설정 열람 상태 초기화
+  closeSettings(); // #52: 타이틀에서 열어둔 설정 창이 있으면 닫고 진입
   $('title-screen').style.display = 'none';
   // 타이틀 화면에선 .panel이 display:none이라 이전 onResize() 때 패널 크기가 0으로 측정됐다.
   // 실제 패널이 보이기 시작한 지금 다시 계산해 자동 배치를 맞춘다.
@@ -7879,12 +7966,9 @@ $('cam-home').addEventListener('click', () => { camState.targetYaw = Math.PI / 4
 // 패널 드래그/접기 활성화
 makeDraggablePanel($('hud'), 'hud', t('panel.hud'));
 makeDraggablePanel($('exp-panel'), 'exp', t('panel.exp'));
-makeDraggablePanel($('render-panel'), 'render', t('panel.render'));
 makeDraggablePanel($('clock-panel'), 'clock', t('panel.clock'));
 makeDraggablePanel($('res-bar'), 'res', t('panel.res'));
-// v2.4: PC는 설정 패널을 기본 숨김 — ESC로 토글 (게임 문법). 터치 기기는 항상 표시(현행 유지).
-// display만 제어하므로 $('opt-...') 접근/이벤트는 숨겨진 상태에서도 정상 동작한다.
-if (isPcInput) $('render-panel').style.display = 'none';
+// #52: 설정은 전용 중앙 오버레이(#settings-screen) — 시작 시 항상 닫힘. 전 경로(타이틀·ESC·톱니)가 개폐.
 
 // UI 스케일 상수 — 아래 부팅 분기(ps-load 경로의 hideTitle→onResize→updateUiScale)보다
 // 먼저 평가되어야 한다. 선언이 뒤에 있으면 불러오기 부팅이 TDZ로 죽는다.
@@ -7909,12 +7993,8 @@ $('lang-en').addEventListener('click', () => pickTitleLang('en'));
 $('t-new').addEventListener('click', () => openSlotModal('new'));
 $('t-load').addEventListener('click', () => openSlotModal('load'));
 $('t-help').addEventListener('click', openHelpModal);
-// 타이틀에서 설정 패널 열람: body.title-mode가 .panel을 숨기므로 show-in-title로 예외 처리
-$('t-settings').addEventListener('click', () => {
-  const panel = $('render-panel');
-  panel.classList.toggle('show-in-title');
-  if (panel.classList.contains('show-in-title')) clampPanel(panel);
-});
+// #52: 타이틀 ⚙️ — 전용 설정 오버레이 토글 (인게임과 동일 창)
+$('t-settings').addEventListener('click', () => toggleSettingsPanel());
 /* ============================================================
    QA 치트 모드 (#43) — 배포본 숨은 진입점
    진입: 타이틀 버전 표기(#title-ver) 5연타(2초 내). 인게임 미노출(타이틀에서만).
@@ -8279,4 +8359,7 @@ window.__shelter = {
   canMoveSomewhere, updateMoveBadge, showEventChip, hideEventChip, reclaimSelected,
   currentSlot: () => currentSlot, doSaveNow, flushSave,
   setLang, applyStaticI18n, t,
+  // #52 설정 창 (하네스/QA용)
+  openSettings, closeSettings, toggleSettingsPanel, switchSettingsTab,
+  settingsOpen, resetSettingsTabToDefault, opts,
 };
