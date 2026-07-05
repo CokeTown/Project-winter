@@ -1,0 +1,31 @@
+/* ============================================================
+   cat.js — Nine Winters 고양이 동반자 시스템 (엔지니어링 분리 Phase 2)
+   ------------------------------------------------------------
+   목적: 고양이 메시(복셀/리깅)·텍스처·AI(모드 전환/걷기/회피/퍼치)·애니메이션·
+         스폰/디스폰을 game.js에서 분리한다. 함수들이 game.js 내부 심볼(scene·items·
+         DEFS·state 및 유틸 B/lamb/makeCanvasTex/disposeDeep/footprintOf/surfaceRectOf/
+         itemsOn/shadowDirty)을 참조하므로, 팩토리 makeCatSystem(ctx)로 내보내고
+         game.js가 ctx를 주입한다(events.js 선례와 동일한 의존성 주입).
+   원칙: import 방향은 game→systems 단방향(여긴 game.js를 import하지 않는다).
+         본문은 원본과 문자열 동일 — 단 한 곳, ROOM(셸터 로드 시 새 객체로 재할당되는
+         가변 바인딩) 참조 4개소만 getRoom()으로 바꿔 '현재 방'을 읽게 한다(캡처 stale 방지,
+         행동 보존). 그 외 로직은 한 글자도 바꾸지 않는다.
+   잔류(이동 안 함): 클로즈업 카메라(catCam/enterCatCloseup/exitCatCloseup)는 camera
+         상태와 공유·입력 핸들러에 얽혀 있어 game.js에 남긴다. despawnCat이 exitCatCloseup를
+         호출하므로 ctx로 주입받는다. 쓰다듬기(pickCat/petCatResponse)도 레이캐스트·입력
+         결합이라 game.js 잔류 — catObj를 getCat()로 읽고 petHappy/petPurr를 직접 쓴다.
+   ctx 필드: THREE, GLTFLoader (three addons) / B, lamb, makeCanvasTex, disposeDeep,
+         footprintOf, surfaceRectOf, itemsOn, shadowDirty (game.js 유틸) / scene, items,
+         DEFS, state (상태·씬 참조 — 재할당 안 됨) / CAT_POSES, CAT_PERCH_Y (data/items) /
+         getRoom (() => ROOM 라이브 게터) / catCam, exitCatCloseup (game.js 클로즈업 잔류부).
+   출처: game.js 고양이 블록(원본 그대로 이동, 팩토리로 래핑 + ROOM→getRoom()만 조정).
+   ============================================================ */
+export function makeCatSystem(ctx) {
+  const {
+    THREE, GLTFLoader,
+    B, lamb, makeCanvasTex, disposeDeep,
+    footprintOf, surfaceRectOf, itemsOn, shadowDirty,
+    scene, items, DEFS, state,
+    CAT_POSES, CAT_PERCH_Y,
+    getRoom, catCam, exitCatCloseup,
+  } = ctx;

@@ -1,0 +1,15 @@
+
+  // ── game.js로 노출하는 API (외부 호출·상태 접근) ──
+  //   catObj/_catSpawning/catSupportDirty는 이 클로저의 모듈 상태다. game.js는 아래
+  //   접근자를 통해서만 읽고, 쓰기가 필요한 곳(petHappy/petPurr·mode·timer·catSupportDirty)은
+  //   getCat()가 돌려주는 객체 참조나 전용 setter로 원본과 동일하게 조작한다.
+  return {
+    spawnCat, despawnCat, updateCat,
+    catPointBlocked, catSupportValid,
+    catFaceTex, catFaceHappyTex,
+    getCat: () => catObj,
+    isSpawning: () => _catSpawning,
+    getCatSupportDirty: () => catSupportDirty,
+    setCatSupportDirty: (v) => { catSupportDirty = v; },
+  };
+}

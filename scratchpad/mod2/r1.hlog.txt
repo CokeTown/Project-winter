@@ -1,0 +1,6 @@
+[H] harness boot pid 36052 OUT_DIR G:/Project_winter/scratchpad/mod2 DEV http://localhost:8420/
+[H] app ready
+[H] loading url...
+[H] url loaded, waiting __shelter
+[H] writing result, keys: sims,saves,__consoleErrors
+[H] done

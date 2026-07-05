@@ -1240,6 +1240,16 @@
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_region_lab.png",
       "prompt": "a half-buried concrete laboratory entrance with a heavy blast door ajar and a faded radiation trefoil. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "steam_header_clean",
+      "purpose": "Steam 헤더 캡슐 base (텍스트 없음, 로고 PNG 오버레이용)",
+      "w": 460,
+      "h": 215,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/steam_header_clean.png",
+      "prompt": "Wide isometric shelter scene at dusk, aspect ratio close to 2.14:1 (compose for a 1536x1024 canvas cropped to a wide 460x215 band, keep key content in the middle band and leave the upper sky relatively open and uncluttered). A cozy cutaway shipping-container room viewed wide to show two furnished corners: on one side a neatly made bed with a warm candle on a nightstand, on the other a small wood stove glowing orange and stacked crates, warm orange candle and firelight filling the interior. Outside the container's open side, a distant ruined post-apocalyptic city skyline and leafless trees stand against a cold blue-grey twilight sky, gentle snow falling. Strong warm-vs-cool contrast: glowing orange interior against desaturated blue dusk exterior. Cozy pixel art, isometric, soft dithering. ABSOLUTELY NO TEXT, NO LETTERS, NO WORDMARK anywhere in the image — leave the sky clean and empty for a logo to be added later."
     }
   ]
 }

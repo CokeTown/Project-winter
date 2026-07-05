@@ -1,0 +1,152 @@
+{
+  "steps": [
+    {
+      "label": "spawn",
+      "cat": true,
+      "spawning": false,
+      "support": {
+        "baseY": 0.6,
+        "mode": "sit",
+        "supportValid": true,
+        "dirty": false
+      }
+    },
+    {
+      "label": "mode:walk",
+      "mode": "walk",
+      "baseY": 0.6,
+      "posY": 0.6
+    },
+    {
+      "label": "mode:sit",
+      "mode": "sit",
+      "baseY": 0.6,
+      "posY": 0.6
+    },
+    {
+      "label": "mode:sleep",
+      "mode": "sleep",
+      "baseY": 0.6,
+      "posY": 0.6
+    },
+    {
+      "label": "mode:sprawl",
+      "mode": "sprawl",
+      "baseY": 0.6,
+      "posY": 0.6
+    },
+    {
+      "label": "mode:groom",
+      "mode": "groom",
+      "baseY": 0.6,
+      "posY": 0.6
+    },
+    {
+      "label": "mode:stretch",
+      "mode": "stretch",
+      "baseY": 0.6,
+      "posY": 0.6
+    },
+    {
+      "label": "mode:play",
+      "mode": "play",
+      "baseY": 0.6,
+      "posY": 0.633
+    },
+    {
+      "label": "closeup:enter",
+      "cam": {
+        "active": true,
+        "saved": {
+          "yaw": 0.7853981633974483,
+          "elev": 0.5759586531581288,
+          "zoom": 0.6428571428571429
+        },
+        "center": [
+          2.667797771120695,
+          0.8529938806664678,
+          -0.8274131481150644
+        ],
+        "zoom": 12.999926347277334,
+        "dist": 8.000095365375012
+      }
+    },
+    {
+      "label": "closeup:exit",
+      "cam": {
+        "active": false,
+        "saved": null,
+        "center": [
+          2.667797771120695,
+          0.8529938806664678,
+          -0.8274131481150644
+        ],
+        "zoom": 0.6428571428571429,
+        "dist": 23.58886693927322
+      }
+    },
+    {
+      "label": "pet",
+      "pet": {
+        "petHappy": 1.9473000000119212,
+        "petPurr": 0.9736500000059606,
+        "eyesClosed": true
+      }
+    },
+    {
+      "label": "reclaim-landing",
+      "baseY": 0.5,
+      "mode": "sit"
+    },
+    {
+      "label": "migrate",
+      "dest": "bunker",
+      "catAfter": true,
+      "current": "container"
+    },
+    {
+      "label": "weather:rain",
+      "type": "rain",
+      "visible": true,
+      "draw": 1100
+    },
+    {
+      "label": "weather:snow",
+      "type": "snow",
+      "visible": true,
+      "draw": 850
+    },
+    {
+      "label": "weather:storm",
+      "type": "storm",
+      "visible": true,
+      "draw": 2200
+    },
+    {
+      "label": "weather:ash",
+      "type": "ash",
+      "visible": true,
+      "draw": 380
+    },
+    {
+      "label": "weather:clear",
+      "type": "clear",
+      "visible": false,
+      "draw": 380
+    },
+    {
+      "label": "frost",
+      "frostLevel": 0,
+      "netSev": 0,
+      "panes": [
+        0
+      ]
+    },
+    {
+      "label": "envFx",
+      "snowCover": 0.04108201507767375,
+      "wetness": 0.03999283995447391
+    }
+  ],
+  "errors": []
+}
