@@ -21,12 +21,25 @@ export const BAL = {
     drinkFullGate: 85,     // thirst 이 값 초과면 수동 음용 거부
   },
 
-  /* ── 취침 / 에너지 (restEnergyValue) ── */
+  /* ── 취침 / 에너지 (restEnergyValue / sleepUntilMorning) ── */
   rest: {
     bedEnergy: 90,       // 침대에서 취침 시 회복 에너지
     floorEnergy: 65,     // 바닥 취침 회복 에너지
     cozyThreshold: 75,   // comfort 이 값 이상이면 취침 보너스
     cozyBonus: 10,       // 취침 에너지 보너스 (cozy 달성 시)
+
+    /* ── v1.2.0 취침 자율화 (디렉터 승인 설계) ──
+       자정 강제 취침을 폐지하고, "몇 시에 자느냐"를 회복량으로 보상/처벌한다.
+       기준 회복량(bedEnergy/floorEnergy + cozyBonus)에 아래 시각 보정을 가산한다.
+       규칙: 21~23시 +earlyBonus / 00~00:59 보정 0 / lateStartHour(01시)부터 매 정시 -latePerHour 누적(하한 -lateCap) /
+             collapseHour(05시)엔 자동으로 쓰러지듯 취침(회복은 floorEnergy 수준, 전용 문구). */
+    earlyBonus: 5,       // 21~23시 취침 에너지 보너스 (일찍 자면 +5)
+    earlyStartHour: 21,  // 이른 취침 보너스 시작 시각
+    earlyEndHour: 23,    // 이른 취침 보너스 끝 시각(포함) — 24(자정)부터는 0
+    lateStartHour: 1,    // 이 시각(01시)부터 늦잠 페널티 누적 시작
+    latePerHour: 7,      // 01시 이후 매 1시간당 회복 -7
+    lateCap: 28,         // 늦잠 페널티 누적 하한 (최대 -28)
+    collapseHour: 5,     // 이 시각(05시)에 도달하면 자동으로 쓰러지듯 취침
   },
 
   /* ── 탐험 (startExpedition / _simDaysInner 탐험 비용) ── */
@@ -149,6 +162,35 @@ export const BAL = {
     padCursorSpeed: 780,    // 가상 커서 속도 (px/초, 스틱 최대 기울기 기준)
     padCameraSpeed: 2.6,    // 우스틱 카메라 회전 속도 (rad/초 계수)
     padZoomStep: 1.06,      // LB/RB 줌 스텝 (프레임당 배수, 홀드 연속 줌)
+  },
+
+  /* ── 자동 진행 지역 선택 (runAutoPlay, v1.2.0 다양화) ──
+     기존 그리디(항상 최고 eff = 주거)를 결핍 기반 가중으로 교체한다.
+     각 후보 지역의 가중 = eff (성공률) × (1 + 부족자원 산지 보너스) × 연속방문 감쇠.
+     부족 판정: 자원 재고가 scarceThreshold 미만이면 "부족"으로 보고, 그 자원을 loot로 주는 지역에 보너스.
+     ※ 신규 시스템(염장/얼음낚시/프로젝트/암시장)은 자동 대상 아님 — 설계 의도(수동 전략 레버). */
+  auto: {
+    scarceThreshold: 8,     // 이 값 미만이면 해당 자원을 "부족"으로 간주 (하루 소비 기준 여유분)
+    scarceWeightPerRes: 0.6,// 부족 자원 1종을 산지로 주는 지역당 가중 보너스 (합산)
+    revisitDecay: 0.5,      // 직전 방문 지역 재선택 가중 배수 (연속 편중 완화)
+    minEnergy: 30,          // 자동 탐험 출발 최소 에너지 (기존 하드코딩 이관)
+    maxExpPerDay: 4,        // 자동 탐험 일일 상한 (기존 하드코딩 이관 — 5회 중 4회까지 대행)
+    // 부족 판정 대상 자원 (신선/물은 autoEat이 따로 관리하므로 제외 — 건축/제작/유지 자원 위주)
+    scarceWatch: ['fuel', 'parts', 'material', 'salt', 'cloth', 'battery', 'canned'],
+  },
+
+  /* ── 고양이 클로즈업 카메라 (v1.2.0 디렉터 오더) ──
+     비배치 모드에서 고양이 탭 → 카메라가 고양이로 글라이드 클로즈업. 드래그/ESC/빈곳 탭으로 복원.
+     거리/각도는 얼굴 픽셀 텍스처 가독 기준 튜닝(화면 1/3 채움, 눈높이 살짝 위 3/4). */
+  catCam: {
+    // 직교 카메라라 화면상 크기는 zoom만 좌우한다(view height = 9/zoom). 고양이 몸통 ~0.35u가 화면 ~1/3을
+    // 채우려면 view height ~1.1u → zoom ~8. dist는 각도/클리핑용(투영 크기엔 무영향).
+    dist: 8,             // 클로즈업 궤도 거리 (각도·그림자용)
+    zoom: 8.0,           // 클로즈업 직교 줌 (view height ≈ 1.1u — 얼굴 텍스처 가독)
+    elevDeg: 22,         // 클로즈업 앙각(도) — 눈높이 살짝 위 내려보기(3/4 각도)
+    heightAbove: 0.22,   // 고양이 루트 위로 카메라 타겟을 올리는 높이 (얼굴/가슴 기준선)
+    glideLerp: 0.16,     // 진입/추적 카메라 보간 계수 (급회전 금지 — 지연 추적)
+    yawOffset: 0.9,      // 고양이 정면 대비 카메라 yaw 오프셋(rad) — 3/4 측면각
   },
 
   /* ── 쾌적함 4요소 분해 (Living Shelter #29) ──

@@ -9,7 +9,7 @@
   "2652: limits: '🌧️ 옥상 빗물받이 — 비/눈 오는 날 깨끗한 물 +2 (자급 가능)', limitsEn: '🌧️ Rooftop rain catch — cle",
   "2890: moveCost: { parts: 3, material: 3 }, limits: '🌬️ 사방 유리 — 비/눈 오는 날 쾌적함 -6', limitsEn: '🌬️",
   "3070: bottle:    { name: '물병',     nameEn: 'Water Bottle', emoji: '🥤', cost: { water: 1 },  eff",
-  "3071: canned:    { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫', cost: { food: 1 },   eff: ",
+  "3159: canned:    { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫', cost: { canned: 1 }, eff: ",
   "3072: flashlight:{ name: '손전등',   nameEn: 'Flashlight', emoji: '🔦', cost: { battery: 1 },eff: '",
   "3073: gloves:    { name: '장갑',     nameEn: 'Gloves', emoji: '🧤', cost: { cloth: 1 },  eff: '부상 ",
   "3074: raincoat:  { name: '우의',     nameEn: 'Raincoat', emoji: '🧥', cost: { cloth: 1 },  eff: '날",

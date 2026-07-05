@@ -53,6 +53,7 @@ const GRID = 0.25;
 const SAVE_KEY = 'project-shelter-web-v2';
 const OLD_SAVE_KEY = 'project-shelter-web-v1';
 const GAME_MIN_PER_SEC = 1.5;   // 실제 1초 = 게임 1.5분 (하루 = 16분)
+const WAKE_HOUR = 7;            // 취침 후 기상 시각 (07:00) — sleepUntilMorning/결산 게이트 공용 (v1.2.0)
 
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
@@ -72,15 +73,59 @@ const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
 const camState = { yaw: Math.PI / 4, elev: THREE.MathUtils.degToRad(33), dist: 24, zoom: 0.6, targetYaw: Math.PI / 4 };
 const camCenter = new THREE.Vector3(0, 0.9, 0);
 
+// ④ 고양이 클로즈업 카메라 — 비배치 모드에서 고양이 탭 시 얼굴로 글라이드. 드래그/ESC/빈곳 탭으로 복원.
+//   활성 중엔 카메라 타겟을 고양이(눈높이 살짝 위)로 옮기고 거리/줌/앙각을 클로즈업 프로필로 보간(지연 추적).
+const catCam = {
+  active: false,
+  center: new THREE.Vector3(0, 0.9, 0), // 실제 추적 중심(고양이로 지연 수렴)
+  saved: null,                          // 복원용 { yaw, elev, zoom }
+};
+function enterCatCloseup() {
+  if (catCam.active || !catObj) return;
+  catCam.saved = { yaw: camState.targetYaw, elev: camState.elev, zoom: camState.zoom };
+  catCam.center.copy(camCenter); // 현재 중심에서 고양이로 부드럽게 출발
+  catCam.active = true;
+}
+function exitCatCloseup() {
+  if (!catCam.active) return;
+  catCam.active = false;
+  if (catCam.saved) {
+    camState.targetYaw = catCam.saved.yaw;
+    camState.zoom = catCam.saved.zoom;
+    camState.elev = catCam.saved.elev;
+    catCam.saved = null;
+  }
+}
 function updateCamera() {
-  camState.yaw += (camState.targetYaw - camState.yaw) * 0.15;
-  const { yaw, elev, dist } = camState;
+  const C = BAL.catCam;
+  let center = camCenter, dist = camState.dist, elev = camState.elev;
+  if (catCam.active && catObj) {
+    // 고양이 눈높이 살짝 위를 지연 추적(급회전 금지) — center를 catObj로 lerp
+    const p = catObj.g.position;
+    catCam.center.x += (p.x - catCam.center.x) * C.glideLerp;
+    catCam.center.y += ((p.y + C.heightAbove) - catCam.center.y) * C.glideLerp;
+    catCam.center.z += (p.z - catCam.center.z) * C.glideLerp;
+    center = catCam.center;
+    // 3/4 측면각: 고양이 정면(그룹 rotation.y) 기준 yaw 오프셋으로 얼굴을 비스듬히 잡는다.
+    const facing = catObj.g.rotation.y;
+    camState.targetYaw = facing + C.yawOffset;
+    // 거리/줌/앙각을 클로즈업 프로필로 보간(글라이드 ~1초)
+    dist = camState.dist + (C.dist - camState.dist) * C.glideLerp; camState.dist = dist;
+    elev = camState.elev + (THREE.MathUtils.degToRad(C.elevDeg) - camState.elev) * C.glideLerp; camState.elev = elev;
+    camState.zoom += (C.zoom - camState.zoom) * C.glideLerp;
+  } else if (camState.dist !== 24) {
+    // 복원: 클로즈업에서 빠져나오면 기본 거리/앙각으로 서서히 되돌린다
+    camState.dist += (24 - camState.dist) * 0.16; dist = camState.dist;
+    if (Math.abs(dist - 24) < 0.05) camState.dist = 24;
+  }
+  camState.yaw += (camState.targetYaw - camState.yaw) * (catCam.active ? BAL.catCam.glideLerp : 0.15);
+  const yaw = camState.yaw;
   camera.position.set(
-    camCenter.x + dist * Math.cos(elev) * Math.cos(yaw),
-    camCenter.y + dist * Math.sin(elev),
-    camCenter.z + dist * Math.cos(elev) * Math.sin(yaw)
+    center.x + dist * Math.cos(elev) * Math.cos(yaw),
+    center.y + dist * Math.sin(elev),
+    center.z + dist * Math.cos(elev) * Math.sin(yaw)
   );
-  camera.lookAt(camCenter);
+  camera.lookAt(center);
   const aspect = innerWidth / innerHeight;
   const h = 9 / camState.zoom;
   camera.left = -h * aspect / 2; camera.right = h * aspect / 2;
@@ -613,7 +658,11 @@ function applyTimeLighting() {
   hemi.intensity *= 1 + (wSun - 1) * 0.45 * dayness;
   // 달: 밤/여명에만 노출. 낮(7~18h)엔 dayness 계산과 무관하게 절대 숨긴다 (실기기 신고: 낮 하늘의 붉은 원).
   // 색은 창백한 차가운 톤(0x9db4d8 계열)으로 고정 — 붉은 여명 하늘과 대비되도록.
-  moonMesh.visible = dayness < 0.35 && (h < 7 || h >= 18);
+  // ⑥-d: 실내 셸터(지하철 등 — 사방·천장이 막혀 하늘이 안 보이는 지오메트리)에선 시간대 무관하게 천체(달/별) 전부 숨김.
+  //   벙커는 돔 외피에 개구부가 있어 하늘이 보이는 구조라 indoor=false → 유지. 판정 근거: SHELTERS[*].indoor.
+  const indoorSh = !!SHELTERS[state.current]?.indoor;
+  moonMesh.visible = !indoorSh && dayness < 0.35 && (h < 7 || h >= 18);
+  if (indoorSh) stars.material.opacity = 0; // 실내: 별도 숨김(위 starsBase 계산 무시)
   updateWindowSkies();
   updateSunShafts();
 }
@@ -1173,6 +1222,7 @@ function buildRuinCity(parent, rand, opt) {
 ============================================================ */
 let ROOM = { w: 6.4, d: 2.9, h: 2.4 };
 let wallList = [];      // { group, normal }
+let ceilCullList = [];  // { group, y } — 실내를 덮는 천장/지붕. 카메라가 천장보다 높은(부감) 각도면 숨겨 실내를 보이게 한다 (⑥-a, 전 셸터 공통).
 let blockers = [];      // 고정 소품 충돌 영역 { x, z, w, d }
 let envDyn = {};        // 환경별 동적 요소
 let bunkerStairsObj = null; // #55: 벙커 하강 계단 상호작용 히트 대상 (없으면 null)
@@ -1328,6 +1378,13 @@ function makeWalls(defs) {
     wallList.push({ group: d.group, normal: d.normal });
   }
 }
+// ⑥-a (전 셸터 공통): 실내를 덮는 천장/지붕을 컬링 목록에 등록한다. obj는 이미 씬에 붙은 Mesh/Group.
+//   y = 천장 대략 높이(카메라가 이보다 확실히 위에 있으면=부감 → 숨김). 셸터별 buildRoom에서 천장 메시 생성 직후 호출.
+//   (ARC: 셸터별 복붙 컬링 로직 없이, 태그만 붙이면 updateWallCulling의 공통 루프가 일괄 처리)
+function tagCeiling(obj, y) {
+  if (obj) ceilCullList.push({ group: obj, y });
+  return obj;
+}
 function groundPlane(colFn, hFn, size = 300, seg = 52) {
   const gGeo = new THREE.PlaneGeometry(size, size, seg, seg);
   gGeo.rotateX(-Math.PI / 2);
@@ -1378,13 +1435,15 @@ const SHELTERS = {
       // 외형 개성화 (#18): 지붕 방수포 + 고정 로프 + 문짝 스텐실 — 밋밋한 철제 박스 실루엣 깨기
       {
         const crand = seededRand(77);
-        // 지붕 위 접힌 방수포 (한쪽으로 쏠려 늘어짐)
+        // 지붕 위 접힌 방수포 (한쪽으로 쏠려 늘어짐) — 실내를 덮으므로 천장 컬링 그룹에 묶는다(⑥-a).
+        const roofG = new THREE.Group();
         const tarp = new THREE.Mesh(new THREE.BoxGeometry(w * 0.62, 0.05, d + 0.5), lamb(0x4a5560));
         tarp.position.set(-w * 0.12, h + 0.03, 0.1); tarp.rotation.z = 0.03; tarp.castShadow = true;
-        roomGroup.add(tarp);
+        roofG.add(tarp);
         const tarp2 = new THREE.Mesh(new THREE.BoxGeometry(w * 0.22, 0.06, d + 0.6), lamb(0x3f4954));
         tarp2.position.set(-w * 0.32, h + 0.06, 0); tarp2.rotation.z = 0.16; tarp2.castShadow = true; // 접힌 자락
-        roomGroup.add(tarp2);
+        roofG.add(tarp2);
+        tagCeiling(roofG, h + 0.02); roomGroup.add(roofG);
         // 고정 로프 (지붕 → 처마)
         for (const sx of [-w * 0.28, w * 0.05, w * 0.24]) Cyl(roomGroup, 0.015, 0.015, 0.5, 0x2a2620, sx, h - 0.1, d / 2 + 0.08, 4).rotation.x = 0.4;
         // 문짝 스텐실 (뒷벽 +z 바깥면에 페인트 번호판)
@@ -1546,8 +1605,7 @@ const SHELTERS = {
         tarp.position.set(0, R - 0.15, zBack + (d + 0.6) / 2 + 0.2);
         tarp.rotation.z = 0.04;
         tarp.castShadow = tarp.receiveShadow = true;
-        roomGroup.add(tarp);
-        for (let k = -1; k <= 1; k++) Cyl(roomGroup, 0.03, 0.03, 0.5, 0x2f2a24, k * 1.0, R - 0.4, zBack + 0.6, 5);
+        tagCeiling(tarp, ROOM.h + 0.2); roomGroup.add(tarp); // ⑥-a: 부감에서 천장 덮개 투시
       }
       // 완전 수리(full): 아치 안쪽에 매끈한 콘크리트 라이너를 덧대 '온전한 천장' 느낌.
       if (roofFixed) {
@@ -1555,7 +1613,8 @@ const SHELTERS = {
         liner.rotation.z = Math.PI / 2; liner.rotation.y = Math.PI / 2;
         liner.position.set(0, 0, zBack + (d + 0.9) / 2);
         liner.material.side = THREE.BackSide;
-        roomGroup.add(liner);
+        // ⑥-a: 완전 수리 라이너는 실내를 덮는 천장 — 부감에서 투시. 컬링 임계는 방 천장 높이(ROOM.h) 기준.
+        tagCeiling(liner, ROOM.h + 0.2); roomGroup.add(liner);
       }
       // #55 뒷문 개방(backdoor): 뒷벽 개구부 + 전실(콘크리트 방: 선반/램프) + 바닥에서 지하로 이어지는 하강 계단.
       // 전실/계단은 back(뒷벽) 그룹에 붙여 뒷벽 컬링 마스크와 함께 처리한다(카메라가 앞에서 볼 때만 노출).
@@ -1583,6 +1642,10 @@ const SHELTERS = {
         const backWall = new THREE.Mesh(new THREE.BoxGeometry(ANTE_W, wallH, 0.16), conc2);
         backWall.position.set(DX, wallH / 2 - 0.1, zFar); backWall.receiveShadow = true; store.add(backWall);
         B(store, ANTE_W, 0.16, ANTE_D, 0x6f6b63, DX, wallH - 0.1, (zNear + zFar) / 2); // 천장
+        // ⑥-b 개방 후: 외부(후면)에서 "덧붙은 구조물"로 보이게 전실 지붕에 돌출 처마 슬래브 + 후면 보강 리브.
+        //   (벽/천장은 실내를 향하므로 후면 실루엣이 밋밋했다 — 지붕 캡으로 부착 구조물의 덩어리감을 준다.)
+        B(store, ANTE_W + 0.5, 0.16, ANTE_D + 0.4, 0x615d55, DX, wallH + 0.02, (zNear + zFar) / 2).castShadow = true;
+        for (const sx of [-1, 1]) B(store, 0.16, wallH, 0.16, 0x565049, DX + sx * (ANTE_W / 2 + 0.08), wallH / 2 - 0.1, zFar - 0.02).castShadow = true; // 후면 모서리 기둥
         // 선반 (기존 저장고 보너스 이전) + 상자
         for (let s = 0; s < 2; s++) B(store, 1.9, 0.06, 0.42, 0x77543a, DX, 0.7 + s * 0.62, zFar + 0.35);
         for (let c = 0; c < 3; c++) { const cr = B(store, 0.4, 0.4, 0.4, [0x8a6a48, 0x6a5a40, 0x7a6a54][c], DX - 0.6 + c * 0.6, 0.32, zFar + 0.9); cr.castShadow = true; }
@@ -1654,6 +1717,40 @@ const SHELTERS = {
 
         // store는 back 그룹 좌표계라 back의 위치/컬링을 그대로 따른다
         back.add(store);
+      } else {
+        // ⑥-b 개방 전: 돔 후면에 "잠긴 철문 + 콘크리트 프레임" 매스를 뚜렷이 세운다.
+        //   유저 신고("뒤가 허전하다 / 뭔가 있어야 게이트를 인지한다") 해소 — 순수 비주얼(게이트 로직/비용 불변).
+        //   ★ back(뒷벽) 그룹은 카메라가 후면에 오면 벽 컬링으로 통째로 숨는다(실내가 보이게). 그러면 문이 안 보이므로
+        //     이 잠긴문 매스는 back이 아니라 roomGroup에 직접 붙여, 후면 외부에서도 항상 보이게 한다(컬링 무관).
+        //     back 위치 z = -d/2-0.13, 외부(-z)로 조금 더 나가 zW = -d/2-0.13-0.26.
+        const lock = new THREE.Group();
+        const LX = -w / 4;            // 좌측(뒷문 개방 시 전실이 생길 자리와 동일 위치)
+        const zW = -d / 2 - 0.13 - 0.26; // 뒷벽 바깥면 월드 z
+        // 콘크리트 문틀 프레임 (문보다 크게 — 매스감)
+        const frameW = 2.0, frameH = 2.6, frameT = 0.5;
+        B(lock, 0.32, frameH, frameT, 0x8f8b82, LX - frameW / 2, frameH / 2 - 0.1, zW).castShadow = true;
+        B(lock, 0.32, frameH, frameT, 0x99958b, LX + frameW / 2, frameH / 2 - 0.1, zW).castShadow = true;
+        // 상인방(위 보) + 하단 문지방
+        B(lock, frameW + 0.32, 0.34, frameT, 0x847f76, LX, frameH - 0.27, zW).castShadow = true;
+        B(lock, frameW + 0.1, 0.16, frameT + 0.1, 0x6f6b63, LX, 0.0, zW);
+        // 녹슨 철판 문짝 (두 짝) — 프레임보다 살짝 안쪽
+        const steelMat = wallPhong({ map: metalTex }); steelMat.userData.shared = true;
+        for (const sx of [-1, 1]) {
+          const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.82, 2.2, 0.12), steelMat);
+          leaf.position.set(LX + sx * 0.42, 1.05, zW + 0.28); leaf.castShadow = leaf.receiveShadow = true; lock.add(leaf);
+          B(lock, 0.08, 2.0, 0.06, 0x3d444c, LX + sx * 0.42, 1.05, zW + 0.21); // 세로 보강 리브
+        }
+        // 가로 빗장 (문을 가로지르는 굵은 철봉) + 자물쇠 뭉치 — "잠김"을 명확히
+        B(lock, 1.7, 0.16, 0.14, 0x55504a, LX, 1.15, zW + 0.2).castShadow = true;
+        B(lock, 0.24, 0.3, 0.2, 0x2f2b26, LX, 1.15, zW + 0.12).castShadow = true; // 자물쇠 박스
+        // 볼트 자국(모서리 리벳)
+        for (let i = 0; i < 8; i++) {
+          const bx = LX - 0.7 + (i % 4) * 0.47, by = 0.5 + Math.floor(i / 4) * 1.2;
+          Cyl(lock, 0.04, 0.04, 0.05, 0x2a2622, bx, by, zW + 0.34, 5);
+        }
+        // 경고 표식(빛바랜 스텐실 판) — 시선을 끄는 작은 색면
+        B(lock, 0.5, 0.34, 0.03, 0x9a7a2a, LX + 0.02, 1.75, zW + 0.22);
+        roomGroup.add(lock); // 컬링 무관: 후면에서 항상 노출
       }
 
       // 천장 펜던트 램프 (컨셉아트) — 아치 정점에서 늘어짐
@@ -2152,13 +2249,15 @@ const SHELTERS = {
       ]);
       // 외형 개성화 (#18): 지붕 짐칸(방수포 묶음+짐) + 앞유리 위 행선지 롤사인 — 밋밋한 노란 박스 깨기
       {
-        // 지붕 레일 + 묶인 방수포 짐
-        B(roomGroup, w * 0.9, 0.06, d * 0.9, 0x3a3733, 0, h + 0.03, 0); // 루프 랙 판
-        for (const sx of [-w * 0.35, w * 0.35]) B(roomGroup, 0.05, 0.12, d * 0.9, 0x55504a, sx, h + 0.09, 0); // 레일
+        // 지붕 레일 + 묶인 방수포 짐 — 실내를 덮는 지붕 → 천장 컬링 그룹(⑥-a). 롤사인(앞유리 위)은 옆면이라 제외.
+        const roofG = new THREE.Group();
+        BP(roofG, w * 0.9, 0.06, d * 0.9, lamb(0x3a3733), 0, h + 0.03, 0); // 루프 랙 판
+        for (const sx of [-w * 0.35, w * 0.35]) B(roofG, 0.05, 0.12, d * 0.9, 0x55504a, sx, h + 0.09, 0); // 레일
         const bundle = new THREE.Mesh(new THREE.BoxGeometry(w * 0.5, 0.4, d * 0.7), lamb(0x4a5560));
-        bundle.position.set(-w * 0.08, h + 0.24, 0); bundle.rotation.z = 0.02; bundle.castShadow = true; roomGroup.add(bundle);
-        for (const bz of [-d * 0.25, d * 0.25]) B(roomGroup, w * 0.55, 0.03, 0.03, 0x2a2620, -w * 0.08, h + 0.24, bz); // 결속 끈
-        const box = B(roomGroup, 0.6, 0.4, 0.5, 0x6a5a40, w * 0.28, h + 0.24, d * 0.15); box.castShadow = true; // 잡짐 상자
+        bundle.position.set(-w * 0.08, h + 0.24, 0); bundle.rotation.z = 0.02; bundle.castShadow = true; roofG.add(bundle);
+        for (const bz of [-d * 0.25, d * 0.25]) B(roofG, w * 0.55, 0.03, 0.03, 0x2a2620, -w * 0.08, h + 0.24, bz); // 결속 끈
+        const box = B(roofG, 0.6, 0.4, 0.5, 0x6a5a40, w * 0.28, h + 0.24, d * 0.15); box.castShadow = true; // 잡짐 상자
+        tagCeiling(roofG, h + 0.01); roomGroup.add(roofG);
         // 앞유리 위 행선지 롤사인 (보닛 쪽 +x)
         B(roomGroup, 0.1, 0.34, d * 0.7, 0x1c1f26, w / 2 + 0.62, 1.15, 0);
         B(roomGroup, 0.11, 0.24, d * 0.55, 0xc7b25a, w / 2 + 0.63, 1.15, 0);
@@ -2245,7 +2344,10 @@ const SHELTERS = {
       makeWalls([
         { group: back, pos: [0, 0, -d / 2 - 0.13], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
       ]);
-      // 승강장 기둥 2개 (고정 소품)
+      // ⑥-c 천장 슬래브: 벽 top(y=h)에 맞닿게 내려 접합(이격 0). 슬래브 두께 0.2 → 중심 y=h+0.1이면 바닥면이 y=h.
+      //   (구: y=h+0.85로 떠 있어 "천장이 벽과 분리돼 공중부양"으로 보이던 버그.) 공통 천장 컬링에 등록(부감 투시).
+      const ceilY = h + 0.1;
+      // 승강장 기둥 2개 (고정 소품) — 바닥부터 천장 슬래브 바닥면(y=h)까지 꽉 채워 접합.
       for (const px of [-w / 4, w / 4]) {
         const col = new THREE.Mesh(new THREE.BoxGeometry(0.5, h, 0.5), tileMat);
         col.position.set(px, h / 2, 0.4);
@@ -2253,15 +2355,15 @@ const SHELTERS = {
         roomGroup.add(col);
         B(roomGroup, 0.7, 0.12, 0.7, 0x4e4e4c, px, 0.06, 0.4);
       }
-      // 천장 슬래브 + 매달린 표지판 (위는 막혀있지만 카메라는 이소메트릭이라 룸 위 y3.2에 얇게)
       const ceil = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.2, d + 0.6), lamb(0x1c1e22));
-      ceil.position.y = h + 0.85;
-      roomGroup.add(ceil);
+      ceil.position.y = ceilY;
+      tagCeiling(ceil, h); roomGroup.add(ceil);
+      // 매달린 표지판 — 천장 바닥면(y=h)에서 아래로 늘어뜨린다(구: 떠 있던 천장 기준이라 h+0.15~0.55였음).
       const hang = new THREE.Group();
-      Cyl(hang, 0.02, 0.02, 0.5, 0x3a3733, -0.5, h + 0.55, 0, 5);
-      Cyl(hang, 0.02, 0.02, 0.5, 0x3a3733, 0.5, h + 0.55, 0, 5);
-      B(hang, 1.6, 0.4, 0.06, 0x1d3a2a, 0, h + 0.15, 0);
-      B(hang, 0.5, 0.2, 0.07, 0xd8d3c8, -0.4, h + 0.15, 0);
+      Cyl(hang, 0.02, 0.02, 0.34, 0x3a3733, -0.5, h - 0.17, 0, 5);
+      Cyl(hang, 0.02, 0.02, 0.34, 0x3a3733, 0.5, h - 0.17, 0, 5);
+      B(hang, 1.6, 0.4, 0.06, 0x1d3a2a, 0, h - 0.5, 0);
+      B(hang, 0.5, 0.2, 0.07, 0xd8d3c8, -0.4, h - 0.5, 0);
       hang.position.set(1.5, 0, 1.2);
       roomGroup.add(hang);
       // 승강장 가장자리 경고선 + 선로
@@ -2366,19 +2468,22 @@ const SHELTERS = {
         { group: mkGlass(d, 34), pos: [w / 2 + 0.08, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
       ]);
       // 외형 개성화 (#18): 깨진 지붕 채광창에 덧댄 반투명 비닐 + 이음 각목 + 지붕 능선 골조 — 밋밋한 유리 박스 깨기
+      // ⑥-a: 유리 지붕 능선+비닐 패치도 실내 상부를 덮으므로 천장 컬링 그룹에 묶어 부감에서 투시.
       {
+        const roofG = new THREE.Group();
         // 지붕 능선 골조 (양 처마 → 용마루)
-        B(roomGroup, w + 0.2, 0.08, 0.08, 0xcfc8ba, 0, h + 0.04, 0);
-        for (const sz of [-d / 2, 0, d / 2]) B(roomGroup, w + 0.1, 0.06, 0.06, 0xbfb8aa, 0, h + 0.02, sz);
+        B(roofG, w + 0.2, 0.08, 0.08, 0xcfc8ba, 0, h + 0.04, 0);
+        for (const sz of [-d / 2, 0, d / 2]) B(roofG, w + 0.1, 0.06, 0.06, 0xbfb8aa, 0, h + 0.02, sz);
         // 찢어진 곳에 덧댄 비닐 패치 2장 (반투명, 살짝 처짐)
         for (const [px, pz, s] of [[-w * 0.22, d * 0.18, 1.0], [w * 0.26, -d * 0.14, 0.8]]) {
           const tarp = new THREE.Mesh(new THREE.BoxGeometry(2.0 * s, 0.04, 1.5 * s),
             wallPhong({ color: 0xcdd8d0, transparent: true, opacity: 0.5 }));
           tarp.position.set(px, h + 0.06, pz); tarp.rotation.z = 0.06; tarp.rotation.x = -0.04; tarp.castShadow = true;
-          roomGroup.add(tarp);
+          roofG.add(tarp);
           // 고정 각목
-          B(roomGroup, 2.1 * s, 0.05, 0.05, 0x8a6a48, px, h + 0.09, pz - 0.7 * s);
+          B(roofG, 2.1 * s, 0.05, 0.05, 0x8a6a48, px, h + 0.09, pz - 0.7 * s);
         }
+        tagCeiling(roofG, h + 0.01); roomGroup.add(roofG);
       }
       // 고정 텃밭 화단 2개 (뒤쪽)
       const bed = (bx) => {
@@ -2708,9 +2813,10 @@ const SHELTERS = {
         step.rotation.y = -i * 1.05;
       }
       // 옥상 랜턴층 (방 위) — 렌즈 + 지붕 + 회전 빔
+      // ⑥-a: 랜턴 데크 원반이 방 상부를 덮어 부감에서 실내를 가린다 → 천장 컬링에 등록(렌즈/캡/빔은 얇은 랜턴이라 유지).
       const deck = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.4, 0.25, 14), lamb(0x4a4f55));
       deck.position.y = h + 0.4;
-      roomGroup.add(deck);
+      tagCeiling(deck, h + 0.1); roomGroup.add(deck);
       const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.8, 10),
         new THREE.MeshLambertMaterial({ color: 0xffe9b0, emissive: 0xffc860, emissiveIntensity: 1.2 }));
       lens.position.y = h + 1.0;
@@ -3070,7 +3176,7 @@ const INJURIES = {
 // ---- 탐험 준비물 (기획서 v0.2: 준비물 슬롯) ----
 const PREPS = {
   bottle:    { name: '물병',     nameEn: 'Water Bottle', emoji: '🥤', cost: { water: 1 },  eff: '탐험 갈증 소모 절반 · 부상 회복 -20%', effEn: 'Halves thirst use on expeditions · injury recovery -20%' },
-  canned:    { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫', cost: { food: 1 },   eff: '공업/슬럼 성공률 +5%p', effEn: 'Industrial/slum success +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
+  canned:    { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫', cost: { canned: 1 }, eff: '공업/슬럼 성공률 +5%p', effEn: 'Industrial/slum success +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
   flashlight:{ name: '손전등',   nameEn: 'Flashlight', emoji: '🔦', cost: { battery: 1 },eff: '상업/슬럼 성공률 +10%p', effEn: 'Commercial/slum success +10%p', bonus: { commercial: 0.10, slum: 0.10 } },
   gloves:    { name: '장갑',     nameEn: 'Gloves', emoji: '🧤', cost: { cloth: 1 },  eff: '부상 확률 -30%', effEn: 'Injury chance -30%' },
   raincoat:  { name: '우의',     nameEn: 'Raincoat', emoji: '🧥', cost: { cloth: 1 },  eff: '날씨 페널티 -70%', effEn: 'Weather penalty -70%' },
@@ -3256,33 +3362,75 @@ function isExhausted() { return state.hunger <= 0 || state.thirst <= 0; }
 /* ── 취침 (의무 휴식 — 자원 인플레이션 방지 + 침대의 가치) ── */
 const EXP_PER_DAY = BAL.exp.perDay;
 // 취침/쪽잠 공통 에너지 회복 공식 (침대 유무 + 쾌적함 보너스)
-function restEnergyValue() {
+// v1.2.0 취침 자율화: "몇 시에 자느냐"를 회복량으로 보상/처벌한다.
+// atHour 미지정 시 현재 게임 시각 기준. collapse=true 면 05시 자동 쓰러짐(바닥 취침 수준).
+function restHourMod(atHour) {
+  const R = BAL.rest;
+  const h = Math.floor(atHour);
+  if (h >= R.earlyStartHour && h <= R.earlyEndHour) return R.earlyBonus; // 21~23시: +보너스
+  if (h >= R.lateStartHour && h < R.collapseHour) {                     // 01~04시: 시간당 누적 페널티
+    return -Math.min(R.lateCap, R.latePerHour * (h - R.lateStartHour + 1));
+  }
+  return 0; // 00~00:59(자정 직후) 및 그 외: 보정 없음
+}
+function restEnergyValue(atHour, collapse = false) {
   const hasBed = items.some(i => i.defId === 'bed');
   const cozy = comfortDetail().score;
-  return { hasBed, energy: Math.min(100, (hasBed ? BAL.rest.bedEnergy : BAL.rest.floorEnergy) + (cozy >= BAL.rest.cozyThreshold ? BAL.rest.cozyBonus : 0)) };
+  const hour = atHour != null ? atHour : gameHour();
+  if (collapse) {
+    // 05시 자동 취침: 몸이 버티지 못하고 쓰러진다 — 회복은 바닥 취침 수준(cozy 보너스 없음).
+    return { hasBed, collapse: true, energy: Math.min(100, BAL.rest.floorEnergy) };
+  }
+  const base = (hasBed ? BAL.rest.bedEnergy : BAL.rest.floorEnergy) + (cozy >= BAL.rest.cozyThreshold ? BAL.rest.cozyBonus : 0);
+  const energy = Math.max(0, Math.min(100, base + restHourMod(hour)));
+  return { hasBed, collapse: false, energy };
 }
-function sleepUntilMorning(auto = false) {
+function sleepUntilMorning(auto = false, opt = {}) {
   if (!auto && paused) { toast(t('pause.blocked')); return; }
   if (state.exp) { toast(t('sleep.cantDuringExp')); return; }
   if (blackoutActive) return;
-  const { hasBed, energy } = restEnergyValue();
+  const collapse = !!opt.collapse;
+  const { hasBed, energy } = restEnergyValue(gameHour(), collapse);
   blackout(() => {
     // 정점(검은 화면)에서 시간 점프·에너지 회복·노트 — 유저 눈엔 자연스러운 취침
-    // 내일 아침 07:00으로 — 하루 정산(processDay)은 tickTime이 처리
-    state.gameMin = (Math.floor(state.gameMin / 1440) + 1) * 1440 + 7 * 60;
+    // 다음 07:00으로 — 저녁~자정 취침은 다음날 아침, 자정 이후(01~05시) 취침은 같은 날 아침(하루 스킵 방지).
+    // 하루 정산(processDay)은 tickTime의 자정 롤오버가 이미 처리했다(같은 날 07:00으로 가면 재정산 없음).
+    const dayStart = Math.floor(state.gameMin / 1440) * 1440;
+    const wakeToday = dayStart + WAKE_HOUR * 60;
+    state.gameMin = state.gameMin < wakeToday ? wakeToday : dayStart + 1440 + WAKE_HOUR * 60;
     state.energy = energy;
     const e = Math.round(state.energy);
-    state.dayLog.notes.push(t(hasBed ? 'sleep.noteBed' : 'sleep.noteFloor', { e }));
+    // 05시 쓰러짐은 전용 문구 — 자발적 취침과 톤을 구분한다.
+    const noteKey = collapse ? 'sleep.noteCollapse' : (hasBed ? 'sleep.noteBed' : 'sleep.noteFloor');
+    state.dayLog.notes.push(t(noteKey, { e }));
     questProgress('sleep'); // 온보딩: 취침으로 하루 마무리 → 기상 후 아침 보고가 결산을 가르친다
     // 기상 토스트·'dawn' SFX는 페이드아웃(눈 뜨는 시점)에
-    toast(auto
-      ? t(hasBed ? 'sleep.autoBed' : 'sleep.autoFloor', { e })
-      : t(hasBed ? 'sleep.wakeBed' : 'sleep.wakeFloor', { e }));
+    toast(collapse
+      ? t('sleep.collapse', { e })
+      : auto
+        ? t(hasBed ? 'sleep.autoBed' : 'sleep.autoFloor', { e })
+        : t(hasBed ? 'sleep.wakeBed' : 'sleep.wakeFloor', { e }));
     scheduleSave();
     updateHud();
     updateClock();
     playSfx('dawn');
   });
+}
+
+// 취침 확인창 — 현재 시각 기준 예상 회복량을 미리 보여준다 (v1.2.0 취침 자율화).
+async function promptSleep() {
+  if (paused) { toast(t('pause.blocked')); return; }
+  if (state.exp) { toast(t('sleep.cantDuringExp')); return; }
+  if (blackoutActive) return;
+  const { energy } = restEnergyValue();
+  const cur = Math.round(state.energy);
+  const to = Math.round(energy);
+  const ok = await gameConfirm(
+    t('sleep.confirm', { cur, to }),
+    t('sleep.confirmYes'),
+    t('confirm.cancel'),
+  );
+  if (ok) sleepUntilMorning();
 }
 
 /* ── 세이브 슬롯 (Steam 대비: 슬롯 3개 + 최근 슬롯 기억) ── */
@@ -3640,7 +3788,7 @@ function loadShelter(id) {
   }
   disposeDeep(roomGroup); roomGroup.clear();
   disposeDeep(envRoot); envRoot.clear();
-  wallList = []; blockers = []; envDyn = {};
+  wallList = []; ceilCullList = []; blockers = []; envDyn = {};
   bunkerStairsObj = null; // #55: 계단 히트 대상 재수집
   weatherFx.caps = []; wetApplied = -1;
   winSkyMats.length = 0; // 창문 하늘판 재수집
@@ -3780,7 +3928,8 @@ const REGIONS = {
     pool: ['bed', 'chair', 'rug', 'dresser', 'candle', 'cushion', 'bookstack'], furnChance: 0.02,
     desc: '음식·물·천·양초 · 생활 가구', descEn: 'Food, water, cloth, candles · household furniture', risk: '낮음', riskEn: 'Low',
     // Phase B: 주거지역 food/water 소폭 하향(max -1) — "주거 단일 최적해" 해소
-    lootRes: [['food', 2, 2], ['canned', 1, 2, 0.6], ['cloth', 1, 1], ['candle', 1, 1], ['water', 2, 2], ['bandage', 1, 1, 0.25]],
+    // v1.2.0 경제 캘리브레이션: 신선식량 획득 손맛 상향(2,2→3,4) + 통조림 드랍확률 트림(0.6→0.45).
+    lootRes: [['food', 4, 5], ['canned', 1, 2, 0.45], ['cloth', 1, 1], ['candle', 1, 1], ['water', 2, 2], ['bandage', 1, 1, 0.25]],
     injuries: ['minor'],
   },
   commercial: {
@@ -3788,7 +3937,8 @@ const REGIONS = {
     pool: ['sofa', 'table', 'bookshelf', 'radio', 'plant', 'fridge', 'teatable', 'clock', 'lantern'], furnChance: 0.02,
     desc: '배터리·의약품 · 상점 가구', descEn: 'Batteries, medicine · store furniture', risk: '보통', riskEn: 'Medium',
     // Phase B: 배터리/의약 특화 상향 (배터리 확정 1 + 의약 확률/양 상향)
-    lootRes: [['battery', 1, 2], ['parts', 1, 1], ['canned', 1, 1, 0.6], ['water', 1, 1], ['antiseptic', 1, 1, 0.35], ['painkiller', 1, 1, 0.3]],
+    // v1.2.0: 통조림 드랍확률 트림(0.6→0.45).
+    lootRes: [['battery', 1, 2], ['parts', 1, 1], ['canned', 1, 1, 0.45], ['water', 1, 1], ['antiseptic', 1, 1, 0.35], ['painkiller', 1, 1, 0.3]],
     injuries: ['minor', 'minor', 'sprain'],
   },
   industrial: {
@@ -3812,7 +3962,7 @@ const REGIONS = {
     pool: ['crate', 'dresser', 'radio', 'lamp', 'clock'], furnChance: 0.02,
     desc: '컨테이너 화물 · 오늘 바다가 준 것', descEn: 'Container cargo · what the sea gave today', risk: '보통', riskEn: 'Medium',
     // 랜덤 편중 드랍: 매일 1종이 부스트됨(rollRes의 yardBoost 훅). 기본은 얕고 넓게.
-    lootRes: [['cloth', 1, 2], ['parts', 1, 2], ['material', 1, 2], ['salt', 1, 1, 0.5], ['canned', 1, 1, 0.4]],
+    lootRes: [['cloth', 1, 2], ['parts', 1, 2], ['material', 1, 2], ['salt', 1, 1, 0.5], ['canned', 1, 1, 0.3]],
     injuries: ['minor', 'sprain'],
     harborYard: true, // rollRes 일일 부스트 표식
   },
@@ -3820,7 +3970,7 @@ const REGIONS = {
     name: '수산시장 폐허', nameEn: 'Fish Market Ruins', emoji: '🐟', rate: 0.7, time: 35,
     pool: ['crate', 'table', 'clock'], furnChance: 0.01,
     desc: '신선식품 · 소금 산지 (겨울엔 결빙)', descEn: 'Fresh food · salt source (frozen in winter)', risk: '낮음', riskEn: 'Low',
-    lootRes: [['food', 2, 3], ['salt', 1, 2], ['water', 1, 1], ['canned', 1, 1, 0.4]],
+    lootRes: [['food', 4, 6], ['salt', 1, 2], ['water', 1, 1], ['canned', 1, 1, 0.3]],
     injuries: ['minor'],
     fishMarket: true, // 겨울 결빙 드랍 절반 표식
   },
@@ -4509,14 +4659,17 @@ const CAT_POSES = {
   //   (라이브 튜닝 확정 2026-07-04: 57°는 가슴이 앞다리에서 벗어나 공중부양으로 보임 → 35°)
   //   (v0.9.5 재수술: brx -0.62(35°)는 긴 몸통 박스를 사선 판자처럼 만들고 고정 다리와 어깨가 분리돼 "박살"으로 보임 →
   //    brx -0.30(17°)로 완화해 몸통을 거의 수평 로프 실루엣으로, 앞다리 소폭 접힘(-0.3)으로 앞발 앞짚음, by 소폭 상향)
-  sit:     { by: 0.06,  brx: -0.30, hrx: 0.20, legF: -0.3,  legB: -1.5,  t1: -0.85 },
+  //   (v1.2.0 ⑦ MC 재수술: 디렉터 신고 — 앞다리 상단이 가슴 볼륨 관통. legF≈0(수직 앞다리)로 바꾸고,
+  //    updateCatBones에서 어깨 피벗을 척추 리프트만큼 counter-rotate(shoulderComp)해 관통 제거. 가슴 세움 유지.)
+  sit:     { by: 0.06,  brx: -0.30, hrx: 0.20, legF: -0.05, legB: -1.5,  t1: -0.85 },
   // sleep: 식빵 — 몸통 수평(brx=0)으로 낮춰 배가 바닥에 닿게(by=0.03 → 바닥면 y≈-0.01, 살짝 파묻혀 접지감),
   //   네 다리 전부 -1.5rad 로 접어 몸 밑에 숨김(legF=legB), 머리는 살짝 숙임(hrx 양수)
   sleep:   { by: 0.03,  brx: 0,     hrx: 0.5,  legF: -1.5,  legB: -1.5,  t1: -1.3 },
-  // sprawl: 배 까고 드러눕기 — 몸통을 Z축으로 ~90°(brz) 굴려 옆으로 눕고 배가 화면 쪽을 향한다.
-  //   그룹을 옆으로 굴리면 몸 반지름(2px=0.04)만큼 중심이 내려가 바닥에 파묻히므로 by를 몸 반지름만큼 올려 접지.
-  //   네 다리는 몸에서 느슨하게 뻗침(legF/legB 소폭 +), 꼬리 편안히 늘어뜨림. (brz 필드 신설)
-  sprawl:  { by: 0.07,  brx: 0,     hrx: 0.15, legF: 0.35,  legB: 0.45,  t1: -0.6,  brz: 1.45 },
+  // sprawl: 엎드려 눕기(마인크래프트 고양이 침대 눕기 레퍼런스, v1.2.0 ⑦ 재수술).
+  //   배 노출 드러눕기(brz 롤)를 폐기 → 배는 바닥, 몸통을 낮게 붙이고(by 낮춤·brx 0=수평) 다리 4개를
+  //   앞뒤로 곧게 뻗는다(앞다리 전방 legF 음수 / 뒷다리 후방 legB 양수). 고개는 들어 정면(쉬는 자세, hrx≤0).
+  //   꼬리는 바닥에 자연스럽게(t1 완화). brz=0 — 회전으로 배를 까지 않는다.
+  sprawl:  { by: 0.035, brx: 0,     hrx: -0.05, legF: -0.9,  legB: 0.55,  t1: -0.5,  brz: 0 },
   // groom: sit과 같은 앉음 실루엣 위에 오버레이(updateCat의 headRX 사인파/앞발 들기)가 얹힌다 (sit 재수술에 맞춰 완화)
   groom:   { by: 0.06,  brx: -0.30, hrx: 0.30, legF: -0.3,  legB: -1.5,  t1: -0.85 },
   // stretch: 다운독 — brx=+0.6, by=0.17 → 가슴쪽(z=0.24) 바닥 코너 y=0(접지), 엉덩이쪽 y≈0.14(번쩍 들림)
@@ -4612,6 +4765,7 @@ async function spawnCat() {
 }
 function despawnCat() {
   if (!catObj) return;
+  if (catCam.active) exitCatCloseup(); // 고양이가 사라지면 클로즈업도 해제(카메라 원복)
   scene.remove(catObj.g);
   disposeDeep(catObj.g);
   catObj = null;
@@ -4809,8 +4963,12 @@ function updateCatBones(c, a, dt) {
   //   기본 게인 -0.9 (접힘 → +X: 발이 몸 뒤·아래로 턱 = 웅크림), stretch 만 +0.9 (발 앞으로 뻗는 플레이보우)
   const fgTgt = c.mode === 'stretch' ? 0.9 : -0.9;
   c._fg = (c._fg === undefined ? -0.9 : c._fg) + (fgTgt - c._fg) * Math.min(1, dt * 6);
-  _setBone(rig, B.legFL, c._fg * a.flX, 0, 0);
-  _setBone(rig, B.legFR, c._fg * a.frX, 0, 0);
+  // ⑦ MC 앉기: 가슴이 spine으로 들리면(brx 음수) 어깨 피벗도 함께 회전해 앞다리가 몸통을 뚫는다.
+  //   척추 총 리프트(brx*2.0)만큼 앞다리 루트를 되돌려(counter) 다리를 바닥 수직으로 세운다 — 관통 0.
+  //   sit/groom(가슴 세우는 포즈)에서만 보정. 다른 포즈(brx≈0)는 보정량 0이라 영향 없음.
+  const shoulderComp = (c.mode === 'sit' || c.mode === 'groom') ? a.pv.brx * 2.0 : 0;
+  _setBone(rig, B.legFL, c._fg * a.flX - shoulderComp, 0, 0);
+  _setBone(rig, B.legFR, c._fg * a.frX - shoulderComp, 0, 0);
   _setBone(rig, B.foreFL, 0.55 * Math.min(0, a.flX), 0, 0);   // 접을 때만 앞무릎 역굽힘
   _setBone(rig, B.foreFR, 0.55 * Math.min(0, a.frX), 0, 0);
   // 뒷다리 — 실측: thigh +X = 접힘(발끝 위·뒤), shin -X = 발끝 앞 (상쇄 굽힘)
@@ -5693,6 +5851,8 @@ function buildRooftopSlate(w, d, h) {
     // 완전 보수: 용마루 마감 각목 한 줄
     B(g, rw, 0.05, 0.08, 0x5a5450, 0, h + 0.15, 0);
   }
+  // ⑥-a: 슬레이트 지붕은 실내를 덮는다 — 공통 천장 컬링에 등록(부감에서 숨김). 보수 전/후 모두 g 하나에 담김.
+  tagCeiling(g, h + 0.08);
   roomGroup.add(g);
 }
 // ── 옥상 텃밭 (#53) — 마당(방 밖 슬래브)에 플랜터 박스 2열. 작물 성장 3단계 지오메트리.
@@ -6827,7 +6987,7 @@ canvas.addEventListener('pointerdown', e => {
   if (e.button !== 0 && e.pointerType === 'mouse') return;
   if (placing) { moveGhost(placing, e); finishPlacing(); return; }
   if (!editMode && pickStairs(e)) return; // #55 배치 모드가 아닐 때만 계단 상호작용 (배치 중 오작동 방지)
-  if (pickCat(e)) return; // 고양이를 쓰다듬은 경우 기존 가구 선택/드래그로 이어지지 않게 소비
+  if (pickCat(e)) { if (!editMode) enterCatCloseup(); return; } // 쓰다듬기 + (비배치) 클로즈업 진입 — 히트 소비
   const hit = pickItem(e);
   if (hit) {
     // 배치 모드 OFF: 가구 선택/이동은 막고, 기능형(라디오/촛불 토글)만 실행.
@@ -6857,6 +7017,7 @@ addEventListener('pointermove', e => {
   if (pinch && touches.size >= 2) {
     const [a, b] = [...touches.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y);
+    if (catCam.active) exitCatCloseup(); // 핀치 줌/회전도 카메라 조작 → 클로즈업 해제
     camState.zoom = THREE.MathUtils.clamp(pinch.zoom * (d / pinch.dist), 0.25, 3.2);
     const cx = (a.x + b.x) / 2;
     camState.targetYaw += (cx - pinch.cx) * 0.006;
@@ -6872,6 +7033,7 @@ addEventListener('pointermove', e => {
     const dx = e.clientX - orbitDrag.x;
     if (!orbitDrag.moved && Math.hypot(dx, e.clientY - orbitDrag.y) > 7) orbitDrag.moved = true;
     if (orbitDrag.moved) {
+      if (catCam.active) exitCatCloseup(); // 드래그로 카메라를 잡으면 클로즈업 해제(원 카메라 복원)
       camState.targetYaw += dx * 0.008;
       orbitDrag.x = e.clientX; orbitDrag.y = e.clientY;
     }
@@ -6893,7 +7055,7 @@ function onPointerEnd(e) {
   if (pinch && touches.size < 2) pinch = null;
   if (e.button === 2) { orbiting = false; return; }
   if (orbitDrag) {
-    if (!orbitDrag.moved) deselect(); // 제자리 탭 = 선택 해제
+    if (!orbitDrag.moved) { if (catCam.active) exitCatCloseup(); else deselect(); } // 빈곳 탭 = 클로즈업 해제 or 선택 해제
     orbitDrag = null;
     return;
   }
@@ -6918,6 +7080,7 @@ addEventListener('pointercancel', onPointerEnd);
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
+  if (catCam.active) exitCatCloseup(); // 휠 줌도 카메라 조작 → 클로즈업 해제
   camState.zoom = THREE.MathUtils.clamp(camState.zoom * (e.deltaY < 0 ? 1.1 : 0.9), 0.25, 3.2);
 }, { passive: false });
 
@@ -7122,8 +7285,9 @@ addEventListener('keydown', e => {
   if (awaitingRebind) { captureRebind(e); return; }
   if (titleVisible) return;
   if (e.key === 'Escape') {
-    // 우선순위: 설정 창 닫기 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
+    // 우선순위: 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
     if (settingsOpen()) { closeSettings(); }
+    else if (catCam.active) { exitCatCloseup(); }
     else if (placing) { cancelPlacing(); }
     else if (selected) { deselect(); }
     else if ($('modal-back').classList.contains('show')) { closeModal(); }
@@ -7185,6 +7349,18 @@ function updateWallCulling() {
     if (w.group.visible) mask |= 1 << i;
   });
   if (mask !== lastWallMask) { lastWallMask = mask; shadowDirty(); }
+  updateCeilCulling();
+}
+// ⑥-a (전 셸터 공통): 천장/지붕 투시 컬링.
+//   벽 컬링과 동일 사상 — 카메라를 '마주보지 않는' 면은 감춘다. 천장은 위를 향하므로 카메라가 천장보다
+//   위(부감/사선)에 있을 때 숨겨 실내를 보이게 한다. 수평 앵글(카메라가 천장 높이 아래)에서는 천장이 보여
+//   아늑함이 유지된다. 임계각은 렌더 상수(아래 CEIL_CULL_MARGIN)로 실측 튜닝 — BAL이 아니라 순수 렌더 값.
+const CEIL_CULL_MARGIN = 0.3; // 카메라 y가 (천장y + 이 여유)보다 높으면 부감으로 보고 천장을 숨긴다.
+function updateCeilCulling() {
+  for (const rf of ceilCullList) {
+    const above = camera.position.y > rf.y + CEIL_CULL_MARGIN;
+    if (rf.group.visible === above) { rf.group.visible = !above; shadowDirty(); }
+  }
 }
 // 날씨-환경 상호작용: 눈이 쌓이고(지면·수풀·지붕 풀 서리 톤), 악천후엔 바람이 거세짐
 let snowCover = 0, windLevel = 1;
@@ -8145,7 +8321,34 @@ function blackout(midFn, holdMs = 500) {
     }, holdMs);
   }, IN);
 }
-// 자동 진행 모드 (Day 10+ 해금): 매 게임 내 정시마다 간단한 생존 루틴을 대신 처리
+// v1.2.0 자동 진행 지역 선택 — 결핍 기반 가중.
+// 유저 신고("자동진행이 주거만 간다") 해소: 순수 그리디(항상 최고 eff = 주거) 대신
+//   가중 = eff × (1 + Σ 부족자원 산지 보너스) × (직전 방문 지역이면 감쇠).
+// 후보 = 해금된 전 지역(항구/지하 개통 포함), 폭설 봉쇄 지역 제외. 부족 판정은 BAL.auto.scarceWatch 자원만
+//   (신선식품/물은 autoEat이 따로 관리하므로 제외). 결정론 아님(Math.random 타이브레이크 없음 — 가중 최대 선택).
+function pickAutoRegion() {
+  const A = BAL.auto;
+  // 오늘 부족한(임계 미만) 자원 집합
+  const scarce = new Set(A.scarceWatch.filter(r => (state.res[r] || 0) < A.scarceThreshold));
+  let bestId = null, bestW = -1;
+  for (const id of Object.keys(REGIONS)) {
+    if (!regionUnlocked(id)) continue;      // 항구 등 미해금 제외
+    if (blizzardBlocks(id)) continue;       // 폭설 봉쇄 지상 지역 제외
+    const eff = rateParts(id, []).eff;
+    if (eff <= 0) continue;
+    // 이 지역이 loot로 주는 부족 자원 종 수 → 가중 보너스
+    let scarceHits = 0;
+    for (const [rid] of REGIONS[id].lootRes) if (scarce.has(rid)) scarceHits++;
+    let w = eff * (1 + scarceHits * A.scarceWeightPerRes);
+    if (id === state.lastAutoRegion) w *= A.revisitDecay; // 직전 방문 지역 감쇠(연속 편중 완화)
+    if (w > bestW) { bestW = w; bestId = id; }
+  }
+  return bestId;
+}
+
+// 자동 진행 모드 (Day 10+ 해금): 매 게임 내 정시마다 간단한 생존 루틴을 대신 처리.
+// 자동 대상: 치료·청소·탐험(급식/취침/autoEat은 각각 processDay/자정루프/decayGauges가 자동 처리).
+// 자동 대상 아님(설계 의도 — 후반 수동 전략 레버): 염장(salt cure)·얼음낚시·대형 프로젝트·암시장.
 function runAutoPlay() {
   if (paused || titleVisible || !opts.autoPlay || (!isZen() && state.day < 10)) return;
   if (state.injury && resHasAll(INJURIES[state.injury.type].cure)) {
@@ -8157,14 +8360,11 @@ function runAutoPlay() {
     cleanShelter();
     state.dayLog.notes.push(t('auto.clean'));
   }
-  if (!state.exp && (state.expToday || 0) < 4 && state.energy >= 30 && !isExhausted()) {
-    let bestId = null, bestEff = -1;
-    for (const id of Object.keys(REGIONS)) {
-      const eff = rateParts(id, []).eff;
-      if (eff > bestEff) { bestEff = eff; bestId = id; }
-    }
+  if (!state.exp && (state.expToday || 0) < BAL.auto.maxExpPerDay && state.energy >= BAL.auto.minEnergy && !isExhausted()) {
+    const bestId = pickAutoRegion();
     if (bestId) {
       departExpedition(bestId, [], { auto: true });
+      state.lastAutoRegion = bestId; // 다음 선택에서 연속 방문 감쇠에 사용
       state.dayLog.notes.push(t('auto.depart', { emoji: REGIONS[bestId].emoji, name: LName(REGIONS[bestId]) }));
     }
   }
@@ -8189,8 +8389,9 @@ function tickTime(dt) {
     reportQueued = true;
     rolledOver = true;
   }
-  // 자정을 자연 경과(취침이 아님)로 넘긴 경우 — 마지막 날 기준 아침 08:00으로 점프.
-  // (sleepUntilMorning은 스스로 다음날 07:00 이후로 세팅하므로 아래 조건이 걸리지 않는다.)
+  // 자정을 자연 경과(취침이 아님)로 넘긴 경우의 처리.
+  // v1.2.0: 자정 강제 취침 폐지. 셸터 안에서 깨어 있으면 시간이 계속 흐르고(01시부터 회복 페널티 누적),
+  // 05시에 쓰러지듯 자동 취침한다(아래 별도 트리거). 탐험/오프라인 경로만 여기서 아침으로 점프.
   if (rolledOver) {
     const morning8 = (state.day - 1) * 1440 + 8 * 60;
     if (state.gameMin < morning8) {
@@ -8205,23 +8406,23 @@ function tickTime(dt) {
         state.energy = Math.max(state.energy, energy);
         const e = Math.round(state.energy);
         state.dayLog.notes.push(t('day.napMorning', { e }));
-      } else {
-        // 셸터 안에서 자정 경과: "결국 졸음을 이기지 못했다" — 암전 경유로 점프(1회).
-        const { energy } = restEnergyValue();
-        blackout(() => {
-          state.gameMin = morning8;
-          state.energy = Math.max(state.energy, energy);
-          const e = Math.round(state.energy);
-          state.dayLog.notes.push(t('day.napMorning', { e }));
-          questProgress('sleep'); // 취침 버튼을 안 눌러도 잠들면 온보딩이 막히지 않게
-          updateHud(); updateClock();
-        });
       }
+      // else(셸터 안에서 깨어 자정 경과): 아무 것도 하지 않는다 — 시간을 계속 흐르게 두고,
+      //   결산은 아침(WAKE_HOUR 이후)까지 미룬다(아래 reportQueued 게이트의 시각 조건).
     }
   }
+  // 05시 자동 취침: 셸터 안에서 깨어 있고 새벽 collapseHour에 도달하면 쓰러지듯 잠든다.
+  // (탐험 중·오프라인 정산·암전 중·타이틀·일시정지 제외 — 실제 플레이 세션에서만)
+  if (!state.exp && !settlingOffline && !blackoutActive && !titleVisible && !paused
+      && Math.floor(gameHour()) >= BAL.rest.collapseHour && (state.gameMin % 1440) < BAL.rest.collapseHour * 60 + 60) {
+    sleepUntilMorning(true, { collapse: true });
+    return; // 이번 틱은 취침 처리로 종결 (아침 결산은 기상 후 다음 틱)
+  }
   // 보고/이벤트 노출 게이트: 탐험(부재) 중이거나 암전 연출 중엔 하루 보고·셸터 이벤트를 띄우지 않는다.
+  // v1.2.0: 자정 직후(01~04시) 깨어 있는 동안엔 결산을 미룬다 — 아침(WAKE_HOUR 이후)에만 뜬다.
   // (탐험 복귀 결산 모달을 닫으면 modal-back 조건이 풀려 자연히 표시된다.)
-  if (reportQueued && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show')) {
+  const isMorningForReport = Math.floor(gameHour()) >= WAKE_HOUR || Math.floor(gameHour()) < BAL.rest.lateStartHour;
+  if (reportQueued && isMorningForReport && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show')) {
     reportQueued = false;
     showDayReport();
     scheduleSave();
@@ -8327,6 +8528,10 @@ function renderExpPanel() {
   if (tb) tb.addEventListener('click', treatInjury);
 }
 function tickExpeditionUI() {
+  // 부팅 플로우 원칙: 타이틀 화면에선 어떤 게임 팝업/결과도 뜨면 안 된다.
+  // 저장된 탐험이 이미 끝난 상태로 부팅되면 이 틱이 타이틀 위로 탐험 결과 모달을 띄우던 버그 —
+  // 아침 결산과 동일하게 hideTitle() 이후로 지연한다(hideTitle이 진입 시 resolveExpedition을 호출).
+  if (titleVisible) return;
   if (state.exp) {
     const remain = state.exp.end - Date.now();
     const total = state.exp.dur || (REGIONS[state.exp.region].time * 1000);
@@ -9383,15 +9588,15 @@ $('btn-craft').addEventListener('click', openCraftModal);
 $('btn-journal').addEventListener('click', () => openJournalModal('journal'));
 $('g-hunger').addEventListener('click', eatFood);
 $('g-thirst').addEventListener('click', drinkWater);
-$('g-energy').addEventListener('click', () => sleepUntilMorning());
-$('btn-sleep').addEventListener('click', () => sleepUntilMorning());
+$('g-energy').addEventListener('click', () => promptSleep());
+$('btn-sleep').addEventListener('click', () => promptSleep());
 $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
 // 온스크린 카메라 컨트롤 (모바일/데스크톱 공용)
-$('cam-rotl').addEventListener('click', () => { camState.targetYaw -= Math.PI / 4; });
-$('cam-rotr').addEventListener('click', () => { camState.targetYaw += Math.PI / 4; });
-$('cam-zin').addEventListener('click', () => { camState.zoom = THREE.MathUtils.clamp(camState.zoom * 1.25, 0.25, 3.2); });
-$('cam-zout').addEventListener('click', () => { camState.zoom = THREE.MathUtils.clamp(camState.zoom * 0.8, 0.25, 3.2); });
-$('cam-home').addEventListener('click', () => { camState.targetYaw = Math.PI / 4; fitZoomForShelter(); });
+$('cam-rotl').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw -= Math.PI / 4; });
+$('cam-rotr').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw += Math.PI / 4; });
+$('cam-zin').addEventListener('click', () => { exitCatCloseup(); camState.zoom = THREE.MathUtils.clamp(camState.zoom * 1.25, 0.25, 3.2); });
+$('cam-zout').addEventListener('click', () => { exitCatCloseup(); camState.zoom = THREE.MathUtils.clamp(camState.zoom * 0.8, 0.25, 3.2); });
+$('cam-home').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw = Math.PI / 4; fitZoomForShelter(); });
 // 패널 드래그/접기 활성화
 makeDraggablePanel($('hud'), 'hud', t('panel.hud'));
 makeDraggablePanel($('exp-panel'), 'exp', t('panel.exp'));
@@ -9599,7 +9804,7 @@ function pollGamepad(dt) {
   }
   // 우스틱 → 카메라 회전
   const rx = padDead(ax[2] || 0);
-  if (rx) camState.targetYaw += rx * BAL.input.padCameraSpeed * dt;
+  if (rx) { if (catCam.active) exitCatCloseup(); camState.targetYaw += rx * BAL.input.padCameraSpeed * dt; }
   // LB/RB → 줌 (홀드 연속)
   if (pressed(PAD_BTN.RB)) camState.zoom = THREE.MathUtils.clamp(camState.zoom * BAL.input.padZoomStep, 0.25, 3.2);
   if (pressed(PAD_BTN.LB)) camState.zoom = THREE.MathUtils.clamp(camState.zoom / BAL.input.padZoomStep, 0.25, 3.2);
@@ -9856,12 +10061,23 @@ window.__shelter = {
   envFx: () => ({ snowCover, wetness }),
   cat: () => catObj,
   camera, THREE, CAT_POSES,
+  // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
+  //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).
+  setYaw: (rad) => { camState.yaw = camState.targetYaw = rad; },
+  setPitch: (rad) => { camState.elev = THREE.MathUtils.clamp(rad, 0.05, Math.PI / 2 - 0.05); },
+  setZoom: (z) => { camState.zoom = THREE.MathUtils.clamp(z, 0.2, 3.2); },
+  // ④ 고양이 클로즈업 QA 훅
+  enterCatCloseup, exitCatCloseup, catCamState: () => ({ active: catCam.active, saved: catCam.saved, center: catCam.center.toArray(), zoom: camState.zoom, dist: camState.dist }),
+  setCatMode: (m) => { if (catObj) { catObj.mode = m; catObj.timer = 999; } },
   // 퀘스트 트래커
   QUESTS, questProgress, renderQuestCard, questActive,
   // v0.9.2 개연성 패스 (1부)
   fmtGameDur, expDuration, sleepUntilMorning, tickTime, GAME_MIN_PER_SEC,
   isBlackoutActive: () => blackoutActive,
   renderExpPanel, startPlacing, finishPlacing, select, deselect,
+  // v1.2.0 QA 훅: 취침 자율화(②) / 자동진행 지역선택(③) / 천장 컬링(⑥)
+  restEnergyValue, restHourMod, promptSleep, pickAutoRegion, updateWallCulling,
+  ceilCullState: () => ceilCullList.map(c => ({ visible: c.group.visible, y: c.y })),
   dbg: () => ({ reportQueued, blackoutActive, journalOpen, settlingOffline, pendingEvent: state.pendingEvent }),
   // v0.9.2 배치 모드 + 성공률 보정 (2부)
   expActualRate,

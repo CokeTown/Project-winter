@@ -128,12 +128,16 @@
   #settings-window {
     position: relative; zoom: var(--uiz);
     width: 340px; max-width: 92vw;
-    max-height: 88vh; display: flex; flex-direction: column;
+    /* ⑧ zoom(var(--uiz)=동적스케일×TEXT_BOOST)이 창 전체를 곱해 88vh 클램프를 초과(1080p에서도 상하 잘림) →
+       max-height를 --uiz로 역보정(나눗셈)해 zoom 곱 후 실제 높이가 뷰포트 안(≈94vh)에 들어오게 한다.
+       (#toolbar가 calc((100vw-40px)/var(--uiz,1))로 같은 문제를 푼 선례.) 헤더/탭/푸터 고정 + 탭바디만 스크롤은 아래 flex로. */
+    max-height: calc(94vh / var(--uiz, 1)); display: flex; flex-direction: column;
     padding: 0; overflow: hidden;
   }
   #settings-head {
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 12px 8px; border-bottom: 2px solid var(--panel-border);
+    flex-shrink: 0; /* ⑧ 헤더 고정 — 창이 짧아도 줄지 않음 */
   }
   #settings-head h2 { font-size: 13px; color: var(--accent); margin: 0; }
   #settings-x {
@@ -141,7 +145,7 @@
     font-family: inherit; font-size: 15px; cursor: pointer; line-height: 1; padding: 2px 4px;
   }
   #settings-x:hover { color: var(--bad); }
-  #settings-tabs { display: flex; gap: 0; padding: 6px 8px 0; border-bottom: 2px solid var(--panel-border); flex-wrap: wrap; }
+  #settings-tabs { display: flex; gap: 0; padding: 6px 8px 0; border-bottom: 2px solid var(--panel-border); flex-wrap: wrap; flex-shrink: 0; /* ⑧ 탭줄 고정 */ }
   .settings-tab {
     flex: 1 1 auto; min-width: 0;
     font-family: inherit; font-size: 11px; color: var(--text-dim);
@@ -151,7 +155,12 @@
   }
   .settings-tab:hover { color: var(--accent); }
   .settings-tab.active { color: var(--accent); background: var(--panel-bg); border-color: var(--accent); position: relative; top: 2px; }
-  #settings-tabbody { padding: 10px 14px; overflow-y: auto; flex: 1 1 auto; }
+  /* ⑧ 탭 콘텐츠만 내부 스크롤 — min-height:0으로 flex 자식이 축소 가능해야 overflow가 실제로 걸린다.
+     얇은 픽셀 톤 스크롤바. 헤더/탭/푸터는 flex-shrink:0으로 고정이라 이 영역만 넘칠 때 스크롤된다. */
+  #settings-tabbody { padding: 10px 14px; overflow-y: auto; flex: 1 1 auto; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--panel-border) transparent; }
+  #settings-tabbody::-webkit-scrollbar { width: 8px; }
+  #settings-tabbody::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 0; }
+  #settings-tabbody::-webkit-scrollbar-track { background: transparent; }
   .settings-pane { display: none; }
   .settings-pane.active { display: block; }
   #settings-window label {
@@ -189,6 +198,7 @@
   #settings-foot {
     display: flex; gap: 6px; flex-wrap: wrap;
     padding: 8px 12px 10px; border-top: 2px solid var(--panel-border);
+    flex-shrink: 0; /* ⑧ 푸터(저장/기본값/타이틀/닫기) 고정 — 항상 보이게 (잘림 원천 차단) */
   }
   #settings-foot .pixel-btn { flex: 1 1 auto; }
   #display-section, #widget-section { border-top: 1px solid rgba(255,255,255,0.12); margin-top: 10px; padding-top: 8px; }
@@ -702,7 +712,7 @@
     #lcd { padding: 3px 8px; min-width: 84px; }
     #lcd-time { font-size: 17px; letter-spacing: 1px; }
     #lcd-day, #lcd-sub { font-size: 8px; }
-    #settings-window { max-height: calc(100vh - 12px); }
+    #settings-window { max-height: calc((100vh - 12px) / var(--uiz, 1)); } /* ⑧ 미니/저해상도도 --uiz 역보정 */
     #res-bar { top: 6px; right: 180px; width: 150px; max-height: calc(100vh - 12px); overflow-y: auto; }
     #exp-panel { top: 6px; left: 178px; width: 190px; max-height: calc(100vh - 12px); }
     #toolbar { bottom: 4px; padding: 4px; max-width: calc(100vw - 200px); }

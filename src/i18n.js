@@ -281,6 +281,11 @@ export const STR = {
   'sleep.wakeFloor':      { ko: '😴 바닥에서 웅크리고 잤다 — 아침이 밝았다 (⚡{e})', en: '😴 Curled up on the floor — morning has come (⚡{e})' },
   'day.napMorning':       { ko: '😴 결국 졸음을 이기지 못했다 — 눈을 뜨니 아침이다 (⚡{e})', en: "😴 Sleep finally won — you wake and it's morning (⚡{e})" },
   'day.expNight':         { ko: '🌒 밤새 폐허를 뒤졌다 — 동틀 녘에야 돌아왔다', en: '🌒 You scavenged through the night — back only at first light' },
+  /* v1.2.0 취침 자율화 — 05시 쓰러짐 전용 문구(무방비 톤) + 취침 확인창 */
+  'sleep.noteCollapse':   { ko: '😵 결국 쓰러지듯 잠들었다 — 눈을 뜨니 아침이다 (⚡{e})', en: "😵 Finally collapsed into sleep — waking, it's already morning (⚡{e})" },
+  'sleep.collapse':       { ko: '😵 새벽까지 버티다 쓰러지듯 잠들었다 (⚡{e})', en: '😵 Held out till dawn, then collapsed into sleep (⚡{e})' },
+  'sleep.confirm':        { ko: '지금 자면 에너지가 {cur} → {to}로 회복됩니다. 잘까요?', en: 'Sleeping now restores energy {cur} → {to}. Turn in?' },
+  'sleep.confirmYes':     { ko: '잔다', en: 'Sleep' },
 
   /* ── 먹기/마시기 ── */
   'eat.noFood':    { ko: '음식이 없습니다 — 주거지역을 탐험하세요', en: 'No food — explore the residential district' },
