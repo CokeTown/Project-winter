@@ -359,7 +359,7 @@ export const STR = {
   'mode.normal.desc': { ko: '표준 밸런스. 느긋하게 셸터를 가꾸는 코지 생존.', en: 'Standard balance. Cozy survival at your own pace.' },
   'mode.hard':        { ko: '🔥 하드', en: '🔥 Hard' },
   'mode.hard.tag':    { ko: '폐허는 아무것도 거저 주지 않는다', en: 'The ruins give nothing for free' },
-  'mode.hard.desc':   { ko: '탐험 전리품 −30% · 배고픔/갈증 소모 +50%. 첫 겨울이 진짜 시험이 된다.', en: 'Expedition loot −30% · hunger/thirst drain +50%. The first winter becomes a real test.' },
+  'mode.hard.desc':   { ko: '탐험 전리품 −30% · 배고픔/갈증 소모 +50% · 한파가 더 잦다. 첫 겨울이 진짜 시험이 된다.', en: 'Expedition loot −30% · hunger/thirst drain +50% · cold snaps strike more often. The first winter becomes a real test.' },
   'mode.zen':         { ko: '♾️ 무한', en: '♾️ Endless' },
   'mode.zen.tag':     { ko: '끝도, 재촉도 없다 — 폐허의 시간은 당신 것이다', en: 'No end, no rush — the ruins keep your hours' },
   'mode.zen.desc':    { ko: '노말 밸런스에 넉넉한 시작 물자. 자동 진행이 처음부터 열려 있다. 느긋한 방치에 최적.', en: 'Normal balance with a generous start. Auto-play unlocked from day one. Made for idling.' },

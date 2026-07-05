@@ -7103,10 +7103,13 @@ function processDay() {
       notes.push(t('coldsnap.ended'));
     }
     // 4) 예보 발령: 겨울 중, 미발동·미예보, 겨울당 상한 미만, 확률 판정 → 리드타임 뒤로 예약
+    //    하드는 한파가 더 잦고(확률 ×1.6) 더 많이 온다(상한 +1) — "첫 겨울이 진짜 시험" (v1.0.0)
+    const snapCap = S.coldSnapMaxPerWinter + (isHard() ? BAL.hard.coldSnapExtraPerWinter : 0);
+    const snapChance = S.coldSnapChancePerDay * (isHard() ? BAL.hard.coldSnapChanceMul : 1);
     if (inWinter && !state.coldSnap && state.coldSnapForecast === 0 &&
-        state.coldSnapsThisWinter < S.coldSnapMaxPerWinter &&
+        state.coldSnapsThisWinter < snapCap &&
         seasonDay(state.day) <= SEASON_DAYS - S.coldSnapForecastDays - 1 && // 겨울 끝에 걸치지 않게
-        Math.random() < S.coldSnapChancePerDay) {
+        Math.random() < snapChance) {
       state.coldSnapForecast = state.day + S.coldSnapForecastDays;
     }
   }

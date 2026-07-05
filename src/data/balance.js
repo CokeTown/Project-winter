@@ -46,6 +46,11 @@ export const BAL = {
     lootMul: 0.7,        // 하드 전리품 배수 (기댓값 보존 확률 반올림)
     drainMul: 1.5,       // 하드 게이지 소모 배수
     expMul: 1.5,         // 하드 탐험 게이지 소모 배수 (sim)
+    /* 하드 겨울 한파 강화 (v1.0.0, REQ-BAL-02 후속) — 광고 수치(loot/drain)와 별개로
+       "첫 겨울이 진짜 시험" 카피를 체감시키는 압박 레버. 탈진 유발이 아니라
+       한파일수 증가(쾌적 -12, 탐험 -10%p, 배고픔 ×1.5)로 겨울 긴장을 만든다. */
+    coldSnapChanceMul: 1.6,    // 하드 한파 발동 확률 배수 (0.14 → 0.224/일)
+    coldSnapExtraPerWinter: 1, // 하드 겨울당 한파 상한 +1 (2 → 3회)
   },
 
   /* ── 성공률 pity 보정 (expActualRate / resolveExpedition) ── */

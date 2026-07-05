@@ -1010,6 +1010,56 @@
       "fit": "cover",
       "dest": "assets-src/art/out/icons/ev_caravan_pass.png",
       "prompt": "Seen from afar: a small caravan of silhouetted figures with a cart crossing a distant ridge at golden hour, never coming closer, power lines in the foreground. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "icon_furn_frame",
+      "purpose": "가구 아이콘: 액자",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_frame.png",
+      "prompt": "a small framed picture in a worn wooden frame, faded landscape photo inside. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_curtain",
+      "purpose": "가구 아이콘: 커튼",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_curtain.png",
+      "prompt": "a warm fabric window curtain hanging from a rod, gently draped. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_desklamp",
+      "purpose": "가구 아이콘: 책상 램프",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_desklamp.png",
+      "prompt": "a small articulated desk lamp with a metal shade and warm bulb glow. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_firstaidbox",
+      "purpose": "가구 아이콘: 구급상자",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_firstaidbox.png",
+      "prompt": "a wall-mounted first aid box with a cross emblem, slightly scuffed. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_mirror",
+      "purpose": "가구 아이콘: 거울",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_mirror.png",
+      "prompt": "a standing full-length mirror in a dark worn wooden frame, the glass showing a pale cool blue-grey reflection with one diagonal light streak. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline around the whole object, soft single-direction top-left light, subtle dithered shading, no text, no frame border, no background."
     }
   ]
 }
