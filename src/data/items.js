@@ -1,0 +1,117 @@
+/* ============================================================
+   items.js — Nine Winters 아이템/제작/장식/고양이 포즈 데이터 (콘텐츠 분리 Phase 1)
+   ------------------------------------------------------------
+   목적: 자원·부상·탐험 준비물·제작 레시피·테마 세트·고양이 포즈 등
+         "순수 콘텐츠 테이블"을 game.js에서 분리한다.
+   원칙: 순수 데이터 파일. 밸런스 수치는 balance.js의 BAL를 참조하되(CRAFTS 염장 비용),
+         balance.js는 의존성 0이므로 순환이 생기지 않는다(data→data 단방향 허용).
+   미이동: WALLPAPERS/FLOORINGS 는 tex()가 game.js의 makeCanvasTex(캔버스/THREE 렌더)를
+           호출하는 텍스처 빌더라 Phase 2로 유보(3D 빌더 분리 배치). 여기엔 없음.
+   출처: game.js RESOURCES/INJURIES/PREPS/THEME_SETS/CAT_POSES/CAT_PERCH_Y/CRAFTS.
+   ============================================================ */
+import { BAL } from './balance.js';
+
+export const RESOURCES = {
+  food:       { name: '신선식품', nameEn: 'Fresh Food',  emoji: '🍎' },
+  canned:     { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫' },
+  water:      { name: '깨끗한 물', nameEn: 'Clean Water', emoji: '💧' },
+  cloth:      { name: '천',       nameEn: 'Cloth',       emoji: '🧵' },
+  bandage:    { name: '붕대',     nameEn: 'Bandage',     emoji: '🩹' },
+  antiseptic: { name: '소독약',   nameEn: 'Antiseptic',  emoji: '🧴' },
+  painkiller: { name: '진통제',   nameEn: 'Painkiller',  emoji: '💊' },
+  candle:     { name: '양초',     nameEn: 'Candle',      emoji: '🕯️' },
+  battery:    { name: '배터리',   nameEn: 'Battery',     emoji: '🔋' },
+  fuel:       { name: '연료',     nameEn: 'Fuel',        emoji: '⛽' },
+  parts:      { name: '부품',     nameEn: 'Parts',       emoji: '⚙️' },
+  material:   { name: '건축재',   nameEn: 'Material',    emoji: '🧱' },
+  salt:       { name: '소금',     nameEn: 'Salt',        emoji: '🧂' }, // 1.1 항구: 수산시장/야적장 전리품 · 염장 재료
+};
+// ---- 부상 (기획서 v0.2: 부상 치료 시스템) ----
+export const INJURIES = {
+  minor:     { name: '가벼운 부상', nameEn: 'Minor Injury',    icon: '🩹', pen: 0.05, restH: 12, cure: { bandage: 1 }, infect: 0.10 },
+  deep:      { name: '깊은 상처',   nameEn: 'Deep Wound',      icon: '🩸', pen: 0.15, restH: 24, cure: { bandage: 1, antiseptic: 1 }, infect: 0.25 },
+  sprain:    { name: '염좌',        nameEn: 'Sprain',          icon: '🦵', pen: 0.10, restH: 18, timeMult: 1.3, cure: { painkiller: 1 } },
+  infection: { name: '감염 위험',   nameEn: 'Infection Risk',  icon: '🤒', pen: 0.20, restH: 36, cure: { antiseptic: 1, water: 1 } },
+};
+// ---- 탐험 준비물 (기획서 v0.2: 준비물 슬롯) ----
+export const PREPS = {
+  bottle:    { name: '물병',     nameEn: 'Water Bottle', emoji: '🥤', cost: { water: 1 },  eff: '탐험 갈증 소모 절반 · 부상 회복 -20%', effEn: 'Halves thirst use on expeditions · injury recovery -20%' },
+  canned:    { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫', cost: { canned: 1 }, eff: '공업/슬럼 성공률 +5%p', effEn: 'Industrial/slum success +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
+  flashlight:{ name: '손전등',   nameEn: 'Flashlight', emoji: '🔦', cost: { battery: 1 },eff: '상업/슬럼 성공률 +10%p', effEn: 'Commercial/slum success +10%p', bonus: { commercial: 0.10, slum: 0.10 } },
+  gloves:    { name: '장갑',     nameEn: 'Gloves', emoji: '🧤', cost: { cloth: 1 },  eff: '부상 확률 -30%', effEn: 'Injury chance -30%' },
+  raincoat:  { name: '우의',     nameEn: 'Raincoat', emoji: '🧥', cost: { cloth: 1 },  eff: '날씨 페널티 -70%', effEn: 'Weather penalty -70%' },
+  firstaid:  { name: '응급키트', nameEn: 'First-Aid Kit', emoji: '⛑️', cost: { bandage: 1, antiseptic: 1 }, eff: '깊은 상처 → 가벼운 부상으로 완화', effEn: 'Softens deep wounds into minor injuries' },
+};
+
+export const THEME_SETS = [
+  { id: 'bedroom', name: '따뜻한 침실', nameEn: 'Warm Bedroom', emoji: '🛏️', items: ['bed', 'rug', 'lamp', 'heater'] },
+  { id: 'workshop', name: '작업 공간', nameEn: 'Work Space', emoji: '🛠️', items: ['table', 'crate', 'bookshelf'] },
+  { id: 'greencorner', name: '녹색 구석', nameEn: 'Green Corner', emoji: '🪴', items: ['plant', 'plant', 'teatable'] },
+];
+
+export const CAT_POSES = {
+  //          bodyY   bodyRX     headRX      legF        legB        tail1RX
+  // walk: 서있는 기본 높이(다리 피벗 0.12와 거의 일치하는 0.13), 수평 자세 — stride 오버레이가 다리를 흔든다
+  walk:    { by: 0.13,  brx: 0,     hrx: 0,    legF: 0,     legB: 0,     t1: -0.5 },
+  // sit: 마인크래프트 식 — 엉덩이(피벗)를 바닥에 붙이고 가슴을 크게 들어올림.
+  //   기하 검증(box 로컬 코너 y=±0.04, z=0/0.24 를 brx만큼 회전 후 +by):
+  //     brx=-1.0, by=0.025 → 엉덩이쪽(z=0) 바닥 코너 y≈0.008(거의 접지), 가슴쪽(z=0.24) 최고점 y≈0.264
+  //   앞다리는 거의 수직 유지(legF≈0, 몸이 들려도 어깨 피벗은 고정이라 다리는 그대로 뻗은 자세로 보임),
+  //   뒷다리는 -1.5rad 로 완전히 접어 배(들린 엉덩이) 밑으로 숨김(다리 끝 y≈0.11, z가 몸쪽으로 당겨짐).
+  //   (라이브 튜닝 확정 2026-07-04: 57°는 가슴이 앞다리에서 벗어나 공중부양으로 보임 → 35°)
+  //   (v0.9.5 재수술: brx -0.62(35°)는 긴 몸통 박스를 사선 판자처럼 만들고 고정 다리와 어깨가 분리돼 "박살"으로 보임 →
+  //    brx -0.30(17°)로 완화해 몸통을 거의 수평 로프 실루엣으로, 앞다리 소폭 접힘(-0.3)으로 앞발 앞짚음, by 소폭 상향)
+  //   (v1.2.0 ⑦ MC 재수술: 디렉터 신고 — 앞다리 상단이 가슴 볼륨 관통. legF≈0(수직 앞다리)로 바꾸고,
+  //    updateCatBones에서 어깨 피벗을 척추 리프트만큼 counter-rotate(shoulderComp)해 관통 제거. 가슴 세움 유지.)
+  sit:     { by: 0.06,  brx: -0.30, hrx: 0.20, legF: -0.05, legB: -1.5,  t1: -0.85 },
+  // sleep: 식빵 — 몸통 수평(brx=0)으로 낮춰 배가 바닥에 닿게(by=0.03 → 바닥면 y≈-0.01, 살짝 파묻혀 접지감),
+  //   네 다리 전부 -1.5rad 로 접어 몸 밑에 숨김(legF=legB), 머리는 살짝 숙임(hrx 양수)
+  sleep:   { by: 0.03,  brx: 0,     hrx: 0.5,  legF: -1.5,  legB: -1.5,  t1: -1.3 },
+  // sprawl: 엎드려 눕기(마인크래프트 고양이 침대 눕기 레퍼런스, v1.2.0 ⑦ 재수술).
+  //   배 노출 드러눕기(brz 롤)를 폐기 → 배는 바닥, 몸통을 낮게 붙이고(by 낮춤·brx 0=수평) 다리 4개를
+  //   앞뒤로 곧게 뻗는다(앞다리 전방 legF 음수 / 뒷다리 후방 legB 양수). 고개는 들어 정면(쉬는 자세, hrx≤0).
+  //   꼬리는 바닥에 자연스럽게(t1 완화). brz=0 — 회전으로 배를 까지 않는다.
+  sprawl:  { by: 0.035, brx: 0,     hrx: -0.05, legF: -0.9,  legB: 0.55,  t1: -0.5,  brz: 0 },
+  // groom: sit과 같은 앉음 실루엣 위에 오버레이(updateCat의 headRX 사인파/앞발 들기)가 얹힌다 (sit 재수술에 맞춰 완화)
+  groom:   { by: 0.06,  brx: -0.30, hrx: 0.30, legF: -0.3,  legB: -1.5,  t1: -0.85 },
+  // stretch: 다운독 — brx=+0.6, by=0.17 → 가슴쪽(z=0.24) 바닥 코너 y=0(접지), 엉덩이쪽 y≈0.14(번쩍 들림)
+  //   앞다리는 앞으로 쭉 뻗고(legF 음수, 접힘 부호를 반대로 써 전방으로 펴짐), 뒷다리는 곧게 편 채 지지(legB≈0)
+  stretch: { by: 0.17,  brx: 0.6,   hrx: -0.4, legF: -0.9,  legB: 0.1,   t1: 0.35 },
+  // play: 사냥 자세 — 몸을 살짝 낮추고(by 표준보다 조금 아래) 앞으로 약간 웅크림, hop 오버레이가 콩콩 튀게 함
+  play:    { by: 0.11,  brx: 0.15,  hrx: 0.15, legF: 0.1,   legB: -0.4,  t1: -0.8 },
+  // hop: 가구 오르내리는 점프 중 — 네 다리 웅크림 + 꼬리 들어 균형
+  hop:     { by: 0.13,  brx: -0.12, hrx: -0.1, legF: -0.85, legB: -0.85, t1: 0.35 },
+};
+export const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2 };
+
+export const CRAFTS = [
+  { out: { res: 'bandage', n: 1 }, cost: { cloth: 2 }, hint: '기본 치료품', hintEn: 'Basic first aid' },
+  { out: { res: 'candle', n: 2 }, cost: { cloth: 1, fuel: 1 }, hint: '조명 연료', hintEn: 'Lighting fuel' },
+  { out: { res: 'material', n: 1 }, cost: { parts: 2 }, hint: '수리·유지비용', hintEn: 'Repairs & upkeep' },
+  { out: { furn: 'cushion' }, cost: { cloth: 2 }, hint: '푹신한 바닥 방석', hintEn: 'A soft floor cushion' },
+  { out: { furn: 'bookstack' }, cost: { cloth: 1, material: 1 }, hint: '주워 모은 책 무더기', hintEn: 'A pile of gathered books' },
+  { out: { furn: 'crate' }, cost: { material: 2 }, hint: '수납 상자', hintEn: 'Storage crate' },
+  { out: { furn: 'chair' }, cost: { material: 2 }, hint: '나무 의자', hintEn: 'Wooden chair' },
+  { out: { furn: 'candle' }, cost: { material: 1, candle: 1 }, hint: '캔들 스툴', hintEn: 'Candle stool' },
+  { out: { furn: 'teatable' }, cost: { material: 2, cloth: 1 }, hint: '낮은 찻상 — 따뜻한 한 잔', hintEn: 'A low tea table — a warm cup' },
+  { out: { furn: 'rug' }, cost: { cloth: 3 }, hint: '천을 엮은 러그', hintEn: 'A woven-cloth rug' },
+  { out: { furn: 'plant' }, cost: { water: 2, material: 1 }, hint: '화분에 심은 초록', hintEn: 'Greenery in a pot' },
+  { out: { furn: 'table' }, cost: { material: 3 }, hint: '식탁', hintEn: 'Dining table' },
+  { out: { furn: 'dresser' }, cost: { material: 3, cloth: 1 }, hint: '서랍장', hintEn: 'Dresser' },
+  { out: { furn: 'lantern' }, cost: { parts: 1, material: 1, candle: 2 }, hint: '걸이형 랜턴 (양초 연료)', hintEn: 'Hanging lantern (candle fuel)' },
+  { out: { furn: 'bed' }, cost: { cloth: 3, material: 2 }, hint: '천 + 프레임 → 침대', hintEn: 'Cloth + frame → bed' },
+  { out: { furn: 'bookshelf' }, cost: { material: 4 }, hint: '책장', hintEn: 'Bookshelf' },
+  { out: { furn: 'sofa' }, cost: { cloth: 4, material: 2 }, hint: '패브릭 소파', hintEn: 'Fabric sofa' },
+  { out: { furn: 'lamp' }, cost: { parts: 2, battery: 1 }, hint: '부품 조립 조명', hintEn: 'Part-built lamp' },
+  { out: { furn: 'clock' }, cost: { parts: 2, material: 2 }, hint: '괘종시계 — 시간이 흐르는 소리', hintEn: 'Grandfather clock — the sound of passing time' },
+  { out: { furn: 'radio' }, cost: { parts: 3, battery: 1 }, hint: '라디오 (날씨 예보)', hintEn: 'Radio (weather forecast)' },
+  { out: { furn: 'stove' }, cost: { parts: 3, material: 3 }, hint: '장작 난로 — 최고의 온기 (연료 1/일)', hintEn: 'Wood stove — the best warmth (fuel 1/day)' },
+  { out: { furn: 'purifier' }, cost: { parts: 4, material: 2 }, hint: '매일 물 +1 (전력 필요)', hintEn: 'Water +1 daily (needs power)' },
+  { out: { furn: 'generator' }, cost: { parts: 5, material: 3 }, hint: '배터리 소비 무료화 (연료 필요)', hintEn: 'Free battery use (needs fuel)' },
+  { out: { furn: 'fridge' }, cost: { parts: 4, material: 2, battery: 1 }, hint: '음식 부패 방지 (전력 필요)', hintEn: 'Prevents food spoilage (needs power)' },
+  // Phase B 고급 제작 (후반 인플레 싱크) — 희귀부품(parts) 고비용 사용처
+  { out: { furn: 'autopurifier' }, cost: { parts: 6, material: 3, battery: 1 }, hint: '매일 물 +2 (배터리 1/일)', hintEn: 'Water +2 daily (battery 1/day)' },
+  { out: { furn: 'heater' }, cost: { parts: 5, material: 3, cloth: 2 }, hint: '한파 방어 + 겨울 쾌적 (연료 1/일)', hintEn: 'Cold-snap defense + winter comfort (fuel 1/day)' },
+  // 1.1 염장 — 신선식품 2 + 소금 1 → 보존식 2. 냉장고 없는 초반의 부패 카운터(여름 대비).
+  { out: { res: 'canned', n: BAL.harbor.saltCureOut }, cost: { food: BAL.harbor.saltCureFood, salt: BAL.harbor.saltCureSalt }, hint: '소금으로 절인 보존식 — 여름 부패를 이긴다', hintEn: 'Salt-cured preserves — beats summer spoilage' },
+];

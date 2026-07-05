@@ -5,6 +5,11 @@ import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert, josa } from './li
 import { DEFS } from './data/furniture.js';
 import { BAL } from './data/balance.js';
 import { PROJECTS } from './data/projects.js';
+// 콘텐츠 데이터 분리 Phase 1 (순수 테이블 추출) — 로직은 game.js에 그대로.
+import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS } from './data/items.js';
+import { DISTRICTS, REGIONS } from './data/world.js';
+import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, BROADCASTS, SKETCHES } from './data/lore.js';
+import { makeEvents } from './data/events.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
 import { Platform, bindPlatform } from './lib/platform.js';
@@ -380,11 +385,7 @@ const FLOORINGS = {
 };
 // 테마 세트(#13): 지정 가구가 모두 배치되면 분위기 축 쾌적 +N. 판정은 선언적 테이블(ARC-01).
 const DECO_THEME_COMFORT = BAL.deco.themeSetComfort;
-const THEME_SETS = [
-  { id: 'bedroom', name: '따뜻한 침실', nameEn: 'Warm Bedroom', emoji: '🛏️', items: ['bed', 'rug', 'lamp', 'heater'] },
-  { id: 'workshop', name: '작업 공간', nameEn: 'Work Space', emoji: '🛠️', items: ['table', 'crate', 'bookshelf'] },
-  { id: 'greencorner', name: '녹색 구석', nameEn: 'Green Corner', emoji: '🪴', items: ['plant', 'plant', 'teatable'] },
-];
+// THEME_SETS(테마 세트)는 src/data/items.js로 분리(콘텐츠 데이터 Phase 1).
 // 세트 충족: 필요한 defId 개수(중복 포함)를 배치된 가구가 모두 만족하면 true.
 function themeSetActive(ts) {
   const need = {};
@@ -3386,69 +3387,7 @@ function buildBreakwaterSite(parent, ox, oy, oz) {
 /* ============================================================
    구역 시스템 — 한 지역 안에 여러 셸터, 지역 간 이동은 비용이 든다
 ============================================================ */
-const DISTRICTS = {
-  outskirts: {
-    name: '잿빛 외곽', nameEn: 'Ashen Outskirts', emoji: '🏜️', shelters: ['container', 'bus'],
-    desc: '도시 밖 황무지. 고속도로가 지나가 이동이 편하다.',
-    descEn: 'Wasteland beyond the city. A highway runs through, making travel easy.',
-    regionBonus: { residential: 0.03 },
-    bonusLabel: '주거지역 접근성 +3%p', bonusLabelEn: 'Residential access +3%p',
-  },
-  city: {
-    name: '무너진 도심', nameEn: 'Fallen Downtown', emoji: '🏙️', shelters: ['rooftop', 'subway'],
-    desc: '폐허가 된 시가지. 위험하지만 물자가 몰려 있다.',
-    descEn: 'A ruined city center. Dangerous, but supplies are dense here.',
-    regionBonus: { commercial: 0.05, slum: 0.05 },
-    bonusLabel: '상업지구·슬럼가 접근성 +5%p', bonusLabelEn: 'Commercial & slum access +5%p',
-  },
-  meadow: {
-    name: '초원 구릉지', nameEn: 'Meadow Hills', emoji: '🌾', shelters: ['bunker', 'greenhouse'],
-    desc: '들풀이 무성한 벌판. 조용하고 흙이 살아있다.',
-    descEn: 'A field thick with wild grass. Quiet, and the soil is alive.',
-    regionBonus: { residential: 0.05 },
-    bonusLabel: '주거지역 접근성 +5%p', bonusLabelEn: 'Residential access +5%p',
-  },
-  forest: {
-    name: '숲과 산기슭', nameEn: 'Forest & Foothills', emoji: '🌲', shelters: ['cabin'],
-    desc: '침엽수림 가장자리. 폐허에서 가장 먼 안식처.',
-    descEn: 'The edge of a conifer forest. The refuge farthest from the ruins.',
-    regionBonus: { industrial: 0.05 },
-    bonusLabel: '공업지대 접근성 +5%p', bonusLabelEn: 'Industrial access +5%p',
-  },
-  coast: {
-    name: '잿빛 해안', nameEn: 'Ashen Coast', emoji: '🌊', shelters: ['ship', 'lighthouse'],
-    desc: '안개 낀 바닷가. 바다가 주는 것과 빼앗는 것이 있다.',
-    descEn: 'A fog-wrapped shore. The sea gives, and the sea takes.',
-    regionBonus: { slum: 0.05 },
-    bonusLabel: '슬럼가 접근성 +5%p', bonusLabelEn: 'Slum access +5%p',
-  },
-  // 1.1 「얼어붙은 항구」 — 강 하구를 따라 내려간 얼어붙은 항구. 예인선/관제탑 셸터가 이 구역.
-  harbor: {
-    name: '얼어붙은 항구', nameEn: 'Frozen Harbor', emoji: '⚓', shelters: ['tugboat', 'controltower'],
-    desc: '강 하구의 죽은 항만. 바다는 얼었어도 죽지 않았다.',
-    descEn: 'A dead port at the river mouth. The sea is frozen, but not dead.',
-    regionBonus: { harborYard: 0.05, fishMarket: 0.05 },
-    bonusLabel: '항구 지역 접근성 +5%p', bonusLabelEn: 'Harbor region access +5%p',
-  },
-  // 1.3 「고요한 고원」 — 산 위로 올라간 고원. 스키 로지 셸터가 이 구역. 겨울 접근성이 나쁜 대신 보상이 좋다.
-  highland: {
-    name: '고요한 고원', nameEn: 'Silent Highland', emoji: '🏔️', shelters: ['lodge'],
-    desc: '구름 위로 솟은 고원. 겨울이 더 혹독한 만큼, 남은 것도 더 값지다.',
-    descEn: 'A plateau above the clouds. The winters bite harder here, and what remains is worth more for it.',
-    regionBonus: { resort: 0.05 },
-    bonusLabel: '리조트 폐허 접근성 +5%p', bonusLabelEn: 'Resort ruins access +5%p',
-  },
-  // 1.4 「금지 구역」 — 군이 마지막으로 지킨 곳. 전용 거주 셸터는 없다(어느 거처에서든 방호복으로 닿는 원정지).
-  //   지도 상의 구역으로만 존재 — 검문소·연구동 지역이 여기 속한다. districtOf는 셸터로 판정하므로
-  //   이 구역은 shelters:[] (거주 불가). 지역 접근성 보너스는 없음(금지 구역엔 우대가 없다).
-  research: {
-    name: '금지 구역', nameEn: 'Forbidden Zone', emoji: '☢️', shelters: [],
-    desc: '군이 마지막까지 봉쇄한 폭심지. 방호복 없이는 한 걸음도 들일 수 없다.',
-    descEn: 'The blast core the army sealed to the last. Without a hazmat suit, not one step in.',
-    regionBonus: {},
-    bonusLabel: '', bonusLabelEn: '',
-  },
-};
+// DISTRICTS(지도 구역)는 src/data/world.js로 분리(콘텐츠 데이터 Phase 1).
 function districtOf(shelterId) {
   for (const [id, d] of Object.entries(DISTRICTS)) if (d.shelters.includes(shelterId)) return id;
   return 'outskirts';
@@ -3458,37 +3397,11 @@ function districtOf(shelterId) {
    게임 상태 & 저장
 ============================================================ */
 // ---- 자원 (기획서 v0.2: 자원 보유량 및 소비) ----
-const RESOURCES = {
-  food:       { name: '신선식품', nameEn: 'Fresh Food',  emoji: '🍎' },
-  canned:     { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫' },
-  water:      { name: '깨끗한 물', nameEn: 'Clean Water', emoji: '💧' },
-  cloth:      { name: '천',       nameEn: 'Cloth',       emoji: '🧵' },
-  bandage:    { name: '붕대',     nameEn: 'Bandage',     emoji: '🩹' },
-  antiseptic: { name: '소독약',   nameEn: 'Antiseptic',  emoji: '🧴' },
-  painkiller: { name: '진통제',   nameEn: 'Painkiller',  emoji: '💊' },
-  candle:     { name: '양초',     nameEn: 'Candle',      emoji: '🕯️' },
-  battery:    { name: '배터리',   nameEn: 'Battery',     emoji: '🔋' },
-  fuel:       { name: '연료',     nameEn: 'Fuel',        emoji: '⛽' },
-  parts:      { name: '부품',     nameEn: 'Parts',       emoji: '⚙️' },
-  material:   { name: '건축재',   nameEn: 'Material',    emoji: '🧱' },
-  salt:       { name: '소금',     nameEn: 'Salt',        emoji: '🧂' }, // 1.1 항구: 수산시장/야적장 전리품 · 염장 재료
-};
+// RESOURCES(자원)는 src/data/items.js로 분리(콘텐츠 데이터 Phase 1).
 // ---- 부상 (기획서 v0.2: 부상 치료 시스템) ----
-const INJURIES = {
-  minor:     { name: '가벼운 부상', nameEn: 'Minor Injury',    icon: '🩹', pen: 0.05, restH: 12, cure: { bandage: 1 }, infect: 0.10 },
-  deep:      { name: '깊은 상처',   nameEn: 'Deep Wound',      icon: '🩸', pen: 0.15, restH: 24, cure: { bandage: 1, antiseptic: 1 }, infect: 0.25 },
-  sprain:    { name: '염좌',        nameEn: 'Sprain',          icon: '🦵', pen: 0.10, restH: 18, timeMult: 1.3, cure: { painkiller: 1 } },
-  infection: { name: '감염 위험',   nameEn: 'Infection Risk',  icon: '🤒', pen: 0.20, restH: 36, cure: { antiseptic: 1, water: 1 } },
-};
+// INJURIES(부상)는 src/data/items.js로 분리(콘텐츠 데이터 Phase 1).
 // ---- 탐험 준비물 (기획서 v0.2: 준비물 슬롯) ----
-const PREPS = {
-  bottle:    { name: '물병',     nameEn: 'Water Bottle', emoji: '🥤', cost: { water: 1 },  eff: '탐험 갈증 소모 절반 · 부상 회복 -20%', effEn: 'Halves thirst use on expeditions · injury recovery -20%' },
-  canned:    { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫', cost: { canned: 1 }, eff: '공업/슬럼 성공률 +5%p', effEn: 'Industrial/slum success +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
-  flashlight:{ name: '손전등',   nameEn: 'Flashlight', emoji: '🔦', cost: { battery: 1 },eff: '상업/슬럼 성공률 +10%p', effEn: 'Commercial/slum success +10%p', bonus: { commercial: 0.10, slum: 0.10 } },
-  gloves:    { name: '장갑',     nameEn: 'Gloves', emoji: '🧤', cost: { cloth: 1 },  eff: '부상 확률 -30%', effEn: 'Injury chance -30%' },
-  raincoat:  { name: '우의',     nameEn: 'Raincoat', emoji: '🧥', cost: { cloth: 1 },  eff: '날씨 페널티 -70%', effEn: 'Weather penalty -70%' },
-  firstaid:  { name: '응급키트', nameEn: 'First-Aid Kit', emoji: '⛑️', cost: { bandage: 1, antiseptic: 1 }, eff: '깊은 상처 → 가벼운 부상으로 완화', effEn: 'Softens deep wounds into minor injuries' },
-};
+// PREPS(탐험 준비물)는 src/data/items.js로 분리(콘텐츠 데이터 Phase 1).
 
 const state = {
   ver: 3,
@@ -4525,89 +4438,7 @@ function updateMoveBadge() {
 /* ============================================================
    탐험(파밍) 시스템 — 기획서의 지역별 성공률 기반
 ============================================================ */
-const REGIONS = {
-  residential: {
-    name: '주거지역', nameEn: 'Residential', emoji: '🏘️', rate: 0.8, time: 20,
-    pool: ['bed', 'chair', 'rug', 'dresser', 'candle', 'cushion', 'bookstack'], furnChance: 0.02,
-    desc: '음식·물·천·양초 · 생활 가구', descEn: 'Food, water, cloth, candles · household furniture', risk: '낮음', riskEn: 'Low',
-    // Phase B: 주거지역 food/water 소폭 하향(max -1) — "주거 단일 최적해" 해소
-    // v1.2.0 경제 캘리브레이션: 신선식량 획득 손맛 상향(2,2→3,4) + 통조림 드랍확률 트림(0.6→0.45).
-    lootRes: [['food', 4, 5], ['canned', 1, 2, 0.45], ['cloth', 1, 1], ['candle', 1, 1], ['water', 2, 2], ['bandage', 1, 1, 0.25]],
-    injuries: ['minor'],
-  },
-  commercial: {
-    name: '상업지구', nameEn: 'Commercial', emoji: '🏬', rate: 0.6, time: 35,
-    pool: ['sofa', 'table', 'bookshelf', 'radio', 'plant', 'fridge', 'teatable', 'clock', 'lantern'], furnChance: 0.02,
-    desc: '배터리·의약품 · 상점 가구', descEn: 'Batteries, medicine · store furniture', risk: '보통', riskEn: 'Medium',
-    // Phase B: 배터리/의약 특화 상향 (배터리 확정 1 + 의약 확률/양 상향)
-    // v1.2.0: 통조림 드랍확률 트림(0.6→0.45).
-    lootRes: [['battery', 1, 2], ['parts', 1, 1], ['canned', 1, 1, 0.45], ['water', 1, 1], ['antiseptic', 1, 1, 0.35], ['painkiller', 1, 1, 0.3]],
-    injuries: ['minor', 'minor', 'sprain'],
-  },
-  industrial: {
-    name: '공업지대', nameEn: 'Industrial', emoji: '🏭', rate: 0.4, time: 50,
-    pool: ['lamp', 'crate', 'radio', 'dresser', 'purifier', 'generator', 'stove'], furnChance: 0.01,
-    desc: '부품·건축재·연료', descEn: 'Parts, building material, fuel', risk: '높음 — 장갑 권장', riskEn: 'High — gloves advised',
-    // Phase B: parts/fuel 상향 + fuel 확정 1 보장 (parts/fuel 공급 목적성)
-    lootRes: [['parts', 2, 4], ['material', 2, 3], ['fuel', 2, 3]],
-    injuries: ['deep', 'deep', 'sprain'],
-  },
-  slum: {
-    name: '슬럼가', nameEn: 'Slums', emoji: '🏚️', rate: 0.25, time: 70,
-    pool: Object.keys(DEFS), furnChance: 0.03,
-    desc: '뭐든 나올 수 있다 · 희귀 가구', descEn: 'Anything might turn up · rare furniture', risk: '매우 높음 — 응급키트 권장', riskEn: 'Very high — first-aid kit advised',
-    lootRes: [['parts', 2, 2], ['cloth', 2, 2], ['painkiller', 1, 1, 0.15], ['antiseptic', 1, 1, 0.15]],
-    injuries: ['deep', 'sprain', 'infection'],
-  },
-  // ── 1.1 항구 지역 2종 (harbor 해금 = 항구 셸터 해금 이후. 지도 마커 항구 구역) ──
-  harborYard: {
-    name: '항만 야적장', nameEn: 'Harbor Yard', emoji: '🚢', rate: 0.5, time: 45,
-    pool: ['crate', 'dresser', 'radio', 'lamp', 'clock'], furnChance: 0.02,
-    desc: '컨테이너 화물 · 오늘 바다가 준 것', descEn: 'Container cargo · what the sea gave today', risk: '보통', riskEn: 'Medium',
-    // 랜덤 편중 드랍: 매일 1종이 부스트됨(rollRes의 yardBoost 훅). 기본은 얕고 넓게.
-    lootRes: [['cloth', 1, 2], ['parts', 1, 2], ['material', 1, 2], ['salt', 1, 1, 0.5], ['canned', 1, 1, 0.3]],
-    injuries: ['minor', 'sprain'],
-    harborYard: true, // rollRes 일일 부스트 표식
-  },
-  fishMarket: {
-    name: '수산시장 폐허', nameEn: 'Fish Market Ruins', emoji: '🐟', rate: 0.7, time: 35,
-    pool: ['crate', 'table', 'clock'], furnChance: 0.01,
-    desc: '신선식품 · 소금 산지 (겨울엔 결빙)', descEn: 'Fresh food · salt source (frozen in winter)', risk: '낮음', riskEn: 'Low',
-    lootRes: [['food', 4, 6], ['salt', 1, 2], ['water', 1, 1], ['canned', 1, 1, 0.3]],
-    injuries: ['minor'],
-    fishMarket: true, // 겨울 결빙 드랍 절반 표식
-  },
-  // ── 1.3 고원 지역: 리조트 폐허 (highland 해금 = 로지 셸터 해금 이후. 고위험·고보상 호텔 물자) ──
-  //   먼 거리(고원)라 소요·위험이 크지만 전리품 양이 넓다. 겨울엔 눈사태 리스크가 얹힌다(예보→우회).
-  resort: {
-    name: '리조트 폐허', nameEn: 'Resort Ruins', emoji: '🏨', rate: 0.4, time: 60,
-    pool: ['sofa', 'bed', 'teatable', 'clock', 'lantern', 'bookshelf', 'plant'], furnChance: 0.03,
-    desc: '산정 호텔의 잔해 · 두둑한 물자 (겨울엔 눈사태 위험)', descEn: 'Ruins of a summit hotel · rich supplies (avalanche risk in winter)', risk: '높음 — 응급키트 권장', riskEn: 'High — first-aid kit advised',
-    lootRes: [['canned', 2, 3], ['cloth', 2, 3], ['fuel', 1, 2], ['battery', 1, 2], ['parts', 1, 2], ['painkiller', 1, 1, 0.3]],
-    injuries: ['deep', 'sprain', 'minor'],
-    resort: true, // 고원 지역 표식 (눈사태 판정 대상)
-  },
-  // ── 1.4 금지 구역 2단 진입 구조 (research 구역. 방호복 필수) ──
-  //   ① 격리 검문소(중위험) — 첫 관문. 여기까지는 방호복 없이 닿을 수 없다(startExpedition 게이트).
-  //   ② 지하 연구동(고위험) — 폭심지 폐허. 희귀부품 최다 + 기밀 문서(research 메모) 본진.
-  //   두 지역 모두 forbidden:true — 방호복 미착용 차단·내구 소모 판정 대상.
-  checkpoint: {
-    name: '격리 검문소', nameEn: 'Quarantine Checkpoint', emoji: '🚧', rate: 0.5, time: 55,
-    pool: ['crate', 'dresser', 'lamp', 'clock', 'radio'], furnChance: 0.02,
-    desc: '봉쇄선의 첫 관문 · 부품·건축재 (방호복 필수)', descEn: 'The first gate of the cordon · parts, material (hazmat required)', risk: '보통 — 방호복 필수', riskEn: 'Medium — hazmat required',
-    lootRes: [['parts', 2, 3], ['material', 1, 2], ['battery', 1, 1], ['cloth', 1, 2], ['canned', 1, 1, 0.3]],
-    injuries: ['minor', 'sprain'],
-    forbidden: true, // 방호복 게이트·내구 소모 대상
-  },
-  lab: {
-    name: '지하 연구동', nameEn: 'Underground Lab', emoji: '🧪', rate: 0.35, time: 70,
-    pool: ['bookshelf', 'crate', 'lamp', 'clock', 'radio', 'generator'], furnChance: 0.02,
-    desc: '폭심지 연구소 폐허 · 희귀부품 최다 · 세상의 답이 있는 곳 (방호복 필수)', descEn: 'Ruins of the ground-zero lab · richest in rare parts · where the world’s answer lies (hazmat required)', risk: '매우 높음 — 방호복 필수', riskEn: 'Very high — hazmat required',
-    lootRes: [['parts', 3, 5], ['material', 1, 2], ['battery', 1, 2], ['fuel', 1, 1]],
-    injuries: ['deep', 'infection', 'sprain'],
-    forbidden: true, // 방호복 게이트·내구 소모 대상
-  },
-};
+// REGIONS(탐험 지역 수치·메타)는 src/data/world.js로 분리(콘텐츠 데이터 Phase 1). 아래 id 주입 루프는 유지.
 for (const [k, v] of Object.entries(REGIONS)) v.id = k;
 
 /* ============================================================
@@ -5402,39 +5233,7 @@ function buildCatMesh() {
    꼬리 1×1×6px×2마디(t1 음수=아래로 처짐, 기존 부호 유지) */
 // 다리 rotation.x: 음수 = 앞(+z)으로 접힘(배 밑으로 튐), 양수 = 뒤로 뻗음
 // body.rotation.x 부호: box가 로컬 +z(전방)에 있으므로 음수 회전 = 전방(가슴/머리)이 들림, 양수 = 전방이 숙여짐(엎드림)
-const CAT_POSES = {
-  //          bodyY   bodyRX     headRX      legF        legB        tail1RX
-  // walk: 서있는 기본 높이(다리 피벗 0.12와 거의 일치하는 0.13), 수평 자세 — stride 오버레이가 다리를 흔든다
-  walk:    { by: 0.13,  brx: 0,     hrx: 0,    legF: 0,     legB: 0,     t1: -0.5 },
-  // sit: 마인크래프트 식 — 엉덩이(피벗)를 바닥에 붙이고 가슴을 크게 들어올림.
-  //   기하 검증(box 로컬 코너 y=±0.04, z=0/0.24 를 brx만큼 회전 후 +by):
-  //     brx=-1.0, by=0.025 → 엉덩이쪽(z=0) 바닥 코너 y≈0.008(거의 접지), 가슴쪽(z=0.24) 최고점 y≈0.264
-  //   앞다리는 거의 수직 유지(legF≈0, 몸이 들려도 어깨 피벗은 고정이라 다리는 그대로 뻗은 자세로 보임),
-  //   뒷다리는 -1.5rad 로 완전히 접어 배(들린 엉덩이) 밑으로 숨김(다리 끝 y≈0.11, z가 몸쪽으로 당겨짐).
-  //   (라이브 튜닝 확정 2026-07-04: 57°는 가슴이 앞다리에서 벗어나 공중부양으로 보임 → 35°)
-  //   (v0.9.5 재수술: brx -0.62(35°)는 긴 몸통 박스를 사선 판자처럼 만들고 고정 다리와 어깨가 분리돼 "박살"으로 보임 →
-  //    brx -0.30(17°)로 완화해 몸통을 거의 수평 로프 실루엣으로, 앞다리 소폭 접힘(-0.3)으로 앞발 앞짚음, by 소폭 상향)
-  //   (v1.2.0 ⑦ MC 재수술: 디렉터 신고 — 앞다리 상단이 가슴 볼륨 관통. legF≈0(수직 앞다리)로 바꾸고,
-  //    updateCatBones에서 어깨 피벗을 척추 리프트만큼 counter-rotate(shoulderComp)해 관통 제거. 가슴 세움 유지.)
-  sit:     { by: 0.06,  brx: -0.30, hrx: 0.20, legF: -0.05, legB: -1.5,  t1: -0.85 },
-  // sleep: 식빵 — 몸통 수평(brx=0)으로 낮춰 배가 바닥에 닿게(by=0.03 → 바닥면 y≈-0.01, 살짝 파묻혀 접지감),
-  //   네 다리 전부 -1.5rad 로 접어 몸 밑에 숨김(legF=legB), 머리는 살짝 숙임(hrx 양수)
-  sleep:   { by: 0.03,  brx: 0,     hrx: 0.5,  legF: -1.5,  legB: -1.5,  t1: -1.3 },
-  // sprawl: 엎드려 눕기(마인크래프트 고양이 침대 눕기 레퍼런스, v1.2.0 ⑦ 재수술).
-  //   배 노출 드러눕기(brz 롤)를 폐기 → 배는 바닥, 몸통을 낮게 붙이고(by 낮춤·brx 0=수평) 다리 4개를
-  //   앞뒤로 곧게 뻗는다(앞다리 전방 legF 음수 / 뒷다리 후방 legB 양수). 고개는 들어 정면(쉬는 자세, hrx≤0).
-  //   꼬리는 바닥에 자연스럽게(t1 완화). brz=0 — 회전으로 배를 까지 않는다.
-  sprawl:  { by: 0.035, brx: 0,     hrx: -0.05, legF: -0.9,  legB: 0.55,  t1: -0.5,  brz: 0 },
-  // groom: sit과 같은 앉음 실루엣 위에 오버레이(updateCat의 headRX 사인파/앞발 들기)가 얹힌다 (sit 재수술에 맞춰 완화)
-  groom:   { by: 0.06,  brx: -0.30, hrx: 0.30, legF: -0.3,  legB: -1.5,  t1: -0.85 },
-  // stretch: 다운독 — brx=+0.6, by=0.17 → 가슴쪽(z=0.24) 바닥 코너 y=0(접지), 엉덩이쪽 y≈0.14(번쩍 들림)
-  //   앞다리는 앞으로 쭉 뻗고(legF 음수, 접힘 부호를 반대로 써 전방으로 펴짐), 뒷다리는 곧게 편 채 지지(legB≈0)
-  stretch: { by: 0.17,  brx: 0.6,   hrx: -0.4, legF: -0.9,  legB: 0.1,   t1: 0.35 },
-  // play: 사냥 자세 — 몸을 살짝 낮추고(by 표준보다 조금 아래) 앞으로 약간 웅크림, hop 오버레이가 콩콩 튀게 함
-  play:    { by: 0.11,  brx: 0.15,  hrx: 0.15, legF: 0.1,   legB: -0.4,  t1: -0.8 },
-  // hop: 가구 오르내리는 점프 중 — 네 다리 웅크림 + 꼬리 들어 균형
-  hop:     { by: 0.13,  brx: -0.12, hrx: -0.1, legF: -0.85, legB: -0.85, t1: 0.35 },
-};
+// CAT_POSES(고양이 자세 테이블)는 src/data/items.js로 분리(콘텐츠 데이터 Phase 1).
 // 지면(baseY≈0)에서 (x,z)가 가구 풋프린트와 겹치는지 — 회피용 저비용 AABB 전수 검사.
 //   noCollide/support(상판 위 소품)/얹힘 가구는 통과 허용. 고양이 몸통 반경 여유 0.14.
 function catPointBlocked(x, z, baseY) {
@@ -5458,7 +5257,7 @@ function pickNextCatMode(c) {
   else { c.mode = 'sit'; c.timer = 8 + Math.random() * 14; }
 }
 // 고양이가 올라앉을 수 있는 가구 상면 높이 (surface 정의가 없는 것들)
-const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2 };
+// CAT_PERCH_Y(고양이 퍼치 높이)는 src/data/items.js로 분리(콘텐츠 데이터 Phase 1).
 // ⑥a: 퍼치 중인 고양이 발밑에 아직 지지면이 있는가 — findSupport/AABB 문법 재사용.
 //   (x,z)가 어떤 가구 상면 사각 안이고 그 상면 높이가 baseY와 대략 일치하면 유효.
 function catSupportValid(c) {
@@ -5828,131 +5627,19 @@ function updateCatBones(c, a, dt) {
    슬럼=버려진 사람들)에 맞춰 배치. 유서 6종은 지역 무관 별도 풀(극저확률).
    테이블 스키마: { name/nameEn(제목), desc/descEn(본문), region } — LN/LD 재사용.
 ============================================================ */
-const MEMOS = {
-  // ── 주거 (residential) 8: 일상의 붕괴 ──
-  res1: { region: 'residential', name: '냉장고 쪽지', nameEn: 'Fridge Note', desc: '우유 사올 것. 애들 학원비. 다음 주 부모님 생신.\n적어둔 목록은 그대로인데, 마트는 열흘째 문을 닫았다.', descEn: 'Buy milk. Kids’ tuition. Mom’s birthday next week.\nThe list is still here. The store has been shut ten days.' },
-  res2: { region: 'residential', name: '현관의 신발', nameEn: 'Shoes at the Door', desc: '아이 운동화가 문 앞에 그대로 있다. 사이즈가 작아 새로 사주기로 했었다.\n결국 못 사줬다.', descEn: 'A child’s sneakers, still by the door. Too small — we meant to buy new ones.\nWe never did.' },
-  res3: { region: 'residential', name: '봉쇄 첫날 일기', nameEn: 'Lockdown Day One', desc: '봉쇄 첫날. 다들 며칠이면 끝난다고 했다.\n베란다에서 옆 동 사람과 손을 흔들었다. 그게 마지막 인사였다.', descEn: 'First day of lockdown. Everyone said a few days, that’s all.\nWaved to a neighbor across the way. That was the last hello.' },
-  res4: { region: 'residential', name: '아파트 방송문', nameEn: 'Building Announcement', desc: '주민 여러분께. 엘리베이터 운행을 중단합니다. 물은 하루 두 시간만 나옵니다.\n관리사무소는 오늘부로 비웁니다. 부디 몸조심하십시오.', descEn: 'To all residents. The elevator is stopped. Water runs two hours a day.\nThe office closes today. Please, take care of yourselves.' },
-  res5: { region: 'residential', name: '벽에 그은 키', nameEn: 'Height Marks', desc: '문틀에 연필로 그은 키 눈금. 작년 봄까지는 촘촘하다.\n그 위로는 없다.', descEn: 'Pencil height marks on the door frame, close together — until last spring.\nNothing above them.' },
-  res6: { region: 'residential', name: '반쯤 싼 이민 가방', nameEn: 'Half-Packed Suitcase', desc: '옷 몇 벌, 사진첩, 여권. 떠날 준비를 하다 멈춘 가방.\n어디로 가려 했는지는 적혀 있지 않다.', descEn: 'A few clothes, a photo album, passports. A bag packed halfway, then abandoned.\nWhere they meant to go isn’t written anywhere.' },
-  res7: { region: 'residential', name: '식탁 위 편지', nameEn: 'Letter on the Table', desc: '먼저 간다. 물자 받으러 갔다가 자리가 나면 연락할게.\n식탁 위에 그대로 놓여 있다. 답장은 없다.', descEn: 'Going ahead. I’ll send word once I find us a spot at the supply line.\nStill on the table. No reply ever came.' },
-  res8: { region: 'residential', name: '마지막 배달 영수증', nameEn: 'Last Delivery Slip', desc: '쌀 10kg, 생수 두 박스, 통조림. 배달 완료.\n영수증 날짜 이후로 이 집에서 나간 사람은 없다.', descEn: '10kg rice, two cases of water, canned goods. Delivered.\nAfter this date, no one left this house.' },
-
-  // ── 상업 (commercial) 8: 사재기와 폭동 ──
-  com1: { region: 'commercial', name: '텅 빈 진열대 팻말', nameEn: 'Empty Shelf Sign', desc: '1인 1개. 새치기 신고 즉시 퇴장.\n팻말만 남고 진열대는 사흘 만에 뼈대뿐이었다.', descEn: 'One per customer. Cutting the line means removal.\nThe sign stayed. The shelves were bones in three days.' },
-  com2: { region: 'commercial', name: '점장의 메모', nameEn: 'Manager’s Memo', desc: '직원들에게. 오늘 문을 닫는다. 남은 물건은 각자 가져가라.\n너희를 지켜주지 못해 미안하다.', descEn: 'To my staff. We close today. Take what’s left, split it fairly.\nI’m sorry I couldn’t keep you safe.' },
-  com3: { region: 'commercial', name: '깨진 쇼윈도 낙서', nameEn: 'Graffiti on Broken Glass', desc: '깨진 유리 위에 스프레이로 적혔다. "여긴 이미 털렸다. 헛수고 마라."\n그 아래 누군가 덧썼다. "그래도 확인했다."', descEn: 'Sprayed across shattered glass: "Already cleaned out. Don’t bother."\nBelow it someone added: "Checked anyway."' },
-  com4: { region: 'commercial', name: '현금은 안 받습니다', nameEn: 'No Cash Accepted', desc: '종이에 매직으로. 현금 안 받음. 물, 약, 연료만 교환.\n돈이 종이가 되는 데 일주일이 걸렸다.', descEn: 'Marker on cardboard: No cash. Trade only — water, meds, fuel.\nIt took a week for money to become paper.' },
-  com5: { region: 'commercial', name: '약국 셔터의 호소', nameEn: 'Plea on the Pharmacy Shutter', desc: '약이 필요하면 문을 두드리지 말고 목록을 적어 넣으세요. 있으면 내놓겠습니다.\n마지막 줄: 이제 아무것도 없습니다.', descEn: 'Need meds? Don’t knock — slip a list under the door. If we have it, it’s yours.\nLast line: We have nothing left now.' },
-  com6: { region: 'commercial', name: '폭동의 밤 전단', nameEn: 'Riot Night Flyer', desc: '오늘 밤 배급소 앞으로. 더는 순서를 기다리지 않는다.\n전단은 젖어 뭉개졌고, 배급소는 그 밤 이후 불탔다.', descEn: 'Tonight, at the ration depot. We wait our turn no longer.\nThe flyer is pulped with rain. The depot burned that night.' },
-  com7: { region: 'commercial', name: 'ATM 화면', nameEn: 'ATM Screen', desc: '거래를 완료할 수 없습니다. 잠시 후 다시 시도해 주십시오.\n같은 문장이 몇 달째 켜져 있다.', descEn: 'Transaction cannot be completed. Please try again later.\nThe same line, lit for months now.' },
-  com8: { region: 'commercial', name: '백화점 안내방송 대본', nameEn: 'Department Store Script', desc: '고객 여러분, 영업을 종료합니다. 침착하게 가까운 출구로.\n대본 여백에 손글씨. "3번 출구 막힘. 통제 불가."', descEn: 'Dear customers, we are closing. Calmly proceed to the nearest exit.\nHandwritten in the margin: "Exit 3 blocked. No control."' },
-
-  // ── 공업 (industrial) 7: 폐쇄 명령·마지막 교대 ──
-  ind1: { region: 'industrial', name: '공장 폐쇄 명령서', nameEn: 'Plant Shutdown Order', desc: '본 공장은 정부 명령에 따라 조업을 전면 중단한다. 설비 전원을 내리고 즉시 귀가하라.\n도장이 찍힌 날 이후, 라인은 멈춘 채다.', descEn: 'By government order, all operations cease. Power down and go home at once.\nSince the stamp on this page, the line has not moved.' },
-  ind2: { region: 'industrial', name: '마지막 교대 일지', nameEn: 'Last Shift Log', desc: '야간조 3명 출근. 주간조 인수인계 없음 — 아무도 오지 않음.\n마지막 줄: 문 잠그고 나감. 불은 켜둔다.', descEn: 'Night shift: 3 in. No day-shift handover — no one came.\nLast line: Locking up. Leaving a light on.' },
-  ind3: { region: 'industrial', name: '안전모의 이름표', nameEn: 'Name on a Hard Hat', desc: '먼지 앉은 안전모 안쪽에 이름과 사번. 그 아래 작게. "27년 근속. 이제 집에 간다."\n걸이엔 아직 열두 개가 그대로다.', descEn: 'Name and badge number inside a dusty hard hat. Below, small: "27 years. Going home now."\nTwelve more still hang on the pegs.' },
-  ind4: { region: 'industrial', name: '급여 미지급 공고', nameEn: 'Unpaid Wages Notice', desc: '이번 달 급여 지급이 불가함을 알린다. 회사가 존속하는 한 반드시 정산하겠다.\n회사는 존속하지 않았다.', descEn: 'This month’s wages cannot be paid. So long as the company stands, you will be made whole.\nThe company did not stand.' },
-  ind5: { region: 'industrial', name: '보일러실 낙서', nameEn: 'Boiler Room Scrawl', desc: '배관공이 파이프에 분필로. "밸브 잠갔음. 여기 온기는 내가 마지막까지 지켰다."\n온기는 오래전에 식었다.', descEn: 'Chalked on a pipe by the fitter: "Valves shut. I kept this heat going till the end."\nThe warmth went cold long ago.' },
-  ind6: { region: 'industrial', name: '출근 카드 뭉치', nameEn: 'Stack of Time Cards', desc: '타임카드가 한 날짜에서 멈췄다. 그날 이후로 찍힌 카드가 없다.\n기계는 아직 자정을 가리키고 있다.', descEn: 'The time cards all stop on one date. None punched after.\nThe clock still points to midnight.' },
-  ind7: { region: 'industrial', name: '창고 재고표', nameEn: 'Warehouse Inventory', desc: '연료 드럼 40 → 6. 부품 상자 전량 반출.\n표 맨 아래: "가져갈 수 있는 건 다 가져갔다. 미안."', descEn: 'Fuel drums 40 → 6. Parts crates all removed.\nBottom of the sheet: "Took everything we could carry. Sorry."' },
-
-  // ── 슬럼 (slum) 7: 버려진 사람들 ──
-  slum1: { region: 'slum', name: '배급 명단', nameEn: 'Ration List', desc: '이름 옆에 체크. 절반쯤에서 펜이 멈췄다. 그 아래는 줄만 그어져 있다.\n명단에 없는 사람은 받지 못했다.', descEn: 'Checkmarks beside names. The pen stops halfway. Below, only ruled lines.\nThose not on the list got nothing.' },
-  slum2: { region: 'slum', name: '판자벽 낙서', nameEn: 'Scrawl on the Plank Wall', desc: '"우리는 명단에 없었다."\n페인트가 흘러내린 채 굳었다.', descEn: '"We were not on the list."\nThe paint ran and set that way.' },
-  slum3: { region: 'slum', name: '가짜 배급표', nameEn: 'Forged Ration Coupon', desc: '진짜와 똑같이 인쇄된 배급표. 뒷면에 손글씨. "이거 열 장에 물 한 통. 속는 셈 치고."\n결국 아무 데서도 통하지 않았다.', descEn: 'A ration coupon printed to look real. On the back: "Ten of these for a jug of water. Worth a shot."\nIn the end they were good nowhere.' },
-  slum4: { region: 'slum', name: '아이의 그림', nameEn: 'A Child’s Drawing', desc: '크레용으로 그린 집과 사람 넷. 그 위에 회색으로 온통 덧칠했다.\n한 귀퉁이에 삐뚤빼뚤. "우리 집."', descEn: 'A house and four people in crayon, painted over all in grey.\nIn one corner, uneven letters: "Our home."' },
-  slum5: { region: 'slum', name: '대피령 벽보', nameEn: 'Evacuation Notice', desc: '해당 구역은 지원 대상에서 제외되었습니다. 자력으로 이동하십시오.\n어디로 가라는 말은 없었다.', descEn: 'This zone is excluded from assistance. Relocate by your own means.\nIt never said where to go.' },
-  slum6: { region: 'slum', name: '공동 우물의 규칙', nameEn: 'Rules of the Shared Well', desc: '한 집에 하루 한 통. 순서 지킬 것. 싸우지 말 것.\n맨 아래 다른 글씨. "우물 말랐음. 미안."', descEn: 'One jug per household a day. Keep the order. No fighting.\nIn a different hand at the bottom: "Well’s dry. Sorry."' },
-  slum7: { region: 'slum', name: '남겨진 담요', nameEn: 'The Left-Behind Blanket', desc: '골목 끝에 개켜진 담요 한 장과 빈 그릇. 누군가 여기 오래 앉아 있었다.\n일어나 어디로 갔는지는 아무도 모른다.', descEn: 'A folded blanket and an empty bowl at the alley’s end. Someone sat here a long while.\nWhere they rose and went, no one knows.' },
-
-  // ── 특수 (bunker) 1: 하강 계단에서만 발견 (#55, 1.4 비밀 진입로 복선) ──
-  stair1: { region: 'bunker', name: '계단참의 낙서', nameEn: 'Scrawl on the Landing', desc: '이 통로는 어디로 이어질까. 군화 자국은 아래로만 나 있다.', descEn: 'Where does this passage lead? The boot prints go only downward.' },
-
-  // ── 지하 (subway) 5: 판데믹 초기 지하 대피 서사의 본진 (대피 행렬→봉쇄→핵겨울로 이어지는 결) ──
-  //   지하철 셸터 거주 중 탐험에서만 드랍(district=city, subway 풀 우선). 1인칭 발견 문법·기존 36종 문체 유지.
-  sub1: { region: 'subway', name: '승강장 안내 방송문', nameEn: 'Platform Announcement', desc: '열차 운행이 전면 중단되었습니다. 승강장에서 대기하지 마시고 지상 대피소로 이동하십시오.\n같은 방송이 반복되다, 어느 순간 뚝 끊겼다.', descEn: 'All train service has stopped. Do not wait on the platform — proceed to a surface shelter.\nThe same message looped, then cut off mid-sentence.' },
-  sub2: { region: 'subway', name: '셔터 앞의 줄', nameEn: 'The Line at the Shutter', desc: '개찰구 셔터 앞에 분필로 그은 줄, 번호가 삼백을 넘는다.\n맨 끝 번호 옆에 작게. "여기까지. 안은 다 찼다."', descEn: 'Chalk numbers queued before the gate shutter, past three hundred.\nBy the last number, small: "This far. Inside is full."' },
-  sub3: { region: 'subway', name: '궤도 위의 유모차', nameEn: 'A Pram on the Tracks', desc: '선로 자갈 위에 빈 유모차 하나가 모로 넘어져 있다. 담요는 아직 개켜진 채다.\n왜 여기 두고 갔는지는, 아무도 적어두지 않았다.', descEn: 'An empty pram lies on its side in the track gravel. The blanket is still folded.\nWhy it was left here, no one wrote down.' },
-  sub4: { region: 'subway', name: '마지막 열차 시각표', nameEn: 'Last Train Timetable', desc: '벽에 붙은 시각표에 누군가 빨간 펜으로 한 줄만 크게 동그라미 쳤다. 막차 23:40.\n그 밑에. "이걸 놓치면 걸어서 내려와라."', descEn: 'On the wall timetable, one line is circled hard in red pen: last train, 23:40.\nBeneath it: "Miss this and walk down."' },
-  sub5: { region: 'subway', name: '터널로 이어진 발자국', nameEn: 'Footprints into the Tunnel', desc: '먼지 앉은 승강장 끝, 발자국이 어둠 속 터널로 줄지어 이어진다. 돌아 나온 자국은 없다.\n그들이 지하에서 무엇을 찾으려 했는지, 나는 이제 조금 알 것 같다.', descEn: 'At the dusty platform’s end, footprints file into the dark of the tunnel. None come back.\nWhat they hoped to find underground — I think I’m beginning to understand.' },
-
-  // ── 1.3 리조트 폐허 (resort) 8: 마지막 휴가객들 (봉쇄 전 산정에서 겨울을 보낸 사람들의 결) ──
-  //   스키 로지 거주 중 리조트 탐험에서 우선 드랍. 1인칭 발견 문법·기존 문체 유지.
-  rst1: { region: 'resort', name: '프런트의 마지막 예약', nameEn: 'The Last Booking', desc: '데스크 컴퓨터 화면이 아직 켜져 있다. 마지막 예약: 2박, 스위트, 두 사람.\n체크아웃란은 비어 있다. 그들은 끝내 내려가지 않았다.', descEn: 'The front-desk screen still glows. Last booking: two nights, a suite, for two.\nThe check-out field is blank. They never went back down.' },
-  rst2: { region: 'resort', name: '눈에 묻힌 스키', nameEn: 'Skis Under the Snow', desc: '거치대에 스키 여남은 켤레가 그대로 꽂혀 있다. 이름표가 달린 것도 있다.\n마지막으로 슬로프를 탄 사람이 누구였는지, 이제 알 길이 없다.', descEn: 'A dozen pairs of skis still stand in the rack, some with name tags.\nWho last rode the slope, there’s no way to know now.' },
-  rst3: { region: 'resort', name: '라운지의 방명록', nameEn: 'The Lounge Guestbook', desc: '난롯가 방명록에 적힌 인사들. "다시 오겠습니다." "잊지 못할 겨울."\n마지막 장엔 다른 필체. "여기 갇혔다. 그래도 따뜻하다."', descEn: 'Greetings in the guestbook by the hearth. "We’ll be back." "An unforgettable winter."\nThe last page, another hand: "Snowed in. Still — it’s warm here."' },
-  rst4: { region: 'resort', name: '케이블카 운행 중지 안내', nameEn: 'Cable Car Suspended', desc: '승강장에 붙은 안내문. 폭설로 케이블카 운행을 중단합니다. 복구 시 재개.\n복구는 오지 않았다. 산은 그대로 사람들을 품었다.', descEn: 'A notice at the platform: Cable car suspended due to heavy snow. Service resumes when restored.\nRestoration never came. The mountain kept its people as they were.' },
-  rst5: { region: 'resort', name: '객실의 크리스마스 트리', nameEn: 'A Room’s Christmas Tree', desc: '작은 트리 하나가 창가에 서 있다. 전구는 꺼졌지만 장식은 그대로다.\n선물 하나가 아직 안 뜯긴 채, 그 아래 놓여 있다.', descEn: 'A small tree stands by the window. The bulbs are dark, the ornaments intact.\nOne gift, still unopened, waits beneath it.' },
-  rst6: { region: 'resort', name: '스키 강사의 수첩', nameEn: 'The Ski Instructor’s Notebook', desc: '오전반 다섯 명, 오후반 취소. 눈이 너무 많이 온다.\n마지막 줄: 손님들을 라운지로 모았다. 내려갈 길이 막혔다. 겁주지 말자.', descEn: 'Morning class of five, afternoon cancelled. Too much snow.\nLast line: Gathered the guests in the lounge. The way down is closed. Don’t frighten them.' },
-  rst7: { region: 'resort', name: '온천 옆 수건 바구니', nameEn: 'Towel Basket by the Spring', desc: '노천탕 옆에 개켜진 수건이 아직 쌓여 있다. 김은 오래전에 걷혔다.\n누군가는 여기서, 세상이 끝나는 걸 따뜻한 물속에서 지켜봤을 것이다.', descEn: 'Folded towels still stack beside the open-air bath. The steam lifted long ago.\nSomeone, maybe, watched the world end from the warm water here.' },
-  rst8: { region: 'resort', name: '전망대의 망원경', nameEn: 'The Overlook Telescope', desc: '동전 넣는 유료 망원경이 계곡을 향해 있다. 마지막으로 넣은 동전이 아직 걸려 있다.\n무엇을 보려 했을까. 아래 도시엔 이제 불빛이 없다.', descEn: 'A coin-op telescope points down the valley, the last coin still lodged in it.\nWhat did they hope to see? There are no lights in the city below now.' },
-
-  // ── 1.4 금지 구역 (research) 12: 세계관의 답 — 판데믹→봉쇄→핵겨울→그리고 왜. 최종장. ──
-  //   검문소/연구동 탐험에서 우선 드랍. 극적 폭로가 아니라 조용한 발견의 톤. 기존 memo 문법·1인칭 발견.
-  //   서사 순서: 검문소(격리 초기 기록) → 연구동(원인·결정·관측 프로그램·박사). 12종 다 모으면 최종장 페이지.
-  rsc1: { region: 'research', name: '검문소 통제 일지', nameEn: 'Checkpoint Control Log', desc: '차단봉 옆 철제 캐비닛에서 나온 일지. 첫 장: 감염 의심자 격리, 통행 전면 차단. 마지막 장은 며칠 뒤다.\n"우리도 안에 갇혔다. 밖에서 문을 잠갔다."', descEn: 'A logbook from the steel cabinet by the barrier. First page: isolate suspected cases, seal all passage. The last page is days later.\n"We are shut in too. They locked the door from outside."' },
-  rsc2: { region: 'research', name: '방호 지침 게시물', nameEn: 'Protective Protocol Notice', desc: '벽에 붙은 코팅된 지침. 방호복 없이 이 선을 넘지 말 것. 노출 시 되돌릴 수 없음.\n누군가 아래에 유성펜으로 적었다. "그래도 넘어야 할 사람이 있다."', descEn: 'A laminated notice on the wall. Do not cross this line without a suit. Exposure cannot be undone.\nBeneath it, in marker: "Even so, someone has to cross."' },
-  rsc3: { region: 'research', name: '초기 역학 보고 조각', nameEn: 'Early Epidemiology Fragment', desc: '찢긴 보고서 한 장. 전파 속도가 모형을 앞질렀다. 도시 봉쇄로는 늦었다는 판단.\n표 여백에 흐린 글씨. "봉쇄가 사람을 살리려는 것이었는지, 가두려는 것이었는지 이제 모르겠다."', descEn: 'A torn report page. Spread outran the models. Lockdown, it concludes, came too late.\nIn the margin, faint: "I no longer know if the cordon was to save people, or to hold them in."' },
-  rsc4: { region: 'research', name: '봉쇄선 지도', nameEn: 'The Cordon Map', desc: '벽 한 면을 채운 지도. 도시들이 동심원으로 그어져 있고, 가장 안쪽 원에 굵은 빨간 표시.\n범례에 적힌 한 단어를 오래 들여다봤다. "소각(燒却)."', descEn: 'A map filling one wall. Cities ringed in concentric circles, the innermost marked thick in red.\nI stared a long time at the one word in the legend: "Incineration."' },
-  rsc5: { region: 'research', name: '결정 회의록', nameEn: 'Minutes of the Decision', desc: '회의록. 확산을 멈출 방법은 하나뿐이라는 데 다수가 동의. 반대 세 명의 이름은 지워졌다.\n마지막 줄: "겨울을 앞당기더라도. 남은 이들이 버틸 수 있도록."', descEn: 'Meeting minutes. A majority agreed there was only one way to stop the spread. The names of the three who dissented are struck out.\nLast line: "Even if it brings winter early. So that those who remain might endure."' },
-  rsc6: { region: 'research', name: '기상 예측 부록', nameEn: 'Climate Forecast Annex', desc: '두꺼운 부록의 접힌 페이지. 대규모 소각 이후 대기 그을음이 햇빛을 가려 수년간 겨울이 이어질 것이라는 예측.\n"인류가 스스로 부른 겨울. 우리는 그것을 알고도 눌렀다."', descEn: 'A folded page in a thick annex. It predicts that soot from mass incineration would veil the sun, and winter would last years.\n"A winter mankind called down upon itself. We knew, and we pressed it anyway."' },
-  rsc7: { region: 'research', name: '연구소 출입 기록', nameEn: 'Lab Access Log', desc: '지하 연구동 출입 단말의 마지막 기록들. 대부분 퇴근 표시가 없다. 한 사람만 며칠 더 드나든다.\n식별번호 뒤 직함: 관측 프로그램 책임. 이름 자리엔 이니셜 하나뿐이다.', descEn: 'The last entries from the undercroft lab’s access terminal. Most have no clock-out. One person keeps coming and going for days more.\nAfter the ID, a title: Head, Observation Program. Where the name should be, a single initial.' },
-  rsc8: { region: 'research', name: '관측 프로그램 개요', nameEn: 'Observation Program Brief', desc: '표지에 도장. 소각 이후 지상에 남은 생존 신호를 위성으로 관측·기록하는 계획.\n"우리는 내려갈 수 없다. 그러니 위에서 지켜본다. 버티는 불빛이 있는 한, 이건 실패가 아니다."', descEn: 'A stamped cover sheet. A plan to track and log surviving signals on the ground by satellite, after the burning.\n"We cannot come down. So we watch from above. As long as a light holds out, this is not a failure."' },
-  rsc9: { region: 'research', name: '박사의 개인 노트', nameEn: 'The Doctor’s Personal Note', desc: '연구용 노트 사이에 끼워진 사적인 쪽지. "나는 이 결정에 서명한 세 사람 중 하나였다. 반대편에.\n그래서 나는 여기 남아, 내가 막지 못한 겨울을 끝까지 지켜보기로 했다."', descEn: 'A private note tucked among the research pads. "I was one of the three who signed against this.\nSo I chose to stay here, and watch to the end the winter I could not stop."' },
-  rsc10: { region: 'research', name: '위성 교신 로그', nameEn: 'Satellite Uplink Log', desc: '단말 화면을 옮겨 적은 종이. 궤도 관측소와의 정기 교신 기록. 대부분 "지상 신호 없음".\n맨 아래 한 줄만 다르다. "신호 하나 감지. 좌표 기록. — 계속 지켜본다."', descEn: 'A page transcribed from a terminal. Logs of regular contact with the orbital station. Most read "no surface signal."\nOnly the bottom line differs: "One signal detected. Coordinates logged. — Keep watching."' },
-  rsc11: { region: 'research', name: '무전 기지 설계도', nameEn: 'Radio Base Schematic', desc: '접힌 청사진. 지상에서 궤도 관측소로 신호를 되쏘는 송신 기지의 도면이다. 안테나·송신기·전원 계통이 나뉘어 있다.\n여백에 손글씨. "누군가 이걸 다시 세운다면, 위에서 응답할 것이다."', descEn: 'A folded blueprint. Plans for a ground station that beams a signal back up to the orbital post. Antenna, transmitter, power — each drawn apart.\nIn the margin, by hand: "If someone raises this again, there will be an answer from above."' },
-  rsc12: { region: 'research', name: '마지막 기록', nameEn: 'The Last Entry', desc: '노트의 마지막 장. "아홉 번의 겨울이면 대기가 가라앉는다. 나는 거기까진 못 본다.\n하지만 그때까지 버틴 불빛이 하나라도 있다면, 부디 이 기지를 다시 켜다오. 그게 내가 남길 수 있는 전부다. — Dr. ___"', descEn: 'The notebook’s last page. "Nine winters, and the air will settle. I won’t see that far.\nBut if even one light lasts that long — please, switch this station back on. It is all I can leave. — Dr. ___"' },
-};
-// 유서 6종 — 지역 무관 별도 풀, 극저확률 (REQ-LORE-01)
-const WILLS = {
-  will1: { will: true, name: '창턱의 유서', nameEn: 'Note on the Sill', desc: '더는 기다릴 힘이 없다. 창밖에 봄이 오면 누군가 이 방을 쓰길.\n미워하지 마라. 나는 오래 버텼다.', descEn: 'No strength left to wait. When spring comes to that window, may someone use this room.\nDon’t hate me. I held on a long time.' },
-  will2: { will: true, name: '아버지의 마지막 말', nameEn: 'Father’s Last Words', desc: '아들아, 연료는 다락에 숨겨뒀다. 봄까지만 아끼면 산다.\n나는 너 몫까지 먹지 않으려 한다. 부디 살아라.', descEn: 'Son, the fuel is hid in the attic. Ration it to spring and you’ll live.\nI won’t eat your share. Please — live.' },
-  will3: { will: true, name: '두 사람의 편지', nameEn: 'Letter for Two', desc: '우린 함께 가기로 했다. 따로 남는 것보다 낫다고.\n이 집을 찾은 당신은, 부디 혼자가 아니길.', descEn: 'We chose to go together. Better than being left apart.\nWhoever finds this house — may you not be alone.' },
-  will4: { will: true, name: '간호사의 수첩', nameEn: 'The Nurse’s Notebook', desc: '마지막 환자까지 곁을 지켰다. 약은 진작 떨어졌고, 손을 잡아주는 것밖엔 없었다.\n이제 내 차례다. 두렵지 않다면 거짓말이다.', descEn: 'I stayed to the last patient. The medicine ran out long ago; all I had left was a held hand.\nNow it’s my turn. I’d be lying if I said I wasn’t afraid.' },
-  will5: { will: true, name: '개에게 남긴 말', nameEn: 'A Word for the Dog', desc: '문은 열어뒀다. 너는 나보다 오래 살아라.\n누구든 이 녀석을 보거든, 착한 개다. 겁이 많을 뿐이다.', descEn: 'I left the door open. Outlive me.\nWhoever meets this one — he’s a good dog. Just easily frightened.' },
-  will6: { will: true, name: '전하지 못한 답장', nameEn: 'The Reply Never Sent', desc: '네 편지 잘 받았다. 나도 보고 싶었다고, 그 말을 꼭 하고 싶었다.\n부칠 곳이 이제 없구나.', descEn: 'I got your letter. I wanted to say I missed you too — I needed to say it.\nThere’s nowhere left to send this now.' },
-};
-const MEMO_REGIONS = ['residential', 'commercial', 'industrial', 'slum'];
-// 지역별 메모 id 목록 (미리 그룹핑)
-const MEMOS_BY_REGION = MEMO_REGIONS.reduce((o, rg) => { o[rg] = Object.keys(MEMOS).filter(id => MEMOS[id].region === rg); return o; }, {});
-// 1.2 지하(subway) 메모 풀 — 지하철 셸터 거주 중 탐험에서 우선 드랍(판데믹 지하 대피 서사).
-const MEMOS_SUBWAY = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'subway');
-// 1.3 리조트(resort) 메모 풀 — 리조트 탐험에서 우선 드랍(마지막 휴가객들).
-const MEMOS_RESORT = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'resort');
-// 1.4 금지 구역(research) 기밀 문서 풀 — 검문소/연구동 탐험에서 우선 드랍(세계관의 답 · 최종장).
-const MEMOS_RESEARCH = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'research');
+// MEMOS/WILLS/MEMO_REGIONS 및 파생 지역 목록(MEMOS_BY_REGION/SUBWAY/RESORT/RESEARCH)은
+// src/data/lore.js로 분리(콘텐츠 데이터 Phase 1). 수집/드랍 로직은 game.js에 유지.
+//   subway/resort/research 지역 풀은 lore.js에서 MEMOS를 필터해 파생(원본 유지).
 
 /* ── 라디오 방송 12종 (REQ-RADIO-01) ──
    예보 3(계절)/행상 예고 1/과거 정부 안내 2/정체불명 음악 1/생존자 사연 2/기계 자동 방송 1/박사 일지 조각 2.
    박사 조각(doctor:true) 2종 모두 수집 시 9겨울 doctor_radio 문안에 한 줄 추가된다. */
-const BROADCASTS = {
-  fc_spring: { kind: 'forecast', name: '봄 기상 안내', nameEn: 'Spring Weather Notice', desc: '…낮 기온 오름. 남은 눈 녹아 길 질척임. 이른 풀 돋음. 파종을 서두르라는 옛 방송의 잔향뿐이다.', descEn: '…daytime warming. What snow remains melts to mud. Early grass. Only the echo of an old broadcast urging you to sow.' },
-  fc_summer: { kind: 'forecast', name: '여름 기상 안내', nameEn: 'Summer Weather Notice', desc: '…연일 무더위. 식수 관리 각별히. 신선한 것은 곧 상함. 통조림을 아끼라던 목소리가 지직거린다.', descEn: '…relentless heat, days on end. Guard your water. Fresh food spoils fast. A voice crackles: save the cans.' },
-  fc_winter: { kind: 'forecast', name: '겨울 기상 안내', nameEn: 'Winter Weather Notice', desc: '…한파 주의보. 연료와 단열을 점검하라. 이 방송이 언제 녹음됐는지는 아무도 모른다.', descEn: '…cold-snap warning. Check your fuel and insulation. No one knows when this was recorded.' },
-  merchant_ad: { kind: 'merchant', name: '행상 예고', nameEn: 'Peddler’s Notice', desc: '…돌아다니는 장수요. 있는 것과 없는 것을 바꿉니다. 겨울 전엔 연료가 비싸요. 가을에 챙겨두쇼.', descEn: '…a traveling trader here. I swap what I have for what I don’t. Fuel runs dear before winter. Stock up in autumn.' },
-  gov_curfew: { kind: 'gov', name: '통행 제한 안내 (반복)', nameEn: 'Curfew Notice (looped)', desc: '…해당 구역은 통행이 제한됩니다. 지정된 대피소로 이동하십시오. …구역은 통행이 제한됩니다. 이동하십시오. …제한됩니다…', descEn: '…this zone is under curfew. Proceed to a designated shelter. …zone is under curfew. Proceed. …under curfew…' },
-  gov_ration: { kind: 'gov', name: '배급 안내 (반복)', nameEn: 'Ration Notice (looped)', desc: '…배급표를 지참하십시오. 한 사람당 하루 한 통. 질서를 지켜주십시오. 같은 문장이 끝없이 되풀이된다.', descEn: '…bring your ration coupon. One jug per person a day. Please keep order. The same lines loop without end.' },
-  music_unknown: { kind: 'music', name: '정체불명의 음악', nameEn: 'Music from Nowhere', desc: '가사 없는 낡은 곡이 흐른다. 누가, 왜 아직도 이걸 송출하는지 알 수 없다. 그래도 잠시, 혼자가 아닌 것 같다.', descEn: 'An old tune, no words, drifting through. Who plays it, and why, no one can say. Still — for a moment, you feel less alone.' },
-  survivor1: { kind: 'survivor', name: '생존자 사연 · 등대', nameEn: 'Survivor’s Story · Lighthouse', desc: '"바닷가에 있어요. 밤마다 불을 켜둡니다. 지나는 배가 있으면… 혼자가 아니라고 말해주고 싶어서."', descEn: '"I’m by the sea. I keep a light burning each night. If a ship passes… I just want to say — you’re not alone."' },
-  survivor2: { kind: 'survivor', name: '생존자 사연 · 아이', nameEn: 'Survivor’s Story · The Child', desc: '"딸이 라디오를 좋아했어요. 그래서 계속 틀어둡니다. 언젠가 이 소릴 듣고 찾아올지도 모르니까요."', descEn: '"My daughter loved the radio. So I keep it on. Maybe one day she hears it and finds her way back."' },
-  auto_beacon: { kind: 'machine', name: '자동 관측 신호', nameEn: 'Automated Beacon', desc: '…관측소 자동 송신. 좌표 기록 중. 지상 신호 감지 시 보고. 사람의 목소리는 한 마디도 섞이지 않는다.', descEn: '…observatory auto-transmit. Logging coordinates. Report on surface-signal detection. Not one human word in it.' },
-  doctor1: { kind: 'doctor', doctor: true, name: '박사의 일지 · 조각 하나', nameEn: 'Doctor’s Log · Fragment One', desc: '"…겨울이 아홉 번 지나면, 대기가 가라앉는다고 계산했다. 그 전까지 버틴 신호가 있다면, 그건 우연이 아니다. — 계속 관측한다."', descEn: '"…by my count, after nine winters the air settles. If a signal holds out that long, it is no accident. — I keep watching."' },
-  doctor2: { kind: 'doctor', doctor: true, name: '박사의 일지 · 조각 둘', nameEn: 'Doctor’s Log · Fragment Two', desc: '"관측 위성은 아직 돈다. 지상에 불빛 하나가 아홉 해를 버티면, 우리는 내려갈 이유를 얻는다. 그 하나를 기다린다."', descEn: '"The satellite still turns. If one light on the ground lasts nine years, we are given a reason to come down. I wait for that one."' },
-};
+// BROADCASTS(라디오 방송 12종)는 src/data/lore.js로 분리(콘텐츠 데이터 Phase 1).
 
 /* ── 1.3 밤하늘 스케치 6종 (관측소 완공 후, 맑은 밤 이벤트로 수집) ──
    감상 보상. 각 스케치는 그날 본 하늘의 1인칭 기록 — "나는 오래 서서 하늘을 봤다"의 결. 지시조 금지.
    맨 끝(satellite)은 1.4 복선: "저건 별이 아니다". 기록 탭에서 종이 스케치처럼 열람. */
-const SKETCHES = {
-  meteor:    { name: '유성우 스케치', nameEn: 'Meteor Shower Sketch', desc: '몇 개나 셌는지 모르겠다. 세다가 그만두고, 그냥 오래 서서 하늘을 봤다.\n떨어지는 것들에게도 소원을 빌 사람이 필요했을 텐데.', descEn: 'I lost count of how many. I stopped counting and just stood a long while, watching.\nEven the falling ones must have wanted someone to wish on them.' },
-  aurora:    { name: '오로라 스케치', nameEn: 'Aurora Sketch', desc: '초록 커튼이 산등성이 위로 천천히 흘렀다. 소리는 없었다.\n이렇게 조용한 것이 이렇게 넓을 수 있다는 게, 오늘은 위로가 됐다.', descEn: 'A green curtain drifted slow above the ridgeline. There was no sound.\nThat something so quiet could be so vast — tonight, that was a comfort.' },
-  milkyway:  { name: '은하수 스케치', nameEn: 'Milky Way Sketch', desc: '도시가 살아 있을 땐 이런 하늘을 본 적이 없다. 폐허가 준 것 중에 이건 나쁘지 않다.\n먼지 너머로, 강처럼 흐르는 별.', descEn: 'When the city still lived I never saw a sky like this. Of what the ruin gave, this one isn’t bad.\nBeyond the dust, stars flowing like a river.' },
-  moonhalo:  { name: '달무리 스케치', nameEn: 'Moon Halo Sketch', desc: '달 둘레에 흐린 고리가 걸렸다. 내일 눈이 온다는 뜻이라고, 누가 그랬던 것 같다.\n예보는 이제 하늘밖에 없다.', descEn: 'A faint ring hung round the moon. Someone once said it means snow tomorrow.\nThe sky is the only forecast left now.' },
-  comet:     { name: '혜성 스케치', nameEn: 'Comet Sketch', desc: '꼬리를 끌고 서쪽으로 낮게 지났다. 다음에 돌아올 땐 내가 없을 것이다.\n그래도 오늘 밤 그것을 본 사람이 하나는 있었다고, 적어둔다.', descEn: 'It passed low to the west, dragging its tail. When it swings back, I won’t be here.\nStill — I write it down: tonight, at least one person saw it.' },
-  satellite: { name: '궤도의 불빛 스케치', nameEn: 'Orbiting Light Sketch', desc: '별들 사이로 한 점이 일정한 속도로 미끄러졌다. 깜빡이지도, 떨어지지도 않았다.\n저건 별이 아니다. 누군가 아직 저 위에서 돌고 있다.', descEn: 'A single point slid between the stars at a steady pace. It did not blink, and it did not fall.\nThat is no star. Someone up there is still going round.' },
-};
+// SKETCHES(밤하늘 스케치)는 src/data/lore.js로 분리(콘텐츠 데이터 Phase 1).
 
 /* ── 1.3 밤하늘 스케치 수집 (state.sketches) — 관측소 완공 후 맑은 밤 이벤트로 1종씩 수집 ── */
 function sketchesCollected() { return Object.keys(state.sketches || {}).length; }
@@ -6176,275 +5863,16 @@ function playEventSting(id) {
   playSfx('sting', { rate: STING_RATE[tone], jitter: 0.03 });
 }
 // title/text/choice label 은 언어 전환 시점(showEvent) 에 t() 로 해석하므로 id 로 보관한다.
-const EVENTS = {
-  wanderer: {
-    icon: '🚶', titleId: 'ev.wanderer.title', textId: 'ev.wanderer.text',
-    choices: [
-      { labelId: 'ev.wanderer.c0', cost: { food: 2 }, run() { state.buff = { exp: 0.10, labelId: 'buff.wanderer' }; return t('ev.wanderer.r0'); } },
-      { labelId: 'ev.wanderer.c1', run() { return t('ev.wanderer.r1'); } },
-    ],
-  },
-  trader: {
-    icon: '🎒', titleId: 'ev.trader.title', textId: 'ev.trader.text',
-    choices: [
-      { labelId: 'ev.trader.c0', cost: { battery: 2 }, run() { resAdd('bandage', 1); resAdd('antiseptic', 1); return t('ev.trader.r0'); } },
-      { labelId: 'ev.trader.c1', run() { return t('ev.trader.r1'); } },
-    ],
-  },
-  dog: {
-    icon: '🐕', titleId: 'ev.dog.title', textId: 'ev.dog.text',
-    choices: [
-      { labelId: 'ev.dog.c0', cost: { food: 1 }, run() { state.buff = { exp: 0.10, labelId: 'buff.dog' }; return t('ev.dog.r0'); } },
-      { labelId: 'ev.dog.c1', run() { return t('ev.dog.r1'); } },
-    ],
-  },
-  // 1.1 밀수꾼 행상인 — 항구 한정, 지나가는 존재(캐논: 타인은 흐른다). 계절 가격 극단(겨울 연료 프리미엄).
-  smuggler: {
-    icon: '🚢', titleId: 'ev.smuggler.title', textId: 'ev.smuggler.text',
-    when: { districts: ['harbor'], dayOnly: true },
-    choices: [
-      // 겨울이면 연료 프리미엄(배터리 3), 평시엔 배터리 1 — 계절로 대가가 갈린다.
-      { labelId: 'ev.smuggler.c0',
-        cost() { return { battery: seasonOf().id === 'winter' ? BAL.harbor.smugglerFuelWinter : BAL.harbor.smugglerFuelNormal }; },
-        run() { resAdd('fuel', 1); return t(seasonOf().id === 'winter' ? 'ev.smuggler.r0winter' : 'ev.smuggler.r0'); } },
-      // 소금 3 → 희귀부품 2 (항구 특산의 교환 가치)
-      { labelId: 'ev.smuggler.c1', cost: { salt: 3 }, run() { resAdd('parts', BAL.harbor.smugglerPartsGet); return t('ev.smuggler.r1'); } },
-      { labelId: 'ev.smuggler.c2', run() { return t('ev.smuggler.r2'); } },
-    ],
-  },
-  storm: {
-    icon: '🌪️', titleId: 'ev.storm.title', textId: 'ev.storm.text',
-    choices: [
-      { labelId: 'ev.storm.c0', cost: { material: 1 }, run() { return t('ev.storm.r0'); } },
-      { labelId: 'ev.storm.c1', run() { state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 10); return t('ev.storm.r1'); } },
-    ],
-  },
-  broken: {
-    icon: '🔩', titleId: 'ev.broken.title', textId: 'ev.broken.text',
-    choices: [
-      { labelId: 'ev.broken.c0', cost: { parts: 1 }, run() { return t('ev.broken.r0'); } },
-      { labelId: 'ev.broken.c1', run() { state.buff = { exp: -0.05, labelId: 'buff.broken' }; return t('ev.broken.r1'); } },
-    ],
-  },
-  thief: {
-    icon: '👣', titleId: 'ev.thief.title', textId: 'ev.thief.text',
-    choices: [
-      { labelId: 'ev.thief.c0', run() {
-        const lit = items.some(it => DEFS[it.defId].light && it.on !== false);
-        if (lit) return t('ev.thief.r.safe');
-        for (const rid of ['bandage', 'battery', 'food']) {
-          if ((state.res[rid] || 0) > 0) { resConsume(rid, 1); return t('event.stolen', { name: LN(RESOURCES[rid]) }); }
-        }
-        return t('ev.thief.r.none');
-      } },
-    ],
-  },
-  seeds: {
-    icon: '🌱', titleId: 'ev.seeds.title', textId: 'ev.seeds.text',
-    choices: [
-      { labelId: 'ev.seeds.c0', cost: { water: 2 }, run() {
-        if (state.current === 'greenhouse') { resAdd('food', 3); return t('ev.seeds.r.green'); }
-        resAdd('food', 1);
-        return t('ev.seeds.r.plain');
-      } },
-      { labelId: 'ev.seeds.c1', run() { return t('ev.seeds.r1'); } },
-    ],
-  },
-  radio_sig: {
-    icon: '📡', titleId: 'ev.radio.title', textId: 'ev.radio.text',
-    when: { needsRadio: true }, // (구 cond: 라디오 보유 시에만) — 동작 불변, 스키마 이관
-    choices: [
-      { labelId: 'ev.radio.c0', run() { state.buff = { loot: 2, labelId: 'buff.radio' }; return t('ev.radio.r0'); } },
-      { labelId: 'ev.radio.c1', run() { return t('ev.radio.r1'); } },
-    ],
-  },
-  /* ── Phase D 신규 인카운터 12종 (#12) — 조건은 when 스키마로 선언 ── */
-  // 1. 겨울+한파: 문 밖에 쓰러진 낯선 이. 데워 보내기 / 못 본 척.
-  coldsnap_stranger: {
-    icon: '🧊', titleId: 'ev.coldstranger.title', textId: 'ev.coldstranger.text',
-    when: { seasons: ['winter'] }, cond: () => coldSnapActive(),
-    choices: [
-      { labelId: 'ev.coldstranger.c0', cost: { fuel: 2 }, run() { addMoodBuff(3, 3); state.dayLog.notes.push(t('ev.coldstranger.note0')); return t('ev.coldstranger.r0'); } },
-      { labelId: 'ev.coldstranger.c1', run() { addMoodBuff(-2, 2); state.dayLog.notes.push(t('ev.coldstranger.note1')); return t('ev.coldstranger.r1'); } },
-    ],
-  },
-  // 2. 여름: 상한 것 반값에 떠넘기려는 행상. 간파 / 속아 삼(식중독).
-  spoil_merchant: {
-    icon: '🥴', titleId: 'ev.spoilmerchant.title', textId: 'ev.spoilmerchant.text',
-    when: { seasons: ['summer'] },
-    choices: [
-      { labelId: 'ev.spoilmerchant.c0', run() { state.dayLog.notes.push(t('ev.spoilmerchant.note0')); return t('ev.spoilmerchant.r0'); } },
-      { labelId: 'ev.spoilmerchant.c1', cost: { battery: 1 }, run() {
-        resAdd('canned', 2);
-        if (Math.random() < 0.5) { const msg = applyInjury('infection', false); state.dayLog.notes.push(msg); return t('ev.spoilmerchant.r1bad'); }
-        return t('ev.spoilmerchant.r1ok');
-      } },
-    ],
-  },
-  // 3. 비/폭우 + 비 새는 셸터: 지붕 물 새기. 건축재 응급 / 방치(청결↓).
-  leaky_roof: {
-    icon: '💧', titleId: 'ev.leakyroof.title', textId: 'ev.leakyroof.text',
-    when: { weather: ['rain', 'storm'], shelters: ['container', 'rooftop', 'subway', 'ship'] },
-    choices: [
-      { labelId: 'ev.leakyroof.c0', cost: { material: 1 }, run() { return t('ev.leakyroof.r0'); } },
-      { labelId: 'ev.leakyroof.c1', run() { state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 12); return t('ev.leakyroof.r1'); } },
-    ],
-  },
-  // 4. 눈+아침: 밤새 셸터를 돌고 간 발자국. 따라가기(소득/부상) / 지우기(안정감+).
-  snow_prints: {
-    icon: '👣', titleId: 'ev.snowprints.title', textId: 'ev.snowprints.text',
-    when: { weather: ['snow'] },
-    choices: [
-      { labelId: 'ev.snowprints.c0', run() {
-        if (Math.random() < 0.55) { resAdd('canned', 1); resAdd('cloth', 1); state.dayLog.notes.push(t('ev.snowprints.note0')); return t('ev.snowprints.r0good'); }
-        const msg = applyInjury('minor', false); state.dayLog.notes.push(msg); return t('ev.snowprints.r0bad');
-      } },
-      { labelId: 'ev.snowprints.c1', run() { addMoodBuff(2, 2); return t('ev.snowprints.r1'); } },
-    ],
-  },
-  // 5. 등대 전용+밤: 먼바다의 불빛 신호. 응답 점등 / 침묵. (1.1 항구 복선)
-  lighthouse_ship: {
-    icon: '🚢', titleId: 'ev.lighthouseship.title', textId: 'ev.lighthouseship.text',
-    when: { shelters: ['lighthouse'], night: true },
-    choices: [
-      { labelId: 'ev.lighthouseship.c0', cost: { fuel: 1 }, run() { addMoodBuff(2, 3); state.dayLog.notes.push(t('ev.lighthouseship.note0')); return t('ev.lighthouseship.r0'); } },
-      { labelId: 'ev.lighthouseship.c1', run() { return t('ev.lighthouseship.r1'); } },
-    ],
-  },
-  // 6. 온실 전용: 씨앗 훔치는 새들. 쫓기 / 나눠주기(분위기+, 반짝이).
-  greenhouse_birds: {
-    icon: '🐦', titleId: 'ev.greenhousebirds.title', textId: 'ev.greenhousebirds.text',
-    when: { shelters: ['greenhouse'] },
-    choices: [
-      { labelId: 'ev.greenhousebirds.c0', run() { return t('ev.greenhousebirds.r0'); } },
-      { labelId: 'ev.greenhousebirds.c1', cost: { food: 1 }, run() {
-        addMoodBuff(2, 3);
-        if (Math.random() < 0.5) { resAdd('parts', 1); state.dayLog.notes.push(t('ev.greenhousebirds.note1')); return t('ev.greenhousebirds.r1shiny'); }
-        return t('ev.greenhousebirds.r1');
-      } },
-    ],
-  },
-  // 7. 먼 불빛(REQ-EVT-03): 지상 도심계 셸터+맑음+밤. 보상 없음, 안정감 +2 1회, 목격 기록.
-  distant_light: {
-    icon: '🌆', titleId: 'ev.distantlight.title', textId: 'ev.distantlight.text',
-    when: { shelters: ['rooftop', 'cabin', 'bunker'], weather: ['clear'], night: true },
-    choices: [
-      { labelId: 'ev.distantlight.c0', run() {
-        addMoodBuff(2, 2);
-        recordDistantLight();
-        // 장소별 문안 변형 3종 (옥탑/오두막/벙커)
-        const key = { rooftop: 'ev.distantlight.r0.rooftop', cabin: 'ev.distantlight.r0.cabin', bunker: 'ev.distantlight.r0.bunker' }[state.current] || 'ev.distantlight.r0';
-        return t(key);
-      } },
-    ],
-  },
-  // 8. 라디오 배치+밤: 주파수 사이의 목소리. 미수집 방송 드랍 연동.
-  radio_ghost: {
-    icon: '📻', titleId: 'ev.radioghost.title', textId: 'ev.radioghost.text',
-    when: { needsRadio: true, night: true },
-    choices: [
-      { labelId: 'ev.radioghost.c0', run() {
-        const b = dropBroadcast();
-        if (b) { state.pendingBroadcast = b; return t('ev.radioghost.r0', { title: LN(BROADCASTS[b]) }); }
-        return t('ev.radioghost.r0none');
-      } },
-      { labelId: 'ev.radioghost.c1', run() { return t('ev.radioghost.r1'); } },
-    ],
-  },
-  // 9. 무조건부 저확률: 벽에서 발견한 과거 달력. 메모 1 드랍.
-  old_calendar: {
-    icon: '📅', titleId: 'ev.oldcalendar.title', textId: 'ev.oldcalendar.text',
-    weight: 0.5,
-    choices: [
-      { labelId: 'ev.oldcalendar.c0', run() {
-        const m = dropMemo();
-        if (m) return t('ev.oldcalendar.r0', { title: LN(MEMOS[m]) });
-        return t('ev.oldcalendar.r0none');
-      } },
-    ],
-  },
-  // 10. 고양이 보유: 고양이가 물어온 것. 잡동사니/희귀부품/죽은 쥐.
-  cat_gift: {
-    icon: '🐾', titleId: 'ev.catgift.title', textId: 'ev.catgift.text',
-    when: { needsCat: true },
-    choices: [
-      { labelId: 'ev.catgift.c0', run() {
-        const r = Math.random();
-        if (r < 0.08) { resAdd('parts', 2); return t('ev.catgift.r0rare'); }
-        if (r < 0.6) { resAdd('cloth', 1); return t('ev.catgift.r0junk'); }
-        addMoodBuff(-1, 1); return t('ev.catgift.r0rat');
-      } },
-    ],
-  },
-  // 11. 겨울: 수도관 동파. 부품 수리 / 방치(정수기 3일 정지).
-  frozen_pipe: {
-    icon: '🚰', titleId: 'ev.frozenpipe.title', textId: 'ev.frozenpipe.text',
-    when: { seasons: ['winter'] },
-    choices: [
-      { labelId: 'ev.frozenpipe.c0', cost: { parts: 1 }, run() { return t('ev.frozenpipe.r0'); } },
-      { labelId: 'ev.frozenpipe.c1', run() { state.pipeFrozenUntil = state.day + 3; state.dayLog.notes.push(t('ev.frozenpipe.note1')); return t('ev.frozenpipe.r1'); } },
-    ],
-  },
-  // 12. 봄/가을+낮: 멀리 지나가는 행렬. 관측만(만나지 않는다). 쌍안경 있으면 상세 노트.
-  caravan_pass: {
-    icon: '🛻', titleId: 'ev.caravanpass.title', textId: 'ev.caravanpass.text',
-    when: { seasons: ['spring', 'autumn'], dayOnly: true },
-    choices: [
-      { labelId: 'ev.caravanpass.c0', run() {
-        addMoodBuff(1, 2);
-        // 망원경 계열 가구(telescope)를 두었다면 행렬을 더 오래 지켜본 상세 노트. 없으면 관측만.
-        const detail = items.some(i => i.defId === 'telescope');
-        return detail ? t('ev.caravanpass.r0detail') : t('ev.caravanpass.r0');
-      } },
-    ],
-  },
-
-  /* ── 특수 인카운터 (일반 풀에서 제외) ── */
-  cat: {
-    special: true,
-    icon: '🐈', titleId: 'ev.cat.title', textId: 'ev.cat.text',
-    choices: [
-      { labelId: 'ev.cat.c0', cost: { food: 1 }, run() {
-        state.cat = 1;
-        spawnCat();
-        state.dayLog.notes.push(t('day.catJoined'));
-        playSfx('meow1');
-        return t('ev.cat.r0');
-      } },
-      { labelId: 'ev.cat.c1', run() { return t('ev.cat.r1'); } },
-    ],
-  },
-  ending: {
-    special: true,
-    icon: '🚁', titleId: 'ev.ending.title', textId: 'ev.ending.text',
-    // 1.4 다리: 무전 기지에서 방송을 송출한 적 있으면 구조 무전 문구가 달라진다(그들이 내 신호를 따라왔다).
-    textFn: () => t('ev.ending.text') + ((state.survivorLights || 0) > 0 ? '<br><br>' + t('ev.ending.textSignal') : ''),
-    choices: [
-      { labelId: 'ev.ending.c0', run() { setTimeout(runEndingSequence, 400); return t('ev.ending.r0'); } },
-      { labelId: 'ev.ending.c1', run() { return t('ev.ending.r1'); } },
-    ],
-  },
-  // Nine Winters(#11): 9번째 겨울 이후 박사의 첫 무전 — Day 10000 엔딩의 첫 복선 (이름은 밝히지 않는다)
-  doctor_radio: {
-    special: true,
-    icon: '📻', titleId: 'ev.doctor.title', textId: 'ev.doctor.text',
-    // 박사 일지 조각 2종을 모두 수집했다면 무전 문안에 한 줄이 이어진다 (REQ-RADIO-01 연호).
-    textFn: () => t('ev.doctor.text') + (doctorFragmentsComplete() ? '<br><br>' + t('ev.doctor.textFrag') : ''),
-    choices: [
-      { labelId: 'ev.doctor.c0', run() { return t('ev.doctor.r0'); } },
-    ],
-  },
-  // 1.4: 모든 수집물을 무전 기지에서 송출한 뒤 개방되는 박사의 정기 교신 — 9겨울 무전과 Day10000 엔딩 사이의 다리.
-  //   기밀 문서를 다 읽었다면 박사 정체를 알아본 뒤의 교신이다(문안에 한 줄이 더 이어진다).
-  doctor_radio_regular: {
-    special: true,
-    icon: '📡', titleId: 'ev.doctorReg.title', textId: 'ev.doctorReg.text',
-    textFn: () => t('ev.doctorReg.text') + (state.memos && MEMOS_RESEARCH.every(id => state.memos[id]) ? '<br><br>' + t('ev.doctorReg.textTruth') : ''),
-    choices: [
-      { labelId: 'ev.doctorReg.c0', run() { state.doctorRegularSeen = true; return t('ev.doctorReg.r0'); } },
-    ],
-  },
-};
+// 인카운터 테이블은 src/data/events.js로 분리(콘텐츠 데이터 Phase 1). 함수 필드가 game.js
+// 내부 심볼을 참조하므로 팩토리 makeEvents(ctx)에 의존성 주입해 생성한다(원본과 동작 동일).
+// state/items/weather는 const 참조라 재할당되지 않아 클로저 캡처가 안전하다.
+const EVENTS = makeEvents({
+  t, LN, RESOURCES, DEFS, MEMOS, MEMOS_RESEARCH, BROADCASTS, BAL,
+  state, items,
+  resAdd, resConsume, addMoodBuff, applyInjury, seasonOf, coldSnapActive,
+  dropMemo, dropBroadcast, recordDistantLight, spawnCat, playSfx,
+  runEndingSequence, doctorFragmentsComplete,
+});
 // 이벤트 선택지 비용 판정/소비: food가 섞인 cost는 신선+통조림 합산으로 취급 (신선 우선 소비 후 통조림 폴백)
 function eventCostOk(cost) {
   return Object.entries(cost).every(([id, n]) => id === 'food' ? hasAnyFood(n) : (state.res[id] || 0) >= n);
@@ -7010,37 +6438,7 @@ function applyDeco() {
 }
 
 // 가구는 파밍이 아니라 제작이 기본 (파밍은 극히 드문 행운)
-const CRAFTS = [
-  { out: { res: 'bandage', n: 1 }, cost: { cloth: 2 }, hint: '기본 치료품', hintEn: 'Basic first aid' },
-  { out: { res: 'candle', n: 2 }, cost: { cloth: 1, fuel: 1 }, hint: '조명 연료', hintEn: 'Lighting fuel' },
-  { out: { res: 'material', n: 1 }, cost: { parts: 2 }, hint: '수리·유지비용', hintEn: 'Repairs & upkeep' },
-  { out: { furn: 'cushion' }, cost: { cloth: 2 }, hint: '푹신한 바닥 방석', hintEn: 'A soft floor cushion' },
-  { out: { furn: 'bookstack' }, cost: { cloth: 1, material: 1 }, hint: '주워 모은 책 무더기', hintEn: 'A pile of gathered books' },
-  { out: { furn: 'crate' }, cost: { material: 2 }, hint: '수납 상자', hintEn: 'Storage crate' },
-  { out: { furn: 'chair' }, cost: { material: 2 }, hint: '나무 의자', hintEn: 'Wooden chair' },
-  { out: { furn: 'candle' }, cost: { material: 1, candle: 1 }, hint: '캔들 스툴', hintEn: 'Candle stool' },
-  { out: { furn: 'teatable' }, cost: { material: 2, cloth: 1 }, hint: '낮은 찻상 — 따뜻한 한 잔', hintEn: 'A low tea table — a warm cup' },
-  { out: { furn: 'rug' }, cost: { cloth: 3 }, hint: '천을 엮은 러그', hintEn: 'A woven-cloth rug' },
-  { out: { furn: 'plant' }, cost: { water: 2, material: 1 }, hint: '화분에 심은 초록', hintEn: 'Greenery in a pot' },
-  { out: { furn: 'table' }, cost: { material: 3 }, hint: '식탁', hintEn: 'Dining table' },
-  { out: { furn: 'dresser' }, cost: { material: 3, cloth: 1 }, hint: '서랍장', hintEn: 'Dresser' },
-  { out: { furn: 'lantern' }, cost: { parts: 1, material: 1, candle: 2 }, hint: '걸이형 랜턴 (양초 연료)', hintEn: 'Hanging lantern (candle fuel)' },
-  { out: { furn: 'bed' }, cost: { cloth: 3, material: 2 }, hint: '천 + 프레임 → 침대', hintEn: 'Cloth + frame → bed' },
-  { out: { furn: 'bookshelf' }, cost: { material: 4 }, hint: '책장', hintEn: 'Bookshelf' },
-  { out: { furn: 'sofa' }, cost: { cloth: 4, material: 2 }, hint: '패브릭 소파', hintEn: 'Fabric sofa' },
-  { out: { furn: 'lamp' }, cost: { parts: 2, battery: 1 }, hint: '부품 조립 조명', hintEn: 'Part-built lamp' },
-  { out: { furn: 'clock' }, cost: { parts: 2, material: 2 }, hint: '괘종시계 — 시간이 흐르는 소리', hintEn: 'Grandfather clock — the sound of passing time' },
-  { out: { furn: 'radio' }, cost: { parts: 3, battery: 1 }, hint: '라디오 (날씨 예보)', hintEn: 'Radio (weather forecast)' },
-  { out: { furn: 'stove' }, cost: { parts: 3, material: 3 }, hint: '장작 난로 — 최고의 온기 (연료 1/일)', hintEn: 'Wood stove — the best warmth (fuel 1/day)' },
-  { out: { furn: 'purifier' }, cost: { parts: 4, material: 2 }, hint: '매일 물 +1 (전력 필요)', hintEn: 'Water +1 daily (needs power)' },
-  { out: { furn: 'generator' }, cost: { parts: 5, material: 3 }, hint: '배터리 소비 무료화 (연료 필요)', hintEn: 'Free battery use (needs fuel)' },
-  { out: { furn: 'fridge' }, cost: { parts: 4, material: 2, battery: 1 }, hint: '음식 부패 방지 (전력 필요)', hintEn: 'Prevents food spoilage (needs power)' },
-  // Phase B 고급 제작 (후반 인플레 싱크) — 희귀부품(parts) 고비용 사용처
-  { out: { furn: 'autopurifier' }, cost: { parts: 6, material: 3, battery: 1 }, hint: '매일 물 +2 (배터리 1/일)', hintEn: 'Water +2 daily (battery 1/day)' },
-  { out: { furn: 'heater' }, cost: { parts: 5, material: 3, cloth: 2 }, hint: '한파 방어 + 겨울 쾌적 (연료 1/일)', hintEn: 'Cold-snap defense + winter comfort (fuel 1/day)' },
-  // 1.1 염장 — 신선식품 2 + 소금 1 → 보존식 2. 냉장고 없는 초반의 부패 카운터(여름 대비).
-  { out: { res: 'canned', n: BAL.harbor.saltCureOut }, cost: { food: BAL.harbor.saltCureFood, salt: BAL.harbor.saltCureSalt }, hint: '소금으로 절인 보존식 — 여름 부패를 이긴다', hintEn: 'Salt-cured preserves — beats summer spoilage' },
-];
+// CRAFTS(제작 레시피)는 src/data/items.js로 분리(콘텐츠 데이터 Phase 1). BAL 참조는 items.js가 balance.js를 import.
 function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
   const rows = CRAFTS.map((c, i) => {
