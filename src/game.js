@@ -3438,6 +3438,16 @@ const DISTRICTS = {
     regionBonus: { resort: 0.05 },
     bonusLabel: '리조트 폐허 접근성 +5%p', bonusLabelEn: 'Resort ruins access +5%p',
   },
+  // 1.4 「금지 구역」 — 군이 마지막으로 지킨 곳. 전용 거주 셸터는 없다(어느 거처에서든 방호복으로 닿는 원정지).
+  //   지도 상의 구역으로만 존재 — 검문소·연구동 지역이 여기 속한다. districtOf는 셸터로 판정하므로
+  //   이 구역은 shelters:[] (거주 불가). 지역 접근성 보너스는 없음(금지 구역엔 우대가 없다).
+  research: {
+    name: '금지 구역', nameEn: 'Forbidden Zone', emoji: '☢️', shelters: [],
+    desc: '군이 마지막까지 봉쇄한 폭심지. 방호복 없이는 한 걸음도 들일 수 없다.',
+    descEn: 'The blast core the army sealed to the last. Without a hazmat suit, not one step in.',
+    regionBonus: {},
+    bonusLabel: '', bonusLabelEn: '',
+  },
 };
 function districtOf(shelterId) {
   for (const [id, d] of Object.entries(DISTRICTS)) if (d.shelters.includes(shelterId)) return id;
@@ -3564,6 +3574,14 @@ const state = {
   // ── 1.3.0 배치 D: 무력 상태 / 구제 / 끝난 기록 (GD-THESIS §4.5) ──
   rescueUsed: false,      // 이 런에서 1회 구제를 이미 받았는지 (노말/하드)
   runEnded: false,        // 런 종료(무력 두 번째 or 하드코어 무력) — 슬롯은 "끝난 기록"으로 보존, 이어하기 불가
+  // ── 1.4 「금지 구역」 ──
+  hazmat: null,           // 방호복 { dur } (제작 시 { dur: hazmatDur }). null=미제작. 금지 구역 진입 게이트+내구 소모.
+  hazmatDone: false,      // 방호복을 한 번이라도 만든 적 있는가 (무전 기지 공사 노출 게이트 — 금지 구역에 닿았다는 증거)
+  radioBaseDone: false,   // 1.4: 무전 기지 완공 (송출 행동 개방)
+  broadcasts_sent: {},    // 1.4: 송출한 방송/기록 { id: 송출일 } — 지도 불빛 점등의 근거
+  survivorLights: 0,      // 1.4: 종이 지도에 켜진 생존자 불빛 수 (송출 이력·수집률 비례로 갱신)
+  doctorRegularSeen: false, // 1.4: 박사 정기 교신을 본 적 있는가 (모든 방송 송출 후 개방 — Day10000 다리)
+  doctorRadioRegularPending: false, // 1.4: 정기 교신 발화 대기 (모든 수집물 송출 시 세워짐 → 밤 무전 1회)
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -4048,6 +4066,14 @@ function loadSave() {
       if (state.nightSkyToday == null) state.nightSkyToday = 0;
       if (state.pendingSketchPopup === undefined) state.pendingSketchPopup = null;
       if (state.deco == null || typeof state.deco !== 'object') state.deco = {}; // #13 꾸미기
+      // 1.4 금지 구역 (구세이브 → 미제작/미완공/미송출)
+      if (state.hazmat === undefined) state.hazmat = null;
+      if (state.hazmatDone == null) state.hazmatDone = false;
+      if (state.radioBaseDone == null) state.radioBaseDone = false;
+      if (state.broadcasts_sent == null || typeof state.broadcasts_sent !== 'object') state.broadcasts_sent = {};
+      if (state.survivorLights == null) state.survivorLights = 0;
+      if (state.doctorRegularSeen == null) state.doctorRegularSeen = false;
+      if (state.doctorRadioRegularPending == null) state.doctorRadioRegularPending = false;
       if (data.state.questIdx === undefined) state.questIdx = (state.day > 1 || state.successes > 0) ? -1 : 0;
       if (!SHELTERS[state.current]) state.current = 'container';
       // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
@@ -4561,6 +4587,26 @@ const REGIONS = {
     injuries: ['deep', 'sprain', 'minor'],
     resort: true, // 고원 지역 표식 (눈사태 판정 대상)
   },
+  // ── 1.4 금지 구역 2단 진입 구조 (research 구역. 방호복 필수) ──
+  //   ① 격리 검문소(중위험) — 첫 관문. 여기까지는 방호복 없이 닿을 수 없다(startExpedition 게이트).
+  //   ② 지하 연구동(고위험) — 폭심지 폐허. 희귀부품 최다 + 기밀 문서(research 메모) 본진.
+  //   두 지역 모두 forbidden:true — 방호복 미착용 차단·내구 소모 판정 대상.
+  checkpoint: {
+    name: '격리 검문소', nameEn: 'Quarantine Checkpoint', emoji: '🚧', rate: 0.5, time: 55,
+    pool: ['crate', 'dresser', 'lamp', 'clock', 'radio'], furnChance: 0.02,
+    desc: '봉쇄선의 첫 관문 · 부품·건축재 (방호복 필수)', descEn: 'The first gate of the cordon · parts, material (hazmat required)', risk: '보통 — 방호복 필수', riskEn: 'Medium — hazmat required',
+    lootRes: [['parts', 2, 3], ['material', 1, 2], ['battery', 1, 1], ['cloth', 1, 2], ['canned', 1, 1, 0.3]],
+    injuries: ['minor', 'sprain'],
+    forbidden: true, // 방호복 게이트·내구 소모 대상
+  },
+  lab: {
+    name: '지하 연구동', nameEn: 'Underground Lab', emoji: '🧪', rate: 0.35, time: 70,
+    pool: ['bookshelf', 'crate', 'lamp', 'clock', 'radio', 'generator'], furnChance: 0.02,
+    desc: '폭심지 연구소 폐허 · 희귀부품 최다 · 세상의 답이 있는 곳 (방호복 필수)', descEn: 'Ruins of the ground-zero lab · richest in rare parts · where the world’s answer lies (hazmat required)', risk: '매우 높음 — 방호복 필수', riskEn: 'Very high — hazmat required',
+    lootRes: [['parts', 3, 5], ['material', 1, 2], ['battery', 1, 2], ['fuel', 1, 1]],
+    injuries: ['deep', 'infection', 'sprain'],
+    forbidden: true, // 방호복 게이트·내구 소모 대상
+  },
 };
 for (const [k, v] of Object.entries(REGIONS)) v.id = k;
 
@@ -4570,7 +4616,7 @@ for (const [k, v] of Object.entries(REGIONS)) v.id = k;
 const MAP = {
   W: 40, H: 28, TILE: 8,
   districts: { coast: { x: 6, y: 13 }, city: { x: 16, y: 8 }, outskirts: { x: 15, y: 21 }, forest: { x: 31, y: 6 }, meadow: { x: 31, y: 19 }, harbor: { x: 4, y: 24 }, highland: { x: 36, y: 3 } },
-  regions: { residential: { x: 24, y: 16 }, commercial: { x: 12, y: 10 }, industrial: { x: 8, y: 23 }, slum: { x: 21, y: 12 }, harborYard: { x: 5, y: 26 }, fishMarket: { x: 9, y: 25 }, resort: { x: 37, y: 2 } },
+  regions: { residential: { x: 24, y: 16 }, commercial: { x: 12, y: 10 }, industrial: { x: 8, y: 23 }, slum: { x: 21, y: 12 }, harborYard: { x: 5, y: 26 }, fishMarket: { x: 9, y: 25 }, resort: { x: 37, y: 2 }, checkpoint: { x: 34, y: 25 }, lab: { x: 38, y: 26 } },
 };
 // 거리 → 탐험 소요 시간 계수 (가까우면 빨리, 멀면 오래)
 function regionDistMult(regionId) {
@@ -4667,6 +4713,31 @@ function openMapModal() {
     el.addEventListener('mouseenter', () => showMapInfo(rid));
     wrap.appendChild(el);
   }
+  // 1.4 송출 오버레이 — 종이 지도 위 생존자 불빛(수집률 비례 점등). ARC-03 레이어 규격: 마커 위에 얹는 절대배치.
+  renderSurvivorLights(wrap);
+}
+// 1.4 생존자 불빛 오버레이 — 켜진 불빛 수만큼 지도 위 결정론적 위치(seed)에 작은 빛점을 찍는다.
+//   불빛은 만남이 아니다 — 응답하는 먼 창문들(타인은 흐른다). 위치는 seed 고정 → 왕복 저장 재현.
+//   마커/지역과 겹치지 않도록 지도 여백대 위주 분포. 지도가 없거나(모달 미개방) 불빛 0이면 아무것도 안 함.
+function renderSurvivorLights(wrap) {
+  if (!wrap) return;
+  wrap.querySelectorAll('.map-light').forEach(el => el.remove()); // 재구성 시 중복 방지
+  const n = state.survivorLights || 0;
+  if (n <= 0) return;
+  const rand = seededRand(19410806); // 고정 seed → 불빛 위치 재현(왕복 저장 무손실)
+  // 후보 위치 풀(%): 지역 마커를 피한 창문/불빛다운 자리. n개까지 앞에서부터 켠다.
+  const spots = [];
+  for (let i = 0; i < MAP_LIGHT_MAX; i++) {
+    spots.push({ x: 8 + rand() * 84, y: 12 + rand() * 74 });
+  }
+  for (let i = 0; i < Math.min(n, spots.length); i++) {
+    const s = spots[i];
+    const dot = document.createElement('div');
+    dot.className = 'map-light';
+    dot.style.left = s.x + '%'; dot.style.top = s.y + '%';
+    dot.title = t('map.survivorLight');
+    wrap.appendChild(dot);
+  }
 }
 // 종이 지도 마커 좌표(% left/top) — 그림 상의 지구 클러스터 위치. residential 좌상 · commercial 우상 · industrial 좌하 · slum 우하.
 const MAP_MARKERS = {
@@ -4679,12 +4750,17 @@ const MAP_MARKERS = {
   fishMarket:  { x: 62, y: 86 },  // 하단 우측 수산시장(선착장)
   // 1.3 고원 구역 — 지도 우상단(산맥 쪽). 리조트 폐허 한 곳. (map_paper 우상단 산 그림 기준 조정 예정)
   resort:      { x: 88, y: 10 },  // 우상단 산정 리조트
+  // 1.4 금지 구역 — 지도 우하단 봉쇄선 너머. 검문소 → 그 안쪽 연구동(폭심지). (map_paper 우하단 기준 조정 예정)
+  checkpoint:  { x: 84, y: 78 },  // 우하단 봉쇄선 검문소
+  lab:         { x: 92, y: 88 },  // 검문소 안쪽 폭심지 연구동
 };
 // 항구 지역 해금 게이트: 항구 셸터(예인선)를 해금한 뒤부터 지도에 항구 구역이 뜬다.
 // 기존 4지역은 항상 해금(true). ARC-03 마커 문법 그대로, 노출 조건만 얹는다.
 function regionUnlocked(rid) {
   if (rid === 'harborYard' || rid === 'fishMarket') return state.successes >= SHELTERS.tugboat.unlockAt;
   if (rid === 'resort') return state.successes >= SHELTERS.lodge.unlockAt; // 1.3: 리조트 폐허는 스키 로지 해금 후에만 노출
+  // 1.4: 금지 구역(검문소·연구동)은 후반선 도달 시 지도에 노출. 진입 자체는 방호복 게이트(startExpedition)가 따로 막는다.
+  if (rid === 'checkpoint' || rid === 'lab') return state.successes >= BAL.forbidden.unlockAt;
   return true;
 }
 // 항만 야적장 "오늘 바다가 준 것": 날짜로 결정론적으로 부스트 전리품 1종 선택(복권 파밍, 매일 리롤).
@@ -4717,7 +4793,14 @@ function expDuration(r) {
   if (r.id === 'resort') t *= state.cablecarDone ? BAL.highland.cablecarTimeDone : BAL.highland.cablecarTimeRaw;
   // 1.3 눈사태 우회로 선택: 이번 출발이 우회로면 시간 증가(위험 감수 대신 안전 경로 아님 — GD: 시간 vs 위험).
   if (state._avalancheDetour && r.id === 'resort') t *= BAL.highland.avalancheDetourTimeMult;
+  // 1.4 벙커 지하 통로 경로: 벙커 거주 + 통로 정리 완공 시, 연구동(lab)까지 지하망 지름길(2번째 접근 경로).
+  if (r.id === 'lab' && bunkerUndercroftRoute()) t *= BAL.forbidden.undercroftLabTimeMult;
   return Math.round(t);
+}
+// 1.4 벙커 지하 통로가 금지 구역 연구동으로 이어진 상태인가 (clearPassage 복선 회수).
+//   벙커 거주 + 통로 정리 프로젝트 완공 = "저편의 희미한 빛"이 연구동 지하 진입로였음이 밝혀진다.
+function bunkerUndercroftRoute() {
+  return state.current === 'bunker' && projectDone('clearPassage');
 }
 // 게임 시간 포매터 — 게임 '분'을 받아 "N분 / N시간 / N시간 N분"으로 표기 (5분 단위 반올림).
 // 실초→게임분은 ×GAME_MIN_PER_SEC(1.5). 메커니즘은 건드리지 않고 라벨만 게임 시간으로 통일.
@@ -4766,6 +4849,11 @@ function startExpedition(regionId) {
   if (state.energy < BAL.exp.minEnergy) { toast(t('toast.tooTired')); return; }
   if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); return; }
   if (blizzardBlocks(regionId)) { toast(t('subway.blizzardBlocked')); return; } // 1.2 폭설 봉쇄 (개통 구간은 예외)
+  // 1.4 금지 구역 진입 게이트 — 방호복 미제작/내구 소진 시 차단. "방호복 없이는 한 걸음도"의 실측 지점.
+  if (isForbiddenRegion(regionId) && !hazmatUsable()) {
+    toast(t(state.hazmat ? 'hazmat.wornOut' : 'hazmat.blocked'));
+    return;
+  }
   if (avalancheBlocks(regionId)) { toast(t('avalanche.blockedToast', { n: state.avalancheBlockUntil - state.day + 1 })); return; } // 1.3 눈사태 봉쇄
   // 1.3 눈사태 예보 당일 리조트 탐험: 우회(안전·이번 예보 해소) vs 위험 감수(성공률↓·보상 1.5배·부상 위험) 선택
   if (avalancheForecastToday(regionId)) { openAvalancheChoice(regionId); return; }
@@ -4922,6 +5010,8 @@ function resolveExpedition() {
   let got = [];        // 가구 획득
   const notes = [];
   let title, body;
+  // 1.4 금지 구역 탐험 — 성패와 무관하게 방호복이 노출됐다: 내구 -1. 다 닳으면 다음 진입이 차단된다(수리 필요).
+  if (isForbiddenRegion(exp.region)) { wearHazmat(); if (state.hazmat) notes.push(t('hazmat.wearNote', { dur: state.hazmat.dur })); }
   // hard=true인 기본 획득에만 하드 -30%를 적용한다. 은닉처 loot×2 버프는 hard=false로 호출해
   // 온전한 2배를 보장 — 유저가 얻은 "2배" 버프의 체감 가치를 하드가 깎지 않도록.
   // 1.1 항만 야적장: 그날 부스트되는 전리품 1종(결정론적, 왕복/시뮬 재현) · 수산시장: 겨울 결빙 절반.
@@ -4968,7 +5058,8 @@ function resolveExpedition() {
       notes.push(t('cutter.foundNote'));
     }
     // 세계관 메모/유서 드랍 (#35) — 성공 탐험에서만. 수집 시 결산 노트 + 닫은 뒤 쪽지 팝업 예약.
-    const drop = tryDropMemoOnExpedition();
+    //   1.4: 금지 구역이면 이번 탐험 목적지(exp.region)를 넘겨 기밀 문서를 우선 드랍한다.
+    const drop = tryDropMemoOnExpedition(exp.region);
     if (drop) {
       const tbl = drop.will ? WILLS : MEMOS;
       notes.push(t(drop.will ? 'memo.foundWillNote' : 'memo.foundNote', { title: LN(tbl[drop.id]) }));
@@ -5797,6 +5888,22 @@ const MEMOS = {
   rst6: { region: 'resort', name: '스키 강사의 수첩', nameEn: 'The Ski Instructor’s Notebook', desc: '오전반 다섯 명, 오후반 취소. 눈이 너무 많이 온다.\n마지막 줄: 손님들을 라운지로 모았다. 내려갈 길이 막혔다. 겁주지 말자.', descEn: 'Morning class of five, afternoon cancelled. Too much snow.\nLast line: Gathered the guests in the lounge. The way down is closed. Don’t frighten them.' },
   rst7: { region: 'resort', name: '온천 옆 수건 바구니', nameEn: 'Towel Basket by the Spring', desc: '노천탕 옆에 개켜진 수건이 아직 쌓여 있다. 김은 오래전에 걷혔다.\n누군가는 여기서, 세상이 끝나는 걸 따뜻한 물속에서 지켜봤을 것이다.', descEn: 'Folded towels still stack beside the open-air bath. The steam lifted long ago.\nSomeone, maybe, watched the world end from the warm water here.' },
   rst8: { region: 'resort', name: '전망대의 망원경', nameEn: 'The Overlook Telescope', desc: '동전 넣는 유료 망원경이 계곡을 향해 있다. 마지막으로 넣은 동전이 아직 걸려 있다.\n무엇을 보려 했을까. 아래 도시엔 이제 불빛이 없다.', descEn: 'A coin-op telescope points down the valley, the last coin still lodged in it.\nWhat did they hope to see? There are no lights in the city below now.' },
+
+  // ── 1.4 금지 구역 (research) 12: 세계관의 답 — 판데믹→봉쇄→핵겨울→그리고 왜. 최종장. ──
+  //   검문소/연구동 탐험에서 우선 드랍. 극적 폭로가 아니라 조용한 발견의 톤. 기존 memo 문법·1인칭 발견.
+  //   서사 순서: 검문소(격리 초기 기록) → 연구동(원인·결정·관측 프로그램·박사). 12종 다 모으면 최종장 페이지.
+  rsc1: { region: 'research', name: '검문소 통제 일지', nameEn: 'Checkpoint Control Log', desc: '차단봉 옆 철제 캐비닛에서 나온 일지. 첫 장: 감염 의심자 격리, 통행 전면 차단. 마지막 장은 며칠 뒤다.\n"우리도 안에 갇혔다. 밖에서 문을 잠갔다."', descEn: 'A logbook from the steel cabinet by the barrier. First page: isolate suspected cases, seal all passage. The last page is days later.\n"We are shut in too. They locked the door from outside."' },
+  rsc2: { region: 'research', name: '방호 지침 게시물', nameEn: 'Protective Protocol Notice', desc: '벽에 붙은 코팅된 지침. 방호복 없이 이 선을 넘지 말 것. 노출 시 되돌릴 수 없음.\n누군가 아래에 유성펜으로 적었다. "그래도 넘어야 할 사람이 있다."', descEn: 'A laminated notice on the wall. Do not cross this line without a suit. Exposure cannot be undone.\nBeneath it, in marker: "Even so, someone has to cross."' },
+  rsc3: { region: 'research', name: '초기 역학 보고 조각', nameEn: 'Early Epidemiology Fragment', desc: '찢긴 보고서 한 장. 전파 속도가 모형을 앞질렀다. 도시 봉쇄로는 늦었다는 판단.\n표 여백에 흐린 글씨. "봉쇄가 사람을 살리려는 것이었는지, 가두려는 것이었는지 이제 모르겠다."', descEn: 'A torn report page. Spread outran the models. Lockdown, it concludes, came too late.\nIn the margin, faint: "I no longer know if the cordon was to save people, or to hold them in."' },
+  rsc4: { region: 'research', name: '봉쇄선 지도', nameEn: 'The Cordon Map', desc: '벽 한 면을 채운 지도. 도시들이 동심원으로 그어져 있고, 가장 안쪽 원에 굵은 빨간 표시.\n범례에 적힌 한 단어를 오래 들여다봤다. "소각(燒却)."', descEn: 'A map filling one wall. Cities ringed in concentric circles, the innermost marked thick in red.\nI stared a long time at the one word in the legend: "Incineration."' },
+  rsc5: { region: 'research', name: '결정 회의록', nameEn: 'Minutes of the Decision', desc: '회의록. 확산을 멈출 방법은 하나뿐이라는 데 다수가 동의. 반대 세 명의 이름은 지워졌다.\n마지막 줄: "겨울을 앞당기더라도. 남은 이들이 버틸 수 있도록."', descEn: 'Meeting minutes. A majority agreed there was only one way to stop the spread. The names of the three who dissented are struck out.\nLast line: "Even if it brings winter early. So that those who remain might endure."' },
+  rsc6: { region: 'research', name: '기상 예측 부록', nameEn: 'Climate Forecast Annex', desc: '두꺼운 부록의 접힌 페이지. 대규모 소각 이후 대기 그을음이 햇빛을 가려 수년간 겨울이 이어질 것이라는 예측.\n"인류가 스스로 부른 겨울. 우리는 그것을 알고도 눌렀다."', descEn: 'A folded page in a thick annex. It predicts that soot from mass incineration would veil the sun, and winter would last years.\n"A winter mankind called down upon itself. We knew, and we pressed it anyway."' },
+  rsc7: { region: 'research', name: '연구소 출입 기록', nameEn: 'Lab Access Log', desc: '지하 연구동 출입 단말의 마지막 기록들. 대부분 퇴근 표시가 없다. 한 사람만 며칠 더 드나든다.\n식별번호 뒤 직함: 관측 프로그램 책임. 이름 자리엔 이니셜 하나뿐이다.', descEn: 'The last entries from the undercroft lab’s access terminal. Most have no clock-out. One person keeps coming and going for days more.\nAfter the ID, a title: Head, Observation Program. Where the name should be, a single initial.' },
+  rsc8: { region: 'research', name: '관측 프로그램 개요', nameEn: 'Observation Program Brief', desc: '표지에 도장. 소각 이후 지상에 남은 생존 신호를 위성으로 관측·기록하는 계획.\n"우리는 내려갈 수 없다. 그러니 위에서 지켜본다. 버티는 불빛이 있는 한, 이건 실패가 아니다."', descEn: 'A stamped cover sheet. A plan to track and log surviving signals on the ground by satellite, after the burning.\n"We cannot come down. So we watch from above. As long as a light holds out, this is not a failure."' },
+  rsc9: { region: 'research', name: '박사의 개인 노트', nameEn: 'The Doctor’s Personal Note', desc: '연구용 노트 사이에 끼워진 사적인 쪽지. "나는 이 결정에 서명한 세 사람 중 하나였다. 반대편에.\n그래서 나는 여기 남아, 내가 막지 못한 겨울을 끝까지 지켜보기로 했다."', descEn: 'A private note tucked among the research pads. "I was one of the three who signed against this.\nSo I chose to stay here, and watch to the end the winter I could not stop."' },
+  rsc10: { region: 'research', name: '위성 교신 로그', nameEn: 'Satellite Uplink Log', desc: '단말 화면을 옮겨 적은 종이. 궤도 관측소와의 정기 교신 기록. 대부분 "지상 신호 없음".\n맨 아래 한 줄만 다르다. "신호 하나 감지. 좌표 기록. — 계속 지켜본다."', descEn: 'A page transcribed from a terminal. Logs of regular contact with the orbital station. Most read "no surface signal."\nOnly the bottom line differs: "One signal detected. Coordinates logged. — Keep watching."' },
+  rsc11: { region: 'research', name: '무전 기지 설계도', nameEn: 'Radio Base Schematic', desc: '접힌 청사진. 지상에서 궤도 관측소로 신호를 되쏘는 송신 기지의 도면이다. 안테나·송신기·전원 계통이 나뉘어 있다.\n여백에 손글씨. "누군가 이걸 다시 세운다면, 위에서 응답할 것이다."', descEn: 'A folded blueprint. Plans for a ground station that beams a signal back up to the orbital post. Antenna, transmitter, power — each drawn apart.\nIn the margin, by hand: "If someone raises this again, there will be an answer from above."' },
+  rsc12: { region: 'research', name: '마지막 기록', nameEn: 'The Last Entry', desc: '노트의 마지막 장. "아홉 번의 겨울이면 대기가 가라앉는다. 나는 거기까진 못 본다.\n하지만 그때까지 버틴 불빛이 하나라도 있다면, 부디 이 기지를 다시 켜다오. 그게 내가 남길 수 있는 전부다. — Dr. ___"', descEn: 'The notebook’s last page. "Nine winters, and the air will settle. I won’t see that far.\nBut if even one light lasts that long — please, switch this station back on. It is all I can leave. — Dr. ___"' },
 };
 // 유서 6종 — 지역 무관 별도 풀, 극저확률 (REQ-LORE-01)
 const WILLS = {
@@ -5814,6 +5921,8 @@ const MEMOS_BY_REGION = MEMO_REGIONS.reduce((o, rg) => { o[rg] = Object.keys(MEM
 const MEMOS_SUBWAY = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'subway');
 // 1.3 리조트(resort) 메모 풀 — 리조트 탐험에서 우선 드랍(마지막 휴가객들).
 const MEMOS_RESORT = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'resort');
+// 1.4 금지 구역(research) 기밀 문서 풀 — 검문소/연구동 탐험에서 우선 드랍(세계관의 답 · 최종장).
+const MEMOS_RESEARCH = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'research');
 
 /* ── 라디오 방송 12종 (REQ-RADIO-01) ──
    예보 3(계절)/행상 예고 1/과거 정부 안내 2/정체불명 음악 1/생존자 사연 2/기계 자동 방송 1/박사 일지 조각 2.
@@ -5911,7 +6020,16 @@ function dropMemo() {
   return null;
 }
 // 탐험 결산에서 호출 — 확률 게이트를 여기서 관리. 수집 시 id(+will 여부) 반환.
-function tryDropMemoOnExpedition() {
+//   expRegion: 이번 탐험의 목적지 지역(금지 구역 기밀 문서는 '어디서 탐험했나'로 우선순위가 정해진다 — 셸터 아님).
+function tryDropMemoOnExpedition(expRegion) {
+  // 1.4 금지 구역(연구동/검문소) 탐험 — 기밀 문서(research 메모)를 최우선 드랍. 세계관의 답이 있는 곳.
+  //   유서보다 우선(최종장 서사가 확률에 묻히지 않게). 미수집 research 메모가 있는 동안은 확정에 가깝게.
+  if (isForbiddenRegion(expRegion)) {
+    const unRes = MEMOS_RESEARCH.filter(id => !(state.memos || {})[id]);
+    if (unRes.length && Math.random() < BAL.events.memoDropChance * 2.5) { // 금지 구역은 문서 밀도가 높다(2.5배 게이트)
+      const id = unRes[Math.floor(Math.random() * unRes.length)]; collectMemo(id); return { id, will: false };
+    }
+  }
   // 유서 우선 롤
   if (Math.random() < BAL.events.willDropChance) {
     const un = Object.keys(WILLS).filter(id => !(state.memos || {})[id]);
@@ -6299,6 +6417,8 @@ const EVENTS = {
   ending: {
     special: true,
     icon: '🚁', titleId: 'ev.ending.title', textId: 'ev.ending.text',
+    // 1.4 다리: 무전 기지에서 방송을 송출한 적 있으면 구조 무전 문구가 달라진다(그들이 내 신호를 따라왔다).
+    textFn: () => t('ev.ending.text') + ((state.survivorLights || 0) > 0 ? '<br><br>' + t('ev.ending.textSignal') : ''),
     choices: [
       { labelId: 'ev.ending.c0', run() { setTimeout(runEndingSequence, 400); return t('ev.ending.r0'); } },
       { labelId: 'ev.ending.c1', run() { return t('ev.ending.r1'); } },
@@ -6312,6 +6432,16 @@ const EVENTS = {
     textFn: () => t('ev.doctor.text') + (doctorFragmentsComplete() ? '<br><br>' + t('ev.doctor.textFrag') : ''),
     choices: [
       { labelId: 'ev.doctor.c0', run() { return t('ev.doctor.r0'); } },
+    ],
+  },
+  // 1.4: 모든 수집물을 무전 기지에서 송출한 뒤 개방되는 박사의 정기 교신 — 9겨울 무전과 Day10000 엔딩 사이의 다리.
+  //   기밀 문서를 다 읽었다면 박사 정체를 알아본 뒤의 교신이다(문안에 한 줄이 더 이어진다).
+  doctor_radio_regular: {
+    special: true,
+    icon: '📡', titleId: 'ev.doctorReg.title', textId: 'ev.doctorReg.text',
+    textFn: () => t('ev.doctorReg.text') + (state.memos && MEMOS_RESEARCH.every(id => state.memos[id]) ? '<br><br>' + t('ev.doctorReg.textTruth') : ''),
+    choices: [
+      { labelId: 'ev.doctorReg.c0', run() { state.doctorRegularSeen = true; return t('ev.doctorReg.r0'); } },
     ],
   },
 };
@@ -7076,6 +7206,47 @@ function openCraftModal() {
         <button class="pixel-btn" id="btn-icefish" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('icefish.go')}</button>
       </div>`;
   }
+  // 1.4 금지 구역 — 방호복(제작/수리) + 무전 송출. 금지 구역 노출선 도달 후 또는 이미 방호복/기지가 있으면 노출.
+  let forbiddenHtml = '';
+  const forbiddenReached = state.successes >= BAL.forbidden.unlockAt || state.hazmatDone || state.radioBaseDone;
+  if (forbiddenReached) {
+    const F = BAL.forbidden;
+    const rows2 = [];
+    // 방호복 제작/수리 카드
+    if (!state.hazmat) {
+      const ok = resHasAll(F.hazmatCost);
+      rows2.push(`<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
+        <span>🥽 ${t('hazmat.name')}</span>
+        <span class="p-eff" style="font-size:10px;flex:1">${t('hazmat.craftHint', { dur: F.hazmatDur })}</span>
+        <span class="p-cost">${costLabel(F.hazmatCost)}</span>
+        <button class="pixel-btn" data-hazmat="craft" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('hazmat.craftBtn')}</button>
+      </div>`);
+    } else {
+      const full = state.hazmat.dur >= F.hazmatDur;
+      const ok = resHasAll(F.hazmatRepairCost);
+      rows2.push(`<div class="prep-row ${full ? 'sel' : ''}" style="cursor:default">
+        <span>🥽 ${t('hazmat.name')}</span>
+        <span class="p-eff" style="font-size:10px;flex:1">${t('hazmat.durLine', { dur: state.hazmat.dur, max: F.hazmatDur })}</span>
+        ${full
+          ? `<span style="color:var(--good);font-size:11px">${t('hazmat.ready')}</span>`
+          : `<span class="p-cost">${costLabel(F.hazmatRepairCost)}</span><button class="pixel-btn" data-hazmat="repair" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('hazmat.repairBtn')}</button>`}
+      </div>`);
+    }
+    // 무전 송출 카드 (기지 완공 후)
+    if (state.radioBaseDone) {
+      const total = broadcastableTotal();
+      const sent = broadcastSentCount();
+      const allSent = total > 0 && sent >= total;
+      const canEnergy = state.energy >= F.broadcastEnergy && !isExhausted();
+      const ok = !allSent && total > 0 && canEnergy;
+      rows2.push(`<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
+        <span>📡 ${t('radio.broadcastName')}</span>
+        <span class="p-eff" style="font-size:10px;flex:1">${t('radio.broadcastHint', { e: F.broadcastEnergy, sent, total, lit: state.survivorLights || 0 })}</span>
+        <button class="pixel-btn" id="btn-broadcast" ${ok ? '' : 'disabled'} style="margin-left:6px">${allSent ? t('radio.allSentBtn') : t('radio.broadcastBtn')}</button>
+      </div>`);
+    }
+    forbiddenHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">☢️ ${LName(DISTRICTS.research)}</div><div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${t('forbidden.intro')}</div>${rows2.join('')}`;
+  }
   // 꾸미기(#13): 벽지/바닥재 스와치. 현재 셸터의 벽/바닥 재질을 교체 (셸터 지오메트리 불변).
   const dcur = currentDeco();
   const decoSwatches = (kind, table, sel) => Object.entries(table).map(([id, def]) => {
@@ -7105,7 +7276,7 @@ function openCraftModal() {
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('craft.intro')}</div>${rows}
     <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>
     <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}
-    ${bunkerHtml}${rooftopHtml}${subwayHtml}${icefishHtml}${projHtml}${decoHtml}`);
+    ${bunkerHtml}${rooftopHtml}${subwayHtml}${icefishHtml}${forbiddenHtml}${projHtml}${decoHtml}`);
   $('modal-body').querySelectorAll('button[data-deco]').forEach(b =>
     b.addEventListener('click', () => {
       const [kind, id] = b.dataset.deco.split(':');
@@ -7172,6 +7343,15 @@ function openCraftModal() {
       if ($('modal-back').classList.contains('show')) openCraftModal();
     }));
   { const ibf = $('btn-icefish'); if (ibf) ibf.addEventListener('click', () => { doIceFish(); openCraftModal(); }); }
+  // 1.4 방호복 제작/수리
+  $('modal-body').querySelectorAll('button[data-hazmat]').forEach(b =>
+    b.addEventListener('click', () => {
+      const act = b.dataset.hazmat;
+      const done = act === 'craft' ? craftHazmat() : repairHazmat();
+      if (done) openCraftModal();
+    }));
+  // 1.4 무전 송출 (기지 완공 후) — 수집 방송/기록 1개 송출 → 지도 불빛 점등
+  { const bb = $('btn-broadcast'); if (bb) bb.addEventListener('click', () => { if (doBroadcast()) openCraftModal(); }); }
   // 1.2 지하철 허브 승격 버튼
   $('modal-body').querySelectorAll('button[data-subway]').forEach(b =>
     b.addEventListener('click', () => {
@@ -7297,7 +7477,10 @@ function projectSiteStage(id) {
 function applyProjectEffect(effectKey) {
   if (!effectKey) return;
   switch (effectKey) {
-    case 'clearPassage.done': break; // 코스메틱 + 수첩 기록만 (1.4 복선). 부수효과 없음.
+    // 1.1 파일럿 통로 정리 완공 — 1.4에서 복선 회수: 금지 구역에 닿은 뒤라면 이 통로가 연구동 지하로 이어짐이 드러난다.
+    case 'clearPassage.done':
+      if (state.hazmatDone || state.successes >= BAL.forbidden.unlockAt) state.dayLog.notes.push(t('proj.clearPassage.revealNote'));
+      break;
     case 'harbor.breakwater.done': state.breakwaterHut = true; break; // 항구 파밍 -25% + 얼음낚시 스팟 +1 (플래그로 판정)
     // 1.2 선로 개통 — 구간별 연결 지역을 개통 상태로. 탐험 시간 -50% + 겨울 폭설 봉쇄 무시(플래그 판정).
     case 'subway.openSeg1': openSubwaySegment(1); break;
@@ -7307,6 +7490,8 @@ function applyProjectEffect(effectKey) {
     case 'resort.accessTime': state.cablecarDone = true; break;
     // 1.3 관측소 완공 — 맑은 밤 밤하늘 이벤트 개방(플래그 판정, processDay 밤하늘 롤이 읽음).
     case 'lodge.nightSky': state.observatoryDone = true; break;
+    // 1.4 무전 기지 완공 — 송출 행동 개방(플래그 판정, 송출 UI/지도 불빛이 읽음). 주제 회수의 스위치.
+    case 'radio.broadcastAction': state.radioBaseDone = true; break;
     default: break; // 1.2~1.4 확장이 여기에 case를 추가한다.
   }
 }
@@ -7324,6 +7509,102 @@ function subwayOpenCount() {
 // 특정 지역이 지하 노선으로 개통되어 있는가 (탐험 시간·봉쇄 예외 판정).
 function subwayReaches(regionId) {
   return !!(state.subwayOpen && state.subwayOpen[regionId]);
+}
+
+/* ── 1.4 「금지 구역」 방호복 / 무전 송출 ──
+   방호복(hazmat): 고급 제작 정점. 금지 구역(forbidden) 지역 진입 게이트 + 탐험 1회당 내구 소모.
+   무전 송출: 완공된 무전 기지에서 수집 방송/기록을 송출 → 종이 지도에 생존자 불빛 점등(수집률 비례).
+   주제 회수: "내가 지킨 온기가 신호가 되어 퍼진다" — 불빛은 만남이 아니라 응답하는 먼 창문(타인은 흐른다). */
+// 특정 지역이 금지 구역(방호복 필수)인가.
+function isForbiddenRegion(regionId) {
+  return !!REGIONS[regionId]?.forbidden;
+}
+// 방호복을 입을 수 있는 상태인가 (제작됐고 내구가 남았는가).
+function hazmatUsable() {
+  return !!(state.hazmat && state.hazmat.dur > 0);
+}
+// 방호복 제작 — 고급 제작 정점. 재료 소비 후 최대 내구로 지급. 최초 제작 시 hazmatDone(무전 기지 공사 게이트) 세움.
+function craftHazmat() {
+  if (state.hazmat && state.hazmat.dur >= BAL.forbidden.hazmatDur) { toast(t('hazmat.alreadyFull')); return false; }
+  if (!resConsumeAll(BAL.forbidden.hazmatCost)) { toast(t('toast.needMaterial')); return false; }
+  const firstTime = !state.hazmatDone;
+  state.hazmat = { dur: BAL.forbidden.hazmatDur };
+  state.hazmatDone = true; // 방호복에 손댄 순간부터 무전 기지 공사가 열린다(금지 구역에 닿을 자격)
+  state.dayLog.notes.push(t('hazmat.craftedNote'));
+  toast(t('hazmat.crafted', { dur: BAL.forbidden.hazmatDur }) + (firstTime ? '\n' + t('hazmat.firstHint') : ''));
+  playSfx('craft');
+  scheduleSave(); renderResBar(); updateHud();
+  return true;
+}
+// 방호복 수리 — 닳은 내구를 전량 회복. 재료 소비.
+function repairHazmat() {
+  if (!state.hazmat) { toast(t('hazmat.needCraft')); return false; }
+  if (state.hazmat.dur >= BAL.forbidden.hazmatDur) { toast(t('hazmat.alreadyFull')); return false; }
+  if (!resConsumeAll(BAL.forbidden.hazmatRepairCost)) { toast(t('toast.needMaterial')); return false; }
+  state.hazmat.dur = BAL.forbidden.hazmatDur;
+  toast(t('hazmat.repaired', { dur: BAL.forbidden.hazmatDur }));
+  playSfx('craft');
+  scheduleSave(); renderResBar(); updateHud();
+  return true;
+}
+// 금지 구역 탐험 1회당 방호복 내구 -1 (resolveExpedition에서 호출). 다 닳으면 다음 진입이 차단된다.
+function wearHazmat() {
+  if (!state.hazmat) return;
+  state.hazmat.dur = Math.max(0, state.hazmat.dur - 1);
+}
+// 송출 대상 = 수집한 방송(broadcasts) + 기록(memos) 통합 풀. "수집한 방송/기록을 송출"(GD).
+//   전체 송출 가능 총량(수집한 것 전부)과 이미 송출한 수를 센다.
+function broadcastableTotal() {
+  return Object.keys(state.broadcasts || {}).length + Object.keys(state.memos || {}).length;
+}
+function broadcastSentCount() {
+  return Object.keys(state.broadcasts_sent || {}).length;
+}
+// 아직 송출하지 않은 수집물 id 1개 (방송 우선, 없으면 기록). 없으면 null.
+function pickUnsentSignal() {
+  const sent = state.broadcasts_sent || {};
+  const bun = Object.keys(state.broadcasts || {}).filter(id => !sent['b_' + id]);
+  if (bun.length) return { key: 'b_' + bun[0], kind: 'broadcast', id: bun[0] };
+  const mun = Object.keys(state.memos || {}).filter(id => !sent['m_' + id]);
+  if (mun.length) return { key: 'm_' + mun[0], kind: 'memo', id: mun[0] };
+  return null;
+}
+// 지도에 켜져야 할 목표 불빛 수 = (송출한 신호 / 송출 가능 총량) × 최대 불빛. 수집률 비례로 번진다.
+//   최대 불빛 수는 종이 지도가 감당할 밀도(MAP_LIGHT_MAX). 총량 0이면 0.
+const MAP_LIGHT_MAX = 12; // 종이 지도 오버레이 최대 불빛 점(응답하는 먼 창문들)
+function targetSurvivorLights() {
+  const total = broadcastableTotal();
+  const sent = broadcastSentCount();
+  if (total <= 0 || sent <= 0) return 0;
+  const ratio = Math.min(1, sent / total);
+  // 송출한 신호가 하나라도 있으면 최소 1개는 응답한다(먼 창문). 이후 수집률 비례로 번진다(ceil로 촘촘히).
+  return Math.max(1, Math.ceil(ratio * MAP_LIGHT_MAX));
+}
+// 송출 행동 — 미송출 신호 1개를 송출. 에너지 소모. 지도 불빛 목표 갱신 후 점등. 모든 신호 송출 시 박사 정기 교신 개방.
+function doBroadcast() {
+  if (isWallpaper()) { toast(t('wallpaper.noAction')); return false; }
+  if (!state.radioBaseDone) { toast(t('radio.needBase')); return false; }
+  if (state.energy < BAL.forbidden.broadcastEnergy) { toast(t('toast.tooTired')); return false; }
+  const sig = pickUnsentSignal();
+  if (!sig) { toast(t('radio.allSent')); return false; }
+  if (!state.broadcasts_sent) state.broadcasts_sent = {};
+  state.broadcasts_sent[sig.key] = state.day;
+  state.energy = Math.max(0, state.energy - BAL.forbidden.broadcastEnergy);
+  // 불빛 목표 갱신 → 실제 점등(하나 이상 늘면 "먼 창문이 응답했다").
+  const before = state.survivorLights || 0;
+  const target = targetSurvivorLights();
+  state.survivorLights = Math.max(before, target); // 켜진 불빛은 꺼지지 않는다(온기는 남는다)
+  const lit = state.survivorLights - before;
+  const note = lit > 0 ? t('radio.sentLit', { n: state.survivorLights }) : t('radio.sentNoLit');
+  state.dayLog.notes.push(note);
+  toast(note);
+  playSfx('craft');
+  // 모든 수집물을 송출했다면 박사 정기 교신 개방(다음 밤 무전 — Day10000 다리). 미본 상태에서만 예약.
+  if (!pickUnsentSignal() && !state.doctorRegularSeen) state.doctorRadioRegularPending = true;
+  scheduleSave(); renderResBar(); updateHud();
+  // 지도가 열려 있으면 불빛 오버레이 즉시 갱신(맵 모달은 매 열 때 재구성되므로, 열려 있을 때만 다시 그린다).
+  if ($('map-wrap')) renderSurvivorLights($('map-wrap'));
+  return true;
 }
 
 /* ── 1.2 암시장 (허브 승격 후 개방) — 잉여 물물교환 = 후반 인플레의 최종 싱크 ──
@@ -7504,6 +7785,17 @@ function recordTabHtml() {
     const rgot = MEMOS_RESORT.filter(id => owned[id]).length;
     if (rgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionResort')} (${rgot}/${MEMOS_RESORT.length})</div>` + MEMOS_RESORT.map(id => memoRow(id, MEMOS)).join('');
   }
+  // 1.4: 금지 구역(research) 기밀 문서 — 발견 후에만 섹션 노출. 12종 다 모으면 최종장 페이지가 열린다.
+  {
+    const cgot = MEMOS_RESEARCH.filter(id => owned[id]).length;
+    if (cgot > 0) {
+      sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionResearch')} (${cgot}/${MEMOS_RESEARCH.length})</div>` + MEMOS_RESEARCH.map(id => memoRow(id, MEMOS)).join('');
+      // 최종장: 12종 전부 수집 시 "그날의 진실" 페이지 열람 링크 (기록 문법, data-truth 훅).
+      if (cgot >= MEMOS_RESEARCH.length) {
+        sections += `<div class="prep-row" style="cursor:pointer;border-top:1px solid var(--panel-border);margin-top:4px" data-truth="1"><span>📖</span><span style="color:var(--accent)">${t('record.truthTitle')}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`;
+      }
+    }
+  }
   const willIds = Object.keys(WILLS);
   const willGot = willIds.filter(id => owned[id]).length;
   sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
@@ -7570,6 +7862,7 @@ function openJournalModal(tab = 'journal') {
   body.querySelectorAll('[data-memo]').forEach(el => el.addEventListener('click', () => showMemoPage(el.dataset.memo, el.dataset.will === '1')));
   body.querySelectorAll('[data-broadcast]').forEach(el => el.addEventListener('click', () => showBroadcastModal(el.dataset.broadcast)));
   body.querySelectorAll('[data-sketch]').forEach(el => el.addEventListener('click', () => showSketchPage(el.dataset.sketch)));
+  body.querySelectorAll('[data-truth]').forEach(el => el.addEventListener('click', () => showTruthPage()));
 }
 
 /* ============================================================
@@ -8962,12 +9255,21 @@ function passWinter(notes) {
 }
 // 박사 무전 발화 시도 (밤, 라디오 보유 시). processDay 말미에서 호출.
 function tryDoctorRadio() {
-  if (!state.doctorRadioPending) return;
-  if (!items.some(i => i.defId === 'radio')) return; // 라디오 미보유 → 다음 배치일까지 보류
   if (state.pendingEvent) return;                    // 다른 인카운터 대기 중이면 다음 날
-  state.doctorRadioPending = false;
-  state.pendingEvent = 'doctor_radio';
-  state.lastEventDay = state.day;
+  // 9겨울 첫 무전 (라디오 보유 시)
+  if (state.doctorRadioPending) {
+    if (!items.some(i => i.defId === 'radio')) return; // 라디오 미보유 → 다음 배치일까지 보류
+    state.doctorRadioPending = false;
+    state.pendingEvent = 'doctor_radio';
+    state.lastEventDay = state.day;
+    return;
+  }
+  // 1.4 정기 교신 — 모든 수집물을 송출한 뒤 개방. 무전 기지를 세운 사람이라 라디오 보유 조건은 두지 않는다(기지가 곧 무전).
+  if (state.doctorRadioRegularPending && !state.doctorRegularSeen) {
+    state.doctorRadioRegularPending = false;
+    state.pendingEvent = 'doctor_radio_regular';
+    state.lastEventDay = state.day;
+  }
 }
 // 라디오 방송 청취 시도 (#12) — 라디오 배치+ON, 하루 1회, BAL 확률로 미수집 방송 1개 예약.
 function tryRadioBroadcast(notes) {
@@ -9406,6 +9708,7 @@ function pickAutoRegion() {
   for (const id of Object.keys(REGIONS)) {
     if (!regionUnlocked(id)) continue;      // 항구 등 미해금 제외
     if (blizzardBlocks(id)) continue;       // 폭설 봉쇄 지상 지역 제외
+    if (isForbiddenRegion(id)) continue;    // 1.4 금지 구역은 자동 대상 아님(방호복·수동 전략 레버 — 염장/얼음낚시와 동일 원칙)
     const eff = rateParts(id, []).eff;
     if (eff <= 0) continue;
     // 이 지역이 loot로 주는 부족 자원 종 수 → 가중 보너스
@@ -9891,6 +10194,16 @@ function showSketchPage(id) {
   const body = `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${t('sketch.tag')}</div>` +
     `<div style="white-space:pre-line;line-height:1.9">${LD(s)}</div>`;
   openJournalPages([{ title: LN(s), body }]);
+}
+// 1.4 최종장 "그날의 진실" — 기밀 문서 12종 전부 수집 시 열리는 회고 페이지(다중 페이지, 메모 페이지 문법).
+//   조용한 발견의 톤: 극적 폭로가 아니라 흩어진 기록을 이어 붙인 한 사람의 정리. 지시조 금지.
+function showTruthPage() {
+  const pages = [1, 2, 3].map(n => ({
+    title: t('truth.title'),
+    body: `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${t('truth.tag')}</div>` +
+      `<div style="white-space:pre-line;line-height:1.9">${t('truth.p' + n)}</div>`,
+  }));
+  openJournalPages(pages);
 }
 /* ── 라디오 방송 연출 (좀보이드식 자막 버블, #12 코디 지시) ──
    모달 대신 배치된 라디오 위에 초록 자막 박스를 띄운다. 라디오 월드 좌표를 매 프레임
@@ -11082,6 +11395,7 @@ function _simDaysInner(n, opt) {
     } else {
       bestId = null; let bestEff = -1; // 최고 eff 지역
       for (const id of Object.keys(REGIONS)) {
+        if (isForbiddenRegion(id)) continue; // 1.4 금지 구역은 시뮬 대상 아님(방호복 게이트 — 자동/시뮬 모두 제외)
         const eff = rateParts(id, []).eff;
         if (eff > bestEff) { bestEff = eff; bestId = id; }
       }
@@ -11160,6 +11474,10 @@ window.__shelter = {
   // 1.3 고요한 고원 QA 훅
   SKETCHES, MEMOS_RESORT, avalancheBlocks, avalancheForecastToday, openAvalancheChoice,
   sketchesCollected, sketchesTotal, collectSketch, tryNightSky, showSketchPage, expDuration,
+  // 1.4 금지 구역 QA 훅
+  MEMOS_RESEARCH, isForbiddenRegion, hazmatUsable, craftHazmat, repairHazmat, wearHazmat,
+  broadcastableTotal, broadcastSentCount, pickUnsentSignal, targetSurvivorLights, doBroadcast,
+  bunkerUndercroftRoute, showTruthPage, tryDoctorRadio,
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,

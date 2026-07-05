@@ -159,6 +159,28 @@ export const PROJECTS = {
     ],
     doneSiteStage: 4,
   },
+
+  /* ── 1.4 「금지 구역」 무전 기지 복구 (최종 대형 프로젝트) ──
+     노출 조건: 금지 구역(research) 구역 접근 후 — 방호복(hazmat)이 있어야 현장에 닿는다.
+       when.needsFlag='hazmatDone' → 방호복을 만든 적 있으면 현장 노출(연구동 폐허의 무전탑이 공사 현장).
+     안테나→송신기→전원 3단계. 완공 효과(radio.broadcastAction): 송출 행동 개방(state.radioBaseDone).
+     site='radioBase' (3단계 오브젝트) — 연구동/검문소 관련 씬이 아니라, 기지 자체는 벙커/로지처럼
+       현재 거주 셸터의 buildRoom 분기가 아니라 '기록/지도' UI 상의 상태로 표현한다(지역이 셸터가 아님).
+       → 현장 3D는 최소: 무전 기지는 지도·행동 UI 중심 콘텐츠이므로 site 오브젝트는 폴백(생략) 허용.
+     엔진 규칙 무수정 계약: 이 테이블 추가 + applyProjectEffect switch에 case 1개(예고된 확장 지점)만. */
+  radioBase: {
+    id: 'radioBase',
+    when: { needsFlag: 'hazmatDone' }, // 방호복 제작 이력 = 금지 구역에 닿았다는 증거 → 무전 기지 공사 개방
+    site: 'radioBase',
+    icon: '📡',
+    memoirKey: 'proj.radioBase.memoir',
+    stages: [
+      { costKey: 'radioAntenna1', need: 3, siteStage: 1, effectKey: null },                 // 안테나
+      { costKey: 'radioTx1', need: 3, siteStage: 2, effectKey: null },                       // 송신기
+      { costKey: 'radioPower1', need: 3, siteStage: 3, effectKey: 'radio.broadcastAction' }, // 전원 → 송출 개방
+    ],
+    doneSiteStage: 4,
+  },
 };
 
 /* ── 1.2~1.4 확장 수용성 증명 (설계 노트, 이번 배치 미구현) ────────

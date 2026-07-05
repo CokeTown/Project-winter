@@ -1096,6 +1096,63 @@ export const STR = {
   'record.sketchTitle':   { ko: '밤하늘 스케치 ({n}/{total})', en: 'Night-Sky Sketches ({n}/{total})' },
   'record.regionResort':  { ko: '리조트 폐허', en: 'The Resort Ruins' },
 
+  /* ── 1.4 「금지 구역」 ── */
+  // 금지 구역 지역/구역
+  'memo.tagRegion.research': { ko: '금지 구역에서 — 봉쇄선 너머의 기록', en: 'From the forbidden zone — records past the cordon' },
+  'record.regionResearch': { ko: '기밀 문서', en: 'Classified Documents' },
+  'record.truthTitle':    { ko: '📖 그날의 진실', en: '📖 The Truth of That Day' },
+  'map.survivorLight':    { ko: '응답한 먼 불빛', en: 'A distant light, answering' },
+  'forbidden.intro':      { ko: '봉쇄선 너머의 일이다. 방호복 없이는 한 걸음도 들일 수 없다.', en: 'This is beyond the cordon. Without a suit, not one step in.' },
+  // 방호복
+  'hazmat.name':          { ko: '방호복', en: 'Hazmat Suit' },
+  'hazmat.craftHint':     { ko: '금지 구역에 들어가려면 필요하다 (내구 {dur}회 · 탐험마다 닳는다)', en: 'Needed to enter the forbidden zone (durability {dur} · wears each expedition)' },
+  'hazmat.craftBtn':      { ko: '만들기', en: 'Make' },
+  'hazmat.repairBtn':     { ko: '수선', en: 'Mend' },
+  'hazmat.ready':         { ko: '온전함', en: 'Intact' },
+  'hazmat.durLine':       { ko: '내구 {dur}/{max}회', en: 'Durability {dur}/{max}' },
+  'hazmat.crafted':       { ko: '방호복을 지어 입었다. 내구 {dur}회.', en: 'You made the hazmat suit and put it on. Durability {dur}.' },
+  'hazmat.craftedNote':   { ko: '🥽 방호복을 완성했다 — 이제 봉쇄선을 넘을 수 있다.', en: '🥽 Finished the hazmat suit — you can cross the cordon now.' },
+  'hazmat.firstHint':     { ko: '봉쇄선 너머, 검문소부터 하나씩.', en: 'Past the cordon — start at the checkpoint.' },
+  'hazmat.repaired':      { ko: '방호복을 수선했다. 내구 {dur}회로 돌아왔다.', en: 'You mended the suit. Back to {dur} durability.' },
+  'hazmat.alreadyFull':   { ko: '방호복은 이미 온전하다.', en: 'The suit is already intact.' },
+  'hazmat.needCraft':     { ko: '먼저 방호복을 만들어야 한다.', en: 'You need to make a suit first.' },
+  'hazmat.blocked':       { ko: '방호복 없이는 봉쇄선을 넘을 수 없다.', en: 'You can’t cross the cordon without a hazmat suit.' },
+  'hazmat.wornOut':       { ko: '방호복이 다 닳았다. 수선해야 다시 들어갈 수 있다.', en: 'The suit is worn out. Mend it before going back in.' },
+  'hazmat.wearNote':      { ko: '🥽 방호복이 조금 닳았다 (내구 {dur}회 남음).', en: '🥽 The suit wore down a little (durability {dur} left).' },
+  // 무전 송출
+  'radio.broadcastName':  { ko: '무전 송출', en: 'Broadcast' },
+  'radio.broadcastHint':  { ko: '수집한 방송·기록을 하나씩 내보낸다 (에너지 {e} · 송출 {sent}/{total} · 불빛 {lit})', en: 'Send out what you gathered, one at a time (energy {e} · sent {sent}/{total} · lights {lit})' },
+  'radio.broadcastBtn':   { ko: '송출', en: 'Send' },
+  'radio.allSentBtn':     { ko: '다 보냄', en: 'All sent' },
+  'radio.needBase':       { ko: '무전 기지를 먼저 세워야 한다.', en: 'You need to raise the radio base first.' },
+  'radio.allSent':        { ko: '모아둔 것은 이미 다 내보냈다.', en: 'You’ve sent out all you had.' },
+  'radio.sentLit':        { ko: '📡 신호를 실어 보냈다. 지도 저편에서 불빛이 하나 켜진다 — 이제 {n}개.', en: '📡 You sent the signal out. Far off on the map, one more light comes on — {n} now.' },
+  'radio.sentNoLit':      { ko: '📡 신호를 실어 보냈다. 어둠 속으로 퍼져 나간다.', en: '📡 You sent the signal out. It spreads into the dark.' },
+  // 무전 기지 (대형 프로젝트)
+  'proj.radioBase.name':      { ko: '무전 기지 복구', en: 'Radio Base Recovery' },
+  'proj.radioBase.stage1':    { ko: '쓰러진 안테나 마스트를 다시 세운다. 접시를 하늘로 돌려놓는다.', en: 'I raise the fallen antenna mast again, turning the dish back to the sky.' },
+  'proj.radioBase.stage2':    { ko: '송신기 회로를 잇는다. 끊긴 배선을 하나씩 되살린다.', en: 'I wire the transmitter back together, reviving the broken circuits one by one.' },
+  'proj.radioBase.stage3':    { ko: '발전·축전 계통을 붙인다. 계기에 바늘이 처음으로 움찔한다.', en: 'I hook up the power and battery lines. For the first time, a needle twitches on the gauge.' },
+  'proj.radioBase.workNote':  { ko: '무전 기지 복구를 조금 진척시켰다.', en: 'Made some progress recovering the radio base.' },
+  'proj.radioBase.doneToast': { ko: '무전 기지가 살아났다. 이제 모아둔 방송과 기록을 저 위로 실어 보낼 수 있다.', en: 'The radio base has come alive. Now I can send what I gathered up there.' },
+  'proj.radioBase.memoir':    { ko: '{day}일째. 봉쇄선 너머의 무전 기지를 되살렸다. 안테나를 세우고, 송신기를 잇고, 전원을 붙이는 데 며칠이 걸렸다. 이제 이 폐허에서도 신호 하나를 내보낼 수 있다.', en: 'Day {day}. I brought the radio base beyond the cordon back to life. Days of raising the antenna, wiring the transmitter, hooking up power. Even from this ruin, I can send out one signal now.' },
+  // 통로 복선 회수
+  'proj.clearPassage.revealNote': { ko: '🕯️ 정리한 통로 저편의 어둠이, 봉쇄선 아래로 이어지는 지하 길이었다. 이제 저 아래로 내려갈 수 있다.', en: '🕯️ The dark beyond the cleared passage was an underground way leading below the cordon. I can go down there now.' },
+  // 박사 정기 교신 (Day10000 다리)
+  'ev.doctorReg.title':   { ko: '정기 교신', en: 'A Regular Contact' },
+  'ev.doctorReg.text':    { ko: '무전 기지가 궤도의 관측소와 이어졌다. 잡음 사이로 그 목소리가, 이번엔 정해진 시각에 또렷이 들어온다.<br><br>"신호 잘 받았다. 네가 켠 불빛을 여기서 세고 있다. 아홉 해를 버틴 자리가 있다는 건, 우리가 내려갈 이유가 된다."', en: 'The radio base has linked to the station in orbit. Through the static, the voice comes in clear now, at a set hour.<br><br>"Signal received. I’m counting the lights you lit, from up here. That a place has lasted nine winters — that gives us a reason to come down."' },
+  'ev.doctorReg.textTruth': { ko: '"…그 문서들을 다 읽었구나. 그럼 내가 누구였는지도 알겠지. 나는 그 겨울을 막지 못한 사람이고, 그래서 네 불빛을 끝까지 지켜보는 사람이다."', en: '"…so you read all the files. Then you know who I was. I’m the one who couldn’t stop that winter — and so, the one who watches your light to the end."' },
+  'ev.doctorReg.c0':      { ko: '오래 응답을 나눴다', en: 'You trade word for a long while' },
+  'ev.doctorReg.r0':      { ko: '교신은 잡음에 묻혔다. 하지만 이 신호는 이제 혼자 울리지 않는다.', en: 'The contact sinks into static. But this signal no longer sounds alone.' },
+  // 엔딩 다리 (송출 이력 반영)
+  'ev.ending.textSignal': { ko: '무전병이 덧붙인다. "당신 신호를 따라왔습니다. 지도에 불빛이 하나씩 켜지는 걸, 우리도 봤어요."', en: 'The radio operator adds: "We followed your signal. We saw them too — the lights coming on across the map, one by one."' },
+  // 최종장 "그날의 진실"
+  'truth.title':          { ko: '그날의 진실', en: 'The Truth of That Day' },
+  'truth.tag':            { ko: '흩어진 기록을 이어 붙인 정리', en: 'Scattered records, pieced together' },
+  'truth.p1':             { ko: '처음엔 병이었다. 도시를 잠그고, 사람들을 안으로 몰았다. 봉쇄가 사람을 살리려던 것인지 가두려던 것인지는, 이제 그들 자신도 몰랐다.\n모형은 번번이 빗나갔다. 전파는 언제나 조금씩 빨랐다.', en: 'First it was a sickness. They locked the cities, and drove people inward. Whether the cordon was to save people or to hold them in — by the end, even they no longer knew.\nThe models kept missing. The spread was always a little faster.' },
+  'truth.p2':             { ko: '멈출 방법은 하나뿐이라고 그들은 적었다. 가장 안쪽 원을 불로 지우기로. 대기에 남을 그을음이 몇 해의 겨울을 부를 걸 알면서도, 그들은 그것을 눌렀다.\n반대한 세 사람의 이름은 지워졌다. 그중 하나가 이 아래에 남았다.', en: 'There was only one way to stop it, they wrote. Erase the innermost ring with fire. Knowing the soot it left would call down years of winter, they pressed it anyway.\nThe names of the three who dissented were struck out. One of them stayed down here.' },
+  'truth.p3':             { ko: '그 사람은 내려가지 못하는 대신, 위에서 지켜보기로 했다. 궤도의 관측소로 지상의 신호를 세면서. 버티는 불빛이 하나라도 있는 한, 이건 실패가 아니라고.\n아홉 번의 겨울이면 대기가 가라앉는다고 그는 계산했다. 그리고 그때까지 켜져 있을 불빛 하나를, 이름도 없이 기다렸다.', en: 'That one could not go down, so they chose to watch from above — counting ground signals from the orbital station. As long as one light held out, they wrote, this was not a failure.\nNine winters, and the air would settle, was the calculation. And they waited, nameless, for the one light that would still be burning by then.' },
+
   /* ── BGM ── */
   'bgm.notFound':     { ko: 'BGM 파일을 찾을 수 없습니다 (BGM 폴더)', en: 'BGM files not found (BGM folder)' },
 

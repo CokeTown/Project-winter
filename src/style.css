@@ -386,6 +386,19 @@
   /* 1.2 폭설 봉쇄된 지역 (개통 구간은 예외) — 흐릿하게 + 눈송이 표식 */
   .map-pin.blocked { opacity: 0.55; filter: grayscale(0.6); }
   .map-pin.blocked img.px-icon { transform: none; }
+  /* 1.4 생존자 불빛 오버레이 — 송출에 응답한 먼 창문(수집률 비례 점등). 만남이 아니다: 작게, 멀리, 따뜻하게. */
+  .map-light {
+    position: absolute; transform: translate(-50%, -50%);
+    width: 7px; height: 7px; border-radius: 50%; z-index: 1; pointer-events: none;
+    background: radial-gradient(circle, #ffe9a8 0%, #ffca5a 55%, rgba(255,180,70,0) 100%);
+    box-shadow: 0 0 6px 2px rgba(255,200,90,0.7);
+    animation: lightflicker 3.2s ease-in-out infinite;
+  }
+  @keyframes lightflicker {
+    0%, 100% { opacity: 0.55; }
+    45% { opacity: 1; }
+    70% { opacity: 0.7; }
+  }
   /* 현 거처 위치 표식 (지구 매핑 가능 시) */
   .map-pin.here::after {
     content: "📍"; position: absolute; top: -18px; font-size: 16px;
