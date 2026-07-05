@@ -79,8 +79,38 @@ scene.fog = new THREE.Fog(0x1a2233, 24, 58);
    카메라 (이소메트릭 직교 + 궤도 회전/줌)
 ============================================================ */
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
-const camState = { yaw: Math.PI / 4, elev: THREE.MathUtils.degToRad(33), dist: 24, zoom: 0.6, targetYaw: Math.PI / 4 };
+const camState = {
+  yaw: Math.PI / 4, elev: THREE.MathUtils.degToRad(33), dist: 24, zoom: 0.6, targetYaw: Math.PI / 4,
+  // #70 클램프 팬: 카메라 타겟의 월드 XZ 오프셋 — 렌더 전용(세이브 미저장, 시뮬 무영향, 로드 시 0).
+  //   targetPan → pan 을 yaw 보간과 같은 문법으로 매 프레임 lerp (reduceMotion이면 즉시 스냅).
+  panX: 0, panZ: 0, targetPanX: 0, targetPanZ: 0,
+};
 const camCenter = new THREE.Vector3(0, 0.9, 0);
+// #70: 이번 프레임 카메라에 '실제 적용된' 팬(클로즈업 중엔 0) — 컬링 판정이 팬을 되돌려
+//   벽/천장/근경소품 마스크가 팬과 무관하게 유지되도록 하는 보정값(아래 updateWallCulling/tickEnv).
+const camPanApplied = { x: 0, z: 0 };
+const _panLook = new THREE.Vector3();
+// 팬 클램프 반경: 방 크기 비례(마당·원경 부착물이 살짝 보이는 정도) — 벡터 길이 원형 클램프.
+function panMax() { return Math.max(ROOM.w, ROOM.d) * 0.55; }
+function setPanTarget(x, z) {
+  const m = panMax(), len = Math.hypot(x, z);
+  if (len > m) { x = x * m / len; z = z * m / len; }
+  camState.targetPanX = x; camState.targetPanZ = z;
+}
+// #70 화면 픽셀 드래그 → 월드 XZ 팬 (grab-the-world: 잡은 지점이 포인터를 따라온다).
+//   직교 투영에서 세로 h=9/zoom 이 innerHeight px에 대응 → 픽셀당 월드 길이(wpp).
+//   세로 드래그는 앙각(elev)의 바닥 평면 투영 보정(fs) — 낮은 앵글일수록 같은 픽셀이 더 먼 바닥 거리.
+function panByScreenDelta(dx, dy) {
+  const wpp = (9 / camState.zoom) / innerHeight;
+  const fs = 1 / Math.max(0.35, Math.sin(camState.elev));
+  const yaw = camState.yaw;
+  const rx = Math.sin(yaw), rz = -Math.cos(yaw);   // 화면 오른쪽의 월드 XZ 방향
+  const fx = -Math.cos(yaw), fz = -Math.sin(yaw);  // 화면 위쪽의 월드 XZ 방향(카메라 → 방 중심)
+  setPanTarget(
+    camState.targetPanX - dx * wpp * rx + dy * wpp * fs * fx,
+    camState.targetPanZ - dx * wpp * rz + dy * wpp * fs * fz
+  );
+}
 
 // ④ 고양이 클로즈업 카메라 — 비배치 모드에서 고양이 탭 시 얼굴로 글라이드. 드래그/ESC/빈곳 탭으로 복원.
 //   활성 중엔 카메라 타겟을 고양이(눈높이 살짝 위)로 옮기고 거리/줌/앙각을 클로즈업 프로필로 보간(지연 추적).
@@ -110,7 +140,8 @@ function enterCatCloseup() {
   const _cat = getCat();
   if (catCam.active || !_cat) return;
   catCam.saved = { yaw: camState.targetYaw, elev: camState.elev, zoom: camState.zoom };
-  catCam.center.copy(camCenter); // 현재 중심에서 고양이로 부드럽게 출발
+  // #70: 팬 상태에서 진입해도 '지금 보던 중심'에서 출발(진입 프레임 점프 방지) — 클로즈업 중 팬은 미적용.
+  catCam.center.set(camCenter.x + camPanApplied.x, camCenter.y, camCenter.z + camPanApplied.z);
   // ⑶ 진입 시점의 현재 카메라 yaw 기준으로 목표 yaw를 1회 확정(짧은 호 ≤45°). 이후엔 이 값으로만 글라이드.
   catCam.targetYaw = computeCatCloseupYaw(_cat.g.rotation.y, camState.yaw);
   catCam.active = true;
@@ -149,13 +180,23 @@ function updateCamera() {
     if (Math.abs(dist - 24) < 0.05) camState.dist = 24;
   }
   camState.yaw += (camState.targetYaw - camState.yaw) * (catCam.active ? BAL.catCam.glideLerp : 0.15);
+  // #70 팬 보간: targetPan → pan (yaw 보간 문법). reduceMotion이면 즉시. 클로즈업 중엔 팬 미적용(스펙: 비활성).
+  if (opts.reduceMotion) { camState.panX = camState.targetPanX; camState.panZ = camState.targetPanZ; }
+  else {
+    camState.panX += (camState.targetPanX - camState.panX) * 0.15;
+    camState.panZ += (camState.targetPanZ - camState.panZ) * 0.15;
+  }
+  camPanApplied.x = catCam.active ? 0 : camState.panX;
+  camPanApplied.z = catCam.active ? 0 : camState.panZ;
   const yaw = camState.yaw;
+  // 카메라 타겟 = camCenter + (panX, 0, panZ) — camCenter 자체는 불변(컬링 기준점 유지, 의도된 동작).
   camera.position.set(
-    center.x + dist * Math.cos(elev) * Math.cos(yaw),
+    center.x + camPanApplied.x + dist * Math.cos(elev) * Math.cos(yaw),
     center.y + dist * Math.sin(elev),
-    center.z + dist * Math.cos(elev) * Math.sin(yaw)
+    center.z + camPanApplied.z + dist * Math.cos(elev) * Math.sin(yaw)
   );
-  camera.lookAt(center);
+  _panLook.set(center.x + camPanApplied.x, center.y, center.z + camPanApplied.z);
+  camera.lookAt(_panLook);
   const aspect = innerWidth / innerHeight;
   const h = 9 / camState.zoom;
   camera.left = -h * aspect / 2; camera.right = h * aspect / 2;
@@ -1194,6 +1235,7 @@ function buildPowerPole(parent, x, z, tilt, groundY) {
   g.rotation.z = tilt;
   g.position.set(x, groundY, z);
   parent.add(g);
+  if (ogReg) ogReg.poles.push({ x, z, groundY, tilt }); // #71: 전신주 덩굴 감김 대상 등록(전 호출처가 buildEnv)
 }
 function buildRuinCity(parent, rand, opt) {
   // 폐허 빌딩(개별 그룹) — 무너진 상층부 + 드문 불빛. 반환값으로 시야 컬링 가능.
@@ -1226,6 +1268,10 @@ function buildRuinCity(parent, rand, opt) {
     g.position.set(x, opt.baseY, z);
     parent.add(g);
     list.push({ obj: g, dir: new THREE.Vector2(x, z).normalize(), r });
+    // #71: 폐허 빌딩 벽면 = 담쟁이/이끼 패치 대상 등록. dynCull(옥탑 근경처럼 envDyn.buildings로
+    //   시야 컬링되는 호출)은 그룹 참조를 함께 남겨 패치를 그룹 자식으로 부착(빌딩과 함께 사라지도록).
+    //   ogSkip: 바다 셸터(등대)처럼 '건물 잠식 대신 암반 이끼 소량' 규칙인 호출처가 명시적으로 제외.
+    if (ogReg && !opt.ogSkip) ogReg.bldg.push({ x, z, w: bw, d: bd, h: bh, baseY: opt.baseY, per: opt.ogPer ?? 1, group: g, dyn: !!opt.dynCull });
   }
   return list;
 }
@@ -1537,6 +1583,7 @@ const SHELTERS = {
         const m = 0.5 + 0.5 * Math.sin(x * 0.4 + z * 0.31) * Math.cos(z * 0.27 - x * 0.2);
         return cA.clone().lerp(cB, m * 0.7).lerp(cC, 0.35 * (0.5 + 0.5 * Math.sin(x * 0.09 - z * 0.14)));
       }, gh));
+      ogGround(gh, 5.5, 20, 7); // #71: 황무지 마당 수풀 클러스터(연차 비례) — gh 접지
       // 고사목
       for (let i = 0; i < 26; i++) {
         const a = rand() * Math.PI * 2, r = 8 + Math.pow(rand(), 0.8) * 26;
@@ -1967,6 +2014,7 @@ const SHELTERS = {
         const m = 0.5 + 0.5 * Math.sin(x * 0.41 + z * 0.3) * Math.cos(z * 0.33 - x * 0.21);
         return cA.clone().lerp(cB, m * 0.65).lerp(cC, 0.35 * (0.5 + 0.5 * Math.sin(x * 0.1 - z * 0.15)));
       }, gh));
+      ogGround(gh, 6, 20, 6); // #71: 벙커 앞마당 수풀 클러스터(연차 비례)
       // 무성한 들풀 (병합 1메시)
       const tufts = [];
       for (let i = 0; i < 260; i++) {
@@ -2200,8 +2248,11 @@ const SHELTERS = {
     },
     buildEnv() {
       const rand = seededRand(777);
-      const near = buildRuinCity(envRoot, rand, { count: 9, rMin: 13, rMax: 22, hMin: 6, hMax: 14, baseY: -18, litChance: 0.6 });
-      buildRuinCity(envRoot, rand, { count: 16, rMin: 24, rMax: 46, hMin: 8, hMax: 20, baseY: -18, litChance: 0.45 });
+      // #71: 도심 — 잠식이 가장 짙은 셸터. 근경 빌딩(dynCull: envDyn.buildings 시야 컬링 대상)은
+      //   담쟁이를 그룹 자식으로 부착, 원경은 월드 병합. ogPer = 동당 패치 밀도 가중.
+      const near = buildRuinCity(envRoot, rand, { count: 9, rMin: 13, rMax: 22, hMin: 6, hMax: 14, baseY: -18, litChance: 0.6, dynCull: true, ogPer: 1.6 });
+      buildRuinCity(envRoot, rand, { count: 16, rMin: 24, rMax: 46, hMin: 8, hMax: 20, baseY: -18, litChance: 0.45, ogPer: 1.2 });
+      ogGround((x, z) => -18.1, 15, 26, 3); // 노면 균열 사이 수풀(도로 평면 y 고정)
       // 저 멀리 화재가 난 빌딩
       const fx = 20, fz = -14, fy = -2;
       const glow = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 6),
@@ -2265,6 +2316,7 @@ const SHELTERS = {
         const m = 0.5 + 0.5 * Math.sin(x * 0.43 + z * 0.29) * Math.cos(z * 0.37 - x * 0.19);
         return cG.clone().lerp(cD, m * 0.6).lerp(cM, 0.4 * (0.5 + 0.5 * Math.sin(x * 0.11 - z * 0.17)));
       }, gh));
+      ogGround(gh, 8.5, 22, 8); // #71: 숲 가장자리 덤불 클러스터(연차 비례)
       // 숲 (가까운 나무는 개별 메시 — 시야 컬링 + 바람에 흔들림) + 고사목 섞기
       const trees = [];
       const farGeos = [];
@@ -2312,6 +2364,11 @@ const SHELTERS = {
         ruin.position.set(9.5, gh(9.5, -7.5) - 0.02, -7.5);
         ruin.rotation.y = -0.5;
         envRoot.add(ruin);
+        // #71: 전소 잔해 잠식 — 회전 그룹이라 로컬 좌표 box(굴뚝/벽 잔해)를 등록해 자식으로 담쟁이 부착
+        ogAttach(ruin, [
+          { x: 1.1, z: -0.9, w: 0.7, d: 0.7, h: 2.0, y0: 0 },  // 벽난로 굴뚝
+          { x: -1.5, z: 0, w: 0.16, d: 2.4, h: 1.2, y0: 0 },   // 남은 벽 잔해
+        ]);
       }
       // 불탄 숲 군락 (검게 그을린 고사목)
       for (let i = 0; i < 7; i++) {
@@ -2472,6 +2529,7 @@ const SHELTERS = {
         const m = 0.5 + 0.5 * Math.sin(x * 0.4 + z * 0.31);
         return cA.clone().lerp(cB, m * 0.7);
       }, gh));
+      ogGround(gh, 6, 20, 5, (x, z) => Math.abs(z) > 4.6); // #71: 갓길 수풀 — 도로면(|z|≤4.5)은 제외
       // 갈라진 고속도로 (버스가 서 있는 도로)
       const road = B(envRoot, 90, 0.12, 7, 0x33342f, 0, GY + 0.05, 0);
       road.receiveShadow = true;
@@ -2613,6 +2671,10 @@ const SHELTERS = {
       emg.position.copy(em.position);
       envRoot.add(emg);
       envDyn = { fire: em, fireBase: 6 };
+      // #71: 지하는 잠식 스킵(햇빛 없음 — 건물/지면/전신주 대상 없음). 오더 명시 예외로
+      //   승강장 가장자리·선로 바닥의 물때 이끼만 소량 허용(습기 연출, 평면 존 패치).
+      ogZone(0, d / 2 + 2.1, w + 8, 2.6, -0.9, 3); // 선로 바닥(승강장 밖)
+      ogZone(0, d / 2 - 0.2, w * 0.9, 0.8, 0, 2);  // 승강장 가장자리 띠(경고선 안쪽 얇게)
       // 1.2 선로 복구 현장 오브젝트 (site='railSegment') — 허브 승격 후 노출. 구간 진행에 따라 자란다.
       buildRailSegments(w, d, h);
     },
@@ -2716,6 +2778,7 @@ const SHELTERS = {
         const m = 0.5 + 0.5 * Math.sin(x * 0.42 + z * 0.3) * Math.cos(z * 0.35 - x * 0.2);
         return cA.clone().lerp(cB, m * 0.6).lerp(cC, 0.3);
       }, gh));
+      ogGround(gh, 5.5, 18, 6); // #71: 버려진 농지 주변 수풀 클러스터(연차 비례)
       // 버려진 밭이랑 (줄지어 솟은 두둑)
       for (let row = 0; row < 5; row++) {
         const rz = 6 + row * 1.6;
@@ -2972,12 +3035,17 @@ const SHELTERS = {
       buoy.add(bl);
       buoy.position.set(-9, -6, 7);
       envRoot.add(buoy);
+      ogRock(-9, -6, 7, 0.7); // #71: 바다 셸터 — 건물 잠식 대신 부표 흘수선 이끼 소량
       // 해안선 절벽 (한쪽)
       for (let i = 0; i < 6; i++) {
-        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(2.5 + rand() * 3, 0), lamb(0x232830));
-        rock.position.set(-30 + rand() * 10, -5.5 + rand() * 1.5, 14 + rand() * 12);
+        // #71: 치수/위치를 변수로 캡처해 암반 이끼 대상으로 등록 — rand() 호출 순서는 원본과 동일(모습 불변)
+        const rs = 2.5 + rand() * 3;
+        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(rs, 0), lamb(0x232830));
+        const rx = -30 + rand() * 10, ry = -5.5 + rand() * 1.5, rz = 14 + rand() * 12;
+        rock.position.set(rx, ry, rz);
         rock.rotation.set(rand() * 3, rand() * 3, rand() * 3);
         envRoot.add(rock);
+        ogRock(rx, ry, rz, rs);
       }
       envDyn = { sea, seaBase: sea.position.y };
     },
@@ -3094,11 +3162,15 @@ const SHELTERS = {
       // 절벽 (등대가 선 바위산)
       const cliff = new THREE.Group();
       for (let i = 0; i < 9; i++) {
-        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(3.5 + rand() * 3.5, 0), lamb([0x2a2f38, 0x232830, 0x31363e][i % 3]));
-        rock.position.set((rand() - 0.5) * 9, -14 - rand() * 4, (rand() - 0.5) * 9);
+        // #71: 치수/위치 캡처 — 절벽 암반 이끼 대상 등록(rand() 호출 순서 원본 동일, 모습 불변)
+        const rs = 3.5 + rand() * 3.5;
+        const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(rs, 0), lamb([0x2a2f38, 0x232830, 0x31363e][i % 3]));
+        const rx = (rand() - 0.5) * 9, ry = -14 - rand() * 4, rz = (rand() - 0.5) * 9;
+        rock.position.set(rx, ry, rz);
         rock.rotation.set(rand() * 3, rand() * 3, rand() * 3);
         rock.scale.y = 1.6 + rand();
         cliff.add(rock);
+        ogRock(rx, ry, rz, rs, rock.scale.y); // cliff 그룹은 원점 무변환 → 로컬=월드
       }
       envRoot.add(cliff);
       // 바다
@@ -3129,7 +3201,8 @@ const SHELTERS = {
       wreck.position.set(14, -19, 9);
       envRoot.add(wreck);
       // 해안 폐허 마을 (절벽 건너)
-      buildRuinCity(envRoot, rand, { count: 8, rMin: 26, rMax: 44, hMin: 3, hMax: 8, baseY: -18.5, litChance: 0.15 });
+      // #71 ogSkip: 등대는 바다 셸터 — 건물 잠식 대신 위 절벽 암반 이끼 소량 규칙(오더 명시)
+      buildRuinCity(envRoot, rand, { count: 8, rMin: 26, rMax: 44, hMin: 3, hMax: 8, baseY: -18.5, litChance: 0.15, ogSkip: true });
       envDyn.beam = envDyn._beam;
       delete envDyn._beam;
     },
@@ -3204,6 +3277,7 @@ const SHELTERS = {
       B(quay, 12, 0.3, 6, 0x565149, 0, 0.05, 0);
       for (let i = 0; i < 5; i++) { const bol = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.7, 8), lamb(0x2a2824)); bol.position.set(-4.5 + i * 2.2, 0.35, -2.6); quay.add(bol); }
       quay.position.set(-ROOM.w / 2 - 7, 0, 0); envRoot.add(quay);
+      ogZone(-ROOM.w / 2 - 7, 0, 10.5, 5, 0.2, 3); // #71: 바다 셸터 — 안벽 상판 물때 이끼 소량(건물 잠식 대신)
       // 크레인 실루엣 + 컨테이너 스택 (야적장 방향)
       const crane = new THREE.Group();
       Cyl(crane, 0.2, 0.2, 8, 0x6a5a30, 0, 4, 0, 6);
@@ -3283,6 +3357,7 @@ const SHELTERS = {
       sea.geometry.computeVertexNormals(); sea.position.y = GY; envRoot.add(sea);
       // 부두 안벽 + 컨테이너 야적 (저 아래)
       B(envRoot, 40, 1.2, 14, 0x413d37, 0, GY + 0.8, 10).receiveShadow = true;
+      ogZone(0, 10, 36, 12, GY + 1.4, 3); // #71: 부감으로 내려다보이는 안벽 상판 이끼(항구 — 소량)
       const contPal = [0x8a4535, 0x3a5a6a, 0x6a6a3a, 0x555049];
       for (let i = 0; i < 26; i++) {
         const cc = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2, 1.2), lamb(contPal[Math.floor(rand() * contPal.length)]));
@@ -3379,6 +3454,7 @@ const SHELTERS = {
         const m = 0.5 + 0.5 * Math.sin(x * 0.4 + z * 0.3) * Math.cos(z * 0.33 - x * 0.2);
         return cS.clone().lerp(cB, m * 0.7).lerp(cR, 0.3 * THREE.MathUtils.smoothstep(Math.hypot(x, z), 20, 46));
       }, gh));
+      ogGround(gh, 10, 22, 3, null, true); // #71: 고원 설원 — 눈을 뚫고 나온 마른 관목 소량(dry: 초록 금지)
       // 눈 덮인 침엽수 (설산) + 멀리 뾰족 봉우리 실루엣
       const farGeos = [];
       for (let i = 0; i < 70; i++) {
@@ -3486,6 +3562,209 @@ function buildBreakwaterSite(parent, ox, oy, oz) {
   }
   g.position.set(ox, 0, oz);
   parent.add(g);
+}
+
+/* ============================================================
+   #71 계절 식생 + 도심 잠식(overgrowth) — TLOU 레퍼런스
+   "사람이 떠난 도심은 수풀이 삼킨다": backdrop(방 밖 원경 건물·구조물)만, 연차(state.day)에
+   비례해 (a)벽면 이끼/담쟁이 패치 (b)지면 수풀 클러스터 (c)전신주 덩굴이 자란다.
+   겨울(seasonOf 'winter')엔 마른 톤(0x6a5f45 계열) + 밀도 ×0.6 — 눈 아래로 후퇴.
+   ── 원칙 ──
+   · 대상 등록: buildEnv/공용 빌더 코드가 ogReg에 좌표·그룹 참조를 직접 남긴다(장면 traverse로 이름 추측 금지).
+   · 방(roomGroup) 내부·부착물·셸터 본체 금지 — 예외: 지하철 승강장/선로 이끼 소량(오더 명시 허용).
+   · 시뮬 byte-identical: state는 읽기만 한다(day/current/계절). 난수는 seededRand(고정 시드+셸터 id 해시)
+     — 같은 날 같은 셸터는 항상 같은 모습.
+   · 갱신 주기: loadShelter 시 재생성만. 하루가 넘어가도 즉시 갱신하지 않는다(다음 로드 반영이면 충분 — 의도).
+   · 성능 예산: 전부 병합 메시 — 월드 병합 1 + 수풀 정적 1 + sway 클러스터 ≤2 + 그룹 부착(동적 컬링 빌딩 ≤4,
+     잔해 ≤2) = 셸터당 추가 드로우콜 ≤12. 텍스처 신규 생성 없음(팔레트 색 vertexColors Lambert).
+   · 색: 자체 재질(신규 Lambert) — 전역 vcLambert 계절 틴트와 이중 적용 방지. envRoot 소속이라
+     applyWetness(roomGroup 한정 스윕) 비대상 — 기존 backdrop 소품 관례와 동일(noWet 불필요).
+============================================================ */
+let ogReg = null; // buildEnv 동안만 유효한 등록부 — loadShelter가 리셋, buildOvergrowth가 소비 후 닫음
+let ogState = { years: 0, patches: 0, tufts: 0, drawCallsAdded: 0 }; // QA 훅(overgrowthState) 노출용
+function ogResetRegistry() { ogReg = { bldg: [], poles: [], rocks: [], zones: [], ground: null, attach: [] }; }
+// 지면 수풀 존: buildEnv의 gh(x,z) 클로저를 그대로 캡처해 원지형에 접지. n = 1년차 기준 클러스터 수.
+//   filter(x,z)로 도로면 등 제외. dry=true면 계절 무관 마른 관목(설원 로지 — 눈 위 초록 방지).
+function ogGround(gh, rMin, rMax, n, filter = null, dry = false) { if (ogReg) ogReg.ground = { gh, rMin, rMax, n, filter, dry }; }
+// 평면 이끼 존(부두 안벽 상판/승강장 등): 중심(cx,cz), 범위 w×d, 표면 y. n = 1년차 기준 패치 수.
+function ogZone(cx, cz, w, d, y, n) { if (ogReg) ogReg.zones.push({ cx, cz, w, d, y, n }); }
+// 암반/부표 이끼 대상(바다 셸터의 '건물 잠식 대신 소량' 규칙): sy = y 스케일(절벽 바위 세로 늘림 반영).
+function ogRock(x, y, z, r, sy = 1) { if (ogReg) ogReg.rocks.push({ x, y, z, r, sy }); }
+// 회전된 소품 그룹(전소 잔해 등) 잠식: group 로컬 좌표의 box 면에 담쟁이 — 그룹 자식 1메시로 병합 부착.
+function ogAttach(group, boxes) { if (ogReg) ogReg.attach.push({ group, boxes }); }
+function ogHashId(id) { let h = 0; for (let i = 0; i < id.length; i++) h = (h * 33 + id.charCodeAt(i)) % 9973; return h; }
+function buildOvergrowth() {
+  ogState = { years: 0, patches: 0, tufts: 0, drawCallsAdded: 0 };
+  const reg = ogReg; ogReg = null; // 소비 후 닫는다 — 로드 경로 밖의 등록 누수 방지
+  if (!reg) return;
+  // 잠식 연차: 0년차 거의 없음 → 3년차 상한. 모든 수량이 years에 비례.
+  const years = Math.min(3, (state.day || 1) / 360);
+  ogState.years = +years.toFixed(3);
+  const winter = seasonOf().id === 'winter';
+  const dens = winter ? 0.6 : 1;
+  const rand = seededRand(41000 + ogHashId(state.current) * 7);
+  const PAL = winter ? [0x6a5f45, 0x5d5340, 0x746a4e, 0x66603f]  // 겨울 마른 톤(오더 지정 0x6a5f45 계열)
+                     : [0x3e5230, 0x46603a, 0x2f4527, 0x4a5c3c]; // 이끼/담쟁이 짙은 초록(기존 수풀 팔레트 근친)
+  const pick = () => PAL[Math.floor(rand() * PAL.length)];
+  const ogMat = () => new THREE.MeshLambertMaterial({ vertexColors: true }); // map 없음 → disposeDeep가 정리
+  const worldGeos = [];  // 월드 좌표 병합분(담쟁이/덩굴/암반 이끼/평면 존)
+  const tuftGeos = [];   // 지면 수풀 정적 병합분
+  const og = new THREE.Group(); // 산출물 그룹 — envRoot에 붙어 다음 로드 때 함께 dispose
+  let meshes = 0;
+  // (a) 건물 벽면 담쟁이/이끼 — 방(원점)을 향한 면에만, 하단 편중(바닥에서 기어오른 인상).
+  //     local=true: 동적 컬링 빌딩(옥탑 근경) — 그룹 로컬 좌표로 만들어 자식 부착(빌딩과 함께 사라져야 함).
+  const addIvyPatches = (b, out, local) => {
+    const nP = Math.min(4, Math.round((b.per ?? 1) * years * dens + rand() * 0.35));
+    if (nP <= 0) return 0;
+    const dirX = -b.x, dirZ = -b.z, dl = Math.hypot(dirX, dirZ) || 1;
+    const faces = [{ nx: 1, nz: 0 }, { nx: -1, nz: 0 }, { nx: 0, nz: 1 }, { nx: 0, nz: -1 }]
+      .filter(f => (f.nx * dirX + f.nz * dirZ) / dl > 0.15);
+    if (!faces.length) return 0;
+    let made = 0;
+    for (let i = 0; i < nP; i++) {
+      const f = faces[Math.floor(rand() * faces.length)];
+      const pw = 0.5 + rand() * 1.6;
+      // 고층(옥탑 원경 등)은 파사드 전체에 분산 — 저층은 지면 출발 + 30% 중단 반점
+      const yLift = b.h > 8 ? rand() * b.h * 0.6 : (rand() < 0.3 ? rand() * b.h * 0.4 : 0);
+      const ph = Math.min(0.7 + rand() * Math.max(0.7, b.h * 0.45), Math.max(0.5, b.h - yLift));
+      const yc = yLift + ph / 2;
+      const jitter = rand() - 0.5;
+      let g;
+      if (f.nx) {
+        g = new THREE.BoxGeometry(0.06, ph, Math.min(pw, b.d * 0.9));
+        g.translate(f.nx * (b.w / 2 + 0.035), yc, jitter * Math.max(0, b.d - pw * 0.6));
+      } else {
+        g = new THREE.BoxGeometry(Math.min(pw, b.w * 0.9), ph, 0.06);
+        g.translate(jitter * Math.max(0, b.w - pw * 0.6), yc, f.nz * (b.d / 2 + 0.035));
+      }
+      if (!local) g.translate(b.x, b.baseY, b.z);
+      out.push(paintGeo(g, pick()));
+      made++;
+    }
+    return made;
+  };
+  let dynUsed = 0;
+  for (const b of reg.bldg) {
+    if (b.dyn) {
+      if (dynUsed >= 4) continue; // 동적 컬링 빌딩 부착 메시는 드로우콜 예산상 4동까지
+      const geos = [];
+      const made = addIvyPatches(b, geos, true);
+      if (made > 0) {
+        const m = new THREE.Mesh(mergeGeometries(geos), ogMat());
+        b.group.add(m); meshes++; dynUsed++;
+        ogState.patches += made;
+      }
+    } else ogState.patches += addIvyPatches(b, worldGeos, false);
+  }
+  // (c) 전신주 덩굴 감김 — 0.5년 1단 → 1.2년 2단 → 2.2년 3단. 기둥 기울기(rotation.z=tilt)를 월드로 환산해 밀착.
+  for (const p of reg.poles) {
+    const wraps = years >= 2.2 ? 3 : years >= 1.2 ? 2 : years >= 0.5 ? 1 : 0;
+    const ct = Math.cos(p.tilt), st = Math.sin(p.tilt);
+    for (let k = 0; k < wraps; k++) {
+      const yk = 0.45 + k * 0.75 + rand() * 0.35;
+      for (let s = 0; s < 4; s++) {
+        const a = rand() * Math.PI * 2;
+        const lx = Math.cos(a) * 0.105, lz = Math.sin(a) * 0.105, ly = yk + s * 0.09;
+        const g = new THREE.BoxGeometry(0.09, 0.16, 0.09);
+        g.rotateY(a);
+        g.translate(p.x + lx * ct - ly * st, p.groundY + lx * st + ly * ct, p.z + lz);
+        worldGeos.push(paintGeo(g, pick()));
+        ogState.patches++;
+      }
+    }
+    if (years >= 2 && rand() < 0.7) { // 가로대에서 늘어진 덩굴 자락
+      const len = 0.9 + rand() * 0.8, lx = (rand() - 0.5) * 1.2, ly = 4.85 - len / 2;
+      const g = new THREE.BoxGeometry(0.05, len, 0.05);
+      g.translate(p.x + lx * ct - ly * st, p.groundY + lx * st + ly * ct, p.z + (rand() - 0.5) * 0.1);
+      worldGeos.push(paintGeo(g, pick()));
+      ogState.patches++;
+    }
+  }
+  // 암반/부표 이끼(바다 셸터) — 연차에 비례해 이끼 낀 바위가 늘어난다(소량 원칙, 0년차 거의 없음)
+  for (const r of reg.rocks) {
+    if (rand() > 0.04 + years * 0.3) continue;
+    const s = r.r * (0.55 + rand() * 0.3);
+    const g = new THREE.BoxGeometry(s, Math.max(0.06, r.r * 0.16), s);
+    g.rotateY(rand() * Math.PI);
+    g.translate(r.x, r.y + r.r * r.sy * 0.42, r.z);
+    worldGeos.push(paintGeo(g, pick()));
+    ogState.patches++;
+  }
+  // 평면 이끼 존(부두 안벽/승강장/선로)
+  for (const z of reg.zones) {
+    const nZ = Math.round(z.n * years * dens);
+    for (let i = 0; i < nZ; i++) {
+      const g = new THREE.BoxGeometry(0.35 + rand() * 0.85, 0.024, 0.25 + rand() * 0.6);
+      g.rotateY(rand() * Math.PI);
+      g.translate(z.cx + (rand() - 0.5) * z.w, z.y + 0.012, z.cz + (rand() - 0.5) * z.d);
+      worldGeos.push(paintGeo(g, shade(pick(), 0.85)));
+      ogState.patches++;
+    }
+  }
+  // (b) 지면 수풀 클러스터 — 일부 클러스터는 기존 tagSway 훅으로 바람 sway(신규 시스템 금지)
+  if (reg.ground) {
+    const G = reg.ground;
+    const gPal = (G.dry && !winter) ? [0x6a5f45, 0x746a4e, 0x66603f, 0x5d5340] : PAL;
+    const nC = Math.round(G.n * years * dens);
+    const swayBundles = [];
+    for (let c = 0; c < nC; c++) {
+      let cx = 0, cz = 0, ok = false;
+      for (let tr = 0; tr < 6 && !ok; tr++) {
+        const a = rand() * Math.PI * 2, rr = G.rMin + rand() * (G.rMax - G.rMin);
+        cx = Math.cos(a) * rr; cz = Math.sin(a) * rr;
+        ok = !G.filter || G.filter(cx, cz);
+      }
+      if (!ok) continue;
+      const nT = 4 + Math.floor(rand() * 5), cr = 0.5 + rand() * 0.8;
+      const doSway = swayBundles.length < 2 && rand() < 0.4;
+      const dst = doSway ? [] : tuftGeos;
+      const baseY = G.gh(cx, cz);
+      for (let i = 0; i < nT; i++) {
+        const tx = cx + (rand() - 0.5) * cr * 2, tz = cz + (rand() - 0.5) * cr * 2;
+        const th = 0.22 + rand() * 0.42;
+        const g = new THREE.ConeGeometry(0.05 + rand() * 0.08, th, 4);
+        g.rotateZ((rand() - 0.5) * 0.5);
+        if (doSway) g.translate(tx - cx, G.gh(tx, tz) - baseY + th / 2 - 0.02, tz - cz); // sway 클러스터는 로컬 좌표
+        else g.translate(tx, G.gh(tx, tz) + th / 2 - 0.02, tz);
+        dst.push(paintGeo(g, gPal[Math.floor(rand() * gPal.length)]));
+        ogState.tufts++;
+      }
+      if (doSway && dst.length) swayBundles.push({ geos: dst, cx, cz, y: baseY });
+    }
+    for (const sb of swayBundles) {
+      const m = new THREE.Mesh(mergeGeometries(sb.geos), ogMat());
+      m.position.set(sb.cx, sb.y, sb.cz);
+      tagSway(m, 0, 0.035); // F-1a [B] 기존 sway 훅 재사용 — 원점이 클러스터 밑동이라 회전 sway가 자연스럽다
+      og.add(m); meshes++;
+    }
+  }
+  // 회전 그룹 잔해 잠식(오두막 전소 잔해 등) — 로컬 좌표 병합 후 그룹 자식으로
+  for (const at of reg.attach) {
+    const geos = [];
+    for (const bx of at.boxes) {
+      const nP = Math.round(1.4 * years * dens);
+      for (let i = 0; i < nP; i++) {
+        const face = Math.floor(rand() * 4);
+        const ph = 0.4 + rand() * Math.max(0.5, bx.h * 0.8);
+        const yc = (bx.y0 || 0) + ph / 2;
+        let g;
+        if (face < 2) {
+          g = new THREE.BoxGeometry(0.05, ph, Math.min(0.5 + rand() * 0.5, bx.d));
+          g.translate(bx.x + (face ? 1 : -1) * (bx.w / 2 + 0.03), yc, bx.z + (rand() - 0.5) * bx.d * 0.5);
+        } else {
+          g = new THREE.BoxGeometry(Math.min(0.5 + rand() * 0.5, bx.w), ph, 0.05);
+          g.translate(bx.x + (rand() - 0.5) * bx.w * 0.5, yc, bx.z + (face === 2 ? 1 : -1) * (bx.d / 2 + 0.03));
+        }
+        geos.push(paintGeo(g, pick()));
+        ogState.patches++;
+      }
+    }
+    if (geos.length) { const m = new THREE.Mesh(mergeGeometries(geos), ogMat()); at.group.add(m); meshes++; }
+  }
+  if (worldGeos.length) { og.add(new THREE.Mesh(mergeGeometries(worldGeos), ogMat())); meshes++; }
+  if (tuftGeos.length) { og.add(new THREE.Mesh(mergeGeometries(tuftGeos), ogMat())); meshes++; }
+  if (og.children.length) envRoot.add(og);
+  ogState.drawCallsAdded = meshes; // 병합 메시 수 = 추가 드로우콜 추정치(그림자 캐스팅 없음)
 }
 
 /* ============================================================
@@ -4447,6 +4726,7 @@ function loadShelter(id) {
   disposeDeep(roomGroup); roomGroup.clear();
   disposeDeep(envRoot); envRoot.clear();
   wallList = []; ceilCullList = []; blockers = []; envDyn = {}; swayProps = [];
+  ogResetRegistry(); // #71: 잠식 대상 등록부 리셋 — buildEnv가 채우고 buildOvergrowth가 소비
   bunkerStairsObj = null; // #55: 계단 히트 대상 재수집
   weatherFx.caps = []; wetApplied = -1;
   winSkyMats.length = 0; // 창문 하늘판 재수집
@@ -4461,6 +4741,9 @@ function loadShelter(id) {
   if ((state.mods?.[id] || []).includes('extension')) ROOM.w += 2; // 증축
   sh.buildRoom();
   sh.buildEnv();
+  // #71: 연차·계절 비례 도심 잠식 — 로드 시 1회 재생성. 플레이 중 하루가 넘어가도 즉시 갱신하지
+  //   않는다(성장은 느린 현상 — 다음 로드/이주/재입장에 반영이면 충분, 의도된 주기).
+  buildOvergrowth();
   addDistantSmoke(); // F-1a [B]: 창밖 원거리 연기 기둥(먼 생존 흔적) — 없는 셸터에만 1개
   buildModProps(); // 설치된 개조 소품
   applyDeco();     // 꾸미기(#13): 벽지/바닥재 재질 적용 (셸터 원본 map 위에 오버레이)
@@ -4501,6 +4784,8 @@ function loadShelter(id) {
   // F-1a: 야생동물 재구성 — 셸터(구역)별 종·로밍 존으로 상시 1~2마리 스폰(개막 새 착지 포함).
   if (typeof wildlifeSys !== 'undefined') wildlifeSys.respawn(id);
   fitZoomForShelter();
+  // #70: 팬은 세이브에 저장하지 않는다 — 셸터 로드/이주 시 항상 방 중심(0,0)에서 시작.
+  camState.panX = camState.panZ = camState.targetPanX = camState.targetPanZ = 0;
   // 벽 컬링을 로드 시점에 동기로 확정한다 (실기기 신고: 부팅 직후 컨테이너 벽 하나가 사라져 T자로 보이다
   // 나중에 정상화되던 버그). 원인: 첫 프레임 전 camera.position가 아직 갱신 안 된 상태로 mask가 잘못 잡히고,
   // 다음 mask 변화(카메라 회전)까지 유지됨. → yaw를 targetYaw로 즉시 스냅 + updateCamera로 카메라 확정 후 컬링.
@@ -7200,7 +7485,7 @@ canvas.addEventListener('pointerdown', e => {
       if (funcClickItem(hit)) return;         // 기능 실행 후 소비 (선택/드래그 없음)
       // 비배치 모드에서 일반 가구 탭 → 배치 모드 진입 유도 팝업 (기능형은 위에서 소비됨)
       offerEditMode(hit);
-      orbitDrag = { x: e.clientX, y: e.clientY, moved: false }; // 그 외엔 화면 회전으로
+      orbitDrag = { x: e.clientX, y: e.clientY, moved: false, pan: false }; // 가구가 잡힌 드래그 = 기존 화면 회전 유지(#70: 팬은 빈 공간 전용)
       return;
     }
     // 배치 모드 ON: 선택 + 드래그 이동 허용
@@ -7213,7 +7498,11 @@ canvas.addEventListener('pointerdown', e => {
       kids: DEFS[hit.defId].surface ? itemsOn(hit).map(ch => ({ ch, x: ch.x, z: ch.z, r: ch.rot })) : [],
     };
   } else {
-    orbitDrag = { x: e.clientX, y: e.clientY, moved: false };
+    // #70 빈 공간 드래그: 비배치·비클로즈업이면 클램프 팬, 배치 모드/클로즈업 중엔 기존 yaw 회전(팬 비활성 스펙).
+    //   팬은 최저 우선순위 — 계단/고양이/가구 픽이 전부 미스인 이 else에서만 시작(select 레이캐스트 경로 불변).
+    //   데드존: 팬은 8px(탭 상호작용 보호 스펙), 회전은 기존 7px 유지.
+    const pan = !editMode && !catCam.active;
+    orbitDrag = { x: e.clientX, y: e.clientY, moved: false, pan, dead: pan ? 8 : 7 };
   }
 });
 addEventListener('pointermove', e => {
@@ -7234,11 +7523,12 @@ addEventListener('pointermove', e => {
     return;
   }
   if (orbitDrag) {
-    const dx = e.clientX - orbitDrag.x;
-    if (!orbitDrag.moved && Math.hypot(dx, e.clientY - orbitDrag.y) > 7) orbitDrag.moved = true;
+    const dx = e.clientX - orbitDrag.x, dy = e.clientY - orbitDrag.y;
+    if (!orbitDrag.moved && Math.hypot(dx, dy) > (orbitDrag.dead || 7)) orbitDrag.moved = true;
     if (orbitDrag.moved) {
       if (catCam.active) exitCatCloseup(); // 드래그로 카메라를 잡으면 클로즈업 해제(원 카메라 복원)
-      camState.targetYaw += dx * 0.008;
+      if (orbitDrag.pan) panByScreenDelta(dx, dy); // #70 빈 공간 드래그 = 클램프 팬 (마우스/터치 공용)
+      else camState.targetYaw += dx * 0.008;
       orbitDrag.x = e.clientX; orbitDrag.y = e.clientY;
     }
     return;
@@ -7635,7 +7925,10 @@ function updateWallCulling(dt = 0, instant = false) {
   // 컨테이너가 바닥+뒷벽만 남은 T자 골조로 보임(실기기 신고 재발분). 게임 진입(hideTitle) 시
   // 기존 페이드로 근벽이 스르륵 열리며 실내 진입. 지하(subway)는 보여줄 외경이 없어 제외.
   const closedHome = titleVisible && !SHELTERS[state.current]?.indoor;
-  const dir = new THREE.Vector3().subVectors(camera.position, camCenter).normalize();
+  // #70: 팬은 렌더 전용 오프셋 — camera.position에 더해진 팬을 되돌려 '방 중심 기준' 방향으로 판정한다.
+  //   (팬해도 컬링 마스크 불변: 마당을 보려고 팬했는데 벽이 열리거나 닫히면 안 됨 — 의도된 동작)
+  const dir = new THREE.Vector3(camera.position.x - camPanApplied.x - camCenter.x,
+    camera.position.y - camCenter.y, camera.position.z - camPanApplied.z - camCenter.z).normalize();
   let mask = 0;
   wallList.forEach((w, i) => {
     const show = closedHome || w.normal.dot(dir) < 0.25;
@@ -7729,7 +8022,8 @@ function updateEnvironment(t, dt) {
     }
   }
   if (envDyn.trees || envDyn.buildings) {
-    const cd = new THREE.Vector2(camera.position.x - camCenter.x, camera.position.z - camCenter.z).normalize();
+    // #70: 근경 나무/빌딩 가림 판정도 팬을 되돌린 앵글 기준 — 팬 중 소품이 깜빡이며 토글되지 않게(벽 컬링과 동일 사상).
+    const cd = new THREE.Vector2(camera.position.x - camPanApplied.x - camCenter.x, camera.position.z - camPanApplied.z - camCenter.z).normalize();
     if (envDyn.trees) {
       for (const tr of envDyn.trees) {
         tr.obj.visible = tr.dir.dot(cd) < 0.5;
@@ -10088,7 +10382,7 @@ $('cam-rotl').addEventListener('click', () => { exitCatCloseup(); camState.targe
 $('cam-rotr').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw += Math.PI / 4; });
 $('cam-zin').addEventListener('click', () => { exitCatCloseup(); camState.zoom = THREE.MathUtils.clamp(camState.zoom * 1.25, 0.25, 3.2); });
 $('cam-zout').addEventListener('click', () => { exitCatCloseup(); camState.zoom = THREE.MathUtils.clamp(camState.zoom * 0.8, 0.25, 3.2); });
-$('cam-home').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw = Math.PI / 4; fitZoomForShelter(); });
+$('cam-home').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw = Math.PI / 4; setPanTarget(0, 0); fitZoomForShelter(); }); // #70: 홈 복귀에 팬 0,0 리셋 포함
 // 패널 드래그/접기 활성화
 makeDraggablePanel($('hud'), 'hud', t('panel.hud'));
 makeDraggablePanel($('exp-panel'), 'exp', t('panel.exp'));
@@ -10295,6 +10589,8 @@ function pollGamepad(dt) {
     const c = $('pad-cursor'); if (c) { c.style.left = padState.x + 'px'; c.style.top = padState.y + 'px'; }
   }
   // 우스틱 → 카메라 회전
+  // #70: 게임패드 팬은 이번 배치 제외 — 우스틱 X가 이미 회전을 점유 중이고, R3 클릭 토글/우스틱 Y 혼용은
+  //   회전↔팬 혼입 오조작 우려가 있어 보류. 필요해지면 BAL.input에 pad 팬 속도를 열고 여기서 setPanTarget 분기.
   const rx = padDead(ax[2] || 0);
   if (rx) { if (catCam.active) exitCatCloseup(); camState.targetYaw += rx * BAL.input.padCameraSpeed * dt; }
   // LB/RB → 줌 (홀드 연속)
@@ -10580,6 +10876,9 @@ window.__shelter = {
   setYaw: (rad) => { camState.yaw = camState.targetYaw = rad; },
   setPitch: (rad) => { camState.elev = THREE.MathUtils.clamp(rad, 0.05, Math.PI / 2 - 0.05); },
   setZoom: (z) => { camState.zoom = THREE.MathUtils.clamp(z, 0.2, 3.2); },
+  // #70 클램프 팬 QA 훅: setYaw 문법대로 target+현재값 동시 세팅(보간 대기 없이 즉시 반영). 원형 클램프 통과.
+  setPan: (x, z) => { setPanTarget(x, z); camState.panX = camState.targetPanX; camState.panZ = camState.targetPanZ; },
+  panState: () => ({ x: camState.panX, z: camState.panZ, tx: camState.targetPanX, tz: camState.targetPanZ, max: panMax() }),
   // ④ 고양이 클로즈업 QA 훅
   enterCatCloseup, exitCatCloseup, catCamState: () => ({ active: catCam.active, saved: catCam.saved, center: catCam.center.toArray(), zoom: camState.zoom, dist: camState.dist }),
   setCatMode: (m) => { const c = getCat(); if (c) { c.mode = m; c.timer = 999; } },
@@ -10591,6 +10890,8 @@ window.__shelter = {
   wildlifeNudge: (i, x, z) => wildlifeSys._nudge(i, x, z), // QA: 클로즈업 검수용 (팬 카메라 부재 보완)
   wildlifeRespawn: (id) => wildlifeSys.respawn(id || state.current),
   swayCount: () => swayProps.length,
+  // #71 도심 잠식 QA 훅: 연차/패치·수풀 수/추가 드로우콜 추정(병합 메시 수)
+  overgrowthState: () => ({ ...ogState }),
   // ⑥ 고양이 버그픽스 QA 훅: 스폰 가드 상태(⑥b 브릭 감지) + 퍼치 지지면 유효성(⑥a)
   catSpawning: () => catSys.isSpawning(),
   catSupportState: () => { const c = getCat(); return c ? { baseY: +c.baseY.toFixed(3), mode: c.mode, supportValid: c.baseY > 0.12 ? catSupportValid(c) : null, dirty: catSys.getCatSupportDirty() } : null; },
