@@ -9,3 +9,4 @@ build/electron-dist/
 # Android 서명 키스토어/비밀번호 — 절대 커밋 금지 (분실 시 앱 업데이트 불가)
 android/keystore/
 android/keystore.properties
+scratchpad/
