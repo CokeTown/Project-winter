@@ -606,7 +606,10 @@ function applyTimeLighting() {
     hemi.color.lerp(_tc.b, 0.10 * dayness);
   }
   // 날씨 광량 대비: 맑은 날은 쨍하게(+6%), 궂은 날은 태양광을 깎는다 — 낮에만 체감(dayness 가중)
-  const wSun = { clear: 1.06, snow: 0.8, rain: 0.55, ash: 0.62, storm: 0.42 }[weather.type] ?? 1;
+  const wSunTab = { clear: 1.06, snow: 0.8, rain: 0.55, ash: 0.62, storm: 0.42 };
+  let wSun = wSunTab[weather.type] ?? 1;
+  // 날씨 전이(#83): 광량이 파티클보다 앞서 서서히 흐려지고/개인다 — 급변 금지
+  if (weather.transPrev != null) { const a = wSunTab[weather.transPrev] ?? 1; wSun = a + (wSun - a) * Math.min(1, weather.transK * 1.4); }
   moon.intensity *= 1 + (wSun - 1) * dayness;
   hemi.intensity *= 1 + (wSun - 1) * 0.45 * dayness;
   // 달: 밤/여명에만 노출. 낮(7~18h)엔 dayness 계산과 무관하게 절대 숨긴다 (실기기 신고: 낮 하늘의 붉은 원).
@@ -773,13 +776,37 @@ function setWeather(type) {
   if (gameStarted && (type === 'rain' || type === 'storm')) tipOnce('tip.rain');
   if (gameStarted && type === 'snow') tipOnce('tip.snow');
 }
+/* ── 날씨 전이 (#83 디렉터 오더, Fable 직접): 급변 금지 ──
+   원칙: 게임 판정(state.weatherType/HUD/페널티)은 기존대로 즉시 전환 — 밸런스 모호 구간을 만들지 않는다.
+   시각(파티클 밀도·색·광량)과 청각(앰비언스 페이드)만 램프를 탄다.
+   2상 램프: 전반(k<0.5) 이전 날씨가 잦아듦 → 후반 새 날씨가 차오름. 완료 시 비 갠 낮이면 새소리 원샷. */
+const WEATHER_TRANS_MIN = 45;   // 전이 길이(게임분) ≈ 실시간 30초 — 감각 튜닝 값
+const WEATHER_AMB_FADE = 8;     // 앰비언스 페이드(실초) — 루프 뚝 시작("이상한 소리") 원천 제거
+function transitionWeather(next) {
+  const prev = weather.type;
+  setWeather(next);                       // 판정/HUD 즉시 (기존 경로 그대로)
+  if (next === prev || !gameStarted) return; // 동일 날씨/부팅 중엔 램프 불필요
+  weather.transPrev = prev;
+  weather.transStart = state.gameMin;
+  weather.transK = 0;
+  // 전이 시작 시점의 시각 상태는 "이전 날씨 풀 밀도"에서 출발
+  const from = WEATHERS[prev];
+  if (from.count) {
+    weather.pts.visible = true;
+    weather.pts.material.color.setHex(from.color); weather.pts.material.size = from.size;
+    weather.pts.geometry.setDrawRange(0, weatherDrawCount(prev));
+  } else {
+    weather.pts.visible = false;
+  }
+  weather.transBirds = (prev === 'rain' || prev === 'storm') && next === 'clear';
+}
 function rollWeather() {
   const pool = seasonAdjustPool(SHELTERS[state.current].weatherPool || ['clear']);
   let next = pool[Math.floor(Math.random() * pool.length)];
   // 비가 뽑히면 25% 확률로 폭우(storm)로 승격 (seasonAdjustPool의 풀에는 넣지 않음)
   if (next === 'rain' && Math.random() < 0.25) next = 'storm';
   if (next !== weather.type) { const wn = LName(WEATHERS[next]); state.dayLog.notes.push(t('weather.changed', { name: wn, josa: josa(wn, '으로/로') })); }
-  setWeather(next);
+  transitionWeather(next);
   // 날씨는 하루~이틀 유지 (기획: 리얼타임 감각)
   state.weatherUntil = state.gameMin + 1440 + Math.random() * 1440;
 }
@@ -792,7 +819,30 @@ function ensureWeather() {
 }
 function updateWeather(dt, t) {
   if (state.gameMin > state.weatherUntil) rollWeather();
-  const W = WEATHERS[weather.type];
+  // ── 전이 램프(#83): 전반 = 이전 날씨 밀도 감소, 후반 = 새 날씨 밀도 증가 ──
+  if (weather.transPrev != null) {
+    const k = Math.min(1, Math.max(0, (state.gameMin - weather.transStart) / WEATHER_TRANS_MIN));
+    weather.transK = k;
+    const fromT = weather.transPrev, toT = weather.type;
+    const from = WEATHERS[fromT], to = WEATHERS[toT];
+    if (k < 0.5) {
+      const c = Math.round(weatherDrawCount(fromT) * (1 - k * 2));
+      weather.pts.visible = c > 0;
+      if (from.count) { weather.pts.material.color.setHex(from.color); weather.pts.material.size = from.size; weather.pts.geometry.setDrawRange(0, c); }
+    } else {
+      const c = Math.round(weatherDrawCount(toT) * ((k - 0.5) * 2));
+      weather.pts.visible = !!to.count && c > 0;
+      if (to.count) { weather.pts.material.color.setHex(to.color); weather.pts.material.size = to.size; weather.pts.geometry.setDrawRange(0, Math.max(1, c)); }
+    }
+    if (k >= 1) {
+      // 전이 완료: 비가 갠 낮이면 새소리 원샷(밤엔 조용히 끝 — 디렉터 오더)
+      if (weather.transBirds && gameHour() >= 7 && gameHour() < 19) playSfx('birds_after_rain');
+      weather.transPrev = null; weather.transBirds = false;
+      setWeather(weather.type); // 최종 밀도/색 확정 복원
+    }
+  }
+  // 파티클 낙하 시뮬은 "지금 화면에 보이는" 날씨 기준 (전이 전반엔 이전 날씨의 낙하 특성)
+  const W = WEATHERS[(weather.transPrev != null && weather.transK < 0.5) ? weather.transPrev : weather.type];
   if (!W.count) return;
   const p = weather.pts.geometry.attributes.position;
   const { SPAN, TOP } = weather;
@@ -8989,7 +9039,8 @@ function showBroadcastModal(id) { // 이름 유지(기존 호출부 호환), 실
   clearRadioBubble();
   const el = ensureRadioBubbleEl();
   const full = `📻 ${LN(b)}`;
-  const bodyText = LD(b).replace(/\s+/g, ' ');
+  // v1.4.2(디렉터 오더): 자막에는 전파를 타는 단파 단문(air)만 — 수신자 시점 서술(desc)은 수첩 기록 전용.
+  const bodyText = LD(b.air ? { desc: b.air, descEn: b.airEn || b.air } : b).replace(/\s+/g, ' ');
   el.className = '';
   el.innerHTML = `<div class="rb-title"></div><div class="rb-body"></div>`;
   el.style.display = 'block';
@@ -9663,18 +9714,20 @@ function syncSfxAmbience() {
   if (titleVisible || endingActive) { setAmbience(null); setFire(false); setSeasonAmbience(null); return; }
   const indoorSh = !!SHELTERS[state.current]?.indoor;
   let calmOutdoor = false; // 맑은 날 실외 = 계절 앰비언스가 깔릴 수 있는 조건
+  // 날씨발 앰비언스 전환은 긴 페이드(#83) — 루프가 뚝 시작/종료하는 "이상한 소리" 원천 제거
+  const wf = WEATHER_AMB_FADE;
   if (indoorSh) {
-    setAmbience(null);
+    setAmbience(null, undefined, wf);
   } else if (weather.type === 'storm') {
-    setAmbience('rain_heavy');
+    setAmbience('rain_heavy', undefined, wf);
   } else if (weather.type === 'rain') {
-    setAmbience(RAIN_AMB[state.current] || 'rain_roof');
+    setAmbience(RAIN_AMB[state.current] || 'rain_roof', undefined, wf);
   } else if (weather.type === 'snow') {
-    setAmbience('amb_wind');
+    setAmbience('amb_wind', undefined, wf);
   } else if (weather.type === 'ash') {
-    setAmbience('amb_wind'); // 재(灰) 날씨는 별도 루프가 없어 바람 앰비언스로 간이 처리
+    setAmbience('amb_wind', undefined, wf); // 재(灰) 날씨는 별도 루프가 없어 바람 앰비언스로 간이 처리
   } else {
-    setAmbience(null);
+    setAmbience(null, undefined, wf);
     calmOutdoor = true;
   }
   // 계절 앰비언스(#13): 맑은 날 실외에서만 계절 배경음(봄새/여름벌레/가을바람/겨울삭풍).
@@ -10209,7 +10262,7 @@ window.__shelter = {
   openModeModal, refreshAutoplayLock, runAutoPlay,
   items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather, BAL,
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
-  startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,
+  startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
   seasonOf, SEASONS, openMapModal, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,

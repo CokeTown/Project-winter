@@ -66,17 +66,17 @@ function makeChannel() {
   return { name: null, src: null, gain: null };
 }
 
-function channelStop(chan) {
+function channelStop(chan, fadeSec = XFADE) {
   if (!chan.src) { chan.name = null; return; }
   const g = chan.gain, s = chan.src;
-  g.gain.setTargetAtTime(0, ctx.currentTime, XFADE / 4);
-  setTimeout(() => { try { s.stop(); } catch (e) {} s.disconnect(); g.disconnect(); }, XFADE * 1000 + 200);
+  g.gain.setTargetAtTime(0, ctx.currentTime, fadeSec / 4);
+  setTimeout(() => { try { s.stop(); } catch (e) {} s.disconnect(); g.disconnect(); }, fadeSec * 1000 + 200);
   chan.name = null; chan.src = null; chan.gain = null;
 }
 
-function channelPlay(chan, name, vol) {
+function channelPlay(chan, name, vol, fadeSec = XFADE) {
   if (chan.name === name) return;     // 같은 이름 재호출 무시
-  channelStop(chan);                  // 기존 소스 페이드아웃
+  channelStop(chan, fadeSec);         // 기존 소스 페이드아웃 (같은 길이로)
   chan.name = name;
   loadBuf(name).then(buf => {
     if (!buf || !ctx || chan.name !== name) return;  // 로딩 중 상태 바뀌면 폐기
@@ -84,7 +84,7 @@ function channelPlay(chan, name, vol) {
     src.buffer = buf; src.loop = true;
     const g = ctx.createGain();
     g.gain.value = 0;
-    g.gain.setTargetAtTime(vol, ctx.currentTime, XFADE / 4);   // 페이드인 램프
+    g.gain.setTargetAtTime(vol, ctx.currentTime, fadeSec / 4);   // 페이드인 램프
     src.connect(g); g.connect(master);
     src.start(0);
     chan.src = src; chan.gain = g;
@@ -94,10 +94,11 @@ function channelPlay(chan, name, vol) {
 const ambChan = makeChannel();   // 날씨 앰비언트
 const fireChan = makeChannel();  // 난롯불
 
-export function setAmbience(name, vol = 0.3) {
+// fadeSec: 날씨 전이(#83)처럼 천천히 스며들어야 하는 전환은 긴 페이드를 넘긴다 (기본 XFADE 유지)
+export function setAmbience(name, vol = 0.3, fadeSec) {
   if (!ctx) return;
-  if (!name) { channelStop(ambChan); return; }
-  channelPlay(ambChan, name, vol);
+  if (!name) { channelStop(ambChan, fadeSec); return; }
+  channelPlay(ambChan, name, vol, fadeSec);
 }
 
 export function setFire(on, vol = 0.22) {
