@@ -1449,6 +1449,16 @@ function makeWalls(defs) {
     wallList.push({ group: d.group, normal: d.normal });
   }
 }
+// ⑤ 벽 부착 소품 컬링 동기화: 벽 평면에 덧댄 패치/판자/방수포/브레이스/스텐실 등을,
+//   해당 방향 벽 그룹의 자식으로 흡수해 벽과 함께 컬링·페이드된다(허공 부유 방지).
+//   normalDir: 벽 바깥 법선(±1축). objs: roomGroup(또는 상위)에 이미 붙은 Mesh/Group 들.
+//   attach()로 월드 변환을 보존하며 재부모화하므로 좌표 재계산 불필요.
+//   외벽 실외 부착물(SHELTER_MOUNTS: 태양광/빗물받이/부표 등)은 이 함수로 넘기지 않는다(실외라 컬링 대상 아님).
+function attachToWall(nx, ny, nz, ...objs) {
+  const w = wallList.find(w => Math.abs(w.normal.x - nx) < 0.01 && Math.abs(w.normal.y - ny) < 0.01 && Math.abs(w.normal.z - nz) < 0.01);
+  if (!w) return;
+  for (const o of objs) if (o && o.parent !== w.group) w.group.attach(o); // 월드 변환 보존 재부모화
+}
 // ⑥-a (전 셸터 공통): 실내를 덮는 천장/지붕을 컬링 목록에 등록한다. obj는 이미 씬에 붙은 Mesh/Group.
 //   y = 천장 대략 높이(카메라가 이보다 확실히 위에 있으면=부감 → 숨김). 셸터별 buildRoom에서 천장 메시 생성 직후 호출.
 //   (ARC: 셸터별 복붙 컬링 로직 없이, 태그만 붙이면 updateWallCulling의 공통 루프가 일괄 처리)
@@ -1515,13 +1525,16 @@ const SHELTERS = {
         tarp2.position.set(-w * 0.32, h + 0.06, 0); tarp2.rotation.z = 0.16; tarp2.castShadow = true; // 접힌 자락
         roofG.add(tarp2);
         tagCeiling(roofG, h + 0.02); roomGroup.add(roofG);
+        // ⑤ 아래 부착물은 전부 +z(뒷벽) 바깥면 소품 → +z 벽 컬링과 동기화 (허공 부유 방지).
+        const wallProps = [];
         // 고정 로프 (지붕 → 처마)
-        for (const sx of [-w * 0.28, w * 0.05, w * 0.24]) Cyl(roomGroup, 0.015, 0.015, 0.5, 0x2a2620, sx, h - 0.1, d / 2 + 0.08, 4).rotation.x = 0.4;
+        for (const sx of [-w * 0.28, w * 0.05, w * 0.24]) { const rope = Cyl(roomGroup, 0.015, 0.015, 0.5, 0x2a2620, sx, h - 0.1, d / 2 + 0.08, 4); rope.rotation.x = 0.4; wallProps.push(rope); }
         // 문짝 스텐실 (뒷벽 +z 바깥면에 페인트 번호판)
-        B(roomGroup, 0.5, 0.34, 0.02, 0xb8a24a, w * 0.22, 1.5, d / 2 + 0.12);
-        B(roomGroup, 0.42, 0.26, 0.03, 0x2a2b26, w * 0.22, 1.5, d / 2 + 0.13);
+        wallProps.push(B(roomGroup, 0.5, 0.34, 0.02, 0xb8a24a, w * 0.22, 1.5, d / 2 + 0.12));
+        wallProps.push(B(roomGroup, 0.42, 0.26, 0.03, 0x2a2b26, w * 0.22, 1.5, d / 2 + 0.13));
         // 녹 얼룩 몇 점
-        for (let i = 0; i < 3; i++) B(roomGroup, 0.16 + crand() * 0.2, 0.4 + crand() * 0.5, 0.02, 0x6e3e28, -w / 2 + crand() * w, 0.8 + crand() * 1.0, d / 2 + 0.115);
+        for (let i = 0; i < 3; i++) wallProps.push(B(roomGroup, 0.16 + crand() * 0.2, 0.4 + crand() * 0.5, 0.02, 0x6e3e28, -w / 2 + crand() * w, 0.8 + crand() * 1.0, d / 2 + 0.115));
+        attachToWall(0, 0, 1, ...wallProps); // +z 뒷벽에 흡수
       }
       blockers = [];
     },
@@ -2039,11 +2052,12 @@ const SHELTERS = {
         { group: mkPatchWall(d), pos: [-w / 2 - 0.09, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
         { group: mkPatchWall(d), pos: [w / 2 + 0.09, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
       ]);
-      // 문틀 (개구부 테두리)
+      // 문틀 (개구부 테두리) — ⑤ 앞(+z)벽 부착물 → +z 벽 컬링과 동기화(허공 부유 방지)
       const doorX = 0; // 앞벽 중앙
-      B(roomGroup, 0.08, 1.8, 0.14, 0x3a3228, doorX - 0.65, 0.9, d / 2 + 0.09);
-      B(roomGroup, 0.08, 1.8, 0.14, 0x3a3228, doorX + 0.65, 0.9, d / 2 + 0.09);
-      B(roomGroup, 1.42, 0.1, 0.14, 0x3a3228, doorX, 1.8, d / 2 + 0.09);
+      attachToWall(0, 0, 1,
+        B(roomGroup, 0.08, 1.8, 0.14, 0x3a3228, doorX - 0.65, 0.9, d / 2 + 0.09),
+        B(roomGroup, 0.08, 1.8, 0.14, 0x3a3228, doorX + 0.65, 0.9, d / 2 + 0.09),
+        B(roomGroup, 1.42, 0.1, 0.14, 0x3a3228, doorX, 1.8, d / 2 + 0.09));
       // ── 슬레이트 지붕 (조악 — 초기 2장 빠짐, 제작으로 보수) ──
       buildRooftopSlate(w, d, h);
 
@@ -10897,6 +10911,9 @@ window.__shelter = {
   // v1.2.0 QA 훅: 취침 자율화(②) / 자동진행 지역선택(③) / 천장 컬링(⑥)
   restEnergyValue, restHourMod, promptSleep, pickAutoRegion, updateWallCulling,
   ceilCullState: () => ceilCullList.map(c => ({ visible: c.group.visible, y: c.y })),
+  // ① 컬링 페이드 QA 훅: 각 벽의 표시/페이드/재질 transparent 상태 (완료 후 상시 draw call 증가 0 검증용)
+  wallCullState: () => wallList.map(w => { const cs = w.group.userData.cull; let transp = 0; if (cs) for (const m of cs.mats) if (m.transparent) transp++;
+    return { visible: w.group.visible, fade: cs ? +cs.fade.toFixed(2) : null, target: cs ? cs.target : null, mats: cs ? cs.mats.length : 0, transparentMats: transp }; }),
   dbg: () => ({ reportQueued, blackoutActive, journalOpen, settlingOffline, pendingEvent: state.pendingEvent }),
   // v0.9.2 배치 모드 + 성공률 보정 (2부)
   expActualRate,
