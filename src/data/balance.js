@@ -66,6 +66,14 @@ export const BAL = {
     coldSnapExtraPerWinter: 1, // 하드 겨울당 한파 상한 +1 (2 → 3회)
   },
 
+  /* ── 무력 상태 구제 (v1.3.0 배치 D · GD-THESIS §4.5) ──
+     노말/하드 런당 1회, 무력(식량·식수 0 + 게이지 바닥) 도달 시 지급되는 재기 물자.
+     "재기 가능선" — 하루치 안전망이지 난이도가 아니다(노말 정상 플레이는 도달 0). */
+  rescue: {
+    food: 3, water: 4, fuel: 2, canned: 2,
+    unlockDay: 150, // 배경화면 모드 해금: 노말 모드 누적 최고 생존일 도달 기준
+  },
+
   /* ── 성공률 pity 보정 (expActualRate / resolveExpedition) ── */
   pity: {
     normalBonus: 0.04,   // 노말 상시 +4%p (하드는 0)

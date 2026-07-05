@@ -370,6 +370,46 @@ export const STR = {
   'mode.zen.desc':    { ko: '노말 밸런스에 넉넉한 시작 물자. 자동 진행이 처음부터 열려 있다. 느긋한 방치에 최적.', en: 'Normal balance with a generous start. Auto-play unlocked from day one. Made for idling.' },
   'mode.back':        { ko: '◂ 뒤로', en: '◂ Back' },
   'slot.zenBadge.title': { ko: '무한 모드', en: 'Endless mode' },
+  /* ── 배치 D: 하드코어 · 배경화면 모드 ── */
+  'mode.hardcore':      { ko: '💀 하드코어', en: '💀 Hardcore' },
+  'mode.hardcore.tag':  { ko: '폐허는 두 번 묻지 않는다', en: 'The ruins do not bury you twice' },
+  'mode.hardcore.desc': { ko: '하드 밸런스 그대로, 구제는 없다. 문 앞의 꾸러미도 헬기의 소리도 오지 않는다. 온기는 오직 손수 지핀 것뿐.', en: 'Hard balance, and no rescue. No parcel at the door, no sound of a helicopter. The only warmth is what you kindle yourself.' },
+  'mode.wallpaper':      { ko: '🖼️ 배경화면', en: '🖼️ Wallpaper' },
+  'mode.wallpaper.tag':  { ko: '살아남기 없이, 살아보기', en: 'To dwell, without surviving' },
+  'mode.wallpaper.desc': { ko: '자원은 무한(∞), 셸터는 전부 열려 있다. 게이지도 겨울의 압박도 없이 배치와 꾸미기만 남는다. 계절과 날씨는 그저 흐른다 — 꾸민 집을 바탕화면에 켜두기 좋다.', en: 'Resources endless (∞), every shelter open. No gauges, no winter pressure — only placing and decorating. Seasons and weather simply drift by; a home to leave glowing on your desktop.' },
+  'mode.wallpaper.lock': { ko: '노말 모드로 {n}일을 살아본 사람의 것이다.', en: 'It belongs to those who have lived {n} days in Normal.' },
+  'mode.wallpaper.lockToast': { ko: '노말 모드 {n}일을 넘긴 뒤에 열린다.', en: 'Opens after passing day {n} in Normal.' },
+  'slot.hardcoreBadge.title': { ko: '하드코어 모드', en: 'Hardcore mode' },
+  'slot.wallpaperBadge.title': { ko: '배경화면 모드', en: 'Wallpaper mode' },
+  'slot.endedTag':    { ko: '끝난 기록', en: 'closed record' },
+  'wallpaper.noAction': { ko: '배경화면 모드에서는 탐험을 나서지 않는다.', en: 'In Wallpaper mode, no one heads out to scavenge.' },
+
+  /* ── 배치 D: 무력 구제 (노말/하드 1회) ── */
+  'rescue.parcel.title': { ko: '문 앞의 꾸러미', en: 'A Parcel at the Door' },
+  'rescue.parcel.body':  { ko: '아침, 문 앞에 낡은 상자가 놓여 있었다. 누가 두고 갔는지는 알 수 없다.\n안에는 며칠을 버틸 만한 것들. 쪽지도, 이름도 없다.\n\n끝내 만나지 못한 누군가가, 딱 한 번 이쪽의 온기를 대신 지펴 주었다.', en: 'At dawn, a worn box sat by the door. No telling who left it.\nInside, enough to last a few days. No note, no name.\n\nSomeone you never met kindled this warmth, just once, in your place.' },
+  'rescue.parcel.note':  { ko: '🎁 문 앞에 누가 꾸러미를 두고 갔다.', en: '🎁 Someone left a parcel at the door.' },
+  'rescue.heli.title':   { ko: '먼 프로펠러 소리', en: 'A Far-off Rotor' },
+  'rescue.heli.body':    { ko: '지붕 너머로 프로펠러 소리가 지나갔다. 곧 낙하산 하나가 눈밭에 내려앉는다.\n헬기는 멈추지 않았다. 다만 보급 상자 하나를 남기고 갔다.\n\n스치듯 지나간 온기가, 딱 한 번 이쪽을 붙들어 주었다.', en: 'A rotor passed beyond the roof. Soon a single chute settles onto the snow.\nThe helicopter never stopped. It left one supply crate behind.\n\nA warmth that only grazed you held you up, just once.' },
+  'rescue.heli.note':    { ko: '🚁 헬기가 보급 상자를 떨어뜨리고 갔다.', en: '🚁 A helicopter dropped a supply crate.' },
+
+  /* ── 배치 D: 런 종료 · 끝난 기록 (GD-THESIS §4.5) ── */
+  'ended.title':        { ko: '마지막 페이지', en: 'The Last Page' },
+  'ended.page1':        { ko: '여기까지 기록이 남아 있다.\n\n펜이 멈춘 자리에서, 하루가 조용히 닫혔다. 이 집이 품었던 온기는, 기록으로 남는다.', en: 'The record reaches this far.\n\nWhere the pen stopped, a day quietly closed. The warmth this home once held stays on, as a record.' },
+  'ended.summaryTitle': { ko: '그 겨울들의 기록', en: 'A Record of Those Winters' },
+  'ended.summary':      { ko: 'Day {day}까지 살았다.\n넘긴 겨울 ❄️ {winters}\n모은 기록 {collected}가지{cat}', en: 'Lived until Day {day}.\nWinters passed ❄️ {winters}\nRecords gathered: {collected}{cat}' },
+  'ended.summary.cat':  { ko: '\n난롯가에 고양이 한 마리', en: '\nA cat by the hearth' },
+  'ended.toTitle':      { ko: '기록은 슬롯에 남는다.', en: 'The record remains in its slot.' },
+
+  /* ── 배치 D: 전체 수거 ── */
+  'inv.collectAll':       { ko: '전체 수거', en: 'Collect All' },
+  'inv.collectAll.title': { ko: '놓인 가구 {n}개를 전부 거둔다.', en: 'Gather all {n} placed pieces.' },
+  'inv.collectAll.none':  { ko: '거둘 가구가 없다.', en: 'Nothing placed to gather.' },
+  'reclaimAll.confirm':   { ko: '가구 {n}개를 전부 거둔다.', en: 'Gather all {n} pieces.' },
+  'reclaimAll.ok':        { ko: '전부 거둔다', en: 'Gather all' },
+  'reclaimAll.cancel':    { ko: '그만둔다', en: 'Leave them' },
+  'reclaimAll.done':      { ko: '📦 가구 {n}개를 인벤토리로 거뒀다.', en: '📦 Gathered {n} pieces into inventory.' },
+  'reclaimAll.applianceOff': { ko: '가전 {n}대의 효과가 멈췄다.', en: '{n} appliances stopped running.' },
+  'shelter.leftover':     { ko: '이 집에 놓인 가구 {n}개는 옮겨도 인벤토리에 남는다.', en: 'The {n} pieces here stay in inventory when you move.' },
 
   /* ── 지도 / 탐험 ── */
   // 수사 의문·지시조 안내문 금지 — UI는 어포던스로 스스로 읽혀야 한다 (2026-07-05 디렉터 지침)

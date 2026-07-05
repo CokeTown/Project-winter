@@ -3561,6 +3561,9 @@ const state = {
   sketches: {},           // 1.3: 수집한 밤하늘 스케치 { id: 수집일 } (도감/기록 문법)
   nightSkyToday: 0,       // 1.3: 오늘 밤하늘 이벤트 발동 여부 (하루 1회 제한)
   pendingSketchPopup: null, // 1.3: 결산 닫은 뒤 열 스케치 팝업 id
+  // ── 1.3.0 배치 D: 무력 상태 / 구제 / 끝난 기록 (GD-THESIS §4.5) ──
+  rescueUsed: false,      // 이 런에서 1회 구제를 이미 받았는지 (노말/하드)
+  runEnded: false,        // 런 종료(무력 두 번째 or 하드코어 무력) — 슬롯은 "끝난 기록"으로 보존, 이어하기 불가
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -3571,6 +3574,7 @@ function resAdd(id, n) {
   state.dayLog.gain[id] = (state.dayLog.gain[id] || 0) + n;
 }
 function resConsume(id, n) {
+  if (isWallpaper()) return true; // 🖼️ 배경화면: 자원 무한 — 차감하지 않는다(표시는 ∞)
   if ((state.res[id] || 0) < n) return false;
   state.res[id] -= n;
   state.dayLog.spend[id] = (state.dayLog.spend[id] || 0) + n;
@@ -3578,6 +3582,7 @@ function resConsume(id, n) {
   return true;
 }
 function resHasAll(cost) {
+  if (isWallpaper()) return true; // 🖼️ 배경화면: 항상 충족 (배치/이주 자유)
   return Object.entries(cost).every(([id, n]) => (state.res[id] || 0) >= n);
 }
 function resConsumeAll(cost) {
@@ -3623,8 +3628,14 @@ bindPlatform({
 /* ============================================================
    난이도 모드 (v0.9.2) — 하드: 전리품 -30% · 게이지 소모 +50%
 ============================================================ */
-const isHard = () => state.mode === 'hard';
+// 하드코어(hardcore)는 하드 밸런스를 그대로 쓴다(구제만 없음) — isHard가 하드코어를 포함해야
+// 전리품/게이지/한파 강화가 하드코어에도 적용된다. 배치 D 밸런스 불가침(하드 값 재사용).
+const isHard = () => state.mode === 'hard' || state.mode === 'hardcore';
+const isHardcore = () => state.mode === 'hardcore'; // 폐허는 두 번 묻지 않는다 — 구제 없음
 const isZen = () => state.mode === 'zen'; // ♾️ 무한: 자동 진행 첫날 해금 + 겨울 카운터 분모 없음
+const isWallpaper = () => state.mode === 'wallpaper'; // 🖼️ 배경화면: 압박 전부 off, 자원 무한, 셸터 전 해금
+// 구제 대상 모드: 노말/하드만(무한·배경화면은 무력 미적용, 하드코어는 구제 없음)
+const rescueEligible = () => state.mode === 'normal' || state.mode === 'hard';
 // 하드 전리품 -30%. EV 보존 확률적 반올림: floor만 쓰면 1개 드랍이 항상 0이 되고,
 // round만 쓰면 1개가 영원히 안 줄어든다 — 소수부를 확률로 처리해 기댓값(×0.7)을 지킨다.
 function hardLoot(n) {
@@ -3637,6 +3648,7 @@ function hardLoot(n) {
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
 ============================================================ */
 function decayGauges(gm) {
+  if (isWallpaper()) return; // 🖼️ 배경화면: 게이지 압박 off — 배고픔/갈증/에너지 정지(볼거리만 흐른다)
   const winterMult = seasonOf().id === 'winter' ? BAL.gauges.winterMult : 1; // 겨울엔 열량 소모가 크다
   const hardMul = isHard() ? BAL.hard.drainMul : 1; // 하드: 배고픔/갈증 소모 +50%
   // 한파: 방어가 안 된 만큼(netSeverity) 배고픔 감소를 가속 (완전 방어 시 1.0)
@@ -3673,6 +3685,116 @@ function drinkWater() {
   renderResBar(); updateHud(); scheduleSave();
 }
 function isExhausted() { return state.hunger <= 0 || state.thirst <= 0; }
+
+/* ============================================================
+   무력 상태 · 구제 1회 · 런 종료 (v1.3.0 배치 D · GD-THESIS §4.5)
+   무력 = 식량·식수 재고 0 AND 배고픔·갈증·에너지 바닥.
+   노말/하드: 런당 1회 구제(문 앞 꾸러미 / 헬기 보급). 이후 2번째 무력 = 런 종료.
+   하드코어: 구제 없음(첫 무력이 곧 종료). 무한/배경화면: 무력 미적용.
+============================================================ */
+const GAUGE_FLOOR = 0; // 게이지 바닥 판정선 (구조 상수 — 밸런스 수치 아님)
+function gaugesBottomed() {
+  return state.hunger <= GAUGE_FLOOR && state.thirst <= GAUGE_FLOOR && state.energy <= GAUGE_FLOOR;
+}
+function helplessNow() {
+  if (isWallpaper() || isZen()) return false;   // 무력 미적용 모드
+  const foodStock = (state.res.food || 0) + (state.res.canned || 0);
+  const waterStock = (state.res.water || 0);
+  return foodStock <= 0 && waterStock <= 0 && gaugesBottomed();
+}
+let helplessBusy = false; // 구제/종료 연출 중 재진입 가드 (틱마다 재호출되므로)
+// 매 상태 변화 후 호출되는 안전망 판정. 무력이면 구제 또는 종료를 연출한다.
+function checkHelpless() {
+  if (helplessBusy || state.runEnded || blackoutActive) return;
+  if (!helplessNow()) return;
+  helplessBusy = true;
+  if (rescueEligible() && !state.rescueUsed) doRescue();
+  else endRun();
+}
+// 구제 1회: 암전 → 랜덤 2종(문 앞 꾸러미 / 헬기 보급). 재기 가능선 물자 지급.
+function doRescue() {
+  state.rescueUsed = true;
+  const heli = Math.random() < 0.5;
+  if (heli) playSfx('heli');
+  blackout(() => {
+    // 보급량 지급 (BAL.rescue) — 재기 가능선(하루치)
+    for (const [rid, n] of Object.entries(BAL.rescue)) {
+      if (rid === 'unlockDay') continue;
+      state.res[rid] = (state.res[rid] || 0) + n;
+    }
+    // 게이지도 최소 재기선까지 끌어올린다 (물자만 주고 바닥이면 즉시 재무력)
+    state.hunger = Math.max(state.hunger, 40);
+    state.thirst = Math.max(state.thirst, 40);
+    state.energy = Math.max(state.energy, 40);
+    const noteKey = heli ? 'rescue.heli.note' : 'rescue.parcel.note';
+    state.dayLog.notes.push(t(noteKey));
+    renderResBar(); updateHud(); flushSave();
+  }, 900);
+  // 연출이 끝난 뒤 수첩 한 장으로 "타인의 온기"를 전한다
+  setTimeout(() => {
+    helplessBusy = false;
+    openJournalPages([{
+      titleId: heli ? 'rescue.heli.title' : 'rescue.parcel.title',
+      bodyId: heli ? 'rescue.heli.body' : 'rescue.parcel.body',
+    }]);
+  }, 1800);
+}
+// 런 종료: 암전 → 수첩 마지막 페이지 → 요약 → "끝난 기록"으로 보존.
+function endRun() {
+  state.runEnded = true;
+  blackout(() => { flushSave(); }, 1000);
+  setTimeout(() => {
+    helplessBusy = false;
+    setPaused(true);
+    openEndedRecordPages(runSummaryLines(), { fromRun: true });
+  }, 1600);
+}
+// 요약: 넘긴 겨울 / 수집 / 고양이 (GD-THESIS §4.5)
+function runSummaryLines() {
+  const collected = memosCollected() + broadcastsCollected()
+    + Object.keys(state.sketches || {}).length;
+  return {
+    day: state.day,
+    winters: state.winters || 0,
+    collected,
+    cat: !!state.cat,
+    mode: state.mode,
+  };
+}
+// 끝난 기록 수첩 (런 종료 직후 · 회고 재열람 공통)
+function openEndedRecordPages(sum, opt = {}) {
+  const catLine = sum.cat ? t('ended.summary.cat') : '';
+  openJournalPages([
+    { titleId: 'ended.title', bodyId: 'ended.page1' }, // "여기까지 기록이 남아 있다"
+    { titleId: 'ended.summaryTitle', body: t('ended.summary', {
+        day: sum.day, winters: sum.winters, collected: sum.collected, cat: catLine,
+      }) },
+  ], {
+    onClose: () => {
+      if (opt.fromRun) {
+        // 런 종료 직후엔 타이틀로 (끝난 기록은 슬롯에 보존됨)
+        toast(t('ended.toTitle'));
+        flushSave();
+        setTimeout(() => reloadWithVeil(), 400);
+      }
+    },
+  });
+}
+// 끝난 기록 회고 열람 (타이틀 불러오기에서 끝난 슬롯 클릭) — 해당 슬롯 요약만 읽는다.
+function openEndedRecord(n) {
+  const d = readSlot(n);
+  const st = d?.state;
+  if (!st) { toast(t('toast.emptySlot')); return; }
+  const collected = Object.keys(st.memos || {}).length + Object.keys(st.broadcasts || {}).length
+    + Object.keys(st.sketches || {}).length;
+  openEndedRecordPages({
+    day: st.day || 1,
+    winters: st.winters || 0,
+    collected,
+    cat: !!st.cat,
+    mode: st.mode || 'normal',
+  });
+}
 
 /* ── 취침 (의무 휴식 — 자원 인플레이션 방지 + 침대의 가치) ── */
 const EXP_PER_DAY = BAL.exp.perDay;
@@ -3750,8 +3872,32 @@ async function promptSleep() {
 }
 
 /* ── 세이브 슬롯 (Steam 대비: 슬롯 3개 + 최근 슬롯 기억) ── */
-const SLOT_COUNT = 3;
+// 표시할 세이브 슬롯 칸수 = max(5, 채워진 슬롯+1) — 항상 빈 칸 1개 이상, 사실상 무한.
+// 저장 키는 slot1.. 연속. 구 3슬롯은 그대로 slot1~3에 남아 완전 호환.
+const SLOT_MIN = 5;
+// 채워진 슬롯의 최대 번호를 찾아, 그보다 1칸 더(빈 칸) 보여준다. 하한 SLOT_MIN.
+function slotDisplayCount() {
+  let maxFilled = 0;
+  // 상한 없이 스캔하되 실무 안전 상한(200) — 사용자가 200칸을 채우는 일은 없다.
+  for (let n = 1; n <= 200; n++) { if (localStorage.getItem(slotKey(n))) maxFilled = n; }
+  return Math.max(SLOT_MIN, maxFilled + 1);
+}
 const slotKey = n => `project-shelter-slot${n}`;
+
+/* ── 계정 통계 (세이브 아닌 로컬 영속, Platform 어댑터 경유) ──
+   배경화면 모드 해금(노말 누적 최고 생존일 ≥ BAL.rescue.unlockDay) 판정용.
+   QA 치트로 오염된 런은 집계하지 않는다(qaUsed). */
+function readStats() {
+  try { return JSON.parse(Platform.cloud.load('nw-stats') || '{}') || {}; } catch (e) { return {}; }
+}
+function writeStats(s) { Platform.cloud.save('nw-stats', JSON.stringify(s)); }
+// 노말 모드에서 도달한 최고 생존일 갱신 (배경화면 해금 통계). day는 현재 게임일.
+function recordNormalDay(day) {
+  if (_simRunning || state.mode !== 'normal' || state.qaUsed) return; // 시뮬레이션은 계정 통계 오염 금지
+  const s = readStats();
+  if ((s.normalBestDay || 0) < day) { s.normalBestDay = day; writeStats(s); }
+}
+function wallpaperUnlocked() { return (readStats().normalBestDay || 0) >= (BAL.rescue?.unlockDay || 150); }
 let currentSlot = parseInt(localStorage.getItem('project-shelter-lastslot') || '1', 10) || 1;
 function readSlot(n) {
   try { return JSON.parse(localStorage.getItem(slotKey(n)) || 'null'); } catch (e) { return null; }
@@ -3763,7 +3909,8 @@ function slotMeta(n) {
   const se = SEASONS[Math.floor(((st.day || 1) - 1) / SEASON_DAYS) % 4];
   return {
     day: st.day || 1, season: se, shelter: SHELTERS[st.current] ? SHELTERS[st.current] : SHELTERS.container,
-    successes: st.successes || 0, mode: st.mode === 'hard' ? 'hard' : st.mode === 'zen' ? 'zen' : 'normal',
+    successes: st.successes || 0, mode: ['hard', 'zen', 'hardcore', 'wallpaper'].includes(st.mode) ? st.mode : 'normal',
+    runEnded: !!st.runEnded, // 끝난 기록(이어하기 불가, 회고 열람만)
     // Nine Winters(#11): 슬롯/이어하기에 겨울 수 (없으면 day로 역산 — 마이그레이션과 동일 규칙)
     winters: st.winters != null ? st.winters : Math.floor(((st.day || 1) - 1) / SEASON_DAYS / 4),
     qaUsed: !!st.qaUsed,
@@ -4613,6 +4760,7 @@ function forecastText() {
 // 탐험은 준비 단계를 거친다 (기획서 v0.2: 지역 → 날씨/위험 확인 → 준비물 → 출발)
 function startExpedition(regionId) {
   if (paused) { toast(t('pause.blocked')); return; }
+  if (isWallpaper()) { toast(t('wallpaper.noAction')); return; } // 🖼️ 배경화면: 탐험 off
   if (state.exp) return;
   if (isExhausted()) { toast(t('toast.exhausted')); return; }
   if (state.energy < BAL.exp.minEnergy) { toast(t('toast.tooTired')); return; }
@@ -5878,6 +6026,7 @@ function pushEvHistory(id) {
 }
 // 후보 풀에서 가중 추첨해 pendingEvent 예약. 성공 시 뽑힌 id, 없으면 null.
 function drawEvent(ctx = eventCtx()) {
+  if (isWallpaper()) return null; // 🖼️ 배경화면: 인카운터/이벤트 off
   const cands = Object.keys(EVENTS).filter(id =>
     !EVENTS[id].special && eventMatches(id, ctx) && !eventThreePeatBlocked(id));
   if (!cands.length) return null;
@@ -7669,6 +7818,26 @@ function reclaimSelected() {
   playSfx('whoosh');
   if (wasOn) toast(t('reclaim.utilityOff', { name: utilName, effect: t(`reclaim.eff.${app.effect}`) }));
 }
+// 배치 D ④: 전체 수거 — 현재 셸터의 모든 가구를 인벤토리로 거둔다.
+//   가전 효과 중단은 요약 1줄로 안내(개별 토스트 폭탄 방지).
+async function reclaimAll() {
+  const n = items.length;
+  if (n <= 0) { toast(t('inv.collectAll.none')); return; }
+  if (!(await gameConfirm(t('reclaimAll.confirm', { n }), t('reclaimAll.ok'), t('reclaimAll.cancel')))) return;
+  let applianceOff = 0;
+  // 스냅샷 복사 후 순회 (removeItem이 items를 변형하므로)
+  for (const it of [...items]) {
+    const app = DEFS[it.defId].appliance;
+    if (app && it.on !== false) applianceOff++;
+    state.inventory[it.defId] = (state.inventory[it.defId] || 0) + 1;
+    removeItem(it);
+  }
+  deselect();
+  renderInventoryBar();
+  scheduleSave();
+  playSfx('whoosh');
+  toast(t('reclaimAll.done', { n }) + (applianceOff > 0 ? ' ' + t('reclaimAll.applianceOff', { n: applianceOff }) : ''));
+}
 
 // 멀티터치 추적: 한 손가락 = 선택/이동/빈 곳 드래그 회전, 두 손가락 = 핀치 줌 + 회전
 const touches = new Map();
@@ -8485,23 +8654,32 @@ function hideTitle() {
   if (state.exp && Date.now() >= state.exp.end) resolveExpedition();
   syncBgm();
 }
+// 슬롯 모드 배지 (하드/무한/하드코어/배경화면) — icon() 폴백 문법 대신 이모지 배지 유지
+function slotModeBadge(mode) {
+  if (mode === 'hard') return `<span class="sl-mode-hard" title="${t('slot.hardBadge.title')}">🔥</span>`;
+  if (mode === 'hardcore') return `<span class="sl-mode-hard" title="${t('slot.hardcoreBadge.title')}">💀</span>`;
+  if (mode === 'zen') return `<span class="sl-mode-zen" title="${t('slot.zenBadge.title')}">♾️</span>`;
+  if (mode === 'wallpaper') return `<span class="sl-mode-zen" title="${t('slot.wallpaperBadge.title')}">🖼️</span>`;
+  return '';
+}
 function openSlotModal(mode) {
   const cards = [];
-  for (let n = 1; n <= SLOT_COUNT; n++) {
+  const count = slotDisplayCount(); // max(5, 채워진 최대 슬롯+1) — 항상 빈 칸 하나
+  for (let n = 1; n <= count; n++) {
     const m = slotMeta(n);
+    const ended = m && m.runEnded; // 끝난 기록(회고만)
     cards.push(`
-      <div class="slot-card ${m ? '' : 'empty'}" data-slot="${n}" data-has="${m ? 1 : 0}">
-        ${m && m.mode === 'hard' ? `<span class="sl-mode-hard" title="${t('slot.hardBadge.title')}">🔥</span>` : ''}
-        ${m && m.mode === 'zen' ? `<span class="sl-mode-zen" title="${t('slot.zenBadge.title')}">♾️</span>` : ''}
+      <div class="slot-card ${m ? '' : 'empty'} ${ended ? 'ended' : ''}" data-slot="${n}" data-has="${m ? 1 : 0}" data-ended="${ended ? 1 : 0}">
+        ${m ? slotModeBadge(m.mode) : ''}
         ${m && m.qaUsed ? `<span class="sl-qa" title="QA 치트 사용됨" style="position:absolute;top:4px;left:4px;font-size:9px;background:#6b5a40;color:#1a1408;padding:1px 4px;border-radius:3px;font-weight:bold">QA</span>` : ''}
         <span class="sl-no">${n}</span>
         <div class="sl-body">${m
-          ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}${m.winters >= 1 ? ` <span class="sl-winters">❄️${m.winters}${m.mode === 'zen' ? '' : '/9'}</span>` : ''}<br><span class="sl-meta">${t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
+          ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}${m.winters >= 1 ? ` <span class="sl-winters">❄️${m.winters}${m.mode === 'zen' ? '' : '/9'}</span>` : ''}${ended ? ` <span class="sl-ended">${t('slot.endedTag')}</span>` : ''}<br><span class="sl-meta">${t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
           : t('slot.empty')}</div>
         ${m ? `<button class="sl-del" data-del="${n}" title="${t('slot.del.title')}">🗑</button>` : ''}
       </div>`);
   }
-  openModal(mode === 'new' ? t('slot.new') : t('slot.load'), cards.join(''));
+  openModal(mode === 'new' ? t('slot.new') : t('slot.load'), `<div class="slot-scroll">${cards.join('')}</div>`);
   $('modal-body').querySelectorAll('.sl-del').forEach(b => b.addEventListener('click', async ev => {
     ev.stopPropagation();
     if (!(await gameConfirm(t('slot.delConfirm', { n: b.dataset.del }), t('confirm.delete'), t('confirm.cancel')))) return;
@@ -8513,9 +8691,11 @@ function openSlotModal(mode) {
     openSlotModal(mode);
   }));
   $('modal-body').querySelectorAll('.slot-card').forEach(c => c.addEventListener('click', async () => {
-    const n = +c.dataset.slot, has = c.dataset.has === '1';
+    const n = +c.dataset.slot, has = c.dataset.has === '1', ended = c.dataset.ended === '1';
     if (mode === 'load') {
       if (!has) { toast(t('toast.emptySlot')); return; }
+      // 끝난 기록: 이어하기 불가 — 회고(마지막 요약)만 열람한다.
+      if (ended) { openEndedRecord(n); return; }
       localStorage.setItem('project-shelter-lastslot', String(n));
       sessionStorage.setItem('ps-load', '1'); // 리로드 후 타이틀 건너뛰고 바로 게임 (밀린 결산 표시)
       location.reload();
@@ -8526,30 +8706,45 @@ function openSlotModal(mode) {
     }
   }));
 }
-// 새 게임: 슬롯 선택 후 노말/하드 모드를 고르는 화면 (같은 모달의 body 교체)
+// 새 게임: 슬롯 선택 후 모드 5종(노말/하드/하드코어/무한/배경화면)을 고르는 화면 (같은 모달의 body 교체)
 function openModeModal(n) {
-  const card = (mode, titleId, tagId, descId) => `
-    <div class="slot-card mode-card" data-mode="${mode}">
+  const card = (mode, titleId, tagId, descId, opt = {}) => {
+    const lock = opt.locked;
+    return `
+    <div class="slot-card mode-card ${lock ? 'locked' : ''}" data-mode="${mode}" data-locked="${lock ? 1 : 0}">
       <div class="sl-body">
-        <div class="mc-title">${t(titleId)}</div>
+        <div class="mc-title">${lock ? '🔒 ' : ''}${t(titleId)}</div>
         <div class="mc-tag">${t(tagId)}</div>
-        <div class="sl-meta">${t(descId)}</div>
+        <div class="sl-meta">${lock ? t('mode.wallpaper.lock', { n: BAL.rescue.unlockDay }) : t(descId)}</div>
       </div>
     </div>`;
-  const body = card('normal', 'mode.normal', 'mode.normal.tag', 'mode.normal.desc')
+  };
+  const wpLocked = !wallpaperUnlocked();
+  const body = `<div class="mode-scroll">`
+    + card('normal', 'mode.normal', 'mode.normal.tag', 'mode.normal.desc')
     + card('hard', 'mode.hard', 'mode.hard.tag', 'mode.hard.desc')
+    + card('hardcore', 'mode.hardcore', 'mode.hardcore.tag', 'mode.hardcore.desc')
     + card('zen', 'mode.zen', 'mode.zen.tag', 'mode.zen.desc')
-    + `<button class="pixel-btn mode-back">${t('mode.back')}</button>`;
+    + card('wallpaper', 'mode.wallpaper', 'mode.wallpaper.tag', 'mode.wallpaper.desc', { locked: wpLocked })
+    + `</div><button class="pixel-btn mode-back">${t('mode.back')}</button>`;
   openModal(t('mode.pick.title'), body);
   $('modal-body').querySelector('.mode-back').addEventListener('click', () => openSlotModal('new'));
   $('modal-body').querySelectorAll('.mode-card').forEach(c => c.addEventListener('click', () => {
+    if (c.dataset.locked === '1') { toast(t('mode.wallpaper.lockToast', { n: BAL.rescue.unlockDay })); return; }
+    const m = c.dataset.mode;
     const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
     fresh.savedAt = Date.now();
     fresh.helpSeen = true;
-    fresh.mode = c.dataset.mode === 'hard' ? 'hard' : c.dataset.mode === 'zen' ? 'zen' : 'normal';
+    fresh.mode = ['hard', 'zen', 'hardcore', 'wallpaper'].includes(m) ? m : 'normal';
     // ♾️ 무한 모드: 넉넉한 시작 물자 가산 (노말 밸런스 위에)
     if (fresh.mode === 'zen') {
       for (const [rid, n2] of Object.entries(BAL.economy.zenStart || {})) fresh.res[rid] = (fresh.res[rid] || 0) + n2;
+    }
+    // 🖼️ 배경화면 모드: 셸터 전 해금 + 무한 물자(표시는 ∞) + 배치/꾸미기 전용.
+    //   successes를 최고 해금선까지 올려 전 셸터를 열고, 게이지는 만땅으로 시작(무력 미적용).
+    if (fresh.mode === 'wallpaper') {
+      fresh.successes = Math.max(...Object.values(SHELTERS).map(s => s.unlockAt || 0));
+      // 게이지는 decayGauges가 배경화면에서 정지시키고 HUD도 숨긴다 — DEFAULT_STATE 값 그대로 둔다.
     }
     // 새 게임은 자동 진행이 '해금만' 된 상태로 시작 — 기본 OFF. (실기기 신고: zen이 시작하자마자 자동 돌입)
     // opts는 전역 지속값이라 이전 게임에서 켰던 autoPlay가 새 슬롯에 그대로 새지 않게 여기서 끈다.
@@ -8557,7 +8752,9 @@ function openModeModal(n) {
     opts.autoPlay = false;
     localStorage.setItem(slotKey(n), JSON.stringify({ state: fresh, opts }));
     localStorage.setItem('project-shelter-lastslot', String(n));
-    sessionStorage.setItem('ps-intro', '1');
+    // 배경화면 모드는 인트로(생존 서사) 건너뛰고 바로 진입 — 살아남기 없이 살아보기.
+    if (fresh.mode === 'wallpaper') sessionStorage.setItem('ps-load', '1');
+    else sessionStorage.setItem('ps-intro', '1');
     location.reload();
   }));
 }
@@ -8635,6 +8832,8 @@ function updateClock() {
 }
 
 function updateHud() {
+  // 🖼️ 배경화면 모드: 게이지/탐험 패널을 숨긴다(CSS). 압박 UI가 없는 순수 가꾸기.
+  document.body.classList.toggle('wallpaper-mode', isWallpaper());
   const sh = SHELTERS[state.current];
   const W = WEATHERS[weather.type];
   const cd = comfortDetail();
@@ -8680,11 +8879,12 @@ function renderGauge(id, val, gkey, emoji) {
 let lastResSnapshot = {};
 function renderResBar() {
   const bar = $('res-chips');
+  const wp = isWallpaper();
   bar.innerHTML = Object.entries(RESOURCES).map(([id, r]) => {
     const n = state.res[id] || 0;
-    const changed = lastResSnapshot[id] != null && lastResSnapshot[id] !== n;
-    return `<div class="res-chip ${n === 0 ? 'zero' : ''} ${changed ? 'flash' : ''}" title="${LName(r)}">
-      <span class="re">${resIcon(id)}</span><span class="rname">${LName(r)}</span><span class="rn">${n}</span>
+    const changed = !wp && lastResSnapshot[id] != null && lastResSnapshot[id] !== n;
+    return `<div class="res-chip ${!wp && n === 0 ? 'zero' : ''} ${changed ? 'flash' : ''}" title="${LName(r)}">
+      <span class="re">${resIcon(id)}</span><span class="rname">${LName(r)}</span><span class="rn">${wp ? '∞' : n}</span>
     </div>`;
   }).join('');
   lastResSnapshot = { ...state.res };
@@ -9083,6 +9283,8 @@ function processDay() {
   if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 1 && Math.random() < BAL.events.dailyChance) {
     drawEvent({ ...eventCtx(), night: true });
   }
+  // 배치 D ①: 노말 모드 누적 최고 생존일 통계 갱신 (배경화면 모드 해금 조건 — 세이브 아닌 계정 통계).
+  recordNormalDay(state.day);
 }
 // 아침 브리핑 카드 (#29) — 결산 상단 "오늘" 섹션: 날씨 예보 + 경고 통합 + 권장 행동 1줄
 function briefingHtml(forecast, prep, warns) {
@@ -9220,7 +9422,7 @@ function pickAutoRegion() {
 // 자동 대상: 치료·청소·탐험(급식/취침/autoEat은 각각 processDay/자정루프/decayGauges가 자동 처리).
 // 자동 대상 아님(설계 의도 — 후반 수동 전략 레버): 염장(salt cure)·얼음낚시·대형 프로젝트·암시장.
 function runAutoPlay() {
-  if (paused || titleVisible || !opts.autoPlay || (!isZen() && state.day < 10)) return;
+  if (paused || titleVisible || !opts.autoPlay || isWallpaper() || (!isZen() && state.day < 10)) return;
   if (state.injury && resHasAll(INJURIES[state.injury.type].cure)) {
     const name = LName(INJURIES[state.injury.type]);
     treatInjury();
@@ -9242,6 +9444,7 @@ function runAutoPlay() {
 function tickTime(dt) {
   state.gameMin += dt * GAME_MIN_PER_SEC;
   decayGauges(dt * GAME_MIN_PER_SEC);
+  checkHelpless(); // 배치 D: 무력 상태(게이지 바닥 + 재고 0) 안전망 판정
   const curHour = Math.floor(state.gameMin / 60);
   if (curHour !== lastAutoHour) {
     lastAutoHour = curHour;
@@ -9359,6 +9562,17 @@ function tickTime(dt) {
 function renderInventoryBar() {
   const bar = $('toolbar');
   bar.innerHTML = '';
+  // 배치 D ④: 전체 수거 버튼 — 현재 셸터에 놓인 가구 전부를 인벤토리로 거둔다.
+  //   icon() 폴백 구조(아트 없으면 이모지). 놓인 가구가 있을 때만 활성.
+  {
+    const placedN = items.length;
+    const btn = document.createElement('div');
+    btn.className = 'tool-item tool-collect' + (placedN <= 0 ? ' empty' : '');
+    btn.innerHTML = `<span class="emoji">${icon('icon_sys_collect', '📦')}</span><span>${t('inv.collectAll')}</span><span class="cnt">${placedN}</span>`;
+    btn.title = placedN > 0 ? t('inv.collectAll.title', { n: placedN }) : t('inv.collectAll.none');
+    btn.addEventListener('click', () => reclaimAll());
+    bar.appendChild(btn);
+  }
   for (const [id, def] of Object.entries(DEFS)) {
     const cnt = state.inventory[id] || 0;
     const el = document.createElement('div');
@@ -9558,10 +9772,20 @@ function openShelterModal() {
         ${t('shelter.districtHeader', { emoji: dist.emoji, name: LName(dist), here: here ? t('shelter.hereTag') : '', bonus: LBonus(dist), desc: LDesc(dist) })}
       </div>${cards}`;
   }).join('');
+  // 배치 D ④: 현재 셸터에 놓인 가구가 있으면 "남는 가구 N개" 안내 + 전체 수거 바로가기
+  const placedN = items.length;
+  const leftoverHtml = placedN > 0
+    ? `<div class="shelter-leftover" style="font-size:11px;color:var(--text-dim);margin:2px 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+         <span>${t('shelter.leftover', { n: placedN })}</span>
+         <button class="pixel-btn" id="btn-shelter-collect" style="padding:3px 8px;font-size:10px">${t('inv.collectAll')}</button>
+       </div>`
+    : '';
   openModal(t('shelter.modalTitle'), `
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">
       ${t('shelter.intro')}
-    </div>${groups}`);
+    </div>${leftoverHtml}${groups}`);
+  const collectBtn = $('btn-shelter-collect');
+  if (collectBtn) collectBtn.addEventListener('click', async () => { closeModal(); await reclaimAll(); });
   $('modal-body').querySelectorAll('button[data-shelter]').forEach(b =>
     b.addEventListener('click', () => moveToShelter(b.dataset.shelter)));
 }
@@ -10830,16 +11054,20 @@ function simReset() {
   const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
   Object.assign(state, fresh);
 }
+let _simRunning = false; // 시뮬 중엔 계정 통계(recordNormalDay)를 오염시키지 않는다
 function simDays(n = 30, opt = {}) {
   if (opt.reset !== false) simReset();
-  const seed = opt.seed;
-  if (seed != null) { // 재현 가능한 시드 (간이 LCG로 Math.random 대체)
-    let s = seed >>> 0;
-    const orig = Math.random;
-    Math.random = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
-    try { return _simDaysInner(n, opt); } finally { Math.random = orig; }
-  }
-  return _simDaysInner(n, opt);
+  _simRunning = true;
+  try {
+    const seed = opt.seed;
+    if (seed != null) { // 재현 가능한 시드 (간이 LCG로 Math.random 대체)
+      let s = seed >>> 0;
+      const orig = Math.random;
+      Math.random = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+      try { return _simDaysInner(n, opt); } finally { Math.random = orig; }
+    }
+    return _simDaysInner(n, opt);
+  } finally { _simRunning = false; }
 }
 function _simDaysInner(n, opt) {
   const snaps = [];
@@ -10905,13 +11133,16 @@ function _simDaysInner(n, opt) {
 // 디버그/테스트용 핸들
 window.__shelter = {
   simDays, simReset, expectedLoot,
-  isHard, isZen, hardLoot, loadSave, gameConfirm,
+  isHard, isZen, isHardcore, isWallpaper, hardLoot, loadSave, gameConfirm,
+  // 배치 D QA 훅: 무력/구제/종료/통계/전체수거
+  helplessNow, checkHelpless, doRescue, endRun, reclaimAll,
+  readStats, writeStats, recordNormalDay, wallpaperUnlocked, slotDisplayCount,
   openModeModal, refreshAutoplayLock, runAutoPlay,
   items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather,
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
-  slotMeta, updateHud, checkAchievements, renderResBar, // Nine Winters(#11) QA
+  slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
   seasonOf, SEASONS, openMapModal, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
   // Phase D (#12 · #35 · #36) QA 훅
   MEMOS, WILLS, BROADCASTS, MEMOS_BY_REGION, eventCtx, eventMatches, drawEvent, eventWeight,

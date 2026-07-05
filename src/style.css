@@ -460,7 +460,19 @@
   .mode-card .mc-title { font-size: 13px; color: var(--accent); margin-bottom: 3px; }
   .mode-card .mc-tag { font-size: 10px; color: var(--text-dim); font-style: italic; margin-bottom: 5px; }
   .mode-card .sl-meta { color: var(--text-dim); font-size: 10px; line-height: 1.5; }
+  .mode-card.locked { opacity: 0.7; cursor: default; }
+  .mode-card.locked:hover { border-color: var(--panel-border); }
+  .mode-card.locked .mc-title { color: var(--text-dim); }
   .mode-back { margin-top: 4px; }
+  /* 슬롯 무한 확장(배치 D) — 5칸 넘어가면 모달 안에서 스크롤 */
+  .slot-scroll, .mode-scroll { max-height: min(56vh, 460px); overflow-y: auto; padding-right: 2px; }
+  /* 끝난 기록 슬롯 — 회고만 열람(이어하기 불가) */
+  .slot-card.ended { opacity: 0.82; border-style: dashed; }
+  .slot-card .sl-ended { color: var(--bad); font-size: 10px; white-space: nowrap; }
+  /* 🖼️ 배경화면 모드: 압박 UI 숨김 (게이지 · 탐험 패널 · 생존 퀘스트 카드 — 게이지 없는 모드에 생존 지시는 톤 위반) */
+  body.wallpaper-mode #gauges,
+  body.wallpaper-mode #exp-panel,
+  body.wallpaper-mode #quest-card { display: none !important; }
 
   /* ── 인트로 ── */
   #intro-screen {
