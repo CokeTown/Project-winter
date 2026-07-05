@@ -1060,6 +1060,66 @@
       "fit": "cover",
       "dest": "assets-src/art/out/icons/icon_furn_mirror.png",
       "prompt": "a standing full-length mirror in a dark worn wooden frame, the glass showing a pale cool blue-grey reflection with one diagonal light streak. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline around the whole object, soft single-direction top-left light, subtle dithered shading, no text, no frame border, no background."
+    },
+    {
+      "id": "icon_res_salt",
+      "purpose": "자원 아이콘: 소금",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_salt.png",
+      "prompt": "a small burlap sack of coarse white sea salt, open at the top showing bright white crystals, a tiny wooden scoop resting in it. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+    },
+    {
+      "id": "icon_region_harborYard",
+      "purpose": "지역 마커: 항만 야적장",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_region_harborYard.png",
+      "prompt": "stacked rusty shipping containers and a toppled harbor crane by a frozen dock. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_region_fishMarket",
+      "purpose": "지역 마커: 수산시장",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_region_fishMarket.png",
+      "prompt": "a small ruined fish market stall with hanging dried fish and wooden crates, torn awning. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_shelter_tugboat",
+      "purpose": "셸터 아이콘: 예인선",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_shelter_tugboat.png",
+      "prompt": "a sturdy little tugboat with a round wheelhouse moored in icy water, warm light in the cabin window. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_shelter_controltower",
+      "purpose": "셸터 아이콘: 항만 관제탑",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_shelter_controltower.png",
+      "prompt": "a tall harbor control tower with a glass observation room on top, one warm lit window against grey sky. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent, crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "ev_smuggler",
+      "purpose": "인카운터 일러: 밀수꾼",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/events/ev_smuggler.png",
+      "prompt": "A shadowy smuggler in a heavy oilskin coat standing on a frozen pier beside a small boat loaded with crates, offering goods by the light of a swinging lantern, snow drifting over dark harbor water, distant ruined cranes silhouetted. Cozy pixel art illustration, isometric-leaning cinematic angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
     }
   ]
 }
