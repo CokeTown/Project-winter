@@ -1554,74 +1554,169 @@ const SHELTERS = {
   },
 
   rooftop: {
-    name: '도시 옥탑방', nameEn: 'City Rooftop', emoji: '🏙️', unlockAt: 4, viewH: 18, ceilY: 2.6,
-    desc: '무너진 도시의 빌딩 옥상. 하늘이 열려 있고 폐허가 된 도시가 내려다보인다.',
-    descEn: 'A rooftop atop a fallen city building. The sky is wide open, and the ruined city spreads out below.',
-    room: { w: 9, d: 7, h: 0.85 },
+    name: '도시 옥탑방', nameEn: 'City Rooftop', emoji: '🏙️', unlockAt: 4, viewH: 19, ceilY: 2.5,
+    desc: '무너진 도시의 빌딩 옥상. 콘크리트 슬래브 위, 주워 모은 판자로 잇댄 가벽 방과 텃밭으로 개조할 수 있는 마당이 있다.',
+    descEn: 'Atop a fallen city building. A crude room walled with scavenged panels sits on the concrete slab, beside a yard you can turn into a garden.',
+    // ROOM = 가벽 방 내부(가구 배치 영역)만. 마당은 방 밖 슬래브라 배치 불가. (구 9×7 → 5.6×4.4로 축소, 로드 시 클램프 마이그레이션)
+    room: { w: 5.6, d: 4.4, h: 2.4 },
     baseComfort: 4,
-    weatherDirt: 3, moveCost: { material: 2, parts: 1 }, limits: '🌧️ 지붕 없는 노천 — 비/눈 오는 날마다 청결 -3', limitsEn: '🌧️ Roofless & exposed — cleanliness -3 on each rainy/snowy day',
+    moveCost: { material: 2, parts: 1 }, limits: '🪨 슬레이트 지붕에 두 장이 빠져 있다 — 보수 전까지 비/눈 오는 날 청결 소폭 감소', limitsEn: '🪨 Two slates are missing from the roof — until repaired, cleanliness dips a little on rainy/snowy days',
     mood: { fog: 0x1c202c, fogNear: 22, fogFar: 62, skyH: 0x252c3d, skyZ: 0x0b0e18, hemiSky: 0x7d8bb0, hemiGround: 0x3a3733, hemiInt: 0.66, moonC: 0x9db4d8, moonInt: 0.8, stars: 0.75 },
     weatherPool: ['clear', 'rain', 'clear', 'snow'],
-    perk: { salvagePlus: true, label: '📡 탁 트인 시야 — 부분 성공 시에도 가구 1개 회수', labelEn: '📡 Clear vantage — salvage 1 furniture even on partial success' },
+    // 옥탑 퍽: 텃밭 수확 배수(gardenMult). 텃밭은 현재 rooftop 전용이라 이 배수가 곧 옥탑의 정체성 —
+    // 다른 셸터에 텃밭이 생기는 건 향후. 부분성공 회수(salvagePlus)는 유지.
+    perk: { salvagePlus: true, gardenMult: BAL.economy.rooftopGardenMult, label: '📡 탁 트인 시야 — 부분 성공 시 가구 1개 회수 · 🌱 옥상 텃밭 수확 2배', labelEn: '📡 Clear vantage — salvage 1 furniture on partial success · 🌱 rooftop garden yields ×2' },
+    // 슬래브는 방(ROOM)보다 훨씬 넓고, 방은 -x/-z 구석, 마당은 +x/+z. 방은 원점 중심(가구 배치 기준).
+    // 슬래브 반폭/반깊이 (방 원점 기준 비대칭). YARD 오프셋으로 마당 중심을 잡는다.
+    _slab: { backX: 3.4, frontX: 6.9, backZ: 2.9, frontZ: 6.1 }, // 방 원점에서 각 방향 슬래브 가장자리까지
     buildRoom() {
       const { w, d, h } = ROOM;
+      const S = SHELTERS.rooftop._slab;
       const conc = wallPhong({ map: concreteTex });
       conc.userData.shared = true;
-      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, 0.35, d + 0.8), conc);
-      floor.position.y = -0.175; floor.receiveShadow = true;
-      roomGroup.add(floor);
-      // 낮은 난간 — 배경이 잘 보임
-      const mkP = (len, x, z, rotY) => {
+      // ── 콘크리트 슬래브 (넓게 — 마당 공간 확보) ──
+      const slabW = S.backX + S.frontX, slabD = S.backZ + S.frontZ;
+      const slabCX = (S.frontX - S.backX) / 2, slabCZ = (S.frontZ - S.backZ) / 2;
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(slabW, 0.35, slabD), conc);
+      slab.position.set(slabCX, -0.175, slabCZ); slab.receiveShadow = true;
+      roomGroup.add(slab);
+      // 슬래브 이음 라인 (방수 이음새 느낌)
+      for (let gx = -1; gx <= 1; gx++) B(roomGroup, 0.05, 0.02, slabD, 0x4a4a48, slabCX + gx * slabW / 4, 0.01, slabCZ);
+      // ── 콘크리트 파라펫(난간) — 슬래브 가장자리, 일부 파손 ──
+      const pH = 0.9;
+      const parapet = (len, cx, cz, rotY, breaks) => {
+        // breaks: [ [중심비율 0~1, 폭비율] ] 파손 구간. 구간을 빼고 남는 조각들만 세운다.
+        const segs = [[0, 1]]; // [시작비율, 끝비율]
+        let parts = [[0, 1]];
+        for (const [c, bw] of breaks) {
+          const bs = c - bw / 2, be = c + bw / 2;
+          parts = parts.flatMap(([s, e]) => {
+            if (be <= s || bs >= e) return [[s, e]];
+            const out = [];
+            if (bs > s) out.push([s, bs]);
+            if (be < e) out.push([be, e]);
+            return out;
+          });
+        }
         const g = new THREE.Group();
-        const m = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.28), wallPhong({ color: 0x5b5b58 }));
-        m.position.y = h / 2; m.castShadow = m.receiveShadow = true; g.add(m);
-        const cap = new THREE.Mesh(new THREE.BoxGeometry(len, 0.07, 0.36), wallPhong({ color: 0x6a6a66 }));
-        cap.position.y = h + 0.03; g.add(cap);
-        g.position.set(x, 0, z); g.rotation.y = rotY;
-        roomGroup.add(g);
+        for (const [s, e] of parts) {
+          const pl = (e - s) * len; if (pl < 0.15) continue;
+          const px = (s + e) / 2 * len - len / 2;
+          const m = new THREE.Mesh(new THREE.BoxGeometry(pl, pH, 0.26), wallPhong({ color: 0x5b5b58 }));
+          m.position.set(px, pH / 2, 0); m.castShadow = m.receiveShadow = true; g.add(m);
+          const cap = new THREE.Mesh(new THREE.BoxGeometry(pl, 0.07, 0.34), wallPhong({ color: 0x6a6a66 }));
+          cap.position.set(px, pH + 0.03, 0); g.add(cap);
+        }
+        g.position.set(cx, 0, cz); g.rotation.y = rotY; roomGroup.add(g);
       };
-      mkP(w + 0.56, 0, -d / 2 - 0.25, 0);
-      mkP(w + 0.56, 0, d / 2 + 0.25, 0);
-      mkP(d + 0.56, -w / 2 - 0.25, 0, Math.PI / 2);
-      mkP(d + 0.56, w / 2 + 0.25, 0, Math.PI / 2);
-      wallList = [];
-      // 아래 빌딩 몸체 + 창문
-      const body = B(roomGroup, w + 1.2, 17, d + 1.2, 0x252932, 0, -8.9, 0);
+      // 앞(+z, 카메라 홈 방향)·뒤(-z)·좌(-x)·우(+x). 파손 1~2곳.
+      parapet(slabW, slabCX, S.frontZ - 0.13, 0, [[0.62, 0.16]]);
+      parapet(slabW, slabCX, -S.backZ + 0.13, 0, []);
+      parapet(slabD, -S.backX + 0.13, slabCZ, Math.PI / 2, [[0.4, 0.13]]);
+      parapet(slabD, S.frontX - 0.13, slabCZ, Math.PI / 2, []);
+      // ── 아래 빌딩 몸체 + 창문 (슬래브 밑) ──
+      const body = B(roomGroup, slabW + 0.4, 17, slabD + 0.4, 0x252932, slabCX, -8.9, slabCZ);
       body.receiveShadow = false;
       const rand = seededRand(88);
       const winGeos = [];
-      for (let i = 0; i < 22; i++) {
+      for (let i = 0; i < 26; i++) {
         const side = Math.floor(rand() * 4);
-        const wx = side < 2 ? (rand() - 0.5) * (w - 1) : (side === 2 ? -w / 2 - 0.62 : w / 2 + 0.62);
-        const wz = side >= 2 ? (rand() - 0.5) * (d - 1) : (side === 0 ? -d / 2 - 0.62 : d / 2 + 0.62);
+        const hw = slabW / 2, hd = slabD / 2;
+        const wx = side < 2 ? slabCX + (rand() - 0.5) * (slabW - 1) : slabCX + (side === 2 ? -hw - 0.22 : hw + 0.22);
+        const wz = side >= 2 ? slabCZ + (rand() - 0.5) * (slabD - 1) : slabCZ + (side === 0 ? -hd - 0.22 : hd + 0.22);
         const wg = new THREE.BoxGeometry(side < 2 ? 0.7 : 0.1, 0.9, side < 2 ? 0.1 : 0.7);
         wg.translate(wx, -1.6 - rand() * 13, wz);
         winGeos.push(paintGeo(wg, rand() < 0.15 ? 0xd9b06a : 0x131720));
       }
       roomGroup.add(new THREE.Mesh(mergeGeometries(winGeos), vcLambert));
-      // 고정 소품: 텐트 + 모래주머니 + 안테나
-      const tent = new THREE.Group();
-      const tc = 0x76684a;
-      B(tent, 2.2, 0.06, 1.9, shade(tc, 1.05), 0, 0.02, 0);
-      const p1 = B(tent, 2.0, 0.08, 1.35, tc, -0.34, 0.62, 0); p1.rotation.z = 0.86;
-      const p2 = B(tent, 2.0, 0.08, 1.35, shade(tc, 0.9), 0.34, 0.62, 0); p2.rotation.z = -0.86;
-      B(tent, 0.07, 1.25, 0.07, 0x4a4238, 0, 0.62, -0.62);
-      B(tent, 0.07, 1.25, 0.07, 0x4a4238, 0, 0.62, 0.62);
-      const back2 = new THREE.Mesh(new THREE.ConeGeometry(0.94, 1.28, 4), lamb(shade(tc, 0.8)));
-      back2.rotation.y = Math.PI / 4; back2.scale.set(1.1, 1, 0.06);
-      back2.position.set(0, 0.64, -0.65); back2.castShadow = true; tent.add(back2);
-      tent.position.set(-w / 2 + 1.5, 0, -d / 2 + 1.35);
-      tent.rotation.y = 0.35;
-      roomGroup.add(tent);
+
+      // ── 가벽 방 (콘크리트 옥탑 구조물 뼈대 + 주워 모은 패널/합판 가벽) ──
+      // 방은 원점 중심. 컬링용 벽 4장 + 문 개구부(+z). 슬레이트 지붕은 별도(rooftopSlate).
+      const plyMat = wallPhong({ map: plywoodTex }); plyMat.userData.shared = true;
+      // 뒤섞인 판자 팔레트 (색·재질 뒤섞인 도시 폐허 자재)
+      const panelCols = [0x8a7350, 0x6e6350, 0x7d6a4a, 0x5f6a6e, 0x86745a, 0x655b48, 0x6a6660];
+      // 콘크리트 옥탑 뼈대 기둥 4개 (모서리)
+      for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]])
+        B(roomGroup, 0.18, h + 0.1, 0.18, 0x5a5a57, sx * (w / 2 + 0.09), (h + 0.1) / 2, sz * (d / 2 + 0.09));
+      // 패널 가벽 빌더: 방 한 변을 낱장 판자를 세로로 잇대어 채운다 (문 개구부 지원)
+      const pr = seededRand(53);
+      const mkPatchWall = (len, doorC) => {
+        // doorC: 문 중심 비율(0~1) 있으면 그 구간(폭 doorW)을 비운다. 컬링 그룹 반환.
+        const g = new THREE.Group();
+        const doorW = doorC != null ? 1.3 : 0;
+        const doorS = doorC != null ? doorC * len - len / 2 - doorW / 2 : 0;
+        const doorE = doorS + doorW;
+        let x = -len / 2;
+        const board = 0.44;
+        while (x < len / 2 - 0.02) {
+          const bw = Math.min(board + (pr() - 0.5) * 0.18, len / 2 - x);
+          const cx = x + bw / 2;
+          // 문 개구부와 겹치면 상인방(위)만 남기고 비운다
+          const inDoor = doorC != null && cx > doorS - bw / 2 && cx < doorE + bw / 2;
+          const col = panelCols[Math.floor(pr() * panelCols.length)];
+          const useMap = pr() < 0.5;
+          const mat = useMap ? plyMat : wallPhong({ color: col });
+          if (inDoor) {
+            // 문 위 상인방 (짧은 판)
+            const lh = h - 1.8;
+            const p = new THREE.Mesh(new THREE.BoxGeometry(bw - 0.03, lh, 0.09), mat);
+            p.position.set(cx, h - lh / 2, 0); p.castShadow = p.receiveShadow = true; g.add(p);
+          } else {
+            const ph2 = h - (pr() < 0.3 ? 0.12 : 0) - 0.02; // 몇 장은 살짝 짧아 위가 삐죽
+            const p = new THREE.Mesh(new THREE.BoxGeometry(bw - 0.03, ph2, 0.09), mat);
+            p.position.set(cx, ph2 / 2, (pr() - 0.5) * 0.03); p.castShadow = p.receiveShadow = true; g.add(p);
+            // 가로 못댄 각목 (판자 이음 강조)
+            if (pr() < 0.4) B(g, bw - 0.05, 0.06, 0.03, 0x4a3f30, cx, 0.4 + pr() * (h - 1), 0.06);
+          }
+          x += bw;
+        }
+        return g;
+      };
+      // 문은 앞(+z) 벽에. 컬링을 위해 makeWalls 계약(그룹+법선)으로 등록.
+      makeWalls([
+        { group: mkPatchWall(w, 0.5), pos: [0, 0, d / 2 + 0.09], rotY: 0, normal: new THREE.Vector3(0, 0, 1) },
+        { group: mkPatchWall(w), pos: [0, 0, -d / 2 - 0.09], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+        { group: mkPatchWall(d), pos: [-w / 2 - 0.09, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+        { group: mkPatchWall(d), pos: [w / 2 + 0.09, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
+      ]);
+      // 문틀 (개구부 테두리)
+      const doorX = 0; // 앞벽 중앙
+      B(roomGroup, 0.08, 1.8, 0.14, 0x3a3228, doorX - 0.65, 0.9, d / 2 + 0.09);
+      B(roomGroup, 0.08, 1.8, 0.14, 0x3a3228, doorX + 0.65, 0.9, d / 2 + 0.09);
+      B(roomGroup, 1.42, 0.1, 0.14, 0x3a3228, doorX, 1.8, d / 2 + 0.09);
+      // ── 슬레이트 지붕 (조악 — 초기 2장 빠짐, 제작으로 보수) ──
+      buildRooftopSlate(w, d, h);
+
+      // ── 마당 소품: 급수탑 + 실외기 (슬래브 +x/+z 구석) ──
+      // 급수탑: 다리 4개 + 원통 탱크
+      const tower = new THREE.Group();
+      for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+        const leg = Cyl(tower, 0.045, 0.055, 2.1, 0x4e4a44, sx * 0.42, 1.05, sz * 0.42, 5); leg.castShadow = true;
+      }
+      const tank = Cyl(tower, 0.62, 0.7, 1.15, 0x6a5f52, 0, 2.75, 0, 12); tank.castShadow = true;
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.68, 0.5, 12), lamb(0x5a5048));
+      cone.position.y = 3.55; cone.castShadow = true; tower.add(cone);
+      tower.position.set(S.frontX - 1.2, 0, -S.backZ + 1.1);
+      roomGroup.add(tower);
+      // 실외기 (에어컨 실외기 — 마당 다른 구석)
+      const ac = new THREE.Group();
+      B(ac, 0.85, 0.6, 0.55, 0xa8a49c, 0, 0.3, 0).castShadow = true;
+      B(ac, 0.8, 0.02, 0.5, 0x3a3a38, 0, 0.61, 0);
+      Cyl(ac, 0.22, 0.22, 0.03, 0x2a2a28, 0, 0.62, 0, 10);
+      for (let i = 0; i < 5; i++) B(ac, 0.78, 0.02, 0.02, 0x555250, 0, 0.14 + i * 0.09, 0.28);
+      ac.position.set(S.frontX - 1.1, 0, S.frontZ - 1.1); ac.rotation.y = -0.4;
+      roomGroup.add(ac);
+      // 실외기 옆 잡짐 (드럼통 + 판자 더미) — 마당의 폐허 자재감
+      Cyl(roomGroup, 0.3, 0.3, 0.8, 0x5c5f52, S.frontX - 2.4, 0.4, S.frontZ - 1.0, 9).castShadow = true;
       const sb = seededRand(9);
-      for (let i = 0; i < 5; i++)
-        B(roomGroup, 0.55, 0.22, 0.32, [0x6e6350, 0x655b48][i % 2], w / 2 - 0.9 - i * 0.28 * (i % 2), 0.11 + (i > 2 ? 0.22 : 0), d / 2 - 0.75 + sb() * 0.2);
-      Cyl(roomGroup, 0.03, 0.05, 2.6, 0x55504a, w / 2 - 0.5, 1.3, -d / 2 + 0.5, 5);
-      B(roomGroup, 0.7, 0.05, 0.05, 0x55504a, w / 2 - 0.5, 2.3, -d / 2 + 0.5);
+      for (let i = 0; i < 4; i++)
+        B(roomGroup, 1.1, 0.12, 0.3, panelCols[i % panelCols.length], S.frontX - 2.3, 0.08 + i * 0.13, S.frontZ - 2.2).rotation.y = (sb() - 0.5) * 0.3;
+      // 안테나 (방 뒤 구석)
+      Cyl(roomGroup, 0.03, 0.05, 2.4, 0x55504a, -w / 2 - 0.4, 1.2, -d / 2 - 0.4, 5);
+      B(roomGroup, 0.7, 0.05, 0.05, 0x55504a, -w / 2 - 0.4, 2.2, -d / 2 - 0.4);
       blockers = [
-        { x: -w / 2 + 1.5, z: -d / 2 + 1.35, w: 2.5, d: 2.3 },
-        { x: w / 2 - 1.1, z: d / 2 - 0.75, w: 1.7, d: 0.7 },
-        { x: w / 2 - 0.5, z: -d / 2 + 0.5, w: 0.5, d: 0.5 },
+        { x: S.frontX - 1.2, z: -S.backZ + 1.1, w: 1.6, d: 1.6 }, // 급수탑
+        { x: S.frontX - 1.1, z: S.frontZ - 1.1, w: 1.1, d: 1.0 }, // 실외기
       ];
     },
     buildEnv() {
@@ -2646,6 +2741,8 @@ const state = {
   bunkerRoof: 'hole',     // 돔 벙커 천장 상태: 'hole'(구멍)|'temp'(임시덮개)|'full'(완전수리) (#36)
   bunkerBackdoor: false,  // 절단기로 뒷문 저장고 개방 여부 (#36)
   hasCutter: false,       // 절단기 보유 (공업지대 드랍)
+  rooftopSlate: 'gapped', // 옥탑 슬레이트 지붕: 'gapped'(2장 빠짐)|'full'(보수 완료) (#53)
+  rooftopGardenStage: 0,  // 옥상 텃밭 성장 단계 0=새싹 1=줄기 2=결실 (겨울엔 휴면, 시각만) (#53)
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -2907,6 +3004,8 @@ function loadSave() {
       if (state.bunkerRoof == null) state.bunkerRoof = 'hole';
       if (state.bunkerBackdoor == null) state.bunkerBackdoor = false;
       if (state.hasCutter == null) state.hasCutter = false;
+      if (state.rooftopSlate == null) state.rooftopSlate = 'gapped'; // #53
+      if (state.rooftopGardenStage == null) state.rooftopGardenStage = 0; // #53
       if (data.state.questIdx === undefined) state.questIdx = (state.day > 1 || state.successes > 0) ? -1 : 0;
       if (!SHELTERS[state.current]) state.current = 'container';
       // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
@@ -3151,9 +3250,12 @@ function loadShelter(id) {
   scene.add(gridObj);
 
   // 저장된 레이아웃 복원 (표면 위 소품은 지지대 링크 재구성)
+  // 마이그레이션(#53): 방(ROOM) 치수가 줄어든 셸터(옥탑 리워크)에서 구 좌표 가구가 방 밖에 있으면
+  // 로드 시 방 안으로 클램프한다 — 유실 없이 보존. clampToRoom은 footprint를 고려하므로 defId 임시 아이템으로 계산.
   for (const it of (state.layouts[id] || [])) {
     if (!DEFS[it.d]) continue;
-    addItem(it.d, it.c ?? 0, it.x, it.z, it.r ?? 0, it.o !== 0, it.y || 0);
+    const [cx, cz] = clampToRoom({ defId: it.d, colorIdx: it.c ?? 0, rot: it.r ?? 0 }, it.x, it.z);
+    addItem(it.d, it.c ?? 0, cx, cz, it.r ?? 0, it.o !== 0, it.y || 0);
   }
   for (const it of items) {
     if (!it.y) continue;
@@ -4819,7 +4921,10 @@ function hideEventChip() {
 /* ── 거처 개조 (기지 커스터마이징: 빗물받이·텃밭·증축 등) ── */
 const SHELTER_MODS = {
   raincatch:  { name: '빗물받이',    nameEn: 'Rain Catch',   emoji: '🪣', cost: { material: 2, parts: 1 }, desc: '비/눈 오는 날 깨끗한 물 +1', descEn: 'Clean water +1 on rainy/snowy days', not: ['lighthouse'] },
-  garden:     { name: '텃밭 상자',   nameEn: 'Garden Box',   emoji: '🌱', cost: { material: 2, water: 2 }, desc: '이틀에 한 번 음식 +1 (겨울 제외)', descEn: 'Food +1 every other day (except winter)', not: ['subway'] },
+  garden:     { name: '텃밭 상자',   nameEn: 'Garden Box',   emoji: '🌱', cost: { material: 2, water: 2 }, desc: '이틀에 한 번 음식 +1 (겨울 제외)', descEn: 'Food +1 every other day (except winter)', not: ['subway', 'rooftop'] },
+  // 옥상 텃밭 (#53) — rooftop 전용. 마당을 텃밭으로 개조. 매일 음식 생산(겨울 0), 옥탑 퍽 gardenMult로 2배.
+  //   현재 텃밭은 rooftop 전용이라 퍽이 곧 정체성 — 다른 셸터로의 확장은 향후.
+  rooftopGarden: { name: '옥상 텃밭', nameEn: 'Rooftop Garden', emoji: '🌱', cost: { material: 3, water: 2 }, desc: '마당을 텃밭으로 — 매일 음식 +2 (겨울 휴면)', descEn: 'Turn the yard into a garden — food +2 daily (dormant in winter)', only: ['rooftop'] },
   insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '🧤', cost: { cloth: 3, material: 2 }, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
   shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '🪜', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
   solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '🔆', cost: { parts: 4, battery: 1 },  desc: '이틀에 한 번 배터리 +1', descEn: 'Battery +1 every other day', not: ['subway'] },
@@ -4833,7 +4938,7 @@ const SHELTER_MODS = {
 // roof=지붕면 브래킷 · eave=처마 홈통+파이프+물통 · wall=외벽 덧댐 · ground=지면(마당) 배치.
 const MOD_MOUNT = {
   solar: 'roof', raincatch: 'eave', bigraincatch: 'eave',
-  insulation: 'wall', insulationPlus: 'wall', garden: 'ground',
+  insulation: 'wall', insulationPlus: 'wall', garden: 'ground', rooftopGarden: 'ground',
 };
 // 셸터별 설치 앵커 실측 좌표 (buildRoom 지오메트리 기준).
 //  roof:  { y(지붕 상면), cx, cz(지붕 중심), hw, hd(지붕 반폭/반깊이), pitch?(경사지붕이면 +z로 내려가는 기울기 rad) }
@@ -4850,9 +4955,10 @@ const SHELTER_MOUNTS = {
     roof: { y: 2.7, cx: 0, cz: 3.4, hw: 2.4, hd: 0.7 },
     eave: { y: 3.0, x: 4.25, z: 3.0, dir: [1, 1] },
   },
-  rooftop: { // 옥탑: 개방 난간 h0.85. 지붕면 없음 — 난간 위 경사 거치.
-    roof: { y: 1.0, cx: 0, cz: 0, hw: 3.6, hd: 2.6 },
-    eave: { y: 0.9, x: 4.75, z: 3.75, dir: [1, 1] },
+  rooftop: { // 옥탑 리워크(#53): 5.6×4.4×2.4 가벽 방 + 슬레이트 지붕(상면 ~2.5). 태양광=슬레이트 위, 빗물받이=방 처마.
+    roof: { y: 2.52, cx: 0, cz: 0, hw: 2.5, hd: 1.9 },
+    eave: { y: 2.4, x: 2.88, z: 2.48, dir: [1, 1] }, // 방 앞모서리(+x/+z) 처마
+    wall: { face: '+x', y: 2.4, len: 4.4, off: 2.9 }, // 마당 쪽 외벽 (단열재 등 폴백)
   },
   cabin: { // 10×8×2.7 풀지붕(평평). 벽 off 0.11
     roof: { y: 2.85, cx: 0, cz: 0, hw: 4.6, hd: 3.6 },
@@ -5005,12 +5111,100 @@ function addModProp(id) {
     }
     g.position.set(w / 2 + 1.1, 0, -d / 2 + 1.2);
     roomGroup.add(g);
+  } else if (id === 'rooftopGarden') {
+    buildRooftopGarden();
   } else if (id === 'shelf') {
     B(roomGroup, 0.06, 1.4, ROOM.d * 0.7, 0x77543a, -w / 2 + 0.12, 0.7, 0);
     B(roomGroup, 0.4, 0.05, ROOM.d * 0.7, 0x8a6a48, -w / 2 + 0.28, 1.1, 0);
     B(roomGroup, 0.4, 0.05, ROOM.d * 0.7, 0x8a6a48, -w / 2 + 0.28, 1.7, 0);
   }
   // roof(지붕 보강)/extension: 시각 소품 없음 (구조 변경 개조)
+}
+// ── 옥탑 슬레이트 지붕 (#53) — 방 위에 슬레이트 몇 장. state.rooftopSlate==='full'이면 빈틈 없이,
+//    'gapped'(기본)이면 2장 빠져 하늘이 보인다. buildRoom에서 호출, 제작 보수 시 loadShelter로 재빌드. ──
+function buildRooftopSlate(w, d, h) {
+  const full = (state.rooftopSlate || 'gapped') === 'full';
+  const g = new THREE.Group();
+  // 지붕판 베이스 (살짝 뒤로 경사진 얇은 슬래브)
+  const eaveOver = 0.28;
+  const rw = w + eaveOver * 2, rd = d + eaveOver * 2;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(rw, 0.06, rd), wallPhong({ color: 0x3a3a3c }));
+  base.position.y = h + 0.06; base.receiveShadow = true; base.castShadow = true; g.add(base);
+  // 슬레이트 타일 격자 (앞뒤로 겹쳐 이는 판) — 빠진 2장은 건너뛴다
+  const cols = 6, rows = 4;
+  const tw = rw / cols, td = rd / rows;
+  const missing = full ? new Set() : new Set(['1,1', '4,2']); // (col,row) 두 장 빠짐
+  const slateCols = [0x4a4e52, 0x53565a, 0x44484c, 0x4e5256];
+  const pr = seededRand(153);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (missing.has(`${c},${r}`)) continue;
+      const col = slateCols[Math.floor(pr() * slateCols.length)];
+      const tile = new THREE.Mesh(new THREE.BoxGeometry(tw * 0.98, 0.05, td * 0.62), wallPhong({ color: col }));
+      const tx = -rw / 2 + tw * (c + 0.5);
+      const tz = -rd / 2 + td * (r + 0.5);
+      tile.position.set(tx, h + 0.11 + r * 0.012, tz - td * 0.16); // 앞줄이 뒷줄을 덮도록 살짝 겹침
+      tile.rotation.x = 0.05; tile.castShadow = true; g.add(tile);
+    }
+  }
+  if (!full) {
+    // 빠진 자리 아래로 방 바닥이 보이도록 어두운 구멍 테두리 (빗물 새는 느낌)
+    for (const key of missing) {
+      const [c, r] = key.split(',').map(Number);
+      const tx = -rw / 2 + tw * (c + 0.5), tz = -rd / 2 + td * (r + 0.5) - td * 0.16;
+      B(g, tw * 0.9, 0.02, td * 0.5, 0x1a1c1e, tx, h + 0.02, tz);
+    }
+  } else {
+    // 완전 보수: 용마루 마감 각목 한 줄
+    B(g, rw, 0.05, 0.08, 0x5a5450, 0, h + 0.15, 0);
+  }
+  roomGroup.add(g);
+}
+// ── 옥상 텃밭 (#53) — 마당(방 밖 슬래브)에 플랜터 박스 2열. 작물 성장 3단계 지오메트리.
+//    stage: 0=새싹 1=줄기 2=결실. 겨울이면 휴면(갈색). state.rooftopGardenStage로 결정. ──
+function buildRooftopGarden() {
+  const S = SHELTERS.rooftop._slab;
+  const winter = seasonOf().id === 'winter';
+  const stage = winter ? -1 : Math.max(0, Math.min(2, state.rooftopGardenStage ?? 0));
+  const g = new THREE.Group();
+  const pr = seededRand(207);
+  // 플랜터 박스 2열 × 각 4포기
+  const planter = (pz) => {
+    B(g, 3.0, 0.32, 0.72, 0x6a4f33, 0, 0.16, pz);            // 나무 박스
+    B(g, 2.9, 0.1, 0.64, winter ? 0x4a4038 : 0x3a2f22, 0, 0.36, pz); // 흙 (겨울엔 마른 톤)
+    for (let i = 0; i < 4; i++) {
+      const cx = -1.15 + i * 0.77;
+      if (winter) {
+        // 휴면: 갈색 마른 줄기
+        const st = Cyl(g, 0.02, 0.03, 0.22, 0x6b5636, cx, 0.5, pz + (pr() - 0.5) * 0.2, 4); st.castShadow = true;
+      } else if (stage === 0) {
+        // 새싹
+        const sp = new THREE.Mesh(new THREE.IcosahedronGeometry(0.07 + pr() * 0.04, 0), lamb(0x74a35a));
+        sp.position.set(cx, 0.45, pz + (pr() - 0.5) * 0.2); sp.castShadow = true; g.add(sp);
+      } else if (stage === 1) {
+        // 줄기 (기른 대 + 잎)
+        const st = Cyl(g, 0.025, 0.03, 0.42, 0x5f8a4a, cx, 0.6, pz + (pr() - 0.5) * 0.18, 5); st.castShadow = true;
+        for (const sy of [0.55, 0.72]) {
+          const lf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 0), lamb(0x6f9a5a));
+          lf.scale.set(1.3, 0.5, 0.8); lf.position.set(cx + (pr() - 0.5) * 0.12, sy, pz); lf.castShadow = true; g.add(lf);
+        }
+      } else {
+        // 결실 (줄기 + 열매)
+        const st = Cyl(g, 0.03, 0.035, 0.5, 0x568044, cx, 0.64, pz + (pr() - 0.5) * 0.16, 5); st.castShadow = true;
+        const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 0), lamb(0x5f8a52));
+        bush.position.set(cx, 0.82, pz); bush.castShadow = true; g.add(bush);
+        for (let k = 0; k < 3; k++) {
+          const fr = new THREE.Mesh(new THREE.IcosahedronGeometry(0.05, 0), lamb([0xc84a3a, 0xd8843a, 0xc84a3a][k % 3]));
+          fr.position.set(cx + (pr() - 0.5) * 0.24, 0.78 + pr() * 0.1, pz + (pr() - 0.5) * 0.24); g.add(fr);
+        }
+      }
+    }
+  };
+  planter(-0.5); planter(0.6);
+  // 마당(+x/+z) 안쪽, 실외기/급수탑을 피해 배치
+  g.position.set(S.frontX - 3.2, 0, S.frontZ - 3.0);
+  roomGroup.add(g);
+  blockers.push({ x: S.frontX - 3.2, z: S.frontZ - 3.0, w: 3.2, d: 2.0 });
 }
 function buildModProps() {
   for (const id of (state.mods?.[state.current] || [])) addModProp(id);
@@ -5108,11 +5302,42 @@ function openCraftModal() {
     }
     bunkerHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🛖 ${LName(SHELTERS.bunker)}</div>${projRows.join('')}`;
   }
+  // 옥탑 슬레이트 보수 프로젝트 (#53) — 옥탑에서만. 빠진 슬레이트 2장 채우기(건축재 1). 벙커 천장과 동일 문법.
+  let rooftopHtml = '';
+  if (state.current === 'rooftop') {
+    const slate = state.rooftopSlate || 'gapped';
+    const projRows = [];
+    if (slate !== 'full') {
+      const ok = resHasAll(BAL.economy.rooftopSlateCost);
+      projRows.push(`<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
+        <span>🪨 ${t('rooftop.slateTitle')}</span>
+        <span class="p-eff" style="font-size:10px">${t('rooftop.slateGapped')}</span>
+        <span class="p-cost">${costLabel(BAL.economy.rooftopSlateCost)}</span>
+        <button class="pixel-btn" data-rproj="slate" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('rooftop.slateBtn')}</button>
+      </div>`);
+    } else {
+      projRows.push(`<div class="prep-row sel" style="cursor:default"><span>🪨 ${t('rooftop.slateTitle')}</span><span class="p-eff" style="font-size:10px">${t('rooftop.slateFull')}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`);
+    }
+    rooftopHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🏙️ ${LName(SHELTERS.rooftop)}</div>${projRows.join('')}`;
+  }
   openModal(t('craft.title'), `
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('craft.intro')}</div>${rows}
     <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>
     <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}
-    ${bunkerHtml}`);
+    ${bunkerHtml}${rooftopHtml}`);
+  $('modal-body').querySelectorAll('button[data-rproj]').forEach(b =>
+    b.addEventListener('click', () => {
+      if (b.dataset.rproj === 'slate') {
+        if (!resConsumeAll(BAL.economy.rooftopSlateCost)) { toast(t('toast.needMaterial')); return; }
+        state.rooftopSlate = 'full';
+        toast(t('rooftop.slateDone')); state.dayLog.notes.push(t('rooftop.slateDone'));
+        // 지붕 지오메트리를 다시 짓는다 (가구 보존 — 벙커 재빌드와 동일 패턴)
+        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+        loadShelter('rooftop');
+        closeModal();
+        playSfx('craft'); scheduleSave(); renderResBar(); updateHud();
+      }
+    }));
   $('modal-body').querySelectorAll('button[data-bproj]').forEach(b =>
     b.addEventListener('click', () => {
       const act = b.dataset.bproj;
@@ -6568,6 +6793,11 @@ function processDay() {
     dirt += BAL.economy.bunkerRoofDirtPerDay;
     notes.push(t('bunker.roofNote'));
   }
+  // 옥탑 슬레이트 지붕(#53): 두 장 빠진 상태(gapped)에서는 비/눈 오는 날 청결이 소폭 더 떨어진다. (벙커 천장 문법)
+  if (state.current === 'rooftop' && (state.rooftopSlate || 'gapped') !== 'full' && wBad) {
+    dirt += BAL.economy.rooftopSlateDirtPerDay;
+    notes.push(t('rooftop.slateNote'));
+  }
   // 거처 개조 효과
   if (hasMod('raincatch') && wBad) {
     const n = hasMod('bigraincatch') ? BAL.economy.bigRaincatchWater : 1;
@@ -6576,6 +6806,18 @@ function processDay() {
   if (hasMod('garden') && state.day % 2 === 0) {
     if (seasonOf().id === 'winter') notes.push(t('day.gardenBoxFrozen'));
     else { resAdd('food', 1); notes.push(t('day.gardenBox')); }
+  }
+  // 옥상 텃밭(#53): 매일 생산. 겨울엔 휴면(0). 생산량 = 기본 × 옥탑 퍽 gardenMult(2). 성장 단계 진행(시각).
+  if (hasMod('rooftopGarden')) {
+    if (seasonOf().id === 'winter') {
+      notes.push(t('rooftop.gardenDormant'));
+    } else {
+      const n = BAL.economy.rooftopGardenFoodPerDay * (perk.gardenMult || 1);
+      resAdd('food', n);
+      notes.push(t('rooftop.gardenHarvest', { n }));
+      // 성장 단계 진행 (0→1→2에서 멈춤) — 시각 연출용
+      if ((state.rooftopGardenStage ?? 0) < 2) state.rooftopGardenStage = (state.rooftopGardenStage ?? 0) + 1;
+    }
   }
   if (hasMod('solar') && state.day % 2 === 1) { resAdd('battery', 1); notes.push(t('day.solar')); }
   state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - dirt);

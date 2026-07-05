@@ -121,6 +121,12 @@ export const BAL = {
     bunkerRoofComfort: 4,             // 천장 완전 수리 시 벙커 쾌적 가산
     bunkerStorageComfort: 4,          // 절단기 뒷문 전실(저장고) 개방 시 벙커 쾌적 가산
     bunkerRoofDirtPerDay: 1,          // 천장 구멍 방치 시 비 오는 날 청결 추가 감소
+
+    /* 옥탑방 리워크 (#53) — 슬레이트 지붕 + 텃밭 마당 */
+    rooftopSlateCost: { material: 1 },  // 슬레이트 보수 비용 (빠진 2장 채우기) — 벙커 1단계와 동일 눈높이
+    rooftopSlateDirtPerDay: 2,          // 슬레이트 빠진 상태로 비/눈 오는 날 청결 추가 감소 (구 weatherDirt 3보다 완화 — 지붕 일부 존재)
+    rooftopGardenFoodPerDay: 1,         // 옥상 텃밭 기본 일일 음식 생산 (겨울 0). 실제 생산 = 기본 × 셸터 perk.gardenMult
+    rooftopGardenMult: 2,               // 옥탑 퍽: 텃밭 수확 배수 (옥탑 텃밭 food +2/일). 현재 텃밭은 rooftop 전용이라 이 배수가 곧 옥탑 정체성
   },
 
   /* ── 인카운터 / 수집 (Phase D #12·#35) ── */
