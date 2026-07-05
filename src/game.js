@@ -5222,7 +5222,8 @@ function dropMemo() {
 //   expRegion: 이번 탐험의 목적지 지역(금지 구역 기밀 문서는 '어디서 탐험했나'로 우선순위가 정해진다 — 셸터 아님).
 function tryDropMemoOnExpedition(expRegion) {
   // 1.4 금지 구역(연구동/검문소) 탐험 — 기밀 문서(research 메모)를 최우선 드랍. 세계관의 답이 있는 곳.
-  //   유서보다 우선(최종장 서사가 확률에 묻히지 않게). 미수집 research 메모가 있는 동안은 확정에 가깝게.
+  //   유서보다 우선. 문서 희소화(디렉터 지시: 기본 2%) 후에도 금지 구역은 2.5배 밀도(실효 5%) —
+  //   최종장 12종은 이제 '긴 추적'이다. 종이 한 장이 귀한 세계.
   if (isForbiddenRegion(expRegion)) {
     const unRes = MEMOS_RESEARCH.filter(id => !(state.memos || {})[id]);
     if (unRes.length && Math.random() < BAL.events.memoDropChance * 2.5) { // 금지 구역은 문서 밀도가 높다(2.5배 게이트)

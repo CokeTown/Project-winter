@@ -165,7 +165,7 @@ export const BAL = {
   events: {
     dailyChance: 0.60,     // 아침 결산 시 랜덤 인카운터 발동 확률 (기존 하드코딩 0.60 이관)
     midExpChance: 0.10,    // 탐험 중간(50% 지점) 인카운터 발동 확률 (기존 0.10 이관)
-    memoDropChance: 0.12,  // 탐험 성공 시 지역 메모 1개 드랍 확률
+    memoDropChance: 0.02,  // 탐험 성공 시 지역 메모 1개 드랍 확률 (디렉터 지시: 문서 희소화 12%→2% — 종이 한 장이 귀해야 한다)
     willDropChance: 0.02,  // 탐험 성공 시 생존자 유서 드랍 확률 (극저확률, REQ-LORE-01: 1.5~2.5% 밴드)
     radioListenChance: 0.18, // 라디오 ON 상태 하루 1회 방송 청취 확률
   },
