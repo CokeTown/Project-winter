@@ -27,6 +27,9 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+          # Actions 스토리지 90% 경고(2026-07-06): 배포 아티팩트는 배포 직후 쓸모없음 — 기본 90일 보존이
+          # 푸시 잦은 날 0.5GB 무료 한도를 잠식. 1일 보존으로 스토리지 원천 차단.
+          retention-days: 1
 
   deploy:
     needs: build

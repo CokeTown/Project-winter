@@ -1,0 +1,34 @@
+# Actions 스토리지 정리 (2026-07-06, 디렉터 90% 경고 대응)
+# - 배포(pages) 아티팩트가 기본 90일 보존으로 누적돼 0.5GB 무료 한도를 잠식하던 것.
+# - 이 파일이 push되면 1회 자동 실행되어 만료 전 아티팩트를 전부 삭제한다(배포 완료본에는 영향 없음 —
+#   Pages는 이미 서빙 중이고 아티팩트는 전달용 임시물). 이후는 deploy-pages.yml의 retention-days: 1이 원천 차단.
+# - 필요 시 Actions 탭에서 수동 재실행(workflow_dispatch) 가능.
+name: Cleanup Actions artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/cleanup-artifacts.yml']
+
+permissions:
+  actions: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const arts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
+              owner: context.repo.owner, repo: context.repo.repo, per_page: 100,
+            });
+            let freed = 0, n = 0;
+            for (const a of arts) {
+              if (a.expired) continue;
+              await github.rest.actions.deleteArtifact({ owner: context.repo.owner, repo: context.repo.repo, artifact_id: a.id });
+              freed += a.size_in_bytes; n++;
+              console.log('deleted:', a.id, a.name, (a.size_in_bytes / 1048576).toFixed(1) + 'MB');
+            }
+            console.log(`총 ${n}개 삭제, ${(freed / 1048576).toFixed(1)}MB 회수`);
