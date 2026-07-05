@@ -5,7 +5,7 @@ import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert } from './lib/help
 import { DEFS } from './data/furniture.js';
 import { BAL } from './data/balance.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
-import { playSfx, setAmbience, setFire, setSfxVol, initSfx } from './sfx.js';
+import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
 import { Platform, bindPlatform } from './lib/platform.js';
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
@@ -214,6 +214,150 @@ const concreteTex = makeCanvasTex((g, w, h) => {
   g.beginPath(); g.moveTo(10, 20); g.lineTo(34, 44); g.lineTo(30, 70); g.stroke();
   g.beginPath(); g.moveTo(90, 100); g.lineTo(74, 82); g.lineTo(84, 60); g.stroke();
 }, 128, 128, 4, 3);
+
+/* ============================================================
+   꾸미기 확장 (#13 REQ-DECO-01) — 벽지 6종 / 바닥재 6종
+   makeCanvasTex 절차 텍스처. 셸터 지오메트리는 불변 — loadShelter가
+   벽/바닥 재질의 .map만 교체(applyDeco). id 'default'는 셸터 원본 유지.
+   ARC-01: 콘텐츠 테이블. 신규 벽지/바닥은 여기 항목 추가만으로 늘어난다.
+============================================================ */
+// 벽지: 실내 벽면 재질/색. repX/repY는 벽 폭 대비 반복.
+const WALLPAPERS = {
+  default: { name: '기본 벽면', nameEn: 'Default Wall', emoji: '🧱', tex: null }, // 셸터 원본
+  cream:   { name: '크림 도배', nameEn: 'Cream Paper', emoji: '🟨', cost: { cloth: 2 }, tex: () => makeCanvasTex((g, w, h) => {
+    g.fillStyle = '#d8ccb0'; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(255,255,255,0.05)'; for (let i = 0; i < 40; i++) g.fillRect((i * 29) % w, (i * 17) % h, 2, 2);
+    g.fillStyle = 'rgba(150,132,96,0.08)'; for (let i = 0; i < 8; i++) g.fillRect((i * 43) % w, 0, 1, h);
+  }, 128, 128, 3, 1) },
+  sage:    { name: '세이지 도배', nameEn: 'Sage Paper', emoji: '🟩', cost: { cloth: 2 }, tex: () => makeCanvasTex((g, w, h) => {
+    g.fillStyle = '#9aa886'; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(120,138,104,0.35)'; for (let i = 0; i < 6; i++) g.fillRect((i * 22 + 4) % w, 0, 8, h); // 세로 은은한 줄
+    g.fillStyle = 'rgba(255,255,255,0.04)'; for (let i = 0; i < 30; i++) g.fillRect((i * 31) % w, (i * 23) % h, 2, 2);
+  }, 128, 128, 3, 1) },
+  stripe:  { name: '줄무늬 벽지', nameEn: 'Striped Paper', emoji: '📏', cost: { cloth: 3 }, tex: () => makeCanvasTex((g, w, h) => {
+    g.fillStyle = '#cdbfa2'; g.fillRect(0, 0, w, h);
+    const sw = w / 8;
+    for (let c = 0; c < 8; c += 2) { g.fillStyle = '#b7a582'; g.fillRect(c * sw, 0, sw, h); }
+    g.fillStyle = 'rgba(90,70,44,0.12)'; for (let c = 0; c < 8; c++) g.fillRect(c * sw, 0, 1, h);
+  }, 128, 128, 3, 1) },
+  floral:  { name: '빛바랜 꽃무늬', nameEn: 'Faded Floral', emoji: '🌼', cost: { cloth: 3, material: 1 }, tex: () => makeCanvasTex((g, w, h) => {
+    g.fillStyle = '#cbb8a0'; g.fillRect(0, 0, w, h);
+    const rand = seededRand(91);
+    for (let i = 0; i < 14; i++) {
+      const x = rand() * w, y = rand() * h, r = 6 + rand() * 5;
+      g.fillStyle = ['rgba(160,110,120,0.35)', 'rgba(150,150,110,0.3)', 'rgba(130,120,150,0.3)'][Math.floor(rand() * 3)];
+      for (let p = 0; p < 5; p++) { const a = p * 1.25; g.beginPath(); g.arc(x + Math.cos(a) * r * 0.6, y + Math.sin(a) * r * 0.6, r * 0.45, 0, 7); g.fill(); }
+      g.fillStyle = 'rgba(120,100,60,0.4)'; g.beginPath(); g.arc(x, y, r * 0.3, 0, 7); g.fill();
+    }
+  }, 128, 128, 2, 2) },
+  news:    { name: '신문지 임시도배', nameEn: 'Newspaper Patch', emoji: '📰', cost: { material: 1 }, tex: () => makeCanvasTex((g, w, h) => {
+    g.fillStyle = '#c9c2b0'; g.fillRect(0, 0, w, h);
+    const rand = seededRand(77);
+    // 겹쳐 붙인 신문 조각 (사각 패치 + 텍스트 줄)
+    for (let p = 0; p < 6; p++) {
+      const px = rand() * w * 0.7, py = rand() * h * 0.7, pw = 30 + rand() * 40, ph = 26 + rand() * 34;
+      g.fillStyle = `rgba(${200 + rand() * 20 | 0},${192 + rand() * 20 | 0},170,0.6)`; g.fillRect(px, py, pw, ph);
+      g.strokeStyle = 'rgba(90,84,70,0.4)'; g.strokeRect(px, py, pw, ph);
+      g.fillStyle = 'rgba(60,56,48,0.5)';
+      for (let l = 0; l < ph / 5; l++) if (rand() > 0.2) g.fillRect(px + 2, py + 3 + l * 5, pw - 4 - rand() * 8, 1);
+    }
+  }, 128, 128, 2, 2) },
+  plank:   { name: '판자 그대로', nameEn: 'Bare Planks', emoji: '🪵', cost: { material: 2 }, tex: () => makeCanvasTex((g, w, h) => {
+    g.fillStyle = '#8a6f4c'; g.fillRect(0, 0, w, h);
+    const plank = w / 4;
+    for (let c = 0; c < 4; c++) {
+      g.fillStyle = ['#8f724e', '#836848', '#957750', '#7c6242'][c];
+      g.fillRect(c * plank, 0, plank, h);
+      g.fillStyle = '#5d452c'; g.fillRect(c * plank, 0, 2, h);
+      g.fillStyle = 'rgba(0,0,0,0.08)'; for (let i = 0; i < 8; i++) g.fillRect(c * plank + 4 + (i * 6) % (plank - 6), (c * 31 + i * 19) % h, 2, 5);
+    }
+  }, 128, 128, 3, 1) },
+};
+// 바닥재: 바닥 전체 재질.
+const FLOORINGS = {
+  default: { name: '기본 바닥', nameEn: 'Default Floor', emoji: '⬜', tex: null },
+  wood:    { name: '원목 마루', nameEn: 'Oak Floor', emoji: '🟫', cost: { material: 2 }, tex: () => makeCanvasTex((g, w, h) => {
+    g.fillStyle = '#a07850'; g.fillRect(0, 0, w, h);
+    const plank = h / 4;
+    for (let r = 0; r < 4; r++) {
+      g.fillStyle = ['#a5875c', '#9a7c52', '#ab8d63', '#94774e'][r];
+      g.fillRect(0, r * plank, w, plank);
+      g.fillStyle = '#6e5636'; g.fillRect(0, r * plank, w, 2);
+      const off = (r * 47) % w; g.fillRect(off, r * plank, 2, plank);
+      g.fillStyle = 'rgba(0,0,0,0.07)'; for (let i = 0; i < 12; i++) g.fillRect((off + i * 27) % w, r * plank + (i * 11) % plank, 5, 1);
+    }
+  }, 128, 128, 4, 4) },
+  vinyl:   { name: '체크 장판', nameEn: 'Checker Vinyl', emoji: '🏁', cost: { cloth: 1, material: 1 }, tex: () => makeCanvasTex((g, w, h) => {
+    const t = w / 4;
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+      g.fillStyle = (r + c) % 2 ? '#c9bfa6' : '#8a8272'; g.fillRect(c * t, r * t, t, t);
+    }
+    g.fillStyle = 'rgba(255,255,255,0.05)'; for (let i = 0; i < 20; i++) g.fillRect((i * 37) % w, (i * 23) % h, 2, 2);
+  }, 128, 128, 4, 4) },
+  cement:  { name: '노출 시멘트', nameEn: 'Bare Cement', emoji: '⬛', cost: { material: 1 }, tex: () => makeCanvasTex((g, w, h) => {
+    g.fillStyle = '#6a6a68'; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(0,0,0,0.1)'; for (let i = 0; i < 30; i++) g.fillRect((i * 37 + 5) % w, (i * 23 + 9) % h, 3 + (i % 4), 1);
+    g.strokeStyle = 'rgba(30,30,30,0.4)'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(14, 24); g.lineTo(40, 50); g.lineTo(36, 78); g.stroke();
+  }, 128, 128, 5, 5) },
+  tile:    { name: '타일', nameEn: 'Tile', emoji: '🔲', cost: { material: 2, parts: 1 }, tex: () => makeCanvasTex((g, w, h) => {
+    g.fillStyle = '#3a3d44'; g.fillRect(0, 0, w, h); // 줄눈
+    const tw = w / 4, gap = 3;
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+      g.fillStyle = ['#8fa0a8', '#849aa2', '#95a6ae', '#7d929a'][(r * 3 + c) % 4];
+      g.fillRect(c * tw + gap, r * tw + gap, tw - gap * 2, tw - gap * 2);
+    }
+  }, 128, 128, 5, 5) },
+  carpet:  { name: '카펫', nameEn: 'Carpet', emoji: '🟥', cost: { cloth: 4 }, tex: () => makeCanvasTex((g, w, h) => {
+    g.fillStyle = '#7a4a48'; g.fillRect(0, 0, w, h);
+    const rand = seededRand(63);
+    // 보풀 노이즈 (파일 카펫 질감)
+    for (let i = 0; i < 900; i++) { g.fillStyle = rand() > 0.5 ? 'rgba(150,90,86,0.25)' : 'rgba(80,44,42,0.3)'; g.fillRect(rand() * w, rand() * h, 2, 2); }
+  }, 128, 128, 4, 4) },
+  scrap:   { name: '스크랩 판자', nameEn: 'Scrap Boards', emoji: '🧱', cost: { material: 1 }, tex: () => makeCanvasTex((g, w, h) => {
+    g.fillStyle = '#7c6549'; g.fillRect(0, 0, w, h);
+    const rand = seededRand(41);
+    // 제각각 크기의 판자 조각을 이어붙인 느낌
+    let y = 0;
+    while (y < h) {
+      const bh = 12 + rand() * 16; let x = -rand() * 20;
+      while (x < w) {
+        const bw = 24 + rand() * 30;
+        g.fillStyle = ['#836a4a', '#786044', '#8c7250', '#6f5a3e'][Math.floor(rand() * 4)];
+        g.fillRect(x, y, bw - 2, bh - 2);
+        g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(x, y, bw - 2, 1);
+        x += bw;
+      }
+      y += bh;
+    }
+  }, 128, 128, 3, 3) },
+};
+// 테마 세트(#13): 지정 가구가 모두 배치되면 분위기 축 쾌적 +N. 판정은 선언적 테이블(ARC-01).
+const DECO_THEME_COMFORT = BAL.deco.themeSetComfort;
+const THEME_SETS = [
+  { id: 'bedroom', name: '따뜻한 침실', nameEn: 'Warm Bedroom', emoji: '🛏️', items: ['bed', 'rug', 'lamp', 'heater'] },
+  { id: 'workshop', name: '작업 공간', nameEn: 'Work Space', emoji: '🛠️', items: ['table', 'crate', 'bookshelf'] },
+  { id: 'greencorner', name: '녹색 구석', nameEn: 'Green Corner', emoji: '🪴', items: ['plant', 'plant', 'teatable'] },
+];
+// 세트 충족: 필요한 defId 개수(중복 포함)를 배치된 가구가 모두 만족하면 true.
+function themeSetActive(ts) {
+  const need = {};
+  for (const id of ts.items) need[id] = (need[id] || 0) + 1;
+  const have = {};
+  for (const it of items) have[it.defId] = (have[it.defId] || 0) + 1;
+  return Object.entries(need).every(([id, n]) => (have[id] || 0) >= n);
+}
+function activeThemeSets() { return THEME_SETS.filter(themeSetActive); }
+// 텍스처 캐시 (재빌드마다 새 CanvasTexture를 만들지 않도록 lazy 캐시)
+const _decoTexCache = {};
+function decoTex(kind, id) {
+  const table = kind === 'wall' ? WALLPAPERS : FLOORINGS;
+  const def = table[id];
+  if (!def || !def.tex) return null;
+  const key = kind + ':' + id;
+  if (!_decoTexCache[key]) _decoTexCache[key] = def.tex();
+  return _decoTexCache[key];
+}
 
 /* ============================================================
    낡은 종이 텍스처 (생존 수첩 / 찢어진 쪽지용)
@@ -795,8 +939,10 @@ function comfortDetail() {
   const moodMod = (state.moodBuff && state.day <= state.moodBuff.until) ? (state.moodBuff.amt || 0) : 0;
   // 돔 벙커 리워크(#36): 천장 완전 수리 + 뒷문 저장고가 갖춰지면 벙커 쾌적 가산.
   const bunkerMod = bunkerComfortBonus();
-  const score = THREE.MathUtils.clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod + heatMod + moodMod + bunkerMod, 0, 100);
-  return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, heatMod, moodMod, bunkerMod, clean, score };
+  // 테마 세트(#13): 충족한 세트 수 × +3 (분위기 축). 선언적 판정 — activeThemeSets.
+  const themeMod = activeThemeSets().length * DECO_THEME_COMFORT;
+  const score = THREE.MathUtils.clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod + heatMod + moodMod + bunkerMod + themeMod, 0, 100);
+  return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, heatMod, moodMod, bunkerMod, themeMod, clean, score };
 }
 /* ── 쾌적함 4요소 분해 (#29 Living Shelter) ──
    comfortDetail()의 원본 컴포넌트를 온기/청결/안정감/분위기 4축으로 "재분류"만 한다.
@@ -834,7 +980,7 @@ function comfortBreakdown() {
   const clean = cd.cleanMod;
   // moodBuff(만남의 여운)와 벙커 수리 가산은 안정감 축으로 귀속 — 합계는 score 불변.
   const security = 18 + cd.shelterMod + cd.settled + cd.injuryMod + (cd.moodMod || 0) + (cd.bunkerMod || 0);
-  const mood = cd.furn + lightMood + darkPen;
+  const mood = cd.furn + lightMood + darkPen + (cd.themeMod || 0);
   // ── 원인 로그 (각 축 2~3줄) ──
   const logs = { warmth: [], clean: [], security: [], mood: [] };
   // 온기
@@ -854,6 +1000,7 @@ function comfortBreakdown() {
   // 분위기
   if (cd.furn) logs.mood.push({ icon: '🪑', name: t('comfort.log.furn'), v: `+${cd.furn}` });
   for (const s of moodSrc) logs.mood.push({ icon: DEFS[s.id].emoji, name: LName(DEFS[s.id]), v: `+${Math.round(s.v * (rawSum ? (cd.light / rawSum) : 1))}` });
+  if (cd.themeMod) for (const ts of activeThemeSets()) logs.mood.push({ icon: ts.emoji, name: LName(ts), v: `+${DECO_THEME_COMFORT}` });
   if (darkPen) logs.mood.push({ icon: '🌑', name: t('comfort.log.dark'), v: `${darkPen}` });
   return { warmth, clean, security, mood, score: cd.score, logs };
 }
@@ -1046,6 +1193,8 @@ function BP(parent, w, h, d, c, x = 0, y = 0, z = 0) {
 function stdWall(len, h, mat, opts = {}) {
   const g = new THREE.Group();
   const t = 0.22;
+  // 꾸미기(#13): 벽지 교체 대상 재질 태깅. 공유 재질이라 셸터당 1회만 표시하면 충분.
+  if (mat && mat.userData) { mat.userData.isWallMat = true; if (!mat.userData.baseMap) mat.userData.baseMap = mat.map || null; }
   if (!opts.window) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(len, h, t), mat);
     m.position.y = h / 2; m.castShadow = m.receiveShadow = true;
@@ -2718,6 +2867,7 @@ const state = {
   pendingEvent: null,  // 표시 대기 중인 인카운터 id
   lastEventDay: 0,
   mods: {},            // 거처 개조 { shelterId: [modId] }
+  deco: {},            // 꾸미기(#13): 셸터별 벽지/바닥재 { shelterId: { wall:id, floor:id } }
   stayDays: 0,         // 현재 거처 연속 거주일 (정든 집 보너스)
   cat: 0,              // 고양이 입양 여부 (Day 9+ 인카운터)
   catMusicDay: 0,      // 고양이 인카운터가 뜬 날 — 그날은 Cat OST만 재생
@@ -3023,6 +3173,7 @@ function loadSave() {
       if (state.hasCutter == null) state.hasCutter = false;
       if (state.rooftopSlate == null) state.rooftopSlate = 'gapped'; // #53
       if (state.rooftopGardenStage == null) state.rooftopGardenStage = 0; // #53
+      if (state.deco == null || typeof state.deco !== 'object') state.deco = {}; // #13 꾸미기
       if (data.state.questIdx === undefined) state.questIdx = (state.day > 1 || state.successes > 0) ? -1 : 0;
       if (!SHELTERS[state.current]) state.current = 'container';
       // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
@@ -3249,6 +3400,7 @@ function loadShelter(id) {
   sh.buildRoom();
   sh.buildEnv();
   buildModProps(); // 설치된 개조 소품
+  applyDeco();     // 꾸미기(#13): 벽지/바닥재 재질 적용 (셸터 원본 map 위에 오버레이)
   scatterDust();   // 실내 먼지 모트 재배치
   applyMood(sh.mood);
   ensureWeather();
@@ -4611,6 +4763,21 @@ function drawEvent(ctx = eventCtx()) {
   return pick;
 }
 
+// 이벤트 스팅어 톤(#13 사운드): 등장 차임을 카테고리별로 피치 변주(WebAudio playbackRate).
+//   서사(narrative, 기본) 1.0 · 위험(danger) 0.82(낮게 긴장) · 온기(warmth) 1.18(높게 포근).
+//   신규 에셋 불필요 — 기존 'sting' 하나를 rate 변주로 3종화. 선언적 테이블(ARC-01).
+const EVENT_STING = {
+  storm: 'danger', thief: 'danger', spoil_merchant: 'danger', leaky_roof: 'danger', frozen_pipe: 'danger',
+  dog: 'warmth', cat_gift: 'warmth', cat: 'warmth', coldsnap_stranger: 'warmth', caravan_pass: 'warmth', trader: 'warmth',
+  // 그 외(wanderer, seeds, radio_sig, snow_prints, lighthouse_ship, greenhouse_birds,
+  //       distant_light, radio_ghost, old_calendar, broken)는 기본 서사 톤.
+};
+const STING_RATE = { narrative: 1.0, danger: 0.82, warmth: 1.18 };
+function playEventSting(id) {
+  const tone = EVENT_STING[id] || 'narrative';
+  dbgSfx = 'sting:' + tone; // 하네스 lastSfx 추적: 어떤 톤이 울렸는지 확인
+  playSfx('sting', { rate: STING_RATE[tone], jitter: 0.03 });
+}
 // title/text/choice label 은 언어 전환 시점(showEvent) 에 t() 로 해석하므로 id 로 보관한다.
 const EVENTS = {
   wanderer: {
@@ -4867,7 +5034,7 @@ function eventCostConsume(cost) {
 function showEvent(id) {
   const ev = EVENTS[id];
   if (!ev) return;
-  playSfx('sting');
+  playEventSting(id);
   state.activeEvent = id; // 현재 떠 있는 이벤트 (내리기 대상)
   const evTitle = t(ev.titleId);
   // 이벤트 일러스트 전면 적용 (22종 배포 완료) — 미보유 id(ending 등)는 onerror가 조용히 제거
@@ -5227,6 +5394,69 @@ function buildModProps() {
   for (const id of (state.mods?.[state.current] || [])) addModProp(id);
 }
 
+/* ── 꾸미기(#13): 벽지/바닥재 적용 ──
+   loadShelter가 buildRoom() 직후 호출. 셸터 지오메트리는 불변 — 재질의 .map만 교체한다.
+   벽: stdWall에서 태깅한 isWallMat 재질(공유). 바닥: roomGroup 안의 넓고 얇은 수평 박스 메시.
+   id가 'default'/미설정이면 셸터 원본 baseMap으로 복원(무변화). */
+function currentDeco() { return state.deco?.[state.current] || {}; }
+// 벽지/바닥재 선택: 유료 항목은 최초 적용 시 자원 소비(같은 셸터에 이미 산 것으로 되돌리면 무료).
+function applyDecoChoice(kind, id) {
+  if (!state.deco) state.deco = {};
+  if (!state.deco[state.current]) state.deco[state.current] = {};
+  const slot = kind === 'wall' ? 'wall' : 'floor';
+  const table = kind === 'wall' ? WALLPAPERS : FLOORINGS;
+  const def = table[id];
+  if (!def) return;
+  const cur = state.deco[state.current];
+  if (cur[slot] === id) return; // 이미 적용됨
+  // 이 셸터에서 이미 구매한 이력(_bought)이면 재적용 무료
+  if (!cur._bought) cur._bought = {};
+  const boughtKey = kind + ':' + id;
+  if (id !== 'default' && def.cost && !cur._bought[boughtKey]) {
+    if (!resConsumeAll(def.cost)) { toast(t('toast.needMaterial')); return; }
+    cur._bought[boughtKey] = true;
+    renderResBar();
+  }
+  cur[slot] = id;
+  applyDeco();
+  shadowDirty();
+  playSfx('craft');
+  scheduleSave();
+  toast(t('deco.applied', { name: LName(def) }));
+  openCraftModal(); // 모달 갱신
+}
+function applyDeco() {
+  const d = currentDeco();
+  // ── 벽지 ──
+  const wallTex = decoTex('wall', d.wall);
+  roomGroup.traverse(o => {
+    const mat = o.material;
+    if (mat && mat.userData && mat.userData.isWallMat) {
+      const target = (d.wall && d.wall !== 'default') ? wallTex : (mat.userData.baseMap || null);
+      if (mat.map !== target) { mat.map = target; mat.needsUpdate = true; }
+    }
+  });
+  // ── 바닥재 ── (셸터별 지오메트리라 휴리스틱으로 바닥 메시 식별: 넓고(≥ROOM폭*0.8) 얇은(≤0.4) 수평 박스)
+  const floorTex = decoTex('floor', d.floor);
+  roomGroup.traverse(o => {
+    if (!o.isMesh || !o.geometry?.parameters) return;
+    const p = o.geometry.parameters;
+    if (p.width == null || p.height == null || p.depth == null) return;
+    const isFloor = p.height <= 0.4 && p.width >= ROOM.w * 0.8 && p.depth >= ROOM.d * 0.8 && o.position.y <= 0.2;
+    if (!isFloor) return;
+    const mat = o.material;
+    if (!mat || !mat.userData) return;
+    if (!('baseFloorMap' in mat.userData)) mat.userData.baseFloorMap = mat.map || null;
+    const target = (d.floor && d.floor !== 'default') ? floorTex : mat.userData.baseFloorMap;
+    if (mat.map !== target) {
+      mat.map = target; mat.needsUpdate = true;
+      // 원본 바닥에 색상만 있고 map이 없던 경우, map을 씌우면 색 곱연산으로 어두워질 수 있어 흰색으로.
+      if (target && mat.color) mat.color.setHex(0xffffff);
+      else if (!target && mat.userData.baseFloorColor != null) mat.color.setHex(mat.userData.baseFloorColor);
+    }
+  });
+}
+
 // 가구는 파밍이 아니라 제작이 기본 (파밍은 극히 드문 행운)
 const CRAFTS = [
   { out: { res: 'bandage', n: 1 }, cost: { cloth: 2 }, hint: '기본 치료품', hintEn: 'Basic first aid' },
@@ -5337,11 +5567,39 @@ function openCraftModal() {
     }
     rooftopHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🏙️ ${LName(SHELTERS.rooftop)}</div>${projRows.join('')}`;
   }
+  // 꾸미기(#13): 벽지/바닥재 스와치. 현재 셸터의 벽/바닥 재질을 교체 (셸터 지오메트리 불변).
+  const dcur = currentDeco();
+  const decoSwatches = (kind, table, sel) => Object.entries(table).map(([id, def]) => {
+    const active = (sel || 'default') === id;
+    const owned = active || !def.cost || resHasAll(def.cost);
+    const costTip = def.cost ? costLabel(def.cost) : t('deco.free');
+    return `<button class="pixel-btn ${active ? 'primary' : ''}" data-deco="${kind}:${id}" ${owned || active ? '' : 'disabled'}
+      title="${LName(def)} · ${costTip}" style="margin:2px;padding:4px 6px;font-size:11px">${def.emoji} ${LName(def)}${active ? ' ✓' : (def.cost ? ` <span style="opacity:.6">${costTip}</span>` : '')}</button>`;
+  }).join('');
+  const themeHtml = THEME_SETS.map(ts => {
+    const done = themeSetActive(ts);
+    return `<div class="prep-row ${done ? 'sel' : ''}" style="cursor:default">
+      <span>${ts.emoji} ${LName(ts)}</span>
+      <span class="p-eff" style="font-size:10px">${ts.items.map(id => DEFS[id].emoji).join('')} → ${t('deco.themeBonus', { n: DECO_THEME_COMFORT })}</span>
+      <span style="color:${done ? 'var(--good)' : 'var(--text-dim)'};font-size:11px;margin-left:6px">${done ? t('deco.themeDone') : t('deco.themeTodo')}</span>
+    </div>`;
+  }).join('');
+  const decoHtml = `
+    <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('deco.header')}</div>
+    <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${t('deco.intro')}</div>
+    <div style="font-size:11px;margin-bottom:3px">${t('deco.wall')}</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${decoSwatches('wall', WALLPAPERS, dcur.wall)}</div>
+    <div style="font-size:11px;margin-bottom:3px">${t('deco.floor')}</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${decoSwatches('floor', FLOORINGS, dcur.floor)}</div>
+    <div style="font-size:11px;color:var(--accent);margin:8px 0 4px">${t('deco.themeHeader')}</div>${themeHtml}`;
   openModal(t('craft.title'), `
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('craft.intro')}</div>${rows}
     <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>
     <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}
-    ${bunkerHtml}${rooftopHtml}`);
+    ${bunkerHtml}${rooftopHtml}${decoHtml}`);
+  $('modal-body').querySelectorAll('button[data-deco]').forEach(b =>
+    b.addEventListener('click', () => {
+      const [kind, id] = b.dataset.deco.split(':');
+      applyDecoChoice(kind, id);
+    }));
   $('modal-body').querySelectorAll('button[data-rproj]').forEach(b =>
     b.addEventListener('click', () => {
       if (b.dataset.rproj === 'slate') {
@@ -5534,12 +5792,19 @@ function openJournalModal(tab = 'journal') {
       `<span title="${LColor(def, i)}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-left:3px;background:${arr[i] ? '#' + c.toString(16).padStart(6, '0') : '#22252d'};border:1px solid ${arr[i] ? 'var(--accent)' : '#333'}"></span>`).join('');
     return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${def.emoji}${sw}</span>`;
   }).join('');
+  const colTotal = Object.values(DEFS).reduce((a, d) => a + d.colors.length, 0);
+  // 테마 세트 도감 뱃지 (#13): 충족 시 강조.
+  const themeBadges = THEME_SETS.map(ts => {
+    const done = themeSetActive(ts);
+    return `<span title="${ts.items.map(id => LName(DEFS[id])).join(' + ')}" style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid ${done ? 'var(--good)' : '#333'};color:${done ? 'var(--good)' : 'var(--text-dim)'}">${done ? '🏅' : '▫️'} ${ts.emoji} ${LName(ts)}</span>`;
+  }).join('');
   const journalBody = `
     <div class="report-sec"><span class="r-title">${t('journal.statsTitle')}</span><br>
       ${t('journal.statsLine', { day: state.day, sicon: se.icon, exp: state.stats.exp, succ: state.stats.success, craft: state.stats.craft || 0, stay: state.stayDays || 0 })}
     </div>
     ${comfortBreakdownHtml()}
-    <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount() })}</span><br>${colHtml}</div>
+    <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount(), total: colTotal })}</span><br>${colHtml}</div>
+    <div class="report-sec"><span class="r-title">${t('deco.themeBadgeTitle', { n: activeThemeSets().length, total: THEME_SETS.length })}</span><br>${themeBadges}</div>
     <div class="report-sec"><span class="r-title">${t('journal.achTitle', { n: Object.values(state.achs || {}).filter(Boolean).length, total: ACHS.length })}</span></div>
     ${achsHtml}`;
   openModal(t('journal.title'), journalTabBar(tab) + (tab === 'record' ? recordTabHtml() : journalBody));
@@ -8255,8 +8520,9 @@ const RAIN_AMB = {
 };
 /* ── SFX 앰비언스/난로 상태 동기화 (날씨·실내·가구 상태 → 루프 채널) ── */
 function syncSfxAmbience() {
-  if (titleVisible || endingActive) { setAmbience(null); setFire(false); return; }
+  if (titleVisible || endingActive) { setAmbience(null); setFire(false); setSeasonAmbience(null); return; }
   const indoorSh = !!SHELTERS[state.current]?.indoor;
+  let calmOutdoor = false; // 맑은 날 실외 = 계절 앰비언스가 깔릴 수 있는 조건
   if (indoorSh) {
     setAmbience(null);
   } else if (weather.type === 'storm') {
@@ -8269,7 +8535,11 @@ function syncSfxAmbience() {
     setAmbience('amb_wind'); // 재(灰) 날씨는 별도 루프가 없어 바람 앰비언스로 간이 처리
   } else {
     setAmbience(null);
+    calmOutdoor = true;
   }
+  // 계절 앰비언스(#13): 맑은 날 실외에서만 계절 배경음(봄새/여름벌레/가을바람/겨울삭풍).
+  // 실내이거나 날씨 루프가 이미 깔린 경우엔 계절음을 끈다(중첩 방지).
+  setSeasonAmbience(calmOutdoor ? seasonOf().id : null);
   // v0.9.1: 캔들/랜턴은 타닥거리는 fire 루프에서 제외 — 장작 난로(stove)만 fire 루프 재생.
   // 캔들 전용 타닥 소리는 사용자 파일 제공 시 별도 채널로 추가 예정.
   const fireOn = items.some(it => it.defId === 'stove' && it.on !== false);
@@ -8827,6 +9097,10 @@ window.__shelter = {
   isEditMode: () => editMode,
   lastSfx: () => dbgSfx,
   resetSfx: () => { dbgSfx = null; },
+  // #13 꾸미기 확장 + 사운드 QA 훅
+  WALLPAPERS, FLOORINGS, THEME_SETS, DECO_THEME_COMFORT, applyDecoChoice, applyDeco,
+  themeSetActive, activeThemeSets, currentDeco, EVENT_STING, playEventSting,
+  setSeasonAmbience, seasonAmbienceName,
   pickItemAt: (cx, cy) => pickItem({ clientX: cx, clientY: cy }),
   funcClickItem, addItem, catPointBlocked, footprintOf, scene,
   // 편의성 배치 v0.9.2

@@ -105,3 +105,26 @@ export function setFire(on, vol = 0.22) {
   if (on) channelPlay(fireChan, 'amb_fire', vol);
   else channelStop(fireChan);
 }
+
+/* ── 계절 앰비언스 (#13 사운드 빈칸) ──
+ * 봄 새소리 / 여름 벌레 / 가을 바람 / 겨울 삭풍 — 맑은 날 실외 셸터의 배경 루프.
+ * 전용 채널(seasonChan)로 날씨 앰비언스(ambChan)와 독립 크로스페이드.
+ * 에셋 파일명은 SEASON_AMB 매핑. 파일이 아직 없으면 loadBuf가 조용히 null → 무음(크래시 없음).
+ * 코디네이터가 아래 4개 ogg를 public/sfx에 배치하면 즉시 활성화된다:
+ *   amb_spring_birds.ogg · amb_summer_insects.ogg · amb_autumn_wind.ogg · amb_winter_gale.ogg
+ */
+const SEASON_AMB = {
+  spring: 'amb_spring_birds',
+  summer: 'amb_summer_insects',
+  autumn: 'amb_autumn_wind',
+  winter: 'amb_winter_gale',
+};
+const seasonChan = makeChannel();
+export function setSeasonAmbience(season, vol = 0.18) {
+  if (!ctx) return;
+  const name = season && SEASON_AMB[season];
+  if (!name) { channelStop(seasonChan); return; }
+  channelPlay(seasonChan, name, vol);
+}
+// 에셋 존재 여부를 하네스가 확인할 수 있게 매핑을 노출.
+export function seasonAmbienceName(season) { return SEASON_AMB[season] || null; }

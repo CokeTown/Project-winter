@@ -1,0 +1,180 @@
+{
+  "state": {
+    "ver": 3,
+    "current": "container",
+    "successes": 0,
+    "inventory": {
+      "bed": 1,
+      "rug": 1,
+      "candle": 1
+    },
+    "res": {
+      "food": 8,
+      "canned": 30.499999999999996,
+      "water": 42.5,
+      "cloth": 39,
+      "bandage": 6.5,
+      "antiseptic": 6.2,
+      "painkiller": 5.475,
+      "candle": 24,
+      "battery": 22.75,
+      "fuel": 32.5,
+      "parts": 68.5,
+      "material": 32.5
+    },
+    "layouts": {
+      "container": [
+        {
+          "d": "crate",
+          "c": 1,
+          "x": 2.5,
+          "z": -0.75,
+          "r": 0
+        }
+      ],
+      "bunker": [],
+      "rooftop": [],
+      "cabin": []
+    },
+    "exp": null,
+    "injury": null,
+    "gameMin": 480,
+    "day": 20,
+    "savedAt": 1783222615034,
+    "weatherType": "clear",
+    "weatherUntil": 3027.9970401898026,
+    "cleanBy": {
+      "container": 51,
+      "bunker": 70,
+      "rooftop": 70,
+      "cabin": 70
+    },
+    "renovated": {
+      "container": true
+    },
+    "hunger": 57.20639999999994,
+    "thirst": 45,
+    "energy": 65,
+    "expToday": 0,
+    "expFailStreak": 0,
+    "upkeepOk": true,
+    "dayLog": {
+      "gain": {
+        "food": 44,
+        "canned": 28.5,
+        "cloth": 37,
+        "candle": 22,
+        "water": 58.5,
+        "bandage": 5.5,
+        "battery": 21.75,
+        "parts": 68.5,
+        "antiseptic": 6.2,
+        "painkiller": 5.475,
+        "material": 32.5,
+        "fuel": 32.5
+      },
+      "spend": {
+        "water": 19,
+        "food": 38
+      },
+      "notes": [
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🕯️ 이 집이 조금씩 편안해집니다. (정든 집 +3)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🏡 이제 여기가 진짜 집처럼 느껴집니다. (정든 집 +8, 최대)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "☀️ 여름이 왔습니다 — 풀이 무성하다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다."
+      ]
+    },
+    "helpSeen": false,
+    "stats": {
+      "exp": 0,
+      "success": 0
+    },
+    "buff": null,
+    "pendingEvent": "thief",
+    "lastEventDay": 2,
+    "mods": {},
+    "deco": {
+      "container": {
+        "wall": "cream",
+        "floor": "wood"
+      }
+    },
+    "stayDays": 19,
+    "cat": 0,
+    "catMusicDay": 0,
+    "catEventSeen": false,
+    "catHungry": false,
+    "endingSeen": false,
+    "tutDay": 0,
+    "tipsSeen": {
+      "tip.freshfood": true
+    },
+    "pendingTutorial": null,
+    "questIdx": 0,
+    "mode": "normal",
+    "coldSnap": null,
+    "coldSnapForecast": 0,
+    "coldSnapsThisWinter": 0,
+    "coldSnapWinterKey": 1,
+    "winters": 0,
+    "winterSnap": null,
+    "pendingWinterMemoir": [],
+    "doctorRadioPending": false,
+    "evHistory": [
+      {
+        "id": "thief",
+        "day": 2
+      }
+    ],
+    "moodBuff": null,
+    "memos": {},
+    "broadcasts": {},
+    "distantLight": null,
+    "pendingMemoPopup": null,
+    "pendingBroadcast": null,
+    "lastBroadcastDay": 0,
+    "pipeFrozenUntil": 0,
+    "bunkerRoof": "hole",
+    "bunkerBackdoor": false,
+    "hasCutter": false,
+    "rooftopSlate": "gapped",
+    "rooftopGardenStage": 0,
+    "lastUnlockCount": 0
+  },
+  "opts": {
+    "pixel": 3,
+    "quant": true,
+    "dither": true,
+    "ceil": true,
+    "autoEat": true,
+    "autoPlay": false,
+    "bgm": true,
+    "bgmVol": 0.15,
+    "sfxVol": 0.07,
+    "lang": "ko",
+    "fpsCap": 60,
+    "lowSpec": false,
+    "bgIdle": true,
+    "fontScale": 1,
+    "colorblind": false,
+    "reduceMotion": false
+  }
+}

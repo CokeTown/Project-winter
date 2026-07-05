@@ -1,0 +1,129 @@
+{
+  "state": {
+    "ver": 3,
+    "current": "container",
+    "successes": 0,
+    "inventory": {
+      "bed": 1,
+      "rug": 1,
+      "candle": 1
+    },
+    "res": {
+      "food": 2,
+      "canned": 2,
+      "water": 3,
+      "cloth": 2,
+      "bandage": 1,
+      "antiseptic": 0,
+      "painkiller": 0,
+      "candle": 2,
+      "battery": 1,
+      "fuel": 0,
+      "parts": 0,
+      "material": 0
+    },
+    "layouts": {
+      "container": [
+        {
+          "d": "crate",
+          "c": 1,
+          "x": 2.5,
+          "z": -0.75,
+          "r": 0
+        }
+      ],
+      "bunker": [],
+      "rooftop": [],
+      "cabin": []
+    },
+    "exp": null,
+    "injury": null,
+    "gameMin": 480,
+    "day": 1,
+    "savedAt": 1783222615034,
+    "weatherType": "clear",
+    "weatherUntil": 0,
+    "cleanBy": {
+      "container": 70,
+      "bunker": 70,
+      "rooftop": 70,
+      "cabin": 70
+    },
+    "renovated": {
+      "container": true
+    },
+    "hunger": 80,
+    "thirst": 80,
+    "energy": 100,
+    "expToday": 0,
+    "expFailStreak": 0,
+    "upkeepOk": true,
+    "dayLog": {
+      "gain": {},
+      "spend": {},
+      "notes": []
+    },
+    "helpSeen": false,
+    "stats": {
+      "exp": 0,
+      "success": 0
+    },
+    "buff": null,
+    "pendingEvent": null,
+    "lastEventDay": 0,
+    "mods": {},
+    "deco": {},
+    "stayDays": 0,
+    "cat": 0,
+    "catMusicDay": 0,
+    "catEventSeen": false,
+    "catHungry": false,
+    "endingSeen": false,
+    "tutDay": 0,
+    "tipsSeen": {},
+    "pendingTutorial": null,
+    "questIdx": 0,
+    "mode": "normal",
+    "coldSnap": null,
+    "coldSnapForecast": 0,
+    "coldSnapsThisWinter": 0,
+    "coldSnapWinterKey": -1,
+    "winters": 0,
+    "winterSnap": null,
+    "pendingWinterMemoir": [],
+    "doctorRadioPending": false,
+    "evHistory": [],
+    "moodBuff": null,
+    "memos": {},
+    "broadcasts": {},
+    "distantLight": null,
+    "pendingMemoPopup": null,
+    "pendingBroadcast": null,
+    "lastBroadcastDay": 0,
+    "pipeFrozenUntil": 0,
+    "bunkerRoof": "hole",
+    "bunkerBackdoor": false,
+    "hasCutter": false,
+    "rooftopSlate": "gapped",
+    "rooftopGardenStage": 0,
+    "lastUnlockCount": 0
+  },
+  "opts": {
+    "pixel": 3,
+    "quant": true,
+    "dither": true,
+    "ceil": true,
+    "autoEat": true,
+    "autoPlay": false,
+    "bgm": true,
+    "bgmVol": 0.15,
+    "sfxVol": 0.07,
+    "lang": "ko",
+    "fpsCap": 60,
+    "lowSpec": false,
+    "bgIdle": true,
+    "fontScale": 1,
+    "colorblind": false,
+    "reduceMotion": false
+  }
+}

@@ -161,4 +161,9 @@ export const BAL = {
     },
     lightAxisDefault: 'mood', // 표에 없는 조명은 분위기로
   },
+
+  /* ── 꾸미기 (#13 REQ-DECO-01) ── */
+  deco: {
+    themeSetComfort: 3, // 테마 세트 1개 충족 시 분위기(mood) 축 쾌적 가산
+  },
 };

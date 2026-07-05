@@ -1,0 +1,316 @@
+{
+  "state": {
+    "ver": 3,
+    "current": "container",
+    "successes": 120,
+    "inventory": {
+      "bed": 1,
+      "rug": 1,
+      "candle": 1
+    },
+    "res": {
+      "food": 200,
+      "canned": 200,
+      "water": 200,
+      "cloth": 200,
+      "bandage": 200,
+      "antiseptic": 200,
+      "painkiller": 200,
+      "candle": 200,
+      "battery": 200,
+      "fuel": 200,
+      "parts": 200,
+      "material": 200
+    },
+    "layouts": {
+      "container": [
+        {
+          "d": "crate",
+          "c": 1,
+          "x": 2.5,
+          "z": -0.75,
+          "r": 0
+        }
+      ],
+      "bunker": [],
+      "rooftop": [],
+      "cabin": []
+    },
+    "exp": null,
+    "injury": null,
+    "gameMin": 480,
+    "day": 999,
+    "savedAt": 1783222615034,
+    "weatherType": "clear",
+    "weatherUntil": 0,
+    "cleanBy": {
+      "container": 70,
+      "bunker": 70,
+      "rooftop": 70,
+      "cabin": 70
+    },
+    "renovated": {
+      "container": true
+    },
+    "hunger": 80,
+    "thirst": 80,
+    "energy": 100,
+    "expToday": 0,
+    "expFailStreak": 0,
+    "upkeepOk": true,
+    "dayLog": {
+      "gain": {},
+      "spend": {},
+      "notes": []
+    },
+    "helpSeen": false,
+    "stats": {
+      "exp": 0,
+      "success": 0
+    },
+    "buff": null,
+    "pendingEvent": null,
+    "lastEventDay": 0,
+    "mods": {
+      "container": [
+        "insulation",
+        "solar"
+      ],
+      "cabin": [
+        "roof"
+      ]
+    },
+    "deco": {
+      "container": {
+        "wall": "stripe",
+        "floor": "tile"
+      },
+      "cabin": {
+        "wall": "plank",
+        "floor": "scrap"
+      }
+    },
+    "stayDays": 0,
+    "cat": 0,
+    "catMusicDay": 0,
+    "catEventSeen": false,
+    "catHungry": false,
+    "endingSeen": false,
+    "tutDay": 0,
+    "tipsSeen": {},
+    "pendingTutorial": null,
+    "questIdx": 0,
+    "mode": "normal",
+    "coldSnap": null,
+    "coldSnapForecast": 0,
+    "coldSnapsThisWinter": 0,
+    "coldSnapWinterKey": -1,
+    "winters": 9,
+    "winterSnap": null,
+    "pendingWinterMemoir": [],
+    "doctorRadioPending": false,
+    "evHistory": [],
+    "moodBuff": null,
+    "memos": {},
+    "broadcasts": {},
+    "distantLight": null,
+    "pendingMemoPopup": null,
+    "pendingBroadcast": null,
+    "lastBroadcastDay": 0,
+    "pipeFrozenUntil": 0,
+    "bunkerRoof": "hole",
+    "bunkerBackdoor": false,
+    "hasCutter": false,
+    "rooftopSlate": "gapped",
+    "rooftopGardenStage": 0,
+    "lastUnlockCount": 0,
+    "collection": {
+      "bed": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "sofa": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "chair": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "table": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "dresser": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "bookshelf": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "rug": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "lamp": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "plant": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "crate": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "radio": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "candle": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "fridge": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "purifier": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "generator": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "stove": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "cushion": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "teatable": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "bookstack": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "clock": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "lantern": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "heater": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "autopurifier": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "frame": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "curtain": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "desklamp": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "firstaidbox": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "mirror": [
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  },
+  "opts": {
+    "pixel": 3,
+    "quant": true,
+    "dither": true,
+    "ceil": true,
+    "autoEat": true,
+    "autoPlay": false,
+    "bgm": true,
+    "bgmVol": 0.15,
+    "sfxVol": 0.07,
+    "lang": "ko",
+    "fpsCap": 60,
+    "lowSpec": false,
+    "bgIdle": true,
+    "fontScale": 1,
+    "colorblind": false,
+    "reduceMotion": false
+  }
+}

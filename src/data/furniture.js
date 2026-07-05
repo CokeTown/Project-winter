@@ -449,6 +449,99 @@ const DEFS = {
       return g;
     }
   },
+  /* ── 소품 가구 (v1.0 꾸미기 확장 #13) — 절차 텍스처, 일러 재사용 없음 ── */
+  frame: {
+    name: '액자', nameEn: 'Framed Picture', emoji: '🖼️', fp: { w: 0.5, d: 0.3 },
+    stackable: true, // 서랍장·선반 위에 올리는 탁상 액자
+    colorNames: ['호두나무', '골드', '화이트', '슬레이트'],
+    colorNamesEn: ['Walnut', 'Gold', 'White', 'Slate'],
+    colors: [0x6b4a32, 0xb08a3a, 0xd4cfc2, 0x4a4d52],
+    build(c, colorIdx = 0) {
+      const g = new THREE.Group();
+      // 절차 풍경화 (하늘/지평선/언덕 3색 띠 — 일러스트 리소스 미사용)
+      const rand = seededRand(53 + colorIdx * 11);
+      B(g, 0.44, 0.32, 0.04, c, 0, 0.5, 0);              // 프레임
+      const artPals = [[0x8fb0cf, 0x6a8a5a, 0x4a6042], [0xc9a06a, 0x9a7a4a, 0x5a4a34], [0x9a8ab0, 0x6a7a8a, 0x44505a]];
+      const pal = artPals[Math.floor(rand() * artPals.length)];
+      B(g, 0.34, 0.14, 0.02, pal[0], 0, 0.57, 0.021);    // 하늘
+      B(g, 0.34, 0.06, 0.02, pal[1], 0, 0.47, 0.021);    // 언덕
+      B(g, 0.34, 0.04, 0.02, pal[2], 0, 0.42, 0.021);    // 땅
+      const easel = B(g, 0.06, 0.24, 0.06, shade(c, 0.8), 0, 0.14, -0.05); // 뒷받침
+      easel.rotation.x = -0.3;
+      return g;
+    }
+  },
+  curtain: {
+    name: '커튼', nameEn: 'Curtain', emoji: '🪟', fp: { w: 1.4, d: 0.25 }, noCollide: true,
+    colorNames: ['리넨', '세이지', '버건디', '머스터드'],
+    colorNamesEn: ['Linen', 'Sage', 'Burgundy', 'Mustard'],
+    colors: [0xd6c9ab, 0x8a9a78, 0x7a3f42, 0xbb9440],
+    build(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.03, 0.03, 1.34, 0x55504a, 0, 1.8, 0, 6).rotation.z = Math.PI / 2; // 커튼봉
+      for (const cap of [-0.68, 0.68]) Cyl(g, 0.05, 0.05, 0.05, 0x8a8f96, cap, 1.8, 0, 8).rotation.z = Math.PI / 2;
+      // 주름진 천 패널 (좌/우 갈라진 커튼)
+      for (const side of [-1, 1]) {
+        for (let i = 0; i < 3; i++) {
+          const px = side * (0.14 + i * 0.16);
+          const panel = B(g, 0.14, 1.5, 0.04 + (i % 2) * 0.03, i % 2 ? shade(c, 0.85) : c, px, 1.05, 0);
+          panel.castShadow = true;
+        }
+      }
+      return g;
+    }
+  },
+  desklamp: {
+    name: '책상 램프', nameEn: 'Desk Lamp', emoji: '🔦', fp: { w: 0.3, d: 0.3 },
+    stackable: true, // 테이블·서랍장 위
+    colorNames: ['그린', '블랙', '브라스', '크림'],
+    colorNamesEn: ['Green', 'Black', 'Brass', 'Cream'],
+    colors: [0x3a6a4a, 0x2f2a24, 0xb08a3a, 0xd9cdb2],
+    light: { color: 0xffd090, intensity: 4, dist: 5, y: 0.5, fuel: 'battery', comfort: 5 },
+    build(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.11, 0.13, 0.04, shade(c, 0.8), 0, 0.02, 0, 10);   // 받침
+      const arm1 = Cyl(g, 0.02, 0.02, 0.32, shade(c, 0.9), -0.02, 0.18, 0, 6); arm1.rotation.z = 0.35;
+      const arm2 = Cyl(g, 0.02, 0.02, 0.26, shade(c, 0.9), 0.08, 0.36, 0, 6); arm2.rotation.z = -0.7;
+      const shade1 = Cyl(g, 0.06, 0.11, 0.13, c, 0.2, 0.46, 0, 10); shade1.rotation.z = -1.1;
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6),
+        new THREE.MeshLambertMaterial({ color: 0xffe6b0, emissive: 0xffcc70, emissiveIntensity: 1 }));
+      bulb.position.set(0.22, 0.4, 0); bulb.userData.glow = true; g.add(bulb);
+      return g;
+    }
+  },
+  firstaidbox: {
+    name: '구급상자', nameEn: 'First-Aid Box', emoji: '🧰', fp: { w: 0.5, d: 0.35 },
+    stackable: true, // 벽걸이 대신 선반/서랍 위 배치 (관통 회피)
+    colorNames: ['화이트', '레드', '올리브', '스틸'],
+    colorNamesEn: ['White', 'Red', 'Olive', 'Steel'],
+    colors: [0xd8d4cc, 0xa8433f, 0x6a7047, 0x8a8f96],
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 0.44, 0.3, 0.3, c, 0, 0.2, 0);                        // 본체
+      B(g, 0.46, 0.06, 0.32, shade(c, 0.85), 0, 0.36, 0);        // 뚜껑 테두리
+      B(g, 0.12, 0.02, 0.02, 0xa8433f, 0, 0.24, 0.16);          // 적십자 (가로)
+      B(g, 0.02, 0.12, 0.02, 0xa8433f, 0, 0.24, 0.16);          // 적십자 (세로)
+      B(g, 0.14, 0.05, 0.04, shade(c, 0.7), 0, 0.37, 0);        // 손잡이
+      return g;
+    }
+  },
+  mirror: {
+    name: '전신 거울', nameEn: 'Standing Mirror', emoji: '🪞', fp: { w: 0.5, d: 0.35 },
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 0.4, 1.5, 0.06, c, 0, 0.78, 0);                       // 프레임
+      const glass = B(g, 0.3, 1.34, 0.02, 0xaeb8bf, 0, 0.78, 0.03); // 거울면
+      glass.material.emissive = new THREE.Color(0x3a4750);
+      glass.material.emissiveIntensity = 0.35; glass.userData.glow = true;
+      // 반사 하이라이트 (사선 밴드)
+      const hi = B(g, 0.06, 1.0, 0.01, 0xdfe6ea, -0.05, 0.85, 0.041); hi.rotation.z = 0.12;
+      // 받침 다리
+      for (const sx of [-0.16, 0.16]) { const leg = B(g, 0.05, 0.3, 0.16, shade(c, 0.8), sx, 0.06, 0); leg.rotation.x = 0.2; }
+      return g;
+    }
+  },
 };
 
 

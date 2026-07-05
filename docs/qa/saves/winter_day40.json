@@ -1,0 +1,217 @@
+{
+  "state": {
+    "ver": 3,
+    "current": "container",
+    "successes": 0,
+    "inventory": {
+      "bed": 1,
+      "rug": 1,
+      "candle": 1
+    },
+    "res": {
+      "food": 6,
+      "canned": 63.04999999999998,
+      "water": 87,
+      "cloth": 86.5,
+      "bandage": 11.625,
+      "antiseptic": 16.449999999999996,
+      "painkiller": 14.550000000000011,
+      "candle": 44.5,
+      "battery": 58,
+      "fuel": 80,
+      "parts": 176,
+      "material": 80
+    },
+    "layouts": {
+      "container": [
+        {
+          "d": "crate",
+          "c": 1,
+          "x": 2.5,
+          "z": -0.75,
+          "r": 0
+        }
+      ],
+      "bunker": [],
+      "rooftop": [],
+      "cabin": []
+    },
+    "exp": null,
+    "injury": null,
+    "gameMin": 480,
+    "day": 40,
+    "savedAt": 1783222615034,
+    "weatherType": "ash",
+    "weatherUntil": 2322.4066284298897,
+    "cleanBy": {
+      "container": 31,
+      "bunker": 70,
+      "rooftop": 70,
+      "cabin": 70
+    },
+    "renovated": {
+      "container": true
+    },
+    "hunger": 70.99759999999989,
+    "thirst": 45,
+    "energy": 65,
+    "expToday": 0,
+    "expFailStreak": 0,
+    "upkeepOk": true,
+    "dayLog": {
+      "gain": {
+        "food": 85,
+        "canned": 61.04999999999999,
+        "cloth": 84.5,
+        "candle": 42.5,
+        "water": 123,
+        "bandage": 10.625,
+        "battery": 57,
+        "parts": 176,
+        "antiseptic": 16.449999999999996,
+        "painkiller": 14.550000000000011,
+        "material": 80,
+        "fuel": 80
+      },
+      "spend": {
+        "water": 39,
+        "food": 81
+      },
+      "notes": [
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🕯️ 이 집이 조금씩 편안해집니다. (정든 집 +3)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🏡 이제 여기가 진짜 집처럼 느껴집니다. (정든 집 +8, 최대)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "☀️ 여름이 왔습니다 — 풀이 무성하다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍎 여름 더위에 신선식품이 더 빨리 상했습니다.",
+        "🍂 가을이 왔습니다 — 세상이 물든다.",
+        "날씨가 비(으)로 바뀌었습니다",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "❄️ 겨울이 왔습니다 — 혹독한 계절.",
+        "날씨가 재(으)로 바뀌었습니다",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)",
+        "🍎 냉장고가 없어 신선식품이 상했습니다. (-1)"
+      ]
+    },
+    "helpSeen": false,
+    "stats": {
+      "exp": 0,
+      "success": 0
+    },
+    "buff": null,
+    "pendingEvent": "storm",
+    "lastEventDay": 2,
+    "mods": {
+      "container": [
+        "insulation"
+      ]
+    },
+    "deco": {
+      "container": {
+        "wall": "floral",
+        "floor": "carpet"
+      }
+    },
+    "stayDays": 39,
+    "cat": 0,
+    "catMusicDay": 0,
+    "catEventSeen": false,
+    "catHungry": false,
+    "endingSeen": false,
+    "tutDay": 0,
+    "tipsSeen": {
+      "tip.freshfood": true,
+      "tip.winter": true
+    },
+    "pendingTutorial": null,
+    "questIdx": 0,
+    "mode": "normal",
+    "coldSnap": null,
+    "coldSnapForecast": 0,
+    "coldSnapsThisWinter": 0,
+    "coldSnapWinterKey": 3,
+    "winters": 0,
+    "winterSnap": {
+      "day": 37,
+      "successStart": 0,
+      "acc": {
+        "coldSnaps": 0,
+        "defended": 0,
+        "fuel": 0
+      }
+    },
+    "pendingWinterMemoir": [],
+    "doctorRadioPending": false,
+    "evHistory": [
+      {
+        "id": "storm",
+        "day": 2
+      }
+    ],
+    "moodBuff": null,
+    "memos": {},
+    "broadcasts": {},
+    "distantLight": null,
+    "pendingMemoPopup": null,
+    "pendingBroadcast": null,
+    "lastBroadcastDay": 0,
+    "pipeFrozenUntil": 0,
+    "bunkerRoof": "hole",
+    "bunkerBackdoor": false,
+    "hasCutter": false,
+    "rooftopSlate": "gapped",
+    "rooftopGardenStage": 0,
+    "lastUnlockCount": 0
+  },
+  "opts": {
+    "pixel": 3,
+    "quant": true,
+    "dither": true,
+    "ceil": true,
+    "autoEat": true,
+    "autoPlay": false,
+    "bgm": true,
+    "bgmVol": 0.15,
+    "sfxVol": 0.07,
+    "lang": "ko",
+    "fpsCap": 60,
+    "lowSpec": false,
+    "bgIdle": true,
+    "fontScale": 1,
+    "colorblind": false,
+    "reduceMotion": false
+  }
+}
