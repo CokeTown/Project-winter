@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert } from './lib/helpers.js';
 import { DEFS } from './data/furniture.js';
 import { BAL } from './data/balance.js';
+import { PROJECTS } from './data/projects.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
 import { Platform, bindPlatform } from './lib/platform.js';
@@ -1618,6 +1619,36 @@ const SHELTERS = {
           new THREE.MeshBasicMaterial({ visible: false }));
         hit.position.set(SX, -0.1 - (steps * stepH) / 2, zStart - (steps * stepD) / 2);
         stairs.add(hit);
+        // ── 대형 프로젝트 현장 오브젝트 (1.1 ARC-02): "막힌 통로 정리" 돌무더기 ──
+        // clearPassage 진행 단계에 따라 돌무더기가 줄어들다 통로가 열린다. (site='stairRubble')
+        // siteStage 0/1=가득, 2=절반, 3(완공)=치워짐(통로로 빛이 샌다). 계단 마지막 단 발치에 배치.
+        {
+          const sStage = projectSiteStage('clearPassage');
+          const baseY = -0.1 - steps * stepH;              // 마지막 단 바닥
+          const baseZ = zStart - (steps - 0.5) * stepD;    // 마지막 단 앞
+          const rubblePal = [0x6a655a, 0x5a564e, 0x77726a, 0x4e4a43];
+          const rrand = seededRand(87);
+          if (sStage < 3) {
+            const nRocks = sStage <= 1 ? 11 : 5;           // 가득 vs 절반
+            const rubble = new THREE.Group();
+            for (let i = 0; i < nRocks; i++) {
+              const rs = 0.16 + rrand() * 0.22;
+              const rk = new THREE.Mesh(new THREE.BoxGeometry(rs, rs * (0.7 + rrand() * 0.5), rs * (0.8 + rrand() * 0.4)),
+                lamb(rubblePal[Math.floor(rrand() * rubblePal.length)]));
+              rk.position.set(SX + (rrand() - 0.5) * (stepW - 0.2), baseY + rs / 2 + rrand() * 0.25 * (sStage <= 1 ? 1 : 0.5), baseZ - rrand() * 0.6);
+              rk.rotation.set(rrand() * 0.6, rrand() * Math.PI, rrand() * 0.6);
+              rk.castShadow = rk.receiveShadow = true;
+              rubble.add(rk);
+            }
+            stairs.add(rubble);
+          } else {
+            // 완공: 돌무더기 대신 통로 안쪽에서 새어나오는 희미한 빛 (진입은 여전히 불가 — 1.4 대기)
+            const glow = new THREE.Mesh(new THREE.PlaneGeometry(stepW - 0.2, 1.6),
+              new THREE.MeshBasicMaterial({ color: 0x3a4a55, transparent: true, opacity: 0.5, fog: false, side: THREE.DoubleSide }));
+            glow.position.set(SX, baseY + 0.8, baseZ - 0.7);
+            stairs.add(glow);
+          }
+        }
         bunkerStairsObj = stairs; // 상호작용 대상
         store.add(stairs);
 
@@ -2903,6 +2934,7 @@ const state = {
   hasCutter: false,       // 절단기 보유 (공업지대 드랍)
   rooftopSlate: 'gapped', // 옥탑 슬레이트 지붕: 'gapped'(2장 빠짐)|'full'(보수 완료) (#53)
   rooftopGardenStage: 0,  // 옥상 텃밭 성장 단계 0=새싹 1=줄기 2=결실 (겨울엔 휴면, 시각만) (#53)
+  projects: {},           // 대형 프로젝트 진행 (1.1 ARC-02): { [id]: { stage, invested } }. 미착수 프로젝트는 키 없음.
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -3173,6 +3205,7 @@ function loadSave() {
       if (state.hasCutter == null) state.hasCutter = false;
       if (state.rooftopSlate == null) state.rooftopSlate = 'gapped'; // #53
       if (state.rooftopGardenStage == null) state.rooftopGardenStage = 0; // #53
+      if (state.projects == null || typeof state.projects !== 'object') state.projects = {}; // 1.1 대형 프로젝트 (ARC-02): 구세이브(부재) → {}
       if (state.deco == null || typeof state.deco !== 'object') state.deco = {}; // #13 꾸미기
       if (data.state.questIdx === undefined) state.questIdx = (state.day > 1 || state.successes > 0) ? -1 : 0;
       if (!SHELTERS[state.current]) state.current = 'container';
@@ -5549,6 +5582,44 @@ function openCraftModal() {
     }
     bunkerHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🛖 ${LName(SHELTERS.bunker)}</div>${projRows.join('')}`;
   }
+  // 대형 프로젝트 (1.1 ARC-02) — 현재 조건을 만족하는 프로젝트 카드. 진행 게이지(투입/필요) + 남은 자재 req-chip.
+  let projHtml = '';
+  const availProjects = Object.keys(PROJECTS).filter(pid => projectAvailable(pid));
+  if (availProjects.length) {
+    const cards = availProjects.map(pid => {
+      const p = PROJECTS[pid];
+      const rec = projectRec(pid);
+      const done = projectDone(pid);
+      const nStages = p.stages.length;
+      const totalNeed = p.stages.reduce((a, s) => a + s.need, 0);
+      const investedTotal = p.stages.slice(0, rec.stage).reduce((a, s) => a + s.need, 0) + (done ? 0 : rec.invested);
+      const pct = Math.round((investedTotal / totalNeed) * 100);
+      if (done) {
+        return `<div class="prep-row sel" style="cursor:default">
+          <span>${p.icon} ${t('proj.' + pid + '.name')}</span>
+          <span class="p-eff" style="font-size:10px">${t('proj.done')}</span>
+          <span style="color:var(--good);font-size:11px">${t('craft.installed')}</span>
+        </div>`;
+      }
+      const st = p.stages[rec.stage];
+      const cost = BAL.projects[st.costKey];
+      // 남은 자재 대조 칩 (이주 UX req-chip 재사용): 이번 stage 남은 투입 횟수 × 회당 자재
+      const remaining = st.need - rec.invested;
+      const chips = Object.entries(cost).map(([rid, per]) => {
+        const need = per; const have = state.res[rid] || 0;
+        return `<span class="req-chip ${have >= need ? 'ok' : 'lack'}">${resIcon(rid)} ${have}/${need}</span>`;
+      }).join('');
+      const ok = resHasAll(cost);
+      return `<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default;flex-wrap:wrap">
+        <span>${p.icon} ${t('proj.' + pid + '.name')}</span>
+        <span class="p-eff" style="font-size:10px;flex:1">${t('proj.stageOf', { cur: rec.stage + 1, total: nStages })} · ${t('proj.progress', { pct, inv: investedTotal, need: totalNeed })}</span>
+        <span class="req-chips" style="display:inline-flex;gap:4px">${chips}</span>
+        <button class="pixel-btn" data-proj="${pid}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('proj.workBtn')}</button>
+        <div style="flex-basis:100%;font-size:10px;color:var(--text-dim);margin-top:2px">${t('proj.' + pid + '.stage' + (rec.stage + 1))} <span style="opacity:.7">(${t('proj.stageRemain', { n: remaining })})</span></div>
+      </div>`;
+    }).join('');
+    projHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🏗️ ${t('proj.header')}</div><div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${t('proj.intro')}</div>${cards}`;
+  }
   // 옥탑 슬레이트 보수 프로젝트 (#53) — 옥탑에서만. 빠진 슬레이트 2장 채우기(건축재 1). 벙커 천장과 동일 문법.
   let rooftopHtml = '';
   if (state.current === 'rooftop') {
@@ -5594,7 +5665,7 @@ function openCraftModal() {
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('craft.intro')}</div>${rows}
     <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>
     <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}
-    ${bunkerHtml}${rooftopHtml}${decoHtml}`);
+    ${bunkerHtml}${rooftopHtml}${projHtml}${decoHtml}`);
   $('modal-body').querySelectorAll('button[data-deco]').forEach(b =>
     b.addEventListener('click', () => {
       const [kind, id] = b.dataset.deco.split(':');
@@ -5638,6 +5709,27 @@ function openCraftModal() {
       playSfx('craft');
       scheduleSave(); renderResBar(); updateHud();
       openCraftModal();
+    }));
+  $('modal-body').querySelectorAll('button[data-proj]').forEach(b =>
+    b.addEventListener('click', () => {
+      const pid = b.dataset.proj;
+      const r = investProject(pid);
+      if (!r) return; // 자재 부족 등 — investProject가 토스트 처리
+      state.stats.craft = (state.stats.craft || 0) + 1; // 공사도 "손을 쓴 일"로 집계 (제작 통계 재사용)
+      if (r === 'done') {
+        toast(t('proj.' + pid + '.doneToast'));
+        state.dayLog.notes.push(t('proj.' + pid + '.doneToast'));
+      } else if (r === 'stage') {
+        toast(t('proj.stageDone'));
+        state.dayLog.notes.push(t('proj.' + pid + '.workNote'));
+      } else {
+        toast(t('proj.worked'));
+        state.dayLog.notes.push(t('proj.' + pid + '.workNote'));
+      }
+      playSfx('craft');
+      scheduleSave(); renderResBar(); updateHud();
+      // investProject가 벙커 재빌드로 모달을 닫았을 수 있음 → 열려 있을 때만 갱신
+      if ($('modal-back').classList.contains('show')) openCraftModal();
     }));
   $('modal-body').querySelectorAll('button[data-craft]').forEach(b =>
     b.addEventListener('click', () => {
@@ -5693,6 +5785,89 @@ function rebuildBunkerGeometry() {
   loadShelter('bunker');
   closeModal();
   shadowDirty();
+}
+
+/* ============================================================
+   대형 프로젝트 엔진 (1.1 ARC-02) — 범용. 콘텐츠는 projects.js PROJECTS 테이블.
+   state.projects[id] = { stage, invested }. 여러 날 자재를 붓는 장기 목표.
+   1.2~1.4는 PROJECTS 항목 + BAL.projects 비용 + proj.* i18n + site 3D만 추가한다(이 코드 무수정).
+============================================================ */
+// 프로젝트가 지금 노출 조건을 만족하는가 (EVENTS.when 스키마 부분집합 + needsFlag).
+function projectAvailable(id) {
+  const p = PROJECTS[id];
+  if (!p) return false;
+  const w = p.when;
+  if (w) {
+    if (w.shelters && !w.shelters.includes(state.current)) return false;
+    if (w.districts && !w.districts.includes(districtRegionOf(state.current))) return false;
+    if (w.seasons && !w.seasons.includes(seasonOf().id)) return false;
+    if (w.minDay != null && state.day < w.minDay) return false;
+    if (w.needsMod && !hasMod(w.needsMod)) return false;
+    if (w.needsFlag && !state[w.needsFlag]) return false; // state 불리언 게이트 (예: bunkerBackdoor)
+  }
+  return true;
+}
+// 진행 레코드 (없으면 미착수 기본값). 완공 판정은 stage >= stages.length.
+function projectRec(id) {
+  return state.projects?.[id] || { stage: 0, invested: 0 };
+}
+function projectDone(id) {
+  const p = PROJECTS[id]; if (!p) return false;
+  return projectRec(id).stage >= p.stages.length;
+}
+// 현재 현장 오브젝트 단계 (SHELTER 3D 표현이 읽는다). 완공=doneSiteStage, 진행중=현 stage의 siteStage, 미착수=0.
+function projectSiteStage(id) {
+  const p = PROJECTS[id]; if (!p) return 0;
+  const rec = projectRec(id);
+  if (rec.stage >= p.stages.length) return p.doneSiteStage;
+  const st = p.stages[rec.stage];
+  return st ? st.siteStage : 0;
+}
+// stage 완료 시 효과 적용. 효과는 데이터 키로 분기 — 실제 효과는 여기 switch에 등록.
+// 파일럿(clearPassage.done)은 코스메틱 전용이라 상태 부수효과 없음(현장 오브젝트 교체 + 수첩 기록이 곧 보상).
+function applyProjectEffect(effectKey) {
+  if (!effectKey) return;
+  switch (effectKey) {
+    case 'clearPassage.done': break; // 코스메틱 + 수첩 기록만 (1.4 복선). 부수효과 없음.
+    default: break; // 1.2~1.4 확장이 여기에 case를 추가한다.
+  }
+}
+// 프로젝트 완공 시 수첩 "그 해의 공사" 자동 기록 (memoir 문법 재사용 — pendingWinterMemoir 큐에 적재).
+function recordProjectMemoir(id) {
+  const p = PROJECTS[id]; if (!p || !p.memoirKey) return;
+  if (!Array.isArray(state.pendingWinterMemoir)) state.pendingWinterMemoir = [];
+  state.pendingWinterMemoir.push({
+    titleId: 'proj.memoir.title',
+    bodyId: p.memoirKey,
+    bodyArgs: { day: state.day },
+  });
+}
+// 자재 1회 투입 → invested++. stage 완료 시 효과+현장 갱신+(완공 시)수첩 기록. 반환: 'invested'|'stage'|'done'|false.
+function investProject(id) {
+  const p = PROJECTS[id];
+  if (!p || !projectAvailable(id) || projectDone(id)) return false;
+  const rec = state.projects[id] || { stage: 0, invested: 0 };
+  const st = p.stages[rec.stage];
+  const cost = BAL.projects[st.costKey];
+  if (!resConsumeAll(cost)) { toast(t('toast.needMaterial')); return false; }
+  rec.invested++;
+  state.projects[id] = rec;
+  let result = 'invested';
+  if (rec.invested >= st.need) {
+    // stage 완료
+    applyProjectEffect(st.effectKey);
+    rec.stage++;
+    rec.invested = 0;
+    result = 'stage';
+    if (rec.stage >= p.stages.length) {
+      // 프로젝트 완공
+      recordProjectMemoir(id);
+      result = 'done';
+    }
+  }
+  // 현장 오브젝트가 벙커 지오메트리에 있으면 재빌드로 단계 교체 (현재 셸터 한정).
+  if (p.site === 'stairRubble' && state.current === 'bunker') rebuildBunkerGeometry();
+  return result;
 }
 
 /* ============================================================
@@ -9071,6 +9246,8 @@ window.__shelter = {
   dropMemo, dropBroadcast, tryDropMemoOnExpedition, tryRadioBroadcast, doctorFragmentsComplete,
   collectMemo, memosCollected, broadcastsCollected, recordDistantLight, addMoodBuff,
   showMemoPage, showBroadcastModal, openJournalModal, bunkerComfortBonus, rebuildBunkerGeometry,
+  // 1.1 대형 프로젝트 (ARC-02) QA 훅
+  PROJECTS, projectAvailable, projectRec, projectDone, projectSiteStage, investProject,
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,

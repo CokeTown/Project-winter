@@ -171,4 +171,15 @@ export const BAL = {
   deco: {
     themeSetComfort: 3, // 테마 세트 1개 충족 시 분위기(mood) 축 쾌적 가산
   },
+
+  /* ── 대형 프로젝트 (1.1 신규, ARC-02) ──
+     투입 1회당 지불 자재. costKey는 projects.js PROJECTS[*].stages[*].costKey 와 짝.
+     game.js 엔진이 BAL.projects[costKey]로 해석해 resConsumeAll에 넘긴다.
+     파일럿(clearPassage)은 코스메틱 검증용이라 소량. 항구/선로 등 실제 콘텐츠 프로젝트의
+     총 자재량 게이트(노말 12~20일치 잉여)는 각 확장 배치에서 시뮬 캘리브레이션한다. */
+  projects: {
+    // 파일럿: 벙커 통로 정리 — 1단계 큰 돌(건축재 1×3회=3), 2단계 잔해(건축재 1×2회=2). 총 건축재 5.
+    clearPassage1: { material: 1 }, // 1단계 큰 돌 걷어내기 (투입 1회당)
+    clearPassage2: { material: 1 }, // 2단계 잔해 쓸어내기 (투입 1회당)
+  },
 };
