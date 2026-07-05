@@ -475,7 +475,7 @@ export const STR = {
   'shelter.moveRefit':{ ko: '정비 후 이주', en: 'Refit & move' },
   'shelter.move':     { ko: '이주', en: 'Move' },
   'shelter.noCostNeed':{ ko: '자원 부족: {cost}', en: 'Not enough: {cost}' },
-  'shelter.reqLabel': { ko: '필요 물자', en: 'Required' },
+  'shelter.reqLabel': { ko: '필요 물자 (보유/필요)', en: 'Required (have / need)' },
   'upkeep.none':      { ko: '없음', en: 'none' },
 
   /* ── 제작대 ── */
@@ -505,6 +505,7 @@ export const STR = {
   'deco.wall':      { ko: '벽지', en: 'Wallpaper' },
   'deco.floor':     { ko: '바닥재', en: 'Flooring' },
   'deco.free':      { ko: '무료', en: 'Free' },
+  'deco.noWall':    { ko: '유리 벽엔 벽지를 바를 곳이 없다. 바닥재는 얼마든지.', en: 'Glass walls leave nowhere for wallpaper. The floor is fair game.' },
   'deco.applied':   { ko: '🎨 {name} 적용', en: '🎨 Applied {name}' },
   'deco.themeHeader':{ ko: '🏅 테마 세트', en: '🏅 Theme Sets' },
   'deco.themeBonus': { ko: '분위기 +{n}', en: 'Ambience +{n}' },

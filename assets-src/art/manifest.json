@@ -1120,6 +1120,76 @@
       "fit": "cover",
       "dest": "assets-src/art/out/events/ev_smuggler.png",
       "prompt": "A shadowy smuggler in a heavy oilskin coat standing on a frozen pier beside a small boat loaded with crates, offering goods by the light of a swinging lantern, snow drifting over dark harbor water, distant ruined cranes silhouetted. Cozy pixel art illustration, isometric-leaning cinematic angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "icon_sys_edit",
+      "purpose": "시스템 버튼 아이콘: icon_sys_edit",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_sys_edit.png",
+      "prompt": "a chunky adjustable wrench with orange grip, diagonal. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+    },
+    {
+      "id": "icon_sys_pause",
+      "purpose": "시스템 버튼 아이콘: icon_sys_pause",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_sys_pause.png",
+      "prompt": "two thick vertical rounded bars, bright amber yellow. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+    },
+    {
+      "id": "icon_sys_play",
+      "purpose": "시스템 버튼 아이콘: icon_sys_play",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_sys_play.png",
+      "prompt": "a thick rounded triangle play symbol pointing right, bright green. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+    },
+    {
+      "id": "icon_sys_auto",
+      "purpose": "시스템 버튼 아이콘: icon_sys_auto",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_sys_auto.png",
+      "prompt": "a cute boxy robot head with round cyan eyes and a small antenna. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+    },
+    {
+      "id": "icon_sys_settings",
+      "purpose": "시스템 버튼 아이콘: icon_sys_settings",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_sys_settings.png",
+      "prompt": "a chunky metal gear wheel with eight teeth, warm steel gray with orange center. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+    },
+    {
+      "id": "icon_sys_quest",
+      "purpose": "시스템 버튼 아이콘: icon_sys_quest",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_sys_quest.png",
+      "prompt": "a red push pin stuck at an angle with a small round shadow. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+    },
+    {
+      "id": "icon_sys_check",
+      "purpose": "시스템 버튼 아이콘: icon_sys_check",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_sys_check.png",
+      "prompt": "a thick rounded green checkmark. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     }
   ]
 }

@@ -37,7 +37,7 @@
       <div id="title-tools">
         <button class="pixel-btn" id="t-export" data-i18n-title="title.tools.export" title="세이브 내보내기">💾</button>
         <button class="pixel-btn" id="t-import" data-i18n-title="title.tools.import" title="세이브 가져오기">📂</button>
-        <button class="pixel-btn" id="t-settings" data-i18n-title="title.tools.settings" title="설정">⚙️</button>
+        <button class="pixel-btn" id="t-settings" data-i18n-title="title.tools.settings" title="설정"><img class="sys-icon" src="img/icons/icon_sys_settings.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('⚙️'))"></button>
       </div>
     </div>
     <div id="title-ver" data-i18n="title.ver">Nine Winters · web build</div>
@@ -89,14 +89,14 @@
   <button class="cam-btn" id="cam-zin" data-i18n-title="cam.zin.title" title="줌 인">＋</button>
   <button class="cam-btn" id="cam-zout" data-i18n-title="cam.zout.title" title="줌 아웃">－</button>
   <button class="cam-btn" id="cam-home" data-i18n-title="cam.home.title" title="시점 초기화">⌂</button>
-  <button class="cam-btn" id="btn-edit" data-i18n-title="btn.edit.title" title="배치 모드">🔧</button>
-  <button class="cam-btn" id="btn-pause" data-i18n-title="btn.pause.title" title="일시정지 (P)">⏸</button>
-  <button class="cam-btn" id="btn-auto" data-i18n-title="btn.auto.title" title="자동 진행">🤖</button>
+  <button class="cam-btn" id="btn-edit" data-i18n-title="btn.edit.title" title="배치 모드"><img class="sys-icon" src="img/icons/icon_sys_edit.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('🔧'))"></button>
+  <button class="cam-btn" id="btn-pause" data-i18n-title="btn.pause.title" title="일시정지 (P)"><img class="sys-icon" src="img/icons/icon_sys_pause.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('⏸'))"></button>
+  <button class="cam-btn" id="btn-auto" data-i18n-title="btn.auto.title" title="자동 진행"><img class="sys-icon" src="img/icons/icon_sys_auto.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('🤖'))"></button>
 </div>
 <div id="pause-ind" data-i18n="pause.ind">⏸ 일시정지</div>
 <!-- #14 게임패드 가상 커서 — 패드 입력 시에만 표시(마우스 이동 시 숨김) -->
 <div id="pad-cursor" aria-hidden="true"></div>
-<button class="cam-btn" id="btn-gear" data-i18n-title="btn.gear.title" title="설정" style="display:none">⚙️</button>
+<button class="cam-btn" id="btn-gear" data-i18n-title="btn.gear.title" title="설정" style="display:none"><img class="sys-icon" src="img/icons/icon_sys_settings.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('⚙️'))"></button>
 
 <button class="pixel-btn danger" id="btn-cancel-place" data-i18n="btn.cancelPlace">✖ 배치 취소</button>
 
@@ -192,7 +192,7 @@
 <div class="panel" id="toolbar"></div>
 
 <div id="quest-card">
-  <div class="q-head">📌 <span data-i18n="quest.head">할 일</span></div>
+  <div class="q-head"><img class="sys-icon" src="img/icons/icon_sys_quest.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('📌'))"> <span data-i18n="quest.head">할 일</span></div>
   <div class="q-lore" id="quest-lore"></div>
   <div class="q-body">
     <div class="q-icon" id="quest-icon"></div>
@@ -201,7 +201,7 @@
       <div class="q-prog" id="quest-prog"></div>
     </div>
   </div>
-  <div class="q-check" id="quest-check">✅</div>
+  <div class="q-check" id="quest-check"><img class="sys-icon" src="img/icons/icon_sys_check.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('✅'))"></div>
 </div>
 
 <!-- 인게임 확인창 — window.confirm(브라우저 네이티브 알림창) 대체. 모달 위에도 뜬다(z 70) -->

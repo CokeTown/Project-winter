@@ -1241,11 +1241,25 @@ function BP(parent, w, h, d, c, x = 0, y = 0, z = 0) {
   m.position.set(x, y, z); m.castShadow = m.receiveShadow = true;
   parent.add(m); return m;
 }
+// ── 꾸미기(#13) 명시 태깅 시스템 (B-①) ──
+//   휴리스틱(넓고 얇은 박스=바닥, stdWall 재질=벽)만으로는 커스텀 지오메트리 셸터에서 벽지/바닥재가 조용히
+//   안 먹는 먹튀 버그가 났다(버스/벙커/온실/여객선/등대/지하철). 각 셸터 buildRoom이 벽 재질·바닥 메시를
+//   직접 태깅하고, applyDeco는 "명시 태그 우선, 없으면 기존 휴리스틱 폴백"으로 찾는다.
+// 벽지 대상 재질 태깅 — stdWall 안/밖 어디서든 호출 가능. baseMap(원본 map) 1회 스냅.
+function tagDecoWall(mat) {
+  if (mat && mat.userData) { mat.userData.isWallMat = true; if (!('baseMap' in mat.userData)) mat.userData.baseMap = mat.map || null; }
+  return mat;
+}
+// 바닥재 대상 메시 태깅 — 지오메트리가 휴리스틱(넓고 얇은 수평 박스)에 안 걸리는 좁은/특수 바닥용.
+function tagDecoFloor(mesh) {
+  if (mesh) mesh.userData.isDecoFloor = true;
+  return mesh;
+}
 function stdWall(len, h, mat, opts = {}) {
   const g = new THREE.Group();
   const t = 0.22;
   // 꾸미기(#13): 벽지 교체 대상 재질 태깅. 공유 재질이라 셸터당 1회만 표시하면 충분.
-  if (mat && mat.userData) { mat.userData.isWallMat = true; if (!mat.userData.baseMap) mat.userData.baseMap = mat.map || null; }
+  tagDecoWall(mat);
   if (!opts.window) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(len, h, t), mat);
     m.position.y = h / 2; m.castShadow = m.receiveShadow = true;
@@ -1419,7 +1433,7 @@ const SHELTERS = {
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ map: plywoodTex }));
       floor.material.color.setHex(0xffffff);
       floor.position.y = -0.125; floor.receiveShadow = true;
-      roomGroup.add(floor);
+      tagDecoFloor(floor); roomGroup.add(floor);
       // 받침 블록
       for (const [bx, bz] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]])
         B(roomGroup, 0.6, 0.5, 0.6, 0x4c4a46, bx, -0.5, bz);
@@ -1515,9 +1529,9 @@ const SHELTERS = {
       const { w, d, h } = ROOM;
       const conc = wallPhong({ map: concreteTex });
       conc.userData.shared = true;
-      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, 0.3, d + 0.8), conc);
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, 0.3, d + 0.8), conc.clone());
       floor.position.y = -0.15; floor.receiveShadow = true;
-      roomGroup.add(floor);
+      tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 바닥은 conc.clone() — 포치/전실과 재질 분리해 바닥재만 교체
       // 입구 앞 콘크리트 포치 (컨셉아트의 앞마당)
       const porch = new THREE.Mesh(new THREE.BoxGeometry(w * 0.7, 0.22, 1.8), conc);
       porch.position.set(0, -0.19, d / 2 + 1.2);
@@ -1525,9 +1539,10 @@ const SHELTERS = {
       roomGroup.add(porch);
       B(roomGroup, w + 1.4, 0.7, d + 1.4, 0x2b2e36, 0, -0.65, 0);
 
-      // 뒷벽: 벽돌 + 문 + 액자
+      // 뒷벽: 벽돌 + 문 + 액자 — (B-①) 벙커의 유일한 곧은 내벽. 벽지 대상(돔 곡면은 제외).
       const brickMat = wallPhong({ map: brickTex });
       brickMat.userData.shared = true;
+      tagDecoWall(brickMat);
       const back = new THREE.Group();
       const bw = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.24), brickMat);
       bw.position.y = h / 2; bw.castShadow = bw.receiveShadow = true;
@@ -1864,9 +1879,9 @@ const SHELTERS = {
       // ── 콘크리트 슬래브 (넓게 — 마당 공간 확보) ──
       const slabW = S.backX + S.frontX, slabD = S.backZ + S.frontZ;
       const slabCX = (S.frontX - S.backX) / 2, slabCZ = (S.frontZ - S.backZ) / 2;
-      const slab = new THREE.Mesh(new THREE.BoxGeometry(slabW, 0.35, slabD), conc);
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(slabW, 0.35, slabD), conc.clone());
       slab.position.set(slabCX, -0.175, slabCZ); slab.receiveShadow = true;
-      roomGroup.add(slab);
+      tagDecoFloor(slab); roomGroup.add(slab); // (B-①) 옥탑 바닥재 대상 (벽지는 없음 — 개방형 파라펫)
       // 슬래브 이음 라인 (방수 이음새 느낌)
       for (let gx = -1; gx <= 1; gx++) B(roomGroup, 0.05, 0.02, slabD, 0x4a4a48, slabCX + gx * slabW / 4, 0.01, slabCZ);
       // ── 콘크리트 파라펫(난간) — 슬래브 가장자리, 일부 파손 ──
@@ -1920,6 +1935,7 @@ const SHELTERS = {
       // ── 가벽 방 (콘크리트 옥탑 구조물 뼈대 + 주워 모은 패널/합판 가벽) ──
       // 방은 원점 중심. 컬링용 벽 4장 + 문 개구부(+z). 슬레이트 지붕은 별도(rooftopSlate).
       const plyMat = wallPhong({ map: plywoodTex }); plyMat.userData.shared = true;
+      tagDecoWall(plyMat); // (B-①) 옥탑 가벽의 합판 낱장 — 벽지 대상 (색판 낱장은 폐허 자재감 유지)
       // 뒤섞인 판자 팔레트 (색·재질 뒤섞인 도시 폐허 자재)
       const panelCols = [0x8a7350, 0x6e6350, 0x7d6a4a, 0x5f6a6e, 0x86745a, 0x655b48, 0x6a6660];
       // 콘크리트 옥탑 뼈대 기둥 4개 (모서리)
@@ -2043,7 +2059,7 @@ const SHELTERS = {
       const fm = wallPhong({ map: floorWoodTex }); fm.userData.shared = true;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), fm);
       floor.position.y = -0.15; floor.receiveShadow = true;
-      roomGroup.add(floor);
+      tagDecoFloor(floor); roomGroup.add(floor);
       B(roomGroup, w + 1.0, 0.5, d + 1.0, 0x2b2e36, 0, -0.55, 0);
       B(roomGroup, w + 1.6, 1.0, d + 1.6, 0x2f333c, 0, -1.15, 0);
       const wallMat = wallPhong({ map: wallWoodTex });
@@ -2212,7 +2228,9 @@ const SHELTERS = {
       const busY = 0x9a7a2f, busD = 0x7a6226;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.22, d + 0.5), wallPhong({ color: 0x6a5a44 }));
       floor.position.y = -0.11; floor.receiveShadow = true;
-      roomGroup.add(floor);
+      tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 좁은 통로 바닥 — 명시 태그(휴리스틱 폭 탈락 방지)
+      // (B-①) 실내 측면 패널(하부 노란 철판) 공유 벽지 재질 — 3벽이 공유. 벽지 교체 대상.
+      const busWallMat = tagDecoWall(wallPhong({ color: busY })); busWallMat.userData.shared = true;
       // 차대 + 바퀴
       B(roomGroup, w + 0.7, 0.4, d + 0.3, 0x3a3733, 0, -0.42, 0);
       for (const [wx, wz] of [[-w / 2 + 1.1, -d / 2 - 0.2], [-w / 2 + 1.1, d / 2 + 0.2], [w / 2 - 1.1, -d / 2 - 0.2], [w / 2 - 1.1, d / 2 + 0.2]]) {
@@ -2229,7 +2247,8 @@ const SHELTERS = {
       const mkBusWall = (len, seed) => {
         const g = new THREE.Group();
         const rand = seededRand(seed);
-        BP(g, len, 1.0, 0.16, busY, 0, 0.5, 0);
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(len, 1.0, 0.16), busWallMat); // 하부 측면 패널 = 벽지 대상
+        panel.position.set(0, 0.5, 0); panel.castShadow = panel.receiveShadow = true; g.add(panel);
         BP(g, len, 0.14, 0.18, busD, 0, 1.06, 0);
         const nWin = Math.floor(len / 0.95);
         for (let i = 0; i < nWin; i++) {
@@ -2325,11 +2344,12 @@ const SHELTERS = {
       const { w, d, h } = ROOM;
       const conc = wallPhong({ map: concreteTex });
       conc.userData.shared = true;
-      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), conc);
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), conc.clone());
       floor.position.y = -0.15; floor.receiveShadow = true;
-      roomGroup.add(floor);
+      tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 승강장 바닥재 대상 (conc.clone으로 벽 타일과 분리)
       const tileMat = wallPhong({ map: subwayTileTex });
       tileMat.userData.shared = true;
+      tagDecoWall(tileMat); // (B-①) 승강장 안쪽 타일 벽 = 벽지 대상 (기둥도 같은 타일 — 함께 교체됨)
       // 뒷벽(타일) + 역명판 + 노선도
       const back = new THREE.Group();
       const bw = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.24), tileMat);
@@ -2434,11 +2454,12 @@ const SHELTERS = {
     upkeep: { res: 'water', n: 1, every: 1, label: '깨끗한 물 1 / 일 (급수)', labelEn: 'Clean water 1 / day (irrigation)' },
     stormRepair: ['snow'], moveCost: { material: 3, water: 2 },
     limits: '❄️ 유리 지붕 — 눈 오는 날엔 건축재 1로 보수 (없으면 청결 -8)', limitsEn: '❄️ Glass roof — snowy days need 1 material to patch (else cleanliness -8)',
+    noWallpaper: true, // (B-①) 유리 벽 — 벽지 미대상. 바닥재만 가능.
     buildRoom() {
       const { w, d, h } = ROOM;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ color: 0x6b5a44 }));
       floor.position.y = -0.125; floor.receiveShadow = true;
-      roomGroup.add(floor);
+      tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 온실 흙바닥 → 바닥재 대상
       B(roomGroup, w + 0.9, 0.4, d + 0.9, 0x4a4640, 0, -0.42, 0);
       // 유리벽 (반투명 + 흰 프레임, 컬링 대상)
       const mkGlass = (len, seed) => {
@@ -2609,15 +2630,21 @@ const SHELTERS = {
     perk: { failSalvage: true, produce: { food: 1 }, produceNote: '🎣 밤낚시로 물고기를 잡았습니다', produceNoteEn: '🎣 Caught a fish with night fishing', label: '🎣 낚시 — 매일 음식 +1 · 탐험 실패에도 자원 일부 회수', labelEn: '🎣 Fishing — food +1 daily · salvage some resources even on failed expeditions' },
     upkeep: { res: 'parts', n: 1, every: 3, label: '부품 1 / 3일 (배수 펌프)', labelEn: 'Parts 1 / 3 days (bilge pump)' },
     dailyDirt: 2, moveCost: { parts: 3, material: 2 }, limits: '💧 바다의 습기 — 청결이 매일 2 더 빨리 떨어짐', limitsEn: '💧 Sea damp — cleanliness drops 2 faster each day',
+    // (B-②) 연안 페리 외형 리워크: 흰 상부 구조 + 측면 연속 창문 줄 + 선체 적/청 밴드 + 2층 데크 실루엣 +
+    //   난간 + 소형 굴뚝. ROOM 인테리어(치수/가구 좌표/이주 로직/퍽) 불변 — 외형 메시만 교체.
+    //   선실 벽(-z)은 배치A 마운트 앵커(z≈-3.78, 상단 2.5)와 호환 유지. 새 벽/천장은 컬링 태그 적용.
     buildRoom() {
       const { w, d, h } = ROOM;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), wallPhong({ color: 0x7a6248 }));
       floor.position.y = -0.15; floor.receiveShadow = true;
-      roomGroup.add(floor);
+      tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 선실 바닥재 대상
       for (let i = 0; i < 8; i++) B(roomGroup, w + 0.6, 0.02, 0.06, 0x5d452c, 0, 0.02, -d / 2 + 0.4 + i * 0.85);
-      // 선체 (아래로 이어지는 흘수선)
-      B(roomGroup, w + 1.6, 5.5, d + 1.6, 0x5c3a30, 0, -3.0, 0);
-      B(roomGroup, w + 1.8, 0.7, d + 1.8, 0x2a2622, 0, -5.6, 0);
+      // ── 선체: 흰 선측 + 적/청 도색 밴드 (연안 페리 특유의 색띠) + 어두운 흘수선 ──
+      B(roomGroup, w + 1.6, 3.0, d + 1.6, 0xdad6cc, 0, -1.75, 0);          // 흰 선측 상부
+      B(roomGroup, w + 1.62, 0.42, d + 1.62, 0xb43b30, 0, -0.55, 0);       // 적색 밴드
+      B(roomGroup, w + 1.62, 0.42, d + 1.62, 0x2f5f8a, 0, -1.05, 0);       // 청색 밴드
+      B(roomGroup, w + 1.7, 2.4, d + 1.7, 0x4a2f28, 0, -3.5, 0);           // 하부 선체(흘수 아래)
+      B(roomGroup, w + 1.8, 0.7, d + 1.8, 0x1f1a17, 0, -5.6, 0);           // 용골 밑동
       // 흰 난간 (항상 표시)
       const mkRail = (len, x, z, rotY) => {
         const g = new THREE.Group();
@@ -2638,40 +2665,75 @@ const SHELTERS = {
       mkRail(d + 0.5, -w / 2 - 0.25, 0, Math.PI / 2);
       mkRail(d + 0.5, w / 2 + 0.25, 0, Math.PI / 2);
       wallList = [];
-      // 선실 벽 (뒤쪽, 흰 강판 + 둥근 창)
+      // ── 선실 벽(선수미 방향 뒤쪽, -z) = 흰 상부 구조 + 연속 창문 줄. 벽지 대상 + 컬링. ──
+      //   높이 2.5 유지(상단 y=2.5) → 배치A 벽 마운트 앵커 호환. cabinMat 공유(벽지 교체).
+      const cabinMat = tagDecoWall(wallPhong({ color: 0xdad6cc })); cabinMat.userData.shared = true;
       const cabinW = new THREE.Group();
-      const cw = new THREE.Mesh(new THREE.BoxGeometry(w, 2.5, 0.3), wallPhong({ color: 0xd0ccc0 }));
-      cw.position.y = 1.25; cw.castShadow = cw.receiveShadow = true;
+      const CWH = 2.5;
+      const cw = new THREE.Mesh(new THREE.BoxGeometry(w, CWH, 0.3), cabinMat);
+      cw.position.y = CWH / 2; cw.castShadow = cw.receiveShadow = true;
       cabinW.add(cw);
-      for (let i = 0; i < 4; i++) {
-        const port = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.1, 12), lamb(0x8a8f96));
-        port.rotation.x = Math.PI / 2;
-        port.position.set(-3.2 + i * 2.1, 1.5, 0.18);
-        cabinW.add(port);
-        const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 12), lamb(0x2c3a4a));
-        glass.rotation.x = Math.PI / 2;
-        glass.position.set(-3.2 + i * 2.1, 1.5, 0.19);
-        cabinW.add(glass);
+      // 연속 창문 줄 (긴 띠 유리 + 창틀 멀리언) — 페리 여객 라운지 창
+      const bandY = 1.55, bandH = 0.8;
+      const band = new THREE.Mesh(new THREE.BoxGeometry(w - 1.2, bandH, 0.14), lamb(0x243746));
+      band.position.set(-0.3, bandY, 0.16); cabinW.add(band);
+      const bandTop = new THREE.Mesh(new THREE.BoxGeometry(w - 1.0, 0.1, 0.18), lamb(0x9a958a));
+      bandTop.position.set(-0.3, bandY + bandH / 2 + 0.05, 0.16); cabinW.add(bandTop);
+      const bandBot = bandTop.clone(); bandBot.position.y = bandY - bandH / 2 - 0.05; cabinW.add(bandBot);
+      const nMul = Math.floor((w - 1.2) / 0.85);
+      for (let i = 0; i <= nMul; i++) {
+        const mx = -0.3 - (w - 1.2) / 2 + i * ((w - 1.2) / nMul);
+        B(cabinW, 0.07, bandH, 0.16, 0x9a958a, mx, bandY, 0.17);
       }
+      // 여객 승강문 (우현 쪽)
       const door2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.9, 0.1), lamb(0x6a4f33));
-      door2.position.set(3.6, 0.95, 0.18);
+      door2.position.set(3.9, 0.95, 0.18);
       cabinW.add(door2);
-      // 녹 줄무늬
+      B(cabinW, 1.02, 2.0, 0.06, 0x8a857a, 3.9, 1.0, 0.14); // 문틀
+      // 옅은 녹/때 줄무늬 (세월감)
       const rr = seededRand(21);
-      for (let i = 0; i < 5; i++) {
-        const rust = new THREE.Mesh(new THREE.BoxGeometry(0.2 + rr() * 0.3, 0.6 + rr() * 0.8, 0.05), lamb(0x8a5138));
-        rust.position.set(-w / 2 + 1 + rr() * (w - 2), 0.6 + rr() * 1.2, 0.17);
+      for (let i = 0; i < 4; i++) {
+        const rust = new THREE.Mesh(new THREE.BoxGeometry(0.15 + rr() * 0.22, 0.5 + rr() * 0.7, 0.05), lamb(0x9a7358));
+        rust.position.set(-w / 2 + 1 + rr() * (w - 2), 0.55 + rr() * 0.9, 0.17);
         cabinW.add(rust);
       }
       cabinW.position.set(0, 0, -d / 2 - 0.28);
       makeWalls([{ group: cabinW, pos: [0, 0, -d / 2 - 0.28], rotY: 0, normal: new THREE.Vector3(0, 0, -1) }]);
-      // 굴뚝 (선실 뒤로)
-      const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.85, 3.4, 10), lamb(0xa84a3f));
-      stack.position.set(1.6, 3.6, -d / 2 - 1.4);
-      stack.rotation.z = 0.06;
-      stack.castShadow = true;
-      roomGroup.add(stack);
-      B(roomGroup, 1.7, 0.4, 1.7, 0x2a2622, 1.6, 5.3, -d / 2 - 1.5);
+      // ── 2층 데크 실루엣: 선실 지붕(=1층 천장) + 2층 상부 구조 + 상부 난간 + 창 ──
+      //   지붕은 실내 상부를 덮으므로 천장 컬링 등록(⑥-a/배치A 부감 투시). 선실 벽 뒤(-z)에 얹는다.
+      const superZ = -d / 2 - 0.28;             // 선실 벽면 z
+      const deck2 = new THREE.Group();
+      const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.18, 2.4), lamb(0xcfcabf));
+      roofSlab.position.set(0, CWH + 0.09, superZ - 0.9); roofSlab.castShadow = roofSlab.receiveShadow = true;
+      deck2.add(roofSlab);
+      tagCeiling(roofSlab, CWH);                 // 부감에서 1층 천장(지붕) 투시
+      // 2층 벽체(뒤로 물러난 상부 구조) — 흰 벽 + 작은 창 줄
+      const upH = 1.7;
+      const upWall = new THREE.Mesh(new THREE.BoxGeometry(w - 1.0, upH, 1.8), lamb(0xdad6cc));
+      upWall.position.set(0, CWH + 0.18 + upH / 2, superZ - 1.1); upWall.castShadow = true; deck2.add(upWall);
+      const upBand = new THREE.Mesh(new THREE.BoxGeometry(w - 2.0, 0.5, 0.12), lamb(0x243746));
+      upBand.position.set(0, CWH + 0.18 + upH * 0.62, superZ - 1.1 + 0.9); deck2.add(upBand);
+      for (let i = 0; i <= 6; i++) B(deck2, 0.06, 0.5, 0.14, 0x9a958a, -(w - 2.0) / 2 + i * ((w - 2.0) / 6), CWH + 0.18 + upH * 0.62, superZ - 1.1 + 0.9);
+      // 상부 데크 난간(선실 지붕 앞쪽 가장자리)
+      const upRail = new THREE.Group();
+      const rfm = lamb(0xc8c4b8);
+      for (let i = 0; i <= Math.round((w) / 1.0); i++) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.06), rfm); p.position.set(-w / 2 + i * (w / Math.round(w / 1.0)), 0.25, 0); upRail.add(p); }
+      const upTop = new THREE.Mesh(new THREE.BoxGeometry(w + 0.1, 0.06, 0.08), rfm); upTop.position.y = 0.5; upRail.add(upTop);
+      upRail.position.set(0, CWH + 0.18, superZ + 0.15); deck2.add(upRail);
+      roomGroup.add(deck2);
+      // ── 소형 굴뚝(페리 색띠 도색) — 2층 상부 구조 뒤 ──
+      const funnel = new THREE.Group();
+      const fbody = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.62, 1.8, 12), lamb(0xdad6cc));
+      fbody.position.y = 0.9; funnel.add(fbody);
+      B(funnel, 1.18, 0.4, 1.05, 0xb43b30, 0, 1.35, 0); // 적색 띠 (박스로 감싸 색띠 강조)
+      const fcap = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.18, 12), lamb(0x2a2622));
+      fcap.position.y = 1.82; funnel.add(fcap);
+      funnel.position.set(1.6, CWH + 0.18 + upH, superZ - 1.1);
+      funnel.rotation.z = 0.03; funnel.children.forEach(c => c.castShadow = true);
+      roomGroup.add(funnel);
+      // 마스트 + 삼각기 (실루엣 포인트)
+      Cyl(roomGroup, 0.04, 0.05, 2.2, 0x55504a, -2.6, CWH + 0.18 + upH + 1.1, superZ - 0.6, 5);
+      B(roomGroup, 0.5, 0.3, 0.02, 0xc45540, -2.35, CWH + 0.18 + upH + 1.7, superZ - 0.6);
       // 낚싯대 + 구명튜브 (고정 소품)
       const rod = new THREE.Group();
       Cyl(rod, 0.02, 0.03, 2.2, 0x6a4f33, 0, 1.0, 0, 5).rotation.z = -0.7;
@@ -2761,9 +2823,11 @@ const SHELTERS = {
       const { w, d, h } = ROOM;
       const conc = wallPhong({ map: concreteTex });
       conc.userData.shared = true;
-      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.7, 0.3, d + 0.7), conc);
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.7, 0.3, d + 0.7), conc.clone());
       floor.position.y = -0.15; floor.receiveShadow = true;
-      roomGroup.add(floor);
+      tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 등탑 거실 바닥재 대상
+      // (B-①) 실내 회벽 공유 벽지 재질 — 4면이 공유. 붉은 굽도리 밴드는 원본 유지(스타일 앵커).
+      const lhWallMat = tagDecoWall(wallPhong({ color: 0xd8d0c4 })); lhWallMat.userData.shared = true;
       // 등대 몸통 (아래로, 홍백 줄무늬)
       for (let i = 0; i < 5; i++) {
         const seg = new THREE.Mesh(new THREE.CylinderGeometry(3.6 + i * 0.22, 3.6 + (i + 1) * 0.22, 3.2, 14), lamb(i % 2 ? 0xb84a3f : 0xd8d0c4));
@@ -2774,7 +2838,7 @@ const SHELTERS = {
       const mkWall = (len, seed) => {
         const g = new THREE.Group();
         const rand = seededRand(seed);
-        const wallM = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.26), wallPhong({ color: 0xd8d0c4 }));
+        const wallM = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.26), lhWallMat);
         wallM.position.y = h / 2; wallM.castShadow = wallM.receiveShadow = true;
         g.add(wallM);
         const base = new THREE.Mesh(new THREE.BoxGeometry(len, 0.35, 0.28), lamb(0xb84a3f));
@@ -2913,7 +2977,7 @@ const SHELTERS = {
       const hullC = 0x384a55, deckC = 0x6a5a44;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.28, d + 0.6), wallPhong({ color: deckC }));
       floor.position.y = -0.14; floor.receiveShadow = true;
-      roomGroup.add(floor);
+      tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 예인선 갑판 바닥재 대상
       // 갑판 널
       for (let i = 0; i < 6; i++) B(roomGroup, w + 0.6, 0.02, 0.05, 0x54452f, 0, 0.015, -d / 2 + 0.5 + i * 0.7);
       // 선체 (물속으로 이어지는 통통한 예인선 몸통)
@@ -2927,7 +2991,7 @@ const SHELTERS = {
       }
       // 조타실 (뒤쪽 벽 — 컬링 대상) + 둥근 창
       const wheelhouse = new THREE.Group();
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 2.2, 0.28), wallPhong({ color: 0xc4c0b4 }));
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 2.2, 0.28), tagDecoWall(wallPhong({ color: 0xc4c0b4 }))); // (B-①) 조타실 벽 = 벽지 대상
       wall.position.y = 1.1; wall.castShadow = wall.receiveShadow = true;
       wheelhouse.add(wall);
       for (let i = 0; i < 3; i++) {
@@ -2996,10 +3060,11 @@ const SHELTERS = {
     perk: { forecast: true, forecastLead: 1, expBonus: 0.02, label: '🔭 고층 전망 — 날씨 예보 · 한파 예보 +1일 · 성공률 +2%p', labelEn: '🔭 High vantage — weather forecast · cold-snap lead +1 day · success +2%p' },
     upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (관제 콘솔)', labelEn: 'Battery 1 / day (control console)' },
     moveCost: { parts: 3, material: 3 }, limits: '🌬️ 사방 유리 — 비/눈 오는 날 쾌적함 -6', limitsEn: '🌬️ Glass on all sides — comfort -6 on rainy/snowy days', cold: 6,
+    noWallpaper: true, // (B-①) 사방 유리 전망 벽 — 벽지 미대상. 바닥재만 가능.
     buildRoom() {
       const { w, d, h } = ROOM;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), wallPhong({ map: concreteTex }));
-      floor.position.y = -0.15; floor.receiveShadow = true; roomGroup.add(floor);
+      floor.position.y = -0.15; floor.receiveShadow = true; tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 관제탑 바닥재 대상
       // 지지 기둥(탑 몸통) — 방 아래로 길게
       B(roomGroup, w * 0.7, 16, d * 0.7, 0x4a4640, 0, -8, 0);
       B(roomGroup, w + 1.2, 0.4, d + 1.2, 0x2a2824, 0, -0.4, 0);
@@ -3282,6 +3347,16 @@ function resConsumeAll(cost) {
 }
 function costLabel(cost) {
   return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(' + ');
+}
+// (B-④) 보유/필요 대조 칩 공통 렌더러 — 이주 창·프로젝트 카드·셸터 카드 전부 이 한 곳을 쓴다.
+//   [아이콘 이름 보유/필요] 형태로 자원 이름을 병기(아이콘+숫자만으론 무슨 아이템인지·무슨 수치인지 모른다는 신고).
+//   keep-all 조판으로 이름이 줄바꿈으로 잘리지 않게. ok=충족(green)/lack=부족(red) 색 구분 유지.
+function reqChip(rid, have, need) {
+  const ok = have >= need;
+  return `<span class="req-chip ${ok ? 'ok' : 'lack'}">${resIcon(rid)}<span class="rq-name">${LName(RESOURCES[rid])}</span> ${have}/${need}</span>`;
+}
+function reqChips(cost) {
+  return Object.entries(cost).map(([rid, need]) => reqChip(rid, state.res[rid] || 0, need)).join('');
 }
 // 신선식품 우선 → 통조림 순으로 food n개를 대체 소비 (부족하면 아무것도 소비하지 않고 false)
 function hasAnyFood(n = 1) { return ((state.res.food || 0) + (state.res.canned || 0)) >= n; }
@@ -5995,6 +6070,8 @@ function applyDecoChoice(kind, id) {
   if (!state.deco) state.deco = {};
   if (!state.deco[state.current]) state.deco[state.current] = {};
   const slot = kind === 'wall' ? 'wall' : 'floor';
+  // (B-①) 벽지 미대상 셸터(유리 벽 등)는 벽지 적용을 게임식 문구로 차단 — 자원 먹튀 원천 차단.
+  if (slot === 'wall' && SHELTERS[state.current]?.noWallpaper) { toast(t('deco.noWall')); return; }
   const table = kind === 'wall' ? WALLPAPERS : FLOORINGS;
   const def = table[id];
   if (!def) return;
@@ -6023,21 +6100,36 @@ function applyDeco() {
   roomGroup.traverse(o => {
     const mat = o.material;
     if (mat && mat.userData && mat.userData.isWallMat) {
+      if (!('baseWallColor' in mat.userData) && mat.color) mat.userData.baseWallColor = mat.color.getHex();
       const target = (d.wall && d.wall !== 'default') ? wallTex : (mat.userData.baseMap || null);
-      if (mat.map !== target) { mat.map = target; mat.needsUpdate = true; }
+      if (mat.map !== target) {
+        mat.map = target; mat.needsUpdate = true;
+        // (B-①) 색상만 있던 벽(버스 등)에 벽지 map을 씌우면 색 곱연산으로 물든다 → 흰색으로. 되돌리면 원색 복원.
+        if (target && mat.color) mat.color.setHex(0xffffff);
+        else if (!target && mat.userData.baseWallColor != null && mat.color) mat.color.setHex(mat.userData.baseWallColor);
+      }
     }
   });
-  // ── 바닥재 ── (셸터별 지오메트리라 휴리스틱으로 바닥 메시 식별: 넓고(≥ROOM폭*0.8) 얇은(≤0.4) 수평 박스)
+  // ── 바닥재 ── (B-①) 명시 태그(userData.isDecoFloor) 우선. 태그된 바닥이 하나도 없으면 기존 휴리스틱
+  //   (넓고 ≥ROOM폭*0.8, 얇은 ≤0.4, 지면 근처 수평 박스)으로 폴백 — 좁은 바닥(버스 등)이 조용히 탈락하지 않게.
   const floorTex = decoTex('floor', d.floor);
-  roomGroup.traverse(o => {
-    if (!o.isMesh || !o.geometry?.parameters) return;
-    const p = o.geometry.parameters;
-    if (p.width == null || p.height == null || p.depth == null) return;
-    const isFloor = p.height <= 0.4 && p.width >= ROOM.w * 0.8 && p.depth >= ROOM.d * 0.8 && o.position.y <= 0.2;
-    if (!isFloor) return;
+  let tagged = [];
+  roomGroup.traverse(o => { if (o.isMesh && o.userData.isDecoFloor) tagged.push(o); });
+  const targets = tagged.length ? tagged : (() => {
+    const out = [];
+    roomGroup.traverse(o => {
+      if (!o.isMesh || !o.geometry?.parameters) return;
+      const p = o.geometry.parameters;
+      if (p.width == null || p.height == null || p.depth == null) return;
+      if (p.height <= 0.4 && p.width >= ROOM.w * 0.8 && p.depth >= ROOM.d * 0.8 && o.position.y <= 0.2) out.push(o);
+    });
+    return out;
+  })();
+  for (const o of targets) {
     const mat = o.material;
-    if (!mat || !mat.userData) return;
+    if (!mat || !mat.userData) continue;
     if (!('baseFloorMap' in mat.userData)) mat.userData.baseFloorMap = mat.map || null;
+    if (!('baseFloorColor' in mat.userData) && mat.color) mat.userData.baseFloorColor = mat.color.getHex();
     const target = (d.floor && d.floor !== 'default') ? floorTex : mat.userData.baseFloorMap;
     if (mat.map !== target) {
       mat.map = target; mat.needsUpdate = true;
@@ -6045,7 +6137,7 @@ function applyDeco() {
       if (target && mat.color) mat.color.setHex(0xffffff);
       else if (!target && mat.userData.baseFloorColor != null) mat.color.setHex(mat.userData.baseFloorColor);
     }
-  });
+  }
 }
 
 // 가구는 파밍이 아니라 제작이 기본 (파밍은 극히 드문 행운)
@@ -6163,12 +6255,9 @@ function openCraftModal() {
       }
       const st = p.stages[rec.stage];
       const cost = BAL.projects[st.costKey];
-      // 남은 자재 대조 칩 (이주 UX req-chip 재사용): 이번 stage 남은 투입 횟수 × 회당 자재
+      // 남은 자재 대조 칩 (이주 UX req-chip 재사용): 이번 stage 남은 투입 횟수 × 회당 자재. (B-④) 공통 렌더러.
       const remaining = st.need - rec.invested;
-      const chips = Object.entries(cost).map(([rid, per]) => {
-        const need = per; const have = state.res[rid] || 0;
-        return `<span class="req-chip ${have >= need ? 'ok' : 'lack'}">${resIcon(rid)} ${have}/${need}</span>`;
-      }).join('');
+      const chips = reqChips(cost);
       const ok = resHasAll(cost);
       return `<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default;flex-wrap:wrap">
         <span>${p.icon} ${t('proj.' + pid + '.name')}</span>
@@ -6268,7 +6357,9 @@ function openCraftModal() {
   const decoHtml = `
     <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('deco.header')}</div>
     <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${t('deco.intro')}</div>
-    <div style="font-size:11px;margin-bottom:3px">${t('deco.wall')}</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${decoSwatches('wall', WALLPAPERS, dcur.wall)}</div>
+    <div style="font-size:11px;margin-bottom:3px">${t('deco.wall')}</div>${sh.noWallpaper
+      ? `<div style="font-size:10px;color:var(--text-dim);margin-bottom:8px;padding:6px 8px;border:1px dashed var(--border);border-radius:4px">${t('deco.noWall')}</div>`
+      : `<div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${decoSwatches('wall', WALLPAPERS, dcur.wall)}</div>`}
     <div style="font-size:11px;margin-bottom:3px">${t('deco.floor')}</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${decoSwatches('floor', FLOORINGS, dcur.floor)}</div>
     <div style="font-size:11px;color:var(--accent);margin:8px 0 4px">${t('deco.themeHeader')}</div>${themeHtml}`;
   openModal(t('craft.title'), `
@@ -8286,7 +8377,8 @@ function setPaused(p) {
   paused = p;
   document.body.classList.toggle('paused', p);
   const b = $('btn-pause');
-  if (b) b.textContent = p ? '▶' : '⏸';
+  // (B-③) 재생/일시정지 아이콘 — icon() 폴백 구조(아트 있으면 표시, 없으면 이모지). 시스템 버튼 통일.
+  if (b) b.innerHTML = p ? icon('icon_sys_play', '▶', 'sys-icon') : icon('icon_sys_pause', '⏸', 'sys-icon');
 }
 let reportQueued = false;
 let lastAutoHour = -1;
@@ -8655,12 +8747,8 @@ function openShelterModal() {
       let btn = '';
       if (unlocked && !cur) {
         const { cost, cross, renov } = moveCostFor(id);
-        // 보유/필요 대조 칩 — 이주 로직이 소비하는 동일한 cost 객체에서 렌더 (하드코딩 금지)
-        const chips = Object.entries(cost).map(([rid, need]) => {
-          const have = state.res[rid] || 0;
-          const okItem = have >= need;
-          return `<span class="req-chip ${okItem ? 'ok' : 'lack'}">${resIcon(rid)} ${have}/${need}</span>`;
-        }).join('');
+        // 보유/필요 대조 칩 — 이주 로직이 소비하는 동일한 cost 객체에서 렌더 (하드코딩 금지). (B-④) 공통 렌더러.
+        const chips = reqChips(cost);
         costLine = chips
           ? `<div class="s-desc" style="color:var(--text-dim)">${t('shelter.reqLabel')}</div><div class="req-chips">${chips}</div>`
           : '';
