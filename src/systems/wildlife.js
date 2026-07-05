@@ -91,9 +91,9 @@ export function makeWildlifeSystem(ctx) {
     if (antler) {
       for (const ex of [-1, 1]) {
         const a = new THREE.Group(); a.position.set(ex * PX * s, 2.6 * PX * s, -0.3 * PX * s); head.add(a);
-        if (sp.nameEn === 'mountain goat') { a.rotation.x = 0.5; B(a, 0.6 * PX * s, 4 * PX * s, 0.6 * PX * s, antler, 0, 2 * PX * s, 0); }
-        else { B(a, 0.5 * PX * s, 3.2 * PX * s, 0.5 * PX * s, antler, 0, 1.6 * PX * s, 0);
-               B(a, 0.5 * PX * s, 1.8 * PX * s, 0.5 * PX * s, antler, ex * 1 * PX * s, 3 * PX * s, 0); }
+        // 사슴 가지뿔 (산양은 종 제외 — 디렉터 판단: 지리 정합. 뿔 문법은 사슴 단일)
+        B(a, 0.5 * PX * s, 3.2 * PX * s, 0.5 * PX * s, antler, 0, 1.6 * PX * s, 0);
+        B(a, 0.5 * PX * s, 1.8 * PX * s, 0.5 * PX * s, antler, ex * 1 * PX * s, 3 * PX * s, 0);
       }
     }
     // 꼬리 (그룹 — 살랑). 여우/쥐=길게, 토끼=뭉툭 흰공

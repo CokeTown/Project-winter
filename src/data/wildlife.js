@@ -49,22 +49,18 @@ export const WILDLIFE_SPECIES = {
     palette: { fur: 0x4a4038, belly: 0x5a5048, ear: 0x6a4a48, nose: 0xc08078, eye: 0x140f0a, tailTip: 0x6a4a48 },
     nameKo: '쥐', nameEn: 'rat',
   },
-  goat: {
-    kind: 'quad', sizeH: 0.40, gait: 0.42, shy: 2.8,
-    palette: { fur: 0xd8d2c4, belly: 0xe8e4da, ear: 0xa89e8c, nose: 0x2a2420, eye: 0x140f0a, antler: 0x3a3128 },
-    nameKo: '산양', nameEn: 'mountain goat',
-  },
+  // 산양(goat)은 디렉터 판단으로 제외(지리 정합 — 2026-07). 고원/초지는 사슴이 대신한다.
 };
 
 // 구역(district)별 등장 종. districtOf(shelterId) 결과 키. 셸터별 override 는 SHELTER_WILDLIFE.
 export const DISTRICT_WILDLIFE = {
   outskirts: ['rabbit', 'crow'],
   city:      ['strayCat', 'crow'],
-  meadow:    ['rabbit', 'goat'],
+  meadow:    ['rabbit', 'deer'],
   forest:    ['deer', 'fox'],
   coast:     ['seagull', 'crow'],
   harbor:    ['seagull', 'rat'],
-  highland:  ['goat', 'crow'],
+  highland:  ['deer', 'crow'],
   research:  ['crow'],
 };
 
