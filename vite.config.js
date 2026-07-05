@@ -1,5 +1,9 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { readFileSync } from 'node:fs';
+
+// 타이틀 하단 버전 표기의 단일 출처 — bump-version.ps1이 package.json만 올리면 따라온다.
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 // base 경로는 배포 대상에 따라 다르다:
 // - GitHub Pages(기본 build): 프로젝트 사이트 하위 경로 /Project-winter-Rep/
@@ -7,6 +11,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 // - 로컬 dev/preview: 서버 루트 '/'
 export default defineConfig(({ command, mode }) => ({
   base: mode === 'electron' ? './' : command === 'build' ? '/Project-winter-Rep/' : '/',
+  define: { __APP_VER__: JSON.stringify(pkg.version) },
   server: {
     host: true, // 0.0.0.0 바인딩 — 같은 네트워크의 휴대폰에서 접속 가능
     port: process.env.PORT ? Number(process.env.PORT) : 8420,

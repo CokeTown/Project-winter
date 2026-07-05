@@ -7547,16 +7547,20 @@ let lastWallMask = -1;
 // instant=true(셸터 로드 직후): 페이드 없이 즉시 확정 — 입장 시 벽이 서서히 나타나는 어색함 방지.
 function updateWallCulling(dt = 0, instant = false) {
   if (!wallList.length) return;
+  // 타이틀 배경은 '닫힌 집' 외경으로 보여준다 — 인게임용 투시 컬링이 타이틀에서도 벽을 열면
+  // 컨테이너가 바닥+뒷벽만 남은 T자 골조로 보임(실기기 신고 재발분). 게임 진입(hideTitle) 시
+  // 기존 페이드로 근벽이 스르륵 열리며 실내 진입. 지하(subway)는 보여줄 외경이 없어 제외.
+  const closedHome = titleVisible && !SHELTERS[state.current]?.indoor;
   const dir = new THREE.Vector3().subVectors(camera.position, camCenter).normalize();
   let mask = 0;
   wallList.forEach((w, i) => {
-    const show = w.normal.dot(dir) < 0.25;
+    const show = closedHome || w.normal.dot(dir) < 0.25;
     setCullTarget(w.group, show, instant);
     // 마스크는 "표시 목표" 기준(그림자 갱신 트리거) — 페이드 완료 대기 없이 그림자가 따라오게.
     if (show) mask |= 1 << i;
   });
   if (mask !== lastWallMask) { lastWallMask = mask; shadowDirty(); }
-  updateCeilCulling(instant);
+  updateCeilCulling(instant, closedHome);
   // 진행 중인 페이드 전진
   if (dt > 0 && !opts.reduceMotion) {
     for (const w of wallList) { const cs = w.group.userData.cull; if (cs) tickCullFade(cs, w.group, dt); }
@@ -7568,9 +7572,9 @@ function updateWallCulling(dt = 0, instant = false) {
 //   위(부감/사선)에 있을 때 숨겨 실내를 보이게 한다. 수평 앵글(카메라가 천장 높이 아래)에서는 천장이 보여
 //   아늑함이 유지된다. 임계각은 렌더 상수(아래 CEIL_CULL_MARGIN)로 실측 튜닝 — BAL이 아니라 순수 렌더 값.
 const CEIL_CULL_MARGIN = 0.3; // 카메라 y가 (천장y + 이 여유)보다 높으면 부감으로 보고 천장을 숨긴다.
-function updateCeilCulling(instant = false) {
+function updateCeilCulling(instant = false, closedHome = false) {
   for (const rf of ceilCullList) {
-    const above = camera.position.y > rf.y + CEIL_CULL_MARGIN;
+    const above = !closedHome && camera.position.y > rf.y + CEIL_CULL_MARGIN;
     setCullTarget(rf.group, !above, instant); // above(부감)=숨김 목표 → show=false
   }
 }

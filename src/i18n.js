@@ -10,6 +10,11 @@
 
 export let lang = 'ko';
 
+// 앱 버전 — vite.config의 define(__APP_VER__)이 package.json version을 주입한다.
+// (v0.9.1 하드코딩이 11번의 버전업 동안 방치됐던 실기기 신고 — 단일 출처로 교정)
+// typeof 가드는 node 직실행(게이트 스크립트) 폴백.
+const APP_VER = (typeof __APP_VER__ !== 'undefined') ? __APP_VER__ : 'dev';
+
 export function setLang(l) {
   lang = (l === 'en') ? 'en' : 'ko';
   return lang;
@@ -71,7 +76,7 @@ export const STR = {
   'title.new':      { ko: '✚ 새 게임', en: '✚ New Game' },
   'title.load':     { ko: '💾 불러오기', en: '💾 Load' },
   'title.help':     { ko: '📖 생존 수첩', en: '📖 Survivor\'s Journal' },
-  'title.ver':      { ko: 'Nine Winters · v0.9.1 Beta', en: 'Nine Winters · v0.9.1 Beta' },
+  'title.ver':      { ko: `Nine Winters · v${APP_VER} Beta`, en: `Nine Winters · v${APP_VER} Beta` },
   'title.tools.export':  { ko: '세이브 내보내기', en: 'Export save' },
   'title.tools.import':  { ko: '세이브 가져오기', en: 'Import save' },
   'title.tools.settings':{ ko: '설정', en: 'Settings' },
