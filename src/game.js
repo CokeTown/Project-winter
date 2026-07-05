@@ -4109,6 +4109,7 @@ function removeItem(item) {
   disposeDeep(item.group);
   const i = items.indexOf(item);
   if (i >= 0) items.splice(i, 1);
+  catSupportDirty = true; // ⑥a: 다음 틱에 퍼치 중인 고양이 지지면 유효성 1회 검사 (사라졌으면 hop 착지)
   shadowDirty();
 }
 function recolorItem(item, colorIdx) {
@@ -4932,6 +4933,7 @@ function resolveExpedition() {
    고양이 동반자 (v1.9) — Day 100+ 인카운터로 입양
 ============================================================ */
 let catObj = null, _catSpawning = false;
+let catSupportDirty = false; // ⑥a: 가구 제거 직후 1틱 플래그 — 퍼치 고양이 지지면 재검사 트리거
 // 관절형 치즈 태비 (v1.9.1) — 몸통(호흡)·머리·귀·꼬리 2마디·다리 4개가 따로 움직인다
 /* ============================================================
    리깅된 GLB 고양이 (public/models/riggedcat.glb)
@@ -5218,7 +5220,49 @@ function pickNextCatMode(c) {
 }
 // 고양이가 올라앉을 수 있는 가구 상면 높이 (surface 정의가 없는 것들)
 const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2 };
+// ⑥a: 퍼치 중인 고양이 발밑에 아직 지지면이 있는가 — findSupport/AABB 문법 재사용.
+//   (x,z)가 어떤 가구 상면 사각 안이고 그 상면 높이가 baseY와 대략 일치하면 유효.
+function catSupportValid(c) {
+  const x = c.g.position.x, z = c.g.position.z;
+  for (const i of items) {
+    if (i.support) continue; // 상판 위 소품은 지지면이 아니다
+    const sr = surfaceRectOf(i);
+    const topY = sr ? sr.y : CAT_PERCH_Y[i.defId];
+    if (topY == null) continue;
+    if (Math.abs(topY - c.baseY) > 0.12) continue; // 높이 불일치 — 다른 층
+    const rw = sr ? sr.w : footprintOf(i).w * 0.6;
+    const rd = sr ? sr.d : footprintOf(i).d * 0.5;
+    if (Math.abs(x - i.x) <= rw / 2 + 0.15 && Math.abs(z - i.z) <= rd / 2 + 0.15) return true;
+  }
+  return false;
+}
+// ⑥a: 지지 가구가 회수되어 허공에 뜬 고양이를 기존 hop 연출로 바닥에 착지시킨다 (순간이동 금지).
+function catDropToFloor(c) {
+  const x = c.g.position.x, z = c.g.position.z;
+  // 착지점: 바라보는 방향부터 8방위로 훑어 막히지 않은 바닥 지점. 전부 막히면 제자리 수직 착지.
+  let tx = x, tz = z;
+  for (let k = 0; k < 8; k++) {
+    const a = c.g.rotation.y + k * (Math.PI / 4);
+    const cx = THREE.MathUtils.clamp(x + Math.sin(a) * 0.55, -(ROOM.w / 2 - 0.4), ROOM.w / 2 - 0.4);
+    const cz = THREE.MathUtils.clamp(z + Math.cos(a) * 0.55, -(ROOM.d / 2 - 0.4), ROOM.d / 2 - 0.4);
+    if (!catPointBlocked(cx, cz, 0)) { tx = cx; tz = cz; break; }
+  }
+  c.hop = { t: 0, fx: x, fz: z, fy: c.baseY, tx, tz, ty: 0 };
+  c.modeAfterHop = 'sit';
+  c.mode = 'hop';
+  c.tgt = null;
+}
 function catFreeSpot() {
+  // ⑥b: 어떤 경우에도 예외를 던지지 않는다 — 여기서 예외가 새면 spawnCat 가드(_catSpawning)가
+  //   영구 잔류해 이주 후 고양이가 다시는 소환되지 않는 회귀(1.0→1.2 신고)의 유력 경로였다.
+  //   (예: 레이아웃에 남은 미지의 defId → footprintOf가 DEFS[undefined].fp 참조로 크래시)
+  try {
+    return catFreeSpotInner();
+  } catch (e) {
+    return { x: 0, z: 0, y: 0 }; // 셸터 중앙 폴백 (예외 금지)
+  }
+}
+function catFreeSpotInner() {
   // 가구 위를 좋아한다 — 테이블/상자/서랍장 상판(surface), 침대/소파/러그/방석
   if (Math.random() < 0.45) {
     const climbs = items.filter(i => !i.support && (DEFS[i.defId].surface || CAT_PERCH_Y[i.defId] != null));
@@ -5254,28 +5298,33 @@ const USE_RIGGED_CAT = false;
 async function spawnCat() {
   if (!state.cat || catObj || _catSpawning) return;
   _catSpawning = true;
-  const s = catFreeSpot();
-  let g, parts = null, rig = null;
-  const glbScene = USE_RIGGED_CAT ? await loadCatGlbScene() : null;
-  // 로드 대기 중 상태가 바뀌었으면 취소
-  if (!state.cat || catObj) { _catSpawning = false; if (glbScene) disposeDeep(glbScene); return; }
-  if (glbScene) {
-    const n = normalizeCatGlb(glbScene);
-    g = n.wrap; rig = { bones: n.bones, rest: n.rest };
-  } else {
-    const built = buildCatMesh();
-    g = built.g; parts = built.parts;
+  // ⑥b: 가드는 try/finally로 반드시 해제한다. 종전엔 이 함수 안에서 예외가 나면 _catSpawning=true가
+  //   영구 잔류해 이후 모든 spawnCat이 조기 반환 — "이주하면 고양이가 안 따라온다" 회귀(1.0→1.2)의 브릭 경로.
+  try {
+    const s = catFreeSpot();
+    let g, parts = null, rig = null;
+    const glbScene = USE_RIGGED_CAT ? await loadCatGlbScene() : null;
+    // 로드 대기 중 상태가 바뀌었으면 취소
+    if (!state.cat || catObj) { if (glbScene) disposeDeep(glbScene); return; }
+    if (glbScene) {
+      const n = normalizeCatGlb(glbScene);
+      g = n.wrap; rig = { bones: n.bones, rest: n.rest };
+    } else {
+      const built = buildCatMesh();
+      g = built.g; parts = built.parts;
+    }
+    g.position.set(s.x, s.y, s.z);
+    g.rotation.y = Math.random() * Math.PI * 2;
+    scene.add(g);
+    catObj = {
+      g, p: parts, rig, rigged: !!rig,
+      mode: 'sit', timer: 5 + Math.random() * 8, tgt: null,
+      gait: 0, earKick: 0, earNext: 2 + Math.random() * 5, baseY: s.y,
+    };
+    shadowDirty();
+  } finally {
+    _catSpawning = false;
   }
-  g.position.set(s.x, s.y, s.z);
-  g.rotation.y = Math.random() * Math.PI * 2;
-  scene.add(g);
-  catObj = {
-    g, p: parts, rig, rigged: !!rig,
-    mode: 'sit', timer: 5 + Math.random() * 8, tgt: null,
-    gait: 0, earKick: 0, earNext: 2 + Math.random() * 5, baseY: s.y,
-  };
-  _catSpawning = false;
-  shadowDirty();
 }
 function despawnCat() {
   if (!catObj) return;
@@ -5287,6 +5336,13 @@ function despawnCat() {
 function updateCat(t, dt) {
   if (!catObj) return;
   const c = catObj, p = c.p;
+  // ⑥a: 가구 제거 직후 1회 — 퍼치(baseY>0.12) 중인데 발밑 지지면이 사라졌으면 hop으로 바닥 착지.
+  //   (종전: baseY가 유지된 채 허공 보행 — 코디네이터 재현 확정 버그. 순간이동 금지, 기존 hop 연출 재사용)
+  //   hop 진행 중엔 플래그를 유지했다가 착지 후 틱에서 검사한다 (제거된 가구로 점프 중이던 경우 커버).
+  if (catSupportDirty && c.mode !== 'hop') {
+    catSupportDirty = false;
+    if (c.baseY > 0.12 && !catSupportValid(c)) catDropToFloor(c);
+  }
   // ── 모드 전환
   if (c.mode !== 'walk') {
     c.timer -= dt;
@@ -10899,6 +10955,9 @@ window.__shelter = {
   // ④ 고양이 클로즈업 QA 훅
   enterCatCloseup, exitCatCloseup, catCamState: () => ({ active: catCam.active, saved: catCam.saved, center: catCam.center.toArray(), zoom: camState.zoom, dist: camState.dist }),
   setCatMode: (m) => { if (catObj) { catObj.mode = m; catObj.timer = 999; } },
+  // ⑥ 고양이 버그픽스 QA 훅: 스폰 가드 상태(⑥b 브릭 감지) + 퍼치 지지면 유효성(⑥a)
+  catSpawning: () => _catSpawning,
+  catSupportState: () => catObj ? { baseY: +catObj.baseY.toFixed(3), mode: catObj.mode, supportValid: catObj.baseY > 0.12 ? catSupportValid(catObj) : null, dirty: catSupportDirty } : null,
   // ② 쓰다듬기 연출 QA 훅: 눈 감김·갸르릉·꼬리 가속 트리거 + 상태 조회
   petCat: () => petCatResponse(),
   catPetState: () => catObj ? { petHappy: catObj.petHappy || 0, petPurr: catObj.petPurr || 0, eyesClosed: !!(catObj.p && catObj.p.faceMat && catObj.p.faceMat.map === _catFaceHappyTex) } : null,
