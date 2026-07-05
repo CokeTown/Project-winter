@@ -361,6 +361,9 @@
   }
   .map-pin .pin-rate.ok { color: var(--good); }
   .map-pin .pin-rate.lack { color: var(--bad); }
+  /* 1.2 폭설 봉쇄된 지역 (개통 구간은 예외) — 흐릿하게 + 눈송이 표식 */
+  .map-pin.blocked { opacity: 0.55; filter: grayscale(0.6); }
+  .map-pin.blocked img.px-icon { transform: none; }
   /* 현 거처 위치 표식 (지구 매핑 가능 시) */
   .map-pin.here::after {
     content: "📍"; position: absolute; top: -18px; font-size: 16px;

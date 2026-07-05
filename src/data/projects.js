@@ -74,6 +74,55 @@ export const PROJECTS = {
     ],
     doneSiteStage: 4,
   },
+
+  /* ── 1.2 「지하 노선도」 선로 복구 ×3구간 (구간별 PROJECTS 항목 1개) ──
+     지하철 셸터가 허브로 승격(state.subwayHub)한 뒤에만 노출. 각 구간은 잔해제거→침목→개통 3단계.
+     개통 효과(subway.openSegN): 연결 지역 탐험 시간 -50% + 겨울 폭설 봉쇄 무시(지하니까).
+       · seg1(subRail1) → residential  (가까운 첫 구간, 가장 값쌈)
+       · seg2(subRail2) → commercial
+       · seg3(subRail3) → industrial   (가장 먼 구간, 가장 비쌈)
+     효과 판정은 상태 플래그(state.subwayOpen[regionId]=true)로 — applyProjectEffect가 세운다.
+     현장 오브젝트(site='railSegment')는 지하철 셸터 buildEnv 선로 위에 siteStage로 표현.
+     엔진 규칙 무수정 계약: 이 테이블 추가 + applyProjectEffect switch에 case 추가(예고된 확장 지점)만. */
+  subRail1: {
+    id: 'subRail1',
+    when: { shelters: ['subway'], needsFlag: 'subwayHub' },
+    site: 'railSegment',
+    icon: '🚈',
+    memoirKey: 'proj.subRail1.memoir',
+    stages: [
+      { costKey: 'subRail1a', need: 3, siteStage: 1, effectKey: null },                 // 잔해 제거
+      { costKey: 'subRail1b', need: 3, siteStage: 2, effectKey: null },                 // 침목 깔기
+      { costKey: 'subRail1c', need: 2, siteStage: 3, effectKey: 'subway.openSeg1' },    // 개통 → 효과
+    ],
+    doneSiteStage: 4,
+  },
+  subRail2: {
+    id: 'subRail2',
+    when: { shelters: ['subway'], needsFlag: 'subwayHub' },
+    site: 'railSegment',
+    icon: '🚈',
+    memoirKey: 'proj.subRail2.memoir',
+    stages: [
+      { costKey: 'subRail2a', need: 4, siteStage: 1, effectKey: null },
+      { costKey: 'subRail2b', need: 3, siteStage: 2, effectKey: null },
+      { costKey: 'subRail2c', need: 3, siteStage: 3, effectKey: 'subway.openSeg2' },
+    ],
+    doneSiteStage: 4,
+  },
+  subRail3: {
+    id: 'subRail3',
+    when: { shelters: ['subway'], needsFlag: 'subwayHub' },
+    site: 'railSegment',
+    icon: '🚈',
+    memoirKey: 'proj.subRail3.memoir',
+    stages: [
+      { costKey: 'subRail3a', need: 4, siteStage: 1, effectKey: null },
+      { costKey: 'subRail3b', need: 4, siteStage: 2, effectKey: null },
+      { costKey: 'subRail3c', need: 3, siteStage: 3, effectKey: 'subway.openSeg3' },
+    ],
+    doneSiteStage: 4,
+  },
 };
 
 /* ── 1.2~1.4 확장 수용성 증명 (설계 노트, 이번 배치 미구현) ────────

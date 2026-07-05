@@ -187,6 +187,21 @@ export const BAL = {
     breakwater1: { material: 1 },           // 1단계 잔해 정리 (투입 1회당) — 4회
     breakwater2: { material: 2 },           // 2단계 뼈대 세우기 (투입 1회당) — 3회
     breakwater3: { parts: 1, cloth: 1 },    // 3단계 마감(방수·지붕) (투입 1회당) — 3회
+
+    /* 1.2 선로 복구 ×3 — 잔해제거→침목→개통. 개통 시 연결 지역 탐험 -50% + 폭설 봉쇄 무시.
+       구간이 멀수록(residential→commercial→industrial) 총 자재량이 커진다(후반 잉여 싱크).
+       seg1 총: 건축재 3+3 + (부품1)×2 = 건축재6/부품2.  ~후반 12~16일치 잉여.
+       seg2 총: 건축재4+3 + (부품1)×3 = 건축재7/부품3.
+       seg3 총: 건축재4+4 + (부품1+건축재1)×3 = 건축재11/부품3. 인플레 시 이 수치를 낮춰 재캘리브레이션. */
+    subRail1a: { material: 1 },             // seg1 잔해 제거 — 3회
+    subRail1b: { material: 1 },             // seg1 침목 깔기 — 3회
+    subRail1c: { parts: 1 },                // seg1 개통(레일 체결) — 2회
+    subRail2a: { material: 1 },             // seg2 잔해 제거 — 4회
+    subRail2b: { material: 1 },             // seg2 침목 깔기 — 3회
+    subRail2c: { parts: 1 },                // seg2 개통 — 3회
+    subRail3a: { material: 1 },             // seg3 잔해 제거 — 4회
+    subRail3b: { material: 1 },             // seg3 침목 깔기 — 4회
+    subRail3c: { parts: 1, material: 1 },   // seg3 개통(가장 먼 구간) — 3회
   },
 
   /* ── 1.1 「얼어붙은 항구」 (신규 섹션) ──
@@ -221,5 +236,44 @@ export const BAL = {
     smugglerFuelNormal: 1,     // 평시: 연료 1 대가 배터리
     smugglerPartsCost: { salt: 3 }, // 소금 3 → 희귀부품 1 (항구 특산 소금의 교환 가치)
     smugglerPartsGet: 2,       // 받는 부품
+  },
+
+  /* ── 1.2 「지하 노선도」 (신규 섹션) ──
+     허브 승격·버섯 재배·암시장·폭설 봉쇄 수치. 전부 신규라 기존 BAL 불가침 원칙과 무관.
+     경제 게이트: 노말 Day60 시뮬이 기존 밴드(food+canned 40~120, 굶는 날 0)를 벗어나면
+     아래 수치(특히 mushroomFoodPerDay)를 낮춰 재캘리브레이션(기존 REGIONS/economy 수치는 손대지 않는다).
+     ※ 버섯은 지하철 셸터 전용 개조라 기본 시뮬(container)에는 영향 없음 — 밴드 불변이 구조적으로 보장된다. */
+  subway: {
+    /* 허브 승격 — 지하철 셸터를 확장 거점으로. 승격 비용(1회성): 선로 정비의 첫 삽.
+       승격해야 선로 복구 프로젝트(subRail1~3)·암시장이 열린다. */
+    hubCost: { material: 3, parts: 1 }, // 허브 승격 비용 (핸드카 정비 + 노선도 복원)
+
+    /* 버섯 재배칸(가구 개조) — 어둠에서 자라는 식량. 옥탑 텃밭(볕/여름)의 대칭축(어둠/연중).
+       옥탑 텃밭 food +2/일·겨울 휴면과 대비: 지하 버섯은 연중 생산이되 양은 절반(+1/일). 물 소모. */
+    mushroomFoodPerDay: 1,     // 버섯 재배칸 일일 음식 생산 (겨울 포함 연중 — 어둠은 계절이 없다)
+    mushroomWaterEvery: 2,     // N일마다 물 1 소모 (습기 관리) — 옥탑 텃밭보다 낮은 유지비, 낮은 산출
+    mushroomWater: 1,          // 물 소모량
+
+    /* 선로 개통 효과 — 구간별 연결 지역. openSegN 효과가 이 매핑으로 state.subwayOpen을 세운다. */
+    segRegions: { 1: 'residential', 2: 'commercial', 3: 'industrial' },
+    openTimeMult: 0.5,         // 개통 구간 연결 지역 탐험 시간 배수 (-50%)
+
+    /* 폭설 봉쇄(최소 구현) — 겨울 '눈' 날씨 중 지상 지역은 탐험 봉쇄. 개통 구간은 예외(지하 우회).
+       계절 압박의 우회로를 "건설로 산다". 결정론: 날씨(snow)+겨울 조건만으로 판정(랜덤 없음 — 재현성). */
+    blizzardBlocksExpedition: true, // 겨울 눈 날씨에 미개통 지상 지역 탐험 봉쇄 여부
+
+    /* 암시장(허브 승격 후 개방) — 잉여 물물교환 = 후반 인플레의 최종 싱크. 화폐 없음(캐논: 교환만 남았다).
+       캐논 연출: 상인도 흐르는 타인 — 얼굴 없는 교환대. 하루 교환 슬롯 제한 + 개통 구간 수로 슬롯/레이트 개선.
+       레이트는 "잉여를 덜 흔한 것으로": 흔한 자원 다수 → 귀한 자원 소량. 겨울 연료 프리미엄(항구 밀수꾼과 캐논 공유). */
+    marketBaseSlots: 2,        // 하루 기본 교환 횟수 (허브 승격 직후)
+    marketSlotsPerSeg: 1,      // 개통 구간 1개당 +1 슬롯 (선로가 물류를 늘린다)
+    marketRateBonusPerSeg: 1,  // 개통 구간 1개당 교환 산출 +1 (레이트 개선 — 아래 offers의 getBonus에 가산)
+    // 교환대 품목: give(내는 잉여) → get(받는 것). 겨울 프리미엄은 winterGive로 대체 비용 명시.
+    marketOffers: [
+      { id: 'foodToCanned', give: { food: 3 }, get: 'canned', getN: 2 },     // 남는 신선식품 → 오래 가는 통조림 (부패 싱크)
+      { id: 'materialToParts', give: { material: 4 }, get: 'parts', getN: 1 }, // 흔한 건축재 → 귀한 부품
+      { id: 'clothToBattery', give: { cloth: 4 }, get: 'battery', getN: 1 },   // 남는 천 → 배터리
+      { id: 'partsToFuel', give: { parts: 2 }, get: 'fuel', getN: 1, winterGive: { parts: 3 } }, // 부품 → 연료 (겨울엔 부품 3 — 연료 프리미엄)
+    ],
   },
 };

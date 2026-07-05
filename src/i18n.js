@@ -965,6 +965,53 @@ export const STR = {
   'ev.smuggler.r1':     { ko: '소금 자루를 넘기자 그가 부품 두 개를 던져준다. 항구의 소금은 값이 나간다.', en: 'I hand over the salt; he tosses me two parts. Harbor salt is worth something.' },
   'ev.smuggler.r2':     { ko: '그는 어깨를 으쓱하곤 닻을 올린다. 배는 안개 속으로 사라진다.', en: 'He shrugs and weighs anchor. The boat vanishes into the fog.' },
 
+  /* ── 1.2 「지하 노선도」 ── */
+  // 허브 승격
+  'subway.hubTitle':    { ko: '지하철 허브 승격', en: 'Promote to Subway Hub' },
+  'subway.hubDesc':     { ko: '핸드카를 손보고 노선도를 복원한다 — 선로 복구와 암시장이 열린다', en: 'Repair the hand-car and restore the route map — unlocks rail recovery and the black market' },
+  'subway.hubBtn':      { ko: '승격', en: 'Promote' },
+  'subway.hubDone':     { ko: '이 승강장은 이제 허브다', en: 'This platform is a hub now' },
+  'subway.hubDoneToast':{ ko: '승강장을 허브로 손봤다. 먼지 앉은 노선도를 다시 벽에 걸었다. 이제 선로를 되살리면, 저 어둠이 길이 된다.', en: 'I fixed the platform into a hub. Hung the dusty route map back on the wall. Bring the rails back to life, and that dark becomes a road.' },
+  // 폭설 봉쇄
+  'subway.blizzardBlocked': { ko: '폭설로 지상 길이 파묻혔다. 개통한 지하 노선으로만 오갈 수 있다.', en: 'Snow has buried the surface routes. Only opened subway lines get through.' },
+  // 버섯 재배칸
+  'subway.mushroomHarvest': { ko: '🍄 어둠 속 균상에서 버섯을 {n} 땄다.', en: '🍄 Picked {n} mushroom from the bed in the dark.' },
+  'subway.mushroomWater':   { ko: '균상에 물을 {n} 주었다.', en: 'Watered the mushroom bed ({n}).' },
+  'subway.mushroomDry':     { ko: '물이 없어 균상이 말랐다. 오늘은 딸 것이 없다.', en: 'No water — the bed dried out. Nothing to pick today.' },
+  // 암시장 (교환대)
+  'subway.marketTitle':   { ko: '암시장 교환대', en: 'Black-Market Counter' },
+  'subway.marketIntro':   { ko: '얼굴 없는 교환대. 쪽지와 물건만 오간다 — 남는 것을 덜 흔한 것으로.', en: 'A faceless counter. Only notes and goods change hands — surplus for something rarer.' },
+  'subway.marketRateNote':{ ko: '개통 구간 {n}개만큼 산출이 늘었다.', en: 'Opened segments (×{n}) sweeten the yield.' },
+  'subway.marketSlots':   { ko: '({left}/{total} 남음)', en: '({left}/{total} left)' },
+  'subway.marketWinter':  { ko: '겨울값', en: 'winter rate' },
+  'subway.marketTradeBtn':{ ko: '교환', en: 'Trade' },
+  'subway.marketNoSlot':  { ko: '오늘은 더 교환할 수 없다.', en: 'No more trades today.' },
+  'subway.marketTraded':  { ko: '{give}을(를) 놓고 {emoji} {name} ×{n}을(를) 챙겼다.', en: 'Left {give}, took {emoji} {name} ×{n}.' },
+  // 선로 복구 프로젝트 ×3
+  'proj.subRail1.name':   { ko: '선로 복구 · 1구간 (주거지 방면)', en: 'Rail Recovery · Segment 1 (Residential)' },
+  'proj.subRail1.stage1': { ko: '무너진 잔해로 막힌 선로부터 걷어낸다. 첫 삽이 제일 무겁다.', en: 'I clear the caved-in rubble blocking the rails. The first shovel is the heaviest.' },
+  'proj.subRail1.stage2': { ko: '썩은 침목을 걷어내고 새 침목을 깐다. 어둠 속에서 손끝으로 간격을 잰다.', en: 'I pull the rotted ties and lay new ones, gauging the spacing by fingertip in the dark.' },
+  'proj.subRail1.stage3': { ko: '레일을 이어 체결한다. 핸드카를 굴려 끝까지 밀어본다 — 통한다.', en: 'I couple the rails and bolt them down. I roll the hand-car to the end — it runs through.' },
+  'proj.subRail1.workNote': { ko: '주거지 방면 선로를 조금 되살렸다.', en: 'Brought the Residential-bound rails a little further back to life.' },
+  'proj.subRail1.doneToast':{ ko: '1구간이 개통됐다. 주거지까지 어둠 속 지름길이 열렸다 — 절반의 시간에 닿고, 폭설도 이 길은 막지 못한다.', en: 'Segment 1 is open. A shortcut to Residential runs through the dark now — half the time, and no blizzard closes this road.' },
+  'proj.subRail1.memoir': { ko: '{day}일째. 주거지 방면 첫 구간을 개통했다. 잔해를 치우고, 침목을 깔고, 레일을 이었다. 핸드카가 어둠 속을 굴러간다. 이제 눈이 아무리 쌓여도 이 길만은 열려 있다.', en: 'Day {day}. Opened the first segment toward Residential. Cleared rubble, laid ties, coupled rails. The hand-car rolls through the dark. However deep the snow, this one road stays open.' },
+  'proj.subRail2.name':   { ko: '선로 복구 · 2구간 (상업지구 방면)', en: 'Rail Recovery · Segment 2 (Commercial)' },
+  'proj.subRail2.stage1': { ko: '더 깊은 구간이다. 물이 고인 잔해를 퍼내는 일부터 시작한다.', en: 'A deeper segment. I start by bailing out the flooded rubble.' },
+  'proj.subRail2.stage2': { ko: '침목을 깐다. 벽을 타고 흐르는 물소리가 유일한 동행이다.', en: 'I lay the ties. Water running down the walls is my only company.' },
+  'proj.subRail2.stage3': { ko: '레일을 체결하고 이음매를 점검한다. 상업지구까지 길이 뚫렸다.', en: 'I bolt the rails and check the joints. The way to Commercial is through.' },
+  'proj.subRail2.workNote': { ko: '상업지구 방면 선로 공사를 진척시켰다.', en: 'Made progress on the Commercial-bound rails.' },
+  'proj.subRail2.doneToast':{ ko: '2구간이 개통됐다. 상업지구도 이제 지하로 닿는다.', en: 'Segment 2 is open. Commercial is within reach underground now.' },
+  'proj.subRail2.memoir': { ko: '{day}일째. 상업지구 방면 구간을 개통했다. 고인 물을 퍼내며 며칠을 보냈다. 이 어둠이 조금씩 내 길이 되어간다.', en: 'Day {day}. Opened the Commercial-bound segment. Days spent bailing standing water. This dark is slowly becoming my road.' },
+  'proj.subRail3.name':   { ko: '선로 복구 · 3구간 (공업지대 방면)', en: 'Rail Recovery · Segment 3 (Industrial)' },
+  'proj.subRail3.stage1': { ko: '가장 먼 구간. 무너진 천장 조각까지 치워야 한다.', en: 'The farthest segment. Even fallen ceiling has to be cleared.' },
+  'proj.subRail3.stage2': { ko: '길고 곧은 구간에 침목을 놓는다. 끝이 보이지 않는다.', en: 'I set ties along a long straight run. I can’t see the end of it.' },
+  'proj.subRail3.stage3': { ko: '마지막 레일을 잇는다. 핸드카를 굴리자, 공업지대의 찬 공기가 밀려온다.', en: 'I join the last rail. I push the hand-car, and the cold air of the Industrial yard rolls in.' },
+  'proj.subRail3.workNote': { ko: '공업지대 방면 선로를 이어붙였다.', en: 'Extended the Industrial-bound rails.' },
+  'proj.subRail3.doneToast':{ ko: '3구간이 개통됐다. 가장 먼 공업지대까지 노선이 이어졌다 — 이제 겨울이 나를 가두지 못한다.', en: 'Segment 3 is open. The line reaches the far Industrial yard — winter can’t wall me in now.' },
+  'proj.subRail3.memoir': { ko: '{day}일째. 마지막 구간, 공업지대 방면을 개통했다. 무너진 천장을 치우고 긴 직선에 침목을 놓았다. 세 갈래 노선이 어둠 아래로 뻗는다. 도시의 혈관은 아직 뛴다 — 내가 되살렸다.', en: 'Day {day}. Opened the last segment, toward the Industrial yard. Cleared collapsed ceiling, laid ties down a long straight. Three lines now reach under the dark. The city’s veins still beat — I brought them back.' },
+  // 기록 탭 지하 섹션 제목
+  'record.regionSubway':  { ko: '지하 노선', en: 'The Underground Line' },
+
   /* ── BGM ── */
   'bgm.notFound':     { ko: 'BGM 파일을 찾을 수 없습니다 (BGM 폴더)', en: 'BGM files not found (BGM folder)' },
 

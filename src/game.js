@@ -2315,6 +2315,8 @@ const SHELTERS = {
       emg.position.copy(em.position);
       envRoot.add(emg);
       envDyn = { fire: em, fireBase: 6 };
+      // 1.2 선로 복구 현장 오브젝트 (site='railSegment') — 허브 승격 후 노출. 구간 진행에 따라 자란다.
+      buildRailSegments(w, d, h);
     },
   },
 
@@ -3144,6 +3146,10 @@ const state = {
   projects: {},           // 대형 프로젝트 진행 (1.1 ARC-02): { [id]: { stage, invested } }. 미착수 프로젝트는 키 없음.
   breakwaterHut: false,   // 1.1: 방파제 오두막 완공 여부 (항구 파밍 -25% + 얼음낚시 스팟 +1)
   icefishToday: 0,        // 1.1: 오늘 얼음낚시 횟수 (하루 스팟 제한)
+  subwayHub: false,       // 1.2: 지하철 허브 승격 여부 (선로 복구·암시장 개방 게이트)
+  subwayOpen: {},         // 1.2: 개통된 지하 노선 연결 지역 { [regionId]: true } (탐험 -50% + 폭설 봉쇄 예외)
+  mushroomWaterTimer: 0,  // 1.2: 버섯 재배칸 물 소모 카운터 (mushroomWaterEvery일마다 물 1)
+  marketToday: 0,         // 1.2: 오늘 암시장 교환 횟수 (하루 슬롯 제한)
 };
 // 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
 const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
@@ -3418,6 +3424,10 @@ function loadSave() {
       if (state.breakwaterHut == null) state.breakwaterHut = false; // 1.1 항구: 방파제 오두막 완공 플래그
       if (state.icefishToday == null) state.icefishToday = 0;       // 1.1 항구: 얼음낚시 하루 스팟
       if (state.res.salt == null) state.res.salt = 0;               // 1.1 항구: 신규 자원 소금 (구세이브)
+      if (state.subwayHub == null) state.subwayHub = false;         // 1.2 지하: 허브 승격 (구세이브 → 미승격)
+      if (state.subwayOpen == null || typeof state.subwayOpen !== 'object') state.subwayOpen = {}; // 1.2 지하: 개통 구간 맵
+      if (state.mushroomWaterTimer == null) state.mushroomWaterTimer = 0; // 1.2 지하: 버섯 물 카운터
+      if (state.marketToday == null) state.marketToday = 0;         // 1.2 지하: 암시장 하루 슬롯
       if (state.deco == null || typeof state.deco !== 'object') state.deco = {}; // #13 꾸미기
       if (data.state.questIdx === undefined) state.questIdx = (state.day > 1 || state.successes > 0) ? -1 : 0;
       if (!SHELTERS[state.current]) state.current = 'container';
@@ -3908,10 +3918,14 @@ function openMapModal() {
     el.className = 'map-pin region';
     el.style.left = p.x + '%'; el.style.top = p.y + '%';
     el.title = LName(r);
+    const blocked = blizzardBlocks(rid); // 1.2: 폭설 봉쇄된 지상 지역 (개통 구간은 예외)
+    if (blocked) el.classList.add('blocked');
     const rate = Math.round(rateParts(rid).eff * 100);
     const cls = rate >= 50 ? 'ok' : 'lack';
-    el.innerHTML = `${regionIcon(rid, 'px-lg')}<span class="pin-rate ${cls}">${rate}%</span>`;
-    el.addEventListener('click', () => { closeModal(); startExpedition(rid); }); // 준비 모달 경로 그대로 (에너지/탈진/횟수 검사 포함)
+    el.innerHTML = blocked
+      ? `${regionIcon(rid, 'px-lg')}<span class="pin-rate lack">❄️</span>`
+      : `${regionIcon(rid, 'px-lg')}<span class="pin-rate ${cls}">${rate}%</span>`;
+    el.addEventListener('click', () => { closeModal(); startExpedition(rid); }); // 준비 모달 경로 그대로 (봉쇄/에너지/탈진/횟수 검사 포함)
     // 호버/선택 시 하단 정보 줄에 위험·소요·날씨 표기
     el.addEventListener('mouseenter', () => showMapInfo(rid));
     wrap.appendChild(el);
@@ -3956,6 +3970,8 @@ function expDuration(r) {
   t *= SHELTERS[state.current].perk?.timeMult || 1;
   // 1.1 방파제 오두막 완공: 항구 지역 파밍 시간 -25% (전초기지)
   if (state.breakwaterHut && (r.id === 'harborYard' || r.id === 'fishMarket')) t *= 0.75;
+  // 1.2 지하 노선 개통: 연결 지역은 탐험 시간 -50% (어둠 속 지름길). 셸터 무관 — 노선이 열려 있으면 적용.
+  if (subwayReaches(r.id)) t *= BAL.subway.openTimeMult;
   return Math.round(t);
 }
 // 게임 시간 포매터 — 게임 '분'을 받아 "N분 / N시간 / N시간 N분"으로 표기 (5분 단위 반올림).
@@ -4003,7 +4019,19 @@ function startExpedition(regionId) {
   if (isExhausted()) { toast(t('toast.exhausted')); return; }
   if (state.energy < BAL.exp.minEnergy) { toast(t('toast.tooTired')); return; }
   if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); return; }
+  if (blizzardBlocks(regionId)) { toast(t('subway.blizzardBlocked')); return; } // 1.2 폭설 봉쇄 (개통 구간은 예외)
   openPrepModal(regionId);
+}
+/* 1.2 폭설 봉쇄(최소 구현) — 겨울 '눈' 날씨엔 지상 지역 탐험 봉쇄. 개통된 지하 노선 구간은 예외(지하 우회).
+   지하철 셸터 자체는 날씨가 닿지 않지만(weatherPool clear), 봉쇄는 '목적지 지상'이 눈에 파묻히는 것이라
+   현재 어느 셸터에 있든 겨울+눈이면 판정한다. 항구 지역(harborYard/fishMarket)은 물가라 폭설 봉쇄 대상 아님. */
+const BLIZZARD_EXEMPT_REGIONS = ['harborYard', 'fishMarket']; // 지상 폭설 봉쇄에서 제외되는 지역(항구)
+function blizzardBlocks(regionId) {
+  if (!BAL.subway.blizzardBlocksExpedition) return false;
+  if (seasonOf().id !== 'winter' || weather.type !== 'snow') return false;
+  if (BLIZZARD_EXEMPT_REGIONS.includes(regionId)) return false;
+  if (subwayReaches(regionId)) return false; // 개통 구간: 지하로 돌아가므로 봉쇄 무시
+  return true;
 }
 function openPrepModal(regionId) {
   const r = REGIONS[regionId];
@@ -4862,6 +4890,14 @@ const MEMOS = {
 
   // ── 특수 (bunker) 1: 하강 계단에서만 발견 (#55, 1.4 비밀 진입로 복선) ──
   stair1: { region: 'bunker', name: '계단참의 낙서', nameEn: 'Scrawl on the Landing', desc: '이 통로는 어디로 이어질까. 군화 자국은 아래로만 나 있다.', descEn: 'Where does this passage lead? The boot prints go only downward.' },
+
+  // ── 지하 (subway) 5: 판데믹 초기 지하 대피 서사의 본진 (대피 행렬→봉쇄→핵겨울로 이어지는 결) ──
+  //   지하철 셸터 거주 중 탐험에서만 드랍(district=city, subway 풀 우선). 1인칭 발견 문법·기존 36종 문체 유지.
+  sub1: { region: 'subway', name: '승강장 안내 방송문', nameEn: 'Platform Announcement', desc: '열차 운행이 전면 중단되었습니다. 승강장에서 대기하지 마시고 지상 대피소로 이동하십시오.\n같은 방송이 반복되다, 어느 순간 뚝 끊겼다.', descEn: 'All train service has stopped. Do not wait on the platform — proceed to a surface shelter.\nThe same message looped, then cut off mid-sentence.' },
+  sub2: { region: 'subway', name: '셔터 앞의 줄', nameEn: 'The Line at the Shutter', desc: '개찰구 셔터 앞에 분필로 그은 줄, 번호가 삼백을 넘는다.\n맨 끝 번호 옆에 작게. "여기까지. 안은 다 찼다."', descEn: 'Chalk numbers queued before the gate shutter, past three hundred.\nBy the last number, small: "This far. Inside is full."' },
+  sub3: { region: 'subway', name: '궤도 위의 유모차', nameEn: 'A Pram on the Tracks', desc: '선로 자갈 위에 빈 유모차 하나가 모로 넘어져 있다. 담요는 아직 개켜진 채다.\n왜 여기 두고 갔는지는, 아무도 적어두지 않았다.', descEn: 'An empty pram lies on its side in the track gravel. The blanket is still folded.\nWhy it was left here, no one wrote down.' },
+  sub4: { region: 'subway', name: '마지막 열차 시각표', nameEn: 'Last Train Timetable', desc: '벽에 붙은 시각표에 누군가 빨간 펜으로 한 줄만 크게 동그라미 쳤다. 막차 23:40.\n그 밑에. "이걸 놓치면 걸어서 내려와라."', descEn: 'On the wall timetable, one line is circled hard in red pen: last train, 23:40.\nBeneath it: "Miss this and walk down."' },
+  sub5: { region: 'subway', name: '터널로 이어진 발자국', nameEn: 'Footprints into the Tunnel', desc: '먼지 앉은 승강장 끝, 발자국이 어둠 속 터널로 줄지어 이어진다. 돌아 나온 자국은 없다.\n그들이 지하에서 무엇을 찾으려 했는지, 나는 이제 조금 알 것 같다.', descEn: 'At the dusty platform’s end, footprints file into the dark of the tunnel. None come back.\nWhat they hoped to find underground — I think I’m beginning to understand.' },
 };
 // 유서 6종 — 지역 무관 별도 풀, 극저확률 (REQ-LORE-01)
 const WILLS = {
@@ -4875,6 +4911,8 @@ const WILLS = {
 const MEMO_REGIONS = ['residential', 'commercial', 'industrial', 'slum'];
 // 지역별 메모 id 목록 (미리 그룹핑)
 const MEMOS_BY_REGION = MEMO_REGIONS.reduce((o, rg) => { o[rg] = Object.keys(MEMOS).filter(id => MEMOS[id].region === rg); return o; }, {});
+// 1.2 지하(subway) 메모 풀 — 지하철 셸터 거주 중 탐험에서 우선 드랍(판데믹 지하 대피 서사).
+const MEMOS_SUBWAY = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'subway');
 
 /* ── 라디오 방송 12종 (REQ-RADIO-01) ──
    예보 3(계절)/행상 예고 1/과거 정부 안내 2/정체불명 음악 1/생존자 사연 2/기계 자동 방송 1/박사 일지 조각 2.
@@ -4936,6 +4974,12 @@ function tryDropMemoOnExpedition() {
     if (un.length) { const id = un[Math.floor(Math.random() * un.length)]; collectMemo(id); return { id, will: true }; }
   }
   if (Math.random() < BAL.events.memoDropChance) {
+    // 1.2 지하철 셸터 거주 중이면 지하(subway) 메모를 우선 드랍(판데믹 지하 대피 서사의 본진).
+    //   미수집 지하 메모가 있으면 그중 하나, 다 모았으면 기존 지역 풀로 폴백.
+    if (state.current === 'subway') {
+      const unSub = MEMOS_SUBWAY.filter(id => !(state.memos || {})[id]);
+      if (unSub.length) { const id = unSub[Math.floor(Math.random() * unSub.length)]; collectMemo(id); return { id, will: false }; }
+    }
     const id = pickUncollectedMemo(districtRegionOf(state.current));
     if (id) { collectMemo(id); return { id, will: false }; }
   }
@@ -5410,6 +5454,9 @@ const SHELTER_MODS = {
   // 옥상 텃밭 (#53) — rooftop 전용. 마당을 텃밭으로 개조. 매일 음식 생산(겨울 0), 옥탑 퍽 gardenMult로 2배.
   //   현재 텃밭은 rooftop 전용이라 퍽이 곧 정체성 — 다른 셸터로의 확장은 향후.
   rooftopGarden: { name: '옥상 텃밭', nameEn: 'Rooftop Garden', emoji: '🌱', cost: { material: 3, water: 2 }, desc: '마당을 텃밭으로 — 매일 음식 +2 (겨울 휴면)', descEn: 'Turn the yard into a garden — food +2 daily (dormant in winter)', only: ['rooftop'] },
+  // 1.2 버섯 재배칸 (subway 전용) — 어둠에서 자라는 식량. 옥탑 텃밭(볕/여름)의 대칭축(어둠/연중).
+  //   매일 음식 +1(겨울 포함 연중), 이틀에 한 번 물 1 소모. 옥탑보다 산출 절반이되 계절을 타지 않는다.
+  mushroom: { name: '버섯 재배칸', nameEn: 'Mushroom Bed', emoji: '🍄', cost: { material: 3, water: 3 }, desc: '어둠 속 균상 — 매일 음식 +1 (연중, 물 소모)', descEn: 'A mushroom bed in the dark — food +1 daily year-round (uses water)', only: ['subway'] },
   insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '🧤', cost: { cloth: 3, material: 2 }, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
   shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '🪜', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
   solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '🔆', cost: { parts: 4, battery: 1 },  desc: '이틀에 한 번 배터리 +1', descEn: 'Battery +1 every other day', not: ['subway'] },
@@ -5424,6 +5471,7 @@ const SHELTER_MODS = {
 const MOD_MOUNT = {
   solar: 'roof', raincatch: 'eave', bigraincatch: 'eave',
   insulation: 'wall', insulationPlus: 'wall', garden: 'ground', rooftopGarden: 'ground',
+  mushroom: 'ground', // 1.2 버섯 재배칸 — 지면(승강장) 배치. subway는 SHELTER_MOUNTS.subway.eave 폴백을 쓴다.
 };
 // 셸터별 설치 앵커 실측 좌표 (buildRoom 지오메트리 기준).
 //  roof:  { y(지붕 상면), cx, cz(지붕 중심), hw, hd(지붕 반폭/반깊이), pitch?(경사지붕이면 +z로 내려가는 기울기 rad) }
@@ -5598,6 +5646,8 @@ function addModProp(id) {
     roomGroup.add(g);
   } else if (id === 'rooftopGarden') {
     buildRooftopGarden();
+  } else if (id === 'mushroom') {
+    buildMushroomBed();
   } else if (id === 'shelf') {
     B(roomGroup, 0.06, 1.4, ROOM.d * 0.7, 0x77543a, -w / 2 + 0.12, 0.7, 0);
     B(roomGroup, 0.4, 0.05, ROOM.d * 0.7, 0x8a6a48, -w / 2 + 0.28, 1.1, 0);
@@ -5690,6 +5740,86 @@ function buildRooftopGarden() {
   g.position.set(S.frontX - 3.2, 0, S.frontZ - 3.0);
   roomGroup.add(g);
   blockers.push({ x: S.frontX - 3.2, z: S.frontZ - 3.0, w: 3.2, d: 2.0 });
+}
+// ── 1.2 버섯 재배칸 (subway 전용) — 승강장 뒷벽 쪽에 균상 선반 2단. 어둠 속에서 자라는 하얀 균사/갓.
+//    옥탑 텃밭의 대칭 연출: 볕/흙 대신 어둠/습기. 계절 무관(연중) — 시각도 계절을 타지 않는다. ──
+function buildMushroomBed() {
+  const { w, d } = ROOM;
+  const g = new THREE.Group();
+  const pr = seededRand(361);
+  // 습한 나무 균상 프레임 (2단 선반)
+  const frame = wallPhong({ color: 0x4a3f34 });
+  for (const sy of [0.28, 0.72]) {
+    B(g, 2.2, 0.06, 0.7, 0x574a3c, 0, sy, 0);           // 선반판
+    // 균상 배지(어두운 퇴비)
+    B(g, 2.05, 0.08, 0.6, 0x2a231c, 0, sy + 0.07, 0);
+    // 버섯 갓 (연한 회백색 반구 + 짧은 대) — 랜덤 군생
+    const n = 7;
+    for (let i = 0; i < n; i++) {
+      const cx = -0.9 + (i / (n - 1)) * 1.8 + (pr() - 0.5) * 0.15;
+      const cz = (pr() - 0.5) * 0.42;
+      const h = 0.06 + pr() * 0.05;
+      Cyl(g, 0.018, 0.022, h, 0xd8cfc0, cx, sy + 0.11 + h / 2, cz, 5); // 대
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.045 + pr() * 0.03, 6, 4, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshLambertMaterial({ color: 0xc7bca8, emissive: 0x1a1410, emissiveIntensity: 0.4 }));
+      cap.position.set(cx, sy + 0.11 + h, cz); cap.castShadow = true; g.add(cap);
+    }
+  }
+  // 선반 기둥 4개
+  for (const px of [-1.05, 1.05]) for (const pz of [-0.3, 0.3]) B(g, 0.06, 0.9, 0.06, 0x3d332a, px, 0.45, pz);
+  // 뒷벽(-z) 왼쪽, 기둥(±w/4, z=0.4)을 피해 배치
+  g.position.set(-w / 4 - 1.4, 0, -d / 2 + 0.6);
+  roomGroup.add(g);
+  blockers.push({ x: -w / 4 - 1.4, z: -d / 2 + 0.6, w: 2.3, d: 0.9 });
+}
+// ── 1.2 선로 복구 현장 (site='railSegment') — 지하철 buildEnv에서 호출. 승강장 앞 선로 위에 표현.
+//    허브 미승격이면 없음. 승격 후: 구간별 진행(잔해→침목→개통)을 왼쪽부터 3구간으로 나눠 표시.
+//    개통 완료 구간엔 반짝이는 새 레일 + 완공 1구간 이상이면 수동 궤도차(핸드카) 실루엣이 놓인다. ──
+function buildRailSegments(w, d, h) {
+  if (!state.subwayHub) return;
+  const g = new THREE.Group();
+  const railZ = d / 2 + 2.1;          // 선로 중앙 z (기존 트랙 위)
+  const segIds = ['subRail1', 'subRail2', 'subRail3'];
+  const segW = (w + 12) / 3;          // 세 구간이 트랙 전폭을 나눠 가짐
+  const startX = -(w + 12) / 2;
+  let anyDone = false;
+  for (let s = 0; s < 3; s++) {
+    const st = projectSiteStage(segIds[s]); // 0 미착수 · 1 잔해제거 · 2 침목 · 3 개통중 · 4 완공
+    const cx = startX + segW * (s + 0.5);
+    if (st <= 0) continue;
+    if (st >= 1) {
+      // 잔해 치운 노반 — 밝아진 자갈
+      B(g, segW * 0.92, 0.06, 2.6, 0x2b2822, cx, -0.9, railZ);
+    }
+    if (st >= 2) {
+      // 새 침목 (밝은 목재) — 여러 개
+      const nTies = 5;
+      for (let i = 0; i < nTies; i++) {
+        const tx = cx - segW * 0.4 + (i / (nTies - 1)) * segW * 0.8;
+        B(g, 0.4, 0.1, 2.0, 0x6a5638, tx, -0.8, railZ);
+      }
+    }
+    if (st >= 3) {
+      // 레일 체결(개통 진행/완료) — 반짝이는 금속 레일 2줄
+      const railMat = new THREE.MeshLambertMaterial({ color: 0x9aa0a6, emissive: 0x2a2e33, emissiveIntensity: 0.5 });
+      for (const rz of [railZ - 0.7, railZ + 0.7]) {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(segW * 0.9, 0.08, 0.08), railMat);
+        rail.position.set(cx, -0.7, rz); g.add(rail);
+      }
+    }
+    if (st >= 4) anyDone = true;
+  }
+  if (anyDone) {
+    // 수동 궤도차(핸드카) — 완공 구간이 하나라도 있으면 승강장 앞 레일 위에 놓인다.
+    const car = new THREE.Group();
+    B(car, 1.6, 0.25, 1.5, 0x3a3630, 0, 0.2, 0);                 // 대차 프레임
+    for (const wx of [-0.6, 0.6]) for (const wz of [-0.6, 0.6]) Cyl(car, 0.18, 0.18, 0.1, 0x22242a, wx, 0.06, wz, 8, Math.PI / 2);
+    B(car, 0.08, 0.5, 0.08, 0x55504a, 0, 0.5, 0);               // 펌프 손잡이 기둥
+    B(car, 0.9, 0.06, 0.08, 0x6a6258, 0, 0.72, 0);              // 손잡이 바
+    car.position.set(-w / 2 - 2, -0.62, d / 2 + 2.1);
+    g.add(car);
+  }
+  envRoot.add(g);
 }
 function buildModProps() {
   for (const id of (state.mods?.[state.current] || [])) addModProp(id);
@@ -5908,6 +6038,40 @@ function openCraftModal() {
     }
     rooftopHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🏙️ ${LName(SHELTERS.rooftop)}</div>${projRows.join('')}`;
   }
+  // 1.2 지하철 허브 — 승격(핸드카·노선도 복원) → 선로 복구·암시장 개방. subway에서만 노출.
+  let subwayHtml = '';
+  if (state.current === 'subway') {
+    let rows = '';
+    if (!state.subwayHub) {
+      // 허브 승격 카드
+      const hubOk = resHasAll(BAL.subway.hubCost);
+      rows += `<div class="prep-row ${hubOk ? '' : 'no'}" style="cursor:default">
+        <span>🚇 ${t('subway.hubTitle')}</span>
+        <span class="p-eff" style="font-size:10px;flex:1">${t('subway.hubDesc')}</span>
+        <span class="p-cost">${costLabel(BAL.subway.hubCost)}</span>
+        <button class="pixel-btn" data-subway="hub" ${hubOk ? '' : 'disabled'} style="margin-left:6px">${t('subway.hubBtn')}</button>
+      </div>`;
+    } else {
+      rows += `<div class="prep-row sel" style="cursor:default"><span>🚇 ${t('subway.hubTitle')}</span><span class="p-eff" style="font-size:10px">${t('subway.hubDone')}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`;
+      // 암시장 교환대 (승격 후) — 얼굴 없는 교환대. 슬롯/레이트는 개통 구간 수로 개선.
+      const left = marketSlotsLeft();
+      const total = marketSlots();
+      const segN = subwayOpenCount();
+      rows += `<div style="font-size:11px;color:var(--accent);margin:10px 0 3px">🕳️ ${t('subway.marketTitle')} <span style="color:var(--text-dim)">${t('subway.marketSlots', { left, total })}</span></div>`;
+      rows += `<div style="font-size:10px;color:var(--text-dim);margin-bottom:5px">${t('subway.marketIntro')}${segN > 0 ? ' ' + t('subway.marketRateNote', { n: segN }) : ''}</div>`;
+      for (const offer of BAL.subway.marketOffers) {
+        const cost = marketOfferCost(offer);
+        const getN = marketOfferGetN(offer);
+        const ok = left > 0 && resHasAll(cost);
+        const winterTag = (seasonOf().id === 'winter' && offer.winterGive) ? ` <span style="color:var(--bad);font-size:9px">${t('subway.marketWinter')}</span>` : '';
+        rows += `<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
+          <span>${costLabel(cost)} → ${resIcon(offer.get)}×${getN}${winterTag}</span>
+          <button class="pixel-btn" data-market="${offer.id}" ${ok ? '' : 'disabled'} style="margin-left:auto">${t('subway.marketTradeBtn')}</button>
+        </div>`;
+      }
+    }
+    subwayHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🚇 ${LName(SHELTERS.subway)}</div>${rows}`;
+  }
   // 1.1 얼음낚시 — 겨울 한정, 물가 셸터(예인선/여객선/등대). 겨울이 처음으로 '받는 계절'이 되는 장치.
   let icefishHtml = '';
   if (icefishAvailable()) {
@@ -5951,7 +6115,7 @@ function openCraftModal() {
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('craft.intro')}</div>${rows}
     <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>
     <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}
-    ${bunkerHtml}${rooftopHtml}${icefishHtml}${projHtml}${decoHtml}`);
+    ${bunkerHtml}${rooftopHtml}${subwayHtml}${icefishHtml}${projHtml}${decoHtml}`);
   $('modal-body').querySelectorAll('button[data-deco]').forEach(b =>
     b.addEventListener('click', () => {
       const [kind, id] = b.dataset.deco.split(':');
@@ -6018,6 +6182,22 @@ function openCraftModal() {
       if ($('modal-back').classList.contains('show')) openCraftModal();
     }));
   { const ibf = $('btn-icefish'); if (ibf) ibf.addEventListener('click', () => { doIceFish(); openCraftModal(); }); }
+  // 1.2 지하철 허브 승격 버튼
+  $('modal-body').querySelectorAll('button[data-subway]').forEach(b =>
+    b.addEventListener('click', () => {
+      if (b.dataset.subway === 'hub') {
+        if (!resConsumeAll(BAL.subway.hubCost)) { toast(t('toast.needMaterial')); return; }
+        state.subwayHub = true;
+        toast(t('subway.hubDoneToast')); state.dayLog.notes.push(t('subway.hubDoneToast'));
+        playSfx('craft'); scheduleSave(); renderResBar(); updateHud();
+        openCraftModal();
+      }
+    }));
+  // 1.2 암시장 교환 버튼
+  $('modal-body').querySelectorAll('button[data-market]').forEach(b =>
+    b.addEventListener('click', () => {
+      if (doMarketTrade(b.dataset.market)) openCraftModal();
+    }));
   $('modal-body').querySelectorAll('button[data-craft]').forEach(b =>
     b.addEventListener('click', () => {
       const c = CRAFTS[+b.dataset.craft];
@@ -6125,8 +6305,62 @@ function applyProjectEffect(effectKey) {
   switch (effectKey) {
     case 'clearPassage.done': break; // 코스메틱 + 수첩 기록만 (1.4 복선). 부수효과 없음.
     case 'harbor.breakwater.done': state.breakwaterHut = true; break; // 항구 파밍 -25% + 얼음낚시 스팟 +1 (플래그로 판정)
+    // 1.2 선로 개통 — 구간별 연결 지역을 개통 상태로. 탐험 시간 -50% + 겨울 폭설 봉쇄 무시(플래그 판정).
+    case 'subway.openSeg1': openSubwaySegment(1); break;
+    case 'subway.openSeg2': openSubwaySegment(2); break;
+    case 'subway.openSeg3': openSubwaySegment(3); break;
     default: break; // 1.2~1.4 확장이 여기에 case를 추가한다.
   }
+}
+// 1.2 선로 구간 개통: 해당 구간이 연결하는 지역을 state.subwayOpen 에 등록.
+// 이후 expDuration(-50%)·폭설 봉쇄 예외·암시장 슬롯/레이트가 이 맵을 읽는다.
+function openSubwaySegment(seg) {
+  if (!state.subwayOpen || typeof state.subwayOpen !== 'object') state.subwayOpen = {};
+  const region = BAL.subway.segRegions[seg];
+  if (region) state.subwayOpen[region] = true;
+}
+// 개통 구간 수 (암시장 슬롯/레이트 스케일링에 쓰인다).
+function subwayOpenCount() {
+  return Object.keys(state.subwayOpen || {}).length;
+}
+// 특정 지역이 지하 노선으로 개통되어 있는가 (탐험 시간·봉쇄 예외 판정).
+function subwayReaches(regionId) {
+  return !!(state.subwayOpen && state.subwayOpen[regionId]);
+}
+
+/* ── 1.2 암시장 (허브 승격 후 개방) — 잉여 물물교환 = 후반 인플레의 최종 싱크 ──
+   캐논: 화폐 없음(문명은 죽었다, 교환만 남았다). 상인도 흐르는 타인 — 얼굴 없는 교환대/쪽지 거래.
+   하루 슬롯 제한(marketToday) + 개통 구간 수로 슬롯·레이트 개선. 겨울 연료 프리미엄(winterGive). */
+function marketOpen() { return state.current === 'subway' && state.subwayHub; }
+function marketSlots() {
+  return BAL.subway.marketBaseSlots + subwayOpenCount() * BAL.subway.marketSlotsPerSeg;
+}
+function marketSlotsLeft() { return Math.max(0, marketSlots() - (state.marketToday || 0)); }
+// 한 오퍼의 실제 지불 비용(겨울 프리미엄 반영)과 산출량(개통 구간 레이트 보너스 반영).
+function marketOfferCost(offer) {
+  return (seasonOf().id === 'winter' && offer.winterGive) ? offer.winterGive : offer.give;
+}
+function marketOfferGetN(offer) {
+  return offer.getN + subwayOpenCount() * BAL.subway.marketRateBonusPerSeg;
+}
+// 교환 실행 — 슬롯/자원 검사 후 give 소비, get 지급. 반환: true(성공)|false(실패).
+function doMarketTrade(offerId) {
+  if (!marketOpen()) return false;
+  if (marketSlotsLeft() <= 0) { toast(t('subway.marketNoSlot')); return false; }
+  const offer = BAL.subway.marketOffers.find(o => o.id === offerId);
+  if (!offer) return false;
+  const cost = marketOfferCost(offer);
+  if (!resHasAll(cost)) { toast(t('toast.needResource')); return false; }
+  if (!resConsumeAll(cost)) { toast(t('toast.needResource')); return false; }
+  const n = marketOfferGetN(offer);
+  resAdd(offer.get, n);
+  state.marketToday = (state.marketToday || 0) + 1;
+  const note = t('subway.marketTraded', { give: costLabel(cost), emoji: RESOURCES[offer.get].emoji, name: LName(RESOURCES[offer.get]), n });
+  state.dayLog.notes.push(note);
+  toast(note);
+  playSfx('craft');
+  scheduleSave(); renderResBar(); updateHud();
+  return true;
 }
 // 프로젝트 완공 시 수첩 "그 해의 공사" 자동 기록 (memoir 문법 재사용 — pendingWinterMemoir 큐에 적재).
 function recordProjectMemoir(id) {
@@ -6164,6 +6398,7 @@ function investProject(id) {
   // 현장 오브젝트가 현재 셸터 지오메트리에 있으면 재빌드로 단계 교체 (현재 셸터 한정).
   if (p.site === 'stairRubble' && state.current === 'bunker') rebuildBunkerGeometry();
   else if (p.site === 'breakwaterHut' && (state.current === 'tugboat' || state.current === 'controltower')) rebuildShelterGeometry();
+  else if (p.site === 'railSegment' && state.current === 'subway') rebuildShelterGeometry(); // 1.2 선로 구간 현장 단계 교체
   return result;
 }
 
@@ -6260,6 +6495,11 @@ function recordTabHtml() {
     const bids = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'bunker');
     const bgot = bids.filter(id => owned[id]).length;
     if (bgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionBunker')} (${bgot}/${bids.length})</div>` + bids.map(id => memoRow(id, MEMOS)).join('');
+  }
+  // 1.2: 지하(subway) 판데믹 대피 메모 — 발견 후에만 섹션 노출 (벙커 문법 재사용)
+  {
+    const sgot = MEMOS_SUBWAY.filter(id => owned[id]).length;
+    if (sgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionSubway')} (${sgot}/${MEMOS_SUBWAY.length})</div>` + MEMOS_SUBWAY.map(id => memoRow(id, MEMOS)).join('');
   }
   const willIds = Object.keys(WILLS);
   const willGot = willIds.filter(id => owned[id]).length;
@@ -7559,6 +7799,7 @@ function processDay() {
   const perk = SHELTERS[state.current].perk || {};
   state.expToday = 0; // 새 하루, 새 걸음
   state.icefishToday = 0; // 1.1: 얼음낚시 하루 스팟 리셋
+  state.marketToday = 0;  // 1.2: 암시장 하루 교환 슬롯 리셋
   // 첫 3일 튜토리얼: Day 2/3 아침에 다음 페이지를 표시 대기열에 넣는다 (day-report 뒤로 미룸)
   // tutDay>=1: Day 1 페이지(신규 게임)를 이미 본 경우에만 이어서 진행 — 구세이브는 tutDay 0 그대로라 대상 아님
   // 퀘스트 트래커가 아직 진행 중이면(questActive) 온보딩 중복을 피하려고 자동 페이지를 띄우지 않는다
@@ -7727,6 +7968,19 @@ function processDay() {
       // 성장 단계 진행 (0→1→2에서 멈춤) — 시각 연출용
       if ((state.rooftopGardenStage ?? 0) < 2) state.rooftopGardenStage = (state.rooftopGardenStage ?? 0) + 1;
     }
+  }
+  // 1.2 버섯 재배칸(subway 전용): 어둠 속 연중 생산(겨울 포함). 옥탑 텃밭의 대칭 — 볕/여름 vs 어둠/연중.
+  //   매일 음식 +1, mushroomWaterEvery(2)일마다 물 1 소모. 물이 없으면 그날 수확 없음(습기 없이는 못 자란다).
+  if (hasMod('mushroom')) {
+    const M = BAL.subway;
+    state.mushroomWaterTimer = (state.mushroomWaterTimer || 0) + 1;
+    let watered = true;
+    if (state.mushroomWaterTimer >= M.mushroomWaterEvery) {
+      state.mushroomWaterTimer = 0;
+      if (resConsume('water', M.mushroomWater)) { notes.push(t('subway.mushroomWater', { n: M.mushroomWater })); }
+      else { watered = false; notes.push(t('subway.mushroomDry')); }
+    }
+    if (watered) { resAdd('food', M.mushroomFoodPerDay); notes.push(t('subway.mushroomHarvest', { n: M.mushroomFoodPerDay })); }
   }
   if (hasMod('solar') && state.day % 2 === 1) { resAdd('battery', 1); notes.push(t('day.solar')); }
   state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - dirt);
@@ -9582,6 +9836,10 @@ window.__shelter = {
   PROJECTS, projectAvailable, projectRec, projectDone, projectSiteStage, investProject,
   // 1.1 항구 QA 훅
   regionUnlocked, harborYardBoostId, icefishAvailable, doIceFish,
+  // 1.2 지하 노선도 QA 훅
+  openSubwaySegment, subwayOpenCount, subwayReaches, blizzardBlocks,
+  marketOpen, marketSlots, marketSlotsLeft, marketOfferCost, marketOfferGetN, doMarketTrade,
+  MEMOS_SUBWAY,
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
