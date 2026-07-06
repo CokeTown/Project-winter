@@ -214,6 +214,11 @@ export const BAL = {
     costMul:   { normal: 1.0, hard: 1.25, hardcore: 1.5, zen: 0.85, wallpaper: 1.0 },
   },
 
+  /* ── 게이트 코스트 난이도 스케일 (2026-07-07, 디렉터 "코어 콘텐츠 도달 코스트를 난이도로 늘리자") ──
+     방호복(금지 구역=최종장 게이트) 제작/수리 + 허브 승격(암시장/선로 게이트)에 적용. gateCost(cost) 헬퍼가 각 자원 round·min1.
+     대형 프로젝트는 제외(이미 정밀 캘리브 + 하드코어 벽 위험 — 캐비엇). encounters.costMul과 동일 값. */
+  gateCostMul: { normal: 1.0, hard: 1.25, hardcore: 1.5, zen: 0.85, wallpaper: 1.0 },
+
   /* ── 입력 / 게임패드 (#14 REQ-INP-02) ── */
   input: {
     padDeadzone: 0.15,      // 스틱 데드존 (미만은 0 처리)

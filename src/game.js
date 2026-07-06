@@ -3912,6 +3912,14 @@ function craftCost(c) {
   for (const [rid, n] of Object.entries(c.cost)) out[rid] = Math.max(1, Math.floor(n * m));
   return out;
 }
+// 게이트 코스트 난이도 스케일(§F): 코어 콘텐츠 게이트(방호복/허브) 비용을 모드로 조인다. 각 자원 round·최소 1. 표시·판정·소비 공통. RNG 없음.
+function gateCost(cost) {
+  const m = BAL.gateCostMul[state.mode] ?? 1;
+  if (m === 1) return cost;
+  const out = {};
+  for (const [rid, n] of Object.entries(cost)) out[rid] = Math.max(1, Math.round(n * m));
+  return out;
+}
 // opts / OPTS_DEFAULT 는 core/state.js 로 이전 (모놀리스 분해 Phase 1). 위 import 참조.
 // REQ-STEAM-01: 플랫폼 어댑터에 상태 접근자 주입 (순환 import 회피). 동작 불변 위임.
 bindPlatform({
@@ -6651,11 +6659,11 @@ function openCraftModal() {
     let rows = '';
     if (!state.subwayHub) {
       // 허브 승격 카드
-      const hubOk = resHasAll(BAL.subway.hubCost);
+      const hubOk = resHasAll(gateCost(BAL.subway.hubCost));
       rows += `<div class="prep-row ${hubOk ? '' : 'no'}" style="cursor:default">
         <span>🚇 ${t('subway.hubTitle')}</span>
         <span class="p-eff" style="font-size:10px;flex:1">${t('subway.hubDesc')}</span>
-        <span class="p-cost">${costLabel(BAL.subway.hubCost)}</span>
+        <span class="p-cost">${costLabel(gateCost(BAL.subway.hubCost))}</span>
         <button class="pixel-btn" data-subway="hub" ${hubOk ? '' : 'disabled'} style="margin-left:6px">${t('subway.hubBtn')}</button>
       </div>`;
     } else {
@@ -6703,22 +6711,22 @@ function openCraftModal() {
     const rows2 = [];
     // 방호복 제작/수리 카드
     if (!state.hazmat) {
-      const ok = resHasAll(F.hazmatCost);
+      const ok = resHasAll(gateCost(F.hazmatCost));
       rows2.push(`<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
         <span>🥽 ${t('hazmat.name')}</span>
         <span class="p-eff" style="font-size:10px;flex:1">${t('hazmat.craftHint', { dur: F.hazmatDur })}</span>
-        <span class="p-cost">${costLabel(F.hazmatCost)}</span>
+        <span class="p-cost">${costLabel(gateCost(F.hazmatCost))}</span>
         <button class="pixel-btn" data-hazmat="craft" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('hazmat.craftBtn')}</button>
       </div>`);
     } else {
       const full = state.hazmat.dur >= F.hazmatDur;
-      const ok = resHasAll(F.hazmatRepairCost);
+      const ok = resHasAll(gateCost(F.hazmatRepairCost));
       rows2.push(`<div class="prep-row ${full ? 'sel' : ''}" style="cursor:default">
         <span>🥽 ${t('hazmat.name')}</span>
         <span class="p-eff" style="font-size:10px;flex:1">${t('hazmat.durLine', { dur: state.hazmat.dur, max: F.hazmatDur })}</span>
         ${full
           ? `<span style="color:var(--good);font-size:11px">${t('hazmat.ready')}</span>`
-          : `<span class="p-cost">${costLabel(F.hazmatRepairCost)}</span><button class="pixel-btn" data-hazmat="repair" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('hazmat.repairBtn')}</button>`}
+          : `<span class="p-cost">${costLabel(gateCost(F.hazmatRepairCost))}</span><button class="pixel-btn" data-hazmat="repair" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('hazmat.repairBtn')}</button>`}
       </div>`);
     }
     // 무전 송출 카드 (기지 완공 후)
@@ -6845,7 +6853,7 @@ function openCraftModal() {
   $('modal-body').querySelectorAll('button[data-subway]').forEach(b =>
     b.addEventListener('click', () => {
       if (b.dataset.subway === 'hub') {
-        if (!resConsumeAll(BAL.subway.hubCost)) { toast(t('toast.needMaterial')); return; }
+        if (!resConsumeAll(gateCost(BAL.subway.hubCost))) { toast(t('toast.needMaterial')); return; }
         state.subwayHub = true;
         toast(t('subway.hubDoneToast')); state.dayLog.notes.push(t('subway.hubDoneToast'));
         playSfx('craft'); scheduleSave(); renderResBar(); updateHud();
@@ -7027,7 +7035,7 @@ function hazmatUsable() {
 // 방호복 제작 — 고급 제작 정점. 재료 소비 후 최대 내구로 지급. 최초 제작 시 hazmatDone(무전 기지 공사 게이트) 세움.
 function craftHazmat() {
   if (state.hazmat && state.hazmat.dur >= BAL.forbidden.hazmatDur) { toast(t('hazmat.alreadyFull')); return false; }
-  if (!resConsumeAll(BAL.forbidden.hazmatCost)) { toast(t('toast.needMaterial')); return false; }
+  if (!resConsumeAll(gateCost(BAL.forbidden.hazmatCost))) { toast(t('toast.needMaterial')); return false; }
   const firstTime = !state.hazmatDone;
   state.hazmat = { dur: BAL.forbidden.hazmatDur };
   state.hazmatDone = true; // 방호복에 손댄 순간부터 무전 기지 공사가 열린다(금지 구역에 닿을 자격)
@@ -7041,7 +7049,7 @@ function craftHazmat() {
 function repairHazmat() {
   if (!state.hazmat) { toast(t('hazmat.needCraft')); return false; }
   if (state.hazmat.dur >= BAL.forbidden.hazmatDur) { toast(t('hazmat.alreadyFull')); return false; }
-  if (!resConsumeAll(BAL.forbidden.hazmatRepairCost)) { toast(t('toast.needMaterial')); return false; }
+  if (!resConsumeAll(gateCost(BAL.forbidden.hazmatRepairCost))) { toast(t('toast.needMaterial')); return false; }
   state.hazmat.dur = BAL.forbidden.hazmatDur;
   toast(t('hazmat.repaired', { dur: BAL.forbidden.hazmatDur }));
   playSfx('craft');
@@ -11180,7 +11188,7 @@ window.__shelter = {
   SKETCHES, MEMOS_RESORT, avalancheBlocks, avalancheForecastToday, openAvalancheChoice,
   sketchesCollected, sketchesTotal, collectSketch, tryNightSky, showSketchPage, expDuration,
   // 1.4 금지 구역 QA 훅
-  MEMOS_RESEARCH, isForbiddenRegion, hazmatUsable, craftHazmat, repairHazmat, wearHazmat,
+  MEMOS_RESEARCH, isForbiddenRegion, hazmatUsable, craftHazmat, repairHazmat, wearHazmat, gateCost,
   broadcastableTotal, broadcastSentCount, pickUnsentSignal, targetSurvivorLights, doBroadcast,
   bunkerUndercroftRoute, showTruthPage, tryDoctorRadio,
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,

@@ -208,6 +208,16 @@ const KNOWLEDGE_HASH = -451536973;
     if (bu.error) check('가방 UI (예외 없이)', false, bu.error);
     else check('가방 UI/prep 모달에 가방 토글 행 렌더', bu.bagRow === true && bu.prepRows > 0, `bagRow ${bu.bagRow} prepRows ${bu.prepRows}`);
 
+    // ── 게이트 코스트 스케일(§F) — 방호복 수리비 모드별 (허브도 동일 헬퍼) ──
+    const gate = await call(`
+      S.simReset(); const modes=['zen','normal','hard','hardcore']; const rc = S.BAL.forbidden.hazmatRepairCost;
+      const tot = {}; for (const m of modes){ S.state.mode=m; const c=S.gateCost(rc); tot[m]=Object.values(c).reduce((a,b)=>a+b,0); }
+      return JSON.stringify(tot);
+    `).catch(e=>JSON.stringify({error:String(e)}));
+    const gt = JSON.parse(gate);
+    if (gt.error) check('게이트 스케일 (예외 없이)', false, gt.error);
+    else check('게이트/방호복 수리비 난이도 단조 (무한≤노말<하드≤하드코어)', gt.zen<=gt.normal && gt.normal<gt.hard && gt.hard<=gt.hardcore, `zen ${gt.zen} normal ${gt.normal} hard ${gt.hard} hardcore ${gt.hardcore}`);
+
     // ── 2) 구세이브 마이그레이션 — #76 신규 필드 없이 저장된 세이브가 안전하게 로드되나 ──
     //   (내가 book/bookProgress/demoEnded를 마이그레이션 테스트 없이 넣은 것 → 이 그물로 방어)
     //   포괄 스냅샷: 마이그레이션이 채우는 정적 기본값 ~40필드를 해시로 핀(save.js 추출 안전망).
