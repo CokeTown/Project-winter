@@ -10,3 +10,5 @@ build/electron-dist/
 android/keystore/
 android/keystore.properties
 scratchpad/
+
+release-qa/
