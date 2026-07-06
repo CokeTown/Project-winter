@@ -41,7 +41,8 @@ src/
 │  ├─ shelter.js  · hasMod                                              (← state)
 │  ├─ coldsnap.js · coldDefenseLevel/coldSnapActive/coldSnapNetSeverity (← state, season, shelter, data)
 │  ├─ comfort.js  · comfortDetail/comfortLevel/comfortExpBonus/recoveryMult/themeSetActive/activeThemeSets/bunkerComfortBonus (← state, season, shelter, coldsnap, data; weather.type 주입)
-│  └─ gauges.js   · decayGauges/isExhausted                             (← state, mode, season, coldsnap, economy, data)
+│  ├─ gauges.js   · decayGauges/isExhausted                             (← state, mode, season, coldsnap, economy, data)
+│  └─ save.js     · migrateLoadedState (버전 마이그레이션 + 신규필드 기본값 ~84가드)  (← state, season, data)
 ├─ data/          ← 정적 콘텐츠 테이블 (기존): balance, items, furniture, world, lore, events, projects, wildlife, decotex
 │  └─ shelters.js · [신설] SHELTER_META (12셸터 데이터 필드) — game.js가 build 함수와 병합
 ├─ systems/       ← 서브시스템 팩토리 (기존): cat, wildlife, avatar  — game.js가 컨텍스트 주입(state를 직접 import 안 함)
@@ -72,8 +73,10 @@ tests/            ← [신설] 회귀 그물: harness.cjs(오프스크린 Electr
 | `5ebe3f0` | `core/coldsnap.js` | 한파 술어 3종. hearth를 SHELTER_META에서 읽음(SHELTERS 분리가 열어줌). |
 | `f5dc13b` | `core/comfort.js` | 쾌적 점수 산식 + 파생 + 테마세트 판정. i18n 로그·HTML은 표시층이라 잔류. weather.type만 주입 훅으로. |
 | `911e638` | `core/gauges.js` | decayGauges(배고픔/갈증 감소 + autoEat) + isExhausted. 결합 0. **← Tier 1 완결** |
+| `589d593` | `tests/` (그물 강화) | **세이브 마이그레이션 그물 선(先)강화** — MIG_HASH(정적 기본값 포괄 스냅샷 ~40필드). save 추출 전 "그물 먼저"(세이브=손상 시 복구 불가). |
+| `e4221eb` | `core/save.js` | **세이브 마이그레이션 추출(Tier 2)** — migrateLoadedState(버전 v2→v3 + 신규필드 84가드). I/O·오프라인 정산은 game.js 잔류. MIG_HASH 무손실. |
 
-`game.js`: **11,481 → 11,113줄** + `core/` 8개 모듈 + `data/shelters.js`. *(줄 수보다 "경계가 생긴 것"이 본질 — 한파/쾌적/게이지 로직이 렌더에서 분리돼 독립 테스트·수정 가능. 깊이 설계의 "게이지 상호작용"이 이 위에 얹힌다.)*
+`game.js`: **11,481 → 11,037줄** + `core/` 9개 모듈 + `data/shelters.js`. *(줄 수보다 "경계가 생긴 것"이 본질 — 한파/쾌적/게이지 로직 + 세이브 마이그레이션(유지보수 최대 난제)이 렌더/I/O에서 분리돼 독립 테스트·수정 가능. 깊이 설계의 "게이지 상호작용"과 "신규 세이브 필드"가 이 위에 안전하게 얹힌다.)*
 
 ---
 
@@ -94,8 +97,14 @@ tests/            ← [신설] 회귀 그물: harness.cjs(오프스크린 Electr
 3. ✅ **쾌적(`core/comfort.js`)** — `f5dc13b`. comfortDetail + 파생 + 테마세트. i18n comfortBreakdown/Html은 잔류.
 4. ✅ **게이지(`core/gauges.js`)** — `911e638`. decayGauges + isExhausted. **← Tier 1 여기까지 완결.**
 
-**Tier 2 (다음):**
-5. ⬜ **세이브(`core/save.js`)** — doSaveNow/loadSave/마이그레이션. **84개 손수 가드를 `ver` + 마이그레이션 함수 테이블로** 교체(유지보수 최대 난제). loadShelter(렌더)는 주입 훅으로. *깊이 설계가 세이브 필드를 추가하므로 이 리팩토링이 그 작업을 de-risk한다.*
+**Tier 2:**
+5. ◑ **세이브(`core/save.js`)** — `e4221eb`. **마이그레이션(84가드) 추출 완료** — 이제 순수 `migrateLoadedState`로 격리 + MIG_HASH 그물 보증. *깊이 설계의 신규 세이브 필드가 이 위에 안전하게 얹힌다(de-risk 완료).*
+   - 남은 정제(선택): 평면 84가드를 `ver`별 마이그레이션 함수 테이블로 재구조화 · save I/O(doSaveNow/loadSave/손상복구)를 주입 훅으로 분리. **동작은 이미 격리·검증됨** — 구조 미화라 우선순위 낮음.
+
+**여기까지 = 깊이 작업에 필요한 리팩토링 완료선.** 깊이가 건드릴 로직(한파/쾌적/게이지)이 모듈화·테스트 가능해졌고, 깊이가 추가할 세이브 필드의 마이그레이션이 격리·그물화됨.
+
+**Tier 3 (깊이 이후/병행):** 탐험 판정·날씨·인카운터·프로젝트·이주/이동·오토플레이/sim·processDay 오케스트레이터.
+**Tier 4 (10월 이후 롱테일):** 렌더/UI 분해 (`render/`, `ui/` 서브트리).
 
 ---
 
