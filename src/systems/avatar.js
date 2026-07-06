@@ -166,6 +166,7 @@ export function makeAvatarSystem(ctx) {
       const g = av.g;
       g.rotation.x = 0; g.position.y = 0; resetPose();
       if (av.exitSpot) g.position.set(av.exitSpot.x, 0, av.exitSpot.z);
+      shadowDirty(); // 위치 점프 — 그림자 즉시 갱신 (정적 씬 신고 의무)
     }
     av.exitSpot = null;
   }
@@ -192,6 +193,7 @@ export function makeAvatarSystem(ctx) {
     else g.position.y = 0.08;
     g.rotation.x = -Math.PI / 2 + 0.05;
     resetPose();
+    shadowDirty(); // 침대 위 눕기 점프 — 즉시 갱신
   }
   function resetPose() {
     if (!av) return;
@@ -232,6 +234,7 @@ export function makeAvatarSystem(ctx) {
       if (av.wakeT <= 0) {
         g.rotation.x = 0; g.position.y = 0;
         if (av.use) { const sp = freeSpot(); const bx = av.use.x + 0.9, bz = av.use.z; g.position.set(hitBlock(bx, bz, 0.26) ? sp.x : bx, 0, hitBlock(bx, bz, 0.26) ? sp.z : bz); }
+        shadowDirty(); // 기립 점프 — 즉시 갱신
         pickIdle();
       }
       return;
@@ -268,6 +271,10 @@ export function makeAvatarSystem(ctx) {
         let dr = want - g.rotation.y; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
         g.rotation.y += dr * Math.min(1, dt * 6);
         av.gait += dt * 7;
+        // 그림자 실시간화(디렉터 실기기: "그림자가 뒤늦게 따라온다"): 씬은 정적 최적화(autoUpdate=false)라
+        //   움직이는 놈이 직접 신고해야 한다 — wildlife moveToward와 동일한 0.12s 스로틀.
+        av._shT = (av._shT || 0) + dt;
+        if (av._shT > 0.12) { av._shT = 0; shadowDirty(); }
       }
     } else if (av.mode === 'sit' || av.mode === 'warm') {
       av.timer -= dt;
@@ -314,6 +321,7 @@ export function makeAvatarSystem(ctx) {
     g.position.set(it.x, Math.max(0, y - LEG_H * 0.42), it.z);
     g.rotation.y = ((it.rot || 0) * Math.PI / 2); // 가구 정면 방향으로 앉기 (관례: rot0=+z)
     av.mode = 'sit'; av.timer = 6 + Math.random() * 7; av.tgt = null;
+    shadowDirty(); // 좌판 위로 점프 — 즉시 갱신
   }
   function startWarm() {
     const it = av.use;
@@ -321,6 +329,7 @@ export function makeAvatarSystem(ctx) {
     const g = av.g;
     g.rotation.y = Math.atan2(it.x - g.position.x, it.z - g.position.z); // 불을 향해 선다
     av.mode = 'warm'; av.timer = 5 + Math.random() * 6; av.tgt = null;
+    shadowDirty(); // 방향 전환 + 팔 포즈 — 즉시 갱신
   }
 
   // #86④ 옷 갈아입기: 제자리 재구축 (위치/방향 보존 — 옷장에서 입는 즉시 반영)
