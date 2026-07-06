@@ -20,6 +20,7 @@ import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, s
 import { Platform, bindPlatform } from './lib/platform.js';
 import { state, DEFAULT_STATE, opts, OPTS_DEFAULT } from './core/state.js'; // 모놀리스 분해 Phase 1: 공유 가변 상태
 import { isHard, isHardcore, isZen, isWallpaper, rescueEligible } from './core/mode.js'; // 난이도 예측자
+import { SEASONS, SEASON_DAYS, seasonOf, seasonDay, seasonIndex } from './core/season.js'; // 계절 달력
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -696,17 +697,7 @@ function clockText() {
 /* ============================================================
    계절 (기획서: 4계절 순환 — 12게임일 = 1계절)
 ============================================================ */
-const SEASONS = [
-  { id: 'spring', name: '봄',   nameEn: 'Spring', icon: '🌸', tint: [1.03, 1.05, 1.0],  desc: '만물이 깨어난다', descEn: 'all things awaken' },
-  { id: 'summer', name: '여름', nameEn: 'Summer', icon: '☀️', tint: [0.97, 1.04, 0.94], desc: '풀이 무성하다', descEn: 'the grass grows thick' },
-  { id: 'autumn', name: '가을', nameEn: 'Autumn', icon: '🍂', tint: [1.1, 1.0, 0.86],   desc: '세상이 물든다', descEn: 'the world takes on color' },
-  { id: 'winter', name: '겨울', nameEn: 'Winter', icon: '❄️', tint: [1.0, 1.02, 1.1],   desc: '혹독한 계절', descEn: 'a harsh season' },
-];
-const SEASON_DAYS = BAL.seasons.daysPerSeason;
-function seasonOf(day = state.day) { return SEASONS[Math.floor((day - 1) / SEASON_DAYS) % 4]; }
-function seasonDay(day = state.day) { return ((day - 1) % SEASON_DAYS) + 1; }
-// 계절 절대 인덱스 (겨울 카운터 리셋 기준) — 0부터 계절마다 +1
-function seasonIndex(day = state.day) { return Math.floor((day - 1) / SEASON_DAYS); }
+// 계절 달력(SEASONS/SEASON_DAYS/seasonOf/seasonDay/seasonIndex)은 core/season.js로 이전 (분해 Phase 1). 아래 import 참조.
 /* ── Nine Winters(#11): 겨울 스냅샷 — 겨울에 들어서는 날 이번 겨울의 시작값을 기록해 둔다.
    memoir는 봄으로 넘어가는 날 이 스냅샷과의 차분으로 "그 해 겨울"을 요약한다.
    winterSnap.acc = 겨울 동안 누적되는 서사 통계 (한파/방어/연료). exp 성공은 lifetime stats.success 차분으로. */
