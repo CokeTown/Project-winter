@@ -8,7 +8,7 @@ import { PROJECTS } from './data/projects.js';
 // 콘텐츠 데이터 분리 Phase 1 (순수 테이블 추출) — 로직은 game.js에 그대로.
 import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS } from './data/items.js';
 import { DISTRICTS, REGIONS } from './data/world.js';
-import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, BROADCASTS, SKETCHES } from './data/lore.js';
+import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, BROADCASTS, SKETCHES } from './data/lore.js';
 import { makeEvents } from './data/events.js';
 import { makeDecoTex } from './data/decotex.js';
 import { makeCatSystem } from './systems/cat.js';
@@ -2802,8 +2802,10 @@ const SHELTERS = {
         ridge.receiveShadow = true;
         for (let i = 0; i < 8; i++) {
           if (rand() < 0.4) continue;
-          const sp = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1 + rand() * 0.1, 0), lamb(rand() < 0.5 ? 0x5a6a42 : 0x6a5f3a));
-          sp.position.set(-9.5 + i * 1.8, gh(-3, rz) + 0.35, rz + (rand() - 0.5) * 0.3);
+          // #92 접지: 고정 +0.35가 크기 따라 이랑 위에 떠 보이던 것 — 반지름 비례로 두둑 상면(+0.25)에 심는다
+          const r0 = 0.1 + rand() * 0.1;
+          const sp = new THREE.Mesh(new THREE.IcosahedronGeometry(r0, 0), lamb(rand() < 0.5 ? 0x5a6a42 : 0x6a5f3a));
+          sp.position.set(-9.5 + i * 1.8, gh(-3, rz) + 0.25 + r0 * 0.55, rz + (rand() - 0.5) * 0.3);
           envRoot.add(sp);
         }
       }
@@ -2887,7 +2889,10 @@ const SHELTERS = {
     dailyDirt: 2, moveCost: { parts: 3, material: 2 }, limits: '💧 바다의 습기 — 청결이 매일 2 더 빨리 떨어짐', limitsEn: '💧 Sea damp — cleanliness drops 2 faster each day',
     // (B-②) 연안 페리 외형 리워크: 흰 상부 구조 + 측면 연속 창문 줄 + 선체 적/청 밴드 + 2층 데크 실루엣 +
     //   난간 + 소형 굴뚝. ROOM 인테리어(치수/가구 좌표/이주 로직/퍽) 불변 — 외형 메시만 교체.
-    //   선실 벽(-z)은 배치A 마운트 앵커(z≈-3.78, 상단 2.5)와 호환 유지. 새 벽/천장은 컬링 태그 적용.
+    // (v1.5 페리 리워크 — 디렉터 확정안) "옥탑방처럼 갑판 위에 슬레이트 간이집을 짓고 산다":
+    //   갑판(-z 구석)에 옥탑(#53) 문법의 판자 가벽 3면 + 슬레이트 지붕 간이집. 나머지 갑판 = 배치 가능 야드.
+    //   선실(백드롭 상부구조)은 잠긴 철문 소품으로 봉합("아래층 침수" — lore shp1). ROOM 10×7 불변(가구 마이그레이션 불필요).
+    //   태양광/빗물받이 앵커(SHELTER_MOUNTS.ship)는 간이집 지붕/처마로 이동.
     buildRoom() {
       const { w, d, h } = ROOM;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), wallPhong({ color: 0x7a6248 }));
@@ -2921,7 +2926,7 @@ const SHELTERS = {
       mkRail(d + 0.5, w / 2 + 0.25, 0, Math.PI / 2);
       wallList = [];
       // ── 선실 벽(선수미 방향 뒤쪽, -z) = 흰 상부 구조 + 연속 창문 줄. 벽지 대상 + 컬링. ──
-      //   높이 2.5 유지(상단 y=2.5) → 배치A 벽 마운트 앵커 호환. cabinMat 공유(벽지 교체).
+      //   높이 2.5 유지(상단 y=2.5). (v1.5) 태양광/빗물받이 앵커는 간이집 지붕/처마로 이동 — 이 벽엔 마운트 없음.
       const cabinMat = tagDecoWall(wallPhong({ color: 0xdad6cc })); cabinMat.userData.shared = true;
       const cabinW = new THREE.Group();
       const CWH = 2.5;
@@ -2940,11 +2945,19 @@ const SHELTERS = {
         const mx = -0.3 - (w - 1.2) / 2 + i * ((w - 1.2) / nMul);
         B(cabinW, 0.07, bandH, 0.16, 0x9a958a, mx, bandY, 0.17);
       }
-      // 여객 승강문 (우현 쪽)
-      const door2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.9, 0.1), lamb(0x6a4f33));
-      door2.position.set(3.9, 0.95, 0.18);
-      cabinW.add(door2);
+      // 여객 승강문(우현 쪽) → 잠긴 철문 (v1.5: 벙커 후면 잠긴문 문법 축소판 — "선실은 잠겨 있다").
+      //   갑판 쪽(+z) 면 소품이라 cabinW 자식으로 넣어 선실 벽 컬링과 함께 숨긴다(⑤ 허공 부유 방지).
+      const steelMat = wallPhong({ map: metalTex }); steelMat.userData.shared = true;
+      const steelDoor = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.9, 0.1), steelMat);
+      steelDoor.position.set(3.9, 0.95, 0.18); steelDoor.castShadow = steelDoor.receiveShadow = true;
+      cabinW.add(steelDoor);
       B(cabinW, 1.02, 2.0, 0.06, 0x8a857a, 3.9, 1.0, 0.14); // 문틀
+      for (const sx of [-1, 1]) B(cabinW, 0.07, 1.7, 0.05, 0x3d444c, 3.9 + sx * 0.28, 0.95, 0.24); // 세로 보강 리브
+      B(cabinW, 1.06, 0.13, 0.12, 0x55504a, 3.9, 1.12, 0.26).castShadow = true; // 가로 빗장 (잠김을 명확히)
+      B(cabinW, 0.2, 0.26, 0.16, 0x2f2b26, 3.9, 1.12, 0.3); // 자물쇠 뭉치
+      for (const [bx, by] of [[-0.36, 0.35], [0.36, 0.35], [-0.36, 1.55], [0.36, 1.55]])
+        Cyl(cabinW, 0.03, 0.03, 0.05, 0x2a2622, 3.9 + bx, by, 0.24, 5); // 볼트 자국
+      B(cabinW, 0.44, 0.3, 0.03, 0x9a7a2a, 3.9, 1.62, 0.24); // 빛바랜 경고 표식(글자 없는 색면)
       // 옅은 녹/때 줄무늬 (세월감)
       const rr = seededRand(21);
       for (let i = 0; i < 4; i++) {
@@ -2953,7 +2966,8 @@ const SHELTERS = {
         cabinW.add(rust);
       }
       cabinW.position.set(0, 0, -d / 2 - 0.28);
-      makeWalls([{ group: cabinW, pos: [0, 0, -d / 2 - 0.28], rotY: 0, normal: new THREE.Vector3(0, 0, -1) }]);
+      // ★ 컬링 등록은 아래 간이집 벽 3면과 함께 makeWalls 1회로 일괄 — makeWalls가 wallList를 리셋하므로
+      //   따로 호출하면 먼저 등록한 벽이 목록에서 사라진다(옥탑 문법: 벽 전부를 한 번에 등록).
       // ── 2층 데크 실루엣: 선실 지붕(=1층 천장) + 2층 상부 구조 + 상부 난간 + 창 ──
       //   지붕은 실내 상부를 덮으므로 천장 컬링 등록(⑥-a/배치A 부감 투시). 선실 벽 뒤(-z)에 얹는다.
       const superZ = -d / 2 - 0.28;             // 선실 벽면 z
@@ -2995,10 +3009,121 @@ const SHELTERS = {
       B(rod, 0.15, 0.4, 0.15, 0x55504a, -0.35, 0.2, 0);
       rod.position.set(w / 2 - 0.7, 0, d / 2 - 0.6);
       roomGroup.add(rod);
+      // 구명튜브 — 간이집(-x 구석)과 겹치던 좌현 자리에서 잠긴 철문 옆(우현)으로 이동. 선실 벽면 소품이라
+      //   makeWalls 뒤 attachToWall로 -z 벽 컬링에 편입(벽이 숨을 때 허공에 남지 않게 — ⑤).
       const buoyRing = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.09, 6, 12), lamb(0xc45540));
-      buoyRing.position.set(-w / 2 + 0.2, 1.4, -d / 2 - 0.1);
+      buoyRing.position.set(2.6, 1.4, -d / 2 - 0.1);
       roomGroup.add(buoyRing);
-      blockers = [{ x: w / 2 - 0.7, z: d / 2 - 0.6, w: 0.8, d: 0.8 }];
+
+      // ── (v1.5) 갑판 위 간이집 — 옥탑(#53) 가벽 문법 복제: 판자+방수포 벽 3면 + 슬레이트 지붕 ──
+      //   뒷면(-z)은 선실 벽이 겸한다. 좌표는 절대값 고정(-z/-x 구석) — 증축(extension, ROOM.w+2)은
+      //   갑판 폭만 넓히고 간이집은 그대로다(선실 벽·잠긴 철문 x3.9도 불변).
+      //   치수: 5.6×3.4×2.35. 벽 평면: 앞 z=-0.01, 좌 x=-4.59, 우 x=1.19 (내부 x∈[-4.5,1.1], z∈[-3.5,-0.1]).
+      const SW = 5.6, SD = 3.4, SH = 2.35;              // 간이집 폭/깊이/벽높이
+      const SCX = -1.7, SCZ = -1.8, SFZ = SCZ + SD / 2 + 0.09; // 중심 x/z, 앞벽 평면 z(-0.01)
+      const plyMat = wallPhong({ map: plywoodTex }); plyMat.userData.shared = true;
+      tagDecoWall(plyMat); // (B-①) 간이집 합판 낱장 — 벽지 대상 (옥탑과 동일)
+      const panelCols = [0x8a7350, 0x6e6350, 0x7d6a4a, 0x5f6a6e, 0x86745a, 0x655b48, 0x6a6660];
+      // 목재 모서리 기둥 4개 (컬링 무관 골조 — 옥탑 콘크리트 기둥의 목재판). 뒷기둥은 선실 벽면에 밀착.
+      for (const [px, pz] of [[SCX - SW / 2 - 0.09, SFZ], [SCX + SW / 2 + 0.09, SFZ], [SCX - SW / 2 - 0.09, -3.56], [SCX + SW / 2 + 0.09, -3.56]])
+        B(roomGroup, 0.14, SH + 0.06, 0.14, 0x4a3f30, px, (SH + 0.06) / 2, pz);
+      const pr = seededRand(58);
+      // 판자벽 빌더 (옥탑 mkPatchWall 문법 + 창 개구부): doorC/winC = 개구 중심 비율(0~1). 컬링 그룹 반환.
+      const mkShWall = (len, o = {}) => {
+        const g = new THREE.Group();
+        const doorW = o.doorC != null ? 1.3 : 0, winW = o.winC != null ? 0.95 : 0;
+        const doorS = o.doorC != null ? o.doorC * len - len / 2 - doorW / 2 : 0, doorE = doorS + doorW;
+        const winS = o.winC != null ? o.winC * len - len / 2 - winW / 2 : 0, winE = winS + winW;
+        let x = -len / 2;
+        const board = 0.44;
+        while (x < len / 2 - 0.02) {
+          const bw = Math.min(board + (pr() - 0.5) * 0.18, len / 2 - x);
+          const cx = x + bw / 2;
+          const inDoor = o.doorC != null && cx > doorS - bw / 2 && cx < doorE + bw / 2;
+          const inWin = o.winC != null && cx > winS - bw / 2 && cx < winE + bw / 2;
+          const mat = pr() < 0.5 ? plyMat : wallPhong({ color: panelCols[Math.floor(pr() * panelCols.length)] });
+          if (inDoor) {
+            const lh = SH - 1.8; // 문 위 상인방 (짧은 판)
+            const p = new THREE.Mesh(new THREE.BoxGeometry(bw - 0.03, lh, 0.09), mat);
+            p.position.set(cx, SH - lh / 2, 0); p.castShadow = p.receiveShadow = true; g.add(p);
+          } else if (inWin) {
+            // 창 개구부: [winS,winE] 구간만 아래턱(0~1.05)+위(1.75~벽높이)로 절개하고,
+            // 개구부 밖으로 걸친 자투리는 전고 판자로 남긴다 — 창이 창틀보다 넓게 뚫리지 않게(문간과 달리 벽 중앙 구멍은 티가 난다).
+            const cutS = Math.max(x, winS), cutE = Math.min(x + bw, winE);
+            for (const [ss, ee] of [[x, cutS], [cutE, x + bw]]) if (ee - ss > 0.05) {
+              const sp = new THREE.Mesh(new THREE.BoxGeometry(ee - ss - 0.02, SH - 0.02, 0.09), mat);
+              sp.position.set((ss + ee) / 2, (SH - 0.02) / 2, 0); sp.castShadow = sp.receiveShadow = true; g.add(sp);
+            }
+            const cw2 = cutE - cutS - 0.02;
+            if (cw2 > 0.04) {
+              const p1 = new THREE.Mesh(new THREE.BoxGeometry(cw2, 1.05, 0.09), mat);
+              p1.position.set((cutS + cutE) / 2, 0.525, 0); p1.castShadow = p1.receiveShadow = true; g.add(p1);
+              const p2 = new THREE.Mesh(new THREE.BoxGeometry(cw2, SH - 1.75, 0.09), mat);
+              p2.position.set((cutS + cutE) / 2, (SH + 1.75) / 2, 0); p2.castShadow = p2.receiveShadow = true; g.add(p2);
+            }
+          } else {
+            const ph2 = SH - (pr() < 0.3 ? 0.12 : 0) - 0.02; // 몇 장은 살짝 짧아 위가 삐죽
+            const p = new THREE.Mesh(new THREE.BoxGeometry(bw - 0.03, ph2, 0.09), mat);
+            p.position.set(cx, ph2 / 2, (pr() - 0.5) * 0.03); p.castShadow = p.receiveShadow = true; g.add(p);
+            if (pr() < 0.4) B(g, bw - 0.05, 0.06, 0.03, 0x4a3f30, cx, 0.4 + pr() * (SH - 1), 0.06); // 가로 각목
+          }
+          x += bw;
+        }
+        if (o.winC != null) {
+          // 창틀 + 불빛 유리 — 작은 면(0.9×0.6) 자기조도라 야간 밴딩 함정(대형 무텍스처 평면) 비해당.
+          const wx = o.winC * len - len / 2;
+          B(g, winW + 0.14, 0.07, 0.12, 0x3a3228, wx, 1.785, 0);
+          B(g, winW + 0.14, 0.07, 0.12, 0x3a3228, wx, 1.015, 0);
+          B(g, 0.07, 0.77, 0.12, 0x3a3228, wx - winW / 2 - 0.035, 1.4, 0);
+          B(g, 0.07, 0.77, 0.12, 0x3a3228, wx + winW / 2 + 0.035, 1.4, 0);
+          const pane = new THREE.Mesh(new THREE.BoxGeometry(winW - 0.06, 0.64, 0.05),
+            new THREE.MeshLambertMaterial({ color: 0xffd9a0, emissive: 0xc08a3a, emissiveIntensity: 0.55 }));
+          pane.position.set(wx, 1.4, 0); g.add(pane); // 밤에 "누가 산다"로 읽히는 온광 (부표등과 같은 상시 자발광 문법)
+          B(g, 0.05, 0.64, 0.08, 0x3a3228, wx, 1.4, 0);        // 멀리언 세로대
+          B(g, winW - 0.06, 0.05, 0.08, 0x3a3228, wx, 1.4, 0); // 멀리언 가로대
+        }
+        return g;
+      };
+      // 앞벽(+z): 문간(세계 x≈0.09) + 창(세계 x≈-3.2, 불빛). 좌/우벽은 민판.
+      const shFront = mkShWall(SW, { doorC: 0.82, winC: 0.232 });
+      const shLeft = mkShWall(SD);
+      const shRight = mkShWall(SD);
+      // 방수포: 우벽 상단을 덮은 자락(늘어짐 sway) + 앞벽 문 위 차양 — 벽 그룹 자식이라 벽과 함께 컬링.
+      {
+        const tarp = new THREE.Mesh(new THREE.BoxGeometry(SD * 0.72, 1.1, 0.06), lamb(0x4a5560));
+        tarp.position.set(-SD * 0.1, SH - 0.52, 0.12); tarp.rotation.z = 0.05; tarp.castShadow = true; // z0.12: 판자 지터(±0.015) 밖 — z-fight 여유
+        shRight.add(tarp);
+        const flap = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.05), lamb(0x3f4954));
+        flap.position.set(SD * 0.24, SH - 1.12, 0.19); flap.rotation.z = 0.14;
+        tagSway(flap, 0.14); // F-1a [B]: 방수포 자락 미세 sway
+        shRight.add(flap);
+        const awn = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.05, 0.5), lamb(0x4a5560));
+        awn.position.set(1.8, SH - 0.28, 0.3); awn.rotation.x = 0.42; awn.castShadow = true; // 문 위 차양
+        shFront.add(awn);
+      }
+      // ★ 벽 컬링 일괄 등록 — 법선은 (방 중심이 아니라) 간이집 기준 월드 바깥향. 선실 벽(-z)도 여기서 함께.
+      makeWalls([
+        { group: cabinW, pos: [0, 0, -d / 2 - 0.28], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+        { group: shFront, pos: [SCX, 0, SFZ], rotY: 0, normal: new THREE.Vector3(0, 0, 1) },
+        { group: shLeft, pos: [SCX - SW / 2 - 0.09, 0, SCZ], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+        { group: shRight, pos: [SCX + SW / 2 + 0.09, 0, SCZ], rotY: Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
+      ]);
+      // 문틀 (개구부 테두리) — ⑤ 앞(+z)벽 부착물 → 앞벽 컬링과 동기화 (옥탑 문법 그대로)
+      attachToWall(0, 0, 1,
+        B(roomGroup, 0.08, 1.8, 0.14, 0x3a3228, 0.09 - 0.65, 0.9, SFZ),
+        B(roomGroup, 0.08, 1.8, 0.14, 0x3a3228, 0.09 + 0.65, 0.9, SFZ),
+        B(roomGroup, 1.42, 0.1, 0.14, 0x3a3228, 0.09, 1.8, SFZ));
+      attachToWall(0, 0, -1, buoyRing); // 구명튜브 → 선실 벽 컬링 편입
+      // 슬레이트 지붕 (옥탑 buildRooftopSlate 재사용 — 치수/오프셋 파라미터화, 페리는 빈틈 없는 full 고정).
+      //   내부에서 tagCeiling(y≈2.43) 등록 → 부감에서 실내 투시. 태양광 cullJoin이 이 그룹에 편입된다.
+      buildRooftopSlate(SW, SD, SH, { cx: SCX, cz: SCZ, full: true });
+      blockers = [
+        { x: w / 2 - 0.7, z: d / 2 - 0.6, w: 0.8, d: 0.8 },       // 낚싯대 (기존)
+        { x: SCX - SW / 2 - 0.09, z: SCZ, w: 0.32, d: SD + 0.2 }, // 간이집 좌벽
+        { x: SCX + SW / 2 + 0.09, z: SCZ, w: 0.32, d: SD + 0.2 }, // 간이집 우벽
+        { x: -2.62, z: SFZ, w: 4.12, d: 0.32 },                   // 간이집 앞벽 (문간 왼쪽 — 문간 x∈[-0.56,0.74]은 비움)
+        { x: 1.01, z: SFZ, w: 0.54, d: 0.32 },                    // 간이집 앞벽 (문간 오른쪽)
+      ];
     },
     buildEnv() {
       const rand = seededRand(808);
@@ -5609,6 +5734,11 @@ function tryDropMemoOnExpedition(expRegion) {
       const unRst = MEMOS_RESORT.filter(id => !(state.memos || {})[id]);
       if (unRst.length) { const id = unRst[Math.floor(Math.random() * unRst.length)]; collectMemo(id); return { id, will: false }; }
     }
+    // v1.5 여객선(ship) 거주 중이면 좌초선(harbor) 메모 우선 드랍(갑판 판잣집의 내력 — 잠긴 선실의 사유). 지하/로지 문법 재사용.
+    if (state.current === 'ship') {
+      const unShp = MEMOS_HARBOR.filter(id => !(state.memos || {})[id]);
+      if (unShp.length) { const id = unShp[Math.floor(Math.random() * unShp.length)]; collectMemo(id); return { id, will: false }; }
+    }
     const id = pickUncollectedMemo(districtRegionOf(state.current));
     if (id) { collectMemo(id); return { id, will: false }; }
   }
@@ -5906,9 +6036,11 @@ const SHELTER_MOUNTS = {
     eave: { y: 2.4, x: 4.58, z: 3.08, dir: [1, 1] },
     groundY: -0.73, ground: { x: 5.8, z: 2.0, rot: Math.PI / 2 },
   },
-  ship: { // 개방 갑판 — 선실 벽(-z, 상단 2.5)에 거치. 텃밭은 갑판 위 화단(물 위 부양 금지).
-    roof: { y: 2.55, cx: 0, cz: -3.5, hw: 4.5, hd: 0.9 },
-    eave: { y: 2.5, x: 4.7, z: -3.0, dir: [1, -1] },
+  ship: { // (v1.5 리워크) 갑판 위 간이집 5.6×3.4×2.35(-z/-x 구석, 슬레이트 상면 ~2.46). 텃밭은 갑판 위 화단(물 위 부양 금지).
+    //   roof.y=2.46: 간이집 슬레이트 tagCeiling(2.43)에 cullJoin — 2층 데크 슬래브(y2.5)보다 가깝게 잡아
+    //   attachToRoofCull이 간이집 지붕 그룹을 고르게 한다(컬링되는 지붕이라 cullJoin 적정 — 로지 역효과 사례와 반대).
+    roof: { y: 2.46, cx: -1.7, cz: -1.8, hw: 2.6, hd: 1.5, cullJoin: true },
+    eave: { y: 2.4, x: -4.68, z: 0.18, dir: [-1, 1] }, // 간이집 앞(-x/+z) 처마 모서리 — 홈통은 좌벽/앞벽 컬링에 편입
     groundY: 0, ground: { x: 3.4, z: 2.1, y: 0, rot: 0 },
   },
   lighthouse: { // 원통 — 방(등지기실)이 탑 정상: 바깥 지형은 암반 -8 허공. 텃밭=실내 화분. 자체 홈통 존재(raincatch not).
@@ -6121,9 +6253,11 @@ function addModProp(id) {
   // roof(지붕 보강)/extension: 시각 소품 없음 (구조 변경 개조)
 }
 // ── 옥탑 슬레이트 지붕 (#53) — 방 위에 슬레이트 몇 장. state.rooftopSlate==='full'이면 빈틈 없이,
-//    'gapped'(기본)이면 2장 빠져 하늘이 보인다. buildRoom에서 호출, 제작 보수 시 loadShelter로 재빌드. ──
-function buildRooftopSlate(w, d, h) {
-  const full = (state.rooftopSlate || 'gapped') === 'full';
+//    'gapped'(기본)이면 2장 빠져 하늘이 보인다. buildRoom에서 호출, 제작 보수 시 loadShelter로 재빌드.
+//    (v1.5) opts 파라미터화 — 페리 간이집이 재사용: { cx, cz }=지붕 중심 오프셋(기본 원점),
+//    full=보수 상태 오버라이드(페리는 true 고정 — rooftopSlate 보수 루프는 옥탑 전용이므로 상태 비연동). ──
+function buildRooftopSlate(w, d, h, opts = {}) {
+  const full = opts.full ?? ((state.rooftopSlate || 'gapped') === 'full');
   const g = new THREE.Group();
   // 지붕판 베이스 (살짝 뒤로 경사진 얇은 슬래브)
   const eaveOver = 0.28;
@@ -6159,6 +6293,7 @@ function buildRooftopSlate(w, d, h) {
     B(g, rw, 0.05, 0.08, 0x5a5450, 0, h + 0.15, 0);
   }
   // ⑥-a: 슬레이트 지붕은 실내를 덮는다 — 공통 천장 컬링에 등록(부감에서 숨김). 보수 전/후 모두 g 하나에 담김.
+  g.position.set(opts.cx || 0, 0, opts.cz || 0); // (v1.5) 지붕 중심 오프셋 (y는 0 — tagCeiling 높이 판정 불변)
   tagCeiling(g, h + 0.08);
   roomGroup.add(g);
 }
@@ -7140,6 +7275,11 @@ function recordTabHtml() {
         sections += `<div class="prep-row" style="cursor:pointer;border-top:1px solid var(--panel-border);margin-top:4px" data-truth="1"><span>📖</span><span style="color:var(--accent)">${t('record.truthTitle')}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`;
       }
     }
+  }
+  // v1.5: 좌초 여객선(harbor) 메모 — 발견 후에만 섹션 노출 (지하/리조트 문법 재사용)
+  {
+    const hgot = MEMOS_HARBOR.filter(id => owned[id]).length;
+    if (hgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionHarbor')} (${hgot}/${MEMOS_HARBOR.length})</div>` + MEMOS_HARBOR.map(id => memoRow(id, MEMOS)).join('');
   }
   const willIds = Object.keys(WILLS);
   const willGot = willIds.filter(id => owned[id]).length;

@@ -85,6 +85,10 @@ export const MEMOS = {
   rsc10: { region: 'research', name: '위성 교신 로그', nameEn: 'Satellite Uplink Log', desc: '단말 화면을 옮겨 적은 종이. 궤도 관측소와의 정기 교신 기록. 대부분 "지상 신호 없음".\n맨 아래 한 줄만 다르다. "신호 하나 감지. 좌표 기록. — 계속 지켜본다."', descEn: 'A page transcribed from a terminal. Logs of regular contact with the orbital station. Most read "no surface signal."\nOnly the bottom line differs: "One signal detected. Coordinates logged. — Keep watching."' },
   rsc11: { region: 'research', name: '무전 기지 설계도', nameEn: 'Radio Base Schematic', desc: '접힌 청사진. 지상에서 궤도 관측소로 신호를 되쏘는 송신 기지의 도면이다. 안테나·송신기·전원 계통이 나뉘어 있다.\n여백에 손글씨. "누군가 이걸 다시 세운다면, 위에서 응답할 것이다."', descEn: 'A folded blueprint. Plans for a ground station that beams a signal back up to the orbital post. Antenna, transmitter, power — each drawn apart.\nIn the margin, by hand: "If someone raises this again, there will be an answer from above."' },
   rsc12: { region: 'research', name: '마지막 기록', nameEn: 'The Last Entry', desc: '노트의 마지막 장. "아홉 번의 겨울이면 대기가 가라앉는다. 나는 거기까진 못 본다.\n하지만 그때까지 버틴 불빛이 하나라도 있다면, 부디 이 기지를 다시 켜다오. 그게 내가 남길 수 있는 전부다. — Dr. ___"', descEn: 'The notebook’s last page. "Nine winters, and the air will settle. I won’t see that far.\nBut if even one light lasts that long — please, switch this station back on. It is all I can leave. — Dr. ___"' },
+
+  // ── v1.5 좌초 여객선 (harbor) 1: 페리 리워크 — 선실이 잠긴 사유 봉합 (갑판 판잣집의 내력) ──
+  //   여객선(ship) 거주 중 탐험에서 우선 드랍. 1인칭 발견 문법·두 줄 구조 유지.
+  shp1: { region: 'harbor', name: '선실 철문의 쪽지', nameEn: 'Note on the Cabin Door', desc: '잠긴 철문에 못으로 박아둔 쪽지. "아래층엔 물이 찼다. 펌프로는 못 당한다. 문은 잠갔다."\n갑판 위 판잣집은 그 사람이 지었을 것이다. 차라리 이쪽이 아늑하다.', descEn: 'A note nailed to the locked steel door. "The lower decks are flooded. The pump can’t keep up. I’ve locked the door."\nThe shanty on the deck must have been theirs. Honestly, it’s snugger out here.' },
 };
 // 유서 6종 — 지역 무관 별도 풀, 극저확률 (REQ-LORE-01)
 export const WILLS = {
@@ -104,6 +108,8 @@ export const MEMOS_SUBWAY = Object.keys(MEMOS).filter(id => MEMOS[id].region ===
 export const MEMOS_RESORT = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'resort');
 // 1.4 금지 구역(research) 기밀 문서 풀 — 검문소/연구동 탐험에서 우선 드랍(세계관의 답 · 최종장).
 export const MEMOS_RESEARCH = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'research');
+// v1.5 좌초 여객선(harbor) 메모 풀 — 페리(ship) 거주 중 탐험에서 우선 드랍(갑판 판잣집의 내력).
+export const MEMOS_HARBOR = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'harbor');
 
 /* ── 라디오 방송 12종 (REQ-RADIO-01) ──
    예보 3(계절)/행상 예고 1/과거 정부 안내 2/정체불명 음악 1/생존자 사연 2/기계 자동 방송 1/박사 일지 조각 2.

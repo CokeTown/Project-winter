@@ -226,8 +226,8 @@ export function makeCatSystem(ctx) {
     g.add(body); P.body = body;
     B(body, 4 * PX, 4 * PX, 12 * PX, fur, 0, 0, 6 * PX);              // 몸통 본체 (피벗에서 +z로 12px 길이, 중심 +6px)
     B(body, 4.06 * PX, 1.6 * PX, 10 * PX, belly, 0, -1.6 * PX, 6 * PX); // 배쪽 밴드 (아랫면에 얇게 덧대어 파묻힘 없이 보이게)
-    for (const [sz, w] of [[3 * PX, 4.2 * PX], [7 * PX, 4.2 * PX], [10.5 * PX, 4.06 * PX]])
-      B(body, w, 3.2 * PX, 2.2 * PX, stripe, 0, 0.3 * PX, sz);          // 등 줄무늬 3개 — 몸통보다 살짝만 얇게(파묻히게)
+    for (const [sz, w] of [[3 * PX, 4.06 * PX], [7 * PX, 4.06 * PX], [10.5 * PX, 4.06 * PX]])
+      B(body, w, 3.2 * PX, 2.2 * PX, stripe, 0, 0.3 * PX, sz);          // 등 줄무늬 3개 — 측면 돌출을 배 밴드와 동일(+0.03px)로 플러시(#87: 측면 요철 오독 마감)
     // 가슴 필러 — 앉아서 가슴이 들려도 어깨와 앞다리 사이가 비어 보이지 않게 몸통 앞쪽 아래를 채움
     B(body, 3.4 * PX, 3 * PX, 3.2 * PX, belly, 0, -2 * PX, 10.2 * PX);
     // ── 머리 (5×4×5px, 몸통 앞쪽에 자식으로 부착)

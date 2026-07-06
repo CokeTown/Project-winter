@@ -936,6 +936,9 @@ export const STR = {
   'memo.tagRegion.industrial':  { ko: '공업지대에서 — 폐쇄 명령', en: 'From the industrial zone — the shutdown order' },
   'memo.tagRegion.slum':        { ko: '슬럼가에서 — 남겨진 사람들', en: 'From the slums — those left behind' },
   'memo.tagRegion.bunker':      { ko: '벙커 하강 계단에서 — 아래로 난 자국', en: 'From the bunker stairs — marks leading down' },
+  // #87 스윕: 열람 시 키 원문이 노출되던 누락 2종 (페리 에이전트 검거 — 1.2/1.3 때 태그만 빠졌던 것)
+  'memo.tagRegion.subway':      { ko: '지하 승강장에서 — 내려간 사람들', en: 'From the underground platform — those who went below' },
+  'memo.tagRegion.resort':      { ko: '고원 리조트에서 — 마지막 휴가객들', en: 'From the highland resort — the last vacationers' },
   'radio.heardNote':    { ko: '📻 라디오에서 방송을 하나 들었다 — {title}', en: '📻 Heard a broadcast on the radio — {title}' },
   'radio.logged':       { ko: '📻 수첩에 기록했다', en: '📻 Logged in the journal' },
 
@@ -1118,6 +1121,9 @@ export const STR = {
   // 금지 구역 지역/구역
   'memo.tagRegion.research': { ko: '금지 구역에서 — 봉쇄선 너머의 기록', en: 'From the forbidden zone — records past the cordon' },
   'record.regionResearch': { ko: '기밀 문서', en: 'Classified Documents' },
+  /* ── v1.5 페리 리워크: 좌초 여객선 메모 풀 ── */
+  'memo.tagRegion.harbor': { ko: '좌초한 여객선에서 — 갑판 판잣집의 내력', en: 'From the grounded liner — how the deck shanty came to be' },
+  'record.regionHarbor':  { ko: '좌초한 여객선', en: 'The Grounded Liner' },
   'record.truthTitle':    { ko: '📖 그날의 진실', en: '📖 The Truth of That Day' },
   'map.survivorLight':    { ko: '응답한 먼 불빛', en: 'A distant light, answering' },
   'forbidden.intro':      { ko: '봉쇄선 너머의 일이다. 방호복 없이는 한 걸음도 들일 수 없다.', en: 'This is beyond the cordon. Without a suit, not one step in.' },
