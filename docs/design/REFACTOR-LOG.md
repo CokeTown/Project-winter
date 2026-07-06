@@ -87,9 +87,11 @@ tests/            ← [신설] 회귀 그물: harness.cjs(오프스크린 Electr
 - **F1 (⚠️ 재현성 결함)**: `simDays`(밸런스 오라클)가 **비-헤르메틱** — 같은 dist·시드인데 호출 하네스에 따라 노말 중반 수치가 흔들림(105 vs 126). `simReset`이 weather 등 모듈 상태를 안 리셋하는 게 원인 추정. Day432 캡·하드·하드코어 결론은 안정. **리팩토링 과제**: `simDays`를 헤르메틱하게 → 밸런스 측정 완전 신뢰 가능.
 - **F2 (✅ 안전 확인)**: #76 신규 세이브 필드(book/bookProgress/demoEnded)가 구세이브에서 안전하게 마이그레이션됨 — 유실 없음(그물이 증명).
 - **F3 (✅ 시스템 그라운딩 QA, 2026-07-07)**: 오프스크린 하네스가 **실접지 QA를 가능케 함**(구 `QA-REPORT.md` v0.9.1의 "프리뷰차단" 한계 극복 — 이제 렌더/로밍/모달/예외를 실런타임에서 실측). **두 스윕 = 26/26 green + 게임 버그 0**.
-  - **세션-산출물 스윕(13/13, `scratchpad/qa-systems.cjs`)**: ①지식 트리 모달 렌더(4갈래×티어1/2/3, 선행 게이팅, 익힘/배우기/선행필요 3상태, 해금 파이프라인 책 차감·중복차단) ②가방 확정 파밍(밴드 diff-0) ③게이트 코스트 모드 스케일(단조성) ④야생동물 로밍(강제스폰 3개체·1.9s Δ25.6 이동·야간발자국 0→7·groundY=-0.75 셸터지면 정확 접지) ⑤sim 60일×4모드 무예외 ⑥예외 0건. + 시각 접지 캡처(지식 모달 4갈래 완전 렌더).
-  - **광역-시스템 스윕(13/13, `scratchpad/qa-broad.cjs`)**: 세션 밖 8시스템 실런타임 — 세이브 왕복 무손실(변조→loadSave 복원 day/wood/book), 날씨 5종+전이(#83), 인카운터 엔진(40draw 전부 유효id·3연속0=REQ-EVT-02), 고양이(async GLB 스폰 폴링→쓰다듬 petHappy↑), 아바타(#86), 탐험 전주기(가방 정산), 엔딩 시퀀스, 예외 0건.
-  - *방법론 주의(재사용 가치)*: 초기 3 FAIL은 전부 **QA-스크립트 아티팩트**였음(readSlot 반환구조 오용·weatherFx는 함수 아님·**spawnCat은 async GLB라 catSpawning() 폴링 필요**) — 그라운딩 규율대로 스크립트 수정 후 재실행해 green으로 실증(게임 버그로 오판 안 함). **spawnCat async 폴링 패턴은 향후 고양이 QA 표준.**
+  - **영속 하네스**: `tests/grounding/` 3종 + `npm run grounding`(또는 `grounding:build`로 빌드 동반). scratchpad 아니라 리포지에 박제 — 디렉터/CTO가 언제든 재실행. 스크린샷은 `%TEMP%/nw-grounding-shots`(휘발).
+  - **세션-산출물 스윕(13/13, `tests/grounding/qa-systems.cjs`)**: ①지식 트리 모달 렌더(4갈래×티어1/2/3, 선행 게이팅, 익힘/배우기/선행필요 3상태, 해금 파이프라인 책 차감·중복차단) ②가방 확정 파밍(밴드 diff-0) ③게이트 코스트 모드 스케일(단조성) ④야생동물 로밍(강제스폰 3개체·1.9s Δ25.6 이동·야간발자국 0→7·groundY=-0.75 셸터지면 정확 접지) ⑤sim 60일×4모드 무예외 ⑥예외 0건. + 시각 접지 캡처(지식 모달 4갈래 완전 렌더).
+  - **광역-시스템 스윕(13/13, `tests/grounding/qa-broad.cjs`)**: 세션 밖 8시스템 실런타임 — 세이브 왕복 무손실(변조→loadSave 복원 day/wood/book), 날씨 5종+전이(#83), 인카운터 엔진(40draw 전부 유효id·3연속0=REQ-EVT-02), 고양이(async GLB 스폰 폴링→쓰다듬 petHappy↑), 아바타(#86), 탐험 전주기(가방 정산), 엔딩 시퀀스, 예외 0건.
+  - **QA-폭 스윕(8/8, `tests/grounding/qa-breadth.cjs`)**: BGM 컨텍스트 전환(ash→storm→clear 키), 퀘스트 체인 7단계 전진→트래커 퇴장(-1), 저널(#journal-screen)·도움말·지도 모달 렌더, 예외 0건.
+  - *방법론 주의(재사용 가치)*: 광역·폭 스윕 초기 6 FAIL은 **전부 QA-스크립트 아티팩트**였음(readSlot 반환구조·weatherFx는 함수 아님·**spawnCat은 async GLB라 catSpawning() 폴링 필요**·퀘스트 -1은 600ms setTimeout·저널은 #modal-back이 아닌 자체 #journal-screen 오버레이) — 그라운딩 규율(관측→진단→수정→재실행)대로 스크립트 수정 후 green으로 실증(게임 버그로 오판 안 함). **spawnCat async 폴링·journal-screen 셀렉터는 향후 QA 표준.**
 
 ---
 
