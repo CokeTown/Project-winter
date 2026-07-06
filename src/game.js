@@ -1548,15 +1548,37 @@ function buildWetFx() {
   }
 }
 
+// #97 섀도 프록시 재질(공유): 색은 안 그리고(colorWrite off) 그림자 패스에만 참여 — "보이지 않는 차광판"
+const shadowProxyMat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+shadowProxyMat.userData.shared = true;
+shadowProxyMat.userData.cullFadeSkip = true;
+shadowProxyMat.userData.noWet = true;
 function makeWalls(defs) {
   wallList = [];
   for (let i = 0; i < defs.length; i++) {
     const d = defs[i];
     addWallWeatherFx(d.group); // 회전 전(로컬 좌표)에 치수 측정
+    // #97 (디렉터: "벽 투명화되며 빛이 샌다"): 컬링으로 숨은 벽도 그림자는 계속 드리워야 한다.
+    //   숨은 벽 자리에 화면 비가시 슬래브(프록시)를 켜서 광차단을 대행 — 실내광 유출/외광 유입 봉쇄.
+    //   곡면 벽(noWeatherCap: 벙커 밴드·파사드)은 bb 슬래브가 형상과 틀려 제외(눈 캡과 같은 판정).
+    let proxy = null;
+    if (!d.group.userData.noWeatherCap) {
+      const bb = new THREE.Box3().setFromObject(d.group);
+      const len = bb.max.x - bb.min.x, h = bb.max.y - bb.min.y;
+      if (len > 0.5 && h > 0.5) {
+        proxy = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.16), shadowProxyMat);
+        proxy.position.set(d.pos[0], d.pos[1] + bb.min.y + h / 2, d.pos[2]);
+        proxy.rotation.y = d.rotY;
+        proxy.castShadow = true; proxy.receiveShadow = false;
+        proxy.visible = false;          // 벽이 보일 땐 벽이 직접 그림자 — 프록시는 숨을 때만
+        proxy.raycast = () => {};       // 클릭/피킹 무간섭
+        roomGroup.add(proxy);
+      }
+    }
     d.group.position.set(...d.pos);
     d.group.rotation.y = d.rotY;
     roomGroup.add(d.group);
-    wallList.push({ group: d.group, normal: d.normal });
+    wallList.push({ group: d.group, normal: d.normal, proxy });
   }
 }
 // ⑤ 벽 부착 소품 컬링 동기화: 벽 평면에 덧댄 패치/판자/방수포/브레이스/스텐실 등을,
@@ -5797,7 +5819,7 @@ function openWardrobeModal() {
   $('modal-body').querySelectorAll('button[data-wear]').forEach(b => b.addEventListener('click', () => {
     state.outfit = b.dataset.wear;
     avatarSys.refreshOutfit();
-    playSfx('craft');
+    playSfx('whoosh', { rate: 0.72, vol: 0.5, jitter: 0.06 }); // 갈아입기 = 천 스치는 스윽 (디렉터: 망치질 금지 — 전용 소스 오면 cloth로 교체)
     toast(t('wardrobe.worn', { name: LName(OUTFITS[b.dataset.wear]) }));
     scheduleSave();
     openWardrobeModal(); // 착용 배지 갱신
@@ -7083,7 +7105,9 @@ function openCraftModal() {
       questProgress('craft');
       scheduleSave();
       renderResBar();
-      playSfx('craft');
+      // #86④ 의류는 망치질 대신 천 스치는 소리 (디렉터 오더 — 갈아입기와 동일 결)
+      if (c.out.outfit) playSfx('whoosh', { rate: 0.72, vol: 0.5, jitter: 0.06 });
+      else playSfx('craft');
       spawnCraftFx(craftEmoji); // ④ 제작 손맛: 결과물 아이콘 떠오름 + 반짝임
       if (c.out.outfit) openCraftModal(); // #86④: 보유 배지 즉시 반영 (재제작 버튼 잔류 방지)
       openCraftModal(); // 갱신
@@ -8328,6 +8352,7 @@ function updateWallCulling(dt = 0, instant = false) {
   wallList.forEach((w, i) => {
     const show = closedHome || w.normal.dot(dir) < 0.25;
     setCullTarget(w.group, show, instant);
+    if (w.proxy) w.proxy.visible = !show; // #97: 숨은 벽의 광차단 대행 (마스크 변경이 shadowDirty를 이미 트리거)
     // 마스크는 "표시 목표" 기준(그림자 갱신 트리거) — 페이드 완료 대기 없이 그림자가 따라오게.
     if (show) mask |= 1 << i;
   });
@@ -11337,6 +11362,8 @@ window.__shelter = {
   avatarForceNext: () => avatarSys._forceNext(),          // #86② QA: 행동 추첨 강제 (상호작용 검증)
   avatarBlocks: (x, z) => avatarSys.blocksPlacement(x, z, { w: 1, d: 1 }), // #86③ QA: 설치 가드 판정
   openWardrobeModal, OUTFITS, // #86④ QA: 옷장
+  wallProxyState: () => wallList.map(w => ({ show: w.group.visible, proxy: w.proxy ? w.proxy.visible : null })), // #97 QA
+  avatarWalkTo: (x, z) => avatarSys._walkTo(x, z), // #86 QA: 경유점 라우팅 실증
   wlObstacleList: () => wlObstacles.slice(), // #95 QA: 등록 장애물 덤프 (프로브 침범 판정용)
   wildlifeWalkTo: (i, x, z) => wildlifeSys._walkTo(i, x, z), // #95 QA: 강제 횡단 (회피 실증)
   swayCount: () => swayProps.length,

@@ -113,6 +113,54 @@ export function makeAvatarSystem(ctx) {
     return { x: 0, z: room.d / 2 - 0.7 }; // 최후: 문가
   }
 
+  /* ── 경유점 라우팅 (디렉터: "우회가 아니라 비비기를 한다") ──
+     반응형 슬라이드(부딪힌 뒤 면을 따라 밀림)는 큰 가구에서 '문지르는 그림'이 된다.
+     걷기 목표를 잡는 순간 직선이 가구 사각을 지나는지 검사하고, 지나면 그 사각의
+     자유 모서리(+0.5 여유)를 경유점으로 삽입 — 부딪히기 전에 도는 걸음이 된다.
+     슬라이드는 잔여 안전망(0.9s 상한)으로만 남는다. */
+  function segHitsRect(x0, z0, x1, z1, r, pad) { // 2D 슬랩 판정
+    const hw = r.w / 2 + pad, hd = r.d / 2 + pad;
+    const dx = x1 - x0, dz = z1 - z0;
+    let t0 = 0, t1 = 1;
+    const p = [-dx, dx, -dz, dz];
+    const q = [x0 - (r.x - hw), (r.x + hw) - x0, z0 - (r.z - hd), (r.z + hd) - z0];
+    for (let i = 0; i < 4; i++) {
+      if (Math.abs(p[i]) < 1e-9) { if (q[i] < 0) return false; continue; }
+      const t = q[i] / p[i];
+      if (p[i] < 0) { if (t > t1) return false; if (t > t0) t0 = t; }
+      else { if (t < t1) t1 = t; if (t < t0) return false; }
+    }
+    return t0 <= t1 && t1 > 0 && t0 < 1;
+  }
+  function firstRectOnPath(x0, z0, x1, z1, pad) {
+    const bl = getBlockers ? getBlockers() : [];
+    for (const b of bl) if (segHitsRect(x0, z0, x1, z1, b, pad)) return b;
+    for (const it of items) {
+      if (DEFS[it.defId]?.noCollide || (it.y || 0) > 0.3 || it.support) continue;
+      const fp = footprintOf(it);
+      if (fp && segHitsRect(x0, z0, x1, z1, { x: it.x, z: it.z, w: fp.w, d: fp.d }, pad)) return { x: it.x, z: it.z, w: fp.w, d: fp.d };
+    }
+    return null;
+  }
+  function routeTo(tgt) { // 경유점 계산 — 직행 가능하면 null
+    const g = av.g;
+    const R = firstRectOnPath(g.position.x, g.position.z, tgt.x, tgt.z, 0.3);
+    if (!R) return null;
+    const hw = R.w / 2 + 0.5, hd = R.d / 2 + 0.5;
+    const room = getRoom();
+    let best = null, bestCost = 1e9;
+    for (const [cx, cz] of [[R.x - hw, R.z - hd], [R.x + hw, R.z - hd], [R.x - hw, R.z + hd], [R.x + hw, R.z + hd]]) {
+      if (Math.abs(cx) > room.w / 2 - 0.3 || Math.abs(cz) > room.d / 2 - 0.3) continue; // 방 밖 코너 제외
+      if (Math.hypot(cx - g.position.x, cz - g.position.z) < 0.25) continue; // 지금 선 코너 재선택 금지 — 비용 최소로 계속 뽑혀 제자리 루프(프로브 검거)
+      if (hitBlock(cx, cz, 0.24)) continue;
+      if (segHitsRect(g.position.x, g.position.z, cx, cz, R, 0.24)) continue; // 코너행이 같은 사각을 뚫으면 무효
+      const cost = Math.hypot(cx - g.position.x, cz - g.position.z) + Math.hypot(tgt.x - cx, tgt.z - cz);
+      if (cost < bestCost) { bestCost = cost; best = { x: cx, z: cz }; }
+    }
+    return best;
+  }
+  function setTarget(tgt) { av.tgt = tgt; av.way = tgt ? routeTo(tgt) : null; }
+
   function respawn() {
     despawn();
     const built = buildMesh();
@@ -129,7 +177,8 @@ export function makeAvatarSystem(ctx) {
   /* ── 상호작용 대상 탐색 ── */
   const seatOf = it => SEAT_Y[it.defId];
   function pickSeat() {
-    const list = items.filter(it => seatOf(it) != null && it.defId !== 'bed' && !(it.y > 0.3) && !it.support);
+    // 침대 포함(디렉터: "침대랑 상호작용을 안 한다") — 침대는 startSit에서 모서리 걸터앉기로 처리
+    const list = items.filter(it => seatOf(it) != null && !(it.y > 0.3) && !it.support);
     return list.length ? list[Math.floor(Math.random() * list.length)] : null;
   }
   function pickHeat() {
@@ -158,7 +207,7 @@ export function makeAvatarSystem(ctx) {
     return cand.find(inRoom) || { x: it.x, z: it.z + fp.d / 2 + dist };
   }
 
-  function pickIdle() { if (!av) return; unseat(); av.mode = 'idle'; av.tgt = null; av.use = null; av.timer = 3 + Math.random() * 5; }
+  function pickIdle() { if (!av) return; unseat(); av.mode = 'idle'; av.tgt = null; av.way = null; av.use = null; av.timer = 3 + Math.random() * 5; }
   // 착석/눕기 해제 — 일어날 땐 앉기 전 접근점으로 내려선다(좌판 중앙에서 걸어 나오면 가구 관통으로 보인다)
   function unseat() {
     if (!av) return;
@@ -176,10 +225,10 @@ export function makeAvatarSystem(ctx) {
     const r = Math.random();
     const seat = r >= 0.5 && r < 0.7 ? pickSeat() : null;
     const heat = r >= 0.7 && r < 0.88 ? pickHeat() : null;
-    if (r < 0.35) { av.mode = 'walk'; av.tgt = freeSpot(); }
-    else if (r < 0.5) { av.mode = 'window'; av.timer = 4 + Math.random() * 4; av.tgt = { x: 0, z: -getRoom().d / 2 + 0.6 }; }
-    else if (seat) { av.mode = 'gosit'; av.use = seat; av.tgt = approachPoint(seat, 0.42); }
-    else if (heat) { av.mode = 'gowarm'; av.use = heat; av.tgt = approachPoint(heat, 0.62); }
+    if (r < 0.35) { av.mode = 'walk'; setTarget(freeSpot()); }
+    else if (r < 0.5) { av.mode = 'window'; av.timer = 4 + Math.random() * 4; setTarget({ x: 0, z: -getRoom().d / 2 + 0.6 }); }
+    else if (seat) { av.mode = 'gosit'; av.use = seat; setTarget(approachPoint(seat, 0.42)); }
+    else if (heat) { av.mode = 'gowarm'; av.use = heat; setTarget(approachPoint(heat, 0.62)); }
     else pickIdle();
   }
 
@@ -211,7 +260,7 @@ export function makeAvatarSystem(ctx) {
     if (near < 1.4 && av.mode !== 'walk') {
       const sp = freeSpot(x, z, 1.7);
       resetPose(); av.g.position.y = 0; av.g.rotation.x = 0;
-      av.mode = 'walk'; av.use = null; av.tgt = sp;
+      av.mode = 'walk'; av.use = null; setTarget(sp);
     }
     return Math.abs(x - g.position.x) < fp.w / 2 + 0.24 && Math.abs(z - g.position.z) < fp.d / 2 + 0.24;
   }
@@ -243,10 +292,12 @@ export function makeAvatarSystem(ctx) {
     // 이동 (walk / window·gosit·gowarm 접근)
     const approaching = (av.mode === 'walk' || av.mode === 'window' || av.mode === 'gosit' || av.mode === 'gowarm') && av.tgt;
     if (approaching) {
-      const dx = av.tgt.x - g.position.x, dz = av.tgt.z - g.position.z;
+      const aim = av.way || av.tgt; // 경유점 우선 — 가구 모서리를 돌아서 간다
+      const dx = aim.x - g.position.x, dz = aim.z - g.position.z;
       const dist = Math.hypot(dx, dz);
-      if (dist < 0.08) {
-        if (av.mode === 'walk') pickIdle();
+      if (dist < (av.way ? 0.14 : 0.08)) {
+        if (av.way) { av.way = routeTo(av.tgt); } // 경유점 도착 → 남은 길 재검사(둘째 가구 대응)
+        else if (av.mode === 'walk') pickIdle();
         else if (av.mode === 'window') av.tgt = null;
         else if (av.mode === 'gosit') startSit();
         else if (av.mode === 'gowarm') startWarm();
@@ -259,13 +310,17 @@ export function makeAvatarSystem(ctx) {
           const px = b.w / 2 + 0.26 - Math.abs(nx - b.x), pz = b.d / 2 + 0.26 - Math.abs(nz - b.z);
           if (px < pz) nx = b.x + Math.sign(nx - b.x || 1) * (b.w / 2 + 0.26);
           else nz = b.z + Math.sign(nz - b.z || 1) * (b.d / 2 + 0.26);
+          // 비비적 상한(디렉터: "침대에 비빈다"): 큰 가구를 따라 긴 슬라이드가 이어지면
+          //   문지르는 그림이 된다 — 0.9초 넘게 쓸면 경로를 다시 뽑는다(돌아가는 척이라도).
+          av.slideT = (av.slideT || 0) + dt;
+          if (av.slideT > 0.9) { av.slideT = 0; if (av.mode === 'walk') setTarget(freeSpot()); else return pickIdle(); }
           // 슬라이드 결과가 또 다른 가구 안이면 제자리 — 1.2초 넘게 막히면 목표 재추첨 (이웃 침투/정체 교정)
           if (hitBlock(nx, nz, 0.24)) {
             nx = g.position.x; nz = g.position.z;
             av.blockedT += dt;
             if (av.blockedT > 1.2) { av.blockedT = 0; if (av.mode === 'walk') av.tgt = freeSpot(); else pickIdle(); }
           } else av.blockedT = 0;
-        } else av.blockedT = 0;
+        } else { av.blockedT = 0; av.slideT = 0; }
         g.position.x = nx; g.position.z = nz;
         const want = Math.atan2(dx, dz);
         let dr = want - g.rotation.y; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
@@ -318,8 +373,17 @@ export function makeAvatarSystem(ctx) {
     const g = av.g;
     av.exitSpot = { x: g.position.x, z: g.position.z }; // 도착점(접근점) 기억 — 일어날 때 여기로
     const y = seatOf(it) ?? 0.45;
-    g.position.set(it.x, Math.max(0, y - LEG_H * 0.42), it.z);
-    g.rotation.y = ((it.rot || 0) * Math.PI / 2); // 가구 정면 방향으로 앉기 (관례: rot0=+z)
+    let sx = it.x, sz = it.z, ry = (it.rot || 0) * Math.PI / 2; // 기본: 가구 정면 방향 정좌 (관례: rot0=+z)
+    if (it.defId === 'bed') {
+      // 침대는 걸터앉기(디렉터: "침대랑 상호작용") — 접근한 쪽 모서리에 앉아 바깥을 본다
+      const fp = footprintOf(it) || { w: 1.8, d: 2.3 };
+      const cl = (v, m) => Math.max(-m, Math.min(m, v));
+      sx = it.x + cl((g.position.x - it.x) * 3, fp.w / 2 - 0.22);
+      sz = it.z + cl((g.position.z - it.z) * 3, fp.d / 2 - 0.22);
+      ry = Math.atan2(av.exitSpot.x - it.x, av.exitSpot.z - it.z);
+    }
+    g.position.set(sx, Math.max(0, y - LEG_H * 0.42), sz);
+    g.rotation.y = ry;
     av.mode = 'sit'; av.timer = 6 + Math.random() * 7; av.tgt = null;
     shadowDirty(); // 좌판 위로 점프 — 즉시 갱신
   }
@@ -347,5 +411,6 @@ export function makeAvatarSystem(ctx) {
     exists: () => !!av,
     _debug: () => av ? { mode: av.mode, x: +av.g.position.x.toFixed(2), z: +av.g.position.z.toFixed(2), y: +av.g.position.y.toFixed(2), vis: av.g.visible, use: av.use ? (av.use.defId || 'rect') : null, outfit: getOutfit ? getOutfit() : 'default' } : null,
     _forceNext: () => pickNext(), // QA: 행동 추첨 강제
+    _walkTo: (x, z) => { if (av) { unseat(); av.g.rotation.x = 0; av.g.position.y = 0; av.mode = 'walk'; av.use = null; setTarget({ x, z }); } }, // QA: 강제 횡단 (라우팅 실증)
   };
 }
