@@ -912,3 +912,10 @@
     animation: none !important;
   }
   body.reduce-motion .btn-badge { transform: none; }
+
+/* == #74 Next Fest demo end screen ================================ */
+.demo-end { text-align: center; padding: 6px 4px 2px; word-break: keep-all; }
+.demo-end .de-mark { font-size: 15px; letter-spacing: 2px; margin-bottom: 12px; opacity: 0.9; }
+.demo-end .de-body { font-size: 14px; line-height: 1.75; margin: 0 0 10px; }
+.demo-end .de-sub  { font-size: 12px; line-height: 1.7; color: var(--text-dim, #9aab9a); margin: 0 0 14px; }
+.demo-end .pixel-btn { min-width: 140px; }

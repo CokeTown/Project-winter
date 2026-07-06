@@ -17,6 +17,7 @@ export default defineConfig(({ command, mode }) => ({
   define: {
     __APP_VER__: JSON.stringify(pkg.version),
     __QA_EDITION__: JSON.stringify(process.env.QA_EDITION === '1'),
+    __DEMO__: JSON.stringify(process.env.DEMO_BUILD === '1'), // #74 Next Fest 데모 (tools/build-demo.ps1)
     __BUILD_STAMP__: JSON.stringify(new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).slice(5, 16)),
   },
   server: {

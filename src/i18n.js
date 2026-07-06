@@ -16,6 +16,8 @@ export let lang = 'ko';
 const APP_VER = (typeof __APP_VER__ !== 'undefined') ? __APP_VER__ : 'dev';
 // 빌드 스탬프(KST): 같은 버전 라벨로 웹 핫픽스가 하루 여러 번 나갈 때 "지금 무슨 빌드인지" 분간용 (디렉터 피드백 루프)
 const BUILD_STAMP = (typeof __BUILD_STAMP__ !== 'undefined') ? __BUILD_STAMP__ : '';
+// #74 Next Fest 데모 빌드 표기 — 버전줄에 DEMO 병기 (스샷·제보에서 정식판과 즉시 분간)
+const DEMO_TAG = (typeof __DEMO__ !== 'undefined' && __DEMO__) ? ' · DEMO' : '';
 
 export function setLang(l) {
   lang = (l === 'en') ? 'en' : 'ko';
@@ -78,7 +80,7 @@ export const STR = {
   'title.new':      { ko: '✚ 새 게임', en: '✚ New Game' },
   'title.load':     { ko: '💾 불러오기', en: '💾 Load' },
   'title.help':     { ko: '📖 생존 수첩', en: '📖 Survivor\'s Journal' },
-  'title.ver':      { ko: `Nine Winters · v${APP_VER} Beta${BUILD_STAMP ? ` · ${BUILD_STAMP}` : ''}`, en: `Nine Winters · v${APP_VER} Beta${BUILD_STAMP ? ` · ${BUILD_STAMP}` : ''}` },
+  'title.ver':      { ko: `Nine Winters · v${APP_VER} Beta${DEMO_TAG}${BUILD_STAMP ? ` · ${BUILD_STAMP}` : ''}`, en: `Nine Winters · v${APP_VER} Beta${DEMO_TAG}${BUILD_STAMP ? ` · ${BUILD_STAMP}` : ''}` },
   'title.tools.export':  { ko: '세이브 내보내기', en: 'Export save' },
   'title.tools.import':  { ko: '세이브 가져오기', en: 'Import save' },
   'title.tools.settings':{ ko: '설정', en: 'Settings' },
@@ -710,6 +712,12 @@ export const STR = {
   'winter.passed':    { ko: '❄️ {n}번째 겨울을 넘겼습니다.', en: '❄️ You made it through winter number {n}.' },
   'winter.badge.tip': { ko: '넘긴 겨울 {n}번', en: '{n} winters weathered' },
   'title.continueWinters': { ko: ' · ❄️{n}/9', en: ' · ❄️{n}/9' },
+  // ── #74 Next Fest 데모 「첫 번째 겨울」 종료 화면 ──
+  'demo.end.title':  { ko: '첫 번째 겨울을 넘었습니다', en: 'You Made It Through the First Winter' },
+  'demo.end.body':   { ko: '{d}일. 봄이 왔고, 나는 아직 여기 있다.<br>데모는 여기까지입니다.', en: 'Day {d}. Spring came, and I\'m still here.<br>This is where the demo ends.' },
+  'demo.end.sub':    { ko: '정식판에는 아홉 번의 겨울이 기다립니다 — 열두 곳의 거처, 지하 노선, 봉쇄 너머의 이야기. 위시리스트에 담아 두면 겨울이 올 때 알려 드립니다.', en: 'Nine winters await in the full game — twelve shelters, the metro line, and what lies beyond the blockade. Wishlist it and we\'ll let you know when winter comes.' },
+  'demo.end.back':   { ko: '타이틀로', en: 'Back to Title' },
+  'demo.end.locked': { ko: '데모는 첫 번째 겨울까지 — 이 이야기는 정식판에서 이어집니다.', en: 'The demo ends after the first winter — the story continues in the full game.' },
   // "그 해 겨울" 자동 수첩 페이지
   'winter.page.title':{ ko: '{n}번째 겨울', en: 'Winter №{n}' },
   'winter.page.title.first': { ko: '첫 겨울', en: 'The First Winter' }, // n=1 전용(규칙 이탈 "1번째 겨울" 교정)

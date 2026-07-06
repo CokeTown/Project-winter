@@ -63,7 +63,10 @@ const GRID = 0.25;
 // #89 QA 에디션: 빌드 플래그(vite define, tools/build-qa.ps1가 켠다). 무한 자원·전 해금·업적 no-op·워터마크.
 //   세이브는 키 네임스페이스(qa-)로 완전 분리 — 정식 빌드 세이브와 상호 불가침.
 const QA_ED = typeof __QA_EDITION__ !== 'undefined' && !!__QA_EDITION__;
-const KEY_NS = QA_ED ? 'qa-' : '';
+// #74 Next Fest 데모 「첫 번째 겨울」: 빌드 플래그(tools/build-demo.ps1). 노말 전용, 첫 겨울을 넘기면
+//   데모 종료(그 세이브는 열람 잠금 — 정식판 이관 안내). 세이브 네임스페이스 demo- 분리.
+const DEMO_ED = typeof __DEMO__ !== 'undefined' && !!__DEMO__;
+const KEY_NS = QA_ED ? 'qa-' : DEMO_ED ? 'demo-' : '';
 const SAVE_KEY = KEY_NS + 'project-shelter-web-v2';
 const LASTSLOT_KEY = KEY_NS + 'project-shelter' + '-lastslot'; // 이어하기 포인터도 에디션별 분리 (QA가 정식 포인터를 밀면 빈 슬롯 이어하기 오노출)
 const OLD_SAVE_KEY = 'project-shelter-web-v1';
@@ -4141,6 +4144,7 @@ const state = {
   coldSnapWinterKey: -1,  // 카운터가 속한 겨울 식별자 (계절 인덱스). 겨울이 바뀌면 리셋
   // ── Nine Winters 엔드게임 마일스톤 (#11) ──
   winters: 0,          // 넘긴 겨울 수 (봄으로 넘어가는 날 +1). 제목이 곧 장기 목표.
+  demoEnded: false,    // #74 데모 빌드 전용: 첫 겨울 통과로 데모가 끝난 세이브 (정식 빌드에선 항상 false)
   winterSnap: null,    // 현재/직전 겨울 시작 시점 스냅샷 (memoir 차분 계산용)
   pendingWinterMemoir: [], // 표시 대기 중인 "그 해 겨울" 수첩 페이지 큐 (봄 첫 아침 보고 뒤로 미룸)
   doctorRadioPending: false, // 9겨울 마일스톤 후 박사 무전 대기 (라디오 미보유 시 다음 배치까지 보류)
@@ -4452,6 +4456,7 @@ function restEnergyValue(atHour, collapse = false) {
   return { hasBed, collapse: false, energy };
 }
 function sleepUntilMorning(auto = false, opt = {}) {
+  if (DEMO_ED && state.demoEnded) { if (!auto) toast(t('demo.end.locked')); return; } // #74: 시간 점프 봉인
   if (!auto && paused) { toast(t('pause.blocked')); return; }
   if (state.exp) { toast(t('sleep.cantDuringExp')); return; }
   if (blackoutActive) return;
@@ -5537,6 +5542,7 @@ function forecastText() {
 }
 // 탐험은 준비 단계를 거친다 (기획서 v0.2: 지역 → 날씨/위험 확인 → 준비물 → 출발)
 function startExpedition(regionId) {
+  if (DEMO_ED && state.demoEnded) { toast(t('demo.end.locked')); return; } // #74: 종료된 데모 세이브는 진행 금지
   if (paused) { toast(t('pause.blocked')); return; }
   if (isWallpaper()) { toast(t('wallpaper.noAction')); return; } // 🖼️ 배경화면: 탐험 off
   if (state.exp) return;
@@ -8858,6 +8864,27 @@ function hideTitle() {
   // 자리 비운 사이의 정산(탐험 결과 등)은 게임에 들어온 뒤에 보여준다
   if (state.exp && Date.now() >= state.exp.end) resolveExpedition();
   syncBgm();
+  // #74 데모: 이미 끝난 세이브로 입장하면 종료 화면부터 — 닫으면 봄의 거처 관람(시간 동결)만 가능
+  if (DEMO_ED && state.demoEnded) setTimeout(showDemoEnd, 350);
+}
+
+// ── #74 Next Fest 데모 「첫 번째 겨울」 종료 화면 ──────────────────────────
+// 첫 겨울을 넘긴 롤오버에서 아침 보고 대신 뜬다(tickTime 게이트). 시간 동결·취침/탐험 봉인과 한 세트 —
+// ✕로 닫아도 진행은 없고, 봄이 온 거처를 둘러보는 것만 남는다.
+function showDemoEnd() {
+  // 페이퍼 레이어(수첩/튜토리얼)는 모달보다 위 — 떠 있으면 엔드 스크린을 덮는다(프로브 실측). 강제 정리.
+  const jscr = $('journal-screen');
+  if (jscr) { jscr.classList.remove('show'); jscr.style.display = 'none'; }
+  journalOpen = false;
+  const body = `
+    <div class="demo-end">
+      <div class="de-mark">🌱 ❄️ ❄️ ❄️ ❄️ ❄️ ❄️ ❄️ ❄️</div>
+      <p class="de-body">${t('demo.end.body', { d: state.day })}</p>
+      <p class="de-sub">${t('demo.end.sub')}</p>
+      <button class="pixel-btn primary" id="demo-end-title">${t('demo.end.back')}</button>
+    </div>`;
+  openModal(t('demo.end.title'), body);
+  $('demo-end-title').addEventListener('click', () => { closeModal(); showTitle(); });
 }
 // 슬롯 모드 배지 (하드/무한/하드코어/배경화면) — icon() 폴백 문법 대신 이모지 배지 유지
 function slotModeBadge(mode) {
@@ -8925,12 +8952,13 @@ function openModeModal(n) {
     </div>`;
   };
   const wpLocked = !wallpaperUnlocked();
+  // #74 데모: 노말만 — 모드 다양성은 정식판의 것 (Next Fest 「첫 번째 겨울」 게이트와 한 몸)
   const body = `<div class="mode-scroll">`
     + card('normal', 'mode.normal', 'mode.normal.tag', 'mode.normal.desc')
-    + card('hard', 'mode.hard', 'mode.hard.tag', 'mode.hard.desc')
-    + card('hardcore', 'mode.hardcore', 'mode.hardcore.tag', 'mode.hardcore.desc')
-    + card('zen', 'mode.zen', 'mode.zen.tag', 'mode.zen.desc')
-    + card('wallpaper', 'mode.wallpaper', 'mode.wallpaper.tag', 'mode.wallpaper.desc', { locked: wpLocked })
+    + (DEMO_ED ? '' : card('hard', 'mode.hard', 'mode.hard.tag', 'mode.hard.desc')
+      + card('hardcore', 'mode.hardcore', 'mode.hardcore.tag', 'mode.hardcore.desc')
+      + card('zen', 'mode.zen', 'mode.zen.tag', 'mode.zen.desc')
+      + card('wallpaper', 'mode.wallpaper', 'mode.wallpaper.tag', 'mode.wallpaper.desc', { locked: wpLocked }))
     + `</div><button class="pixel-btn mode-back">${t('mode.back')}</button>`;
   openModal(t('mode.pick.title'), body);
   $('modal-body').querySelector('.mode-back').addEventListener('click', () => openSlotModal('new'));
@@ -9672,6 +9700,8 @@ function runAutoPlay() {
   }
 }
 function tickTime(dt) {
+  // #74 데모 종료 후엔 시간 동결 — 봄의 거처를 둘러볼 순 있지만 진행은 없다(잠금의 실체는 여기).
+  if (DEMO_ED && state.demoEnded) return;
   state.gameMin += dt * GAME_MIN_PER_SEC;
   decayGauges(dt * GAME_MIN_PER_SEC);
   checkHelpless(); // 배치 D: 무력 상태(게이지 바닥 + 재고 0) 안전망 판정
@@ -9691,6 +9721,15 @@ function tickTime(dt) {
     processDay();
     reportQueued = true;
     rolledOver = true;
+  }
+  // #74 데모 게이트: 첫 겨울을 넘기면(봄 도달 → passWinter로 winters≥1) 그 자리에서 데모 종료.
+  // 아침 보고 대신 종료 화면 — demoEnded가 세이브에 박혀 이후 입장에도 종료 화면·시간 동결이 유지된다.
+  if (DEMO_ED && rolledOver && !state.demoEnded && (state.winters || 0) >= 1) {
+    state.demoEnded = true;
+    reportQueued = false;
+    doSaveNow();
+    showDemoEnd();
+    return;
   }
   // 자정을 자연 경과(취침이 아님)로 넘긴 경우의 처리.
   // v1.2.0: 자정 강제 취침 폐지. 셸터 안에서 깨어 있으면 시간이 계속 흐르고(01시부터 회복 페널티 누적),
@@ -10072,6 +10111,7 @@ let journalKeyHandler = null;
 let journalOpen = false; // 수첩이 떠 있는 동안 리포트/인카운터/다음 튜토리얼이 겹치지 않도록
 function openJournalPages(pages, opts = {}) {
   if (!pages || !pages.length) return;
+  if (DEMO_ED && state.demoEnded) return; // #74: 데모 종료 뒤엔 신규 페이퍼 금지 (엔드 스크린 덮개 방지)
   let i = 0;
   const scr = $('journal-screen'), paper = $('journal-paper');
   const titleEl = $('journal-title'), bodyEl = $('journal-body'), indEl = $('journal-page-ind');
@@ -11005,6 +11045,7 @@ $('t-settings').addEventListener('click', () => toggleSettingsPanel());
 let _qaTaps = [];
 $('title-ver').addEventListener('click', () => {
   if (!titleVisible) return; // 인게임/인트로에선 반응 없음
+  if (DEMO_ED) return; // #74: 소비자 대면 데모 빌드엔 치트 진입점 자체를 봉인
   const now = Date.now();
   _qaTaps.push(now);
   _qaTaps = _qaTaps.filter(t => now - t <= 2000); // 2초 창
