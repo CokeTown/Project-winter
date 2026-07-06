@@ -465,6 +465,8 @@ export const STR = {
   'prep.mobileTag':   { ko: ' <span style="color:var(--good)">(이동형 -25%)</span>', en: ' <span style="color:var(--good)">(mobile -25%)</span>' },
   'prep.expectCost':  { ko: '예상 소비: {cost}', en: 'Expected use: {cost}' },
   'prep.depart':      { ko: '🎒 출발 ({dur})', en: '🎒 Depart ({dur})' },
+  'prep.bag':         { ko: '가방 챙기기', en: 'Pack a bag' },
+  'prep.bagEff':      { ko: '실패해도 최소 회수', en: 'Salvage even on failure' },
   'prep.needFor':     { ko: '{name} 준비에 필요한 자원이 부족합니다', en: 'Not enough resources to prepare {name}' },
 
   /* ── 탐험 진행 / 결과 ── */
@@ -478,6 +480,8 @@ export const STR = {
   'exp.partialBody':  { ko: '위험했지만 조금은 건졌습니다.', en: 'It was risky, but you salvaged a little.' },
   'exp.failTitle':    { ko: '❌ {name} 탐험 실패', en: '❌ {name} expedition failed' },
   'exp.failBody':     { ko: '빈손으로 돌아왔습니다.', en: 'You came back empty-handed.' },
+  'exp.failBagBody':  { ko: '허탕이었지만, 가방에 쓸 만한 걸 몇 개 주워 담았습니다.', en: 'A wash — but the bag caught a few useful things on the way back.' },
+  'exp.note.bag':     { ko: '🎒 가방 덕에 빈손은 면했습니다.', en: '🎒 Thanks to the bag, you didn’t come back empty.' },
   'exp.failSalvageBody':{ ko: '실패했지만, 뱃사람의 근성으로 몇 가지는 건져 왔습니다.', en: 'A failure, but with a sailor’s grit you brought a few things back.' },
   'exp.note.loot2':   { ko: '📡 방송의 좌표가 정확했다 — 은닉처에서 자원을 두 배로 회수했습니다!', en: '📡 The broadcast’s coordinates were true — you recovered double the supplies from the cache!' },
   'exp.note.furniture':{ ko: '🛋️ 폐허 속에서 온전한 가구를 발견했습니다 — 흔치 않은 행운!', en: '🛋️ You found an intact piece of furniture in the ruins — a rare stroke of luck!' },

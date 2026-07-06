@@ -53,6 +53,10 @@ export const BAL = {
     midRest: 20,         // 탐험 사이 energy<20 시 간이 회복 (sim 경로)
     hungryPenGate: 25,   // hunger/thirst 이 값 미만이면 성공률 페널티 (rateParts)
     hungryPen: 0.10,     // 허기/갈증 성공률 페널티량
+    // 가방(탐사 안전망, 디렉터 2026-07-07): 출발 시 천 소모, 실패/부분이어도 랜덤 자원 최소 회수 보장(failSalvage와 max).
+    bagCost: { cloth: 2 }, // 가방 챙기기 비용 (출발 시 소모)
+    bagFloorMin: 1,        // 실패/부분 시 최소 확정 회수 (하한)
+    bagFloorMax: 2,        // 최소 확정 회수 (상한)
   },
 
   /* ── 하드 모드 (hardLoot / decayGauges / sim expMul) ── */

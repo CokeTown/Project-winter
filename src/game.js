@@ -5178,6 +5178,7 @@ function avalancheForecastToday(regionId) {
 function openPrepModal(regionId) {
   const r = REGIONS[regionId];
   const selected = new Set();
+  let bag = false; // 가방(§E) 챙김 여부
   const render = () => {
     const p = rateParts(regionId, [...selected]);
     const lines = [];
@@ -5207,11 +5208,16 @@ function openPrepModal(regionId) {
           <span class="p-cost">${costLabel(pr.cost)}</span>
         </div>`;
       }).join('')}</div>
+      <div class="prep-row ${bag ? 'sel' : ''} ${resHasAll(BAL.exp.bagCost) ? '' : 'no'}" data-bag="1" style="margin-top:6px">
+        <span>🎒 ${t('prep.bag')}</span>
+        <span class="p-eff">${t('prep.bagEff')}</span>
+        <span class="p-cost">${costLabel(BAL.exp.bagCost)}</span>
+      </div>
       <div style="font-size:11px;color:var(--text-dim);margin:8px 0">
         ${t('prep.expectCost', { cost: Object.keys(cost).length ? costLabel(cost) : t('none') })}
       </div>
       <button class="pixel-btn primary" id="btn-depart" style="width:100%">${t('prep.depart', { dur })}</button>`;
-    $('modal-body').querySelectorAll('.prep-row').forEach(el => {
+    $('modal-body').querySelectorAll('.prep-row[data-prep]').forEach(el => {
       el.addEventListener('click', () => {
         const id = el.dataset.prep;
         if (selected.has(id)) selected.delete(id);
@@ -5220,7 +5226,12 @@ function openPrepModal(regionId) {
         render();
       });
     });
-    $('btn-depart').addEventListener('click', () => departExpedition(regionId, [...selected]));
+    const bagEl = $('modal-body').querySelector('[data-bag]');
+    if (bagEl) bagEl.addEventListener('click', () => {
+      if (!bag && !resHasAll(BAL.exp.bagCost)) { toast(t('prep.needFor', { name: t('prep.bag') })); return; }
+      bag = !bag; render();
+    });
+    $('btn-depart').addEventListener('click', () => departExpedition(regionId, [...selected], { bag }));
   };
   openModal(t('prep.title', { emoji: r.emoji, name: LName(r) }), '');
   render();
@@ -5237,6 +5248,9 @@ async function departExpedition(regionId, prep, opts2 = {}) {
   // 저성공률 출발 확인 — 수동 클릭 경로에서만 (자동진행/blackout에선 확인창 금지: 게임이 멈춘다)
   if (!opts2.auto && p.eff < 0.5 && !(await gameConfirm(t('exp.confirmRisky', { p: Math.round(p.eff * 100) }), t('confirm.depart'), t('confirm.no')))) return;
   for (const id of prep) resConsumeAll(PREPS[id].cost);
+  // 가방(§E): 챙겼고 천이 충분하면 출발 시 천 소모. 부족하면 가방 없이 출발.
+  const bagOk = !!opts2.bag && resHasAll(BAL.exp.bagCost);
+  if (bagOk) resConsumeAll(BAL.exp.bagCost);
   const dur = expDuration(r) * 1000;
   // 탐험도 몸을 쓴다 (소모 절반으로 완화) + 에너지 소모
   const expMul = isHard() ? 1.5 : 1; // 하드: 탐험 게이지 소모 +50%
@@ -5247,7 +5261,7 @@ async function departExpedition(regionId, prep, opts2 = {}) {
   // 성공률 버프/디버프는 이번 출발에 반영되어 소진 (물자 좌표 버프는 정산 시)
   if (state.buff?.exp) state.buff = null;
   // #94(디렉터): 출발 시각 기록 — 귀환 정산이 '대기 중 이미 흐른 게임 시간'을 차감해 이중 계산을 없앤다.
-  state.exp = { region: regionId, end: Date.now() + dur, dur, rate: p.eff, prep, startGameMin: state.gameMin };
+  state.exp = { region: regionId, end: Date.now() + dur, dur, rate: p.eff, prep, startGameMin: state.gameMin, bag: bagOk };
   closeModal();
   scheduleSave();
   renderExpPanel();
@@ -5379,6 +5393,18 @@ function resolveExpedition() {
     }
     state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 5);
     notes.push(t('exp.note.dirty5'));
+  }
+  // 가방(§E, 안전망): 실패/부분이어도 최소 회수 보장. 이미 얻은 게 floor 미만이면 지역 loot 풀에서 랜덤 자원으로 채운다
+  //   (failSalvage 등과 max — 스택 아님). exp.bag는 출발 시 '가방 챙기기'로만 set → 시뮬은 미설정이라 이 블록 스킵(RNG 무영향).
+  if (exp.bag && !success) {
+    const already = Object.values(gotRes).reduce((a, b) => a + b, 0);
+    let need = (BAL.exp.bagFloorMin + Math.floor(Math.random() * (BAL.exp.bagFloorMax - BAL.exp.bagFloorMin + 1))) - already;
+    if (need > 0) {
+      const pool = r.lootRes.map(l => l[0]);
+      while (need > 0 && pool.length) { const id = pool[Math.floor(Math.random() * pool.length)]; resAdd(id, 1); gotRes[id] = (gotRes[id] || 0) + 1; need--; }
+      notes.push(t('exp.note.bag'));
+      if (!partial) body = t('exp.failBagBody');
+    }
   }
   // 부상 판정: 실패 시 확정, 부분 성공 시 40%
   if (!success && (partial ? Math.random() < BAL.pity.injuryPartialChance : true)) {

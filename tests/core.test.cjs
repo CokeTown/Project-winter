@@ -170,6 +170,44 @@ const KNOWLEDGE_HASH = -451536973;
       check('지식 시그니처 해시 불변 (트리 안전망)', kd.hash === KNOWLEDGE_HASH, `hash ${kd.hash}`);
     }
 
+    // ── 가방(§E) — bag이면 실패/부분이어도 최소 회수(빈손 없음) ──
+    const bag = await call(`
+      S.simReset();
+      const zero = () => { S.state.res = { food:0,water:0,canned:0,cloth:0,battery:0,fuel:0,parts:0,material:0,salt:0 }; };
+      let minWithBag = 999, sawZeroNoBag = false;
+      for (let i=0;i<12;i++){
+        zero(); S.state.expToday=0; S.state.injury=null; S.state.expFailStreak=0;
+        S.state.exp = { region:'residential', rate:0, prep:[], startGameMin: S.state.gameMin, bag:true };
+        try { S.resolveExpedition(); } catch(e){ return JSON.stringify({ error:String(e) }); }
+        const g = Object.values(S.state.res).reduce((a,b)=>a+(b||0),0);
+        minWithBag = Math.min(minWithBag, g);
+      }
+      for (let i=0;i<12;i++){
+        zero(); S.state.expToday=0; S.state.injury=null; S.state.expFailStreak=0;
+        S.state.exp = { region:'residential', rate:0, prep:[], startGameMin: S.state.gameMin, bag:false };
+        S.resolveExpedition();
+        if (Object.values(S.state.res).reduce((a,b)=>a+(b||0),0) === 0) sawZeroNoBag = true;
+      }
+      return JSON.stringify({ minWithBag, sawZeroNoBag });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const bg = JSON.parse(bag);
+    if (bg.error) check('가방 floor (예외 없이)', false, bg.error);
+    else {
+      check('가방/챙기면 실패해도 빈손 없음 (최소 ≥1)', bg.minWithBag >= 1, `minWithBag ${bg.minWithBag}`);
+      check('가방/없으면 실패 시 빈손 발생(대조군)', bg.sawZeroNoBag === true, `noBag zero ${bg.sawZeroNoBag}`);
+    }
+    // 가방 UI: prep 모달에 가방 토글 행이 렌더되나 (data-prep 셀렉터 분리 확인)
+    const bagUi = await call(`
+      S.simReset(); if (S.hideTitle) S.hideTitle(); if (S.setPaused) S.setPaused(false);
+      S.state.res.cloth = 5; S.state.energy = 100; S.state.exp = null; S.state.expToday = 0;
+      S.startExpedition('residential');
+      const h = document.getElementById('modal-body').innerHTML;
+      return JSON.stringify({ bagRow: h.includes('가방 챙기기') && h.includes('data-bag'), prepRows: (h.match(/data-prep=/g)||[]).length });
+    `).catch(e => JSON.stringify({ error: String(e) }));
+    const bu = JSON.parse(bagUi);
+    if (bu.error) check('가방 UI (예외 없이)', false, bu.error);
+    else check('가방 UI/prep 모달에 가방 토글 행 렌더', bu.bagRow === true && bu.prepRows > 0, `bagRow ${bu.bagRow} prepRows ${bu.prepRows}`);
+
     // ── 2) 구세이브 마이그레이션 — #76 신규 필드 없이 저장된 세이브가 안전하게 로드되나 ──
     //   (내가 book/bookProgress/demoEnded를 마이그레이션 테스트 없이 넣은 것 → 이 그물로 방어)
     //   포괄 스냅샷: 마이그레이션이 채우는 정적 기본값 ~40필드를 해시로 핀(save.js 추출 안전망).
