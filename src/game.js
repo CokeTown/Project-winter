@@ -6470,6 +6470,34 @@ function applyDeco() {
 
 // 가구는 파밍이 아니라 제작이 기본 (파밍은 극히 드문 행운)
 // CRAFTS(제작 레시피)는 src/data/items.js로 분리(콘텐츠 데이터 Phase 1). BAL 참조는 items.js가 balance.js를 import.
+// 「지식」 테크트리 모달(§9) — 4갈래×3티어, 책으로 해금. 노드 상태: 해금됨/해금가능/선행잠금/책부족.
+function openKnowledgeModal() {
+  if (paused) { toast(t('pause.blocked')); return; }
+  const books = state.res.book || 0;
+  const sections = KNOWLEDGE_BRANCHES.map(br => {
+    const nodes = Object.entries(KNOWLEDGE).filter(([, n]) => n.branch === br.id).sort((a, b) => a[1].tier - b[1].tier);
+    const rows = nodes.map(([id, n]) => {
+      const has = hasKnowledge(id), pre = knowledgePrereqMet(id), afford = books >= n.cost;
+      let right;
+      if (has) right = `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('know.learned')}</span>`;
+      else if (!pre) right = `<span style="color:var(--text-dim);font-size:10px;margin-left:6px">${t('know.locked')}</span>`;
+      else right = `<button class="pixel-btn" data-know="${id}" ${(pre && afford) ? '' : 'disabled'} style="margin-left:6px">${t('know.learn', { n: n.cost })}</button>`;
+      return `
+      <div class="prep-row ${has ? 'sel' : (pre && afford) ? '' : 'no'}" style="cursor:default">
+        <span>${LName(n)} <span style="color:var(--text-dim);font-size:10px">·${t('know.cost', { n: n.cost })}</span></span>
+        <span class="p-eff" style="font-size:10px">${LDesc(n)}</span>
+        ${right}
+      </div>`;
+    }).join('');
+    return `<div style="margin-top:8px"><div style="font-weight:bold;font-size:12px;margin-bottom:2px">${br.emoji} ${LName(br)}</div>${rows}</div>`;
+  }).join('');
+  openModal(`📚 ${t('know.title')}`, `<div style="font-size:12px;color:var(--accent);margin-bottom:6px">${t('know.books', { n: books })}</div>${sections}`);
+  $('modal-body').querySelectorAll('button[data-know]').forEach(b =>
+    b.addEventListener('click', () => {
+      if (unlockKnowledge(b.dataset.know)) { playSfx('craft'); renderResBar(); updateHud(); openKnowledgeModal(); }
+      else toast(t('toast.needResource'));
+    }));
+}
 function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
   const rows = CRAFTS.map((c, i) => {
@@ -10610,6 +10638,7 @@ $('btn-auto').addEventListener('click', () => {
 });
 syncAutoBtn();
 $('btn-craft').addEventListener('click', openCraftModal);
+{ const bk = $('btn-knowledge'); if (bk) bk.addEventListener('click', openKnowledgeModal); }
 $('btn-journal').addEventListener('click', () => openJournalModal('journal'));
 $('g-hunger').addEventListener('click', eatFood);
 $('g-thirst').addEventListener('click', drinkWater);
@@ -11132,7 +11161,7 @@ window.__shelter = {
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
   // 「지식」 테크트리(§9) QA 훅
-  KNOWLEDGE, KNOWLEDGE_BRANCHES, hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
+  KNOWLEDGE, KNOWLEDGE_BRANCHES, hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge, openKnowledgeModal,
   knowColdDefense, knowExpBonus, knowComfortBonus, knowWaterPerDay, knowsForecast,
   knowGardenAnywhere, knowGardenBonus, knowSpoilMul, knowSaltCureBonus, knowDirtReduce, knowHeatFuelMul, knowCraftMul, knowForecastLead, knowBroadcastBonus,
   // v1.4.1 QA 훅: i18n/josa/세이브 왕복 검증용 (하네스 전용, 프로덕션 무해)
