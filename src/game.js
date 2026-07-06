@@ -13,6 +13,7 @@ import { makeEvents } from './data/events.js';
 import { makeDecoTex } from './data/decotex.js';
 import { makeCatSystem } from './systems/cat.js';
 import { makeWildlifeSystem } from './systems/wildlife.js';
+import { makeAvatarSystem } from './systems/avatar.js';
 import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wildlife.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
@@ -4987,6 +4988,7 @@ function loadShelter(id) {
   if (state.cat) spawnCat(); // 고양이는 이사할 때도 함께 간다
   // F-1a: 야생동물 재구성 — 셸터(구역)별 종·로밍 존으로 상시 1~2마리 스폰(개막 새 착지 포함).
   if (typeof wildlifeSys !== 'undefined') wildlifeSys.respawn(id);
+  if (typeof avatarSys !== 'undefined') avatarSys.respawn(); // #86: 셸터마다 '나'를 다시 세운다
   fitZoomForShelter();
   // #70: 팬은 세이브에 저장하지 않는다 — 셸터 로드/이주 시 항상 방 중심(0,0)에서 시작.
   camState.panX = camState.panZ = camState.targetPanX = camState.targetPanZ = 0;
@@ -5669,6 +5671,13 @@ const wildlifeSys = makeWildlifeSystem({
   getGameMin: () => state.gameMin || 0, getSnowCover: () => snowCover,
   WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE,
   getObstacles: () => wlObstacles, // #95: buildEnv가 등록한 마당 장애물(폐차/전신주/근접 나무) — 통과 방지
+});
+
+// #86 주인공 아바타 — "정착자는 나뿐"의 그 '나' (사람 형상 금지 캐논의 유일한 예외)
+const avatarSys = makeAvatarSystem({
+  THREE, B, lamb, disposeDeep, shadowDirty,
+  scene, state, items,
+  getRoom: () => ROOM, getBlockers: () => blockers, footprintOf, gameHour, opts,
 });
 
 /* ============================================================
@@ -10885,6 +10894,7 @@ function renderFrame() {
   updateWeather(dt, t);
   updateCat(t, dt);
   wildlifeSys.update(t, dt); // F-1a: 야생동물 로밍/개막 연출
+  avatarSys.update(t, dt);   // #86: 주인공 아바타 실내 생활
   updateCraftFx(dt); // ④ 제작 손맛 아이콘/반짝임 연출
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   for (const it of items) {
@@ -11156,6 +11166,8 @@ window.__shelter = {
   wildlifeLeaveAll: () => wildlifeSys._forceLeaveAll(),
   wildlifeNudge: (i, x, z) => wildlifeSys._nudge(i, x, z), // QA: 클로즈업 검수용 (팬 카메라 부재 보완)
   wildlifeRespawn: (id) => wildlifeSys.respawn(id || state.current),
+  avatarState: () => avatarSys._debug(), // #86 QA 훅
+  avatarRespawn: () => avatarSys.respawn(),
   wlObstacleList: () => wlObstacles.slice(), // #95 QA: 등록 장애물 덤프 (프로브 침범 판정용)
   wildlifeWalkTo: (i, x, z) => wildlifeSys._walkTo(i, x, z), // #95 QA: 강제 횡단 (회피 실증)
   swayCount: () => swayProps.length,
