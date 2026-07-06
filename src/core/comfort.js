@@ -9,6 +9,7 @@ import { state, items } from './state.js';
 import { seasonOf } from './season.js';
 import { hasMod } from './shelter.js';
 import { coldSnapNetSeverity } from './coldsnap.js';
+import { knowInsulates, knowHearthAnywhere, knowComfortBonus } from './knowledge.js';
 import { DEFS } from '../data/furniture.js';
 import { SHELTER_META } from '../data/shelters.js';
 import { BAL } from '../data/balance.js';
@@ -61,23 +62,25 @@ export function comfortDetail() {
   // 현실 제약: 단열 취약(악천후 시) / 어둠(조명 필수)
   let limitMod = 0;
   const wt = _weatherType();
-  if (sh.cold && (wt === 'rain' || wt === 'snow' || wt === 'storm') && !hasMod('insulation') && !hasMod('insulationPlus')) limitMod -= sh.cold;
+  // 단열 지식(§9): 얇은 셸터 악천후 쾌적 페널티 무효 (insulation 개조와 동급).
+  if (sh.cold && (wt === 'rain' || wt === 'snow' || wt === 'storm') && !hasMod('insulation') && !hasMod('insulationPlus') && !knowInsulates()) limitMod -= sh.cold;
   if (sh.needsLight && light <= 0) limitMod -= sh.needsLight;
   // 한파: 방어 안 된 만큼 쾌적함 페널티 (완전 방어 시 0)
   if (coldSnapNetSeverity() > 0) limitMod -= BAL.seasons.coldSnapComfortPen;
   // 온풍기(heater) 가동 시 겨울 쾌적 보너스
   let heatMod = 0;
   if (seasonOf().id === 'winter' && items.some(i => i.on !== false && DEFS[i.defId]?.appliance?.effect === 'heat')) heatMod += BAL.economy.heaterWinterComfort;
-  // 1.3 스키 로지 붙박이 벽난로 — 겨울 온기(온풍기와 별개). upkeepOk일 때만.
-  if (sh.hearth && seasonOf().id === 'winter' && state.upkeepOk) heatMod += BAL.highland.hearthWinterComfort;
+  // 로지 붙박이 벽난로 또는 화덕 지식(§9, 전 셸터 벽난로) — 겨울 온기(온풍기와 별개). upkeepOk일 때만.
+  if ((sh.hearth || knowHearthAnywhere()) && seasonOf().id === 'winter' && state.upkeepOk) heatMod += BAL.highland.hearthWinterComfort;
   // 1.3 온천 개조 — cozy 정점(계절 무관, 온천은 늘 따뜻하다).
   if (hasMod('onsen')) heatMod += BAL.highland.onsenComfort;
   // 인카운터 안정감 여운(moodBuff) — 며칠간 지속되는 일시 쾌적.
   const moodMod = (state.moodBuff && state.day <= state.moodBuff.until) ? (state.moodBuff.amt || 0) : 0;
   const bunkerMod = bunkerComfortBonus(); // 돔 벙커 천장/저장고 가산
   const themeMod = activeThemeSets().length * DECO_THEME_COMFORT; // 테마 세트(#13) 분위기 가산
-  const score = clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod + heatMod + moodMod + bunkerMod + themeMod, 0, 100);
-  return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, heatMod, moodMod, bunkerMod, themeMod, clean, score };
+  const knowMod = knowComfortBonus(); // 아늑함 지식(§9) 상시 쾌적 가산
+  const score = clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod + heatMod + moodMod + bunkerMod + themeMod + knowMod, 0, 100);
+  return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, heatMod, moodMod, bunkerMod, themeMod, knowMod, clean, score };
 }
 
 export function comfortLevel() { return Math.min(5, Math.round(comfortDetail().score / 20)); }

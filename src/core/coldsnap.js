@@ -8,13 +8,15 @@
 import { state, items } from './state.js';
 import { seasonOf } from './season.js';
 import { hasMod } from './shelter.js';
+import { knowInsulates, knowHearthAnywhere } from './knowledge.js';
 import { DEFS } from '../data/furniture.js';
 import { SHELTER_META } from '../data/shelters.js';
 
 // 한파 방어 수단이 몇 단계 갖춰졌는가: 단열 개조 + 난방 가동(장작 난로/온풍기 ON)
 export function coldDefenseLevel() {
   let lv = 0;
-  if (hasMod('insulation') || hasMod('insulationPlus')) lv++;
+  // 단열 지식(§9): 전 셸터 영구 단열 — insulation 개조와 OR(중복 아니라 상위 대체, +1만).
+  if (hasMod('insulation') || hasMod('insulationPlus') || knowInsulates()) lv++;
   if (hasMod('insulationPlus')) lv++; // 강화 단열재는 한 단계 더
   // 난방 가동: 장작 난로(stove, 불빛 연료 fuel) 또는 온풍기(heater) ON
   const heating = items.some(i => {
@@ -23,8 +25,8 @@ export function coldDefenseLevel() {
     return DEFS[i.defId]?.appliance?.effect === 'heat';
   });
   if (heating) lv++;
-  // 1.3 스키 로지 붙박이 벽난로 — 유지비만 내면(upkeepOk) 항상 한 단계 방어(고도 페널티 상쇄의 핵심).
-  if (SHELTER_META[state.current].hearth && state.upkeepOk) lv++;
+  // 로지 붙박이 벽난로 또는 화덕 지식(§9, 전 셸터 벽난로) — 유지비만 내면(upkeepOk) 한 단계 방어.
+  if ((SHELTER_META[state.current].hearth || knowHearthAnywhere()) && state.upkeepOk) lv++;
   return lv;
 }
 // 한파 활성 여부 (오늘이 coldSnap.until 이하이고 겨울)

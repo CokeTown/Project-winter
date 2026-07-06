@@ -1023,7 +1023,7 @@ function comfortBreakdown() {
   const warmth = lightWarmth + cd.heatMod + cd.catMod + warmthLimit;
   const clean = cd.cleanMod;
   // moodBuff(만남의 여운)와 벙커 수리 가산은 안정감 축으로 귀속 — 합계는 score 불변.
-  const security = 18 + cd.shelterMod + cd.settled + cd.injuryMod + (cd.moodMod || 0) + (cd.bunkerMod || 0);
+  const security = 18 + cd.shelterMod + cd.settled + cd.injuryMod + (cd.moodMod || 0) + (cd.bunkerMod || 0) + (cd.knowMod || 0);
   const mood = cd.furn + lightMood + darkPen + (cd.themeMod || 0);
   // ── 원인 로그 (각 축 2~3줄) ──
   const logs = { warmth: [], clean: [], security: [], mood: [] };
@@ -1040,6 +1040,7 @@ function comfortBreakdown() {
   if (cd.settled) logs.security.push({ icon: '🪺', name: t('comfort.log.settled', { n: cd.settled }), v: `+${cd.settled}` });
   if (cd.injuryMod) logs.security.push({ icon: '🩹', name: t('comfort.log.injury'), v: `${cd.injuryMod}` });
   if (cd.bunkerMod) logs.security.push({ icon: '🛖', name: t('comfort.log.bunkerRoof'), v: `+${cd.bunkerMod}` });
+  if (cd.knowMod) logs.security.push({ icon: '📖', name: t('comfort.log.knowledge'), v: `+${cd.knowMod}` });
   if (cd.moodMod) logs.security.push({ icon: cd.moodMod > 0 ? '🫧' : '💭', name: t('comfort.log.mood'), v: `${cd.moodMod > 0 ? '+' : ''}${cd.moodMod}` });
   // 분위기
   if (cd.furn) logs.mood.push({ icon: '🪑', name: t('comfort.log.furn'), v: `+${cd.furn}` });

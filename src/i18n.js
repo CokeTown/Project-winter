@@ -596,6 +596,7 @@ export const STR = {
   'comfort.log.injury':    { ko: '몸이 성치 않다', en: 'Body worn down' },
   'comfort.log.furn':      { ko: '가구가 채운 공간', en: 'Furniture fills the room' },
   'comfort.log.dark':      { ko: '어둠이 짙다', en: 'Too dark in here' },
+  'comfort.log.knowledge': { ko: '쌓아온 살림의 지식', en: 'Homemaking knowledge earned' },
   'ach.unlocked':     { ko: '🏆 업적 달성 — {icon} {name}', en: '🏆 Achievement unlocked — {icon} {name}' },
   'ach.note':         { ko: '🏆 업적: {name}', en: '🏆 Achievement: {name}' },
 

@@ -117,13 +117,22 @@ const KNOWLEDGE_HASH = -451536973;
       const bookAfter = S.state.res.book, has1 = S.hasKnowledge('insulation'), cd = S.knowColdDefense();
       const t2now = S.knowledgeUnlockable('effHeating');
       const t3blocked = !S.knowledgeUnlockable('hearthCraft');
+      // 효과 훅 (배치 A): 단열/화덕→coldDefense, 아늑함→comfort +6
+      S.simReset(); S.state.knowledge = []; S.state.res.book = 30; S.state.upkeepOk = true;
+      const cdBase = S.coldDefenseLevel();
+      S.unlockKnowledge('insulation'); const cdIns = S.coldDefenseLevel();
+      S.unlockKnowledge('effHeating'); S.unlockKnowledge('hearthCraft'); const cdHearth = S.coldDefenseLevel();
+      const cmBefore = S.comfortDetail().score;
+      S.unlockKnowledge('tidiness'); S.unlockKnowledge('handiness'); S.unlockKnowledge('coziness');
+      const cd2 = S.comfortDetail(); const cmDelta = cd2.score - cmBefore; const knowMod = cd2.knowMod;
       // 마이그레이션 (구세이브 = knowledge 필드 부재)
       S.simReset(); S.state.knowledge = undefined;
       const old = { state: { ver:3, day:5, mode:'normal', current:'container', res:{food:5} }, savedAt: Date.now() };
       localStorage.setItem(S.slotKey(1), JSON.stringify(old)); S.loadSave();
       const migOk = Array.isArray(S.state.knowledge) && S.state.knowledge.length === 0;
       return JSON.stringify({ count: ids.length, branchCount: Object.keys(branches).length, tiersPerBranch, costOk, hash: h,
-        t1ok, t2blocked, u1, bookAfter, has1, cd, t2now, t3blocked, migOk });
+        t1ok, t2blocked, u1, bookAfter, has1, cd, t2now, t3blocked, migOk,
+        cdBase, cdIns, cdHearth, cmDelta, knowMod });
     `).catch(err => JSON.stringify({ error: String(err) }));
     const kd = JSON.parse(kn);
     if (kd.error) { check('지식 트리 (예외 없이)', false, kd.error); }
@@ -134,6 +143,9 @@ const KNOWLEDGE_HASH = -451536973;
       check('지식/해금 실행 (책 3→2·보유·효과 cd1)', kd.u1 && kd.bookAfter===2 && kd.has1 && kd.cd===1, `book ${kd.bookAfter} cd ${kd.cd}`);
       check('지식/선행 게이트 (t1 후 t2 열림·t3 차단)', kd.t2now && kd.t3blocked, `t2now ${kd.t2now} t3blk ${kd.t3blocked}`);
       check('지식/구세이브 마이그레이션 (knowledge=[])', kd.migOk, `migOk ${kd.migOk}`);
+      check('지식/효과 단열→한파방어 (0→1)', kd.cdBase===0 && kd.cdIns===1, `base ${kd.cdBase} ins ${kd.cdIns}`);
+      check('지식/효과 화덕→방어 +1 (→2)', kd.cdHearth===2, `cdHearth ${kd.cdHearth}`);
+      check('지식/효과 아늑함→쾌적 +6', kd.cmDelta===6 && kd.knowMod===6, `Δ${kd.cmDelta} knowMod ${kd.knowMod}`);
       check('지식 시그니처 해시 불변 (트리 안전망)', kd.hash === KNOWLEDGE_HASH, `hash ${kd.hash}`);
     }
 
