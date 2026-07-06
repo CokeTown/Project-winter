@@ -67,6 +67,11 @@ export function makeWildlifeSystem(ctx) {
     B(body, 4.06 * PX * s, 1.4 * PX * s, 8 * PX * s, belly, 0, -1.4 * PX * s, 5 * PX * s);
     // 어깨 융기(사슴/여우 실루엣)
     if (tall || sp.nameEn === 'fox') B(body, 4.1 * PX * s, 1.6 * PX * s, 3 * PX * s, fur, 0, 1.6 * PX * s, 8 * PX * s);
+    // v1.5.1(디렉터 레퍼런스): 등 반점 — 밝은 모래빛 패치 4장(고정 좌표 — 결정론). spot 팔레트 보유 종만(사슴).
+    if (P.spot) for (const [sx, sz, sw] of [[-1.0, 3.2, 1.4], [0.8, 4.6, 1.2], [-0.4, 6.4, 1.5], [1.0, 7.6, 1.1]])
+      B(body, sw * PX * s, 0.24 * PX * s, 1.7 * PX * s, P.spot, sx * PX * s, 1.86 * PX * s, sz * PX * s);
+    // 가슴 층위(레퍼런스: 배→가슴 밝음 연결) — tall 종은 몸통 앞면 하단에 밝은 가슴판.
+    if (tall) B(body, 3.5 * PX * s, 2.4 * PX * s, 1.1 * PX * s, belly, 0, -0.7 * PX * s, 9.6 * PX * s);
     // 목(그룹 — 사슴 경계 시 치켜듦) + 머리
     const neck = new THREE.Group();
     neck.position.set(0, tall ? 2 * PX * s : 0.8 * PX * s, 10 * PX * s);
@@ -85,6 +90,8 @@ export function makeWildlifeSystem(ctx) {
     for (const [side, ex] of [['L', -1.2], ['R', 1.2]]) {
       const e = new THREE.Group(); e.position.set(ex * PX * s, 1.8 * PX * s, -0.4 * PX * s); head.add(e);
       B(e, 0.9 * PX * s, earH * PX * s, 0.7 * PX * s, ear, 0, earH / 2 * PX * s, 0);
+      // v1.5.1: 귀 안쪽 분홍(레퍼런스) — earIn 보유 종만, 귀 앞면에 얇게.
+      if (P.earIn) B(e, 0.55 * PX * s, earH * 0.55 * PX * s, 0.16 * PX * s, P.earIn, 0, earH * 0.42 * PX * s, 0.38 * PX * s);
       earGroups.push(e);
     }
     // 뿔 (사슴 가지뿔 / 산양 뒤로 굽은 뿔)
@@ -115,7 +122,7 @@ export function makeWildlifeSystem(ctx) {
       g.add(leg); legs[key] = leg;
       const shin = new THREE.Group(); shin.position.set(0, -legH * 0.5, 0); leg.add(shin);
       B(leg, 1.3 * PX * s, legH * 0.5, 1.3 * PX * s, fur, 0, -legH * 0.25, 0);
-      B(shin, 1.15 * PX * s, legH * 0.5, 1.15 * PX * s, fur, 0, -legH * 0.25, 0);
+      B(shin, 1.15 * PX * s, legH * 0.5, 1.15 * PX * s, (tall && P.sock) ? P.sock : fur, 0, -legH * 0.25, 0); // v1.5.1: 하퇴 = 흰 양말(레퍼런스)
       B(shin, 1.4 * PX * s, 0.9 * PX * s, 1.7 * PX * s, tall ? nose : fur, 0, -legH * 0.5 + 0.5 * PX * s, 0.2 * PX * s); // 발굽/발
       legs[key].shin = shin;
     }
@@ -290,7 +297,18 @@ export function makeWildlifeSystem(ctx) {
   function despawnOne(a) { group.remove(a.g); disposeDeep(a.g); animals = animals.filter(x => x !== a); if (!animals.length) scheduleNext(false); }
   function clearPrints() { for (const p of prints) { printGroup.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose(); } prints = []; }
 
-  function sfx(id) { if (typeof playSfx === 'function') { try { playSfx(id, { jitter: 0.05 }); } catch (e) {} } }
+  // v1.5.1(디렉터: "동물 소리가 생각보다 잦다"): 스폰 주기(30~90게임분)가 배속상 실시간 20~60초라
+  //   스폰당 1회도 촘촘하게 들림 → 실시간 쿨다운 120초 + 재생 확률 55% (개막 새 등 보장 재생은 force).
+  let lastSfxAt = -1e9;
+  function sfx(id, force = false) {
+    if (typeof playSfx !== 'function') return;
+    if (!force) {
+      const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      if (now - lastSfxAt < 120000 || Math.random() > 0.55) return;
+      lastSfxAt = now;
+    }
+    try { playSfx(id, { jitter: 0.05 }); } catch (e) {}
+  }
 
   // ── 개막 생명감: Day1 08~10시 새 2~3마리 착지 1회 보장(랜덤 아님) ──
   function tryOpeningSequence() {
@@ -305,7 +323,7 @@ export function makeWildlifeSystem(ctx) {
     const birdId = birds[0] || 'crow';
     const n = W.flockMin + (Math.random() < 0.5 ? 1 : 0);
     for (let i = 0; i < Math.min(n, maxFlock()); i++) spawnOne(birdId, roamSpot(), true, i);
-    sfx('wl_' + birdId);
+    sfx('wl_' + birdId, true); // 개막 새 울음은 1회 보장 (쿨다운 무관)
   }
 
   // ── 매 프레임 업데이트 ──

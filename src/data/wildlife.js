@@ -24,9 +24,11 @@ export const WILDLIFE_SPECIES = {
     palette: { body: 0x1c1c22, wing: 0x14141a, beak: 0x2a2620, eye: 0x0d0b09 },
     nameKo: '까마귀', nameEn: 'crow',
   },
+  // v1.5.1 디자인 업(디렉터 레퍼런스: HIVE 사슴) — 등 반점(spot)/흰 양말(sock)/귀 안쪽(earIn) 레이어 추가.
   deer: {
     kind: 'quad', sizeH: 0.42, gait: 0.5, shy: 3.0,
-    palette: { fur: 0x8a6a48, belly: 0xd8c4a4, ear: 0x6a4e34, nose: 0x2a2420, eye: 0x140f0a, antler: 0xcbb998 },
+    palette: { fur: 0x8a6a48, belly: 0xd8c4a4, ear: 0x6a4e34, nose: 0x2a2420, eye: 0x140f0a, antler: 0xcbb998,
+      spot: 0xd9aa6e, sock: 0xe6d7bd, earIn: 0xd89a96 },
     nameKo: '사슴', nameEn: 'deer',
   },
   fox: {

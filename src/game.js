@@ -61,7 +61,8 @@ const wxIcon    = (type, cls = '') => icon(WEATHER_ICON[type] || `icon_weather_$
 const GRID = 0.25;
 const SAVE_KEY = 'project-shelter-web-v2';
 const OLD_SAVE_KEY = 'project-shelter-web-v1';
-const GAME_MIN_PER_SEC = 1.5;   // 실제 1초 = 게임 1.5분 (하루 = 16분)
+const GAME_MIN_PER_SEC = 1.0;   // 실제 1초 = 게임 1분 (하루 = 실시간 24분) — v1.5.1 디렉터 확정(순삭감 완화, 1.5→1.0)
+//   게이지 소모·부패·스폰 주기는 전부 '게임 분' 기준이라 게임일 밸런스 불변. 오프라인 정산·탐험 차감식(#94)도 이 상수를 공유해 일관.
 const WAKE_HOUR = 7;            // 취침 후 기상 시각 (07:00) — sleepUntilMorning/결산 게이트 공용 (v1.2.0)
 
 const canvas = document.getElementById('c');
@@ -1918,27 +1919,44 @@ const SHELTERS = {
           const anteCXw = -w / 4;                          // 소형 돔 가로 중심 (전실 자리와 동일)
           const zFarW = -d / 2 - 0.13 - 2.5;               // 전실 안쪽 벽 월드 z (zNear -0.1 - 깊이 2.4)
           const smallCz = zFarW + 0.5;                     // 소형 돔 중심 z (전실 안쪽 위)
-          const sR = 1.95, sT = 0.34;                      // 소형 돔 반경/두께
+          // v1.5.1(디렉터: "이글루 말고 같은 돔형을 달아라") — 반구 폐기, 메인 돔과 동일 문법의 반원통 축소판.
+          const sR = 1.7;                                  // 소형 돔 반경
+          const sDep = 2.9;                                // 소형 돔 깊이(z)
           const domeCol = 0x9a968c;
           const smallDome = new THREE.Group();
-          // 반구 외피 (연속 곡면 — 메인 돔과 같은 문법)
+          // 반원통 외피 (axis=z — 메인 돔 mkArc와 같은 결)
           const sk = new THREE.Mesh(
-            new THREE.SphereGeometry(sR, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-            new THREE.MeshLambertMaterial({ color: domeCol }));
-          sk.position.set(anteCXw, 0, smallCz); sk.castShadow = sk.receiveShadow = true; smallDome.add(sk);
-          // 외피 위 이끼/풀 몇 점 + 콘크리트 얼룩 (메인 돔과 톤 맞춤)
+            new THREE.CylinderGeometry(sR, sR, sDep, 20, 1, true, 0, Math.PI),
+            new THREE.MeshLambertMaterial({ color: domeCol, side: THREE.DoubleSide }));
+          sk.rotation.x = Math.PI / 2;                     // 원통 축 y→z
+          sk.rotation.z = Math.PI;                         // 아치가 위로 오게 (통로 pass와 동일 — 1차 검증에서 누워 있던 원인)
+          sk.position.set(anteCXw, 0, smallCz - 0.6);
+          sk.castShadow = sk.receiveShadow = true; smallDome.add(sk);
+          // 후면 반달 캡 (원통 뒤가 뚫려 보이지 않게 — 정면 파사드와 같은 문법의 축소판)
+          {
+            const cshp = new THREE.Shape();
+            cshp.moveTo(sR - 0.02, 0);
+            cshp.absarc(0, 0, sR - 0.02, 0, Math.PI, false);
+            cshp.lineTo(-(sR - 0.02), 0);
+            const cap = new THREE.Mesh(new THREE.ExtrudeGeometry(cshp, { depth: 0.18, bevelEnabled: false }),
+              new THREE.MeshLambertMaterial({ color: shade(domeCol, 0.88) }));
+            cap.position.set(anteCXw, 0, smallCz - 0.6 - sDep / 2 - 0.09);
+            cap.castShadow = cap.receiveShadow = true; smallDome.add(cap);
+          }
+          // 외피 위 이끼/풀 몇 점 — 원통 곡면 좌표로 (메인 돔과 톤 맞춤)
           const sr = seededRand(311);
           for (let i = 0; i < 7; i++) {
-            const a = sr() * Math.PI * 2, el = 0.3 + sr() * 0.9;
-            const rr = sR + 0.04;
-            const gx = anteCXw + rr * Math.cos(el) * Math.cos(a), gy = rr * Math.sin(el), gz = smallCz + rr * Math.cos(el) * Math.sin(a);
+            const th = 0.35 + sr() * (Math.PI - 0.7);      // 원통 각(지면 근처 제외)
+            const rr = sR + 0.05;
+            const gx = anteCXw + rr * Math.cos(th), gy = rr * Math.sin(th);
+            const gz = smallCz - 0.6 + (sr() - 0.5) * (sDep - 0.6);
             const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.06 + sr() * 0.06, 0.16 + sr() * 0.2, 5),
               lamb([0x6a7f4a, 0x8a8a4f, 0x5f7a45][Math.floor(sr() * 3)]));
-            tuft.position.set(gx, gy, gz); tuft.rotation.set(sr() * 0.5, sr() * 3, sr() * 0.5); smallDome.add(tuft);
+            tuft.position.set(gx, gy, gz); tuft.rotation.z = th - Math.PI / 2 + (sr() - 0.5) * 0.4; smallDome.add(tuft);
           }
-          // 소형 돔 정수리 통풍구(작은 콘크리트 링) — 실루엣 포인트
+          // 정수리 통풍구(작은 콘크리트 링) — 실루엣 포인트 유지
           const vent = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 0.34, 10), lamb(0x77736a));
-          vent.position.set(anteCXw, sR - 0.05, smallCz); vent.castShadow = true; smallDome.add(vent);
+          vent.position.set(anteCXw, sR - 0.04, smallCz - 0.6); vent.castShadow = true; smallDome.add(vent);
           // ── 짧은 연결 통로: 메인 돔 뒷벽 ↔ 소형 돔 사이 낮은 반원통 볼트 ──
           const passZ0 = -d / 2 - 0.13;                    // 메인 돔 뒷벽 월드 z
           const passLen = Math.abs(smallCz - passZ0) - sR * 0.4;
@@ -7947,8 +7965,10 @@ function runAction(a) {
     case 'journal': openJournalModal('journal'); break;
     case 'pause': setPaused(!paused); break;
     case 'editMode': toggleEditMode(); break;
-    case 'rotViewL': camState.targetYaw -= Math.PI / 4; break;
-    case 'rotViewR': camState.targetYaw += Math.PI / 4; break;
+    // v1.5.1(디렉터 "시작하자마자 T자"): 45° 스텝은 한 탭에 정면(0°) 도달 — 정면에선 측벽이 실낱+레일만 떠서
+    //   T자 골조로 읽힘. 90° 스텝(대각 4방향 전용)으로 어느 방향이든 2벽이 보이는 3/4 뷰만 허용. 미세 시야는 팬(#70).
+    case 'rotViewL': camState.targetYaw -= Math.PI / 2; break;
+    case 'rotViewR': camState.targetYaw += Math.PI / 2; break;
     case 'rotateItem': rotateActive(); break;
     case 'reclaim': if (selected && !placing) reclaimSelected(); break;
   }
@@ -10558,8 +10578,8 @@ $('g-energy').addEventListener('click', () => promptSleep());
 $('btn-sleep').addEventListener('click', () => promptSleep());
 $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
 // 온스크린 카메라 컨트롤 (모바일/데스크톱 공용)
-$('cam-rotl').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw -= Math.PI / 4; });
-$('cam-rotr').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw += Math.PI / 4; });
+$('cam-rotl').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw -= Math.PI / 2; }); // v1.5.1: 90° 스텝 — 정면 T자 원천 차단
+$('cam-rotr').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw += Math.PI / 2; });
 $('cam-zin').addEventListener('click', () => { exitCatCloseup(); camState.zoom = THREE.MathUtils.clamp(camState.zoom * 1.25, 0.25, 3.2); });
 $('cam-zout').addEventListener('click', () => { exitCatCloseup(); camState.zoom = THREE.MathUtils.clamp(camState.zoom * 0.8, 0.25, 3.2); });
 $('cam-home').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw = Math.PI / 4; setPanTarget(0, 0); fitZoomForShelter(); }); // #70: 홈 복귀에 팬 0,0 리셋 포함
