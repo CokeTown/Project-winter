@@ -9462,9 +9462,10 @@ function processDay() {
   //   신선식품부터 판다(부패 전에 내다 판다는 개연성). 판 누적이 perBook마다 책 1권. 노트는 책 얻은 날만(리포트 청결).
   if (!isWallpaper()) {
     const LX = BAL.luxury;
+    const cap = LX.surplusCap[state.mode] ?? LX.surplusCapDefault; // 난이도별 안착선 (하드/하드코어일수록 낮다 = 더 빡세다)
     const surplus = (state.res.food || 0) + (state.res.canned || 0);
-    if (surplus > LX.surplusCap) {
-      const sell = Math.min(surplus - LX.surplusCap, LX.sellPerDay);
+    if (surplus > cap) {
+      const sell = Math.min(surplus - cap, LX.sellPerDay);
       const sellFood = Math.min(sell, state.res.food || 0);
       if (sellFood > 0) resConsume('food', sellFood);
       if (sell - sellFood > 0) resConsume('canned', sell - sellFood);
@@ -11398,10 +11399,13 @@ window.addEventListener('unhandledrejection', e => {
 function expectedLoot(regionId, mult = 1) {
   const r = REGIONS[regionId];
   const out = {};
+  // 하드/하드코어 전리품 -30% — 실게임 rollRes는 hardLoot()로 적용하지만 expectedLoot(시뮬·QA 전용)엔
+  //   누락돼 있어 하드 sim이 노말 loot로 뻥튀기되던 결함(#76 난이도 검증). 기댓값이라 lootMul을 곱하면 정확.
+  const hardMul = isHard() ? BAL.hard.lootMul : 1;
   for (const [id, min, max, chance] of r.lootRes) {
     const c = chance != null ? chance : 1;
     // resolveExpedition: n = round((min + rand*(max-min)) * mult), n>0만 반영
-    const evN = ((min + max) / 2) * mult;
+    const evN = ((min + max) / 2) * mult * hardMul;
     const contrib = c * evN;
     if (contrib > 0) out[id] = (out[id] || 0) + contrib;
   }
@@ -11415,6 +11419,10 @@ function simReset() {
 let _simRunning = false; // 시뮬 중엔 계정 통계(recordNormalDay)를 오염시키지 않는다
 function simDays(n = 30, opt = {}) {
   if (opt.reset !== false) simReset();
+  // 난이도 모드 적용 — simReset이 normal로 되돌린 직후 지정 모드로. 이게 없으면 opt.mode가 사문화돼
+  //   하드/하드코어 sim이 전부 노말로 돌던 잠복 결함(2026-07-06 검거, #76 난이도 검증 중).
+  //   zen/wallpaper의 시작 물자 보너스는 여기서 재현하지 않는다(로직 경로는 mode 플래그만으로 충분).
+  if (opt.mode) state.mode = opt.mode;
   _simRunning = true;
   try {
     const seed = opt.seed;
