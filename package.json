@@ -14,7 +14,10 @@
     "assets:icons": "node tools/gen-icons.mjs",
     "electron": "electron .",
     "build:electron": "vite build --mode electron",
-    "build:exe": "npm run build:electron && electron-builder --win nsis portable"
+    "build:exe": "npm run build:electron && electron-builder --win nsis portable",
+    "test": "electron tests/core.test.cjs",
+    "test:build": "vite build --mode electron && electron tests/core.test.cjs",
+    "gates": "node tools/check-i18n.mjs && node tools/check-hardcode.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
