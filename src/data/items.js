@@ -25,6 +25,7 @@ export const RESOURCES = {
   parts:      { name: '부품',     nameEn: 'Parts',       emoji: '⚙️' },
   material:   { name: '건축재',   nameEn: 'Material',    emoji: '🧱' },
   salt:       { name: '소금',     nameEn: 'Salt',        emoji: '🧂' }, // 1.1 항구: 수산시장/야적장 전리품 · 염장 재료
+  book:       { name: '책',       nameEn: 'Book',        emoji: '📕' }, // #76 지식: 잉여 식량을 암시장에 판 부산물 + 탐험 희귀 드랍 · 사치 가구 재료
 };
 // ---- 부상 (기획서 v0.2: 부상 치료 시스템) ----
 export const INJURIES = {
@@ -47,6 +48,8 @@ export const THEME_SETS = [
   { id: 'bedroom', name: '따뜻한 침실', nameEn: 'Warm Bedroom', emoji: '🛏️', items: ['bed', 'rug', 'lamp', 'heater'] },
   { id: 'workshop', name: '작업 공간', nameEn: 'Work Space', emoji: '🛠️', items: ['table', 'crate', 'bookshelf'] },
   { id: 'greencorner', name: '녹색 구석', nameEn: 'Green Corner', emoji: '🪴', items: ['plant', 'plant', 'teatable'] },
+  // #76 사치 세트 — 살아남은 뒤에야 갖추는 응접실. 셋을 다 모으면 분위기 가산.
+  { id: 'parlor', name: '응접실', nameEn: 'Parlor', emoji: '🎶', items: ['globe', 'phonograph', 'candelabra'] },
 ];
 
 export const CAT_POSES = {
@@ -137,6 +140,10 @@ export const CRAFTS = [
   { out: { furn: 'heater' }, cost: { parts: 5, material: 3, cloth: 2 }, hint: '한파 방어 + 겨울 쾌적 (연료 1/일)', hintEn: 'Cold-snap defense + winter comfort (fuel 1/day)' },
   // 1.1 염장 — 신선식품 2 + 소금 1 → 보존식 2. 냉장고 없는 초반의 부패 카운터(여름 대비).
   { out: { res: 'canned', n: BAL.harbor.saltCureOut }, cost: { food: BAL.harbor.saltCureFood, salt: BAL.harbor.saltCureSalt }, hint: '소금으로 절인 보존식 — 여름 부패를 이긴다', hintEn: 'Salt-cured preserves — beats summer spoilage' },
+  // #76 사치 가구 — 책(지식)을 재료로. 후반 잉여가 흘러든 책의 사용처(사치 건축 싱크). 응접실 세트.
+  { out: { furn: 'globe' }, cost: { book: 3, material: 2 }, hint: '책으로 채운 지구본 — 가 보지 못한 곳들', hintEn: 'A globe filled by books — places never seen' },
+  { out: { furn: 'candelabra' }, cost: { book: 2, material: 1, candle: 2 }, hint: '가지 촛대 — 사치스러운 불빛', hintEn: 'A branched candelabra — an extravagant light' },
+  { out: { furn: 'phonograph' }, cost: { book: 4, parts: 2, material: 1 }, hint: '축음기 — 폐허에 음악을', hintEn: 'A phonograph — music for the ruins' },
   // #86④ 의류 — 만들면 옷장(state.outfits)에 영구 추가, 착용은 옷장에서. 염색 재료로 개성(소금/연료=숯).
   { out: { outfit: 'navy' }, cost: { cloth: 3 }, hint: '옷장에 추가 — 짙은 밤바다색', hintEn: 'Added to wardrobe — deep sea navy' },
   { out: { outfit: 'wine' }, cost: { cloth: 3, salt: 1 }, hint: '옷장에 추가 — 소금 매염 와인빛', hintEn: 'Added to wardrobe — salt-mordant wine' },

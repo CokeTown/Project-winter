@@ -542,6 +542,82 @@ const DEFS = {
       return g;
     }
   },
+  /* ── #76 「지식과 사치」 사치 가구 — 책(지식)을 재료로 짓는다. 살아남은 뒤에야 갖는 것들 ── */
+  globe: {
+    name: '골동품 지구본', nameEn: 'Antique Globe', emoji: '🌐', fp: { w: 0.5, d: 0.5 },
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
+    build(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.17, 0.19, 0.03, shade(c, 0.85), 0, 0.02, 0, 14);          // 바닥 원반
+      for (let i = 0; i < 3; i++) {                                       // 삼각 다리
+        const a = (i / 3) * Math.PI * 2;
+        const leg = Cyl(g, 0.02, 0.03, 0.52, c, Math.cos(a) * 0.13, 0.28, Math.sin(a) * 0.13, 6);
+        leg.rotation.z = -Math.cos(a) * 0.14; leg.rotation.x = Math.sin(a) * 0.14;
+      }
+      const ax = 0.42; // 지축 기울기 (rad)
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.185, 0.011, 6, 22), lamb(0xb08a3a)); // 자오선 링(황동)
+      ring.position.set(0, 0.68, 0); ring.rotation.y = 0.5; ring.rotation.x = ax; ring.castShadow = true; g.add(ring);
+      const globe = new THREE.Mesh(new THREE.SphereGeometry(0.165, 16, 12), lamb(0x35617e));       // 바다
+      globe.position.set(0, 0.68, 0); globe.rotation.z = ax; globe.castShadow = true; g.add(globe);
+      for (const [x, y, z] of [[0.09, 0.75, 0.06], [-0.07, 0.63, 0.11], [0.04, 0.6, -0.12], [-0.1, 0.72, -0.06]]) {
+        const land = new THREE.Mesh(new THREE.IcosahedronGeometry(0.055, 0), lamb(0x5f8a52));       // 대륙 얼룩
+        land.position.set(x, y, z); land.scale.set(1, 0.55, 1); g.add(land);
+      }
+      Cyl(g, 0.012, 0.012, 0.12, 0xb08a3a, 0, 0.79, 0, 6);              // 지축 상단 축
+      return g;
+    }
+  },
+  phonograph: {
+    name: '축음기', nameEn: 'Phonograph', emoji: '🎶', fp: { w: 0.6, d: 0.55 },
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 0.5, 0.28, 0.45, c, 0, 0.36, 0);                             // 목재 캐비닛
+      B(g, 0.54, 0.05, 0.49, shade(c, 1.12), 0, 0.52, 0);               // 상판
+      for (const [x, z] of [[-0.2, -0.17], [0.2, -0.17], [-0.2, 0.17], [0.2, 0.17]])
+        B(g, 0.05, 0.2, 0.05, shade(c, 0.8), x, 0.12, z);               // 다리
+      Cyl(g, 0.13, 0.13, 0.02, 0x2a2622, -0.05, 0.56, 0, 18);           // 턴테이블(검은 레코드)
+      Cyl(g, 0.025, 0.025, 0.02, 0xb08a3a, -0.05, 0.57, 0, 8);          // 스핀들
+      const arm = Cyl(g, 0.012, 0.012, 0.2, 0xb0b0b0, 0.06, 0.6, 0.05, 6); arm.rotation.z = 0.8; arm.rotation.y = 0.4; // 톤암
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.28, 14, 1, true), lamb(0xc9a24a)); // 황동 나팔
+      horn.material.side = THREE.DoubleSide;
+      horn.position.set(0.14, 0.78, 0.05); horn.rotation.z = -0.7; horn.rotation.x = -0.35; horn.castShadow = true; g.add(horn);
+      Cyl(g, 0.02, 0.02, 0.16, 0xb08a3a, 0.03, 0.64, 0.02, 6).rotation.z = 0.7;  // 나팔 연결관
+      const crank = Cyl(g, 0.015, 0.015, 0.12, 0x3a3530, 0.27, 0.36, 0, 6); crank.rotation.z = Math.PI / 2; // 크랭크
+      return g;
+    }
+  },
+  candelabra: {
+    name: '촛대', nameEn: 'Candelabra', emoji: '🕎', fp: { w: 0.5, d: 0.5 },
+    stackable: true, // 테이블·서랍장 위에도
+    colorNames: ['황동', '실버', '블랙', '앤티크골드'],
+    colorNamesEn: ['Brass', 'Silver', 'Black', 'Antique Gold'],
+    colors: [0xb08a3a, 0xbfc3c8, 0x3a3733, 0x9a7d3a],
+    light: { color: 0xffb060, intensity: 6, dist: 6, y: 1.3, flicker: true, fuel: 'candle', comfort: 9 },
+    build(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.16, 0.2, 0.06, shade(c, 0.8), 0, 0.03, 0, 12);           // 받침
+      Cyl(g, 0.05, 0.09, 0.08, shade(c, 0.9), 0, 0.1, 0, 10);           // 받침 노드(장식)
+      Cyl(g, 0.03, 0.03, 1.0, c, 0, 0.6, 0, 8);                         // 기둥
+      Cyl(g, 0.055, 0.055, 0.06, shade(c, 1.1), 0, 0.62, 0, 10);        // 중간 노드
+      const cup = (cx, cy, cz = 0) => {                                  // 초컵 + 초 + 불꽃
+        Cyl(g, 0.055, 0.04, 0.03, c, cx, cy, cz, 10);                   // 접시(드립 트레이)
+        Cyl(g, 0.03, 0.035, 0.12, 0xf0e8d0, cx, cy + 0.08, cz, 8);      // 초
+        const fl = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.09, 6),
+          new THREE.MeshLambertMaterial({ color: 0xffd487, emissive: 0xffaa40, emissiveIntensity: 1.5 }));
+        fl.position.set(cx, cy + 0.19, cz); fl.userData.glow = true; g.add(fl);
+      };
+      // 좌우 갈래 팔 — S자로 크게 뻗는다(가지 촛대 실루엣). 팔 끝을 수직 올림대로 세워 초를 든다.
+      for (const side of [-1, 1]) {
+        const arm = B(g, 0.44, 0.035, 0.035, shade(c, 1.05), side * 0.2, 1.02, 0); arm.rotation.z = -side * 0.42;
+        Cyl(g, 0.03, 0.03, 0.14, c, side * 0.38, 1.18, 0, 6);          // 팔 끝 수직 올림대
+        cup(side * 0.38, 1.26);                                         // 좌우 초 (중앙보다 낮게)
+      }
+      Cyl(g, 0.03, 0.03, 0.18, c, 0, 1.16, 0, 8);                       // 중앙 올림대
+      cup(0, 1.32);                                                      // 중앙 초 (가장 높이)
+      return g;
+    }
+  },
 };
 
 

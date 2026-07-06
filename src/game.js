@@ -5779,6 +5779,8 @@ function resolveExpedition() {
       notes.push(t(drop.will ? 'memo.foundWillNote' : 'memo.foundNote', { title: LN(tbl[drop.id]) }));
       state.pendingMemoPopup = { id: drop.id, will: drop.will };
     }
+    // #76 지식: 폐허에서 성한 책 한 권 (탐험 성공 희귀 드랍 — 사치 가구 재료). 암시장 판매 부산물과 별개의 '지식' 손맛.
+    if (Math.random() < BAL.luxury.bookDropChance) { resAdd('book', 1); notes.push(t('exp.note.book')); }
     state.successes++;
     state.stats.success++;
     title = t('exp.successTitle', { name: LName(r) });
@@ -9454,6 +9456,24 @@ function processDay() {
     if (watered) { resAdd('food', M.mushroomFoodPerDay); notes.push(t('subway.mushroomHarvest', { n: M.mushroomFoodPerDay })); }
   }
   if (hasMod('solar') && state.day % 2 === 1) { resAdd('battery', 1); notes.push(t('day.solar')); }
+  // #76 지식과 사치: 잉여 식량을 암시장에 내다 팔아 책(지식)으로 — 후반 무한 인플레의 캡.
+  //   food+canned 합이 surplusCap 위로 넘칠 때만, 초과분을 하루 sellPerDay까지 판다. 임계치가 곧 안착선이라
+  //   Day30/60 밴드(110~160 / 122~147)는 구조적으로 불가침 — 후반 폭주분만 깎는다(목표 300~400).
+  //   신선식품부터 판다(부패 전에 내다 판다는 개연성). 판 누적이 perBook마다 책 1권. 노트는 책 얻은 날만(리포트 청결).
+  if (!isWallpaper()) {
+    const LX = BAL.luxury;
+    const surplus = (state.res.food || 0) + (state.res.canned || 0);
+    if (surplus > LX.surplusCap) {
+      const sell = Math.min(surplus - LX.surplusCap, LX.sellPerDay);
+      const sellFood = Math.min(sell, state.res.food || 0);
+      if (sellFood > 0) resConsume('food', sellFood);
+      if (sell - sellFood > 0) resConsume('canned', sell - sellFood);
+      state.bookProgress = (state.bookProgress || 0) + sell;
+      let earnedBooks = 0;
+      while (state.bookProgress >= LX.perBook) { state.bookProgress -= LX.perBook; earnedBooks++; }
+      if (earnedBooks > 0) { resAdd('book', earnedBooks); notes.push(t('day.surplusSold', { n: sell, b: earnedBooks })); }
+    }
+  }
   state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - dirt);
   if (state.cleanBy[state.current] < 20) notes.push(t('day.veryDirty'));
   // 셸터 유지비

@@ -162,6 +162,20 @@ export const BAL = {
     rooftopGardenMult: 2,               // 옥탑 퍽: 텃밭 수확 배수 (옥탑 텃밭 food +2/일). 현재 텃밭은 rooftop 전용이라 이 배수가 곧 옥탑 정체성
   },
 
+  /* ── #76 「지식과 사치」 — 장기 인플레 교정 + 책(지식)/사치 건축 싱크 ──
+     문제(AUDIT-1.4 P1-3): 9겨울 완주(Day432) food+canned가 1291까지 무한 인플레 — 후반 자원이 의미를 잃는다.
+     디렉터 결정: 목표 300~400 + 지식/사치 싱크. 방식(디렉터 승인): "암시장 확장".
+     설계: 방치형 자동 경로 — 잉여 food+canned가 surplusCap 위로 넘치면 매일 암시장에 팔아 책(지식)으로.
+       임계치가 곧 인플레 캡(파는 속도 sellPerDay가 후반 순증을 웃돌아 pile을 surplusCap 부근에 고정).
+     밴드 불가침: surplusCap을 Day30/60 밴드(110~160 / 122~147) 상단보다 훨씬 높게 둬 초·중반은 절대 안 건드린다
+       — 후반 폭주분만 깎는다. 책은 사치 가구 제작(사치 건축)의 재료 + 탐험 희귀 드랍(지식). */
+  luxury: {
+    surplusCap: 340,   // food+canned 합이 이 값을 넘으면 초과분을 암시장에 판다 (≈ 후반 안착선 = 목표 300~400 중앙)
+    sellPerDay: 40,    // 하루 판매 상한 — 총 생성(단일최고 ~20/일, 로테이션 ~10/일)을 넉넉히 웃돌아 임계치가 하드캡으로 작동
+    perBook: 20,       // 누적 판매 이만큼마다 책(지식) 1권 산출 (로테이션 기준 후반 ~0.2권/일 = 완만 — 사치 가구 재료)
+    bookDropChance: 0.03, // 탐험 성공 시 책 1권 드랍 확률 (메모 2%보다 살짝 위 — 지식은 종이 한 장보다 흔하다)
+  },
+
   /* ── 인카운터 / 수집 (Phase D #12·#35) ── */
   events: {
     dailyChance: 0.60,     // 아침 결산 시 랜덤 인카운터 발동 확률 (기존 하드코딩 0.60 이관)
@@ -375,6 +389,9 @@ export const BAL = {
       { id: 'materialToParts', give: { material: 4 }, get: 'parts', getN: 1 }, // 흔한 건축재 → 귀한 부품
       { id: 'clothToBattery', give: { cloth: 4 }, get: 'battery', getN: 1 },   // 남는 천 → 배터리
       { id: 'partsToFuel', give: { parts: 2 }, get: 'fuel', getN: 1, winterGive: { parts: 3 } }, // 부품 → 연료 (겨울엔 부품 3 — 연료 프리미엄)
+      // #76 「지식과 사치」 암시장 확장 — 넘치는 식량을 책(지식)으로. 방치형 자동 판매(surplusCap)보다 빠른 수동 레버.
+      { id: 'foodToBook', give: { food: 10 }, get: 'book', getN: 1 },     // 남는 신선식품 → 책
+      { id: 'cannedToBook', give: { canned: 10 }, get: 'book', getN: 1 }, // 남는 통조림 → 책
     ],
   },
 
