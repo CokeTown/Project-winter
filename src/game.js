@@ -1730,16 +1730,7 @@ const SHELTERS = {
   },
 
   bunker: {
-    name: '돔 벙커', nameEn: 'Dome Bunker', emoji: '🛖', unlockAt: 2, viewH: 17, ceilY: 2.6,
-    baseComfort: 5,
-    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (환기·조명 전력)', labelEn: 'Battery 1 / day (ventilation & lighting)' },
-    moveCost: { material: 2, battery: 1 }, limits: '🔌 밀폐 구조 — 전력이 끊기면 거처 보너스·특성 정지', limitsEn: '🔌 Sealed structure — losing power halts shelter bonuses & traits',
-    desc: '반쯤 무너진 돔형 벙커. 갈라진 외피 사이로 별이 보이지만, 두꺼운 벽 안쪽은 의외로 아늑하다.',
-    descEn: 'A half-collapsed dome bunker. Stars peek through the cracked shell, but inside the thick walls it is surprisingly snug.',
-    room: { w: 8.5, d: 6, h: 3 },
-    mood: { fog: 0x161c2c, fogNear: 22, fogFar: 60, skyH: 0x223048, skyZ: 0x0a0e1a, hemiSky: 0x8593b8, hemiGround: 0x3f3a34, hemiInt: 0.68, moonC: 0x9db4d8, moonInt: 0.8, stars: 0.95 },
-    weatherPool: ['clear', 'snow', 'clear', 'rain'],
-    perk: { injuryHalf: true, label: '🛡️ 두꺼운 외피 — 부상 회복 2배 빠름', labelEn: '🛡️ Thick shell — injuries heal twice as fast' },
+    ...SHELTER_META.bunker, // 데이터 → data/shelters.js. 아래는 렌더 함수만.
     buildRoom() {
       const { w, d, h } = ROOM;
       const conc = wallPhong({ map: concreteTex });
@@ -2216,21 +2207,7 @@ const SHELTERS = {
   },
 
   rooftop: {
-    name: '도시 옥탑방', nameEn: 'City Rooftop', emoji: '🏙️', unlockAt: 4, viewH: 19, ceilY: 2.5,
-    desc: '무너진 도시의 빌딩 옥상. 콘크리트 슬래브 위, 주워 모은 판자로 잇댄 가벽 방과 텃밭으로 개조할 수 있는 마당이 있다.',
-    descEn: 'Atop a fallen city building. A crude room walled with scavenged panels sits on the concrete slab, beside a yard you can turn into a garden.',
-    // ROOM = 가벽 방 내부(가구 배치 영역)만. 마당은 방 밖 슬래브라 배치 불가. (구 9×7 → 5.6×4.4로 축소, 로드 시 클램프 마이그레이션)
-    room: { w: 5.6, d: 4.4, h: 2.4 },
-    baseComfort: 4,
-    moveCost: { material: 2, parts: 1 }, limits: '🪨 슬레이트 지붕에 두 장이 빠져 있다 — 보수 전까지 비/눈 오는 날 청결 소폭 감소', limitsEn: '🪨 Two slates are missing from the roof — until repaired, cleanliness dips a little on rainy/snowy days',
-    mood: { fog: 0x1c202c, fogNear: 22, fogFar: 62, skyH: 0x252c3d, skyZ: 0x0b0e18, hemiSky: 0x7d8bb0, hemiGround: 0x3a3733, hemiInt: 0.66, moonC: 0x9db4d8, moonInt: 0.8, stars: 0.75 },
-    weatherPool: ['clear', 'rain', 'clear', 'snow'],
-    // 옥탑 퍽: 텃밭 수확 배수(gardenMult). 텃밭은 현재 rooftop 전용이라 이 배수가 곧 옥탑의 정체성 —
-    // 다른 셸터에 텃밭이 생기는 건 향후. 부분성공 회수(salvagePlus)는 유지.
-    perk: { salvagePlus: true, gardenMult: BAL.economy.rooftopGardenMult, label: '📡 탁 트인 시야 — 부분 성공 시 가구 1개 회수 · 🌱 옥상 텃밭 수확 2배', labelEn: '📡 Clear vantage — salvage 1 furniture on partial success · 🌱 rooftop garden yields ×2' },
-    // 슬래브는 방(ROOM)보다 훨씬 넓고, 방은 -x/-z 구석, 마당은 +x/+z. 방은 원점 중심(가구 배치 기준).
-    // 슬래브 반폭/반깊이 (방 원점 기준 비대칭). YARD 오프셋으로 마당 중심을 잡는다.
-    _slab: { backX: 3.4, frontX: 6.9, backZ: 2.9, frontZ: 6.1 }, // 방 원점에서 각 방향 슬래브 가장자리까지
+    ...SHELTER_META.rooftop, // 데이터 → data/shelters.js. 아래는 렌더 함수만.
     buildRoom() {
       const { w, d, h } = ROOM;
       const S = SHELTERS.rooftop._slab;
@@ -2407,17 +2384,7 @@ const SHELTERS = {
   },
 
   cabin: {
-    name: '숲속 오두막', nameEn: 'Forest Cabin', emoji: '🏡', unlockAt: 7, viewH: 16, ceilY: 2.45,
-    baseComfort: 10,
-    upkeep: { res: 'material', n: 1, every: 3, label: '건축재 1 / 3일', labelEn: 'Building material 1 / 3 days' },
-    stormRepair: ['rain', 'snow', 'storm'], moveCost: { material: 4 },
-    limits: '🪵 목조 지붕 — 악천후엔 매일 건축재 1로 누수 수리 (없으면 청결 -8)', limitsEn: '🪵 Timber roof — bad weather needs 1 material/day for leak repair (else cleanliness -8)',
-    desc: '숲 가장자리의 오두막. 폐허가 된 세상에서 찾아낸 가장 아늑한 은신처.',
-    descEn: 'A cabin on the forest’s edge. The coziest refuge you have found in this ruined world.',
-    weatherPool: ['clear', 'snow', 'rain', 'clear'],
-    perk: { cozyMult: 1.5, label: '🕯️ 아늑한 구조 — 쾌적함 효과 1.5배', labelEn: '🕯️ Cozy layout — comfort effects ×1.5' },
-    room: { w: 10, d: 8, h: 2.7 },
-    mood: { fog: 0x1a2233, fogNear: 24, fogFar: 58, skyH: 0x1a2233, skyZ: 0x0a0f1a, hemiSky: 0x8a98bd, hemiGround: 0x46403a, hemiInt: 0.7, moonC: 0x9db4d8, moonInt: 0.75, stars: 0.85 },
+    ...SHELTER_META.cabin, // 데이터 → data/shelters.js. 아래는 렌더 함수만.
     buildRoom() {
       const { w, d, h } = ROOM;
       const fm = wallPhong({ map: floorWoodTex }); fm.userData.shared = true;
@@ -2586,16 +2553,7 @@ const SHELTERS = {
   },
 
   bus: {
-    name: '버려진 스쿨버스', nameEn: 'Abandoned School Bus', emoji: '🚌', unlockAt: 9, viewH: 14, ceilY: 2.0,
-    desc: '고속도로 위에 멈춰 선 스쿨버스. 좁지만 어디로든 갈 수 있을 것 같은 기분이 든다.',
-    descEn: 'A school bus stalled on the highway. Cramped, but it feels like it could take you anywhere.',
-    room: { w: 6.8, d: 2.4, h: 2.2 },
-    baseComfort: 3,
-    mood: { fog: 0x2a2622, fogNear: 20, fogFar: 54, skyH: 0x3d3830, skyZ: 0x14151d, hemiSky: 0x8a8272, hemiGround: 0x453d33, hemiInt: 0.66, moonC: 0xc9c0a8, moonInt: 0.6, stars: 0.55 },
-    weatherPool: ['clear', 'ash', 'rain', 'clear'],
-    perk: { timeMult: 0.75, label: '🚌 이동형 거점 — 탐험 소요 시간 -25%', labelEn: '🚌 Mobile base — expedition time -25%' },
-    upkeep: { res: 'fuel', n: 1, every: 2, label: '연료 1 / 2일', labelEn: 'Fuel 1 / 2 days' },
-    maxItems: 8, moveCost: { fuel: 2, parts: 2 }, limits: '📦 좁은 실내 — 가구 최대 8개', limitsEn: '📦 Tight interior — max 8 furniture',
+    ...SHELTER_META.bus, // 데이터 → data/shelters.js. 아래는 렌더 함수만.
     buildRoom() {
       const { w, d, h } = ROOM;
       const busY = 0x9a7a2f, busD = 0x7a6226;
@@ -2705,16 +2663,7 @@ const SHELTERS = {
   },
 
   subway: {
-    name: '지하철 역사', nameEn: 'Subway Station', emoji: '🚇', unlockAt: 12, viewH: 16, ceilY: 2.8, indoor: true,
-    desc: '무너진 도시 아래 잠든 승강장. 날씨도 계절도 닿지 않는 곳 — 어둠만 잘 다스리면 최고의 요새다.',
-    descEn: 'A platform sleeping beneath the fallen city. Untouched by weather or season — master the dark and it becomes the finest fortress.',
-    room: { w: 11, d: 6, h: 3 },
-    baseComfort: 6,
-    mood: { fog: 0x121417, fogNear: 16, fogFar: 44, skyH: 0x0b0c0e, skyZ: 0x060708, hemiSky: 0x6e7684, hemiGround: 0x3a352e, hemiInt: 0.68, moonC: 0x8a96a6, moonInt: 0.45, stars: 0 },
-    weatherPool: ['clear'],
-    perk: { lightMult: 1.5, label: '🕯️ 어둠 속 안식 — 조명 쾌적함 효과 1.5배', labelEn: '🕯️ Rest in the dark — lighting comfort effect ×1.5' },
-    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (환기 팬)', labelEn: 'Battery 1 / day (ventilation fan)' },
-    needsLight: 12, moveCost: { battery: 2, material: 3 }, limits: '🌑 완전한 어둠 — 켜진 조명이 하나도 없으면 쾌적함 -12', limitsEn: '🌑 Total darkness — comfort -12 if no light is lit',
+    ...SHELTER_META.subway, // 데이터 → data/shelters.js. 아래는 렌더 함수만.
     buildRoom() {
       const { w, d, h } = ROOM;
       const conc = wallPhong({ map: concreteTex });
@@ -2838,18 +2787,7 @@ const SHELTERS = {
   },
 
   greenhouse: {
-    name: '온실', nameEn: 'Greenhouse', emoji: '🌿', unlockAt: 15, viewH: 16, ceilY: 2.6,
-    desc: '기적처럼 남아 있는 유리 온실. 세상이 멸망해도 흙에서는 여전히 싹이 튼다.',
-    descEn: 'A glass greenhouse that survived as if by miracle. Even at the end of the world, seeds still sprout from the soil.',
-    room: { w: 9, d: 6, h: 2.4 },
-    baseComfort: 8,
-    mood: { fog: 0x1c2426, fogNear: 22, fogFar: 60, skyH: 0x22333a, skyZ: 0x0a1016, hemiSky: 0x8aa8a0, hemiGround: 0x3f4438, hemiInt: 0.72, moonC: 0xa8c4c0, moonInt: 0.7, stars: 0.8 },
-    weatherPool: ['clear', 'rain', 'clear', 'snow'],
-    perk: { produce: { food: 1 }, produceNote: '🌿 온실 텃밭에서 수확했습니다', produceNoteEn: '🌿 Harvested from the greenhouse garden', label: '🌿 텃밭 — 매일 음식 +1', labelEn: '🌿 Garden — food +1 daily' },
-    upkeep: { res: 'water', n: 1, every: 1, label: '깨끗한 물 1 / 일 (급수)', labelEn: 'Clean water 1 / day (irrigation)' },
-    stormRepair: ['snow'], moveCost: { material: 3, water: 2 },
-    limits: '❄️ 유리 지붕 — 눈 오는 날엔 건축재 1로 보수 (없으면 청결 -8)', limitsEn: '❄️ Glass roof — snowy days need 1 material to patch (else cleanliness -8)',
-    noWallpaper: true, // (B-①) 유리 벽 — 벽지 미대상. 바닥재만 가능.
+    ...SHELTER_META.greenhouse, // 데이터 → data/shelters.js. 아래는 렌더 함수만.
     buildRoom() {
       const { w, d, h } = ROOM;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ color: 0x6b5a44 }));
@@ -3021,16 +2959,7 @@ const SHELTERS = {
   },
 
   ship: {
-    name: '여객선 선실', nameEn: 'Liner Cabin', emoji: '🚢', unlockAt: 18, viewH: 17, ceilY: 2.5,
-    desc: '해안에 좌초된 여객선의 갑판. 파도 소리와 함께 잠들고, 아침엔 낚싯대를 드리운다.',
-    descEn: 'The deck of a passenger liner run aground on the coast. You sleep to the sound of waves and cast a line at dawn.',
-    room: { w: 10, d: 7, h: 0.9 },
-    baseComfort: 7,
-    mood: { fog: 0x16222c, fogNear: 20, fogFar: 56, skyH: 0x1e3040, skyZ: 0x0a1018, hemiSky: 0x7d94b0, hemiGround: 0x3a3d40, hemiInt: 0.68, moonC: 0xa8c0d8, moonInt: 0.8, stars: 0.9 },
-    weatherPool: ['clear', 'rain', 'rain', 'snow'],
-    perk: { failSalvage: true, produce: { food: 1 }, produceNote: '🎣 밤낚시로 물고기를 잡았습니다', produceNoteEn: '🎣 Caught a fish with night fishing', label: '🎣 낚시 — 매일 음식 +1 · 탐험 실패에도 자원 일부 회수', labelEn: '🎣 Fishing — food +1 daily · salvage some resources even on failed expeditions' },
-    upkeep: { res: 'parts', n: 1, every: 3, label: '부품 1 / 3일 (배수 펌프)', labelEn: 'Parts 1 / 3 days (bilge pump)' },
-    dailyDirt: 2, moveCost: { parts: 3, material: 2 }, limits: '💧 바다의 습기 — 청결이 매일 2 더 빨리 떨어짐', limitsEn: '💧 Sea damp — cleanliness drops 2 faster each day',
+    ...SHELTER_META.ship, // 데이터 → data/shelters.js. 아래 주석·렌더 함수만.
     // (B-②) 연안 페리 외형 리워크: 흰 상부 구조 + 측면 연속 창문 줄 + 선체 적/청 밴드 + 2층 데크 실루엣 +
     //   난간 + 소형 굴뚝. ROOM 인테리어(치수/가구 좌표/이주 로직/퍽) 불변 — 외형 메시만 교체.
     // (v1.5 페리 리워크 — 디렉터 확정안) "옥탑방처럼 갑판 위에 슬레이트 간이집을 짓고 산다":
@@ -3337,17 +3266,7 @@ const SHELTERS = {
   },
 
   lighthouse: {
-    name: '등대 등탑 거실', nameEn: 'Lighthouse Lamp Room', emoji: '🗼', unlockAt: 22, viewH: 19, ceilY: 2.2,
-    desc: '절벽 끝 등대의 꼭대기 층. 두꺼운 벽 안은 아늑하고, 옥상 랜턴 옆 빗물받이가 물을 모아준다.',
-    descEn: 'The top floor of a lighthouse at the cliff’s edge. Snug within thick walls, with a rain catch beside the rooftop lantern.',
-    room: { w: 7, d: 7, h: 2.6 },
-    baseComfort: 9,
-    mood: { fog: 0x1a2430, fogNear: 22, fogFar: 64, skyH: 0x223448, skyZ: 0x0a0f18, hemiSky: 0x8aa0c0, hemiGround: 0x3a3d40, hemiInt: 0.7, moonC: 0xa8c0d8, moonInt: 0.8, stars: 0.95 },
-    weatherPool: ['clear', 'rain', 'snow', 'rain'],
-    perk: { expBonus: 0.03, forecast: true, label: '🔦 탐조등 — 모든 지역 성공률 +3%p · 날씨 예보 제공', labelEn: '🔦 Searchlight — success +3%p in all regions · weather forecast' },
-    upkeep: { res: 'fuel', n: 1, every: 2, label: '연료 1 / 2일 (등불)', labelEn: 'Fuel 1 / 2 days (beacon)' },
-    rainCatch: 2, moveCost: { fuel: 2, parts: 3 },
-    limits: '🌧️ 옥상 빗물받이 — 비/눈 오는 날 깨끗한 물 +2 (자급 가능)', limitsEn: '🌧️ Rooftop rain catch — clean water +2 on rainy/snowy days (self-sufficient)',
+    ...SHELTER_META.lighthouse, // 데이터 → data/shelters.js. 아래는 렌더 함수만.
     buildRoom() {
       const { w, d, h } = ROOM;
       const conc = wallPhong({ map: concreteTex });
@@ -3496,16 +3415,7 @@ const SHELTERS = {
   /* ── 1.1 「얼어붙은 항구」 셸터 1: 예인선 ──
      물 위에 뜬 작은 예인선. 흔들림 앰비언트(envDyn.sea 파동) + 낚시 퍽(매일 음식 +1). */
   tugboat: {
-    name: '예인선', nameEn: 'Tugboat', emoji: '🚤', unlockAt: 25, viewH: 16, ceilY: 2.3,
-    desc: '부두에 매인 작은 예인선. 발밑이 늘 흔들리지만, 물 위에서는 낚싯줄이 마르지 않는다.',
-    descEn: 'A small tugboat moored at the pier. The deck always sways, but on the water the line never runs dry.',
-    room: { w: 6.4, d: 4.2, h: 2.2 },
-    baseComfort: 6,
-    mood: { fog: 0x15222c, fogNear: 18, fogFar: 52, skyH: 0x1c2e3e, skyZ: 0x0a1018, hemiSky: 0x7a92ae, hemiGround: 0x36393c, hemiInt: 0.66, moonC: 0xa6bed6, moonInt: 0.78, stars: 0.85 },
-    weatherPool: ['clear', 'snow', 'rain', 'snow'],
-    perk: { produce: { food: 1 }, produceNote: '🎣 뱃전에서 물고기를 낚았습니다', produceNoteEn: '🎣 Caught a fish off the gunwale', label: '🎣 물 위의 거처 — 매일 음식 +1 (얼음낚시 가능)', labelEn: '🎣 Home on the water — food +1 daily (ice fishing available)' },
-    upkeep: { res: 'fuel', n: 1, every: 2, label: '연료 1 / 2일 (엔진 예열)', labelEn: 'Fuel 1 / 2 days (engine warmup)' },
-    dailyDirt: 2, moveCost: { parts: 3, material: 2 }, limits: '💧 뱃전의 습기 — 청결이 매일 2 더 빨리 떨어짐', limitsEn: '💧 Deck damp — cleanliness drops 2 faster each day',
+    ...SHELTER_META.tugboat, // 데이터 → data/shelters.js. 아래는 렌더 함수만.
     buildRoom() {
       const { w, d, h } = ROOM;
       const hullC = 0x384a55, deckC = 0x6a5a44;
@@ -3585,17 +3495,7 @@ const SHELTERS = {
   /* ── 1.1 「얼어붙은 항구」 셸터 2: 항만 관제탑 ──
      항구를 내려다보는 고층 관제탑. 넓은 전망 창(viewH 큼) + 예보 리드타임 +1일 퍽. */
   controltower: {
-    name: '항만 관제탑', nameEn: 'Harbor Control Tower', emoji: '🗼', unlockAt: 29, viewH: 21, ceilY: 2.6,
-    desc: '항구를 내려다보는 관제탑 꼭대기. 사방이 유리라 바람 소리가 크지만, 다가오는 날씨가 가장 먼저 보인다.',
-    descEn: 'The top of a control tower over the harbor. Glass on all sides makes the wind loud, but the coming weather shows here first.',
-    room: { w: 6.6, d: 6.6, h: 2.6 },
-    baseComfort: 7,
-    mood: { fog: 0x18242f, fogNear: 24, fogFar: 66, skyH: 0x203348, skyZ: 0x0a0f18, hemiSky: 0x8aa0c0, hemiGround: 0x3a3d40, hemiInt: 0.7, moonC: 0xa8c0d8, moonInt: 0.8, stars: 0.95 },
-    weatherPool: ['clear', 'snow', 'rain', 'clear'],
-    perk: { forecast: true, forecastLead: 1, expBonus: 0.02, label: '🔭 고층 전망 — 날씨 예보 · 한파 예보 +1일 · 성공률 +2%p', labelEn: '🔭 High vantage — weather forecast · cold-snap lead +1 day · success +2%p' },
-    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (관제 콘솔)', labelEn: 'Battery 1 / day (control console)' },
-    moveCost: { parts: 3, material: 3 }, limits: '🌬️ 사방 유리 — 비/눈 오는 날 쾌적함 -6', limitsEn: '🌬️ Glass on all sides — comfort -6 on rainy/snowy days', cold: 6,
-    noWallpaper: true, // (B-①) 사방 유리 전망 벽 — 벽지 미대상. 바닥재만 가능.
+    ...SHELTER_META.controltower, // 데이터 → data/shelters.js. 아래는 렌더 함수만.
     buildRoom() {
       const { w, d, h } = ROOM;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), wallPhong({ map: concreteTex }));
@@ -3672,20 +3572,7 @@ const SHELTERS = {
      고도 페널티(altitude): 연료 소모 +30% · 한파 빈도 +1 — 로지의 단열/난로가 이를 상쇄하는 리스크·리워드 셸터.
      온천(onsen) 개조로 cozy의 정점을 연다. 관측소·케이블카 대형 프로젝트 현장이 여기에 붙는다. */
   lodge: {
-    name: '스키 로지', nameEn: 'Ski Lodge', emoji: '🏔️', unlockAt: 33, viewH: 20, ceilY: 3.0,
-    desc: '고원 리조트의 통나무 로지. 바깥은 세상에서 가장 혹독한 겨울이지만, 벽난로 앞은 어디보다 따뜻하다.',
-    descEn: 'A timber lodge at the highland resort. Outside is the harshest winter in the world; before the hearth, it is warmer than anywhere.',
-    room: { w: 8.4, d: 6.4, h: 3.0 },
-    baseComfort: 9,
-    // cold 미설정 = 악천후 단열 페널티 없음(최고 단열, 기본 방어). 벽난로 무드는 fire mood + hearth 소품으로.
-    altitude: true, // 고도 페널티 표식 (연료 소모 ×altitudeFuelMult · 한파 빈도 +altitudeColdSnapBonus)
-    hearth: true,   // 붙박이 벽난로 — 겨울 온기 보너스(hearthWinterComfort) + 한파 방어 1단계(coldDefenseLevel)
-    upkeep: { res: 'fuel', n: 1, every: 1, label: '연료 1 / 일 (벽난로·고도 난방)', labelEn: 'Fuel 1 / day (hearth & altitude heating)' },
-    moveCost: { material: 3, parts: 2 },
-    limits: '🏔️ 고도 — 연료 소모 +30% · 한파가 더 잦다 (로지 단열·벽난로가 상쇄)', limitsEn: '🏔️ Altitude — fuel use +30% · cold snaps more frequent (offset by lodge insulation & hearth)',
-    weatherPool: ['clear', 'snow', 'snow', 'snow'], // 고원은 눈이 잦다
-    mood: { fog: 0x1a2436, fogNear: 20, fogFar: 62, skyH: 0x22314a, skyZ: 0x0a1120, hemiSky: 0x94a6c8, hemiGround: 0x484038, hemiInt: 0.72, moonC: 0xaec4e0, moonInt: 0.82, stars: 1.0, fire: 0.9 },
-    perk: { cozyMult: 1.3, forecast: true, label: '🔥 벽난로 로지 — 쾌적 효과 1.3배 · 날씨 예보', labelEn: '🔥 Hearth lodge — comfort effects ×1.3 · weather forecast' },
+    ...SHELTER_META.lodge, // 데이터 → data/shelters.js. 아래는 렌더 함수만.
     buildRoom() {
       const { w, d, h } = ROOM;
       const fm = wallPhong({ map: floorWoodTex }); fm.userData.shared = true;
