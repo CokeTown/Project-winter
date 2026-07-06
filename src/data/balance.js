@@ -122,6 +122,10 @@ export const BAL = {
   economy: {
     // ♾️ 무한(zen) 모드 시작 물자 증량 — 새 게임 생성 시 mode==='zen'이면 DEFAULT_STATE.res에 가산.
     zenStart: { food: 6, canned: 8, water: 10, cloth: 4, candle: 4, fuel: 4, material: 4, parts: 2, battery: 2 },
+    // #76 후속(디렉터 "좀 challenging 해야지"): 난이도별 전리품 수급 배수. rollRes(실게임)+expectedLoot(시뮬) 공통.
+    //   난이도가 높을수록 파밍이 야박하다. 노말도 소폭 조인다(구 1.0 → 0.85, "획득 손맛" 상향을 되돌림).
+    //   ※ 하드 구 BAL.hard.lootMul(0.7) 대체. 안전선: 노말은 굶는 날 0 절대 유지(코지 코어·REQ-BAL-01).
+    incomeMul: { normal: 0.85, hard: 0.58, hardcore: 0.5, zen: 1.0 },
     dailyDirt: 1,          // 일일 청결 감소 기본값 (v0.9.1 2→1)
     foodSpoilPerDay: 1,    // 냉장고 없을 때 신선식품 일일 부패량
     catFeedEvery: 3,       // 고양이 먹이 주기 (일)
