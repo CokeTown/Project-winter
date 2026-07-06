@@ -21,6 +21,7 @@ import { Platform, bindPlatform } from './lib/platform.js';
 import { state, DEFAULT_STATE, opts, OPTS_DEFAULT } from './core/state.js'; // 모놀리스 분해 Phase 1: 공유 가변 상태
 import { isHard, isHardcore, isZen, isWallpaper, rescueEligible } from './core/mode.js'; // 난이도 예측자
 import { SEASONS, SEASON_DAYS, seasonOf, seasonDay, seasonIndex } from './core/season.js'; // 계절 달력
+import { accWinterFuel, resAdd, resConsume, resHasAll, resConsumeAll, hasAnyFood, consumeAnyFood } from './core/economy.js'; // 자원 연산
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -709,9 +710,7 @@ function beginWinterSnapshot() {
   };
 }
 // 겨울 중 연료 소모 집계 (winterSnap.acc.fuel) — resConsume('fuel') 경로에서 호출
-function accWinterFuel(n) {
-  if (seasonOf().id === 'winter' && state.winterSnap?.acc) state.winterSnap.acc.fuel += n;
-}
+// accWinterFuel + 자원 연산(resAdd/resConsume/resHasAll/resConsumeAll/hasAnyFood/consumeAnyFood)은 core/economy.js로 이전. import 참조.
 /* ── 한파 (cold snap) — 겨울 보스 이벤트 (Phase B) ── */
 // 한파 방어 수단이 몇 단계 갖춰졌는가: 단열 개조 + 난방 가동(장작 난로/온풍기 ON)
 function coldDefenseLevel() {
@@ -4089,28 +4088,6 @@ function districtOf(shelterId) {
 
 // state / DEFAULT_STATE 는 core/state.js 로 이전 (모놀리스 분해 Phase 1). 위 import 참조.
 
-function resAdd(id, n) {
-  if (n <= 0) return;
-  state.res[id] = (state.res[id] || 0) + n;
-  state.dayLog.gain[id] = (state.dayLog.gain[id] || 0) + n;
-}
-function resConsume(id, n) {
-  if (isWallpaper()) return true; // 🖼️ 배경화면: 자원 무한 — 차감하지 않는다(표시는 ∞)
-  if ((state.res[id] || 0) < n) return false;
-  state.res[id] -= n;
-  state.dayLog.spend[id] = (state.dayLog.spend[id] || 0) + n;
-  if (id === 'fuel') accWinterFuel(n); // Nine Winters(#11): 겨울 중 연료 소모 집계
-  return true;
-}
-function resHasAll(cost) {
-  if (isWallpaper()) return true; // 🖼️ 배경화면: 항상 충족 (배치/이주 자유)
-  return Object.entries(cost).every(([id, n]) => (state.res[id] || 0) >= n);
-}
-function resConsumeAll(cost) {
-  if (!resHasAll(cost)) return false;
-  for (const [id, n] of Object.entries(cost)) resConsume(id, n);
-  return true;
-}
 function costLabel(cost) {
   return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(' + ');
 }
@@ -4123,16 +4100,6 @@ function reqChip(rid, have, need) {
 }
 function reqChips(cost) {
   return Object.entries(cost).map(([rid, need]) => reqChip(rid, state.res[rid] || 0, need)).join('');
-}
-// 신선식품 우선 → 통조림 순으로 food n개를 대체 소비 (부족하면 아무것도 소비하지 않고 false)
-function hasAnyFood(n = 1) { return ((state.res.food || 0) + (state.res.canned || 0)) >= n; }
-function consumeAnyFood(n = 1) {
-  if (!hasAnyFood(n)) return false;
-  let remain = n;
-  const fromFresh = Math.min(remain, state.res.food || 0);
-  if (fromFresh > 0) { resConsume('food', fromFresh); remain -= fromFresh; }
-  if (remain > 0) resConsume('canned', remain);
-  return true;
 }
 // opts / OPTS_DEFAULT 는 core/state.js 로 이전 (모놀리스 분해 Phase 1). 위 import 참조.
 // REQ-STEAM-01: 플랫폼 어댑터에 상태 접근자 주입 (순환 import 회피). 동작 불변 위임.
