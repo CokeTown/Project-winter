@@ -40,6 +40,7 @@ export const state = {
   pendingEvent: null,  // 표시 대기 중인 인카운터 id
   lastEventDay: 0,
   mods: {},            // 거처 개조 { shelterId: [modId] }
+  knowledge: [],       // 「지식」 테크트리(§9): 해금한 노드 id 배열. 영구·전 셸터.
   deco: {},            // 꾸미기(#13): 셸터별 벽지/바닥재 { shelterId: { wall:id, floor:id } }
   stayDays: 0,         // 현재 거처 연속 거주일 (정든 집 보너스)
   cat: 0,              // 고양이 입양 여부 (Day 9+ 인카운터)

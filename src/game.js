@@ -28,6 +28,11 @@ import { coldDefenseLevel, coldSnapActive, coldSnapNetSeverity } from './core/co
 import { comfortDetail, comfortLevel, comfortExpBonus, recoveryMult, bunkerComfortBonus, themeSetActive, activeThemeSets, setComfortWeather } from './core/comfort.js'; // 쾌적 계산
 import { decayGauges, isExhausted } from './core/gauges.js'; // 생존 게이지 감소
 import { migrateLoadedState } from './core/save.js'; // 세이브 마이그레이션
+import { KNOWLEDGE, KNOWLEDGE_BRANCHES } from './data/knowledge.js'; // 「지식」 테크트리 데이터 (§9)
+import { hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
+  knowColdDefense, knowInsulates, knowHearthAnywhere, knowWinterComfort, knowHeatFuelMul,
+  knowWaterPerDay, knowGardenAnywhere, knowGardenBonus, knowSpoilMul, knowSaltCureBonus,
+  knowDirtReduce, knowCraftMul, knowComfortBonus, knowExpBonus, knowForecastLead, knowsForecast, knowBroadcastBonus } from './core/knowledge.js'; // 지식 해금·효과
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -11106,6 +11111,9 @@ window.__shelter = {
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
+  // 「지식」 테크트리(§9) QA 훅
+  KNOWLEDGE, KNOWLEDGE_BRANCHES, hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
+  knowColdDefense, knowExpBonus, knowComfortBonus, knowWaterPerDay, knowsForecast,
   // v1.4.1 QA 훅: i18n/josa/세이브 왕복 검증용 (하네스 전용, 프로덕션 무해)
   t, LName, josa, WEATHERS, buildWinterMemoir, flushSave, loadSave, readSlot, slotKey, setLang,
   // ③ 창유리 성에 QA 훅: 현재 성에 강도 + 창별 오버레이 투명도

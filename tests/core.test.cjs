@@ -10,6 +10,8 @@ const SHELTER_HASH = -1537463991;
 const MIG_HASH = 779394296;
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
 const MARKET_HASH = -1012304627;
+// 「지식」 테크트리 시그니처 해시 (branch/tier/cost/effect). 노드/비용/효과 변경 시 KNOWLEDGE_HASH(actual) 재핀.
+const KNOWLEDGE_HASH = -451536973;
 
 (async () => {
   try {
@@ -95,6 +97,44 @@ const MARKET_HASH = -1012304627;
         mk.cb.zen <= mk.cb.normal && mk.cb.normal < mk.cb.hard && mk.cb.hard < mk.cb.hardcore,
         `cloth zen ${mk.cb.zen} / normal ${mk.cb.normal} / hard ${mk.cb.hard} / hardcore ${mk.cb.hardcore}`);
       check('암시장 모드별 해결값 해시 불변(밸런스 안전망)', mk.marketHash === MARKET_HASH, `hash ${mk.marketHash}`);
+    }
+
+    // ── 「지식」 테크트리 (§9) — 트리 무결성 + 해금 로직 + 선행 게이트 + 마이그레이션 ──
+    const kn = await call(`
+      const K = S.KNOWLEDGE;
+      const ids = Object.keys(K).sort();
+      const branches = {}; let costOk = true;
+      for (const id of ids) { const n = K[id]; (branches[n.branch] = branches[n.branch] || []).push(n.tier); if (n.cost !== n.tier) costOk = false; }
+      const tiersPerBranch = Object.values(branches).every(ts => ts.slice().sort().join() === '1,2,3');
+      const stable = (o)=>{ if(o===null||typeof o!=='object')return JSON.stringify(o); if(Array.isArray(o))return '['+o.map(stable).join(',')+']'; return '{'+Object.keys(o).sort().map(k=>JSON.stringify(k)+':'+stable(o[k])).join(',')+'}'; };
+      const sig = ids.map(id => id+':'+stable({b:K[id].branch,t:K[id].tier,c:K[id].cost,e:K[id].effect})).join('|');
+      let h=0; for(let i=0;i<sig.length;i++) h=(Math.imul(h,31)+sig.charCodeAt(i))|0;
+      // 해금 로직 (fresh + 책 3 지급)
+      S.simReset(); S.state.knowledge = []; S.state.res.book = 3;
+      const t1ok = S.knowledgeUnlockable('insulation');
+      const t2blocked = !S.knowledgeUnlockable('effHeating');
+      const u1 = S.unlockKnowledge('insulation');
+      const bookAfter = S.state.res.book, has1 = S.hasKnowledge('insulation'), cd = S.knowColdDefense();
+      const t2now = S.knowledgeUnlockable('effHeating');
+      const t3blocked = !S.knowledgeUnlockable('hearthCraft');
+      // 마이그레이션 (구세이브 = knowledge 필드 부재)
+      S.simReset(); S.state.knowledge = undefined;
+      const old = { state: { ver:3, day:5, mode:'normal', current:'container', res:{food:5} }, savedAt: Date.now() };
+      localStorage.setItem(S.slotKey(1), JSON.stringify(old)); S.loadSave();
+      const migOk = Array.isArray(S.state.knowledge) && S.state.knowledge.length === 0;
+      return JSON.stringify({ count: ids.length, branchCount: Object.keys(branches).length, tiersPerBranch, costOk, hash: h,
+        t1ok, t2blocked, u1, bookAfter, has1, cd, t2now, t3blocked, migOk });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const kd = JSON.parse(kn);
+    if (kd.error) { check('지식 트리 (예외 없이)', false, kd.error); }
+    else {
+      if (kd.hash !== KNOWLEDGE_HASH) console.log('KNOWLEDGE_HASH(actual) ' + kd.hash);
+      check('지식/트리 무결성 (12노드·4갈래×3티어·티어=비용)', kd.count===12 && kd.branchCount===4 && kd.tiersPerBranch && kd.costOk, `노드 ${kd.count} 갈래 ${kd.branchCount}`);
+      check('지식/해금 판정 (t1 가능·t2 선행 차단)', kd.t1ok && kd.t2blocked, `t1 ${kd.t1ok} t2blk ${kd.t2blocked}`);
+      check('지식/해금 실행 (책 3→2·보유·효과 cd1)', kd.u1 && kd.bookAfter===2 && kd.has1 && kd.cd===1, `book ${kd.bookAfter} cd ${kd.cd}`);
+      check('지식/선행 게이트 (t1 후 t2 열림·t3 차단)', kd.t2now && kd.t3blocked, `t2now ${kd.t2now} t3blk ${kd.t3blocked}`);
+      check('지식/구세이브 마이그레이션 (knowledge=[])', kd.migOk, `migOk ${kd.migOk}`);
+      check('지식 시그니처 해시 불변 (트리 안전망)', kd.hash === KNOWLEDGE_HASH, `hash ${kd.hash}`);
     }
 
     // ── 2) 구세이브 마이그레이션 — #76 신규 필드 없이 저장된 세이브가 안전하게 로드되나 ──

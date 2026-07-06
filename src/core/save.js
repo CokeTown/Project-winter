@@ -51,6 +51,7 @@ export function migrateLoadedState(rawState, defaults, oldVer) {
   if (!Array.isArray(state.pendingWinterMemoir)) state.pendingWinterMemoir = [];
   if (rawState.doctorRadioPending == null) state.doctorRadioPending = false;
   // Phase D 마이그레이션 (#12·#35·#36) — 구세이브에 없던 필드는 기본값으로 보정
+  if (!Array.isArray(state.knowledge)) state.knowledge = []; // 「지식」 트리(§9) — 구세이브 안전
   if (!Array.isArray(state.evHistory)) state.evHistory = [];
   if (state.moodBuff === undefined) state.moodBuff = null;
   if (state.memos == null || typeof state.memos !== 'object') state.memos = {};
