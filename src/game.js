@@ -3904,6 +3904,14 @@ function reqChip(rid, have, need) {
 function reqChips(cost) {
   return Object.entries(cost).map(([rid, need]) => reqChip(rid, state.res[rid] || 0, need)).join('');
 }
+// 손재주 지식(§9): 제작 재료 ×knowCraftMul(0.8) — 각 자원 내림·최소 1. 표시·판정·소비 공통(일관성). RNG 없음(결정론).
+function craftCost(c) {
+  const m = knowCraftMul();
+  if (m === 1) return c.cost;
+  const out = {};
+  for (const [rid, n] of Object.entries(c.cost)) out[rid] = Math.max(1, Math.floor(n * m));
+  return out;
+}
 // opts / OPTS_DEFAULT 는 core/state.js 로 이전 (모놀리스 분해 Phase 1). 위 import 참조.
 // REQ-STEAM-01: 플랫폼 어댑터에 상태 접근자 주입 (순환 import 회피). 동작 불변 위임.
 bindPlatform({
@@ -6472,12 +6480,12 @@ function openCraftModal() {
         : `${furnIcon(c.out.furn)} ${LName(DEFS[c.out.furn])}`;
     // #86④: 이미 옷장에 있는 의류는 재제작 불가 (영구 소유물 — 중복 소모 방지)
     const owned = c.out.outfit && (state.outfits || ['default']).includes(c.out.outfit);
-    const ok = !owned && resHasAll(c.cost);
+    const ok = !owned && resHasAll(craftCost(c));
     return `
       <div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
         <span>${outLabel}</span>
         <span class="p-eff" style="font-size:10px">${LHint(c)}</span>
-        <span class="p-cost">${owned ? '' : costLabel(c.cost)}</span>
+        <span class="p-cost">${owned ? '' : costLabel(craftCost(c))}</span>
         ${owned
           ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('craft.owned')}</span>`
           : `<button class="pixel-btn" data-craft="${i}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('craft.make')}</button>`}
@@ -6799,7 +6807,7 @@ function openCraftModal() {
     b.addEventListener('click', () => {
       const c = CRAFTS[+b.dataset.craft];
       if (c.out.outfit && (state.outfits || ['default']).includes(c.out.outfit)) return; // #86④ 이중 방어(버튼은 이미 숨김)
-      if (!resConsumeAll(c.cost)) { toast(t('toast.needMaterial')); return; }
+      if (!resConsumeAll(craftCost(c))) { toast(t('toast.needMaterial')); return; }
       let craftEmoji;
       if (c.out.res) {
         resAdd(c.out.res, c.out.n);
@@ -9065,9 +9073,13 @@ function processDay() {
   const up = sh.upkeep;
   if (up) {
     if (state.day % up.every === 0) {
-      if (resConsume(up.res, up.n)) {
+      // 효율 난방 지식(§9): 연료 유지비 ×knowHeatFuelMul(0.75). 소수부는 확률 반올림 — frac>0일 때만 Math.random(시드 시뮬 시퀀스 보존).
+      let upN = up.n;
+      if (up.res === 'fuel' && knowHeatFuelMul() !== 1) { const x = up.n * knowHeatFuelMul(); const f = x - Math.floor(x); upN = Math.floor(x) + (f > 0 && Math.random() < f ? 1 : 0); }
+      if (upN <= 0) { state.upkeepOk = true; } // 효율 난방으로 그날은 연료 소모 없음
+      else if (resConsume(up.res, upN)) {
         state.upkeepOk = true;
-        notes.push(t('day.upkeepPaid', { emoji: RESOURCES[up.res].emoji, name: LName(RESOURCES[up.res]), n: up.n }));
+        notes.push(t('day.upkeepPaid', { emoji: RESOURCES[up.res].emoji, name: LName(RESOURCES[up.res]), n: upN }));
       } else {
         state.upkeepOk = false;
         notes.push(t('day.upkeepUnpaid', { label: LLabel(up) }));

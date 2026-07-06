@@ -135,6 +135,10 @@ const KNOWLEDGE_HASH = -451536973;
       S.unlockKnowledge('scouting'); S.unlockKnowledge('forecasting'); S.unlockKnowledge('radioKnow');
       const kExp = S.knowExpBonus(), kFcLead = S.knowForecastLead(), kFcHas = S.knowsForecast(), kBcast = S.knowBroadcastBonus();
       const rpKnow = S.rateParts('residential').know;
+      // 효과 훅 (배치 C-2): 효율난방/손재주 게터
+      S.simReset(); S.state.knowledge = []; S.state.res.book = 30;
+      S.unlockKnowledge('insulation'); S.unlockKnowledge('effHeating'); S.unlockKnowledge('tidiness'); S.unlockKnowledge('handiness');
+      const kHeat = S.knowHeatFuelMul(), kCraft = S.knowCraftMul();
       // 마이그레이션 (구세이브 = knowledge 필드 부재)
       S.simReset(); S.state.knowledge = undefined;
       const old = { state: { ver:3, day:5, mode:'normal', current:'container', res:{food:5} }, savedAt: Date.now() };
@@ -144,7 +148,7 @@ const KNOWLEDGE_HASH = -451536973;
         t1ok, t2blocked, u1, bookAfter, has1, cd, t2now, t3blocked, migOk,
         cdBase, cdIns, cdHearth, cmDelta, knowMod,
         kWater, kGardenA, kGardenB, kSpoil, kSalt, kDirt,
-        kExp, kFcLead, kFcHas, kBcast, rpKnow });
+        kExp, kFcLead, kFcHas, kBcast, rpKnow, kHeat, kCraft });
     `).catch(err => JSON.stringify({ error: String(err) }));
     const kd = JSON.parse(kn);
     if (kd.error) { check('지식 트리 (예외 없이)', false, kd.error); }
@@ -162,6 +166,7 @@ const KNOWLEDGE_HASH = -451536973;
       check('지식/효과B 보존→부패×0.5·염장+1·정리 청결−0.5', kd.kSpoil===0.5 && kd.kSalt===1 && kd.kDirt===0.5, `spoil ${kd.kSpoil} salt ${kd.kSalt} dirt ${kd.kDirt}`);
       check('지식/효과C 정찰→성공률+4%p (rateParts 통합)', kd.kExp===0.04 && kd.rpKnow===0.04, `exp ${kd.kExp} rpKnow ${kd.rpKnow}`);
       check('지식/효과C 예보→리드+1·예보부여·무전 도달+1', kd.kFcLead===1 && kd.kFcHas===true && kd.kBcast===1, `lead ${kd.kFcLead} has ${kd.kFcHas} bcast ${kd.kBcast}`);
+      check('지식/효과C2 효율난방×0.75·손재주×0.8', kd.kHeat===0.75 && kd.kCraft===0.8, `heat ${kd.kHeat} craft ${kd.kCraft}`);
       check('지식 시그니처 해시 불변 (트리 안전망)', kd.hash === KNOWLEDGE_HASH, `hash ${kd.hash}`);
     }
 
