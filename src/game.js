@@ -4459,6 +4459,11 @@ function sleepUntilMorning(auto = false, opt = {}) {
     updateHud();
     updateClock();
     playSfx('dawn');
+    // #86: 기상 연출 — 침대가 있으면 그 위에서 눈을 뜨고(2.6초 누움→일어남), 없으면 바닥에서.
+    if (typeof avatarSys !== 'undefined') {
+      const bed = items.find(i => i.defId === 'bed');
+      avatarSys.wakeOnBed(bed ? { x: bed.x, z: bed.z, y: 0.63, rot: bed.rot, defId: 'bed' } : null);
+    }
     // F-1a [B] 고양이 티저: 새벽 울음 1회 (등장은 Day9 불변 — 기대감). meow 저피치로 먼 울음 느낌.
     if (state.catTeaserMeow) {
       state.catTeaserMeow = false;
@@ -4936,6 +4941,9 @@ function collides(item, x, z) {
     if (Math.abs(x - b.x) < (fp.w + b.w) / 2 - 0.02 &&
         Math.abs(z - b.z) < (fp.d + b.d) / 2 - 0.02) return true;
   }
+  // #86③ (디렉터: "사람이 있으면 그 위에 설치 안되게"): '나'가 선 자리엔 바닥 설치 불가.
+  //   이 함수는 배치 프리뷰 이동마다 호출된다 — 아바타 비켜서기 트리거도 같은 지점에서 겸한다.
+  if (typeof avatarSys !== 'undefined' && avatarSys.blocksPlacement(x, z, fp)) return true;
   return false;
 }
 // 지지대가 사라지거나 이동했을 때 위에 있던 소품 정리
@@ -5757,7 +5765,7 @@ const wildlifeSys = makeWildlifeSystem({
 // #86 주인공 아바타 — "정착자는 나뿐"의 그 '나' (사람 형상 금지 캐논의 유일한 예외)
 const avatarSys = makeAvatarSystem({
   THREE, B, lamb, disposeDeep, shadowDirty,
-  scene, state, items,
+  scene, state, items, DEFS,
   getRoom: () => ROOM, getBlockers: () => blockers, footprintOf, gameHour, opts,
 });
 
@@ -11266,6 +11274,8 @@ window.__shelter = {
   wildlifeRespawn: (id) => wildlifeSys.respawn(id || state.current),
   avatarState: () => avatarSys._debug(), // #86 QA 훅
   avatarRespawn: () => avatarSys.respawn(),
+  avatarForceNext: () => avatarSys._forceNext(),          // #86② QA: 행동 추첨 강제 (상호작용 검증)
+  avatarBlocks: (x, z) => avatarSys.blocksPlacement(x, z, { w: 1, d: 1 }), // #86③ QA: 설치 가드 판정
   wlObstacleList: () => wlObstacles.slice(), // #95 QA: 등록 장애물 덤프 (프로브 침범 판정용)
   wildlifeWalkTo: (i, x, z) => wildlifeSys._walkTo(i, x, z), // #95 QA: 강제 횡단 (회피 실증)
   swayCount: () => swayProps.length,
