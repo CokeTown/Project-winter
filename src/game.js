@@ -5268,8 +5268,11 @@ function openMapModal() {
     <div id="map-wrap" class="paper"></div>
     <div id="map-info" class="rate-line" style="margin-top:8px">${t('map.pick')}</div>`);
   const wrap = $('map-wrap');
-  // 배경은 JS 인라인으로 — CSS url()은 빌드 후 /assets/ 기준 404 (릴리즈 실증, applyPaperBg 원칙)
-  wrap.style.backgroundImage = 'url(img/map_paper.png)';
+  // #85 2차(디렉터 반려 → 7DTD/구판 비오메 레퍼런스): 손그림 종이는 지리가 없어 '내 위치'가 성립 안 한다.
+  //   비오메 타일 지형(바다/해안·도심 회백·외곽 갈색·숲 초록·설산·봉쇄구역 해치)을 캔버스로 그려
+  //   마커 좌표와 지형이 서로를 낳게 한다 — 지형이 먼저, 마커는 그 위에.
+  wrap.style.backgroundImage = `url(${mapBiomeDataUrl()})`;
+  wrap.style.backgroundSize = '100% 100%';
   // 손그림 종이 지도 위에 4개 파밍 지역 마커를 지구 클러스터 위치에 % 절대 배치 (#47).
   // 좌표는 map_paper.png 위 집/빌딩/공장/판자촌 그림에 맞춰 하네스 스크린샷으로 조정.
   for (const [rid, r] of Object.entries(REGIONS)) {
@@ -5362,8 +5365,83 @@ const MAP_MARKERS = {
 // #85 내 거처 마커: 구역(district)별 지도 위치 — 지역 마커의 옆자리(비클릭, 현재 집 표시).
 const MAP_HOME = {
   outskirts: { x: 12, y: 31 }, city: { x: 62, y: 29 }, meadow: { x: 34, y: 40 }, forest: { x: 30, y: 67 },
-  coast: { x: 17, y: 77 }, harbor: { x: 49, y: 68 }, highland: { x: 80, y: 26 }, research: { x: 68, y: 77 }, // highland: 상업지구 핀(74,18)과 3% 겹치던 것 재배치(프로브 검거)
+  coast: { x: 17, y: 77 }, harbor: { x: 49, y: 74 }, highland: { x: 80, y: 26 }, research: { x: 68, y: 77 }, // highland: 상업지구 핀(74,18)과 3% 겹치던 것 재배치(프로브 검거) / harbor: 부두 벨트(비오메) 안으로
 };
+/* ── #85 2차: 비오메 타일 지형 (디렉터 레퍼런스: 구판 비오메 지도 + 7DTD) ──
+   손그림 종이는 지리가 없어 '내 위치'가 성립하지 않았다(반려). 지형 규칙을 마커 좌표와 정합시켜
+   캔버스로 그린다 — 바다·부두 벨트(남), 설산(북동), 봉쇄구역 해치(남동), 도심 회백(북), 초원/숲(중동부),
+   황무지 갈색(남서·서변). 디더 체커(구판 무드) + 도로망 + 강. 결정론(seed) — 항상 같은 도시. */
+let _mapBiomeUrl = null;
+function mapBiomeDataUrl() {
+  if (_mapBiomeUrl) return _mapBiomeUrl;
+  const W = 512, H = 384, CELL = 4;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g2 = cv.getContext('2d');
+  const rand = seededRand(4207);
+  // 비오메 판정 (% 좌표, 순서 = 우선순위) → [기본색, 디더색]
+  const biomeAt = (x, y) => {
+    if (y > 86) return ['#26364a', '#1e2c3e'];                       // 바다
+    if (x > 64 && y > 60) return ['#33302f', '#2a2726'];             // 봉쇄구역(잿빛 폐허)
+    if (y > 70 && x <= 64) return ['#4a4438', '#403a30'];            // 부두·해안 벨트
+    if (x >= 78 && y <= 34) return ['#8d9298', '#7d838c'];           // 설산(북동)
+    if (x >= 26 && x <= 50 && y >= 32 && y <= 52) return ['#4c5a3a', '#425034']; // 초원
+    if (x >= 22 && x <= 46 && y > 52 && y <= 70) return ['#3a4a34', '#32402e'];  // 숲
+    if (x >= 62 && x <= 84 && y >= 44 && y <= 60) return ['#453b33', '#3b332c']; // 슬럼(녹슨 갈회)
+    if (x < 14 || (y > 44 && y <= 70)) return ['#4e4234', '#443a2e'];            // 황무지(서변·남서)
+    return ['#41454c', '#383c44'];                                   // 도심 회백(기본)
+  };
+  for (let cy = 0; cy < H / CELL; cy++) {
+    for (let cx = 0; cx < W / CELL; cx++) {
+      const px = (cx * CELL + CELL / 2) / W * 100, py = (cy * CELL + CELL / 2) / H * 100;
+      const [a, b] = biomeAt(px, py);
+      g2.fillStyle = (cx + cy) % 2 ? b : a;
+      if (rand() < 0.06) g2.fillStyle = '#22201d';                   // 잔해 점묘
+      g2.fillRect(cx * CELL, cy * CELL, CELL, CELL);
+    }
+  }
+  const X = p => p / 100 * W, Y = p => p / 100 * H;
+  // 강: 북에서 바다로 (도심과 슬럼 사이)
+  g2.strokeStyle = '#31465c'; g2.lineWidth = 5; g2.beginPath();
+  g2.moveTo(X(54), 0);
+  for (let t = 0; t <= 1.001; t += 0.1) g2.lineTo(X(54 + Math.sin(t * 7) * 3.5), Y(t * 88));
+  g2.stroke();
+  // 도로망: 지역 허브를 잇는 아스팔트 — 지형이 마커를 '설명'하는 핵심
+  g2.strokeStyle = '#2c2a26'; g2.lineWidth = 3;
+  const road = pts => { g2.beginPath(); g2.moveTo(X(pts[0][0]), Y(pts[0][1])); for (const [px2, py2] of pts.slice(1)) g2.lineTo(X(px2), Y(py2)); g2.stroke(); };
+  road([[20, 20], [44, 19], [74, 18]]);            // 북부 간선 (주거↔상업)
+  road([[20, 20], [18, 40], [18, 56]]);            // 서부 지선 (주거↔공업)
+  road([[74, 18], [73, 38], [72, 55]]);            // 동부 지선 (상업↔슬럼)
+  road([[18, 56], [28, 70], [38, 79]]);            // 항만로 (공업↔야적장)
+  road([[38, 79], [56, 81]]);                      // 부두 연결로
+  road([[72, 55], [77, 71]]);                      // 봉쇄선 진입로 (슬럼↔검문소)
+  // 설산 등산로 (점선) + 봉우리
+  g2.setLineDash([5, 5]); g2.strokeStyle = '#6a707a'; g2.lineWidth = 2;
+  road([[74, 18], [85, 13]]);
+  g2.setLineDash([]);
+  g2.fillStyle = '#e8ecf2';
+  for (let i = 0; i < 7; i++) {
+    const mx = X(80 + rand() * 16), my = Y(4 + rand() * 22);
+    g2.beginPath(); g2.moveTo(mx - 5, my + 4); g2.lineTo(mx, my - 5); g2.lineTo(mx + 5, my + 4); g2.fill();
+  }
+  // 봉쇄선: 금지구역 경계 붉은 점선 + 해치
+  g2.strokeStyle = '#7a3a30'; g2.lineWidth = 3; g2.setLineDash([8, 6]);
+  g2.beginPath(); g2.moveTo(X(64), Y(60)); g2.lineTo(X(100), Y(60)); g2.moveTo(X(64), Y(60)); g2.lineTo(X(64), Y(87)); g2.stroke();
+  g2.setLineDash([]); g2.strokeStyle = 'rgba(122, 58, 48, 0.28)'; g2.lineWidth = 1;
+  for (let i = 0; i < 14; i++) { const sx = X(64 + i * 2.6); g2.beginPath(); g2.moveTo(sx, Y(60)); g2.lineTo(sx - 14, Y(87)); g2.stroke(); }
+  // 해안 포말 + 파도 대시
+  g2.fillStyle = '#5a6a7c';
+  for (let cx = 0; cx < W / CELL; cx++) { if (rand() < 0.5) g2.fillRect(cx * CELL, Y(86), CELL, 2); }
+  g2.strokeStyle = '#3c5068'; g2.lineWidth = 1;
+  for (let i = 0; i < 20; i++) { const wx = rand() * W, wy = Y(88 + rand() * 10); g2.beginPath(); g2.moveTo(wx, wy); g2.lineTo(wx + 10, wy); g2.stroke(); }
+  // 숲/초원 질감 점 + 외곽 나뭇점
+  for (let i = 0; i < 90; i++) {
+    const px2 = 22 + rand() * 28, py2 = 32 + rand() * 38;
+    const [bA] = biomeAt(px2, py2);
+    if (bA === '#4c5a3a' || bA === '#3a4a34') { g2.fillStyle = '#2c3a28'; g2.fillRect(X(px2), Y(py2), 3, 3); }
+  }
+  _mapBiomeUrl = cv.toDataURL();
+  return _mapBiomeUrl;
+}
 // 항구 지역 해금 게이트: 항구 셸터(예인선)를 해금한 뒤부터 지도에 항구 구역이 뜬다.
 // 기존 4지역은 항상 해금(true). ARC-03 마커 문법 그대로, 노출 조건만 얹는다.
 function regionUnlocked(rid) {
