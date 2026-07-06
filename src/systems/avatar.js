@@ -212,11 +212,15 @@ export function makeAvatarSystem(ctx) {
   function windowSpot() {
     const room = getRoom();
     const z = -room.d / 2 + 0.6;
-    for (const x of [0, -0.6, 0.6, -1.2, 1.2, -1.8, 1.8])
+    // 후보 셔플 + 지터: 매번 정확히 같은 창가 지점에 서는 것도 '순찰' 인상의 한 축
+    const xs = [0, -0.6, 0.6, -1.2, 1.2, -1.8, 1.8].sort(() => Math.random() - 0.5);
+    for (const x0 of xs) {
+      const x = x0 + (Math.random() - 0.5) * 0.4;
       if (Math.abs(x) < room.w / 2 - 0.5 && !hitBlock(x, z, 0.32)) return { x, z };
+    }
     return freeSpot();
   }
-  function pickIdle() { if (!av) return; unseat(); av.mode = 'idle'; av.tgt = null; av.way = null; av.use = null; av.timer = 3 + Math.random() * 5; }
+  function pickIdle() { if (!av) return; unseat(); av.mode = 'idle'; av.tgt = null; av.way = null; av.use = null; av.timer = 6 + Math.random() * 10; }
   // 착석/눕기 해제 — 일어날 땐 앉기 전 접근점으로 내려선다(좌판 중앙에서 걸어 나오면 가구 관통으로 보인다)
   function unseat() {
     if (!av) return;
@@ -231,14 +235,35 @@ export function makeAvatarSystem(ctx) {
   function pickNext() {
     if (!av) return;
     unseat();
-    const r = Math.random();
-    const seat = r >= 0.5 && r < 0.7 ? pickSeat() : null;
-    const heat = r >= 0.7 && r < 0.88 ? pickHeat() : null;
-    if (r < 0.35) { av.mode = 'walk'; setTarget(freeSpot()); }
-    else if (r < 0.5) { av.mode = 'window'; av.timer = 4 + Math.random() * 4; setTarget(windowSpot()); }
-    else if (seat) { av.mode = 'gosit'; av.use = seat; setTarget(approachPoint(seat, 0.42)); }
-    else if (heat) { av.mode = 'gowarm'; av.use = heat; setTarget(approachPoint(heat, 0.62)); }
+    // '순찰' 교정(디렉터: "좁은 범위를 페트롤하듯"): 사는 사람의 리듬은 대부분 머무르고 가끔 움직인다.
+    //   가중 풀 추첨 + 직전 행동 가중 ×0.35(같은 목적지 왕복 억제) + 걷기 목표는 먼 곳 선호.
+    const seatIt = pickSeat(), heatIt = pickHeat();
+    const pool = [['walk', 0.26], ['window', 0.16], ['idle', 0.3]];
+    if (seatIt) pool.push(['sit', 0.22]);
+    if (heatIt) pool.push(['warm', 0.18]);
+    let tot = 0;
+    for (const p of pool) { if (p[0] === av.lastAct) p[1] *= 0.35; tot += p[1]; }
+    let r = Math.random() * tot, act = 'idle';
+    for (const p of pool) { r -= p[1]; if (r <= 0) { act = p[0]; break; } }
+    av.lastAct = act;
+    if (act === 'walk') { av.mode = 'walk'; setTarget(farSpot()); }
+    else if (act === 'window') { av.mode = 'window'; av.timer = 8 + Math.random() * 12; setTarget(windowSpot()); }
+    else if (act === 'sit') { av.mode = 'gosit'; av.use = seatIt; setTarget(approachPoint(seatIt, 0.42)); }
+    else if (act === 'warm') { av.mode = 'gowarm'; av.use = heatIt; setTarget(approachPoint(heatIt, 0.62)); }
     else pickIdle();
+  }
+  // 걷기 목표는 현 위치에서 먼 곳 선호 — 좁은 방에서 제자리 근처 재추첨이 만들던 잔걸음 왕복 제거
+  function farSpot() {
+    const room = getRoom();
+    const minD = Math.min(room.w, room.d) * 0.55;
+    let best = null, bestD = -1;
+    for (let k = 0; k < 6; k++) {
+      const s = freeSpot();
+      const d = Math.hypot(s.x - av.g.position.x, s.z - av.g.position.z);
+      if (d > bestD) { bestD = d; best = s; }
+      if (d >= minD) return s;
+    }
+    return best || freeSpot();
   }
 
   /* ── 기상 연출: 취침(암전) 직후 침대 위에서 눈뜨는 2.6초 — sleepUntilMorning이 호출 ──
@@ -391,9 +416,11 @@ export function makeAvatarSystem(ctx) {
       sz = it.z + cl((g.position.z - it.z) * 3, fp.d / 2 - 0.22);
       ry = Math.atan2(av.exitSpot.x - it.x, av.exitSpot.z - it.z);
     }
-    g.position.set(sx, Math.max(0, y - LEG_H * 0.42), sz);
+    // 그룹 원점은 발바닥 — 앉기는 '골반(=원점+LEG_H)이 좌판에 닿게': y = 좌판 - LEG_H (+쿠션 눌림 0.05).
+    // 이전 식(좌판 - LEG_H×0.42)은 골반이 좌판보다 0.3 떠서 전 좌석 공중부양(디렉터 침대 신고 — 침대가 제일 높아 제일 티).
+    g.position.set(sx, y - LEG_H + 0.05, sz);
     g.rotation.y = ry;
-    av.mode = 'sit'; av.timer = 6 + Math.random() * 7; av.tgt = null;
+    av.mode = 'sit'; av.timer = 10 + Math.random() * 15; av.tgt = null; // 오래 앉는다 — 사는 사람의 리듬
     shadowDirty(); // 좌판 위로 점프 — 즉시 갱신
   }
   function startWarm() {
@@ -401,7 +428,7 @@ export function makeAvatarSystem(ctx) {
     if (!it || !items.includes(it) || it.on === false) return pickIdle();
     const g = av.g;
     g.rotation.y = Math.atan2(it.x - g.position.x, it.z - g.position.z); // 불을 향해 선다
-    av.mode = 'warm'; av.timer = 5 + Math.random() * 6; av.tgt = null;
+    av.mode = 'warm'; av.timer = 8 + Math.random() * 10; av.tgt = null; // 불 앞에 오래 머문다
     shadowDirty(); // 방향 전환 + 팔 포즈 — 즉시 갱신
   }
 
