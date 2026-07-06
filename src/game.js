@@ -26,6 +26,7 @@ import { accWinterFuel, resAdd, resConsume, resHasAll, resConsumeAll, hasAnyFood
 import { hasMod } from './core/shelter.js'; // 셸터 개조 술어
 import { coldDefenseLevel, coldSnapActive, coldSnapNetSeverity } from './core/coldsnap.js'; // 한파 술어
 import { comfortDetail, comfortLevel, comfortExpBonus, recoveryMult, bunkerComfortBonus, themeSetActive, activeThemeSets, setComfortWeather } from './core/comfort.js'; // 쾌적 계산
+import { decayGauges, isExhausted } from './core/gauges.js'; // 생존 게이지 감소
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -3921,22 +3922,7 @@ function hardLoot(n) {
 /* ============================================================
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
 ============================================================ */
-function decayGauges(gm) {
-  if (isWallpaper()) return; // 🖼️ 배경화면: 게이지 압박 off — 배고픔/갈증/에너지 정지(볼거리만 흐른다)
-  const winterMult = seasonOf().id === 'winter' ? BAL.gauges.winterMult : 1; // 겨울엔 열량 소모가 크다
-  const hardMul = isHard() ? BAL.hard.drainMul : 1; // 하드: 배고픔/갈증 소모 +50%
-  // 한파: 방어가 안 된 만큼(netSeverity) 배고픔 감소를 가속 (완전 방어 시 1.0)
-  const coldMult = coldSnapNetSeverity() > 0 ? BAL.seasons.coldSnapHungerMult : 1;
-  const summerThirst = seasonOf().id === 'summer' ? BAL.seasons.summerThirstMult : 1; // 여름 갈증 압박
-  state.hunger = Math.max(0, state.hunger - gm * BAL.gauges.hungerPerMin * winterMult * hardMul * coldMult); // v0.9.1: 22% 완화 (×0.78) — 만복 → 0까지 약 5게임일
-  state.thirst = Math.max(0, state.thirst - gm * BAL.gauges.thirstPerMin * hardMul * summerThirst);          // v0.9.1: 22% 완화 (×0.78)
-  if (opts.autoEat) {
-    let g = 0;
-    while (state.hunger < BAL.gauges.autoEatThreshold && hasAnyFood(1) && g++ < BAL.gauges.autoEatGuard) { consumeAnyFood(1); state.hunger = Math.min(100, state.hunger + BAL.gauges.autoEatRestore); }
-    g = 0;
-    while (state.thirst < BAL.gauges.autoEatThreshold && (state.res.water || 0) > 0 && g++ < BAL.gauges.autoEatGuard) { resConsume('water', 1); state.thirst = Math.min(100, state.thirst + BAL.gauges.autoEatRestore); }
-  }
-}
+// decayGauges → core/gauges.js (import). 배고픔/갈증 시간당 감소(계절·하드·한파·여름 배수 + autoEat).
 function eatFood() {
   if (paused) { toast(t('pause.blocked')); return; }
   if (!hasAnyFood(1)) { toast(t('eat.noFood')); return; }
@@ -3958,7 +3944,7 @@ function drinkWater() {
   questProgress('drink');
   renderResBar(); updateHud(); scheduleSave();
 }
-function isExhausted() { return state.hunger <= 0 || state.thirst <= 0; }
+// isExhausted → core/gauges.js (import). 배고픔/갈증 바닥 판정.
 
 /* ============================================================
    무력 상태 · 구제 1회 · 런 종료 (v1.3.0 배치 D · GD-THESIS §4.5)
