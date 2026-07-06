@@ -5383,7 +5383,8 @@ async function departExpedition(regionId, prep, opts2 = {}) {
   if (state.energy < 20) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
   // 성공률 버프/디버프는 이번 출발에 반영되어 소진 (물자 좌표 버프는 정산 시)
   if (state.buff?.exp) state.buff = null;
-  state.exp = { region: regionId, end: Date.now() + dur, dur, rate: p.eff, prep };
+  // #94(디렉터): 출발 시각 기록 — 귀환 정산이 '대기 중 이미 흐른 게임 시간'을 차감해 이중 계산을 없앤다.
+  state.exp = { region: regionId, end: Date.now() + dur, dur, rate: p.eff, prep, startGameMin: state.gameMin };
   closeModal();
   scheduleSave();
   renderExpPanel();
@@ -5413,7 +5414,11 @@ function resolveExpedition() {
   state.exp = null;
   state.stats.exp++;
   // 탐험을 다녀오면 하루가 그만큼 흘러 있다 (거리 비례 2~5시간)
-  state.gameMin += 120 + expDuration(r) * 2.5;
+  // #94(디렉터 신고): 대기 중에도 시계가 흐르는데 귀환 때 전액을 또 점프해 '시간이 두 번 깎이던' 이중 계산 —
+  //   의도 소요에서 대기 중 경과분을 차감한 나머지만 점프한다(총 경과 = 탐험 소요). 구세이브(기록 없음)는 기존 전액.
+  const expIntendedMin = 120 + expDuration(r) * 2.5;
+  const expPassedMin = (exp.startGameMin != null) ? Math.max(0, state.gameMin - exp.startGameMin) : 0;
+  state.gameMin += Math.max(0, expIntendedMin - expPassedMin);
   state.expToday = (state.expToday || 0) + 1;
   const rate = exp.rate ?? r.rate;                         // 표기용(화면에 보인 확률) — 변경 없음
   const actual = expActualRate(rate, state.expFailStreak); // 실제 판정 확률(숨은 보정)
