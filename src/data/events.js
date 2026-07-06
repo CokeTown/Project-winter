@@ -21,6 +21,7 @@ export function makeEvents(ctx) {
     resAdd, resConsume, addMoodBuff, applyInjury, seasonOf, coldSnapActive,
     dropMemo, dropBroadcast, recordDistantLight, spawnCat, playSfx,
     runEndingSequence, doctorFragmentsComplete,
+    encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도 — 암시장과 캐논 공유)
   } = ctx;
   const EVENTS = {
     wanderer: {
@@ -49,12 +50,14 @@ export function makeEvents(ctx) {
       icon: '🚢', titleId: 'ev.smuggler.title', textId: 'ev.smuggler.text',
       when: { districts: ['harbor'], dayOnly: true },
       choices: [
-        // 겨울이면 연료 프리미엄(배터리 3), 평시엔 배터리 1 — 계절로 대가가 갈린다.
+        // 겨울이면 연료 프리미엄(배터리 3), 평시엔 배터리 1 — 계절로 대가가 갈린다. 모드 배수(costMul)로 야박도 가산.
         { labelId: 'ev.smuggler.c0',
-          cost() { return { battery: seasonOf().id === 'winter' ? BAL.harbor.smugglerFuelWinter : BAL.harbor.smugglerFuelNormal }; },
+          cost() { return { battery: Math.max(1, Math.round((seasonOf().id === 'winter' ? BAL.harbor.smugglerFuelWinter : BAL.harbor.smugglerFuelNormal) * encCostMul())) }; },
           run() { resAdd('fuel', 1); return t(seasonOf().id === 'winter' ? 'ev.smuggler.r0winter' : 'ev.smuggler.r0'); } },
-        // 소금 3 → 희귀부품 2 (항구 특산의 교환 가치)
-        { labelId: 'ev.smuggler.c1', cost: { salt: 3 }, run() { resAdd('parts', BAL.harbor.smugglerPartsGet); return t('ev.smuggler.r1'); } },
+        // 소금 → 희귀부품 (항구 특산의 교환 가치). 모드 배수: 내는 소금 costMul, 받는 부품 barterMul.
+        { labelId: 'ev.smuggler.c1',
+          cost() { return { salt: Math.max(1, Math.round(BAL.harbor.smugglerPartsCost.salt * encCostMul())) }; },
+          run() { resAdd('parts', Math.max(1, Math.round(BAL.harbor.smugglerPartsGet * encBarterMul()))); return t('ev.smuggler.r1'); } },
         { labelId: 'ev.smuggler.c2', run() { return t('ev.smuggler.r2'); } },
       ],
     },

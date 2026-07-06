@@ -197,6 +197,19 @@ export const BAL = {
     radioListenChance: 0.18, // 라디오 ON 상태 하루 1회 방송 청취 확률
   },
 
+  /* ── 인카운터/교환 모드 밸런스 (2026-07-07, 디렉터 "좀 더 하드하게") ──
+     incomeMul 철학 계승(무한 > 노말 > 하드 > 하드코어). 인카운터도 난이도 철학에 편입 — 기존엔 5모드 flat이었다.
+     freqMul   : 인카운터 발동 빈도 배수 (dailyChance/midExpChance에 곱). 배경화면=0(스테이크 없음).
+     barterMul : scale 대상 교환에서 "받는 양" 배수 (높을수록 유리). 어려울수록 덜 받는다.
+     costMul   : scale 대상 교환에서 "내는 자원" 배수 (높을수록 야박). 어려울수록 더 낸다.
+     ※ 적용 대상: 암시장 marketOffers(scale:true) + 밀수꾼. 일반 인카운터(소량 플레이버 교환)와
+       양성 싱크(foodToCanned 부패·book 지식)는 불변 — 난이도로 조일 대상이 아니다. */
+  encounters: {
+    freqMul:   { normal: 1.0, hard: 0.85, hardcore: 0.7, zen: 1.15, wallpaper: 0 },
+    barterMul: { normal: 1.0, hard: 0.7,  hardcore: 0.5, zen: 1.25, wallpaper: 1.0 },
+    costMul:   { normal: 1.0, hard: 1.25, hardcore: 1.5, zen: 0.85, wallpaper: 1.0 },
+  },
+
   /* ── 입력 / 게임패드 (#14 REQ-INP-02) ── */
   input: {
     padDeadzone: 0.15,      // 스틱 데드존 (미만은 0 처리)
@@ -396,12 +409,15 @@ export const BAL = {
     marketSlotsPerSeg: 1,      // 개통 구간 1개당 +1 슬롯 (선로가 물류를 늘린다)
     marketRateBonusPerSeg: 1,  // 개통 구간 1개당 교환 산출 +1 (레이트 개선 — 아래 offers의 getBonus에 가산)
     // 교환대 품목: give(내는 잉여) → get(받는 것). 겨울 프리미엄은 winterGive로 대체 비용 명시.
+    //   scale:true 오퍼는 BAL.encounters.{costMul,barterMul} 모드 배수 적용(암상인이 난이도로 인심을 가른다).
+    //   양성 싱크(부패/지식)는 scale 없음 — 난이도로 조일 대상이 아님.
+    //   2026-07-07 베이스 조임(디렉터 "천4→배터리1 교환비가 너무 좋다"): 흔한 자원→귀한 자원 4→6.
     marketOffers: [
-      { id: 'foodToCanned', give: { food: 3 }, get: 'canned', getN: 2 },     // 남는 신선식품 → 오래 가는 통조림 (부패 싱크)
-      { id: 'materialToParts', give: { material: 4 }, get: 'parts', getN: 1 }, // 흔한 건축재 → 귀한 부품
-      { id: 'clothToBattery', give: { cloth: 4 }, get: 'battery', getN: 1 },   // 남는 천 → 배터리
-      { id: 'partsToFuel', give: { parts: 2 }, get: 'fuel', getN: 1, winterGive: { parts: 3 } }, // 부품 → 연료 (겨울엔 부품 3 — 연료 프리미엄)
-      // #76 「지식과 사치」 암시장 확장 — 넘치는 식량을 책(지식)으로. 방치형 자동 판매(surplusCap)보다 빠른 수동 레버.
+      { id: 'foodToCanned', give: { food: 3 }, get: 'canned', getN: 2 },     // 남는 신선식품 → 통조림 (부패 싱크, 불변)
+      { id: 'materialToParts', give: { material: 6 }, get: 'parts', getN: 1, scale: true }, // 흔한 건축재 → 귀한 부품 (4→6)
+      { id: 'clothToBattery', give: { cloth: 6 }, get: 'battery', getN: 1, scale: true },   // 남는 천 → 배터리 (4→6, 디렉터 지적)
+      { id: 'partsToFuel', give: { parts: 2 }, get: 'fuel', getN: 1, winterGive: { parts: 3 }, scale: true }, // 부품 → 연료 (겨울 프리미엄)
+      // #76 「지식과 사치」 암시장 확장 — 넘치는 식량을 책(지식)으로. 지식 싱크라 scale 없음(불변).
       { id: 'foodToBook', give: { food: 10 }, get: 'book', getN: 1 },     // 남는 신선식품 → 책
       { id: 'cannedToBook', give: { canned: 10 }, get: 'book', getN: 1 }, // 남는 통조림 → 책
     ],

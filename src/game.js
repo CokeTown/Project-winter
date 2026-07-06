@@ -5790,6 +5790,7 @@ const EVENTS = makeEvents({
   resAdd, resConsume, addMoodBuff, applyInjury, seasonOf, coldSnapActive,
   dropMemo, dropBroadcast, recordDistantLight, spawnCat, playSfx,
   runEndingSequence, doctorFragmentsComplete,
+  encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도)
 });
 // 이벤트 선택지 비용 판정/소비: food가 섞인 cost는 신선+통조림 합산으로 취급 (신선 우선 소비 후 통조림 폴백)
 function eventCostOk(cost) {
@@ -7046,12 +7047,23 @@ function marketSlots() {
   return BAL.subway.marketBaseSlots + subwayOpenCount() * BAL.subway.marketSlotsPerSeg;
 }
 function marketSlotsLeft() { return Math.max(0, marketSlots() - (state.marketToday || 0)); }
+// 인카운터/교환 모드 배수 (BAL.encounters — 미지정 모드는 1.0 폴백). scale 대상 교환·빈도에만 적용.
+function encFreqMul()   { return BAL.encounters.freqMul[state.mode]   ?? 1; }
+function encBarterMul() { return BAL.encounters.barterMul[state.mode] ?? 1; }
+function encCostMul()   { return BAL.encounters.costMul[state.mode]   ?? 1; }
 // 한 오퍼의 실제 지불 비용(겨울 프리미엄 반영)과 산출량(개통 구간 레이트 보너스 반영).
+//   scale:true 오퍼는 모드 배수(costMul/barterMul) 적용 — 어려울수록 야박(각 자원 최소 1 가드).
 function marketOfferCost(offer) {
-  return (seasonOf().id === 'winter' && offer.winterGive) ? offer.winterGive : offer.give;
+  const base = (seasonOf().id === 'winter' && offer.winterGive) ? offer.winterGive : offer.give;
+  if (!offer.scale) return base;
+  const m = encCostMul();
+  const out = {};
+  for (const [id, n] of Object.entries(base)) out[id] = Math.max(1, Math.round(n * m));
+  return out;
 }
 function marketOfferGetN(offer) {
-  return offer.getN + subwayOpenCount() * BAL.subway.marketRateBonusPerSeg;
+  const base = offer.getN + subwayOpenCount() * BAL.subway.marketRateBonusPerSeg;
+  return offer.scale ? Math.max(1, Math.round(base * encBarterMul())) : base;
 }
 // 교환 실행 — 슬롯/자원 검사 후 give 소비, get 지급. 반환: true(성공)|false(실패).
 function doMarketTrade(offerId) {
@@ -9117,7 +9129,7 @@ function processDay() {
   tryNightSky(notes);
   // 랜덤 인카운터: 마지막 만남 1일 경과 + BAL 확률. 조건/반복억제는 drawEvent 엔진에서 판정.
   // 아침 결산 draw 는 '지난밤/밤사이' 사건도 허용하도록 night 컨텍스트를 true 로 연다.
-  if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 1 && Math.random() < BAL.events.dailyChance) {
+  if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 1 && Math.random() < BAL.events.dailyChance * encFreqMul()) {
     drawEvent({ ...eventCtx(), night: true });
   }
   // 배치 D ①: 노말 모드 누적 최고 생존일 통계 갱신 (배경화면 모드 해금 조건 — 세이브 아닌 계정 통계).
@@ -9497,7 +9509,7 @@ function tickExpeditionUI() {
     // 탐험 중간 이벤트: 진행률 50% 통과 시점에 1회, BAL 확률로 일반 인카운터 예약 (현재 시각 컨텍스트).
     if (!state.exp.midRolled && (1 - remain / total) >= 0.5) {
       state.exp.midRolled = true;
-      if (!state.pendingEvent && Math.random() < BAL.events.midExpChance) {
+      if (!state.pendingEvent && Math.random() < BAL.events.midExpChance * encFreqMul()) {
         drawEvent();
       }
     }

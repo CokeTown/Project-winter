@@ -8,6 +8,8 @@ const ROT = "['residential','commercial','industrial','slum']";
 const SHELTER_HASH = -1537463991;
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
 const MIG_HASH = 779394296;
+// 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
+const MARKET_HASH = -1012304627;
 
 (async () => {
   try {
@@ -69,6 +71,31 @@ const MIG_HASH = 779394296;
     if (shd.hash !== SHELTER_HASH) console.log('SHELTER_HASH(actual) ' + shd.hash); // 불일치 시 재핀용
     check('SHELTERS 빌드 함수 전부 존재(렌더 game.js 잔류)', shd.allBuild, `셸터 ${shd.count}종`);
     check('SHELTERS 전 필드 해시 불변(분리 안전망)', shd.hash === SHELTER_HASH, `hash ${shd.hash}`);
+
+    // ── 인카운터/암시장 모드 밸런스 (2026-07-07 하드 튜닝) — scale 오퍼 모드별 해결값 스냅샷 ──
+    //   봄(겨울 프리미엄 배제)+subwayOpen 빈 상태에서 4모드 marketOfferCost/GetN 해결값을 해시로 핀.
+    const mkt = await call(`
+      S.simReset(); S.state.day = 1; S.state.subwayOpen = {};
+      const offers = S.BAL.subway.marketOffers.filter(o => o.scale);
+      const modes = ['normal','hard','hardcore','zen'];
+      const snap = {};
+      for (const m of modes) { S.state.mode = m;
+        snap[m] = offers.map(o => { const c = S.marketOfferCost(o);
+          return o.id + ':' + Object.entries(c).map(([k,v])=>k+v).join('+') + '>' + o.get + S.marketOfferGetN(o); }).join('|'); }
+      const sig = JSON.stringify(snap);
+      let h=0; for(let i=0;i<sig.length;i++) h=(Math.imul(h,31)+sig.charCodeAt(i))|0;
+      const cb = {}; for (const m of modes){ S.state.mode=m; cb[m]=S.marketOfferCost(S.BAL.subway.marketOffers.find(o=>o.id==='clothToBattery')).cloth; }
+      return JSON.stringify({ marketHash: h, cb });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const mk = JSON.parse(mkt);
+    if (mk.error) { check('암시장 모드 밸런스(예외 없이 해결)', false, mk.error); }
+    else {
+      if (mk.marketHash !== MARKET_HASH) console.log('MARKET_HASH(actual) ' + mk.marketHash);
+      check('암시장/천→배터리 난이도 단조(무한≤노말<하드<하드코어)',
+        mk.cb.zen <= mk.cb.normal && mk.cb.normal < mk.cb.hard && mk.cb.hard < mk.cb.hardcore,
+        `cloth zen ${mk.cb.zen} / normal ${mk.cb.normal} / hard ${mk.cb.hard} / hardcore ${mk.cb.hardcore}`);
+      check('암시장 모드별 해결값 해시 불변(밸런스 안전망)', mk.marketHash === MARKET_HASH, `hash ${mk.marketHash}`);
+    }
 
     // ── 2) 구세이브 마이그레이션 — #76 신규 필드 없이 저장된 세이브가 안전하게 로드되나 ──
     //   (내가 book/bookProgress/demoEnded를 마이그레이션 테스트 없이 넣은 것 → 이 그물로 방어)
