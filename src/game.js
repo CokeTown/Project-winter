@@ -1468,6 +1468,86 @@ function addWallWeatherFx(wallGroup) {
   wallGroup.add(cap);
   weatherFx.caps.push(cap);
 }
+/* ── #96 젖은 도시 (디렉터 GTA 레퍼런스): 웅덩이 + 광원 반사 스트릭 ──
+   비(wetness)가 오르면 마당 평지에 웅덩이가 배고, 창문 온광이 젖은 땅에 시선축으로 길게 번진다.
+   레퍼런스의 핵심은 웅덩이보다 '광원의 세로 번짐 반사' — 스트릭은 매 프레임 카메라 요를 따라 눕는다.
+   전부 envRoot 자식(셸터 언로드 시 자동 해체), 지연 구축(첫 젖음에 1회), lowSpec 웅덩이 절반. */
+let wetFxBuilt = false;
+const wetGlintAnchors = []; // {x,z,color,w,len} — loadShelter 리셋. 셸터별 특수 광원 등록 여지(2차: 부표/페리 창 등)
+function wetGlint(x, z, color, w = 0.7, len = 2.8) { wetGlintAnchors.push({ x, z, color, w, len }); }
+let _puddleTexes = null, _glintTex = null;
+function puddleTexOf(i) {
+  if (!_puddleTexes) {
+    _puddleTexes = [0, 1, 2].map(seed => makeCanvasTex((g2, w) => {
+      g2.clearRect(0, 0, w, w);
+      const rand = seededRand(31 + seed);
+      // 불규칙 웅덩이: 원 4~5개 합집합 알파 (픽셀 결)
+      g2.fillStyle = 'rgba(255,255,255,0.92)';
+      for (let k = 0; k < 5; k++) {
+        const cx = w * (0.32 + rand() * 0.36), cy = w * (0.32 + rand() * 0.36), r = w * (0.14 + rand() * 0.16);
+        g2.beginPath(); g2.arc(cx, cy, r, 0, 7); g2.fill();
+      }
+    }, 48, 48));
+    for (const t of _puddleTexes) t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  }
+  return _puddleTexes[i % 3];
+}
+function glintTexOnce() {
+  if (_glintTex) return _glintTex;
+  _glintTex = makeCanvasTex((g2, w) => {
+    g2.clearRect(0, 0, w, w);
+    const gr = g2.createRadialGradient(w / 2, w / 2, 1, w / 2, w / 2, w / 2);
+    gr.addColorStop(0, 'rgba(255,255,255,0.85)');
+    gr.addColorStop(0.45, 'rgba(255,255,255,0.28)');
+    gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g2.fillStyle = gr; g2.fillRect(0, 0, w, w);
+  }, 32, 32);
+  return _glintTex;
+}
+function buildWetFx() {
+  wetFxBuilt = true;
+  weatherFx.puddles = []; weatherFx.glints = [];
+  if (SHELTERS[state.current]?.indoor) return;
+  const ray = new THREE.Raycaster();
+  const down = new THREE.Vector3(0, -1, 0);
+  const groundAt = (x, z, nMin) => {
+    ray.set(new THREE.Vector3(x, 9, z), down);
+    return ray.intersectObjects(envRoot.children, true).find(h => h.face && h.face.normal.y > nMin && h.point.y > -2.2 && h.point.y < 1.6);
+  };
+  // 웅덩이: 평지(법선 상향) 레이 샘플 — 지형 함수 비노출이라 float-audit 레이 문법 재사용
+  const srand = seededRand(97);
+  const want = opts.lowSpec ? 4 : 8;
+  for (let k = 0, placed = 0; k < 44 && placed < want; k++) {
+    const a = srand() * Math.PI * 2, r = 2.6 + srand() * 5.2;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    const h = groundAt(x, z, 0.94);
+    if (!h) continue;
+    const size = 0.5 + srand() * 0.75;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(size * (1.1 + srand() * 0.7), size),
+      new THREE.MeshPhongMaterial({ map: puddleTexOf(placed), transparent: true, opacity: 0,
+        color: 0x141d28, specular: 0x9aacc0, shininess: 110, depthWrite: false }));
+    m.material.userData.noWet = true; m.material.userData.cullFadeSkip = true;
+    m.rotation.x = -Math.PI / 2; m.rotation.z = srand() * Math.PI;
+    m.position.set(h.point.x, h.point.y + 0.015, h.point.z);
+    m.renderOrder = 2; m.visible = false;
+    envRoot.add(m); weatherFx.puddles.push(m);
+    placed++; // 상한 카운트 — 누락 시 성공 레이 전부(44) 설치돼 늪이 된다(프로브 실측 검거)
+  }
+  // 광원 스트릭: 등록 앵커. 등록이 없으면 기본 1점 = 창문벽(-z) 바깥 온광 스필.
+  if (!wetGlintAnchors.length) wetGlint(0, -ROOM.d / 2 - 1.6, 0xffc070);
+  for (const g of wetGlintAnchors) {
+    const h = groundAt(g.x, g.z, 0.8);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(g.w, g.len),
+      new THREE.MeshBasicMaterial({ map: glintTexOnce(), transparent: true, opacity: 0, color: g.color,
+        blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+    m.material.userData.noWet = true; m.material.userData.cullFadeSkip = true;
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(g.x, (h ? h.point.y : 0) + 0.02, g.z);
+    m.renderOrder = 3; m.visible = false;
+    envRoot.add(m); weatherFx.glints.push(m);
+  }
+}
+
 function makeWalls(defs) {
   wallList = [];
   for (let i = 0; i < defs.length; i++) {
@@ -4934,6 +5014,7 @@ function loadShelter(id) {
   ogResetRegistry(); // #71: 잠식 대상 등록부 리셋 — buildEnv가 채우고 buildOvergrowth가 소비
   bunkerStairsObj = null; // #55: 계단 히트 대상 재수집
   weatherFx.caps = []; wetApplied = -1;
+  wetFxBuilt = false; wetGlintAnchors.length = 0; weatherFx.puddles = []; weatherFx.glints = []; // #96 젖은 도시 리셋 (메시는 envRoot dispose가 해체)
   winSkyMats.length = 0; // 창문 하늘판 재수집
   sunShafts.length = 0; sunMotes.length = 0; // 빛기둥/먼지도 재수집 (envRoot dispose와 함께 소멸)
   winFrostMats.length = 0; // ③ 창유리 성에 오버레이 재수집
@@ -8227,7 +8308,8 @@ function applyWetness() {
       if (m.userData.shininessDry == null) m.userData.shininessDry = m.shininess;
       _tc.b.setHex(m.userData.specDry).lerp(_wetSpec.set(0x36404c), wetness);
       m.specular.copy(_tc.b);
-      m.shininess = m.userData.shininessDry + (28 - m.userData.shininessDry) * wetness;
+      // #96: 폭풍은 벽면 광택을 한 단계 더 (GTA 레퍼런스 — 퍼붓는 날의 번들거림)
+      m.shininess = m.userData.shininessDry + ((weather.type === 'storm' ? 38 : 28) - m.userData.shininessDry) * wetness;
     }
   });
 }
@@ -8237,11 +8319,12 @@ function updateEnvironment(t, dt) {
   const season = seasonOf();
   const targetSnow = weather.type === 'snow' ? 1 : (season.id === 'winter' ? 0.3 : 0);
   snowCover += (targetSnow - snowCover) * Math.min(1, dt * 0.025);
-  // 계절 색조 × 적설
+  // 계절 색조 × 적설 × 젖음(#96): 눈은 세상을 밝히고, 비는 어둡고 푸르게 가라앉힌다 (같은 메커니즘의 역방향)
+  const wetK = 1 - wetness * 0.34;
   vcLambert.color.setRGB(
-    season.tint[0] * (1 + snowCover * 0.5),
-    season.tint[1] * (1 + snowCover * 0.58),
-    season.tint[2] * (1 + snowCover * 0.72)
+    season.tint[0] * (1 + snowCover * 0.5) * wetK,
+    season.tint[1] * (1 + snowCover * 0.58) * (wetK + wetness * 0.03),
+    season.tint[2] * (1 + snowCover * 0.72) * (wetK + wetness * 0.1)
   );
   // 바람: 비/눈엔 강풍
   windLevel += ((wBadNow ? 2.3 : 1) - windLevel) * Math.min(1, dt * 0.6);
@@ -8255,6 +8338,21 @@ function updateEnvironment(t, dt) {
   for (const cap of weatherFx.caps) {
     cap.visible = !indoorSh && snowCover > 0.05;
     if (cap.visible) cap.scale.y = Math.min(1, snowCover * 1.1);
+  }
+  // #96 젖은 도시 구동: 첫 젖음에 지연 구축 → 웅덩이는 젖음에 비례해 배어들고, 스트릭은 밤에 진해지며
+  //   매 프레임 카메라 요 방향으로 눕는다(레퍼런스의 '시선 쪽으로 번지는 반사').
+  if (!wetFxBuilt && wetness > 0.04 && !indoorSh) buildWetFx();
+  if (weatherFx.puddles) for (const p of weatherFx.puddles) {
+    p.visible = wetness > 0.04;
+    if (p.visible) p.material.opacity = Math.min(0.72, wetness * 0.85);
+  }
+  if (weatherFx.glints) {
+    const hr = gameHour();
+    const nightK = (hr < 6.5 || hr >= 17) ? 1 : 0.4;
+    for (const gl of weatherFx.glints) {
+      gl.visible = wetness > 0.08;
+      if (gl.visible) { gl.material.opacity = Math.min(0.55, wetness * 0.55 * nightK); gl.rotation.z = camState.yaw; }
+    }
   }
   // ③ 한파 실내 침투: 무방비(coldSnapNetSeverity>0) 한파 시 창유리 안쪽 성에가 서서히 짙어지고,
   //   방어 성공/한파 종료 시 서서히 사라진다. 강도는 순 페널티에 비례(방어 단계만큼 옅어짐).
