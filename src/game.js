@@ -24,6 +24,7 @@ import { isHard, isHardcore, isZen, isWallpaper, rescueEligible } from './core/m
 import { SEASONS, SEASON_DAYS, seasonOf, seasonDay, seasonIndex } from './core/season.js'; // 계절 달력
 import { accWinterFuel, resAdd, resConsume, resHasAll, resConsumeAll, hasAnyFood, consumeAnyFood } from './core/economy.js'; // 자원 연산
 import { hasMod } from './core/shelter.js'; // 셸터 개조 술어
+import { coldDefenseLevel, coldSnapActive, coldSnapNetSeverity } from './core/coldsnap.js'; // 한파 술어
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -714,32 +715,7 @@ function beginWinterSnapshot() {
 // 겨울 중 연료 소모 집계 (winterSnap.acc.fuel) — resConsume('fuel') 경로에서 호출
 // accWinterFuel + 자원 연산(resAdd/resConsume/resHasAll/resConsumeAll/hasAnyFood/consumeAnyFood)은 core/economy.js로 이전. import 참조.
 /* ── 한파 (cold snap) — 겨울 보스 이벤트 (Phase B) ── */
-// 한파 방어 수단이 몇 단계 갖춰졌는가: 단열 개조 + 난방 가동(장작 난로/온풍기 ON)
-function coldDefenseLevel() {
-  let lv = 0;
-  if (hasMod('insulation') || hasMod('insulationPlus')) lv++;
-  if (hasMod('insulationPlus')) lv++; // 강화 단열재는 한 단계 더
-  // 난방 가동: 장작 난로(stove, 불빛 연료 fuel) 또는 온풍기(heater) ON
-  const heating = items.some(i => {
-    if (i.on === false) return false;
-    if (i.defId === 'stove') return true;
-    return DEFS[i.defId]?.appliance?.effect === 'heat';
-  });
-  if (heating) lv++;
-  // 1.3 스키 로지 붙박이 벽난로 — 유지비만 내면(upkeepOk) 항상 한 단계 방어(고도 페널티 상쇄의 핵심).
-  if (SHELTERS[state.current].hearth && state.upkeepOk) lv++;
-  return lv;
-}
-// 한파 활성 여부 (오늘이 coldSnap.until 이하이고 겨울)
-function coldSnapActive() {
-  return !!(state.coldSnap && seasonOf().id === 'winter' && state.day <= state.coldSnap.until);
-}
-// 한파 순 페널티 강도 (0=완전 방어). severity - 방어단계, 0~severity로 클램프
-function coldSnapNetSeverity() {
-  if (!coldSnapActive()) return 0;
-  const sev = state.coldSnap.severity || 1;
-  return Math.max(0, sev - coldDefenseLevel());
-}
+// coldDefenseLevel/coldSnapActive/coldSnapNetSeverity → core/coldsnap.js (import). 순수 술어(hearth는 SHELTER_META에서).
 // 계절이 날씨 풀을 편향시킨다
 function seasonAdjustPool(pool) {
   const s = seasonOf().id;
