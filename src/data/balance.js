@@ -124,8 +124,11 @@ export const BAL = {
     zenStart: { food: 6, canned: 8, water: 10, cloth: 4, candle: 4, fuel: 4, material: 4, parts: 2, battery: 2 },
     // #76 후속(디렉터 "좀 challenging 해야지"): 난이도별 전리품 수급 배수. rollRes(실게임)+expectedLoot(시뮬) 공통.
     //   난이도가 높을수록 파밍이 야박하다. 노말도 소폭 조인다(구 1.0 → 0.85, "획득 손맛" 상향을 되돌림).
-    //   ※ 하드 구 BAL.hard.lootMul(0.7) 대체. 안전선: 노말은 굶는 날 0 절대 유지(코지 코어·REQ-BAL-01).
-    incomeMul: { normal: 0.85, hard: 0.58, hardcore: 0.5, zen: 1.0 },
+    //   ※ 하드 구 BAL.hard.lootMul(0.7) 대체.
+    //   하드코어 0.28(디렉터 "진짜 죽는다"): 경제가 쌍안정이라 이 선에서 표본 5시드 중 2개가 아사(영구사망) —
+    //     스킬·운이 없으면 완주 불가한 진짜 permadeath. "폐허는 두 번 묻지 않는다"의 실체.
+    //   안전선(굶는 날 0)은 노말·하드에만 적용(코지 코어·REQ-BAL-01). 하드코어는 의도적으로 치명적 = 예외.
+    incomeMul: { normal: 0.85, hard: 0.58, hardcore: 0.28, zen: 1.0 },
     dailyDirt: 1,          // 일일 청결 감소 기본값 (v0.9.1 2→1)
     foodSpoilPerDay: 1,    // 냉장고 없을 때 신선식품 일일 부패량
     catFeedEvery: 3,       // 고양이 먹이 주기 (일)
