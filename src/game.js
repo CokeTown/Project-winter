@@ -19,6 +19,7 @@ import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
 import { Platform, bindPlatform } from './lib/platform.js';
 import { state, DEFAULT_STATE, opts, OPTS_DEFAULT } from './core/state.js'; // 모놀리스 분해 Phase 1: 공유 가변 상태
+import { isHard, isHardcore, isZen, isWallpaper, rescueEligible } from './core/mode.js'; // 난이도 예측자
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -4153,14 +4154,7 @@ bindPlatform({
 /* ============================================================
    난이도 모드 (v0.9.2) — 하드: 전리품 -30% · 게이지 소모 +50%
 ============================================================ */
-// 하드코어(hardcore)는 하드 밸런스를 그대로 쓴다(구제만 없음) — isHard가 하드코어를 포함해야
-// 전리품/게이지/한파 강화가 하드코어에도 적용된다. 배치 D 밸런스 불가침(하드 값 재사용).
-const isHard = () => state.mode === 'hard' || state.mode === 'hardcore';
-const isHardcore = () => state.mode === 'hardcore'; // 폐허는 두 번 묻지 않는다 — 구제 없음
-const isZen = () => state.mode === 'zen'; // ♾️ 무한: 자동 진행 첫날 해금 + 겨울 카운터 분모 없음
-const isWallpaper = () => state.mode === 'wallpaper'; // 🖼️ 배경화면: 압박 전부 off, 자원 무한, 셸터 전 해금
-// 구제 대상 모드: 노말/하드만(무한·배경화면은 무력 미적용, 하드코어는 구제 없음)
-const rescueEligible = () => state.mode === 'normal' || state.mode === 'hard';
+// 난이도 예측자(isHard/isHardcore/isZen/isWallpaper/rescueEligible)는 core/mode.js로 이전 (분해 Phase 1). 아래 import 참조.
 // 하드 전리품 -30%. EV 보존 확률적 반올림: floor만 쓰면 1개 드랍이 항상 0이 되고,
 // round만 쓰면 1개가 영원히 안 줄어든다 — 소수부를 확률로 처리해 기댓값(×0.7)을 지킨다.
 // 난이도별 전리품 수급 배수(디렉터 "challenging"). 이름은 하드 유래지만 이제 전 모드에 적용된다
