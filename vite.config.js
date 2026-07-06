@@ -11,7 +11,8 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 // - 로컬 dev/preview: 서버 루트 '/'
 export default defineConfig(({ command, mode }) => ({
   base: mode === 'electron' ? './' : command === 'build' ? '/Project-winter/' : '/',
-  define: { __APP_VER__: JSON.stringify(pkg.version) },
+  // __QA_EDITION__: tools/build-qa.ps1이 env로 켠다(#89). 정식 빌드에선 false 상수라 QA 블록이 트리셰이킹된다.
+  define: { __APP_VER__: JSON.stringify(pkg.version), __QA_EDITION__: JSON.stringify(process.env.QA_EDITION === '1') },
   server: {
     host: true, // 0.0.0.0 바인딩 — 같은 네트워크의 휴대폰에서 접속 가능
     port: process.env.PORT ? Number(process.env.PORT) : 8420,

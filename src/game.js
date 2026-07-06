@@ -59,7 +59,12 @@ const wxIcon    = (type, cls = '') => icon(WEATHER_ICON[type] || `icon_weather_$
    기본 설정
 ============================================================ */
 const GRID = 0.25;
-const SAVE_KEY = 'project-shelter-web-v2';
+// #89 QA 에디션: 빌드 플래그(vite define, tools/build-qa.ps1가 켠다). 무한 자원·전 해금·업적 no-op·워터마크.
+//   세이브는 키 네임스페이스(qa-)로 완전 분리 — 정식 빌드 세이브와 상호 불가침.
+const QA_ED = typeof __QA_EDITION__ !== 'undefined' && !!__QA_EDITION__;
+const KEY_NS = QA_ED ? 'qa-' : '';
+const SAVE_KEY = KEY_NS + 'project-shelter-web-v2';
+const LASTSLOT_KEY = KEY_NS + 'project-shelter' + '-lastslot'; // 이어하기 포인터도 에디션별 분리 (QA가 정식 포인터를 밀면 빈 슬롯 이어하기 오노출)
 const OLD_SAVE_KEY = 'project-shelter-web-v1';
 const GAME_MIN_PER_SEC = 1.0;   // 실제 1초 = 게임 1분 (하루 = 실시간 24분) — v1.5.1 디렉터 확정(순삭감 완화, 1.5→1.0)
 //   게이지 소모·부패·스폰 주기는 전부 '게임 분' 기준이라 게임일 밸런스 불변. 오프라인 정산·탐험 차감식(#94)도 이 상수를 공유해 일관.
@@ -4408,7 +4413,7 @@ function slotDisplayCount() {
   for (let n = 1; n <= 200; n++) { if (localStorage.getItem(slotKey(n))) maxFilled = n; }
   return Math.max(SLOT_MIN, maxFilled + 1);
 }
-const slotKey = n => `project-shelter-slot${n}`;
+const slotKey = n => `${KEY_NS}project-shelter-slot${n}`; // #89: QA 에디션은 qa- 네임스페이스 — 정식 세이브와 불가침
 
 /* ── 계정 통계 (세이브 아닌 로컬 영속, Platform 어댑터 경유) ──
    배경화면 모드 해금(노말 누적 최고 생존일 ≥ BAL.rescue.unlockDay) 판정용.
@@ -4424,7 +4429,7 @@ function recordNormalDay(day) {
   if ((s.normalBestDay || 0) < day) { s.normalBestDay = day; writeStats(s); }
 }
 function wallpaperUnlocked() { return (readStats().normalBestDay || 0) >= (BAL.rescue?.unlockDay || 150); }
-let currentSlot = parseInt(localStorage.getItem('project-shelter-lastslot') || '1', 10) || 1;
+let currentSlot = parseInt(localStorage.getItem(LASTSLOT_KEY) || '1', 10) || 1;
 function readSlot(n) {
   try { return JSON.parse(localStorage.getItem(slotKey(n)) || 'null'); } catch (e) { return null; }
 }
@@ -4445,6 +4450,7 @@ function slotMeta(n) {
 }
 let saveTimer = null;
 function doSaveNow() {
+  if (QA_ED) state.qaUsed = true; // #89: QA 에디션 세이브는 전부 오염 각인 — 정식 빌드로 옮겨 심어도 업적·통계 무효
   // P1-A: 게임을 시작한 적 없는 첫 실행에서 타이틀 조작(언어/설정)이
   // 유령 세이브('이어하기' 오노출)를 만들지 않게 — 슬롯이 없고 아직 타이틀이면 옵션만 전역 키에 저장
   const slotExists = !!localStorage.getItem(slotKey(currentSlot));
@@ -4456,7 +4462,7 @@ function doSaveNow() {
   state.savedAt = Date.now();
   // REQ-STEAM-01: 세이브 경로를 클라우드 어댑터 경유 (현재 localStorage 위임 — 동작 불변, Steam Cloud 미러 지점).
   Platform.cloud.save(slotKey(currentSlot), JSON.stringify({ state, opts }));
-  Platform.cloud.save('project-shelter-lastslot', String(currentSlot));
+  Platform.cloud.save(LASTSLOT_KEY, String(currentSlot));
   Platform.cloud.save('nw-opts', JSON.stringify(opts)); // 전역 옵션 동기화 (언어/음량 승계용)
   checkAchievements();               // 업적 체크 (모든 변화는 저장을 거친다)
   updateHud();                       // 쾌적함 반영
@@ -7278,6 +7284,7 @@ const ACHS = [
   { id: 'ending',    icon: '🚁', name: '폐허 너머로',      nameEn: 'Beyond the Ruins',   desc: 'Day 10000 — 박사와 함께 탈출', descEn: 'Day 10000 — escape with the doctor', chk: () => !!state.endingSeen },
 ];
 function checkAchievements() {
+  if (QA_ED) return; // #89 QA 에디션: 업적 전면 no-op (Steam 중계 지점 원천 차단)
   if (!state.achs) state.achs = {};
   if (state.qaUsed) return; // QA 치트로 오염된 세이브는 신규 업적 해금 무시 (기존 해금은 유지)
   for (const a of ACHS) {
@@ -8541,7 +8548,7 @@ function openSlotModal(mode) {
     localStorage.removeItem(slotKey(+b.dataset.del));
     localStorage.removeItem(slotKey(+b.dataset.del) + '-bak'); // P1-B: 롤링 백업도 함께 삭제
     // 삭제한 슬롯을 가리키던 lastslot 포인터도 정리 (빈 슬롯을 이어하기 대상으로 잡지 않도록)
-    if (localStorage.getItem('project-shelter-lastslot') === b.dataset.del) localStorage.removeItem('project-shelter-lastslot');
+    if (localStorage.getItem(LASTSLOT_KEY) === b.dataset.del) localStorage.removeItem(LASTSLOT_KEY);
     if (titleVisible) showTitle();                              // P1-B: '이어하기' 표시 즉시 갱신
     openSlotModal(mode);
   }));
@@ -8551,7 +8558,7 @@ function openSlotModal(mode) {
       if (!has) { toast(t('toast.emptySlot')); return; }
       // 끝난 기록: 이어하기 불가 — 회고(마지막 요약)만 열람한다.
       if (ended) { openEndedRecord(n); return; }
-      localStorage.setItem('project-shelter-lastslot', String(n));
+      localStorage.setItem(LASTSLOT_KEY, String(n));
       sessionStorage.setItem('ps-load', '1'); // 리로드 후 타이틀 건너뛰고 바로 게임 (밀린 결산 표시)
       location.reload();
     } else {
@@ -8606,7 +8613,7 @@ function openModeModal(n) {
     // 유저는 첫 아침 해금 팝업('지금 켠다')으로 직접 선택한다.
     opts.autoPlay = false;
     localStorage.setItem(slotKey(n), JSON.stringify({ state: fresh, opts }));
-    localStorage.setItem('project-shelter-lastslot', String(n));
+    localStorage.setItem(LASTSLOT_KEY, String(n));
     // 배경화면 모드는 인트로(생존 서사) 건너뛰고 바로 진입 — 살아남기 없이 살아보기.
     if (fresh.mode === 'wallpaper') sessionStorage.setItem('ps-load', '1');
     else sessionStorage.setItem('ps-intro', '1');
@@ -10106,7 +10113,7 @@ function importSave() {
       if (!(await gameConfirm(t('save.overwrite', { n: currentSlot }), t('confirm.overwrite'), t('confirm.cancel')))) return;
       try {
         localStorage.setItem(slotKey(currentSlot), JSON.stringify(data));
-        localStorage.setItem('project-shelter-lastslot', String(currentSlot));
+        localStorage.setItem(LASTSLOT_KEY, String(currentSlot));
       } catch (e) { toast(t('save.failed')); return; }
       location.reload();
     };
@@ -10704,6 +10711,32 @@ function openQaPanel() {
     }
     updateHud(); renderResBar(); if (!state.exp) renderExpPanel(); scheduleSave();
   }));
+}
+/* ============================================================
+   #89 QA 에디션 상주 로직 (빌드 플래그 __QA_EDITION__ — 정식 빌드에선 데드코드로 트리셰이킹)
+   디렉터 스펙: "자원이든 뭐든 무한. 직접 파밍하고 언락하려니 너무 오래걸려" + 별도 바이너리 +
+   세이브 분리(KEY_NS) + 업적 no-op(checkAchievements) + 워터마크. 라벨은 QA 전용이라 한국어만(i18n 예외).
+============================================================ */
+if (QA_ED) {
+  // 워터마크: 상시 좌하단 — 스크린샷이 섞여도 에디션이 즉시 식별되게
+  const wm = document.createElement('div');
+  wm.id = 'qa-watermark';
+  wm.textContent = 'QA EDITION · v' + (typeof __APP_VER__ !== 'undefined' ? __APP_VER__ : '?') + ' · 테스트 전용';
+  wm.style.cssText = 'position:fixed;left:8px;bottom:6px;z-index:9000;pointer-events:none;'
+    + 'font:bold 11px/1.4 monospace;color:#ffd88a;opacity:.6;text-shadow:0 1px 2px #000;letter-spacing:.5px';
+  document.body.appendChild(wm);
+  // 상시 만땅(2초 주기): 자원 전종 999 보충 + 게이지 풀 + 전 셸터 해금 + 오염 각인.
+  //   스폰/날씨/개조 로직은 건드리지 않는다 — 콘텐츠 검수용이지 별개 밸런스가 아니다.
+  const maxUnlock = Math.max(...Object.values(SHELTERS).map(s => s.unlockAt || 0));
+  setInterval(() => {
+    if (!state || !state.res) return;
+    state.qaUsed = true;
+    let dirty = false;
+    for (const id of Object.keys(RESOURCES)) if ((state.res[id] || 0) < 500) { state.res[id] = 999; dirty = true; }
+    if (state.hunger < 100 || state.thirst < 100 || state.energy < 100) { state.hunger = state.thirst = state.energy = 100; dirty = true; }
+    if ((state.successes || 0) < maxUnlock) { state.successes = maxUnlock; dirty = true; }
+    if (dirty && !titleVisible) { updateHud(); renderResBar(); }
+  }, 2000);
 }
 if (sessionStorage.getItem('ps-intro')) {
   sessionStorage.removeItem('ps-intro');

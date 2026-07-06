@@ -11,11 +11,14 @@ android {
     namespace = "com.projectwinter.shelter"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.projectwinter.shelter"
+        // #89 QA 에디션: -PqaEdition=1 이면 별도 appId(.qa)로 정식판과 나란히 설치 + 앱 이름에 [QA] 표기.
+        //   tools/build-qa.ps1 전용 스위치 — 평시 빌드는 인자 없음이라 기존과 동일.
+        applicationId "com.projectwinter.shelter" + (project.hasProperty('qaEdition') ? ".qa" : "")
+        manifestPlaceholders = [appLabel: project.hasProperty('qaEdition') ? "Nine Winters QA" : "@string/app_name"]
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 17
-        versionName "1.5.1-beta"
+        versionName "1.5.1-beta" + (project.hasProperty('qaEdition') ? "-qa" : "")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
