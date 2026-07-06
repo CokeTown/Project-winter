@@ -23,6 +23,7 @@ export function makeWildlifeSystem(ctx) {
     getRoom, districtOf, playSfx, shadowDirty,
     gameHour, seasonId, camCenter, getGameMin, getSnowCover,
     WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE,
+    getObstacles, // #95: buildEnv 등록 마당 장애물 [{x,z,r}] — 통과 방지 (없으면 우회 비활성)
   } = ctx;
 
   const W = BAL.wildlife;
@@ -166,6 +167,30 @@ export function makeWildlifeSystem(ctx) {
 
   function buildMesh(sp) { return sp.kind === 'bird' ? buildBird(sp) : buildQuad(sp); }
 
+  /* ── #95 장애물 회피 (디렉터: "동물이 오브젝트를 통과하면 짜침") ──
+     buildEnv가 등록한 소품 원기둥 + 방 풋프린트를 막는다. 목표 선정은 재추첨, 이동은 푸시아웃 스티어링.
+     방은 사각(원 근사는 길쭉한 방의 장변 중앙을 뚫는다) — 돔 벙커만 SHELTER_WILDLIFE.avoidR 원형.
+     실내(지하철)는 방이 곧 무대라 방 회피 없음. 비행(이륙 후)은 통과 허용 — 착지 지점만 검사. */
+  function blockPad(a) { return 0.1 + a.sp.sizeH * 0.3; } // 덩치 비례 여유 (사슴 0.23, 토끼 0.15)
+  function findBlock(x, z, pad) {
+    if (!spec.indoor) {
+      if (spec.avoidR) { // 원형 매스 (돔 벙커: 외피가 원이라 사각이 오히려 뚫린다)
+        const rr = spec.avoidR + pad;
+        if (Math.hypot(x, z) < rr) return { kind: 'circle', x: 0, z: 0, rr };
+      } else {
+        const room = getRoom();
+        const hw = room.w / 2 + 0.4 + pad, hd = room.d / 2 + 0.4 + pad;
+        if (Math.abs(x) < hw && Math.abs(z) < hd) return { kind: 'rect', hw, hd };
+      }
+    }
+    const obs = getObstacles ? getObstacles() : null;
+    if (obs) for (const o of obs) {
+      const rr = o.r + pad;
+      if (Math.hypot(x - o.x, z - o.z) < rr) return { kind: 'circle', x: o.x, z: o.z, rr };
+    }
+    return null;
+  }
+
   // ── 로밍 존 지점 (방 밖 링, 방 풋프린트 회피) ──
   function roamSpot() {
     const band = spec.band || [3.4, 6.5];
@@ -174,10 +199,10 @@ export function makeWildlifeSystem(ctx) {
       // 지하철 승강장 가장자리: 한쪽 벽 근처 고정, x 밴드 유지 (쥐가 가장자리만)
       return { x: (Math.random() < 0.5 ? -1 : 1) * (room.d / 2 + 0.4), z: (Math.random() * 2 - 1) * (room.w / 2 - 0.3) };
     }
-    for (let k = 0; k < 8; k++) {
+    for (let k = 0; k < 10; k++) {
       const a = Math.random() * Math.PI * 2, r = band[0] + Math.random() * (band[1] - band[0]);
       const x = Math.cos(a) * r, z = Math.sin(a) * r;
-      if (Math.abs(x) > room.w / 2 + 0.3 || Math.abs(z) > room.d / 2 + 0.3) return { x, z };
+      if ((Math.abs(x) > room.w / 2 + 0.3 || Math.abs(z) > room.d / 2 + 0.3) && !findBlock(x, z, 0.15)) return { x, z }; // #95: 장애물 안 목표 재추첨
     }
     const a = Math.random() * Math.PI * 2, r = (band[0] + band[1]) / 2;
     return { x: Math.cos(a) * r, z: Math.sin(a) * r };
@@ -233,6 +258,7 @@ export function makeWildlifeSystem(ctx) {
 
   // ── 발자국 데칼 (눈/흙 위) — 페이드아웃. "밤새 뭔가 지나갔다" 티저 + 로밍 흔적 ──
   function dropPrint(x, z, dark) {
+    if (findBlock(x, z, 0)) return; // #95: 방/소품 위 발자국 금지 (밤새 자취가 집·폐차를 관통해 보이던 것)
     const size = 0.11;
     const tex = _printTex(dark);
     const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.55, depthWrite: false });
@@ -494,8 +520,43 @@ export function makeWildlifeSystem(ctx) {
     const dist = Math.hypot(dx, dz);
     if (dist < 0.05) return true;
     const step = a.sp.gait * speedMul * dt;
-    g.position.x += dx / dist * Math.min(step, dist);
-    g.position.z += dz / dist * Math.min(step, dist);
+    let nx = g.position.x + dx / dist * Math.min(step, dist);
+    let nz = g.position.z + dz / dist * Math.min(step, dist);
+    // #95 접선 슬라이드 스티어링: 다음 걸음이 장애물 안이면 '전 속도'를 접선/벽면 방향으로 돌려 두른다.
+    //   순수 방사 푸시아웃은 정면 대치에서 접선 성분 0 → 제자리 정체(프로브 실측: reached=false) — 그 교정.
+    //   사이드는 스티키(_avSide, 1.2초 유지): 우회 중 좌/우가 프레임마다 뒤집히는 디더 방지.
+    //   비행(이륙 상승)은 제외 — 지상 보행/도주/도약만.
+    if (!(a.kind === 'bird' && a.mode === 'takeoff')) {
+      const bl = findBlock(nx, nz, blockPad(a));
+      if (bl) {
+        a._avSideT = 1.2;
+        // 사이드는 '슬라이드 축'별로 스티키 — 코너에서 축이 바뀌면 목표 방향으로 재선택.
+        //   (축 무관 스티키는 모서리에서 이전 부호를 물려받아 후진 → 코너 왕복 라이브록, 프로브 실측)
+        const pick = (axis, want) => {
+          const s = (a._avAxis === axis && a._avSide != null) ? a._avSide : (want >= 0 ? 1 : -1);
+          a._avAxis = axis; a._avSide = s; return s;
+        };
+        if (bl.kind === 'rect') { // 방 사각: 침투 얕은 축은 경계에 고정, 나머지 축으로 전 속도 슬라이드(코너를 돈다)
+          const px = bl.hw - Math.abs(nx), pz = bl.hd - Math.abs(nz);
+          if (px < pz) {
+            nx = (nx < 0 ? -1 : 1) * bl.hw;
+            nz = g.position.z + pick('z', dz) * step;
+          } else {
+            nz = (nz < 0 ? -1 : 1) * bl.hd;
+            nx = g.position.x + pick('x', dx) * step;
+          }
+        } else { // 원: 현 위치 기준 접선으로 전 속도 이동 + 잔여 침투는 림 사영
+          const ox = g.position.x - bl.x, oz = g.position.z - bl.z, od = Math.hypot(ox, oz) || 0.001;
+          const tx = -oz / od, tz = ox / od;
+          const s = pick('c', tx * dx + tz * dz);
+          nx = g.position.x + tx * s * step; nz = g.position.z + tz * s * step;
+          const o2x = nx - bl.x, o2z = nz - bl.z, o2d = Math.hypot(o2x, o2z) || 0.001;
+          if (o2d < bl.rr) { nx = bl.x + o2x / o2d * bl.rr; nz = bl.z + o2z / o2d * bl.rr; }
+        }
+      } else if (a._avSide != null && (a._avSideT = (a._avSideT || 0) - dt) <= 0) { a._avSide = null; a._avAxis = null; }
+    }
+    g.position.x = nx;
+    g.position.z = nz;
     const want = Math.atan2(dx, dz);
     let dr = want - g.rotation.y; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
     g.rotation.y += dr * Math.min(1, dt * 8);
@@ -569,5 +630,7 @@ export function makeWildlifeSystem(ctx) {
     // QA 전용: 클로즈업 검수용 강제 이동 (팬 카메라 부재 보완 — 게임 로직 미사용, 하네스 전용)
     // tgt=null 대신 idle 전환 — walk/landing 업데이트가 tgt를 읽으므로 널을 남기면 프레임 크래시(검증에서 실측)
     _nudge: (i, x, z) => { const a = animals[i]; if (a) { a.g.position.x = x; a.g.position.z = z; a.tgt = null; a.mode = 'idle'; a.timer = 30; } },
+    // #95 QA 전용: 강제 보행 목표 — 장애물 정중앙을 지나는 직선을 시켜 스티어링 실작동을 실증한다.
+    _walkTo: (i, x, z) => { const a = animals[i]; if (a) { a.tgt = { x, z }; a.mode = 'walk'; a.stay = 999; } },
   };
 }

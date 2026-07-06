@@ -1227,6 +1227,7 @@ function buildCarWreck(parent, x, z, rotY, rand, groundY = 0) {
   g.rotation.z = 0.03;
   g.position.set(x, groundY, z); // P2-c: 지형 높이에 접지 (컨테이너 폐차 부양 수정)
   parent.add(g);
+  wlBlock(x, z, 1.5); // #95: 동물 우회 대상 (차체 2.6×1.2 외접원 — 전 호출처가 buildEnv라 자기등록)
 }
 function buildPowerPole(parent, x, z, tilt, groundY) {
   const g = new THREE.Group();
@@ -1236,6 +1237,7 @@ function buildPowerPole(parent, x, z, tilt, groundY) {
   g.rotation.z = tilt;
   g.position.set(x, groundY, z);
   parent.add(g);
+  wlBlock(x, z, 0.3); // #95: 동물 우회 대상 (기둥 밑동)
   if (ogReg) ogReg.poles.push({ x, z, groundY, tilt }); // #71: 전신주 덩굴 감김 대상 등록(전 호출처가 buildEnv)
 }
 function buildRuinCity(parent, rand, opt) {
@@ -1504,6 +1506,11 @@ function tagSway(mesh, baseZ = 0, amp = 0.05) {
   if (mesh) swayProps.push({ mesh, baseZ, amp, phase: Math.random() * Math.PI * 2 });
   return mesh;
 }
+// #95 야생동물 장애물 등록부 (디렉터: "동물이 오브젝트를 통과하면 짜침"): buildEnv의 근접 대형 소품을
+//   원기둥 {x,z,r}로 등록 → wildlife가 목표 재추첨 + 이동 스티어링으로 우회한다. 씬 트래버스 금지 원칙(ogReg 선례).
+//   등록 범위 = 로밍 밴드+퇴장 경로가 닿는 r<12 근방만. loadShelter가 buildEnv 직전 초기화.
+let wlObstacles = [];
+function wlBlock(x, z, r) { wlObstacles.push({ x, z, r }); }
 function groundPlane(colFn, hFn, size = 300, seg = 52) {
   const gGeo = new THREE.PlaneGeometry(size, size, seg, seg);
   gGeo.rotateX(-Math.PI / 2);
@@ -1595,6 +1602,7 @@ const SHELTERS = {
       for (let i = 0; i < 26; i++) {
         const a = rand() * Math.PI * 2, r = 8 + Math.pow(rand(), 0.8) * 26;
         const x = r * Math.cos(a), z = r * Math.sin(a);
+        if (r < 12) wlBlock(x, z, 0.34); // #95: 로밍·퇴장 경로권 나무만 우회 등록
         const geo = deadTreeGeo(rand, 0.8 + rand() * 1.3);
         geo.rotateY(rand() * Math.PI * 2);
         geo.translate(x, gh(x, z) - 0.05, z);
@@ -2060,6 +2068,7 @@ const SHELTERS = {
       for (let i = 0; i < 14; i++) {
         const a = rand() * Math.PI * 2, r = 9 + Math.pow(rand(), 0.8) * 20;
         const x = r * Math.cos(a), z = r * Math.sin(a);
+        if (r < 12) wlBlock(x, z, 0.34); // #95
         const geo = deadTreeGeo(rand, 0.8 + rand() * 1.2);
         geo.rotateY(rand() * Math.PI * 2);
         geo.translate(x, gh(x, z) - 0.05, z);
@@ -2078,9 +2087,11 @@ const SHELTERS = {
         envRoot.add(jg);
       };
       junkAt(6.5, 5.5); junkAt(-7.5, -4);
+      wlBlock(6.5, 5.5, 0.75); wlBlock(-7.5, -4, 0.75); // #95: 가전 더미 우회
       for (let i = 0; i < 5; i++) {
         const a = rand() * Math.PI * 2, r = 6 + rand() * 9;
         const x = r * Math.cos(a), z = r * Math.sin(a);
+        if (r < 12) wlBlock(x, z, 0.42); // #95: 드럼통
         const barrel = Cyl(envRoot, 0.32, 0.32, 0.85, [0x7a4530, 0x5c5f52, 0x6e3e28][i % 3], x, gh(x, z) + 0.42, z, 9);
         if (rand() < 0.4) { barrel.rotation.z = Math.PI / 2 - 0.1; barrel.position.y = gh(x, z) + 0.34; }
       }
@@ -2356,6 +2367,7 @@ const SHELTERS = {
         const s = 0.8 + rand() * 1.5 + (r > 24 ? 0.5 : 0);
         const dead = rand() < 0.22;
         if (r < 20) {
+          if (r < 12) wlBlock(x, z, 0.36); // #95: 숲 근접 수목 우회 등록 (침엽수 둥치가 굵다 — 0.36)
           const geo = dead ? deadTreeGeo(rand, s * 0.9) : pineGeo(rand, s, false);
           const m = new THREE.Mesh(geo, vcLambert);
           m.position.set(x, gh(x, z) - 0.05, z);
@@ -2402,6 +2414,7 @@ const SHELTERS = {
       // 불탄 숲 군락 (검게 그을린 고사목)
       for (let i = 0; i < 7; i++) {
         const x = -13 + rand() * 7, z = -12 + rand() * 6;
+        wlBlock(x, z, 0.34); // #95: 퇴장 경로권(r≈9~13)
         const geo = deadTreeGeo(rand, 0.9 + rand() * 1.1, 0x211d18);
         geo.rotateY(rand() * Math.PI * 2);
         geo.translate(x, gh(x, z) - 0.05, z);
@@ -2410,6 +2423,7 @@ const SHELTERS = {
       // 드럼통
       for (let i = 0; i < 3; i++) {
         const x = 5.5 + rand() * 3, z = 6.5 + rand() * 2.5;
+        wlBlock(x, z, 0.42); // #95
         Cyl(envRoot, 0.32, 0.32, 0.85, [0x7a4530, 0x5c5f52, 0x6e3e28][i], x, gh(x, z) + 0.42, z, 9);
       }
       // 지평선 너머 연기 기둥 (어딘가는 아직 불타고 있다)
@@ -2580,6 +2594,7 @@ const SHELTERS = {
         const a = rand() * Math.PI * 2, r = 9 + Math.pow(rand(), 0.8) * 22;
         const x = r * Math.cos(a), z = r * Math.sin(a);
         if (Math.abs(z) < 4.5) continue; // 도로 위는 비움
+        if (r < 12) wlBlock(x, z, 0.34); // #95
         const geo = deadTreeGeo(rand, 0.8 + rand() * 1.2);
         geo.rotateY(rand() * Math.PI * 2);
         geo.translate(x, gh(x, z) - 0.05, z);
@@ -2858,12 +2873,14 @@ const SHELTERS = {
         const px = hw + 2.2, pz = 2.5;
         const gy = gh(px, pz);
         for (let i = 0; i < 3; i++) { const ty = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.13, 6, 12), lamb(0x1f1d1a)); ty.rotation.x = Math.PI / 2; ty.position.set(px + (i % 2) * 0.1, gy + 0.14 + i * 0.22, pz); ty.castShadow = true; envRoot.add(ty); }
+        wlBlock(px, pz, 0.55); wlBlock(px + 0.9, pz - 0.8, 0.42); // #95: 타이어 더미 + 드럼통 (밴드 내 r≈6)
         Cyl(envRoot, 0.32, 0.32, 0.85, 0x5c5f52, px + 0.9, gh(px + 0.9, pz - 0.8) + 0.42, pz - 0.8, 9).castShadow = true;
         const sign = new THREE.Group();
         Cyl(sign, 0.04, 0.05, 2.0, 0x55504a, 0, 1.0, 0, 5);
         B(sign, 1.0, 0.6, 0.06, 0x3a5a3a, 0, 1.9, 0);
         sign.position.set(-hw - 2.0, gh(-hw - 2.0, 1.5), 1.5); sign.rotation.z = 0.16; sign.rotation.y = -0.5;
         envRoot.add(sign);
+        wlBlock(-hw - 2.0, 1.5, 0.3); // #95: 표지판 기둥
       }
       // 고사목 + 들풀
       const tufts = [];
@@ -2879,6 +2896,7 @@ const SHELTERS = {
       for (let i = 0; i < 10; i++) {
         const a = rand() * Math.PI * 2, r = 11 + rand() * 16;
         const x = r * Math.cos(a), z = r * Math.sin(a);
+        if (r < 12) wlBlock(x, z, 0.34); // #95
         const geo = deadTreeGeo(rand, 0.9 + rand() * 1.1);
         geo.rotateY(rand() * Math.PI * 2);
         geo.translate(x, gh(x, z), z);
@@ -4905,6 +4923,7 @@ function loadShelter(id) {
   disposeDeep(roomGroup); roomGroup.clear();
   disposeDeep(envRoot); envRoot.clear();
   wallList = []; ceilCullList = []; blockers = []; envDyn = {}; swayProps = [];
+  wlObstacles = []; // #95: 야생동물 장애물 등록부 리셋 — buildEnv(폐차/전신주/근접 나무)가 다시 채운다
   ogResetRegistry(); // #71: 잠식 대상 등록부 리셋 — buildEnv가 채우고 buildOvergrowth가 소비
   bunkerStairsObj = null; // #55: 계단 히트 대상 재수집
   weatherFx.caps = []; wetApplied = -1;
@@ -5643,6 +5662,7 @@ const wildlifeSys = makeWildlifeSystem({
   gameHour, seasonId: () => seasonOf().id, camCenter,
   getGameMin: () => state.gameMin || 0, getSnowCover: () => snowCover,
   WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE,
+  getObstacles: () => wlObstacles, // #95: buildEnv가 등록한 마당 장애물(폐차/전신주/근접 나무) — 통과 방지
 });
 
 /* ============================================================
@@ -11103,6 +11123,8 @@ window.__shelter = {
   wildlifeLeaveAll: () => wildlifeSys._forceLeaveAll(),
   wildlifeNudge: (i, x, z) => wildlifeSys._nudge(i, x, z), // QA: 클로즈업 검수용 (팬 카메라 부재 보완)
   wildlifeRespawn: (id) => wildlifeSys.respawn(id || state.current),
+  wlObstacleList: () => wlObstacles.slice(), // #95 QA: 등록 장애물 덤프 (프로브 침범 판정용)
+  wildlifeWalkTo: (i, x, z) => wildlifeSys._walkTo(i, x, z), // #95 QA: 강제 횡단 (회피 실증)
   swayCount: () => swayProps.length,
   // #71 도심 잠식 QA 훅: 연차/패치·수풀 수/추가 드로우콜 추정(병합 메시 수)
   overgrowthState: () => ({ ...ogState }),

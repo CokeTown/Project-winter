@@ -69,9 +69,10 @@ export const DISTRICT_WILDLIFE = {
 // 셸터별 로밍 존 + override. groundY = 근접 야외 지면 근사(각 buildEnv GY 참고).
 //   band = [rMin, rMax] 방 밖 로밍 반경. indoor 셸터(지하철)는 실내 승강장 가장자리.
 //   species 미지정 시 DISTRICT_WILDLIFE[districtOf(id)] 사용.
+//   avoidR = 방 회피 반경 오버라이드(#95): 기본은 방 사각 풋프린트 회피지만, 돔처럼 원형 매스는 원이 정확하다.
 export const SHELTER_WILDLIFE = {
   container:    { groundY: -0.72, band: [3.4, 6.5] },
-  bunker:       { groundY: -0.82, band: [3.8, 6.5] },
+  bunker:       { groundY: -0.82, band: [3.8, 6.5], avoidR: 4.9 }, // 돔 외피 R4.35+T0.42+여유 — 밑동 클리핑 방지
   rooftop:      { groundY: 0.0,  band: [3.2, 5.0], birdOnly: true }, // 옥상: 난간 위 새만
   cabin:        { groundY: -0.8, band: [3.6, 7.0] },
   bus:          { groundY: -0.77, band: [3.2, 6.0] },
