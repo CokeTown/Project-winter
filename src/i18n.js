@@ -424,6 +424,9 @@ export const STR = {
   // 수사 의문·지시조 안내문 금지 — UI는 어포던스로 스스로 읽혀야 한다 (2026-07-05 디렉터 지침)
   'map.title':        { ko: '🗺️ 탐험 지도', en: '🗺️ Expedition Map' },
   'map.pick':         { ko: '', en: '' },
+  // #85 그려지는 발견
+  'map.sketchInfo':   { ko: '아직 가 보지 않았다 — 소문뿐이다. 다녀오면 지도에 잉크로 남는다.', en: 'Not yet visited — rumors only. Come back and it stays in ink.' },
+  'map.visits':       { ko: '다녀옴 ×{n}', en: 'Visited ×{n}' },
   'map.go':           { ko: '🎒 준비하고 출발', en: '🎒 Prepare and depart' },
   'map.riskLine':     { ko: '위험 {risk} · 이동 포함 <b>{dur}</b> (거리 ×{mult}) · {wicon} {wname}{forecast}', en: 'Risk {risk} · incl. travel <b>{dur}</b> (distance ×{mult}) · {wicon} {wname}{forecast}' },
   'dur.min':          { ko: '{n}분', en: '{n} min' },

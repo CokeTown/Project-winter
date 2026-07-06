@@ -398,6 +398,15 @@
   }
   .map-pin .pin-rate.ok { color: var(--good); }
   .map-pin .pin-rate.lack { color: var(--bad); }
+  /* #85 그려지는 발견 — 안 가본 곳은 연필 스케치(소문), 다녀오면 잉크(아는 길) */
+  .map-pin.sketch { opacity: 0.48; filter: grayscale(0.85) contrast(0.85); }
+  .map-pin .pin-rate.sketch-q { color: var(--text-dim); }
+  .map-pin .pin-visits {
+    font-size: 12px; line-height: 0.6; letter-spacing: 2px; color: #5c4a32;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
+  }
+  .map-pin.inked-now { animation: inkIn 1.1s ease-out; }
+  @keyframes inkIn { from { opacity: 0.25; filter: grayscale(1); } to { opacity: 1; filter: none; } }
   /* 1.2 폭설 봉쇄된 지역 (개통 구간은 예외) — 흐릿하게 + 눈송이 표식 */
   .map-pin.blocked { opacity: 0.55; filter: grayscale(0.6); }
   .map-pin.blocked img.px-icon { transform: none; }

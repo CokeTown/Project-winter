@@ -5278,15 +5278,26 @@ function openMapModal() {
     if (!regionUnlocked(rid)) continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
     const el = document.createElement('div');
     el.className = 'map-pin region';
-    el.style.left = p.x + '%'; el.style.top = p.y + '%';
+    // #85 수용 규칙(#87 임시 가드의 정식화): 렌더에서 안전영역 자동 클램프 — 신규 지역 좌표 실수를 원천 차단
+    el.style.left = Math.min(MAP_SAFE.x1, Math.max(MAP_SAFE.x0, p.x)) + '%';
+    el.style.top = Math.min(MAP_SAFE.y1, Math.max(MAP_SAFE.y0, p.y)) + '%';
     el.title = LName(r);
     const blocked = blizzardBlocks(rid); // 1.2: 폭설 봉쇄된 지상 지역 (개통 구간은 예외)
     if (blocked) el.classList.add('blocked');
+    // #85 그려지는 발견: 안 가본 곳은 연필 스케치(수치 없음 — 소문), 다녀오면 잉크(성공률+발자취 점).
+    const visits = (state.regionVisits || {})[rid] || 0;
     const rate = Math.round(rateParts(rid).eff * 100);
     const cls = rate >= 50 ? 'ok' : 'lack';
+    const dots = visits > 0 ? `<span class="pin-visits" title="${t('map.visits', { n: visits })}">${'•'.repeat(Math.min(visits, 4))}</span>` : '';
+    if (!visits && !blocked) el.classList.add('sketch');
     el.innerHTML = blocked
       ? `${regionIcon(rid, 'px-lg')}<span class="pin-rate lack">❄️</span>`
-      : `${regionIcon(rid, 'px-lg')}<span class="pin-rate ${cls}">${rate}%</span>`;
+      : !visits
+        ? `${regionIcon(rid, 'px-lg')}<span class="pin-rate sketch-q">?</span>`
+        : `${regionIcon(rid, 'px-lg')}<span class="pin-rate ${cls}">${rate}%</span>${dots}`;
+    // 첫 귀환 후 처음 여는 지도: 잉크가 배어드는 연출 1회
+    state.mapInked = state.mapInked || {};
+    if (visits > 0 && !state.mapInked[rid]) { el.classList.add('inked-now'); state.mapInked[rid] = 1; scheduleSave(); }
     el.addEventListener('click', () => { closeModal(); startExpedition(rid); }); // 준비 모달 경로 그대로 (봉쇄/에너지/탈진/횟수 검사 포함)
     // 호버/선택 시 하단 정보 줄에 위험·소요·날씨 표기
     el.addEventListener('mouseenter', () => showMapInfo(rid));
@@ -5319,6 +5330,9 @@ function renderSurvivorLights(wrap) {
   }
 }
 // 종이 지도 마커 좌표(% left/top) — 그림 상의 지구 클러스터 위치. residential 좌상 · commercial 우상 · industrial 좌하 · slum 우하.
+// #85 수용 규칙(#87 임시 클램프의 정식화): 마커 중심 안전영역 — 배지·아이콘이 종이 밖으로 잘리지 않는
+//   실측 한계. 신규 지역 좌표는 자유로 적되 openMapModal 렌더가 이 박스로 자동 클램프한다.
+const MAP_SAFE = { x0: 8, x1: 88, y0: 12, y1: 80 };
 const MAP_MARKERS = {
   residential: { x: 20, y: 20 },  // 좌상 손그림 집 클러스터
   commercial:  { x: 74, y: 18 },  // 우상 무너진 빌딩(도심)
@@ -5350,12 +5364,19 @@ function harborYardBoostId(day) {
 }
 function showMapInfo(rid) {
   const r = REGIONS[rid];
+  const visits = (state.regionVisits || {})[rid] || 0;
+  // #85 그려지는 발견: 안 가본 곳은 소문뿐 — 수치(성공률·위험)를 감춰 "가 봐야 아는" 지도로
+  if (!visits) {
+    $('map-info').innerHTML = `${regionIcon(rid)} <b>${LName(r)}</b> — ${t('map.sketchInfo')}`;
+    return;
+  }
   const p = rateParts(rid);
   const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC);
   const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
   $('map-info').innerHTML = `
     ${t('map.regionLine', { emoji: regionIcon(rid), pct: Math.round(p.eff * 100), name: LName(r), desc: LDesc(r) })}<br>
-    ${t('map.riskLine', { risk: LRisk(r), dur, mult: regionDistMult(rid).toFixed(2), wicon: wxIcon(weather.type), wname: LName(WEATHERS[weather.type]), forecast: fc })}`;
+    ${t('map.riskLine', { risk: LRisk(r), dur, mult: regionDistMult(rid).toFixed(2), wicon: wxIcon(weather.type), wname: LName(WEATHERS[weather.type]), forecast: fc })}
+    · ${t('map.visits', { n: visits })}`;
 }
 
 // 탐험 소요 시간(초): 거리 + 염좌 +30% + 이동형 거점(버스) -25%
@@ -5573,6 +5594,9 @@ function resolveExpedition() {
   if (!exp) return;
   playSfx('door');
   const r = REGIONS[exp.region];
+  // #85 그려지는 발견: 다녀온 지역은 지도에 잉크로 남는다 (성패 무관 — 밟아 본 땅)
+  state.regionVisits = state.regionVisits || {};
+  state.regionVisits[exp.region] = (state.regionVisits[exp.region] || 0) + 1;
   const prep = exp.prep || [];
   const startedInjured = !!state.injury;        // 다친 몸으로 출발했는가 (인과문용)
   const departWeather = weather.type;            // 출발 시점 날씨
@@ -6402,9 +6426,25 @@ function buildInsulationProp(wall, plus) {
   attachToWall(nrm[0], nrm[1], nrm[2], g);
   return g;
 }
+// #98(디렉터: "증축하면 화단·빗물받이랑 겹친다 — 다른 셸터 포함"): SHELTER_MOUNTS 앵커는 '원본 외벽'
+//   실측치인데 증축(w+2)이면 ±x 외벽이 1씩 밀려난다 — 원본 반폭 근처(-0.6)부터 바깥의 x 앵커를
+//   같은 쪽으로 1 밀어 벽·부착물 관계를 보존한다. 데이터 무수정(소비 시점 보정), 전 셸터 공통.
+//   z 앵커는 d 불변이라 그대로. 지붕 배치 박스(hw)는 지붕이 같이 넓어지므로 +1.
+function extMounts(shelterId) {
+  const m = SHELTER_MOUNTS[shelterId] || {};
+  if (!(state.mods?.[shelterId] || []).includes('extension')) return m;
+  const half = SHELTERS[shelterId].room.w / 2;
+  const shiftX = x => (typeof x === 'number' && Math.abs(x) >= half - 0.6) ? x + Math.sign(x) : x;
+  const out = { ...m };
+  if (m.eave) out.eave = { ...m.eave, x: shiftX(m.eave.x) };
+  if (m.ground) out.ground = { ...m.ground, x: shiftX(m.ground.x) };
+  if (m.roof) out.roof = { ...m.roof, hw: m.roof.hw + 1 };
+  if (m.wall && (m.wall.face === '+x' || m.wall.face === '-x')) out.wall = { ...m.wall, off: m.wall.off + 1 };
+  return out;
+}
 function addModProp(id) {
   const { w, d } = ROOM;
-  const mounts = SHELTER_MOUNTS[state.current] || {};
+  const mounts = extMounts(state.current);
   const type = MOD_MOUNT[id];
   if (id === 'solar') {
     if (mounts.roof) return buildSolarProp(mounts.roof);
@@ -11364,6 +11404,8 @@ window.__shelter = {
   openWardrobeModal, OUTFITS, // #86④ QA: 옷장
   wallProxyState: () => wallList.map(w => ({ show: w.group.visible, proxy: w.proxy ? w.proxy.visible : null })), // #97 QA
   avatarWalkTo: (x, z) => avatarSys._walkTo(x, z), // #86 QA: 경유점 라우팅 실증
+  // #98 QA: 개조 소품 월드 bb 덤프 (증축 겹침 판정용)
+  modPropBBoxes: () => { const out = {}; roomGroup.traverse(o => { if (o.userData && o.userData.modProp) { const b = new THREE.Box3().setFromObject(o); out[o.userData.modProp] = { minX: +b.min.x.toFixed(2), maxX: +b.max.x.toFixed(2), minZ: +b.min.z.toFixed(2), maxZ: +b.max.z.toFixed(2) }; } }); return out; },
   wlObstacleList: () => wlObstacles.slice(), // #95 QA: 등록 장애물 덤프 (프로브 침범 판정용)
   wildlifeWalkTo: (i, x, z) => wildlifeSys._walkTo(i, x, z), // #95 QA: 강제 횡단 (회피 실증)
   swayCount: () => swayProps.length,
