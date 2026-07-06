@@ -6,11 +6,11 @@ import { readFileSync } from 'node:fs';
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 // base 경로는 배포 대상에 따라 다르다:
-// - GitHub Pages(기본 build): 프로젝트 사이트 하위 경로 /Project-winter-Rep/
+// - GitHub Pages(기본 build): 프로젝트 사이트 하위 경로 /Project-winter/ (2026-07-06 CokeTown 개인 계정 이전 — 레포명 변경)
 // - Electron(file:// 로 로드): 반드시 상대경로 './' 이어야 함
 // - 로컬 dev/preview: 서버 루트 '/'
 export default defineConfig(({ command, mode }) => ({
-  base: mode === 'electron' ? './' : command === 'build' ? '/Project-winter-Rep/' : '/',
+  base: mode === 'electron' ? './' : command === 'build' ? '/Project-winter/' : '/',
   define: { __APP_VER__: JSON.stringify(pkg.version) },
   server: {
     host: true, // 0.0.0.0 바인딩 — 같은 네트워크의 휴대폰에서 접속 가능

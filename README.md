@@ -10,8 +10,8 @@
 
 | 플랫폼 | 링크 |
 |---|---|
-| 🌐 웹 (설치 없음) | https://project-winter-survival.github.io/Project-winter-Rep/ |
-| 💻 Windows / 📱 Android APK | [최신 릴리즈 다운로드](https://github.com/Project-winter-survival/Project-winter-Rep/releases/latest) |
+| 🌐 웹 (설치 없음) | https://coketown.github.io/Project-winter/ |
+| 💻 Windows / 📱 Android APK | [최신 릴리즈 다운로드](https://github.com/CokeTown/Project-winter/releases/latest) |
 
 ## 📚 문서
 

@@ -3,7 +3,7 @@
 param(
   [Parameter(Mandatory = $true)][string]$Tag,
   [Parameter(Mandatory = $true)][string[]]$Files,
-  [string]$Repo = 'Project-winter-survival/Project-winter-Rep',
+  [string]$Repo = 'CokeTown/Project-winter',
   [string]$Name = '',
   [string]$Notes = ''
 )

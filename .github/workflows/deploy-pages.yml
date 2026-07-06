@@ -24,6 +24,11 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm run build
+      # 개인 계정 이전(CokeTown/Project-winter, 2026-07-06): 새 레포는 Pages 미설정 상태 —
+      # enablement로 첫 배포가 소스(GitHub Actions)까지 자동 구성하게 한다.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
