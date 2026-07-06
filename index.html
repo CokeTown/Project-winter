@@ -67,9 +67,11 @@
     <button class="pixel-btn" id="btn-move" data-i18n-title="btn.move.title" title="이주"><img class="act-icon" src="img/icons/icon_act_move.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('🏠'))"><span class="btn-badge" id="move-badge" data-i18n-title="move.badge.title" title="이주 가능한 거처가 있습니다" style="display:none">!</span></button>
     <button class="pixel-btn" id="btn-craft" data-i18n-title="btn.craft.title" title="제작대"><img class="act-icon" src="img/icons/icon_act_craft.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('🔨'))"></button>
     <button class="pixel-btn" id="btn-clean" data-i18n-title="btn.clean.title" title="청소 (물 1 → 청결 +20)"><img class="act-icon" src="img/icons/icon_act_clean.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('🧹'))"></button>
-    <button class="pixel-btn" id="btn-sleep" data-i18n-title="btn.sleep.title" title="취침 — 내일 아침까지 자고 에너지 회복"><img class="act-icon" src="img/icons/icon_act_sleep.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('🛌'))"></button>
+    <!-- #87 스윕: 침대 그림만으로 '취침 버튼' 인지가 안 됨(디렉터) — Zzz 배지 상시 표기 -->
+    <button class="pixel-btn" id="btn-sleep" data-i18n-title="btn.sleep.title" title="취침 — 내일 아침까지 자고 에너지 회복"><img class="act-icon" src="img/icons/icon_act_sleep.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('🛌'))"><span class="zzz-badge" aria-hidden="true">Zzz</span></button>
     <button class="pixel-btn" id="btn-journal" data-i18n-title="btn.journal.title" title="일지 (도감·업적·통계)"><img class="act-icon" src="img/icons/icon_act_journal.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('📖'))"></button>
-    <button class="pixel-btn" id="btn-help" data-i18n-title="btn.help.title" title="튜토리얼"><img class="act-icon" src="img/icons/icon_act_help.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('🎓'))"></button>
+    <!-- #87 스윕: 기존 지도+나침반 그림이 '지도 버튼'으로 오독(디렉터) — 튜토리얼은 물음표 글리프로 -->
+    <button class="pixel-btn" id="btn-help" data-i18n-title="btn.help.title" title="튜토리얼"><span class="act-glyph" aria-hidden="true">?</span></button>
   </div>
 </div>
 
@@ -84,6 +86,9 @@
 </div>
 
 <div id="cam-ctrl">
+  <!-- #87 스윕: 설정 톱니를 스택 밖 fixed(top:96px)에서 스택 첫 버튼으로 편입 — 세로폰 배율에서
+       회전 버튼과 겹쳐 오탭 나던 실기기 신고. 표시 여부(터치 전용)는 기존 JS 그대로. -->
+  <button class="cam-btn" id="btn-gear" data-i18n-title="btn.gear.title" title="설정" style="display:none"><img class="sys-icon" src="img/icons/icon_sys_settings.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('⚙️'))"></button>
   <button class="cam-btn" id="cam-rotl" data-i18n-title="cam.rotl.title" title="시점 좌회전 (Q)">⟲</button>
   <button class="cam-btn" id="cam-rotr" data-i18n-title="cam.rotr.title" title="시점 우회전 (E)">⟳</button>
   <button class="cam-btn" id="cam-zin" data-i18n-title="cam.zin.title" title="줌 인">＋</button>
@@ -96,8 +101,6 @@
 <div id="pause-ind" data-i18n="pause.ind">⏸ 일시정지</div>
 <!-- #14 게임패드 가상 커서 — 패드 입력 시에만 표시(마우스 이동 시 숨김) -->
 <div id="pad-cursor" aria-hidden="true"></div>
-<button class="cam-btn" id="btn-gear" data-i18n-title="btn.gear.title" title="설정" style="display:none"><img class="sys-icon" src="img/icons/icon_sys_settings.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('⚙️'))"></button>
-
 <button class="pixel-btn danger" id="btn-cancel-place" data-i18n="btn.cancelPlace">✖ 배치 취소</button>
 
 <div class="panel" id="exp-panel">

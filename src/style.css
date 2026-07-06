@@ -69,6 +69,18 @@
   button.pixel-btn:disabled { opacity: 0.45; cursor: not-allowed; }
   /* 이주 가능 배지 — #btn-move 우상단 절대배치 (버튼에 relative 부여) */
   button.pixel-btn { position: relative; }
+  /* #87 스윕: 취침 버튼 Zzz 배지(차분한 톤 — 경고 배지와 구분) + 튜토리얼 ? 글리프(지도 오독 해소) */
+  .zzz-badge {
+    position: absolute; top: -6px; right: -4px;
+    padding: 1px 3px; font-size: 9px; line-height: 1; font-weight: bold;
+    background: #2c3444; color: #cfe0ff; border: 1px solid #10141c; border-radius: 4px;
+    pointer-events: none; letter-spacing: 0.5px;
+  }
+  .act-glyph {
+    width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: bold; color: var(--accent); pointer-events: none;
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  }
   .btn-badge {
     position: absolute; top: -5px; right: -5px;
     min-width: 15px; height: 15px; padding: 0 3px;
@@ -834,12 +846,8 @@
   #title-tools { display: flex; gap: 8px; margin-top: 8px; }
   #title-tools .pixel-btn { flex: 1; font-size: 14px; padding: 6px 0; }
 
-  /* ── v0.9.1: 모바일 설정 진입 = 우측 상단 톱니 (PC는 ESC 전용) ── */
-  #btn-gear {
-    position: fixed; top: 96px; right: 10px; z-index: 45;
-    zoom: var(--uiz);
-  }
-  @media (max-height: 420px) { #btn-gear { top: 64px; right: 6px; } }
+  /* ── 모바일 설정 진입 톱니 — #87 스윕: fixed 좌표(top:96px)가 세로폰 배율에서 cam-ctrl 회전 버튼과
+     겹쳐 오탭 나던 실기기 신고 → 스택 첫 버튼으로 편입(index.html). 위치 규칙 불필요, 표시 토글은 JS 그대로. ── */
   body.title-mode #btn-gear { display: none !important; }
   /* 인게임 전용 💾 저장 버튼 — 타이틀 설정 창(#settings-screen)에선 숨김 (유령 세이브 방지) */
   body.title-mode #btn-save-now { display: none !important; }

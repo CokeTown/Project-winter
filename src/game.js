@@ -2583,6 +2583,8 @@ const SHELTERS = {
       tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 승강장 바닥재 대상 (conc.clone으로 벽 타일과 분리)
       const tileMat = wallPhong({ map: subwayTileTex });
       tileMat.userData.shared = true;
+      // #87 스윕: 조명 전무 시 벽 존재 자체가 안 읽히던 것 — 타일에 미세 자기조도(벽지 교체돼도 유지).
+      tileMat.emissive = new THREE.Color(0x0a0c10);
       tagDecoWall(tileMat); // (B-①) 승강장 안쪽 타일 벽 = 벽지 대상 (기둥도 같은 타일 — 함께 교체됨)
       // 뒷벽(타일) + 역명판 + 노선도
       const back = new THREE.Group();
@@ -2622,6 +2624,19 @@ const SHELTERS = {
       roomGroup.add(hang);
       // 승강장 가장자리 경고선 + 선로
       B(roomGroup, w + 0.6, 0.06, 0.3, 0xa89a4a, 0, 0.03, d / 2 + 0.15);
+      // #87 스윕(디렉터: "공간이 안 읽힘"): 지하 무드는 지키되 윤곽 최소 조도 —
+      //   기둥 비상등 2개(주황 픽스처) + 중앙 저강도 점광 1개 + 뒷벽 출구 표지(연녹 자기발광).
+      //   조명 예산: PointLight 1개 추가(그림자 없음), 나머지는 emissive 픽스처.
+      for (const px of [-w / 4, w / 4]) {
+        const fx = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.1, 0.12),
+          new THREE.MeshLambertMaterial({ color: 0xff9a4a, emissive: 0xb55a20, emissiveIntensity: 0.9 }));
+        fx.position.set(px, h - 0.32, 0.4 + 0.36); roomGroup.add(fx);
+      }
+      const emg = new THREE.PointLight(0xff9a4a, 0.34, 9.5, 1.6);
+      emg.position.set(0, h - 0.5, 0.4); roomGroup.add(emg);
+      const exitSign = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.3, 0.08),
+        new THREE.MeshLambertMaterial({ color: 0x5fae6a, emissive: 0x2c6a3a, emissiveIntensity: 1.1 }));
+      exitSign.position.set(-w / 3, h - 0.42, -d / 2 + 0.18); roomGroup.add(exitSign);
       blockers = [
         { x: -w / 4, z: 0.4, w: 0.7, d: 0.7 },
         { x: w / 4, z: 0.4, w: 0.7, d: 0.7 },
@@ -2631,10 +2646,11 @@ const SHELTERS = {
       // 지하: 어둠 + 선로 + 터널 아치
       const rand = seededRand(606);
       const { w, d, h } = ROOM;
-      // 선로 바닥 (승강장보다 낮음)
-      B(envRoot, w + 14, 0.2, 3.4, 0x17181a, 0, -1.0, d / 2 + 2.1);
+      // 선로 바닥 (승강장보다 낮음) — #87: 순흑 덩어리로 읽히던 것(디렉터 "검은 벽") → 한 단 밝혀
+      //   '아래로 꺼진 공간'으로. 레일도 하이라이트 한 단 — 어둠 속에서 선로가 선로로 읽힌다.
+      B(envRoot, w + 14, 0.2, 3.4, 0x1e2026, 0, -1.0, d / 2 + 2.1);
       for (const rz of [d / 2 + 1.4, d / 2 + 2.8]) {
-        B(envRoot, w + 14, 0.1, 0.14, 0x4a4640, 0, -0.72, rz);
+        B(envRoot, w + 14, 0.1, 0.14, 0x5c564a, 0, -0.72, rz);
       }
       for (let i = 0; i < 18; i++) B(envRoot, 0.5, 0.08, 1.8, 0x33302a, -w / 2 - 6 + i * 1.3, -0.82, d / 2 + 2.1);
       // 터널 아치 입구 (양쪽)
@@ -3314,6 +3330,15 @@ const SHELTERS = {
     buildRoom() {
       const { w, d, h } = ROOM;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), wallPhong({ map: concreteTex }));
+      // #87 스윕(디렉터 신고 "중간 글리터링"): 야간 점광 아래 Phong 스펙큘러 풀이 디더와 간섭해 동심 링 밴딩
+      //   → 무광 콘크리트로. 공유 재질 오염 방지를 위해 전용 클론(낮/타 셸터 콘크리트는 불변).
+      floor.material = floor.material.clone();
+      floor.material.userData.shared = false;
+      floor.material.specular.setHex(0x050505);
+      floor.material.shininess = 3;
+      // 무광만으론 부족(재검증): 링의 본체는 야간 저조도 그라데이션이 디더 양자화 경계에서 동심 밴딩으로
+      //   갈라지는 것 — 미세 자기조도로 바닥을 양자화 심연 위로 올려 밴드를 익사시킨다(무드 영향 최소).
+      floor.material.emissive = new THREE.Color(0x0b0c0e);
       floor.position.y = -0.15; floor.receiveShadow = true; tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 관제탑 바닥재 대상
       // 지지 기둥(탑 몸통) — 방 아래로 길게
       B(roomGroup, w * 0.7, 16, d * 0.7, 0x4a4640, 0, -8, 0);
@@ -10504,6 +10529,9 @@ function updateUiScale() {
     if (s < minScale) s = minScale;
   }
   s *= TEXT_BOOST * (opts.fontScale || 1); // 가독성 부스트 + 접근성 폰트 3단(REQ-ACC-01)
+  // #87 스윕(디렉터 실기기): 세로 모바일에서 데스크톱용 부스트가 그대로 먹어 "내 집이 안 보일" 만큼 UI가 큼
+  //   → 세로(폭<높이) + 좁은 폭에서만 16% 축소. 기준 폰트 11px×1.05≈11.5px — 가독 하한은 지킨다.
+  if (isMobileEnv && innerHeight > innerWidth && innerWidth < 560) s *= 0.84;
   document.documentElement.style.setProperty('--uiz', s.toFixed(3));
   return s;
 }
