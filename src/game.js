@@ -8,6 +8,7 @@ import { PROJECTS } from './data/projects.js';
 // 콘텐츠 데이터 분리 Phase 1 (순수 테이블 추출) — 로직은 game.js에 그대로.
 import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS, OUTFITS } from './data/items.js';
 import { DISTRICTS, REGIONS } from './data/world.js';
+import { SHELTER_META } from './data/shelters.js'; // 셸터 데이터 필드(분리 Phase 1) — build 함수는 아래 SHELTERS에서 병합
 import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, BROADCASTS, SKETCHES } from './data/lore.js';
 import { makeEvents } from './data/events.js';
 import { makeDecoTex } from './data/decotex.js';
@@ -1635,15 +1636,7 @@ function groundPlane(colFn, hFn, size = 300, seg = 52) {
 
 const SHELTERS = {
   container: {
-    name: '버려진 컨테이너', nameEn: 'Abandoned Container', emoji: '📦', unlockAt: 0, viewH: 14, ceilY: 2.1,
-    desc: '황무지 한가운데 버려진 화물 컨테이너. 좁지만 비바람은 막아준다.',
-    descEn: 'A cargo container abandoned in the middle of the wasteland. Cramped, but it keeps out the wind and rain.',
-    baseComfort: 2,
-    cold: 8, limits: '🥶 얇은 철판 — 비/눈 오는 날 쾌적함 -8', limitsEn: '🥶 Thin steel — comfort -8 on rainy/snowy days',
-    weatherPool: ['clear', 'ash', 'ash', 'snow'],
-    perk: { expBonus: 0.05, label: '🧭 길목의 거점 — 탐험 성공률 +5%p', labelEn: '🧭 Crossroads outpost — expedition success +5%p' },
-    room: { w: 6.4, d: 2.9, h: 2.4 },
-    mood: { fog: 0x2e2820, fogNear: 20, fogFar: 52, skyH: 0x453a2d, skyZ: 0x15161e, hemiSky: 0x8a8272, hemiGround: 0x4c443a, hemiInt: 0.72, moonC: 0xc9c0a8, moonInt: 0.68, stars: 0.5 },
+    ...SHELTER_META.container, // 데이터 필드는 data/shelters.js (분리 Phase 1). 아래는 렌더 함수만.
     buildRoom() {
       const { w, d, h } = ROOM;
       const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ map: plywoodTex }));
