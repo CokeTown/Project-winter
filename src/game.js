@@ -6353,7 +6353,7 @@ const SHELTER_MOUNTS = {
   },
   rooftop: { // 옥탑 리워크(#53): 5.6×4.4×2.4 가벽 방 + 슬레이트 지붕(상면 ~2.5). 옥상 바닥 = y0.
     roof: { y: 2.52, cx: 0, cz: 0, hw: 2.5, hd: 1.9, cullJoin: true },
-    eave: { y: 2.4, x: 2.88, z: 2.48, dir: [1, 1] }, // 방 앞모서리(+x/+z) 처마
+    eave: { y: 2.4, x: 2.88, z: -2.48, dir: [1, -1] }, // 뒷모서리(+x/-z) 처마 — 앞은 텃밭 마당(v1.6 조합 감사: 물통이 텃밭 안에 서던 것 이전)
     wall: { face: '+x', y: 2.4, len: 4.4, off: 2.9 }, // 마당 쪽 외벽 (단열재 등 폴백)
     groundY: 0,
   },
@@ -6780,8 +6780,12 @@ function buildRailSegments(w, d, h) {
   }
   envRoot.add(g);
 }
+// v1.6 조합 감사 검거: 상위 티어(req 증설형)는 하위를 보유한 채 설치된다 — 소품까지 둘 다 그리면
+//   같은 앵커에 물통 2개/단열재 2겹이 중첩(전 셸터, 실플레이 도달). 시각은 상위가 자리를 대체한다.
+const MOD_SUPERSEDE = { raincatch: 'bigraincatch', insulation: 'insulationPlus' };
 function buildModProps() {
   for (const id of (state.mods?.[state.current] || [])) {
+    if (MOD_SUPERSEDE[id] && (state.mods?.[state.current] || []).includes(MOD_SUPERSEDE[id])) continue; // 상위 티어가 대체
     // #87 스윕(디렉터 신고: 옥탑에 온천): 세이브에 뭐가 들어있든 이 셸터에서 불가능한 개조(only/not)는
     //   그리지 않는다 — QA 만렙 세이브·구세이브 오염 방어. 효과 계산이 아니라 시각 소품만 게이트(안전).
     if (SHELTER_MODS[id] && !modAvailable(id, state.current)) continue;
