@@ -5033,13 +5033,13 @@ const MAP_MARKERS = {
   industrial:  { x: 18, y: 56 },  // 좌하 공장
   slum:        { x: 78, y: 57 },  // 우하 판자촌
   // 1.1 항구 구역 — 지도 하단(해안/부두 쪽). 기존 4지역과 같은 마커 스타일. (map_paper 하단 항구 그림 기준 조정 예정)
-  harborYard:  { x: 44, y: 82 },  // 하단 중앙 야적장(컨테이너 부두)
-  fishMarket:  { x: 62, y: 86 },  // 하단 우측 수산시장(선착장)
-  // 1.3 고원 구역 — 지도 우상단(산맥 쪽). 리조트 폐허 한 곳. (map_paper 우상단 산 그림 기준 조정 예정)
-  resort:      { x: 88, y: 10 },  // 우상단 산정 리조트
-  // 1.4 금지 구역 — 지도 우하단 봉쇄선 너머. 검문소 → 그 안쪽 연구동(폭심지). (map_paper 우하단 기준 조정 예정)
-  checkpoint:  { x: 84, y: 78 },  // 우하단 봉쇄선 검문소
-  lab:         { x: 92, y: 88 },  // 검문소 안쪽 폭심지 연구동
+  // #87 스윕(디렉터 신고: 지역 확장 후 마커·배지가 종이 밖으로 잘림): 확장 5종을 안전영역(x≤86, y 14~80)으로
+  //   클램프 재배치 — 상대 지리(항구 하단·리조트 우상·금지구역 우하 봉쇄선 너머)는 유지. #85 리워크 전 임시 가드.
+  harborYard:  { x: 44, y: 78 },  // 하단 중앙 야적장(컨테이너 부두)
+  fishMarket:  { x: 62, y: 80 },  // 하단 우측 수산시장(선착장)
+  resort:      { x: 84, y: 14 },  // 우상단 산정 리조트
+  checkpoint:  { x: 80, y: 74 },  // 우하단 봉쇄선 검문소
+  lab:         { x: 86, y: 80 },  // 검문소 안쪽 폭심지 연구동
 };
 // 항구 지역 해금 게이트: 항구 셸터(예인선)를 해금한 뒤부터 지도에 항구 구역이 뜬다.
 // 기존 4지역은 항상 해금(true). ARC-03 마커 문법 그대로, 노출 조건만 얹는다.
@@ -6104,8 +6104,15 @@ function addModProp(id) {
       const s = new THREE.Mesh(new THREE.SphereGeometry(0.16 + pr() * 0.1, 6, 5), new THREE.MeshLambertMaterial({ color: 0xeef4f6, transparent: true, opacity: 0.28 }));
       s.position.set((pr() - 0.5) * 1.4, 0.5 + pr() * 0.7, (pr() - 0.5) * 1.0); g.add(s);
     }
-    g.position.set(w / 2 + 1.4, mounts.groundY ?? 0, -d / 2 + 1.6); // #87: 온천도 지형 위 (로지 -0.88)
+    // #87 스윕(디렉터 "온천이면 따로 있어야지"): 벽에 붙던 것을 한 발 이격 + 징검돌 3장으로 '따로 있는 노천탕'.
+    const oy = mounts.groundY ?? 0;
+    g.position.set(w / 2 + 2.3, oy, -d / 2 + 1.9);
     roomGroup.add(g);
+    for (let i = 0; i < 3; i++) {
+      const st = B(roomGroup, 0.42, 0.09, 0.34, [0x6a655c, 0x746e64, 0x5a544a][i],
+        w / 2 + 0.55 + i * 0.55, oy + 0.045, -d / 2 + 1.55 + i * 0.12);
+      st.rotation.y = (i - 1) * 0.22; st.receiveShadow = true;
+    }
   } else if (id === 'shelf') {
     B(roomGroup, 0.06, 1.4, ROOM.d * 0.7, 0x77543a, -w / 2 + 0.12, 0.7, 0);
     B(roomGroup, 0.4, 0.05, ROOM.d * 0.7, 0x8a6a48, -w / 2 + 0.28, 1.1, 0);
@@ -6283,6 +6290,9 @@ function buildRailSegments(w, d, h) {
 }
 function buildModProps() {
   for (const id of (state.mods?.[state.current] || [])) {
+    // #87 스윕(디렉터 신고: 옥탑에 온천): 세이브에 뭐가 들어있든 이 셸터에서 불가능한 개조(only/not)는
+    //   그리지 않는다 — QA 만렙 세이브·구세이브 오염 방어. 효과 계산이 아니라 시각 소품만 게이트(안전).
+    if (SHELTER_MODS[id] && !modAvailable(id, state.current)) continue;
     // QA/컬링 추적용: 소품 루트 그룹에 modProp 태그를 붙인다(게임 로직/렌더 무영향 — userData 태그일 뿐).
     //   단열재처럼 벽 그룹으로 재부모화되는 소품은 반환값으로 식별, 나머지는 roomGroup 신규 자식을 스캔.
     const before = roomGroup.children.length;
