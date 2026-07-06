@@ -23,6 +23,7 @@ export function makeAvatarSystem(ctx) {
     THREE, B, lamb, disposeDeep, shadowDirty,
     scene, state, items, DEFS,
     getRoom, getBlockers, footprintOf, gameHour, opts,
+    OUTFITS, getOutfit, // #86④ 복장 (없으면 기본 팔레트 — 하위호환)
   } = ctx;
 
   const PX = 0.02;                  // cat.js 공유 복셀 단위
@@ -42,6 +43,9 @@ export function makeAvatarSystem(ctx) {
     skin: 0xd8b090, scarf: 0xb8862e, beanie: 0x4a3f33, eye: 0x1a1410,
   };
   function buildMesh() {
+    // #86④ 복장: 기본 팔레트 위에 착용 의류(OUTFITS[state.outfit].pal) 오버라이드 — 제작으로 획득, 옷장에서 착용
+    const ov = (OUTFITS && getOutfit && OUTFITS[getOutfit()]) ? OUTFITS[getOutfit()].pal : null;
+    const P = ov ? { ...PAL, ...ov } : PAL;
     const g = new THREE.Group();
     const legH = LEG_H, torsoH = 30 * PX * s;
     const legs = {};
@@ -49,34 +53,34 @@ export function makeAvatarSystem(ctx) {
       const leg = new THREE.Group();
       leg.position.set(lx * PX * s, legH, 0);
       g.add(leg); legs[key] = leg;
-      B(leg, 5 * PX * s, legH - 4 * PX * s, 6 * PX * s, PAL.pants, 0, -(legH - 4 * PX * s) / 2, 0);
-      B(leg, 5.6 * PX * s, 4 * PX * s, 8.5 * PX * s, PAL.boots, 0, -legH + 2 * PX * s, 1 * PX * s);
-      B(leg, 6 * PX * s, 1.2 * PX * s, 9 * PX * s, PAL.sole, 0, -legH + 0.6 * PX * s, 1 * PX * s);
+      B(leg, 5 * PX * s, legH - 4 * PX * s, 6 * PX * s, P.pants, 0, -(legH - 4 * PX * s) / 2, 0);
+      B(leg, 5.6 * PX * s, 4 * PX * s, 8.5 * PX * s, P.boots, 0, -legH + 2 * PX * s, 1 * PX * s);
+      B(leg, 6 * PX * s, 1.2 * PX * s, 9 * PX * s, P.sole, 0, -legH + 0.6 * PX * s, 1 * PX * s);
     }
     const body = new THREE.Group();
     body.position.set(0, legH, 0);
     g.add(body);
-    B(body, 13 * PX * s, torsoH, 8.5 * PX * s, PAL.coat, 0, torsoH / 2, 0);
-    B(body, 15 * PX * s, 7 * PX * s, 10 * PX * s, PAL.coatHem, 0, 3.5 * PX * s, 0);
-    B(body, 1.2 * PX * s, torsoH - 8 * PX * s, 0.8 * PX * s, PAL.coatHem, 0, torsoH / 2 - 2 * PX * s, 4.4 * PX * s);
+    B(body, 13 * PX * s, torsoH, 8.5 * PX * s, P.coat, 0, torsoH / 2, 0);
+    B(body, 15 * PX * s, 7 * PX * s, 10 * PX * s, P.coatHem, 0, 3.5 * PX * s, 0);
+    B(body, 1.2 * PX * s, torsoH - 8 * PX * s, 0.8 * PX * s, P.coatHem, 0, torsoH / 2 - 2 * PX * s, 4.4 * PX * s);
     const arms = {};
     for (const [key, ax] of [['l', -8.2], ['r', 8.2]]) {
       const arm = new THREE.Group();
       arm.position.set(ax * PX * s, torsoH - 3 * PX * s, 0);
       body.add(arm); arms[key] = arm;
-      B(arm, 4.2 * PX * s, 20 * PX * s, 5.5 * PX * s, PAL.sleeve, 0, -10 * PX * s, 0);
-      B(arm, 3.4 * PX * s, 3.4 * PX * s, 4 * PX * s, PAL.skin, 0, -21 * PX * s, 0);
+      B(arm, 4.2 * PX * s, 20 * PX * s, 5.5 * PX * s, P.sleeve, 0, -10 * PX * s, 0);
+      B(arm, 3.4 * PX * s, 3.4 * PX * s, 4 * PX * s, P.skin, 0, -21 * PX * s, 0);
     }
-    B(body, 11 * PX * s, 4 * PX * s, 9.5 * PX * s, PAL.scarf, 0, torsoH - 1 * PX * s, 0);
-    B(body, 3.6 * PX * s, 9 * PX * s, 1.4 * PX * s, PAL.scarf, 2.4 * PX * s, torsoH - 7 * PX * s, 4.6 * PX * s);
+    B(body, 11 * PX * s, 4 * PX * s, 9.5 * PX * s, P.scarf, 0, torsoH - 1 * PX * s, 0);
+    B(body, 3.6 * PX * s, 9 * PX * s, 1.4 * PX * s, P.scarf, 2.4 * PX * s, torsoH - 7 * PX * s, 4.6 * PX * s);
     const head = new THREE.Group();
     head.position.set(0, torsoH + 1.5 * PX * s, 0);
     body.add(head);
-    B(head, 9 * PX * s, 9.5 * PX * s, 8.5 * PX * s, PAL.skin, 0, 5 * PX * s, 0);
-    B(head, 10 * PX * s, 5 * PX * s, 9.5 * PX * s, PAL.beanie, 0, 9.5 * PX * s, -0.4 * PX * s);
-    B(head, 10.4 * PX * s, 2 * PX * s, 9.9 * PX * s, PAL.beanie, 0, 7.2 * PX * s, -0.4 * PX * s);
+    B(head, 9 * PX * s, 9.5 * PX * s, 8.5 * PX * s, P.skin, 0, 5 * PX * s, 0);
+    B(head, 10 * PX * s, 5 * PX * s, 9.5 * PX * s, P.beanie, 0, 9.5 * PX * s, -0.4 * PX * s);
+    B(head, 10.4 * PX * s, 2 * PX * s, 9.9 * PX * s, P.beanie, 0, 7.2 * PX * s, -0.4 * PX * s);
     for (const ex of [-2, 2])
-      B(head, 1.1 * PX * s, 1.4 * PX * s, 0.5 * PX * s, PAL.eye, ex * PX * s, 4.6 * PX * s, 4.3 * PX * s);
+      B(head, 1.1 * PX * s, 1.4 * PX * s, 0.5 * PX * s, P.eye, ex * PX * s, 4.6 * PX * s, 4.3 * PX * s);
     g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
     return { g, parts: { body, head }, legs, arms };
   }
@@ -319,11 +323,20 @@ export function makeAvatarSystem(ctx) {
     av.mode = 'warm'; av.timer = 5 + Math.random() * 6; av.tgt = null;
   }
 
+  // #86④ 옷 갈아입기: 제자리 재구축 (위치/방향 보존 — 옷장에서 입는 즉시 반영)
+  function refreshOutfit() {
+    if (!av) return respawn();
+    const p = av.g.position.clone(), ry = av.g.rotation.y;
+    respawn();
+    av.g.position.set(p.x, 0, p.z);
+    av.g.rotation.y = ry;
+  }
+
   return {
-    respawn, despawn, update, wakeOnBed, blocksPlacement,
+    respawn, despawn, update, wakeOnBed, blocksPlacement, refreshOutfit,
     getGroup: () => group,
     exists: () => !!av,
-    _debug: () => av ? { mode: av.mode, x: +av.g.position.x.toFixed(2), z: +av.g.position.z.toFixed(2), y: +av.g.position.y.toFixed(2), vis: av.g.visible, use: av.use ? (av.use.defId || 'rect') : null } : null,
+    _debug: () => av ? { mode: av.mode, x: +av.g.position.x.toFixed(2), z: +av.g.position.z.toFixed(2), y: +av.g.position.y.toFixed(2), vis: av.g.visible, use: av.use ? (av.use.defId || 'rect') : null, outfit: getOutfit ? getOutfit() : 'default' } : null,
     _forceNext: () => pickNext(), // QA: 행동 추첨 강제
   };
 }

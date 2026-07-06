@@ -90,6 +90,23 @@ export const CAT_POSES = {
 };
 export const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2 };
 
+// ---- #86④ 복장 (디렉터 UX 결정: 생성 시 X — 천을 구해 '만들어 입는' 제작 문법) ----
+//   pal = 아바타 복셀 팔레트 오버라이드(coat/coatHem/sleeve/beanie/scarf). default는 시작 복장.
+//   획득은 CRAFTS(아래), 착용은 옷장(툴바 👕/아바타 탭). 세이브: state.outfits(보유)/state.outfit(착용).
+export const OUTFITS = {
+  default:  { name: '방한 코트',   nameEn: 'Winter Coat',   emoji: '🧥', pal: {} },
+  navy:     { name: '네이비 코트', nameEn: 'Navy Coat',     emoji: '🧥',
+    pal: { coat: 0x3e4a5c, coatHem: 0x333d4c, sleeve: 0x394454, scarf: 0xb84a3a, beanie: 0x2e3540 } },
+  wine:     { name: '와인 코트',   nameEn: 'Wine Coat',     emoji: '🧥',
+    pal: { coat: 0x6a3a3e, coatHem: 0x553034, sleeve: 0x613639, scarf: 0xd9c9a8, beanie: 0x4a2c30 } },
+  forest:   { name: '숲 파카',     nameEn: 'Forest Parka',  emoji: '🧥',
+    pal: { coat: 0x44523a, coatHem: 0x384430, sleeve: 0x3f4c36, scarf: 0xd0812f, beanie: 0x333f2c } },
+  cream:    { name: '크림 파카',   nameEn: 'Cream Parka',   emoji: '🧥',
+    pal: { coat: 0xcfc4ae, coatHem: 0xb4a98f, sleeve: 0xc4b9a2, scarf: 0x3e4a5c, beanie: 0x6a5a44 } },
+  charcoal: { name: '차콜 코트',   nameEn: 'Charcoal Coat', emoji: '🧥',
+    pal: { coat: 0x3a3a40, coatHem: 0x2f2f35, sleeve: 0x35353b, scarf: 0xb8862e, beanie: 0x2a2a30 } },
+};
+
 export const CRAFTS = [
   { out: { res: 'bandage', n: 1 }, cost: { cloth: 2 }, hint: '기본 치료품', hintEn: 'Basic first aid' },
   { out: { res: 'candle', n: 2 }, cost: { cloth: 1, fuel: 1 }, hint: '조명 연료', hintEn: 'Lighting fuel' },
@@ -120,4 +137,10 @@ export const CRAFTS = [
   { out: { furn: 'heater' }, cost: { parts: 5, material: 3, cloth: 2 }, hint: '한파 방어 + 겨울 쾌적 (연료 1/일)', hintEn: 'Cold-snap defense + winter comfort (fuel 1/day)' },
   // 1.1 염장 — 신선식품 2 + 소금 1 → 보존식 2. 냉장고 없는 초반의 부패 카운터(여름 대비).
   { out: { res: 'canned', n: BAL.harbor.saltCureOut }, cost: { food: BAL.harbor.saltCureFood, salt: BAL.harbor.saltCureSalt }, hint: '소금으로 절인 보존식 — 여름 부패를 이긴다', hintEn: 'Salt-cured preserves — beats summer spoilage' },
+  // #86④ 의류 — 만들면 옷장(state.outfits)에 영구 추가, 착용은 옷장에서. 염색 재료로 개성(소금/연료=숯).
+  { out: { outfit: 'navy' }, cost: { cloth: 3 }, hint: '옷장에 추가 — 짙은 밤바다색', hintEn: 'Added to wardrobe — deep sea navy' },
+  { out: { outfit: 'wine' }, cost: { cloth: 3, salt: 1 }, hint: '옷장에 추가 — 소금 매염 와인빛', hintEn: 'Added to wardrobe — salt-mordant wine' },
+  { out: { outfit: 'forest' }, cost: { cloth: 2, material: 1 }, hint: '옷장에 추가 — 수풀 위장색', hintEn: 'Added to wardrobe — thicket camo' },
+  { out: { outfit: 'cream' }, cost: { cloth: 4 }, hint: '옷장에 추가 — 밝은 생지 그대로', hintEn: 'Added to wardrobe — undyed cream' },
+  { out: { outfit: 'charcoal' }, cost: { cloth: 3, fuel: 1 }, hint: '옷장에 추가 — 숯검정 물들임', hintEn: 'Added to wardrobe — charcoal-dyed' },
 ];

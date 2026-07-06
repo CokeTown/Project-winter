@@ -6,7 +6,7 @@ import { DEFS } from './data/furniture.js';
 import { BAL } from './data/balance.js';
 import { PROJECTS } from './data/projects.js';
 // 콘텐츠 데이터 분리 Phase 1 (순수 테이블 추출) — 로직은 game.js에 그대로.
-import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS } from './data/items.js';
+import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS, OUTFITS } from './data/items.js';
 import { DISTRICTS, REGIONS } from './data/world.js';
 import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, BROADCASTS, SKETCHES } from './data/lore.js';
 import { makeEvents } from './data/events.js';
@@ -5767,7 +5767,49 @@ const avatarSys = makeAvatarSystem({
   THREE, B, lamb, disposeDeep, shadowDirty,
   scene, state, items, DEFS,
   getRoom: () => ROOM, getBlockers: () => blockers, footprintOf, gameHour, opts,
+  OUTFITS, getOutfit: () => state.outfit || 'default', // #86④ 복장
 });
+
+// #86④ 옷장 — 보유 의류(제작으로 획득) 목록에서 탭하여 갈아입기. 진입: 툴바 👕 버튼 + 아바타 탭.
+function openWardrobeModal() {
+  if (paused) { toast(t('pause.blocked')); return; }
+  const ownedList = state.outfits || ['default'];
+  const cur = state.outfit || 'default';
+  const rows = Object.keys(OUTFITS).map(id => {
+    const o = OUTFITS[id];
+    const owned = ownedList.includes(id) || id === 'default';
+    const sel = id === cur;
+    const sw = (c) => `<span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:#${(c ?? 0x5a5648).toString(16).padStart(6, '0')};margin-right:3px;vertical-align:-1px"></span>`;
+    return `
+      <div class="prep-row ${sel ? 'sel' : owned ? '' : 'no'}" style="cursor:default">
+        <span>${o.emoji} ${LName(o)}</span>
+        <span class="p-eff" style="font-size:10px">${sw(o.pal.coat)}${sw(o.pal.scarf ?? 0xb8862e)}${owned ? '' : t('wardrobe.locked')}</span>
+        ${sel
+          ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('wardrobe.wearing')}</span>`
+          : owned
+            ? `<button class="pixel-btn" data-wear="${id}" style="margin-left:6px">${t('wardrobe.wear')}</button>`
+            : ''}
+      </div>`;
+  }).join('');
+  openModal(`👕 ${t('wardrobe.title')}`, `
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('wardrobe.hint')}</div>
+    ${rows}`);
+  $('modal-body').querySelectorAll('button[data-wear]').forEach(b => b.addEventListener('click', () => {
+    state.outfit = b.dataset.wear;
+    avatarSys.refreshOutfit();
+    playSfx('craft');
+    toast(t('wardrobe.worn', { name: LName(OUTFITS[b.dataset.wear]) }));
+    scheduleSave();
+    openWardrobeModal(); // 착용 배지 갱신
+  }));
+}
+// 아바타 탭 → 옷장 (고양이 탭 선례 — 배치 모드에선 오작동 방지 차 미동작)
+function pickAvatar(e) {
+  if (!avatarSys.exists()) return false;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  return raycaster.intersectObject(avatarSys.getGroup(), true).length > 0;
+}
 
 /* ============================================================
    세계관 메모 & 라디오 방송 수집 (#35 · #12의 축)
@@ -6684,14 +6726,20 @@ function openCraftModal() {
   const rows = CRAFTS.map((c, i) => {
     const outLabel = c.out.res
       ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`
-      : `${furnIcon(c.out.furn)} ${LName(DEFS[c.out.furn])}`;
-    const ok = resHasAll(c.cost);
+      : c.out.outfit
+        ? `${OUTFITS[c.out.outfit].emoji} ${LName(OUTFITS[c.out.outfit])}`
+        : `${furnIcon(c.out.furn)} ${LName(DEFS[c.out.furn])}`;
+    // #86④: 이미 옷장에 있는 의류는 재제작 불가 (영구 소유물 — 중복 소모 방지)
+    const owned = c.out.outfit && (state.outfits || ['default']).includes(c.out.outfit);
+    const ok = !owned && resHasAll(c.cost);
     return `
       <div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
         <span>${outLabel}</span>
         <span class="p-eff" style="font-size:10px">${LHint(c)}</span>
-        <span class="p-cost">${costLabel(c.cost)}</span>
-        <button class="pixel-btn" data-craft="${i}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('craft.make')}</button>
+        <span class="p-cost">${owned ? '' : costLabel(c.cost)}</span>
+        ${owned
+          ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('craft.owned')}</span>`
+          : `<button class="pixel-btn" data-craft="${i}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('craft.make')}</button>`}
       </div>`;
   }).join('');
   // 현재 거처에 설치 가능한 개조
@@ -7009,12 +7057,21 @@ function openCraftModal() {
   $('modal-body').querySelectorAll('button[data-craft]').forEach(b =>
     b.addEventListener('click', () => {
       const c = CRAFTS[+b.dataset.craft];
+      if (c.out.outfit && (state.outfits || ['default']).includes(c.out.outfit)) return; // #86④ 이중 방어(버튼은 이미 숨김)
       if (!resConsumeAll(c.cost)) { toast(t('toast.needMaterial')); return; }
       let craftEmoji;
       if (c.out.res) {
         resAdd(c.out.res, c.out.n);
         craftEmoji = RESOURCES[c.out.res].emoji;
         toast(t('craft.doneRes', { emoji: craftEmoji, name: LName(RESOURCES[c.out.res]), n: c.out.n }));
+      } else if (c.out.outfit) {
+        // #86④ 의류: 옷장에 영구 추가 + 바로 갈아입기 (만든 옷을 그 자리에서 입는 게 손맛)
+        state.outfits = state.outfits || ['default'];
+        state.outfits.push(c.out.outfit);
+        state.outfit = c.out.outfit;
+        avatarSys.refreshOutfit();
+        craftEmoji = OUTFITS[c.out.outfit].emoji;
+        toast(t('craft.doneOutfit', { name: LName(OUTFITS[c.out.outfit]) }));
       } else {
         state.inventory[c.out.furn] = (state.inventory[c.out.furn] || 0) + 1;
         craftEmoji = DEFS[c.out.furn].emoji;
@@ -7022,12 +7079,13 @@ function openCraftModal() {
         renderInventoryBar();
       }
       state.stats.craft = (state.stats.craft || 0) + 1;
-      state.dayLog.notes.push(t('craft.noteRes', { name: c.out.res ? LName(RESOURCES[c.out.res]) : LName(DEFS[c.out.furn]) }));
+      state.dayLog.notes.push(t('craft.noteRes', { name: c.out.res ? LName(RESOURCES[c.out.res]) : c.out.outfit ? LName(OUTFITS[c.out.outfit]) : LName(DEFS[c.out.furn]) }));
       questProgress('craft');
       scheduleSave();
       renderResBar();
       playSfx('craft');
       spawnCraftFx(craftEmoji); // ④ 제작 손맛: 결과물 아이콘 떠오름 + 반짝임
+      if (c.out.outfit) openCraftModal(); // #86④: 보유 배지 즉시 반영 (재제작 버튼 잔류 방지)
       openCraftModal(); // 갱신
     }));
   $('modal-body').querySelectorAll('button[data-mod]').forEach(b =>
@@ -7811,6 +7869,7 @@ canvas.addEventListener('pointerdown', e => {
   if (placing) { moveGhost(placing, e); finishPlacing(); return; }
   if (!editMode && pickStairs(e)) return; // #55 배치 모드가 아닐 때만 계단 상호작용 (배치 중 오작동 방지)
   if (pickCat(e)) { if (!editMode) enterCatCloseup(); return; } // 쓰다듬기 + (비배치) 클로즈업 진입 — 히트 소비
+  if (!editMode && pickAvatar(e)) { openWardrobeModal(); return; } // #86④ 아바타 탭 = 옷장 (배치 중 제외)
   const hit = pickItem(e);
   if (hit) {
     // 배치 모드 OFF: 가구 선택/이동은 막고, 기능형(라디오/촛불 토글)만 실행.
@@ -10711,6 +10770,7 @@ updateClock();
 renderQuestCard();
 if (state.minimizedEvent && EVENTS[state.minimizedEvent]) showEventChip(state.minimizedEvent); // 로드 후 내려둔 이벤트 칩 복원
 $('btn-clean').addEventListener('click', cleanShelter);
+$('btn-wardrobe').addEventListener('click', openWardrobeModal); // #86④
 $('btn-edit').addEventListener('click', () => toggleEditMode());
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
 // P2-b: 자동 진행 토글 버튼 (cam-ctrl) — Day 10 미만이면 잠금 토스트, 아니면 opts.autoPlay 토글 + 체크박스 양방향 동기화
@@ -11276,6 +11336,7 @@ window.__shelter = {
   avatarRespawn: () => avatarSys.respawn(),
   avatarForceNext: () => avatarSys._forceNext(),          // #86② QA: 행동 추첨 강제 (상호작용 검증)
   avatarBlocks: (x, z) => avatarSys.blocksPlacement(x, z, { w: 1, d: 1 }), // #86③ QA: 설치 가드 판정
+  openWardrobeModal, OUTFITS, // #86④ QA: 옷장
   wlObstacleList: () => wlObstacles.slice(), // #95 QA: 등록 장애물 덤프 (프로브 침범 판정용)
   wildlifeWalkTo: (i, x, z) => wildlifeSys._walkTo(i, x, z), // #95 QA: 강제 횡단 (회피 실증)
   swayCount: () => swayProps.length,
