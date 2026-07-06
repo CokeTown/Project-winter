@@ -130,6 +130,11 @@ const KNOWLEDGE_HASH = -451536973;
       S.unlockKnowledge('purify'); S.unlockKnowledge('gardening'); S.unlockKnowledge('preserve'); S.unlockKnowledge('tidiness');
       const kWater = S.knowWaterPerDay(), kGardenA = S.knowGardenAnywhere(), kGardenB = S.knowGardenBonus();
       const kSpoil = S.knowSpoilMul(), kSalt = S.knowSaltCureBonus(), kDirt = S.knowDirtReduce();
+      // 효과 훅 (배치 C-1): 정찰/예보/무전 게터 + rateParts 통합
+      S.simReset(); S.state.knowledge = []; S.state.res.book = 30;
+      S.unlockKnowledge('scouting'); S.unlockKnowledge('forecasting'); S.unlockKnowledge('radioKnow');
+      const kExp = S.knowExpBonus(), kFcLead = S.knowForecastLead(), kFcHas = S.knowsForecast(), kBcast = S.knowBroadcastBonus();
+      const rpKnow = S.rateParts('residential').know;
       // 마이그레이션 (구세이브 = knowledge 필드 부재)
       S.simReset(); S.state.knowledge = undefined;
       const old = { state: { ver:3, day:5, mode:'normal', current:'container', res:{food:5} }, savedAt: Date.now() };
@@ -138,7 +143,8 @@ const KNOWLEDGE_HASH = -451536973;
       return JSON.stringify({ count: ids.length, branchCount: Object.keys(branches).length, tiersPerBranch, costOk, hash: h,
         t1ok, t2blocked, u1, bookAfter, has1, cd, t2now, t3blocked, migOk,
         cdBase, cdIns, cdHearth, cmDelta, knowMod,
-        kWater, kGardenA, kGardenB, kSpoil, kSalt, kDirt });
+        kWater, kGardenA, kGardenB, kSpoil, kSalt, kDirt,
+        kExp, kFcLead, kFcHas, kBcast, rpKnow });
     `).catch(err => JSON.stringify({ error: String(err) }));
     const kd = JSON.parse(kn);
     if (kd.error) { check('지식 트리 (예외 없이)', false, kd.error); }
@@ -154,6 +160,8 @@ const KNOWLEDGE_HASH = -451536973;
       check('지식/효과 아늑함→쾌적 +6', kd.cmDelta===6 && kd.knowMod===6, `Δ${kd.cmDelta} knowMod ${kd.knowMod}`);
       check('지식/효과B 정수→물+1·텃밭 수확1', kd.kWater===1 && kd.kGardenA===true && kd.kGardenB===1, `water ${kd.kWater} gardenA ${kd.kGardenA} gardenB ${kd.kGardenB}`);
       check('지식/효과B 보존→부패×0.5·염장+1·정리 청결−0.5', kd.kSpoil===0.5 && kd.kSalt===1 && kd.kDirt===0.5, `spoil ${kd.kSpoil} salt ${kd.kSalt} dirt ${kd.kDirt}`);
+      check('지식/효과C 정찰→성공률+4%p (rateParts 통합)', kd.kExp===0.04 && kd.rpKnow===0.04, `exp ${kd.kExp} rpKnow ${kd.rpKnow}`);
+      check('지식/효과C 예보→리드+1·예보부여·무전 도달+1', kd.kFcLead===1 && kd.kFcHas===true && kd.kBcast===1, `lead ${kd.kFcLead} has ${kd.kFcHas} bcast ${kd.kBcast}`);
       check('지식 시그니처 해시 불변 (트리 안전망)', kd.hash === KNOWLEDGE_HASH, `hash ${kd.hash}`);
     }
 

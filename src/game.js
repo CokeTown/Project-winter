@@ -1094,11 +1094,12 @@ function rateParts(regionId, prep = []) {
   const injuryPen = state.injury ? INJURIES[state.injury.type].pen : 0;
   const hungryPen = (state.hunger < BAL.exp.hungryPenGate || state.thirst < BAL.exp.hungryPenGate) ? BAL.exp.hungryPen : 0; // 허기/갈증
   const buff = state.buff?.exp || 0; // 인카운터 버프/디버프
+  const know = knowExpBonus(); // 정찰 지식(§9): 전 지역 성공률 +4%p
   const coldPen = coldSnapNetSeverity() > 0 ? BAL.seasons.coldSnapExpPen : 0; // 한파: 탐험 성공률 -10%p (방어 시 0)
   // 1.3 눈사태 위험 우회로: 이번 리조트 출발이 우회로면 성공률 -15%p (보상 1.5배는 정산에서). GD 준수.
   const avalanchePen = (state._avalancheDetour && regionId === 'resort') ? BAL.highland.avalancheDetourRatePen : 0;
-  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + district + gear + buff - weatherPen - injuryPen - hungryPen - coldPen - avalanchePen, 0.05, 0.95);
-  return { base: r.rate, comfort, shelter, district, gear, buff, weatherPen, injuryPen, hungryPen, coldPen, avalanchePen, eff };
+  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + district + gear + buff + know - weatherPen - injuryPen - hungryPen - coldPen - avalanchePen, 0.05, 0.95);
+  return { base: r.rate, comfort, shelter, district, gear, buff, know, weatherPen, injuryPen, hungryPen, coldPen, avalanchePen, eff };
 }
 
 /* ============================================================
@@ -7030,7 +7031,7 @@ function doBroadcast() {
   state.energy = Math.max(0, state.energy - BAL.forbidden.broadcastEnergy);
   // 불빛 목표 갱신 → 실제 점등(하나 이상 늘면 "먼 창문이 응답했다").
   const before = state.survivorLights || 0;
-  const target = targetSurvivorLights();
+  const target = targetSurvivorLights() + knowBroadcastBonus(); // 무전 지식(§9): 송출 도달 +N (구조 앞당김)
   state.survivorLights = Math.max(before, target); // 켜진 불빛은 꺼지지 않는다(온기는 남는다)
   const lit = state.survivorLights - before;
   const note = lit > 0 ? t('radio.sentLit', { n: state.survivorLights }) : t('radio.sentNoLit');
@@ -8882,8 +8883,8 @@ function processDay() {
         state.coldSnapsThisWinter < snapCap &&
         seasonDay(state.day) <= SEASON_DAYS - fcDays - 1 && // 겨울 끝에 걸치지 않게
         Math.random() < snapChance) {
-      // 관제탑 퍽(forecastLead): 고층 전망으로 한파 예보 리드타임 +N일. 없으면 0.
-      const lead = SHELTERS[state.current].perk?.forecastLead || 0;
+      // 관제탑 퍽(forecastLead) + 예보 지식(§9): 한파 예보 리드타임 +N일. 없으면 0.
+      const lead = (SHELTERS[state.current].perk?.forecastLead || 0) + knowForecastLead();
       state.coldSnapForecast = state.day + fcDays + lead;
     }
   }
