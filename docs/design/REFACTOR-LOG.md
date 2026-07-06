@@ -78,11 +78,10 @@ tests/            ← [신설] 회귀 그물: harness.cjs(오프스크린 Electr
 
 ## 6. 다음 (로드맵 — CTO 방향)
 
-1. **SHELTERS 데이터/빌드 분리** ⟵ *진행 중 (1/12 + 안전망 완료)*. `SHELTERS`(game.js const)는 데이터 필드(name/perk/baseComfort/hearth/cold…)와 `build()`(THREE 렌더 함수)가 섞여 12셸터 ~2000줄. 한파·쾌적·게이지가 `SHELTERS[id].hearth` 등을 참조하는데 렌더 결합 때문에 코어로 못 가져옴.
-   - ✅ **안전망**(`13fd2a1`): `tests/core.test.cjs`에 SHELTER_SIG 가드 — 로직이 읽는 전 데이터 필드 + build 함수 존재를 12셸터 시그니처로 핀. 어떤 분리든 이걸 보존해야 green.
-   - ✅ **패턴 입증**(`f21fea6`): `data/shelters.js`(SHELTER_META) 신설, container 데이터 이관 → game.js는 `container: { ...SHELTER_META.container, buildRoom(){…}, buildEnv(){…} }`로 병합. 18/18 green.
-   - ⬜ **잔여 11셸터**(bunker/bus/cabin/controltower/greenhouse/lighthouse/lodge/rooftop/ship/subway/tugboat): 동일 기계적 작업 — 각 셸터 데이터 필드를 SHELTER_META로 옮기고 game.js를 `...SHELTER_META.<id>,`로 교체. SHELTER_SIG 가드가 실수를 즉시 잡음.
-   - 완료 후: 한파/쾌적/게이지가 SHELTER_META를 import해 core로 추출 가능.
+1. ✅ **SHELTERS 데이터/빌드 분리 — 완료 (12/12)**. `data/shelters.js`(SHELTER_META)에 12셸터 전 데이터 필드, game.js는 `{ ...SHELTER_META[id], buildRoom(){…}, buildEnv(){…} }`로 병합(THREE 렌더만 잔류).
+   - 안전망(`13fd2a1`→강화 `5fe3cd6`): SHELTER_HASH 가드 — 각 셸터 **모든 비-함수 필드** deep stable 직렬화 해시. 어느 필드 하나라도 바뀌면 검거.
+   - 분리(`f21fea6` container → `a59325d` 나머지 11): 그물 18/18 green + 컨테이너 렌더 그라운딩 확인.
+   - → 이제 한파/쾌적/게이지가 `import { SHELTER_META }`로 `.hearth`/`.cold`/`.needsLight` 등을 읽어 core로 추출 가능(다음).
 2. **한파(`core/coldsnap.js`)** — coldDefenseLevel/coldSnapActive/coldSnapNetSeverity. SHELTERS 분리 후 가능.
 3. **쾌적(`core/comfort.js`)** — comfortDetail/comfortBreakdown. 한파에 의존.
 4. **게이지(`core/gauges.js`)** — decayGauges 등.
