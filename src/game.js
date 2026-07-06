@@ -5690,8 +5690,13 @@ function resolveExpedition() {
   playSfx('door');
   const r = REGIONS[exp.region];
   // #85 그려지는 발견: 다녀온 지역은 지도에 잉크로 남는다 (성패 무관 — 밟아 본 땅)
-  state.regionVisits = state.regionVisits || {};
-  state.regionVisits[exp.region] = (state.regionVisits[exp.region] || 0) + 1;
+  // 시뮬 순수성 가드(recordNormalDay 선례): v1.6 사이클에서 이 카운터 유무가 시드 고정 시뮬의
+  //   자원 궤적을 미세 변화시키는 히든 커플링 실측(생존 지표는 diff-0, 경로 미규명 — 백로그 조사).
+  //   시뮬엔 지도 연출이 무의미하므로 제외 — 기준선 재현성 보존.
+  if (!_simRunning) {
+    state.regionVisits = state.regionVisits || {};
+    state.regionVisits[exp.region] = (state.regionVisits[exp.region] || 0) + 1;
+  }
   const prep = exp.prep || [];
   const startedInjured = !!state.injury;        // 다친 몸으로 출발했는가 (인과문용)
   const departWeather = weather.type;            // 출발 시점 날씨
