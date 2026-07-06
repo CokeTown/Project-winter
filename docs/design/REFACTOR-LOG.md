@@ -105,7 +105,9 @@ tests/            ← [신설] 회귀 그물: harness.cjs(오프스크린 Electr
 
 **Tier 3 (진행 중):**
 - ✅ **탐험 판정(`core/expedition.js`)** — districtOf/rateParts/expActualRate. 순수 계산(RNG 없음), 날씨 페널티만 setExpeditionWeather 주입. 그물 43/43 diff-0(하드코어 RNG 포함). 정산(resolveExpedition)·출발(departExpedition)은 game.js 잔류.
-- ⬜ 날씨 판정·인카운터 선택(drawEvent)·프로젝트 술어·이주/이동·오토플레이/sim·processDay 오케스트레이터.
+- ✅ **프로젝트 술어(`core/projects.js`)** — districtRegionOf/projectAvailable/projectRec/projectDone/projectSiteStage. 순수 상태 술어(when 게이트/진행/완공/현장단계). 투입(investProject·UI)·3D 현장 렌더는 잔류. 그물 43/43 diff-0.
+- ⬜ 날씨 판정·인카운터 선택(drawEvent)·이주/이동·오토플레이/sim·processDay 오케스트레이터.
+- ⚠️ **F1 헤르메틱 sim은 위험 항목** — simReset 전 모듈상태 리셋은 net의 기반을 건드려 잘못되면 그물 신뢰 붕괴. **디렉터 감독하 착수 권장**(자율 미착수).
 **Tier 4 (10월 이후 롱테일):** 렌더/UI 분해 (`render/`, `ui/` 서브트리).
 
 ---

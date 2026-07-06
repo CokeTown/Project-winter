@@ -34,6 +34,7 @@ import { hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
   knowWaterPerDay, knowGardenAnywhere, knowGardenBonus, knowSpoilMul, knowSaltCureBonus,
   knowDirtReduce, knowCraftMul, knowComfortBonus, knowExpBonus, knowForecastLead, knowsForecast, knowBroadcastBonus } from './core/knowledge.js'; // 지식 해금·효과
 import { districtOf, rateParts, expActualRate, setExpeditionWeather } from './core/expedition.js'; // 탐험 판정 (Tier3)
+import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -5624,12 +5625,7 @@ function pickUncollectedMemo(region) {
   return null;
 }
 // 셸터가 속한 '탐험 지역 성격' 추정 — 메모 지역과 맞추기 위한 매핑. 셸터→구역→선호 region.
-function districtRegionOf(shelterId) {
-  const d = districtOf(shelterId);
-  // 구역별 대표 메모 성격 (도심=상업/슬럼, 외곽/초원=주거, 숲=공업, 해안=슬럼)
-  const map = { city: 'commercial', outskirts: 'residential', meadow: 'residential', forest: 'industrial', coast: 'slum' };
-  return map[d] || 'residential';
-}
+// districtRegionOf → core/projects.js (import).
 function collectMemo(id, silent) {
   if (!state.memos) state.memos = {};
   if (state.memos[id]) return false;
@@ -6926,36 +6922,7 @@ function rebuildShelterGeometry() {
    1.2~1.4는 PROJECTS 항목 + BAL.projects 비용 + proj.* i18n + site 3D만 추가한다(이 코드 무수정).
 ============================================================ */
 // 프로젝트가 지금 노출 조건을 만족하는가 (EVENTS.when 스키마 부분집합 + needsFlag).
-function projectAvailable(id) {
-  const p = PROJECTS[id];
-  if (!p) return false;
-  const w = p.when;
-  if (w) {
-    if (w.shelters && !w.shelters.includes(state.current)) return false;
-    if (w.districts && !w.districts.includes(districtRegionOf(state.current))) return false;
-    if (w.seasons && !w.seasons.includes(seasonOf().id)) return false;
-    if (w.minDay != null && state.day < w.minDay) return false;
-    if (w.needsMod && !hasMod(w.needsMod)) return false;
-    if (w.needsFlag && !state[w.needsFlag]) return false; // state 불리언 게이트 (예: bunkerBackdoor)
-  }
-  return true;
-}
-// 진행 레코드 (없으면 미착수 기본값). 완공 판정은 stage >= stages.length.
-function projectRec(id) {
-  return state.projects?.[id] || { stage: 0, invested: 0 };
-}
-function projectDone(id) {
-  const p = PROJECTS[id]; if (!p) return false;
-  return projectRec(id).stage >= p.stages.length;
-}
-// 현재 현장 오브젝트 단계 (SHELTER 3D 표현이 읽는다). 완공=doneSiteStage, 진행중=현 stage의 siteStage, 미착수=0.
-function projectSiteStage(id) {
-  const p = PROJECTS[id]; if (!p) return 0;
-  const rec = projectRec(id);
-  if (rec.stage >= p.stages.length) return p.doneSiteStage;
-  const st = p.stages[rec.stage];
-  return st ? st.siteStage : 0;
-}
+// projectAvailable/projectRec/projectDone/projectSiteStage → core/projects.js (import). 순수 술어. investProject(투입·UI)는 잔류.
 // stage 완료 시 효과 적용. 효과는 데이터 키로 분기 — 실제 효과는 여기 switch에 등록.
 // 파일럿(clearPassage.done)은 코스메틱 전용이라 상태 부수효과 없음(현장 오브젝트 교체 + 수첩 기록이 곧 보상).
 function applyProjectEffect(effectKey) {
