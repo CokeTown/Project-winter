@@ -12,7 +12,13 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 export default defineConfig(({ command, mode }) => ({
   base: mode === 'electron' ? './' : command === 'build' ? '/Project-winter/' : '/',
   // __QA_EDITION__: tools/build-qa.ps1이 env로 켠다(#89). 정식 빌드에선 false 상수라 QA 블록이 트리셰이킹된다.
-  define: { __APP_VER__: JSON.stringify(pkg.version), __QA_EDITION__: JSON.stringify(process.env.QA_EDITION === '1') },
+  // __BUILD_STAMP__: 빌드 시각(KST) — 같은 버전 라벨의 웹 핫픽스가 하루 여러 번 나가 "지금 무슨 빌드인지"
+  //   디렉터가 분간 못 하던 문제(2026-07-06)의 해결. 타이틀 버전줄에 작게 병기.
+  define: {
+    __APP_VER__: JSON.stringify(pkg.version),
+    __QA_EDITION__: JSON.stringify(process.env.QA_EDITION === '1'),
+    __BUILD_STAMP__: JSON.stringify(new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).slice(5, 16)),
+  },
   server: {
     host: true, // 0.0.0.0 바인딩 — 같은 네트워크의 휴대폰에서 접속 가능
     port: process.env.PORT ? Number(process.env.PORT) : 8420,

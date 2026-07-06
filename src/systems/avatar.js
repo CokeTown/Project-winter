@@ -207,6 +207,15 @@ export function makeAvatarSystem(ctx) {
     return cand.find(inRoom) || { x: it.x, z: it.z + fp.d / 2 + dist };
   }
 
+  // 창가 지점(디렉터 양초대 제보로 검거): 고정점(0, 창벽+0.6)이 가구에 점유되면 그 가구를
+  //   창가 갈 때마다 밀어대는 '재발 비비기'가 된다 — x 스캔으로 빈 창가를 찾고, 다 막혔으면 창가 포기.
+  function windowSpot() {
+    const room = getRoom();
+    const z = -room.d / 2 + 0.6;
+    for (const x of [0, -0.6, 0.6, -1.2, 1.2, -1.8, 1.8])
+      if (Math.abs(x) < room.w / 2 - 0.5 && !hitBlock(x, z, 0.32)) return { x, z };
+    return freeSpot();
+  }
   function pickIdle() { if (!av) return; unseat(); av.mode = 'idle'; av.tgt = null; av.way = null; av.use = null; av.timer = 3 + Math.random() * 5; }
   // 착석/눕기 해제 — 일어날 땐 앉기 전 접근점으로 내려선다(좌판 중앙에서 걸어 나오면 가구 관통으로 보인다)
   function unseat() {
@@ -226,7 +235,7 @@ export function makeAvatarSystem(ctx) {
     const seat = r >= 0.5 && r < 0.7 ? pickSeat() : null;
     const heat = r >= 0.7 && r < 0.88 ? pickHeat() : null;
     if (r < 0.35) { av.mode = 'walk'; setTarget(freeSpot()); }
-    else if (r < 0.5) { av.mode = 'window'; av.timer = 4 + Math.random() * 4; setTarget({ x: 0, z: -getRoom().d / 2 + 0.6 }); }
+    else if (r < 0.5) { av.mode = 'window'; av.timer = 4 + Math.random() * 4; setTarget(windowSpot()); }
     else if (seat) { av.mode = 'gosit'; av.use = seat; setTarget(approachPoint(seat, 0.42)); }
     else if (heat) { av.mode = 'gowarm'; av.use = heat; setTarget(approachPoint(heat, 0.62)); }
     else pickIdle();

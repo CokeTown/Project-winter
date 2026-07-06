@@ -14,6 +14,8 @@ export let lang = 'ko';
 // (v0.9.1 하드코딩이 11번의 버전업 동안 방치됐던 실기기 신고 — 단일 출처로 교정)
 // typeof 가드는 node 직실행(게이트 스크립트) 폴백.
 const APP_VER = (typeof __APP_VER__ !== 'undefined') ? __APP_VER__ : 'dev';
+// 빌드 스탬프(KST): 같은 버전 라벨로 웹 핫픽스가 하루 여러 번 나갈 때 "지금 무슨 빌드인지" 분간용 (디렉터 피드백 루프)
+const BUILD_STAMP = (typeof __BUILD_STAMP__ !== 'undefined') ? __BUILD_STAMP__ : '';
 
 export function setLang(l) {
   lang = (l === 'en') ? 'en' : 'ko';
@@ -76,7 +78,7 @@ export const STR = {
   'title.new':      { ko: '✚ 새 게임', en: '✚ New Game' },
   'title.load':     { ko: '💾 불러오기', en: '💾 Load' },
   'title.help':     { ko: '📖 생존 수첩', en: '📖 Survivor\'s Journal' },
-  'title.ver':      { ko: `Nine Winters · v${APP_VER} Beta`, en: `Nine Winters · v${APP_VER} Beta` },
+  'title.ver':      { ko: `Nine Winters · v${APP_VER} Beta${BUILD_STAMP ? ` · ${BUILD_STAMP}` : ''}`, en: `Nine Winters · v${APP_VER} Beta${BUILD_STAMP ? ` · ${BUILD_STAMP}` : ''}` },
   'title.tools.export':  { ko: '세이브 내보내기', en: 'Export save' },
   'title.tools.import':  { ko: '세이브 가져오기', en: 'Import save' },
   'title.tools.settings':{ ko: '설정', en: 'Settings' },
