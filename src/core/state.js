@@ -115,3 +115,9 @@ export const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: 
   fontScale: 1, colorblind: false, reduceMotion: false };
 // #52: 설정 창 [기본값] 버튼용 — 선언부 값의 스냅샷 (탭별 부분 복원)
 export const OPTS_DEFAULT = { ...opts };
+
+// 현재 셸터에 배치된 가구 인스턴스 배열 {defId,colorIdx,x,z,rot,on,y,group,support}.
+//   세이브 시 state.layouts[shelter]로 직렬화(doSaveNow) — 여기 배열은 런타임 라이브(각 항목 .group=THREE 메시).
+//   itemsRoot(THREE.Group) 등 렌더 컨테이너는 game.js에 잔류. const라 모듈 경계 넘어도 동일 참조.
+export const items = [];
+
