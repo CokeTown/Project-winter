@@ -125,6 +125,11 @@ const KNOWLEDGE_HASH = -451536973;
       const cmBefore = S.comfortDetail().score;
       S.unlockKnowledge('tidiness'); S.unlockKnowledge('handiness'); S.unlockKnowledge('coziness');
       const cd2 = S.comfortDetail(); const cmDelta = cd2.score - cmBefore; const knowMod = cd2.knowMod;
+      // 효과 훅 (배치 B): 자급/정리 게터 (data→getter 정확성; processDay 무손상은 경제 밴드가 커버)
+      S.simReset(); S.state.knowledge = []; S.state.res.book = 30;
+      S.unlockKnowledge('purify'); S.unlockKnowledge('gardening'); S.unlockKnowledge('preserve'); S.unlockKnowledge('tidiness');
+      const kWater = S.knowWaterPerDay(), kGardenA = S.knowGardenAnywhere(), kGardenB = S.knowGardenBonus();
+      const kSpoil = S.knowSpoilMul(), kSalt = S.knowSaltCureBonus(), kDirt = S.knowDirtReduce();
       // 마이그레이션 (구세이브 = knowledge 필드 부재)
       S.simReset(); S.state.knowledge = undefined;
       const old = { state: { ver:3, day:5, mode:'normal', current:'container', res:{food:5} }, savedAt: Date.now() };
@@ -132,7 +137,8 @@ const KNOWLEDGE_HASH = -451536973;
       const migOk = Array.isArray(S.state.knowledge) && S.state.knowledge.length === 0;
       return JSON.stringify({ count: ids.length, branchCount: Object.keys(branches).length, tiersPerBranch, costOk, hash: h,
         t1ok, t2blocked, u1, bookAfter, has1, cd, t2now, t3blocked, migOk,
-        cdBase, cdIns, cdHearth, cmDelta, knowMod });
+        cdBase, cdIns, cdHearth, cmDelta, knowMod,
+        kWater, kGardenA, kGardenB, kSpoil, kSalt, kDirt });
     `).catch(err => JSON.stringify({ error: String(err) }));
     const kd = JSON.parse(kn);
     if (kd.error) { check('지식 트리 (예외 없이)', false, kd.error); }
@@ -146,6 +152,8 @@ const KNOWLEDGE_HASH = -451536973;
       check('지식/효과 단열→한파방어 (0→1)', kd.cdBase===0 && kd.cdIns===1, `base ${kd.cdBase} ins ${kd.cdIns}`);
       check('지식/효과 화덕→방어 +1 (→2)', kd.cdHearth===2, `cdHearth ${kd.cdHearth}`);
       check('지식/효과 아늑함→쾌적 +6', kd.cmDelta===6 && kd.knowMod===6, `Δ${kd.cmDelta} knowMod ${kd.knowMod}`);
+      check('지식/효과B 정수→물+1·텃밭 수확1', kd.kWater===1 && kd.kGardenA===true && kd.kGardenB===1, `water ${kd.kWater} gardenA ${kd.kGardenA} gardenB ${kd.kGardenB}`);
+      check('지식/효과B 보존→부패×0.5·염장+1·정리 청결−0.5', kd.kSpoil===0.5 && kd.kSalt===1 && kd.kDirt===0.5, `spoil ${kd.kSpoil} salt ${kd.kSalt} dirt ${kd.kDirt}`);
       check('지식 시그니처 해시 불변 (트리 안전망)', kd.hash === KNOWLEDGE_HASH, `hash ${kd.hash}`);
     }
 

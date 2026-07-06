@@ -654,6 +654,8 @@ export const STR = {
   'day.fuelOut':      { ko: '⚠️ {fuel} 부족 — {name}이(가) 꺼졌습니다.', en: '⚠️ Out of {fuel} — {name} turned off.' },
   'day.purifier':     { ko: '🚰 정수기가 깨끗한 물을 만들었습니다. (+1)', en: '🚰 The purifier produced clean water. (+1)' },
   'day.autopurifier': { ko: '⛲ 자동 급수기가 물을 끌어올렸습니다. (+{n})', en: '⛲ The auto water station drew up water. (+{n})' },
+  'day.knowWater':    { ko: '💧 이슬과 빗물을 받아 걸렀습니다. (+{n})', en: '💧 Gathered and filtered dew and rain. (+{n})' },
+  'day.knowGarden':   { ko: '🌱 작은 텃밭에서 수확했습니다. (+{n})', en: '🌱 Harvested from your small garden. (+{n})' },
   'day.gardenFrozen': { ko: '❄️ 겨울 — 텃밭이 얼어 수확이 없습니다.', en: '❄️ Winter — the garden is frozen; no harvest.' },
   'day.produce':      { ko: '{note} ({emoji}+{n})', en: '{note} ({emoji}+{n})' },
   'day.foodSpoiled':  { ko: '🍎 냉장고가 없어 신선식품이 상했습니다. (-1)', en: '🍎 Without a fridge, fresh food spoiled. (-1)' },

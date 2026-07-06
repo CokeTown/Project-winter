@@ -8950,6 +8950,9 @@ function processDay() {
       notes.push(t('day.autopurifier', { n: BAL.economy.autoWaterPerDay }));
     }
   }
+  // 정수 지식(§9): 이슬·빗물을 모아 거르는 법 — 전 셸터 매일 물 +N (배관 동파와 무관, 가전 아님).
+  const kWater = knowWaterPerDay();
+  if (kWater > 0) { resAdd('water', kWater); notes.push(t('day.knowWater', { n: kWater })); }
   if (perk.produce) {
     // 겨울엔 텃밭이 얼어붙는다 (온실 재배 중단, 낚시는 가능)
     if (seasonOf().id === 'winter' && state.current === 'greenhouse') {
@@ -8961,23 +8964,26 @@ function processDay() {
       }
     }
   }
+  // 텃밭 지식(§9): 어디서든 기르는 소형 텃밭 — 매일 식량 +N (겨울 휴면). knowGardenAnywhere=게이트, knowGardenBonus=수확량.
+  if (knowGardenAnywhere() && seasonOf().id !== 'winter') { const g = knowGardenBonus(); if (g > 0) { resAdd('food', g); notes.push(t('day.knowGarden', { n: g })); } }
   // 4) 음식 부패: 가동 중인 냉장고가 없으면 매일 신선식품만 -1 (통조림은 부패하지 않음)
   const fridgeOn = items.some(it => DEFS[it.defId].appliance?.effect === 'fridge' && it.on !== false);
   // 찢어진 쪽지: 냉장고 없이 신선식품을 보유한 첫 순간 — 오늘 먹으라는 조언 (1회성)
   if (!fridgeOn && (state.res.food || 0) > 0) tipOnce('tip.freshfood');
   if (!fridgeOn && (state.res.food || 0) > 0) {
-    // 여름엔 부패 가속 (×summerSpoilMult, 소수부는 확률 반올림으로 기댓값 보존)
-    let spoil = BAL.economy.foodSpoilPerDay;
-    if (seasonOf().id === 'summer') { const x = spoil * BAL.seasons.summerSpoilMult; spoil = Math.floor(x) + (Math.random() < x - Math.floor(x) ? 1 : 0); }
-    resConsume('food', spoil);
-    notes.push(t(seasonOf().id === 'summer' ? 'day.foodSpoiledSummer' : 'day.foodSpoiled'));
+    // 여름엔 부패 가속(×summerSpoilMult). 보존 지식(§9)이면 부패 ×0.5. 소수부는 확률 반올림으로 기댓값 보존.
+    let spoil = BAL.economy.foodSpoilPerDay * knowSpoilMul();
+    if (seasonOf().id === 'summer') spoil *= BAL.seasons.summerSpoilMult;
+    const frac = spoil - Math.floor(spoil);
+    spoil = Math.floor(spoil) + (frac > 0 && Math.random() < frac ? 1 : 0); // frac=0이면 Math.random 미호출 — 시드 시뮬 RNG 시퀀스 보존(비-여름 베이스 불변)
+    if (spoil > 0) { resConsume('food', spoil); notes.push(t(seasonOf().id === 'summer' ? 'day.foodSpoiledSummer' : 'day.foodSpoiled')); }
   } else if (fridgeOn) {
     notes.push(t('day.foodFresh'));
   }
   // 청결도 일일 감소 + 거처별 현실 제약
   const sh = SHELTERS[state.current];
   const wBad = state.weatherType === 'rain' || state.weatherType === 'snow' || state.weatherType === 'storm';
-  let dirt = BAL.economy.dailyDirt; // v0.9.1: 일일 청결 감소 2 → 1 완화
+  let dirt = Math.max(0, BAL.economy.dailyDirt - knowDirtReduce()); // v0.9.1: 2→1 완화 · 정리 지식(§9): 기본 감소 추가 경감
   if (sh.dailyDirt) { dirt += sh.dailyDirt; notes.push(t('day.seaDamp')); }
   if (sh.weatherDirt && wBad) { dirt += sh.weatherDirt; notes.push(t('day.openWet', { icon: WEATHERS[state.weatherType].icon })); }
   if (sh.stormRepair && sh.stormRepair.includes(state.weatherType) && !hasMod('roof')) {
@@ -11115,6 +11121,7 @@ window.__shelter = {
   // 「지식」 테크트리(§9) QA 훅
   KNOWLEDGE, KNOWLEDGE_BRANCHES, hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
   knowColdDefense, knowExpBonus, knowComfortBonus, knowWaterPerDay, knowsForecast,
+  knowGardenAnywhere, knowGardenBonus, knowSpoilMul, knowSaltCureBonus, knowDirtReduce, knowHeatFuelMul, knowCraftMul, knowForecastLead, knowBroadcastBonus,
   // v1.4.1 QA 훅: i18n/josa/세이브 왕복 검증용 (하네스 전용, 프로덕션 무해)
   t, LName, josa, WEATHERS, buildWinterMemoir, flushSave, loadSave, readSlot, slotKey, setLang,
   // ③ 창유리 성에 QA 훅: 현재 성에 강도 + 창별 오버레이 투명도
