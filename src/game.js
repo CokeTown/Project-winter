@@ -22,6 +22,7 @@ import { state, DEFAULT_STATE, opts, OPTS_DEFAULT, items } from './core/state.js
 import { isHard, isHardcore, isZen, isWallpaper, rescueEligible } from './core/mode.js'; // 난이도 예측자
 import { SEASONS, SEASON_DAYS, seasonOf, seasonDay, seasonIndex } from './core/season.js'; // 계절 달력
 import { accWinterFuel, resAdd, resConsume, resHasAll, resConsumeAll, hasAnyFood, consumeAnyFood } from './core/economy.js'; // 자원 연산
+import { hasMod } from './core/shelter.js'; // 셸터 개조 술어
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -6281,7 +6282,7 @@ function modAvailable(id, shelterId) {
   if (m.req && !(state.mods?.[shelterId] || []).includes(m.req)) return false;
   return true;
 }
-function hasMod(id) { return (state.mods?.[state.current] || []).includes(id); }
+// hasMod는 core/shelter.js로 이전 (분해 Phase 1). import 참조.
 // 설치된 개조의 시각 소품 (roomGroup에 부착 — 셸터 로드 시 재생성)
 // ── 앵커 부착 소품 빌더 (#51) ──
 // 태양광: 지붕면 위 경사 브래킷 프레임 + 패널. roof 앵커의 pitch가 있으면 지붕 각도에 밀착.
