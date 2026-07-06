@@ -4,6 +4,8 @@
 const { boot, evalJs, call, check, near, report, app } = require('./harness.cjs');
 
 const ROT = "['residential','commercial','industrial','slum']";
+// SHELTERS 데이터 시그니처 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_SIG(actual) 로그로 재캡처.
+const SHELTER_SIG = 'bunker:{"bc":5,"cold":0,"hearth":false,"needsLight":0,"unlock":2,"perkExp":0,"wpool":"clear,snow,clear,rain","rw":8.5,"rd":6,"rh":3}|bus:{"bc":3,"cold":0,"hearth":false,"needsLight":0,"unlock":9,"perkExp":0,"wpool":"clear,ash,rain,clear","rw":6.8,"rd":2.4,"rh":2.2}|cabin:{"bc":10,"cold":0,"hearth":false,"needsLight":0,"unlock":7,"perkExp":0,"wpool":"clear,snow,rain,clear","rw":10,"rd":8,"rh":2.7}|container:{"bc":2,"cold":8,"hearth":false,"needsLight":0,"unlock":0,"perkExp":0.05,"wpool":"clear,ash,ash,snow","rw":6.4,"rd":2.9,"rh":2.4}|controltower:{"bc":7,"cold":6,"hearth":false,"needsLight":0,"unlock":29,"perkExp":0.02,"wpool":"clear,snow,rain,clear","rw":6.6,"rd":6.6,"rh":2.6}|greenhouse:{"bc":8,"cold":0,"hearth":false,"needsLight":0,"unlock":15,"perkExp":0,"wpool":"clear,rain,clear,snow","rw":9,"rd":6,"rh":2.4}|lighthouse:{"bc":9,"cold":0,"hearth":false,"needsLight":0,"unlock":22,"perkExp":0.03,"wpool":"clear,rain,snow,rain","rw":7,"rd":7,"rh":2.6}|lodge:{"bc":9,"cold":0,"hearth":true,"needsLight":0,"unlock":33,"perkExp":0,"wpool":"clear,snow,snow,snow","rw":8.4,"rd":6.4,"rh":3}|rooftop:{"bc":4,"cold":0,"hearth":false,"needsLight":0,"unlock":4,"perkExp":0,"wpool":"clear,rain,clear,snow","rw":5.6,"rd":4.4,"rh":2.4}|ship:{"bc":7,"cold":0,"hearth":false,"needsLight":0,"unlock":18,"perkExp":0,"wpool":"clear,rain,rain,snow","rw":10,"rd":7,"rh":0.9}|subway:{"bc":6,"cold":0,"hearth":false,"needsLight":12,"unlock":12,"perkExp":0,"wpool":"clear","rw":11,"rd":6,"rh":3}|tugboat:{"bc":6,"cold":0,"hearth":false,"needsLight":0,"unlock":25,"perkExp":0,"wpool":"clear,snow,rain,snow","rw":6.4,"rd":4.2,"rh":2.2}';
 
 (async () => {
   try {
@@ -44,6 +46,22 @@ const ROT = "['residential','commercial','industrial','slum']";
     check('경제/하드코어 완주 가능(생존 존재)', e.hcSurvive >= 1, `생존 ${e.hcSurvive}/5`);
     // 무한: 노말과 동일 안착
     near('경제/무한 Day432', e.zen.d432, 339, 4);
+
+    // ── SHELTERS 데이터 무결성 (SHELTERS 데이터/빌드 분리 리팩토링 안전망) ──
+    //   로직(한파/쾌적/경제)이 읽는 데이터 필드 + 각 셸터의 build 함수 존재를 핀. 분리가 이걸 온전히 보존해야 한다.
+    const shel = await call(`
+      const ids = Object.keys(S.SHELTERS).sort();
+      const sig = ids.map(id => { const s = S.SHELTERS[id];
+        return id + ':' + JSON.stringify({ bc: s.baseComfort ?? 0, cold: s.cold ?? 0, hearth: !!s.hearth,
+          needsLight: s.needsLight ?? 0, unlock: s.unlockAt ?? 0, perkExp: s.perk?.expBonus ?? 0,
+          wpool: (s.weatherPool || []).join(','), rw: s.room?.w ?? 0, rd: s.room?.d ?? 0, rh: s.room?.h ?? 0 }); }).join('|');
+      const allBuild = ids.every(id => typeof S.SHELTERS[id].buildRoom === 'function' && typeof S.SHELTERS[id].buildEnv === 'function');
+      return JSON.stringify({ count: ids.length, sig, allBuild });
+    `);
+    const shd = JSON.parse(shel);
+    if (shd.sig !== SHELTER_SIG) console.log('SHELTER_SIG(actual) ' + shd.sig); // 불일치 시 재핀용
+    check('SHELTERS 빌드 함수 전부 존재(렌더 game.js 잔류)', shd.allBuild, `셸터 ${shd.count}종`);
+    check('SHELTERS 데이터 시그니처 불변(분리 안전망)', shd.sig === SHELTER_SIG, `len ${shd.sig.length}`);
 
     // ── 2) 구세이브 마이그레이션 — #76 신규 필드 없이 저장된 세이브가 안전하게 로드되나 ──
     //   (내가 book/bookProgress/demoEnded를 마이그레이션 테스트 없이 넣은 것 → 이 그물로 방어)
