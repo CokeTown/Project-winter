@@ -407,6 +407,13 @@
   }
   .map-pin.inked-now { animation: inkIn 1.1s ease-out; }
   @keyframes inkIn { from { opacity: 0.25; filter: grayscale(1); } to { opacity: 1; filter: none; } }
+  /* #85 내 거처 마커 — 비클릭 정보 표식 (지역 핀 아래 레이어, 종이에 붙은 도장 느낌) */
+  .map-pin.home { pointer-events: none; z-index: 1; min-width: 0; min-height: 0; gap: 1px; }
+  .map-pin.home .home-glyph { font-size: 17px; line-height: 1; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.35)); }
+  .map-pin.home .home-label {
+    font-size: 9px; font-weight: bold; color: #4a3a26; white-space: nowrap;
+    background: rgba(233, 222, 196, 0.72); padding: 1px 4px; border-radius: 6px; border: 1px solid rgba(74, 58, 38, 0.35);
+  }
   /* 1.2 폭설 봉쇄된 지역 (개통 구간은 예외) — 흐릿하게 + 눈송이 표식 */
   .map-pin.blocked { opacity: 0.55; filter: grayscale(0.6); }
   .map-pin.blocked img.px-icon { transform: none; }

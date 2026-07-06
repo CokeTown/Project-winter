@@ -427,6 +427,7 @@ export const STR = {
   // #85 그려지는 발견
   'map.sketchInfo':   { ko: '아직 가 보지 않았다 — 소문뿐이다. 다녀오면 지도에 잉크로 남는다.', en: 'Not yet visited — rumors only. Come back and it stays in ink.' },
   'map.visits':       { ko: '다녀옴 ×{n}', en: 'Visited ×{n}' },
+  'map.home':         { ko: '내 거처', en: 'Home' },
   'map.go':           { ko: '🎒 준비하고 출발', en: '🎒 Prepare and depart' },
   'map.riskLine':     { ko: '위험 {risk} · 이동 포함 <b>{dur}</b> (거리 ×{mult}) · {wicon} {wname}{forecast}', en: 'Risk {risk} · incl. travel <b>{dur}</b> (distance ×{mult}) · {wicon} {wname}{forecast}' },
   'dur.min':          { ko: '{n}분', en: '{n} min' },

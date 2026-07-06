@@ -5303,6 +5303,19 @@ function openMapModal() {
     el.addEventListener('mouseenter', () => showMapInfo(rid));
     wrap.appendChild(el);
   }
+  // #85 내 거처 마커 — 지금 사는 곳이 지도 어디인지 (비클릭 정보 표식, 지역 핀보다 아래 레이어)
+  {
+    const hp = MAP_HOME[districtOf(state.current)];
+    if (hp) {
+      const el = document.createElement('div');
+      el.className = 'map-pin home';
+      el.style.left = Math.min(MAP_SAFE.x1, Math.max(MAP_SAFE.x0, hp.x)) + '%';
+      el.style.top = Math.min(MAP_SAFE.y1, Math.max(MAP_SAFE.y0, hp.y)) + '%';
+      el.innerHTML = `<span class="home-glyph">🏠</span><span class="home-label">${t('map.home')}</span>`;
+      el.title = LName(SHELTERS[state.current]);
+      wrap.appendChild(el);
+    }
+  }
   // 1.4 송출 오버레이 — 종이 지도 위 생존자 불빛(수집률 비례 점등). ARC-03 레이어 규격: 마커 위에 얹는 절대배치.
   renderSurvivorLights(wrap);
 }
@@ -5338,14 +5351,18 @@ const MAP_MARKERS = {
   commercial:  { x: 74, y: 18 },  // 우상 무너진 빌딩(도심)
   industrial:  { x: 18, y: 56 },  // 좌하 공장
   slum:        { x: 78, y: 57 },  // 우하 판자촌
-  // 1.1 항구 구역 — 지도 하단(해안/부두 쪽). 기존 4지역과 같은 마커 스타일. (map_paper 하단 항구 그림 기준 조정 예정)
-  // #87 스윕(디렉터 신고: 지역 확장 후 마커·배지가 종이 밖으로 잘림): 확장 5종을 안전영역(x≤86, y 14~80)으로
-  //   클램프 재배치 — 상대 지리(항구 하단·리조트 우상·금지구역 우하 봉쇄선 너머)는 유지. #85 리워크 전 임시 가드.
-  harborYard:  { x: 44, y: 78 },  // 하단 중앙 야적장(컨테이너 부두)
-  fishMarket:  { x: 62, y: 80 },  // 하단 우측 수산시장(선착장)
-  resort:      { x: 84, y: 14 },  // 우상단 산정 리조트
-  checkpoint:  { x: 80, y: 74 },  // 우하단 봉쇄선 검문소
-  lab:         { x: 86, y: 80 },  // 검문소 안쪽 폭심지 연구동
+  // #85 도시 전도: 확장 5종을 지리 서사대로 — 항구 벨트(남쪽 해안 하단), 리조트(북동 산정),
+  //   금지 구역(동남 봉쇄선 너머 — 슬럼 아래로 격리감). 남동 밀집을 풀어 마커 간 간격 확보.
+  harborYard:  { x: 38, y: 79 },  // 하단 좌중 야적장(컨테이너 부두)
+  fishMarket:  { x: 56, y: 81 },  // 하단 중앙 수산시장(선착장)
+  resort:      { x: 85, y: 13 },  // 우상단 산정 리조트
+  checkpoint:  { x: 77, y: 71 },  // 우하단 봉쇄선 검문소
+  lab:         { x: 87, y: 80 },  // 검문소 안쪽 폭심지 연구동 (봉쇄선 너머 구석)
+};
+// #85 내 거처 마커: 구역(district)별 지도 위치 — 지역 마커의 옆자리(비클릭, 현재 집 표시).
+const MAP_HOME = {
+  outskirts: { x: 12, y: 31 }, city: { x: 62, y: 29 }, meadow: { x: 34, y: 40 }, forest: { x: 30, y: 67 },
+  coast: { x: 17, y: 77 }, harbor: { x: 49, y: 68 }, highland: { x: 80, y: 26 }, research: { x: 68, y: 77 }, // highland: 상업지구 핀(74,18)과 3% 겹치던 것 재배치(프로브 검거)
 };
 // 항구 지역 해금 게이트: 항구 셸터(예인선)를 해금한 뒤부터 지도에 항구 구역이 뜬다.
 // 기존 4지역은 항상 해금(true). ARC-03 마커 문법 그대로, 노출 조건만 얹는다.
