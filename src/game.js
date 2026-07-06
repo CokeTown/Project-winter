@@ -1440,13 +1440,19 @@ const weatherFx = { caps: [] };
 const snowCapMat = new THREE.MeshLambertMaterial({ color: 0xe9f2fa, transparent: true, opacity: 0.96 });
 snowCapMat.userData.noWet = true;
 snowCapMat.userData.shared = true; // loadShelter의 disposeDeep에서 살아남아야 함
-snowCapMat.userData.cullFadeSkip = true; // ① 공유 캡 재질 — 클론 금지(캡은 snowCover로 별도 제어)
+// v1.5.2(디렉터 T자 신고): cullFadeSkip 해제 — 벽이 페이드로 열릴 때 캡(순백 판)만 남아
+//   'T자 크로스바'로 읽히던 잔상의 한 축. 표준 경로(그룹별 클론)로 벽과 함께 페이드된다.
+//   캡 가시성(snowCover)은 mesh.visible이라 재질 클론과 무관 — 기존 눈 두께 제어 불변.
 function addWallWeatherFx(wallGroup) {
+  // v1.5.2(디렉터 신고 — 돔 '1자 바'): 상단이 수평 직선인 벽에만 캡이 성립한다. 곡면 밴드/반달 파사드는
+  //   bb 상단에 일자 캡이 공중 부유(벙커에서 y4.3~7.0 흰 바 3개 실측) — noWeatherCap 표식 벽은 생략.
+  if (wallGroup.userData.noWeatherCap) return;
   const bb = new THREE.Box3().setFromObject(wallGroup);
   const len = bb.max.x - bb.min.x, h = bb.max.y - bb.min.y;
   if (len < 0.5 || h < 0.5) return;
   // 눈: 벽 상단에 쌓이는 캡 (snowCover에 따라 두께가 자란다)
-  const capGeo = new THREE.BoxGeometry(len * 0.99, 0.17, 0.4);
+  // 폭 0.4→0.26 (v1.5.2): 벽 두께(0.22대)에 밀착 — 벽보다 두 배 넓은 순백 판이 'T자 선반'으로 읽히던 과장 제거.
+  const capGeo = new THREE.BoxGeometry(len * 0.98, 0.17, 0.26);
   capGeo.translate(0, 0.085, 0);
   const cap = new THREE.Mesh(capGeo, snowCapMat);
   cap.position.y = h - 0.02;
@@ -1753,6 +1759,10 @@ const SHELTERS = {
       roomGroup.add(rightLow); roomGroup.add(rightUp); roomGroup.add(leftUp); roomGroup.add(leftLow);
       tagCeiling(rightUp, R * Math.sin(THS) + 0.2);
       tagCeiling(leftUp, R * Math.sin(THS) + 0.2);
+      // v1.5.2(디렉터 신고 '1자 바'): 곡면 밴드는 눈 캡 부적격 — bb 상단 일자 캡이 돔 위 공중에 떠서
+      //   흰 바로 보였다(실측 y4.5/6.95). 눈 표현은 외피 자체 밝아짐(vcLambert 계절 톤)으로 충분.
+      rightLow.userData.noWeatherCap = true;
+      leftLow.userData.noWeatherCap = true;
       wallDefs.push({ group: rightLow, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(1, 0, 0) });
       wallDefs.push({ group: leftLow, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(-1, 0, 0) });
       // #87 ②: 정면 파사드 — 반달 콘크리트 벽 + 닫힌 철문. "벙커인데 앞이 뻥 뚫려있다" 실기기 신고.
@@ -1767,6 +1777,7 @@ const SHELTERS = {
         doorHole.moveTo(-0.72, 0.01); doorHole.lineTo(-0.72, 2.0); doorHole.lineTo(0.72, 2.0); doorHole.lineTo(0.72, 0.01); doorHole.closePath();
         shp.holes.push(doorHole);
         const facade = new THREE.Group();
+        facade.userData.noWeatherCap = true; // v1.5.2: 반달 파사드 — 일자 캡이 돔 정점 높이(y4.29, 길이 8.5)에 부유하던 '1자 바' 원흉
         const fm = new THREE.Mesh(new THREE.ExtrudeGeometry(shp, { depth: 0.24, bevelEnabled: false }), wallPhong({ color: 0xa39f94 }));
         fm.position.set(0, 0, d / 2 + 0.32); fm.castShadow = fm.receiveShadow = true; facade.add(fm);
         // 닫힌 철문 두 짝 + 가로 빗장 (후면 잠긴문과 같은 문법 — 여긴 '정문')

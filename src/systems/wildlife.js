@@ -447,6 +447,8 @@ export function makeWildlifeSystem(ctx) {
         tgt = { x: a._exit.x + Math.cos(perp) * Math.sin(a.zigT * 8) * 0.6, z: a._exit.z + Math.sin(perp) * Math.sin(a.zigT * 8) * 0.6 };
       }
       moveToward(a, tgt, dt, 2.2);
+      // v1.5.2: 토끼 지그재그 도주도 바운드(도주 gait 16/s × 1.6 → 초당 약 4홉) — 활주 방지는 도주에도 동일.
+      if (a.zig) g.position.y = a.groundY + Math.abs(Math.sin(a.gait * 1.6)) * 0.09;
       poseQuad(a, t, dt, true);
       if (reached(a, a._exit, 0.4)) { trailLeaveIfSnow(a); return void despawnOne(a); }
       return;
@@ -459,6 +461,14 @@ export function makeWildlifeSystem(ctx) {
     } else {
       a.timer -= dt;
       if (a.timer <= 0) pickWalkOrIdle(a);
+    }
+    // v1.5.2(디렉터: "새가 땅을 기어간다"): 지상 이동에 홉 게이트 — y가 평평하면 활주로 읽힌다.
+    //   새 = 두 발 콩콩(까마귀 실제 보행), 토끼 = hopGait(F-1a 데이터 선언의 이행 — 그간 사문화돼 있었다).
+    //   gait 위상(9/s)에 ×1.6 → 초당 약 2.3홉. idle 복귀 시 지면으로 스냅.
+    const hopA = a.kind === 'bird' ? 0.05 : (sp.hopGait ? 0.06 : 0);
+    if (hopA) {
+      if (a.mode === 'walk') g.position.y = a.groundY + Math.abs(Math.sin(a.gait * 1.6)) * hopA;
+      else if (g.position.y !== a.groundY) g.position.y += (a.groundY - g.position.y) * Math.min(1, dt * 8);
     }
     if (a.kind === 'bird') poseBird(a, t, dt, false); else poseQuad(a, t, dt);
     // 발자국(눈): 걷는 중 저빈도로 남김
