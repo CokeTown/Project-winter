@@ -103,7 +103,9 @@ tests/            ← [신설] 회귀 그물: harness.cjs(오프스크린 Electr
 
 **여기까지 = 깊이 작업에 필요한 리팩토링 완료선.** 깊이가 건드릴 로직(한파/쾌적/게이지)이 모듈화·테스트 가능해졌고, 깊이가 추가할 세이브 필드의 마이그레이션이 격리·그물화됨.
 
-**Tier 3 (깊이 이후/병행):** 탐험 판정·날씨·인카운터·프로젝트·이주/이동·오토플레이/sim·processDay 오케스트레이터.
+**Tier 3 (진행 중):**
+- ✅ **탐험 판정(`core/expedition.js`)** — districtOf/rateParts/expActualRate. 순수 계산(RNG 없음), 날씨 페널티만 setExpeditionWeather 주입. 그물 43/43 diff-0(하드코어 RNG 포함). 정산(resolveExpedition)·출발(departExpedition)은 game.js 잔류.
+- ⬜ 날씨 판정·인카운터 선택(drawEvent)·프로젝트 술어·이주/이동·오토플레이/sim·processDay 오케스트레이터.
 **Tier 4 (10월 이후 롱테일):** 렌더/UI 분해 (`render/`, `ui/` 서브트리).
 
 ---

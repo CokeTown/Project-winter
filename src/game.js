@@ -33,6 +33,7 @@ import { hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
   knowColdDefense, knowInsulates, knowHearthAnywhere, knowWinterComfort, knowHeatFuelMul,
   knowWaterPerDay, knowGardenAnywhere, knowGardenBonus, knowSpoilMul, knowSaltCureBonus,
   knowDirtReduce, knowCraftMul, knowComfortBonus, knowExpBonus, knowForecastLead, knowsForecast, knowBroadcastBonus } from './core/knowledge.js'; // 지식 해금·효과
+import { districtOf, rateParts, expActualRate, setExpeditionWeather } from './core/expedition.js'; // 탐험 판정 (Tier3)
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -740,6 +741,7 @@ const WEATHERS = {
 };
 const weather = { type: 'clear', nextChange: 0, pts: null, seedY: [], seedS: [] };
 setComfortWeather(() => weather.type); // core/comfort에 현재 날씨 타입 주입 (weather는 렌더 결합이라 game.js 잔류)
+setExpeditionWeather(() => WEATHERS[weather.type].penalty || 0); // core/expedition에 날씨 페널티 주입 (rateParts용)
 {
   const MAXN = 2200, SPAN = 23, TOP = 17;
   const arr = new Float32Array(MAXN * 3);
@@ -1078,29 +1080,7 @@ function addMoodBuff(amt, days = 3) {
   state.moodBuff = { amt, until: state.day + days };
 }
 // comfortLevel/comfortExpBonus/recoveryMult → core/comfort.js (import). 쾌적 점수 파생(레벨/탐험보너스/회복배수).
-function rateParts(regionId, prep = []) {
-  const r = REGIONS[regionId];
-  const sh = SHELTERS[state.current];
-  const comfort = comfortExpBonus();
-  const shelter = state.upkeepOk ? (sh.perk?.expBonus || 0) : 0; // 유지비 미납 시 특성 정지
-  const district = DISTRICTS[districtOf(state.current)].regionBonus?.[regionId] || 0;
-  let weatherPen = WEATHERS[weather.type].penalty || 0;
-  if (prep.includes('raincoat')) weatherPen *= 0.3;
-  let gear = 0;
-  for (const p of prep) {
-    const b = PREPS[p].bonus;
-    if (b && b[regionId]) gear += b[regionId];
-  }
-  const injuryPen = state.injury ? INJURIES[state.injury.type].pen : 0;
-  const hungryPen = (state.hunger < BAL.exp.hungryPenGate || state.thirst < BAL.exp.hungryPenGate) ? BAL.exp.hungryPen : 0; // 허기/갈증
-  const buff = state.buff?.exp || 0; // 인카운터 버프/디버프
-  const know = knowExpBonus(); // 정찰 지식(§9): 전 지역 성공률 +4%p
-  const coldPen = coldSnapNetSeverity() > 0 ? BAL.seasons.coldSnapExpPen : 0; // 한파: 탐험 성공률 -10%p (방어 시 0)
-  // 1.3 눈사태 위험 우회로: 이번 리조트 출발이 우회로면 성공률 -15%p (보상 1.5배는 정산에서). GD 준수.
-  const avalanchePen = (state._avalancheDetour && regionId === 'resort') ? BAL.highland.avalancheDetourRatePen : 0;
-  const eff = THREE.MathUtils.clamp(r.rate + comfort + shelter + district + gear + buff + know - weatherPen - injuryPen - hungryPen - coldPen - avalanchePen, 0.05, 0.95);
-  return { base: r.rate, comfort, shelter, district, gear, buff, know, weatherPen, injuryPen, hungryPen, coldPen, avalanchePen, eff };
-}
+// rateParts/expActualRate/districtOf → core/expedition.js (import). 순수 성공률 판정. weather 페널티만 주입.
 
 /* ============================================================
    환경 조각 빌더 (아포칼립스 소품)
@@ -3874,10 +3854,7 @@ function buildOvergrowth() {
    구역 시스템 — 한 지역 안에 여러 셸터, 지역 간 이동은 비용이 든다
 ============================================================ */
 // DISTRICTS(지도 구역)는 src/data/world.js로 분리(콘텐츠 데이터 Phase 1).
-function districtOf(shelterId) {
-  for (const [id, d] of Object.entries(DISTRICTS)) if (d.shelters.includes(shelterId)) return id;
-  return 'outskirts';
-}
+// districtOf → core/expedition.js (import).
 
 /* ============================================================
    게임 상태 & 저장
@@ -5283,9 +5260,7 @@ async function departExpedition(regionId, prep, opts2 = {}) {
 // 성공률 체감 보정: 표기(rate)는 그대로 두고 실제 판정 확률만 몰래 올린다.
 // 표기 73%에서 3연속 실패=2%지만 체감은 "사기" — 플레이어 신뢰 보호용 숨은 보정.
 // 노말 +4%p 상시 + pity(연속 실패당 +8%p, 캡3). 하드는 상시 보정 없이 pity만. 상한 0.95.
-function expActualRate(rate, streak) {
-  return Math.min(BAL.pity.ceiling, rate + (isHard() ? 0 : BAL.pity.normalBonus) + BAL.pity.perStreak * Math.min(BAL.pity.streakCap, streak || 0));
-}
+// expActualRate → core/expedition.js (import).
 function resolveExpedition() {
   const exp = state.exp;
   if (!exp) return;
