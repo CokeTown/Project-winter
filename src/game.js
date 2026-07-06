@@ -18,6 +18,7 @@ import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wi
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
 import { Platform, bindPlatform } from './lib/platform.js';
+import { state, DEFAULT_STATE, opts, OPTS_DEFAULT } from './core/state.js'; // 모놀리스 분해 Phase 1: 공유 가변 상태
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -4094,104 +4095,7 @@ function districtOf(shelterId) {
 // ---- 탐험 준비물 (기획서 v0.2: 준비물 슬롯) ----
 // PREPS(탐험 준비물)는 src/data/items.js로 분리(콘텐츠 데이터 Phase 1).
 
-const state = {
-  ver: 3,
-  current: 'container',
-  successes: 0,
-  inventory: { bed: 1, rug: 1, candle: 1 },
-  // 초기 자원 (기획서 밸런싱 권장값)
-  res: { food: 2, canned: 2, water: 3, cloth: 2, bandage: 1, antiseptic: 0, painkiller: 0, candle: 2, battery: 1, fuel: 0, parts: 0, material: 0, salt: 0 },
-  layouts: { container: [{ d: 'crate', c: 1, x: 2.5, z: -0.75, r: 0 }], bunker: [], rooftop: [], cabin: [] },
-  exp: null,             // { region, end(실시간ms), rate, prep:[] }
-  injury: null,          // { type, untilMin, }
-  gameMin: 8 * 60,       // Day 1, 08:00 시작
-  day: 1,
-  savedAt: Date.now(),
-  weatherType: 'clear',
-  weatherUntil: 0,       // gameMin 기준
-  cleanBy: { container: 70, bunker: 70, rooftop: 70, cabin: 70 },
-  renovated: { container: true },   // 정비를 마친 셸터 (최초 입주 시 자원 소요)
-  hunger: 80,   // 배고픔 (0=탈진)
-  thirst: 80,   // 갈증 (0=탈진)
-  energy: 100,  // 에너지 — 탐험/노동으로 소모, 취침으로 회복
-  expToday: 0,  // 오늘 탐험 횟수 (하루 5회 제한)
-  expFatigue: null, // #88 탐험 피로: 한도 소진일(day). 자면 해소 — 밤샘 취침 페널티 가중(강제 정산 대체)
-  expFailStreak: 0, // 연속 탐험 실패 횟수 (성공률 체감 보정 pity용, 캡3)
-  upkeepOk: true,
-  dayLog: { gain: {}, spend: {}, notes: [] },
-  helpSeen: false,
-  stats: { exp: 0, success: 0 },
-  buff: null,          // 인카운터 버프 { exp?:+0.1, loot?:2, label }
-  pendingEvent: null,  // 표시 대기 중인 인카운터 id
-  lastEventDay: 0,
-  mods: {},            // 거처 개조 { shelterId: [modId] }
-  deco: {},            // 꾸미기(#13): 셸터별 벽지/바닥재 { shelterId: { wall:id, floor:id } }
-  stayDays: 0,         // 현재 거처 연속 거주일 (정든 집 보너스)
-  cat: 0,              // 고양이 입양 여부 (Day 9+ 인카운터)
-  catCoat: 'tabby',    // 고양이 코트(입양 시 랜덤: tabby/black/siamese/ragdoll). 구세이브=tabby 폴백.
-  catMusicDay: 0,      // 고양이 인카운터가 뜬 날 — 그날은 Cat OST만 재생
-  catEventSeen: false, // 고양이 인카운터가 이미 한 번 등장했는지 (거절해도 재등장 없음)
-  catHungry: false,    // 유지비(3일마다 음식1)를 내지 못해 쾌적 보너스가 정지된 상태
-  endingSeen: false,   // Day 10000 엔딩 감상 여부
-  tutDay: 0,           // 신규 게임 첫 3일 튜토리얼 진행 단계 (0~3)
-  tipsSeen: {},        // 찢어진 쪽지(1회성 팁) 열람 여부 { 'tip.rain': true, ... }
-  pendingTutorial: null, // 표시 대기 중인 튜토리얼 수첩 페이지 단계 (day-report 뒤로 미룸)
-  questIdx: 0,         // 퀘스트 체인 진행 인덱스 (QUESTS 배열 기준, -1=비활성/완료, QUESTS.length=전체 완료)
-  mode: 'normal',      // 난이도 모드 'normal' | 'hard' (하드: 전리품 -30% · 게이지 소모 +50%)
-  coldSnap: null,      // 한파 진행 상태 { until:day, severity } — 겨울 보스 이벤트 (Phase B)
-  coldSnapForecast: 0, // 한파 발동 예정일 (day). 0=예보 없음. 예보 리드타임 동안 브리핑에 표시
-  coldSnapsThisWinter: 0, // 이번 겨울 한파 발동 횟수 (겨울당 상한 제한용)
-  coldSnapWinterKey: -1,  // 카운터가 속한 겨울 식별자 (계절 인덱스). 겨울이 바뀌면 리셋
-  // ── Nine Winters 엔드게임 마일스톤 (#11) ──
-  winters: 0,          // 넘긴 겨울 수 (봄으로 넘어가는 날 +1). 제목이 곧 장기 목표.
-  demoEnded: false,    // #74 데모 빌드 전용: 첫 겨울 통과로 데모가 끝난 세이브 (정식 빌드에선 항상 false)
-  winterSnap: null,    // 현재/직전 겨울 시작 시점 스냅샷 (memoir 차분 계산용)
-  pendingWinterMemoir: [], // 표시 대기 중인 "그 해 겨울" 수첩 페이지 큐 (봄 첫 아침 보고 뒤로 미룸)
-  doctorRadioPending: false, // 9겨울 마일스톤 후 박사 무전 대기 (라디오 미보유 시 다음 배치까지 보류)
-  // ── Phase D (#12 · #35 · #36) ──
-  evHistory: [],          // 최근 인카운터 발화 이력 [{id,day}] — 반복 억제(REQ-EVT-02)
-  moodBuff: null,         // 인카운터 안정감 여운 { amt, until:day } — comfort 일시 가감
-  memos: {},              // 수집한 세계관 메모/유서 { id: 수집일 } (#35)
-  broadcasts: {},         // 수집한 라디오 방송 { id: 수집일 } (#12)
-  distantLight: null,     // 먼 불빛 목격 기록 { count, lastDay, places:{} } (REQ-EVT-03)
-  pendingMemoPopup: null, // 결산 뒤 열 메모 팝업 { id, will }
-  pendingBroadcast: null, // 결산 뒤 열 방송 모달 id
-  lastBroadcastDay: 0,    // 방송 청취한 마지막 날 (하루 1회 제한)
-  pipeFrozenUntil: 0,     // 수도관 동파 방치 시 정수기 정지 기한 (day)
-  bunkerRoof: 'hole',     // 돔 벙커 천장 상태: 'hole'(구멍)|'temp'(임시덮개)|'full'(완전수리) (#36)
-  bunkerBackdoor: false,  // 절단기로 뒷문 저장고 개방 여부 (#36)
-  hasCutter: false,       // 절단기 보유 (공업지대 드랍)
-  rooftopSlate: 'gapped', // 옥탑 슬레이트 지붕: 'gapped'(2장 빠짐)|'full'(보수 완료) (#53)
-  rooftopGardenStage: 0,  // 옥상 텃밭 성장 단계 0=새싹 1=줄기 2=결실 (겨울엔 휴면, 시각만) (#53)
-  projects: {},           // 대형 프로젝트 진행 (1.1 ARC-02): { [id]: { stage, invested } }. 미착수 프로젝트는 키 없음.
-  breakwaterHut: false,   // 1.1: 방파제 오두막 완공 여부 (항구 파밍 -25% + 얼음낚시 스팟 +1)
-  icefishToday: 0,        // 1.1: 오늘 얼음낚시 횟수 (하루 스팟 제한)
-  subwayHub: false,       // 1.2: 지하철 허브 승격 여부 (선로 복구·암시장 개방 게이트)
-  subwayOpen: {},         // 1.2: 개통된 지하 노선 연결 지역 { [regionId]: true } (탐험 -50% + 폭설 봉쇄 예외)
-  mushroomWaterTimer: 0,  // 1.2: 버섯 재배칸 물 소모 카운터 (mushroomWaterEvery일마다 물 1)
-  marketToday: 0,         // 1.2: 오늘 암시장 교환 횟수 (하루 슬롯 제한)
-  // ── 1.3 「고요한 고원」 ──
-  cablecarDone: false,    // 1.3: 케이블카 복구 완공 (리조트 접근/탐험 시간 단축)
-  observatoryDone: false, // 1.3: 관측소 완공 (맑은 밤 밤하늘 이벤트 개방)
-  avalancheForecast: 0,   // 1.3: 눈사태 발령 예정일 (day). 0=예보 없음. 한파 예보 문법 재사용
-  avalancheBlockUntil: 0, // 1.3: 미대비 눈사태로 리조트가 봉쇄된 기한 (day). 0=봉쇄 없음
-  sketches: {},           // 1.3: 수집한 밤하늘 스케치 { id: 수집일 } (도감/기록 문법)
-  nightSkyToday: 0,       // 1.3: 오늘 밤하늘 이벤트 발동 여부 (하루 1회 제한)
-  pendingSketchPopup: null, // 1.3: 결산 닫은 뒤 열 스케치 팝업 id
-  // ── 1.3.0 배치 D: 무력 상태 / 구제 / 끝난 기록 (GD-THESIS §4.5) ──
-  rescueUsed: false,      // 이 런에서 1회 구제를 이미 받았는지 (노말/하드)
-  runEnded: false,        // 런 종료(무력 두 번째 or 하드코어 무력) — 슬롯은 "끝난 기록"으로 보존, 이어하기 불가
-  // ── 1.4 「금지 구역」 ──
-  hazmat: null,           // 방호복 { dur } (제작 시 { dur: hazmatDur }). null=미제작. 금지 구역 진입 게이트+내구 소모.
-  hazmatDone: false,      // 방호복을 한 번이라도 만든 적 있는가 (무전 기지 공사 노출 게이트 — 금지 구역에 닿았다는 증거)
-  radioBaseDone: false,   // 1.4: 무전 기지 완공 (송출 행동 개방)
-  broadcasts_sent: {},    // 1.4: 송출한 방송/기록 { id: 송출일 } — 지도 불빛 점등의 근거
-  survivorLights: 0,      // 1.4: 종이 지도에 켜진 생존자 불빛 수 (송출 이력·수집률 비례로 갱신)
-  doctorRegularSeen: false, // 1.4: 박사 정기 교신을 본 적 있는가 (모든 방송 송출 후 개방 — Day10000 다리)
-  doctorRadioRegularPending: false, // 1.4: 정기 교신 발화 대기 (모든 수집물 송출 시 세워짐 → 밤 무전 1회)
-};
-// 새 게임용 초기 상태 스냅샷 (state에 함수 없음 전제)
-const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
+// state / DEFAULT_STATE 는 core/state.js 로 이전 (모놀리스 분해 Phase 1). 위 import 참조.
 
 function resAdd(id, n) {
   if (n <= 0) return;
@@ -4238,11 +4142,7 @@ function consumeAnyFood(n = 1) {
   if (remain > 0) resConsume('canned', remain);
   return true;
 }
-const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, autoPlay: false, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko', fpsCap: 60, lowSpec: false, bgIdle: true,
-  // 접근성 (REQ-ACC-01): 폰트 3단(1/1.12/1.25) · 색약 팔레트 · 흔들림/깜빡임 감소
-  fontScale: 1, colorblind: false, reduceMotion: false };
-// #52: 설정 창 [기본값] 버튼용 — 선언부 값의 스냅샷 (탭별 부분 복원)
-const OPTS_DEFAULT = { ...opts };
+// opts / OPTS_DEFAULT 는 core/state.js 로 이전 (모놀리스 분해 Phase 1). 위 import 참조.
 // REQ-STEAM-01: 플랫폼 어댑터에 상태 접근자 주입 (순환 import 회피). 동작 불변 위임.
 bindPlatform({
   getAchs: () => (state.achs || {}),
