@@ -6,6 +6,8 @@ const { boot, evalJs, call, check, near, report, app } = require('./harness.cjs'
 const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
 const SHELTER_HASH = -1537463991;
+// 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
+const MIG_HASH = 779394296;
 
 (async () => {
   try {
@@ -70,28 +72,56 @@ const SHELTER_HASH = -1537463991;
 
     // ── 2) 구세이브 마이그레이션 — #76 신규 필드 없이 저장된 세이브가 안전하게 로드되나 ──
     //   (내가 book/bookProgress/demoEnded를 마이그레이션 테스트 없이 넣은 것 → 이 그물로 방어)
+    //   포괄 스냅샷: 마이그레이션이 채우는 정적 기본값 ~40필드를 해시로 핀(save.js 추출 안전망).
+    //   hunger/thirst는 오프라인 decay가 건드려 비결정론이라 제외. 불일치 시 MIG_HASH(actual) 재핀.
     const sv = await call(`
       S.simReset();
-      // 구세이브 시뮬레이션: 현대 세이브(ver:3)인데 #76 신규 필드만 없는 상태.
-      //   (ver 없으면 v2→v3 마이그레이션이 res/day를 리셋함 — 그건 #76 마이그레이션 테스트가 아님)
+      // 구세이브 시뮬레이션: 현대 세이브(ver:3)인데 신규 필드만 없는 상태.
+      //   (ver 없으면 v2→v3 마이그레이션이 res/day를 리셋함 — 그건 이 테스트 대상 아님)
       const oldSave = { state: { ver: 3, day: 42, winters: 3, mode: 'hard', current: 'container',
         res: { food: 10, canned: 55, water: 20, cloth: 3 } }, savedAt: Date.now() };
       localStorage.setItem(S.slotKey(1), JSON.stringify(oldSave));
       S.loadSave(); // currentSlot(=1) 읽어 마이그레이션 적용
-      return JSON.stringify({
-        day: S.state.day, winters: S.state.winters, canned: S.state.res.canned || 0,
-        bookType: typeof S.state.res.book, bookVal: S.state.res.book,
-        demoType: typeof S.state.demoEnded });
+      const st = S.state;
+      const mig = {
+        day: st.day, winters: st.winters, mode: st.mode, energy: st.energy, canned: st.res.canned||0,
+        catCoat: st.catCoat, expToday: st.expToday, expFailStreak: st.expFailStreak, tutDay: st.tutDay,
+        doctorRadioPending: st.doctorRadioPending, evHistoryLen: (Array.isArray(st.evHistory)?st.evHistory.length:-1),
+        moodBuff: st.moodBuff, lastBroadcastDay: st.lastBroadcastDay, pipeFrozenUntil: st.pipeFrozenUntil,
+        bunkerRoof: st.bunkerRoof, bunkerBackdoor: st.bunkerBackdoor, hasCutter: st.hasCutter,
+        rooftopSlate: st.rooftopSlate, rooftopGardenStage: st.rooftopGardenStage,
+        projects: typeof st.projects, breakwaterHut: st.breakwaterHut, icefishToday: st.icefishToday,
+        salt: st.res.salt||0, subwayHub: st.subwayHub, subwayOpen: typeof st.subwayOpen,
+        mushroomWaterTimer: st.mushroomWaterTimer, marketToday: st.marketToday,
+        cablecarDone: st.cablecarDone, observatoryDone: st.observatoryDone,
+        avalancheForecast: st.avalancheForecast, avalancheBlockUntil: st.avalancheBlockUntil,
+        sketches: typeof st.sketches, nightSkyToday: st.nightSkyToday, deco: typeof st.deco,
+        hazmat: st.hazmat, hazmatDone: st.hazmatDone, radioBaseDone: st.radioBaseDone,
+        survivorLights: st.survivorLights, doctorRegularSeen: st.doctorRegularSeen,
+        doctorRadioRegularPending: st.doctorRadioRegularPending, questIdx: st.questIdx,
+        current: st.current, bookType: typeof st.res.book, demoType: typeof st.demoEnded,
+        renovatedContainer: !!(st.renovated && st.renovated.container) };
+      const sig = JSON.stringify(mig);
+      let h = 0; for (let i=0;i<sig.length;i++) h=(Math.imul(h,31)+sig.charCodeAt(i))|0;
+      return JSON.stringify({ day: mig.day, winters: mig.winters, canned: mig.canned, bookType: mig.bookType,
+        demoType: mig.demoType, bunkerRoof: mig.bunkerRoof, hasCutter: mig.hasCutter, projects: mig.projects,
+        hazmat: mig.hazmat, mode: mig.mode, energy: mig.energy, migHash: h });
     `).catch(err => JSON.stringify({ error: String(err) }));
     const s = JSON.parse(sv);
     if (s.error) {
       check('구세이브 마이그레이션 (예외 없이 로드)', false, s.error);
     } else {
+      if (s.migHash !== MIG_HASH) console.log('MIG_HASH(actual) ' + s.migHash); // 불일치 시 재핀용
       check('마이그레이션/구필드 보존(day 42)', s.day === 42, `day ${s.day}`);
       check('마이그레이션/구필드 보존(winters 3)', s.winters === 3, `winters ${s.winters}`);
       check('마이그레이션/구필드 보존(canned 55)', s.canned === 55, `canned ${s.canned}`);
-      check('마이그레이션/신규 book 안전 기본값(number)', s.bookType === 'number', `book=${s.bookVal} (${s.bookType})`);
+      check('마이그레이션/신규 book 안전 기본값(number)', s.bookType === 'number', `book (${s.bookType})`);
       check('마이그레이션/신규 demoEnded 정의됨', s.demoType !== 'undefined', `demoEnded ${s.demoType}`);
+      check('마이그레이션/기본값(bunkerRoof=hole)', s.bunkerRoof === 'hole', `bunkerRoof ${s.bunkerRoof}`);
+      check('마이그레이션/기본값(hasCutter=false)', s.hasCutter === false, `hasCutter ${s.hasCutter}`);
+      check('마이그레이션/기본값(projects=object)', s.projects === 'object', `projects ${s.projects}`);
+      check('마이그레이션/기본값(hazmat=null)', s.hazmat === null, `hazmat ${s.hazmat}`);
+      check('마이그레이션 전 필드 해시 불변(save 추출 안전망)', s.migHash === MIG_HASH, `hash ${s.migHash}`);
     }
 
     // ── 3) i18n ko/en 패리티 (런타임 확인 — check-i18n의 런타임 짝) ──
