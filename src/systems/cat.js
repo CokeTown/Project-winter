@@ -267,13 +267,24 @@ export function makeCatSystem(ctx) {
     B(tail2, 1.05 * PX, 1.05 * PX, 1.2 * PX, point, 0, 0, -6 * PX + 0.6 * PX); // 꼬리 끝 팁 (코트별 point)
     // ── 다리 4개 (2×6×2px, 가늘고 짧게 — 어깨/골반 피벗, 발끝 흰색)
     //   기립 시 다리 상단(피벗)을 어깨높이 6px(=0.12)에 두면 다리 박스(6px 길이, 중심 -3px)의 하단이 y=0(바닥)에 닿는다
-    P.legs = {};
+    P.legs = {}; P.fore = {};
     for (const [key, x, z] of [['fl', -1.4 * PX, 5 * PX], ['fr', 1.4 * PX, 5 * PX], ['bl', -1.4 * PX, -5 * PX], ['br', 1.4 * PX, -5 * PX]]) {
       const leg = new THREE.Group();
       leg.position.set(x, 6 * PX, z);
       g.add(leg); P.legs[key] = leg;
-      B(leg, 2 * PX, 6 * PX, 2 * PX, fur, 0, -3 * PX, 0);           // 다리 (피벗에서 -y로 6px, 중심 -3px)
-      B(leg, 2.05 * PX, 1.4 * PX, 2.05 * PX, point, 0, -6 * PX + 0.7 * PX, 0); // 발끝 (코트별 point — 콜러포인트는 어둡게)
+      if (z > 0) {
+        // 앞다리 2마디(상완 3px + 전완 3px) — 곧게 편 기본값(전완 회전 0)은 종전 6px 단일다리와 동일 실루엣.
+        //   기지개(stretch)에서만 전완을 ㄴ자로 앞으로 접어 앞팔을 바닥 전방에 납작히 뻗는다(디렉터: 진짜 기지개).
+        B(leg, 2 * PX, 3 * PX, 2 * PX, fur, 0, -1.5 * PX, 0);       // 상완 3px
+        const fore = new THREE.Group();
+        fore.position.set(0, -3 * PX, 0);                          // 전완 피벗 = 팔꿈치(상완 끝)
+        leg.add(fore); P.fore[key] = fore;
+        B(fore, 2 * PX, 3 * PX, 2 * PX, fur, 0, -1.5 * PX, 0);      // 전완 3px
+        B(fore, 2.05 * PX, 1.4 * PX, 2.05 * PX, point, 0, -3 * PX + 0.7 * PX, 0); // 발끝
+      } else {
+        B(leg, 2 * PX, 6 * PX, 2 * PX, fur, 0, -3 * PX, 0);           // 뒷다리 (피벗에서 -y로 6px, 중심 -3px)
+        B(leg, 2.05 * PX, 1.4 * PX, 2.05 * PX, point, 0, -6 * PX + 0.7 * PX, 0); // 발끝
+      }
     }
     g.traverse(o => { if (o.isMesh) o.castShadow = true; });
     return { g, parts: P };
@@ -610,14 +621,16 @@ export function makeCatSystem(ctx) {
       p.legs.bl.scale.y = nv;
       p.legs.br.scale.y = nv;
     }
-    // stretch(기지개/플레이보우): 앞다리를 아래로 늘여 전방으로 뻗은 앞발이 바닥에 닿게 (디렉터 신고 — 확대: "앞발이 떠 있음").
-    //   피벗(어깨 6PX) 고정 → scale.y로만 연장하므로 어깨 틈 없음. 발끝 y = 6PX − 6PX·sy·cos|legF| ≈ 0 (legF−0.7·sy1.32).
+    // 앞다리 전완(팔꿈치) 굽힘 — 앞다리는 2마디(상완+전완). 기지개(stretch)만 ㄴ자로 접어 앞팔을 바닥 전방에 납작하게
+    //   뻗는다(디렉터 신고 — 확대: "진짜 다리 뻗는 건 ㄴ자여야"). 그 외 포즈는 0(곧게)이라 단일 6px 다리처럼 보인다.
+    //   + 기지개는 앞다리 피벗(어깨)을 낮춰 팔꿈치가 바닥 근처로 내려와 앞팔이 실제로 접지한다.
     {
-      const fs = c.mode === 'stretch' ? 1.32 : 1;
-      const cur = p.legs.fl.scale.y;
-      const nv = cur + (fs - cur) * Math.min(1, dt * 5);
-      p.legs.fl.scale.y = nv;
-      p.legs.fr.scale.y = nv;
+      const foreTgt = c.mode === 'stretch' ? 1.35 : 0;    // 전완 상대 굽힘(+X: 앞팔이 전방 수평으로)
+      c._fore = (c._fore || 0) + (foreTgt - (c._fore || 0)) * Math.min(1, dt * 5);
+      if (p.fore) { if (p.fore.fl) p.fore.fl.rotation.x = c._fore; if (p.fore.fr) p.fore.fr.rotation.x = c._fore; }
+      const pivTgt = c.mode === 'stretch' ? 3.6 * 0.02 : 6 * 0.02;  // 어깨 피벗 y (PX=0.02): 기지개 3.6PX로 낮춤
+      c._fpiv = (c._fpiv === undefined ? 0.12 : c._fpiv) + (pivTgt - (c._fpiv === undefined ? 0.12 : c._fpiv)) * Math.min(1, dt * 5);
+      p.legs.fl.position.y = c._fpiv; p.legs.fr.position.y = c._fpiv;
     }
     p.tail1.rotation.x = pv.t1;
     p.tail1.rotation.y = tailY0;
