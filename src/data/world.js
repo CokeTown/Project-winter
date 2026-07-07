@@ -158,4 +158,14 @@ export const REGIONS = {
     injuries: ['deep', 'infection', 'sprain'],
     forbidden: true, // 방호복 게이트·내구 소모 대상
   },
+  // ── 2.0 「응답」 도심 중심지 (GD-2.0 §2~3) — 낙진 시계 게이트: 겨울 셋을 넘긴 뒤(state.winters>=BAL.forbidden.falloutWinters)에만 노출 ──
+  //   봉쇄선 너머 수도의 심장. 최상위 지역이되 "부품 더"가 아니라 질적 차별(책 뭉치·의약 정점·사치 가구 — REWARD-LOOP 교훈).
+  //   forbidden 아님(낙진이 걷힌 뒤에만 열리므로 방호복 게이트 불요) — 대신 최장 소요·최고 부상 위험.
+  citycore: {
+    name: '도심 중심지', nameEn: 'City Core', emoji: '🏛️', rate: 0.3, time: 80,
+    pool: ['bookshelf', 'sofa', 'teatable', 'clock', 'radio', 'lantern', 'plant', 'fridge'], furnChance: 0.04,
+    desc: '수도의 심장 · 책 뭉치·의약 정점·희귀부품 (낙진이 걷힌 뒤에만)', descEn: 'The capital’s heart · book caches, peak meds, rare parts (only after the fallout clears)', risk: '매우 높음 — 응급키트 권장', riskEn: 'Very high — first-aid kit advised',
+    lootRes: [['parts', 3, 5], ['book', 1, 2, 0.6], ['painkiller', 1, 1, 0.4], ['antiseptic', 1, 1, 0.4], ['battery', 1, 2], ['canned', 1, 2, 0.4]],
+    injuries: ['deep', 'infection', 'sprain'],
+  },
 };

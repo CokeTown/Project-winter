@@ -928,6 +928,8 @@
   "hazmat.needCraft": "You need to make a suit first.",
   "hazmat.blocked": "You can’t cross the cordon without a hazmat suit.",
   "hazmat.wornOut": "The suit is worn out. Mend it before going back in.",
+  "fallout.cleared": "The fallout has settled. The cordon can be crossed bare-handed now, and the City Core beyond it has opened on the map.",
+  "fallout.barehandHurt": "Walked inside the cordon with no suit — the residual radiation left its mark.",
   "hazmat.wearNote": "🥽 The suit wore down a little (durability {dur} left).",
   "radio.broadcastName": "Broadcast",
   "radio.broadcastHint": "Send out what you gathered, one at a time (energy {e} · sent {sent}/{total} · lights {lit})",

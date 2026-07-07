@@ -19,11 +19,17 @@ export function setRegionsWeather(fn) { _weatherType = fn; }
 
 const BLIZZARD_EXEMPT_REGIONS = ['harborYard', 'fishMarket']; // 지상 폭설 봉쇄에서 제외되는 지역(항구)
 
+// 2.0 낙진 시계 (GD-2.0 §2): 겨울 셋을 넘기면 낙진이 걷힌다 — 금지 구역 맨몸 개방 + 도심 중심지 노출.
+//   successes가 아니라 winters 파생(day 기반 결정론) — 시간이 지도 자체를 바꾼다.
+export function falloutCleared() {
+  return (state.winters || 0) >= BAL.forbidden.falloutWinters;
+}
 // 지역 해금 여부 (성공 횟수 게이트). 항구·리조트·금지구역은 대응 셸터/후반선 도달 시 지도 노출.
 export function regionUnlocked(rid) {
   if (rid === 'harborYard' || rid === 'fishMarket') return state.successes >= SHELTER_META.tugboat.unlockAt;
   if (rid === 'resort') return state.successes >= SHELTER_META.lodge.unlockAt; // 1.3: 리조트는 스키 로지 해금 후
   if (rid === 'checkpoint' || rid === 'lab') return state.successes >= BAL.forbidden.unlockAt; // 1.4 금지구역(진입은 방호복 게이트가 별도)
+  if (rid === 'citycore') return falloutCleared(); // 2.0: 봉쇄선 너머 수도의 심장 — 낙진이 걷혀야만
   return true;
 }
 export function isForbiddenRegion(regionId) {

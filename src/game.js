@@ -43,7 +43,7 @@ import { hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
 import { districtOf, rateParts, expActualRate, setExpeditionWeather } from './core/expedition.js'; // 탐험 판정 (Tier3)
 import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
 import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEncounterEvents } from './core/encounter.js'; // 인카운터 술어 (Tier3)
-import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3)
+import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, falloutCleared } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0)
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -2341,7 +2341,7 @@ for (const [k, v] of Object.entries(REGIONS)) v.id = k;
 const MAP = {
   W: 40, H: 28, TILE: 8,
   districts: { coast: { x: 6, y: 13 }, city: { x: 16, y: 8 }, outskirts: { x: 15, y: 21 }, forest: { x: 31, y: 6 }, meadow: { x: 31, y: 19 }, harbor: { x: 4, y: 24 }, highland: { x: 36, y: 3 } },
-  regions: { residential: { x: 24, y: 16 }, commercial: { x: 12, y: 10 }, industrial: { x: 8, y: 23 }, slum: { x: 21, y: 12 }, harborYard: { x: 5, y: 26 }, fishMarket: { x: 9, y: 25 }, resort: { x: 37, y: 2 }, checkpoint: { x: 34, y: 25 }, lab: { x: 38, y: 26 } },
+  regions: { residential: { x: 24, y: 16 }, commercial: { x: 12, y: 10 }, industrial: { x: 8, y: 23 }, slum: { x: 21, y: 12 }, harborYard: { x: 5, y: 26 }, fishMarket: { x: 9, y: 25 }, resort: { x: 37, y: 2 }, checkpoint: { x: 34, y: 25 }, lab: { x: 38, y: 26 }, citycore: { x: 39, y: 27 } },
 };
 // 거리 → 탐험 소요 시간 계수 (가까우면 빨리, 멀면 오래)
 function regionDistMult(regionId) {
@@ -2508,6 +2508,7 @@ const MAP_MARKERS = {
   resort:      { x: 85, y: 13 },  // 우상단 산정 리조트
   checkpoint:  { x: 77, y: 71 },  // 우하단 봉쇄선 검문소
   lab:         { x: 87, y: 80 },  // 검문소 안쪽 폭심지 연구동 (봉쇄선 너머 구석)
+  citycore:    { x: 87, y: 62 },  // 2.0 봉쇄선 너머 수도의 심장 (동쪽 가장자리 — 낙진 걷힌 뒤에만 노출)
 };
 // 셸터 지도 좌표(% left/top) — 해금된 내 거점 점 마커용(디렉터 오더). 구역당 2셸터는 오프셋해 겹침 방지.
 //   지역 마커(MAP_MARKERS)와 안 겹치게 배치. openMapModal이 MAP_SAFE로 자동 클램프.
@@ -2756,7 +2757,8 @@ function startExpedition(regionId) {
   if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); return; }
   if (blizzardBlocks(regionId)) { toast(t('subway.blizzardBlocked')); return; } // 1.2 폭설 봉쇄 (개통 구간은 예외)
   // 1.4 금지 구역 진입 게이트 — 방호복 미제작/내구 소진 시 차단. "방호복 없이는 한 걸음도"의 실측 지점.
-  if (isForbiddenRegion(regionId) && !hazmatUsable()) {
+  //   2.0 낙진 시계: 겨울 셋을 넘겨 낙진이 걷히면 맨몸 개방(우회) — 대신 resolve에서 잔류 방사능 부상 롤.
+  if (isForbiddenRegion(regionId) && !hazmatUsable() && !falloutCleared()) {
     toast(t(state.hazmat ? 'hazmat.wornOut' : 'hazmat.blocked'));
     return;
   }
@@ -2935,6 +2937,8 @@ function resolveExpedition() {
   const notes = [];
   let title, body;
   // 1.4 금지 구역 탐험 — 성패와 무관하게 방호복이 노출됐다: 내구 -1. 다 닳으면 다음 진입이 차단된다(수리 필요).
+  //   2.0 낙진: 방호복 없이(걷힌 뒤 맨몸) 들어간 트립은 barehand 표식 — 아래 잔류 방사능 롤이 읽는다.
+  const barehandTrip = isForbiddenRegion(exp.region) && !hazmatUsable();
   if (isForbiddenRegion(exp.region)) { wearHazmat(); if (state.hazmat) notes.push(t('hazmat.wearNote', { dur: state.hazmat.dur })); }
   // hard=true인 기본 획득에만 하드 -30%를 적용한다. 은닉처 loot×2 버프는 hard=false로 호출해
   // 온전한 2배를 보장 — 유저가 얻은 "2배" 버프의 체감 가치를 하드가 깎지 않도록.
@@ -3052,6 +3056,13 @@ function resolveExpedition() {
     notes.push(t('avalanche.detourHurt'));
   }
   if (state._avalancheDetour) state._avalancheDetour = false; // 우회 플래그 소진 (이번 출발 한정)
+  // 2.0 낙진 시계: 맨몸으로 봉쇄선 안을 걸었다 — 잔류 방사능 부상 롤 (성패 무관·아직 안 다쳤을 때만.
+  //   방호복의 걷힌-뒤 가치 = 이 롤의 면제. barehandTrip 가드라 시뮬/일반 지역 RNG 스트림 무영향. 사망 없음 — 부상만.)
+  if (barehandTrip && falloutCleared() && !state.injury && Math.random() < BAL.forbidden.barehandInjuryChance) {
+    const rType = Math.random() < 0.5 ? 'deep' : 'minor';
+    notes.push(applyInjury(rType, prep.includes('bottle')));
+    notes.push(t('fallout.barehandHurt'));
+  }
   // 비/눈 속 탐험 → 젖어서 청결도 감소
   if (weather.type === 'rain' || weather.type === 'snow' || weather.type === 'storm') {
     if (!prep.includes('raincoat')) {
@@ -6160,6 +6171,9 @@ function passWinter(notes) {
   buildWinterMemoir(state.winters);
   if (state.winters === 9) buildNinthWinterMilestone();
   notes.push(t('winter.passed', { n: state.winters }));
+  // 2.0 낙진 시계 (GD-2.0 §2): 정확히 그 겨울을 넘긴 아침에 한 번 — 낙진이 걷혔다.
+  //   winters는 단조 증가라 자연히 1회 발화(별도 플래그·세이브 필드 불요).
+  if (state.winters === BAL.forbidden.falloutWinters) notes.push(t('fallout.cleared'));
   state.winterSnap = null; // 이번 겨울 스냅샷 소진 — 다음 겨울 진입 때 새로 뜬다
 }
 // 박사 무전 발화 시도 (밤, 라디오 보유 시). processDay 말미에서 호출.
@@ -8085,6 +8099,7 @@ function openQaPanel() {
       ${btn('day1', 'Day +1')}
       ${btn('day10', 'Day +10')}
       ${btn('day35', '겨울 직전(Day 35)')}
+      ${btn('winter1', '겨울 +1 (낙진 시계)')}
       ${btn('w_clear', '날씨 맑음')}
       ${btn('w_snow', '날씨 눈')}
       ${btn('w_rain', '날씨 비')}
@@ -8107,6 +8122,8 @@ function openQaPanel() {
       case 'day1': state.day += 1; state.gameMin += 1440; status('Day → ' + state.day); break;
       case 'day10': state.day += 10; state.gameMin += 1440 * 10; status('Day → ' + state.day); break;
       case 'day35': { const d = 35; state.gameMin += (d - state.day) * 1440; state.day = d; status('Day → 35 (겨울 직전)'); break; }
+      // 2.0 낙진 시계 검수용 — 카운터만 올린다(memoir/마일스톤은 정상 passWinter 경로 전용).
+      case 'winter1': state.winters = (state.winters || 0) + 1; status('넘긴 겨울 = ' + state.winters + (state.winters >= BAL.forbidden.falloutWinters ? ' · 낙진 걷힘' : '')); break;
       case 'w_clear': setWeather('clear'); status('날씨 = 맑음'); break;
       case 'w_snow': setWeather('snow'); status('날씨 = 눈'); break;
       case 'w_rain': setWeather('rain'); status('날씨 = 비'); break;
