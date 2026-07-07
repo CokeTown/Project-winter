@@ -10,14 +10,15 @@ import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert } from '../lib/hel
 import { makeCanvasTex, floorWoodTex, wallWoodTex, metalTex, plywoodTex, brickTex, subwayTileTex, concreteTex, frostTex, beamTex, floorGlowTex } from './textures.js';
 import { SHELTER_META } from '../data/shelters.js'; // rooftop이 정적 _slab 필드 참조 (SHELTERS 순환 회피)
 import { projectSiteStage } from '../core/projects.js'; // bunker 뒷문 undercroft 단계별 성장 (순수 술어)
+// 순수 지오/프롭 빌더 → render/props.js에서 직접 import(주입 아님 — ctx 슬림화)
+import { deadTreeGeo, pineGeo, addRoofGrass, groundPlane, buildObservatorySite, buildCablecarSite, buildBreakwaterSite, tagDecoFloor, tagDecoWall } from './props.js';
 
 export function makeShelterBuilders(ctx) {
   const {
     roomGroup, envRoot, state, getROOM, setBlockers, setEnvDyn, getEnvDyn, getWallList, setWallList, setBunkerStairs,
-    wallPhong, stdWall, makeWalls, tagDecoFloor, tagDecoWall, tagCeiling, tagSway, attachToWall,
-    groundPlane, wlBlock, ogGround, ogAttach, ogRock, ogZone, addRoofGrass, deadTreeGeo, pineGeo, BP,
-    buildCarWreck, buildPowerPole, buildRuinCity, buildRooftopSlate,
-    buildObservatorySite, buildCablecarSite, buildBreakwaterSite, buildRailSegments,
+    wallPhong, stdWall, makeWalls, tagCeiling, tagSway, attachToWall,
+    wlBlock, ogGround, ogAttach, ogRock, ogZone, BP,
+    buildCarWreck, buildPowerPole, buildRuinCity, buildRooftopSlate, buildRailSegments,
   } = ctx;
   return {
     container: {
