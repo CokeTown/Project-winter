@@ -791,19 +791,24 @@
     #hud .shelter-name { font-size: 12px; }
     #hud .stat { font-size: 10px; }
     #hud .btn-row .pixel-btn { padding: 7px 1px; font-size: 10px; }
-    #res-bar { top: 156px; right: 8px; left: auto; width: 172px; }
+    #res-bar { top: 132px; right: 8px; left: auto; width: 178px; }
     .res-chip { font-size: 11px; padding: 3px 5px; }
-    #res-chips { grid-template-columns: 1fr; }
+    #res-chips { grid-template-columns: 1fr 1fr; }
     #clock-panel { right: 8px; top: 8px; }
     #lcd-time { font-size: 20px; }
     #settings-window { width: 300px; }
     #exp-panel { top: 240px; width: 210px; left: 8px; max-height: calc(100vh - 330px); }
     .tool-item { min-width: 52px; font-size: 9px; padding: 6px 3px 4px; }
     .tool-item .emoji { font-size: 17px; }
-    #toolbar { bottom: 8px; padding: 6px; }
-    #sel-panel { bottom: 150px; max-width: calc(100vw - 20px); }
-    #cam-ctrl { bottom: 150px; }
-    .cam-btn { width: 44px; height: 44px; }
+    /* 조작 바(디렉터 모바일 정비): zoom 축소를 끄고 실제 터치 크기로 전폭 단일 행.
+       편집(🔧)=좌끝, 카메라/게임 조작 9개=그 옆부터 우끝까지 균등 배치. */
+    #cam-ctrl { zoom: 1; left: 44px; right: 6px; bottom: 8px; justify-content: space-between; gap: 2px; flex-wrap: nowrap; }
+    #btn-edit { zoom: 1; left: 6px; bottom: 8px; }
+    .cam-btn { width: 33px; height: 33px; font-size: 16px; }
+    /* 편집 모드 가구 툴바·팔레트는 조작 바 위로 (조작 바 zoom:1 실측 클리어런스) */
+    #toolbar { bottom: 100px; padding: 6px; }
+    #sel-panel { bottom: 100px; max-width: calc(100vw - 20px); }
+    #quest-card { bottom: 100px; }
     #modal { max-height: 72vh; }
     /* 모바일 세로: 자원바가 상단(top:156px)으로 이동하므로 쪽지는 우하단 코너 유지(데스크톱용 오프셋 되돌림) */
     #tip-note { right: 12px; width: min(260px, calc(100vw - 24px)); }

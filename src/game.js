@@ -5717,8 +5717,12 @@ function clampPanel(el) {
   const preL = r.left / z, preT = r.top / z, preW = r.width / z;
   // P1-D: 터치 기기에선 상단 상태바/펀치홀 회피용 최소 top 24px (몰입 모드 실패 대비 이중 안전장치)
   const minTop = isPcInput ? 0 : 24;
-  const l = THREE.MathUtils.clamp(preL, 0, Math.max(0, innerWidth - Math.min(preW, 120)));
-  const t = THREE.MathUtils.clamp(preT, minTop, Math.max(minTop, innerHeight - 30));
+  // 경계(innerWidth/Height)는 visual px인데 preL/preT는 pre-zoom 좌표계 → z로 나눠 스케일을 맞춘다.
+  //   (기존엔 visual 경계를 그대로 써서 zoom<1 모바일에서 우측 앵커 패널을 화면 중앙(left≈255)으로
+  //    밀어냈다 — 시계·자원바 모바일 '난리'의 근인.)
+  const keepVisX = Math.min(preW * z, 120);
+  const l = THREE.MathUtils.clamp(preL, 0, Math.max(0, (innerWidth - keepVisX) / z));
+  const t = THREE.MathUtils.clamp(preT, minTop / z, Math.max(minTop / z, (innerHeight - 30) / z));
   el.style.left = l + 'px';
   el.style.top = t + 'px';
   el.style.right = 'auto';
