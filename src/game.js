@@ -1472,13 +1472,20 @@ const SHELTERS = {
       roomGroup.add(porch);
       B(roomGroup, w + 1.4, 0.7, d + 1.4, 0x2b2e36, 0, -0.65, 0);
 
-      // 뒷벽: 벽돌 + 문 + 액자 — (B-①) 벙커의 유일한 곧은 내벽. 벽지 대상(돔 곡면은 제외).
+      // 돔 반경/두께/스테이브 수 — 뒷벽을 돔 곡면에 맞춰 자르려면(관통 방지) 뒷벽 빌드 앞에서 정의.
+      const R = 4.35, T = 0.42, SEG = 11;
+      // 뒷벽: 벽돌 + 문 + 액자 — (B-①) 벙커의 곧은 내벽. 벽지 대상.
+      //   디렉터 라이브("네모 벽돌이 타원형을 뚫고 나온다"): 꽉 찬 사각형(w×h=8.5×3)은 옆(x≈±4.25)에서 돔 반원 높이
+      //   √(R²−x²)≈0.92보다 훨씬 높아(y=3) 상단 모서리가 돔 곡면 밖으로 삐져나왔다 → 정면 파사드와 동일한 반달
+      //   Shape(반경 R−0.06)로 재구성해 돔 단면 안에 딱 맞춘다(관통 소멸, 앞뒤 반달벽 대칭).
       const brickMat = wallPhong({ map: brickTex });
       brickMat.userData.shared = true;
       tagDecoWall(brickMat);
       const back = new THREE.Group();
-      const bw = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.24), brickMat);
-      bw.position.y = h / 2; bw.castShadow = bw.receiveShadow = true;
+      const bwShp = new THREE.Shape();
+      bwShp.moveTo(R - 0.06, 0); bwShp.absarc(0, 0, R - 0.06, 0, Math.PI, false); bwShp.lineTo(-(R - 0.06), 0);
+      const bw = new THREE.Mesh(new THREE.ExtrudeGeometry(bwShp, { depth: 0.24, bevelEnabled: false }), brickMat);
+      bw.position.z = -0.12; bw.castShadow = bw.receiveShadow = true;
       back.add(bw);
       const doorX = 1.1;
       const door = new THREE.Mesh(new THREE.BoxGeometry(1.05, 2.0, 0.1), lamb(0x1a1712));
@@ -1504,8 +1511,7 @@ const SHELTERS = {
       const wallDefs = [{ group: back, pos: [0, 0, -d / 2 - 0.13], rotY: 0, normal: new THREE.Vector3(0, 0, -1) }];
       back.position.set(...wallDefs[0].pos);
 
-      // 돔 아치 쉘 (좌/우 반쪽 — 시야 방향 자동 컬링)
-      const R = 4.35, T = 0.42, SEG = 11;
+      // 돔 아치 쉘 (좌/우 반쪽 스테이브 — 시야 방향 자동 컬링). R/T/SEG는 위(뒷벽 앞)에서 정의됨.
       const shellCols = [0xb5b1a6, 0xa8a49a, 0x99958b, 0x8f8b82];
       const grassPal = [0x6a7f4a, 0x8a8a4f, 0xa3703f, 0x5f7a45];
       const zBack = -d / 2 - 0.4;
@@ -1517,19 +1523,20 @@ const SHELTERS = {
       //   [0.9 방식] 반쪽마다 낱장 박스 스테이브 SEG개. 미보수 시 일부 조각을 건너뛰거나(구멍) 짧게(단축) 만들어
       //     '갈라진 외피 사이로 하늘/별이 보이는' 폐허 돔. 상시 라이너 없음 → 붕뜸 원천 소멸.
       //     temp=정점 방수포, full=조각 온전 + 안쪽 콘크리트 라이너로 봉합. 좌/우 반쪽은 시야 방향 벽 컬링(정점 천장 컬링 없음).
-      const mkHalf = (thetaFrom, seed) => {
+      //   일반화(v1.5.4): zbk=반쪽 뒤 가장자리 z, depBase=z깊이, solid=true면 온전(구멍/단축 없음, 확장 돔용).
+      const mkHalf = (thetaFrom, seed, zbk, depBase, solid) => {
         const g = new THREE.Group();
         const rand = seededRand(seed);
         for (let i = 0; i < SEG; i++) {
           const th = thetaFrom + (i + 0.5) * (Math.PI / 2) / SEG;
-          // 갈라진 외피: 일부 조각은 짧거나 없음 (천장 수리하면 메워진다)
-          if (!roofFixed && rand() < 0.1 && th > 0.5 && th < Math.PI - 0.5) continue;
-          let dep = d + 1.0;
-          if (!roofFixed && rand() < 0.34) dep *= 0.5 + rand() * 0.32; // 수리하면 짧은(뚫린) 조각 없음
+          // 갈라진 외피: 일부 조각은 짧거나 없음 (천장 수리하면/solid면 메워진다)
+          if (!solid && !roofFixed && rand() < 0.1 && th > 0.5 && th < Math.PI - 0.5) continue;
+          let dep = depBase;
+          if (!solid && !roofFixed && rand() < 0.34) dep *= 0.5 + rand() * 0.32; // 수리/solid하면 짧은(뚫린) 조각 없음
           const arcLen = R * (Math.PI / 2) / SEG + 0.1;
           const col = rand() < 0.16 ? 0x5d594f : shellCols[Math.floor(rand() * shellCols.length)];
           const m = new THREE.Mesh(new THREE.BoxGeometry(arcLen, T, dep), lamb(col));
-          m.position.set(R * Math.cos(th), R * Math.sin(th), zBack + dep / 2);
+          m.position.set(R * Math.cos(th), R * Math.sin(th), zbk + dep / 2);
           m.rotation.z = th + Math.PI / 2;
           m.castShadow = m.receiveShadow = true;
           g.add(m);
@@ -1539,15 +1546,15 @@ const SHELTERS = {
             const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.07 + rand() * 0.07, gh2, 5),
               lamb(grassPal[Math.floor(rand() * grassPal.length)]));
             const rr = R + T / 2 + gh2 / 2 - 0.03;
-            tuft.position.set(rr * Math.cos(th), rr * Math.sin(th), zBack + 0.6 + rand() * (dep - 1));
+            tuft.position.set(rr * Math.cos(th), rr * Math.sin(th), zbk + 0.6 + rand() * (dep - 1));
             tuft.rotation.z = th - Math.PI / 2 + (rand() - 0.5) * 0.4;
             g.add(tuft);
           }
         }
         return g;
       };
-      const right = mkHalf(0, 21);           // x>0 쪽
-      const left = mkHalf(Math.PI / 2, 43);  // x<0 쪽
+      const right = mkHalf(0, 21, zBack, d + 1.0, false);           // x>0 쪽
+      const left = mkHalf(Math.PI / 2, 43, zBack, d + 1.0, false);  // x<0 쪽
       roomGroup.add(right); roomGroup.add(left);
       // #94('1자 바'): 반쪽 bb 상단(돔 정점 y≈R)에 눈 캡이 가로바로 뜨던 문제 → 캡 제외.
       right.userData.noWeatherCap = true;
@@ -1709,70 +1716,49 @@ const SHELTERS = {
         {
           // v1.5.2(디렉터 신고 — 라이브): "소형 돔이 아니고 동일 사이즈의 돔이 뒤에" → 메인 돔과 동일 반경(R)의
           //   2번째 돔을 중앙(x=0)에 세우고, 메인 돔 뒷면(zBack)에 앞 가장자리를 접하게 배치(두 돔이 앞뒤로 나란히).
-          const anteCXw = 0;                               // 후면 돔 가로 중심 = 메인 돔과 동일(중앙)
-          const sR = 4.35;                                 // 후면 돔 반경 = 메인 돔 R (동일 사이즈)
-          const sDep = 5.0;                                // 후면 돔 깊이(z) — 메인 돔 dep(d+1.0≈7)보다 약간 짧게(뒤로 과돌출 방지)
-          const smallCz = -d / 2 - 0.4 - sDep / 2 + 0.6;   // 후면 돔 중심 z: 앞 가장자리가 메인 돔 뒷면(zBack=-d/2-0.4)에 접함
-          const domeCol = 0x9a968c;
-          const smallDome = new THREE.Group();
-          // 반원통 외피 (axis=z — 후면 돔은 온전한 연속 셸: 앞 돔 스테이브와 달리 불투명 매스로 유지)
-          const sk = new THREE.Mesh(
-            new THREE.CylinderGeometry(sR, sR, sDep, 20, 1, true, 0, Math.PI),
-            new THREE.MeshLambertMaterial({ color: domeCol, side: THREE.DoubleSide }));
-          sk.rotation.x = Math.PI / 2;                     // 원통 축 y→z
-          sk.rotation.z = Math.PI;                         // 아치가 위로 오게 (통로 pass와 동일 — 1차 검증에서 누워 있던 원인)
-          sk.position.set(anteCXw, 0, smallCz - 0.6);
-          sk.castShadow = sk.receiveShadow = true; smallDome.add(sk);
-          // 후면 반달 캡 (원통 뒤가 뚫려 보이지 않게 — 정면 파사드와 같은 문법의 축소판)
-          {
-            const cshp = new THREE.Shape();
-            cshp.moveTo(sR - 0.02, 0);
-            cshp.absarc(0, 0, sR - 0.02, 0, Math.PI, false);
-            cshp.lineTo(-(sR - 0.02), 0);
-            const cap = new THREE.Mesh(new THREE.ExtrudeGeometry(cshp, { depth: 0.18, bevelEnabled: false }),
-              new THREE.MeshLambertMaterial({ color: shade(domeCol, 0.88) }));
-            cap.position.set(anteCXw, 0, smallCz - 0.6 - sDep / 2 - 0.09);
-            cap.castShadow = cap.receiveShadow = true; smallDome.add(cap);
-          }
-          // 정면 반달 캡 (디렉터 신고 — 라이브: "뒤 돔도 투시된다. 안되는 온전한 형태로"): 뒷문 해금 전(!bunkerBackdoor)엔
-          //   앞도 막아 앞뒤 다 닫힌 '온전한 불투명 돔'으로 만든다(투시 불가). 해금하면 이 캡을 없애 전실(store)이 보인다.
-          if (!state.bunkerBackdoor) {
-            const fshp = new THREE.Shape();
-            fshp.moveTo(sR - 0.02, 0);
-            fshp.absarc(0, 0, sR - 0.02, 0, Math.PI, false);
-            fshp.lineTo(-(sR - 0.02), 0);
-            const fcap = new THREE.Mesh(new THREE.ExtrudeGeometry(fshp, { depth: 0.18, bevelEnabled: false }),
-              new THREE.MeshLambertMaterial({ color: shade(domeCol, 0.92) }));
-            fcap.position.set(anteCXw, 0, smallCz - 0.6 + sDep / 2 - 0.09);
-            fcap.castShadow = fcap.receiveShadow = true; smallDome.add(fcap);
-          }
-          // 외피 위 이끼/풀 몇 점 — 원통 곡면 좌표로 (메인 돔과 톤 맞춤)
-          const sr = seededRand(311);
-          for (let i = 0; i < 7; i++) {
-            const th = 0.35 + sr() * (Math.PI - 0.7);      // 원통 각(지면 근처 제외)
-            const rr = sR + 0.05;
-            const gx = anteCXw + rr * Math.cos(th), gy = rr * Math.sin(th);
-            const gz = smallCz - 0.6 + (sr() - 0.5) * (sDep - 0.6);
-            const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.06 + sr() * 0.06, 0.16 + sr() * 0.2, 5),
-              lamb([0x6a7f4a, 0x8a8a4f, 0x5f7a45][Math.floor(sr() * 3)]));
-            tuft.position.set(gx, gy, gz); tuft.rotation.z = th - Math.PI / 2 + (sr() - 0.5) * 0.4; smallDome.add(tuft);
-          }
-          // 정수리 통풍구(작은 콘크리트 링) — 실루엣 포인트 유지
+          // 후면(확장) 돔 — 앞 돔과 동일 반경(R)/결의 '스테이브 돔' + 내부(바닥·먼 반달벽).
+          //   디렉터 라이브: "확장된 왼쪽은 OK, 오른쪽(확장 돔)이 매끈 블롭 → 기존 돔처럼" + "확장 돔 내부도 구현".
+          //   [셸] 온전 스테이브(solid=구멍 없음) 좌/우 반쪽. 정면/외부에선 불투명 돔 실루엣(투시 없음), 후면 회전 시
+          //     근접 반쪽이 컬링돼 내부 노출(메인 돔과 동일 사상). ★ makeWalls는 wallList를 리셋하므로 재호출 불가 →
+          //     빌드된 반쪽/먼벽을 wallList에 직접 push해 동일 컬 루프(updateWallCulling)에 편입(proxy=null 가드됨).
+          const sR = 4.35, sDep = 5.0;
+          const rearCz = -d / 2 - 0.4 - sDep / 2;          // 확장 돔 중심 z (앞 가장자리가 메인 돔 뒷면 zBack=-d/2-0.4에 접함)
+          const rearZBack = rearCz - sDep / 2;             // 스테이브 뒤(먼) 가장자리 z
+          const rearRight = mkHalf(0, 61, rearZBack, sDep, true);           // x>0 반쪽 (온전)
+          const rearLeft = mkHalf(Math.PI / 2, 62, rearZBack, sDep, true);  // x<0 반쪽 (온전)
+          rearRight.userData.noWeatherCap = true; rearLeft.userData.noWeatherCap = true;
+          // 정수리 통풍구 + 외피 이끼 — 각 반쪽 그룹에 넣어 함께 컬링(허공 부유 방지, #87 사상)
+          const rsr = seededRand(311);
           const vent = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 0.34, 10), lamb(0x77736a));
-          vent.position.set(anteCXw, sR - 0.04, smallCz - 0.6); vent.castShadow = true; smallDome.add(vent);
-          // ── 짧은 연결 통로: 메인 돔 뒷벽 ↔ 소형 돔 사이 낮은 반원통 볼트 ──
-          const passZ0 = -d / 2 - 0.13;                    // 메인 돔 뒷벽 월드 z
-          const passLen = Math.abs(smallCz - passZ0) - sR * 0.4;
-          if (passLen > 0.3) {
-            const pass = new THREE.Mesh(
-              new THREE.CylinderGeometry(1.05, 1.05, passLen, 14, 1, true, 0, Math.PI),
-              new THREE.MeshLambertMaterial({ color: shade(domeCol, 0.92), side: THREE.DoubleSide }));
-            pass.rotation.x = Math.PI / 2;                 // 축 y→z
-            pass.rotation.z = Math.PI;                     // 아치가 위로 오게
-            pass.position.set(anteCXw, 0, passZ0 - passLen / 2);
-            pass.castShadow = pass.receiveShadow = true; smallDome.add(pass);
+          vent.position.set(0, sR - 0.04, rearCz); vent.castShadow = true; rearRight.add(vent);
+          for (let i = 0; i < 7; i++) {
+            const th = 0.35 + rsr() * (Math.PI - 0.7);
+            const rr = sR + 0.05;
+            const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.06 + rsr() * 0.06, 0.16 + rsr() * 0.2, 5),
+              lamb([0x6a7f4a, 0x8a8a4f, 0x5f7a45][Math.floor(rsr() * 3)]));
+            tuft.position.set(rr * Math.cos(th), rr * Math.sin(th), rearCz + (rsr() - 0.5) * (sDep - 0.6));
+            tuft.rotation.z = th - Math.PI / 2 + (rsr() - 0.5) * 0.4;
+            (th < Math.PI / 2 ? rearRight : rearLeft).add(tuft);
           }
-          roomGroup.add(smallDome); // 컬링 무관: 후면 외부에서 항상 2돔 실루엣 성립
+          roomGroup.add(rearRight); roomGroup.add(rearLeft);
+          wallList.push({ group: rearRight, normal: new THREE.Vector3(1, 0, 0), proxy: null });
+          wallList.push({ group: rearLeft, normal: new THREE.Vector3(-1, 0, 0), proxy: null });
+          // 내부 바닥(콘크리트) + 어두운 받침 — 확장 돔 안이 텅 빈 껍데기가 아니라 '방'이 되게(디렉터: 내부 구현)
+          const rFloor = new THREE.Mesh(new THREE.BoxGeometry(2 * sR - 0.5, 0.16, sDep - 0.15), lamb(0x6b6760));
+          rFloor.position.set(0, -0.08, rearCz); rFloor.receiveShadow = true; roomGroup.add(rFloor);
+          B(roomGroup, 2 * sR + 0.4, 0.6, sDep + 0.3, 0x2b2e36, 0, -0.46, rearCz);
+          // 먼(뒤) 반달 벽 — 확장 돔 -z 끝을 막음. 후면 회전 시 컬링돼 내부 노출(normal -z, 메인 뒷벽과 대칭).
+          const rearWall = new THREE.Group();
+          {
+            const rwShp = new THREE.Shape();
+            rwShp.moveTo(sR - 0.06, 0); rwShp.absarc(0, 0, sR - 0.06, 0, Math.PI, false); rwShp.lineTo(-(sR - 0.06), 0);
+            const rw = new THREE.Mesh(new THREE.ExtrudeGeometry(rwShp, { depth: 0.22, bevelEnabled: false }), wallPhong({ map: concreteTex }));
+            rw.position.z = -0.11; rw.castShadow = rw.receiveShadow = true; rearWall.add(rw);
+          }
+          rearWall.position.set(0, 0, rearZBack);
+          rearWall.userData.noWeatherCap = true;
+          roomGroup.add(rearWall);
+          wallList.push({ group: rearWall, normal: new THREE.Vector3(0, 0, -1), proxy: null });
         }
       }
       if (!state.bunkerBackdoor) {
