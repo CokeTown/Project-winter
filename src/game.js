@@ -1674,7 +1674,7 @@ function restEnergyValue(atHour, collapse = false) {
   return { hasBed, collapse: false, energy };
 }
 function sleepUntilMorning(auto = false, opt = {}) {
-  if (DEMO_ED && state.demoEnded) { if (!auto) toast(t('demo.end.locked')); return; } // #74: 시간 점프 봉인
+  // #74 데모 재설계: (구) demoEnded 시간점프 봉인 제거 — 샌드박스는 시간이 흐른다.
   if (!auto && paused) { toast(t('pause.blocked')); return; }
   if (state.exp) { toast(t('sleep.cantDuringExp')); return; }
   if (blackoutActive) return;
@@ -2747,7 +2747,7 @@ function forecastText() {
 }
 // 탐험은 준비 단계를 거친다 (기획서 v0.2: 지역 → 날씨/위험 확인 → 준비물 → 출발)
 function startExpedition(regionId) {
-  if (DEMO_ED && state.demoEnded) { toast(t('demo.end.locked')); return; } // #74: 종료된 데모 세이브는 진행 금지
+  // #74 데모 재설계: (구) demoEnded 탐험 봉인 제거 — 샌드박스에서 탐험 가능.
   if (paused) { toast(t('pause.blocked')); return; }
   if (isWallpaper()) { toast(t('wallpaper.noAction')); return; } // 🖼️ 배경화면: 탐험 off
   if (state.exp) return;
@@ -5879,7 +5879,7 @@ function hideTitle() {
   if (state.exp && Date.now() >= state.exp.end) resolveExpedition();
   syncBgm();
   // #74 데모: 이미 끝난 세이브로 입장하면 종료 화면부터 — 닫으면 봄의 거처 관람(시간 동결)만 가능
-  if (DEMO_ED && state.demoEnded) setTimeout(showDemoEnd, 350);
+  // #74 데모 재설계: (구) demoEnded 재입장 종료화면 재노출 제거 — 세이브는 그냥 재개(pre-credits=첫눈까지, sandbox=무한).
 }
 
 // ── #74 Next Fest 데모 「첫 번째 겨울」 종료 화면 ──────────────────────────
@@ -5983,6 +5983,7 @@ function showIntro() {
    엔딩 (v1.9) — Day 10000, 박사의 구조 (이때만 Ending OST)
 ============================================================ */
 let endingActive = false;
+let creditsActive = false; // #74 데모 첫눈 크레딧 진행 중 — 시간정지·SFX 음소거·BGM 크로스페이드를 엔딩과 공유
 function runEndingSequence() {
   endingActive = true;
   closeModal();
@@ -6015,6 +6016,39 @@ function runEndingSequence() {
       scheduleSave();
       syncBgm();
       toast(t('ending.epilogue'));
+    } else render();
+  };
+  render();
+}
+
+// ── #74 데모 재설계: 첫 겨울 '첫눈' → Nine Winters 크레딧(Ending_Credits.mp3) → 4계절 무한 샌드박스 ──
+//   runEndingSequence 골격 재사용(#ending-screen·시간정지·크로스페이드). 종료 시 하드스톱이 아니라
+//   demoPhase='sandbox'로 넘겨 게임이 계속 흐른다(브레드스 잠금은 지역/이주 게이트가 담당).
+function runDemoCredits() {
+  if (creditsActive || state.demoPhase === 'sandbox') return;
+  creditsActive = true;
+  closeModal();
+  setPaused(false);
+  syncBgm(true); // Ending_Credits.mp3 크로스페이드
+  const lines = [t('demo.credits.0'), t('demo.credits.1'), t('demo.credits.2'), t('demo.credits.3')];
+  let i = 0;
+  const scr = $('ending-screen'), txt = $('ending-text'), btn = $('ending-next');
+  scr.style.display = 'flex';
+  const render = () => {
+    txt.style.animation = 'none'; void txt.offsetWidth; txt.style.animation = '';
+    txt.innerHTML = lines[i];
+    btn.textContent = i === lines.length - 1 ? t('demo.credits.close') : t('intro.next');
+  };
+  btn.onclick = () => { // onclick 대입: 재실행 시 리스너 중복 방지
+    i++;
+    if (i >= lines.length) {
+      scr.style.display = 'none';
+      creditsActive = false;
+      state.demoPhase = 'sandbox';   // 이제부터 4계절 무한 샌드박스 (동결 없음)
+      state.dayLog.notes.push(t('demo.credits.note'));
+      flushSave();                   // 재입장 시 크레딧 재발화 방지 (firstSnowSeen + demoPhase 각인)
+      syncBgm();                     // 날씨/계절 BGM 복귀
+      toast(t('demo.credits.toast'));
     } else render();
   };
   render();
@@ -6225,7 +6259,15 @@ function processDay() {
     notes.push(t('season.arrived', { icon: se.icon, name: LName(se), desc: LDesc(se) }));
     toast(t('season.changed', { icon: se.icon, name: LName(se) }));
     rollWeather(); // 새 계절의 날씨로
-    if (se.id === 'winter') { tipOnce('tip.winter'); beginWinterSnapshot(); } // 겨울 진입: memoir용 스냅샷
+    if (se.id === 'winter') { // 겨울 진입: memoir용 스냅샷
+      tipOnce('tip.winter'); beginWinterSnapshot();
+      // #74 데모 재설계: 첫 겨울 진입 = '첫눈' 강제 → 잠시 뒤 Nine Winters 크레딧(1회). pre-credits·첫겨울(winters 0)만.
+      if (DEMO_ED && state.demoPhase === 'pre-credits' && (state.winters || 0) === 0 && !state.firstSnowSeen) {
+        state.firstSnowSeen = true;
+        setWeather('snow');                       // 첫눈 확정 (seasonAdjustPool은 눈을 유력하게만 해 비결정 → 강제)
+        setTimeout(() => runDemoCredits(), 2600); // 첫눈이 내리는 걸 잠시 본 뒤 크레딧
+      }
+    }
     // ── Nine Winters(#11): 겨울을 "넘긴" 순간 = 겨울 마지막 날을 거처에서 맞고 봄으로 넘어온 오늘
     if (prev.id === 'winter' && se.id === 'spring') passWinter(notes);
   }
@@ -6678,8 +6720,7 @@ function runAutoPlay() {
   }
 }
 function tickTime(dt) {
-  // #74 데모 종료 후엔 시간 동결 — 봄의 거처를 둘러볼 순 있지만 진행은 없다(잠금의 실체는 여기).
-  if (DEMO_ED && state.demoEnded) return;
+  // #74 데모 재설계: (구) demoEnded tickTime 동결 제거 — 크레딧 후 4계절 무한 샌드박스는 시간이 흐른다.
   state.gameMin += dt * GAME_MIN_PER_SEC;
   decayGauges(dt * GAME_MIN_PER_SEC);
   checkHelpless(); // 배치 D: 무력 상태(게이지 바닥 + 재고 0) 안전망 판정
@@ -6700,16 +6741,8 @@ function tickTime(dt) {
     reportQueued = true;
     rolledOver = true;
   }
-  // #74 데모 게이트(디렉터 2026-07 볼륨 축소): 첫 겨울이 '닥칠 때'(Day 37 = seasonOf 'winter' 진입) 그 자리에서 종료.
-  //   종전엔 겨울을 넘긴 봄(winters≥1, Day49)에 끝나 코어를 전부 경험시켰다 → "감질맛" 없음. 겨울 도착=클라이맥스 직전으로 앞당김.
-  // 아침 보고 대신 종료 화면 — demoEnded가 세이브에 박혀 이후 입장에도 종료 화면·시간 동결이 유지된다.
-  if (DEMO_ED && rolledOver && !state.demoEnded && seasonOf(state.day) === 'winter') {
-    state.demoEnded = true;
-    reportQueued = false;
-    doSaveNow();
-    showDemoEnd();
-    return;
-  }
+  // #74 데모 재설계: (구) 첫 겨울 진입 하드 시간컷 폐기 — 이제 첫 겨울 '첫눈'(processDay winter 분기)이
+  //   Nine Winters 크레딧을 띄우고 이후 4계절 무한 샌드박스로 넘긴다(동결 없음). demoEnded 동결 로직도 제거됨.
   // 자정을 자연 경과(취침이 아님)로 넘긴 경우의 처리.
   // v1.2.0: 자정 강제 취침 폐지. 셸터 안에서 깨어 있으면 시간이 계속 흐르고(01시부터 회복 페널티 누적),
   // 05시에 쓰러지듯 자동 취침한다(아래 별도 트리거). 탐험/오프라인 경로만 여기서 아침으로 점프.
@@ -7091,7 +7124,7 @@ let journalKeyHandler = null;
 let journalOpen = false; // 수첩이 떠 있는 동안 리포트/인카운터/다음 튜토리얼이 겹치지 않도록
 function openJournalPages(pages, opts = {}) {
   if (!pages || !pages.length) return;
-  if (DEMO_ED && state.demoEnded) return; // #74: 데모 종료 뒤엔 신규 페이퍼 금지 (엔드 스크린 덮개 방지)
+  // #74 데모 재설계: (구) demoEnded 신규 페이퍼 봉인 제거 — 샌드박스 정상.
   let i = 0;
   const scr = $('journal-screen'), paper = $('journal-paper');
   const titleEl = $('journal-title'), bodyEl = $('journal-body'), indEl = $('journal-page-ind');
@@ -7784,6 +7817,7 @@ $('opt-lang').addEventListener('change', async e => {
 const BGM_LIB = {
   main: ['Main_theme'],
   ending: ['Ending'],
+  credits: ['Ending_Credits'], // #74 데모 재설계: 첫눈 크레딧 곡 (메인테마 오케스트라 리믹스)
   cat: ['Cat'],
   weather: {
     clear: ['Sunny1', 'Sunny2', 'Sunny3', 'Sunny4', 'Sunny5', 'Sunny6', 'Sunny7'],
@@ -7803,6 +7837,7 @@ bgm.addEventListener('error', () => {
 });
 function isEveningHour() { const h = gameHour(); return h >= 17 && h < 21; }
 function bgmContext() {
+  if (creditsActive) return { key: 'credits', pool: BGM_LIB.credits, loop: true, vol: 1 }; // #74 데모 첫눈 크레딧
   if (endingActive) return { key: 'ending', pool: BGM_LIB.ending, loop: true, vol: 1 };
   if (titleVisible) return { key: 'title', pool: BGM_LIB.main, loop: true, vol: 0.55 }; // 잔잔하게
   if (state.catMusicDay && state.catMusicDay === state.day)
@@ -7843,7 +7878,7 @@ function pickBgmTrack(ctx) {
   const cands = ctx.pool.filter(n => n !== bgmTrack);
   return cands.length ? cands[Math.floor(Math.random() * cands.length)] : ctx.pool[0];
 }
-const BGM_SPECIAL = key => key === 'title' || key === 'cat' || key === 'ending';
+const BGM_SPECIAL = key => key === 'title' || key === 'cat' || key === 'ending' || key === 'credits';
 function syncBgm(forcePlay = false) {
   const ctx = bgmContext();
   if (ctx.key !== bgmCtxKey) {
@@ -7880,7 +7915,7 @@ const RAIN_AMB = {
 };
 /* ── SFX 앰비언스/난로 상태 동기화 (날씨·실내·가구 상태 → 루프 채널) ── */
 function syncSfxAmbience() {
-  if (titleVisible || endingActive) { setAmbience(null); setFire(false); setSeasonAmbience(null); return; }
+  if (titleVisible || endingActive || creditsActive) { setAmbience(null); setFire(false); setSeasonAmbience(null); return; }
   const indoorSh = !!SHELTERS[state.current]?.indoor;
   let calmOutdoor = false; // 맑은 날 실외 = 계절 앰비언스가 깔릴 수 있는 조건
   // 날씨발 앰비언스 전환은 긴 페이드(#83) — 루프가 뚝 시작/종료하는 "이상한 소리" 원천 제거
@@ -8303,7 +8338,7 @@ function renderFrame() {
   let t = clock.elapsedTime;
   if (_golden) { dt = _goldenDt; if (_goldenDt > 0) _goldenAcc += _goldenDt; t = _goldenT + _goldenAcc; } // 골든: dt=0 정지 / 스테핑 시 고정 dt 결정론 진행
   pollGamepad(dt);
-  if (!titleVisible && !paused && !endingActive) tickTime(dt); // 타이틀·일시정지·엔딩 중엔 시간 정지
+  if (!titleVisible && !paused && !endingActive && !creditsActive) tickTime(dt); // 타이틀·일시정지·엔딩 중엔 시간 정지
   else if (state.exp) state.exp.end += dt * 1000; // 탐험 실시간 타이머도 함께 멈춘다
   applyTimeLighting();
   updateCamera();
@@ -8346,7 +8381,7 @@ function renderFrame() {
 // 로직(시간 진행 + BGM 상태 동기화)만 1초 간격으로 처리한다 (배터리/CPU 절약).
 function logicTick() {
   const dt = Math.min(clock.getDelta(), 1.5); // 숨김 중엔 긴 델타 허용 (1초 간격 폴링)
-  if (!titleVisible && !paused && !endingActive) tickTime(dt);
+  if (!titleVisible && !paused && !endingActive && !creditsActive) tickTime(dt);
   else if (state.exp) state.exp.end += dt * 1000;
   syncBgm();
 }
