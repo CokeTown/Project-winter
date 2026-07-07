@@ -23,7 +23,7 @@ import { makeCatSystem } from './systems/cat.js';
 import { makeWildlifeSystem } from './systems/wildlife.js';
 import { makeAvatarSystem } from './systems/avatar.js';
 import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wildlife.js';
-import { lang, setLang, t, LN, LD, LF, applyStaticI18n } from './i18n.js';
+import { lang, setLang, t, LN, LD, LF, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
 import { Platform, bindPlatform } from './lib/platform.js';
 import { state, DEFAULT_STATE, opts, OPTS_DEFAULT, items } from './core/state.js'; // 모놀리스 분해 Phase 1: 공유 가변 상태
@@ -7939,7 +7939,8 @@ if (!loadSave()) {
   } catch (e) { /* 손상된 nw-opts 무시 */ }
 }
 setLang(opts.lang || 'ko');   // 세이브된 언어 적용 (기본 ko)
-applyStaticI18n();             // index.html 정적 텍스트 치환
+applyLocaleOverrides();       // 설치본 locales/*.json 유저 편집분 병합 (Electron 동기 — 렌더 전, 플래시 없음)
+applyStaticI18n();            // index.html 정적 텍스트 치환
 // 카메라 열 버튼: 브라우저 네이티브 툴팁(title) 대신 게임 스타일 좌측 라벨(::before, data-label).
 // PC=호버 시 표시, 모바일=호버가 없으니 퀘스트 유도(pulse) 중에만 상시 표시 + 토글 토스트가 보조.
 for (const b of document.querySelectorAll('#cam-ctrl .cam-btn, #btn-gear, #btn-edit')) { // #btn-edit: 하단 바 좌측 분리 후에도 커스텀 라벨 방식 유지 (디렉터: 다른 아이콘과 동일하게)
@@ -7953,6 +7954,8 @@ applyOpts();
 updateHud();
 updateClock();
 renderQuestCard();
+// 웹: 설치본 fetch로 loose locales 병합(비동기 베스트에포트) — 적용되면 화면 재치환. (Electron은 위 applyLocaleOverrides 동기 처리)
+loadLocaleOverridesWeb().then(a => { if (a) { applyStaticI18n(); updateHud(); renderResBar(); renderQuestCard(); } });
 if (state.minimizedEvent && EVENTS[state.minimizedEvent]) showEventChip(state.minimizedEvent); // 로드 후 내려둔 이벤트 칩 복원
 $('btn-clean').addEventListener('click', cleanShelter);
 $('btn-wardrobe').addEventListener('click', openWardrobeModal); // #86④

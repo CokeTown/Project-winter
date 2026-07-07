@@ -81,4 +81,37 @@ export function applyStaticI18n(root = document) {
 // title.ver만 예외: 버전문은 로드타임 계산(APP_VER·DEMO_TAG·BUILD_STAMP)이라 JS에 잔류.
 export const STR = {};
 for (const k in koStr) STR[k] = { ko: koStr[k], en: (enStr[k] != null ? enStr[k] : koStr[k]) };
+
+// ── 런타임 로케일 오버라이드 (유저가 설치본 locales/*.json 편집 → 재빌드 없이 번역 변경) ──
+//   Electron: preload(nineLocale)가 fs로 미리 읽어 동기 노출 → 부팅 시 STR 위에 병합(플래시 없음).
+//   웹: fetch('locales/*.json') 비동기 베스트에포트. 파일 없거나 깨지면 내장 기본값 유지(안전).
+// 반환: 실제로 값이 바뀐 게 있으면 true (없으면 재렌더 생략 — loose==base일 때 불필요한 재렌더/깜빡임·골든 교란 방지)
+function mergeOverride(koObj, enObj) {
+  let changed = false;
+  if (koObj) for (const k in koObj) {
+    if (!STR[k]) { STR[k] = { ko: koObj[k], en: koObj[k] }; changed = true; }
+    else if (STR[k].ko !== koObj[k]) { STR[k].ko = koObj[k]; changed = true; }
+  }
+  if (enObj) for (const k in enObj) {
+    if (!STR[k]) { STR[k] = { ko: enObj[k], en: enObj[k] }; changed = true; }
+    else if (STR[k].en !== enObj[k]) { STR[k].en = enObj[k]; changed = true; }
+  }
+  return changed;
+}
+export function applyLocaleOverrides() {
+  const nl = (typeof window !== 'undefined') ? window.nineLocale : null;
+  if (nl && (nl.ko || nl.en)) return mergeOverride(nl.ko, nl.en);
+  return false;
+}
+export async function loadLocaleOverridesWeb() {
+  if (typeof fetch === 'undefined') return false;
+  try {
+    const [ko, en] = await Promise.all([
+      fetch('locales/ko.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('locales/en.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    ]);
+    if (ko || en) return mergeOverride(ko, en);
+  } catch (e) { /* */ }
+  return false;
+}
 STR['title.ver'] = { ko: `Nine Winters · v${APP_VER} Beta${DEMO_TAG}${BUILD_STAMP ? ` · ${BUILD_STAMP}` : ''}`, en: `Nine Winters · v${APP_VER} Beta${DEMO_TAG}${BUILD_STAMP ? ` · ${BUILD_STAMP}` : ''}` };

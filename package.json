@@ -48,6 +48,9 @@
       "electron/**/*",
       "package.json"
     ],
+    "extraResources": [
+      { "from": "public/locales", "to": "locales" }
+    ],
     "directories": {
       "output": "release"
     },
