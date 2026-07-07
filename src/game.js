@@ -12,6 +12,7 @@ import { DISTRICTS, REGIONS } from './data/world.js';
 import { SHELTER_META } from './data/shelters.js'; // 셸터 데이터 필드(분리 Phase 1) — build 함수는 아래 SHELTERS에서 병합
 import { makeShelterBuilders } from './render/shelters.js'; // Tier4 렌더 추출 Phase1-①: 셸터 build 함수(ctx 주입)
 import { makeCulling } from './render/culling.js'; // Tier4 렌더 추출 Phase1-②: 벽/천장 컬링
+import { makeCamera } from './render/camera.js'; // Tier4 렌더 추출 Phase1-③: 카메라
 import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, BROADCASTS, SKETCHES } from './data/lore.js';
 import { makeEvents } from './data/events.js';
 import { makeDecoTex } from './data/decotex.js';
@@ -121,28 +122,6 @@ const camCenter = new THREE.Vector3(0, 0.9, 0);
 // #70: 이번 프레임 카메라에 '실제 적용된' 팬(클로즈업 중엔 0) — 컬링 판정이 팬을 되돌려
 //   벽/천장/근경소품 마스크가 팬과 무관하게 유지되도록 하는 보정값(아래 updateWallCulling/tickEnv).
 const camPanApplied = { x: 0, z: 0 };
-const _panLook = new THREE.Vector3();
-// 팬 클램프 반경: 방 크기 비례(마당·원경 부착물이 살짝 보이는 정도) — 벡터 길이 원형 클램프.
-function panMax() { return Math.max(ROOM.w, ROOM.d) * 0.55; }
-function setPanTarget(x, z) {
-  const m = panMax(), len = Math.hypot(x, z);
-  if (len > m) { x = x * m / len; z = z * m / len; }
-  camState.targetPanX = x; camState.targetPanZ = z;
-}
-// #70 화면 픽셀 드래그 → 월드 XZ 팬 (grab-the-world: 잡은 지점이 포인터를 따라온다).
-//   직교 투영에서 세로 h=9/zoom 이 innerHeight px에 대응 → 픽셀당 월드 길이(wpp).
-//   세로 드래그는 앙각(elev)의 바닥 평면 투영 보정(fs) — 낮은 앵글일수록 같은 픽셀이 더 먼 바닥 거리.
-function panByScreenDelta(dx, dy) {
-  const wpp = (9 / camState.zoom) / innerHeight;
-  const fs = 1 / Math.max(0.35, Math.sin(camState.elev));
-  const yaw = camState.yaw;
-  const rx = Math.sin(yaw), rz = -Math.cos(yaw);   // 화면 오른쪽의 월드 XZ 방향
-  const fx = -Math.cos(yaw), fz = -Math.sin(yaw);  // 화면 위쪽의 월드 XZ 방향(카메라 → 방 중심)
-  setPanTarget(
-    camState.targetPanX - dx * wpp * rx + dy * wpp * fs * fx,
-    camState.targetPanZ - dx * wpp * rz + dy * wpp * fs * fz
-  );
-}
 
 // ④ 고양이 클로즈업 카메라 — 비배치 모드에서 고양이 탭 시 얼굴로 글라이드. 드래그/ESC/빈곳 탭으로 복원.
 //   활성 중엔 카메라 타겟을 고양이(눈높이 살짝 위)로 옮기고 거리/줌/앙각을 클로즈업 프로필로 보간(지연 추적).
@@ -188,59 +167,11 @@ function exitCatCloseup() {
     catCam.saved = null;
   }
 }
-function updateCamera() {
-  const C = BAL.catCam;
-  let center = camCenter, dist = camState.dist, elev = camState.elev;
-  const _cat = getCat();
-  if (catCam.active && _cat) {
-    // 고양이 눈높이 살짝 위를 지연 추적(급회전 금지) — center를 catObj로 lerp
-    const p = _cat.g.position;
-    catCam.center.x += (p.x - catCam.center.x) * C.glideLerp;
-    catCam.center.y += ((p.y + C.heightAbove) - catCam.center.y) * C.glideLerp;
-    catCam.center.z += (p.z - catCam.center.z) * C.glideLerp;
-    center = catCam.center;
-    // ⑶ 진입 시 확정한 목표 yaw(짧은 호 ≤45° 클램프)로만 회전한다 — 매 프레임 고양이 facing으로
-    //   스냅하지 않아 진입 회전이 과하지 않다. 줌·센터링(center lerp)이 얼굴 클로즈업을 완성한다.
-    camState.targetYaw = catCam.targetYaw;
-    // 거리/줌/앙각을 클로즈업 프로필로 보간(글라이드 ~1초)
-    dist = camState.dist + (C.dist - camState.dist) * C.glideLerp; camState.dist = dist;
-    elev = camState.elev + (THREE.MathUtils.degToRad(C.elevDeg) - camState.elev) * C.glideLerp; camState.elev = elev;
-    camState.zoom += (C.zoom - camState.zoom) * C.glideLerp;
-  } else if (camState.dist !== 24) {
-    // 복원: 클로즈업에서 빠져나오면 기본 거리/앙각으로 서서히 되돌린다
-    camState.dist += (24 - camState.dist) * 0.16; dist = camState.dist;
-    if (Math.abs(dist - 24) < 0.05) camState.dist = 24;
-  }
-  camState.yaw += (camState.targetYaw - camState.yaw) * (catCam.active ? BAL.catCam.glideLerp : 0.15);
-  // #70 팬 보간: targetPan → pan (yaw 보간 문법). reduceMotion이면 즉시. 클로즈업 중엔 팬 미적용(스펙: 비활성).
-  if (opts.reduceMotion) { camState.panX = camState.targetPanX; camState.panZ = camState.targetPanZ; }
-  else {
-    camState.panX += (camState.targetPanX - camState.panX) * 0.15;
-    camState.panZ += (camState.targetPanZ - camState.panZ) * 0.15;
-  }
-  camPanApplied.x = catCam.active ? 0 : camState.panX;
-  camPanApplied.z = catCam.active ? 0 : camState.panZ;
-  const yaw = camState.yaw;
-  // 카메라 타겟 = camCenter + (panX, 0, panZ) — camCenter 자체는 불변(컬링 기준점 유지, 의도된 동작).
-  camera.position.set(
-    center.x + camPanApplied.x + dist * Math.cos(elev) * Math.cos(yaw),
-    center.y + dist * Math.sin(elev),
-    center.z + camPanApplied.z + dist * Math.cos(elev) * Math.sin(yaw)
-  );
-  _panLook.set(center.x + camPanApplied.x, center.y, center.z + camPanApplied.z);
-  camera.lookAt(_panLook);
-  const aspect = innerWidth / innerHeight;
-  const h = 9 / camState.zoom;
-  camera.left = -h * aspect / 2; camera.right = h * aspect / 2;
-  camera.top = h / 2; camera.bottom = -h / 2;
-  camera.updateProjectionMatrix();
-}
-function fitZoomForShelter() {
-  const aspect = innerWidth / innerHeight;
-  const base = SHELTERS[state.current].viewH;
-  const needH = Math.max(base, (base + 3) / Math.max(aspect, 0.4));
-  camState.zoom = THREE.MathUtils.clamp(9 / needH, 0.2, 1);
-}
+// 카메라 업데이트/팬/줌 → render/camera.js (Tier4 Phase1-③). 카메라 객체는 game.js 잔류, 함수만 이동.
+const { updateCamera, fitZoomForShelter, panMax, setPanTarget, panByScreenDelta } = makeCamera({
+  camera, camState, camCenter, camPanApplied, BAL, opts, getCat, catCam, state,
+  getROOM: () => ROOM, getSHELTERS: () => SHELTERS,
+});
 
 /* ============================================================
    조명 (환경별로 색/세기 조정)
