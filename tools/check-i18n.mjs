@@ -7,6 +7,11 @@ const read = f => JSON.parse(fs.readFileSync(new URL(`../src/locales/${f}`, impo
 const ko = read('ko.json'), en = read('en.json');
 // {josa}는 한국어 조사 자동선택 전용 플레이스홀더(v1.4.1 josa 유틸) — 영어엔 조사가 없어 ko에만 존재가 정상.
 const KO_ONLY = new Set(['josa']);
+// 미번역 가드(디렉터 2026-07): en.json 값에 한글이 남아 있으면 = 번역 누락 → 게이트 실패.
+//   패리티(키 존재)만으론 "한글을 en에 그대로 복붙"이 통과된다 → 실제 번역 여부를 강제.
+//   예외: 의도된 이중표기(언어 선택기는 양쪽 병기해야 어느 언어 유저든 찾음)만 화이트리스트.
+const EN_HANGUL_OK = new Set(['opt.lang']); // "Language / 언어"
+const HANGUL = /[가-힣ㄱ-ㆎ]/;
 const sig = s => [...String(s).matchAll(/\{(\w+)\}/g)].map(m => m[1]).filter(p => !KO_ONLY.has(p)).sort().join(',');
 const bad = [];
 const koKeys = Object.keys(ko), enKeys = new Set(Object.keys(en));
@@ -14,6 +19,7 @@ for (const k of koKeys) {
   if (!enKeys.has(k)) { bad.push(`${k}: en 누락`); continue; }
   if (!String(ko[k]).trim() && String(en[k]).trim()) bad.push(`${k}: ko 비어있음`);
   if (sig(ko[k]) !== sig(en[k])) bad.push(`${k}: 플레이스홀더 불일치 ko[${sig(ko[k])}] en[${sig(en[k])}]`);
+  if (!EN_HANGUL_OK.has(k) && HANGUL.test(String(en[k] ?? ''))) bad.push(`${k}: en 미번역(한글 잔존) "${String(en[k]).slice(0, 30)}"`);
 }
 for (const k of enKeys) if (!(k in ko)) bad.push(`${k}: ko 누락`);
 console.log(`i18n 항목 ${koKeys.length}개 검사 (ko.json/en.json)`);
