@@ -3,14 +3,16 @@
 //   t/BAL/DEFAULT_STATE/opts는 직접 import, $는 자체 정의. game.js 클로저(openModal/toast/
 //   wallpaperUnlocked/openSlotModal/slotKey/LASTSLOT_KEY/DEMO_ED/SHELTERS)만 ctx 주입.
 //   게이트: 모달 DOM 스냅샷(tests/grounding/modal-golden — mode)이 innerHTML 무손실을 검증.
-import { t, LN as LName } from '../i18n.js'; // LName은 game.js 별칭(const LName=LN) — 모듈은 LN을 직접 alias
+import { t, LN as LName, LD as LDesc } from '../i18n.js'; // LName/LDesc는 game.js 별칭(LN/LD) — 모듈은 직접 alias
 import { BAL } from '../data/balance.js';
 import { state, DEFAULT_STATE, opts } from '../core/state.js';
 import { OUTFITS } from '../data/items.js';
+import { KNOWLEDGE, KNOWLEDGE_BRANCHES } from '../data/knowledge.js';
+import { hasKnowledge, knowledgePrereqMet, unlockKnowledge } from '../core/knowledge.js';
 
 export function makeModals(ctx) {
   const { openModal, toast, wallpaperUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS } = ctx;
-  const { getPaused, playSfx, scheduleSave, avatarSys } = ctx; // wardrobe 등 추가 모달 의존
+  const { getPaused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud } = ctx; // 추가 모달 의존
   const $ = id => document.getElementById(id);
 
   function openModeModal(n) {
@@ -101,5 +103,33 @@ export function makeModals(ctx) {
   }));
   }
 
-  return { openModeModal, openWardrobeModal };
+  function openKnowledgeModal() {
+  if (getPaused()) { toast(t('pause.blocked')); return; }
+  const books = state.res.book || 0;
+  const sections = KNOWLEDGE_BRANCHES.map(br => {
+    const nodes = Object.entries(KNOWLEDGE).filter(([, n]) => n.branch === br.id).sort((a, b) => a[1].tier - b[1].tier);
+    const rows = nodes.map(([id, n]) => {
+      const has = hasKnowledge(id), pre = knowledgePrereqMet(id), afford = books >= n.cost;
+      let right;
+      if (has) right = `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('know.learned')}</span>`;
+      else if (!pre) right = `<span style="color:var(--text-dim);font-size:10px;margin-left:6px">${t('know.locked')}</span>`;
+      else right = `<button class="pixel-btn" data-know="${id}" ${(pre && afford) ? '' : 'disabled'} style="margin-left:6px">${t('know.learn', { n: n.cost })}</button>`;
+      return `
+      <div class="prep-row ${has ? 'sel' : (pre && afford) ? '' : 'no'}" style="cursor:default">
+        <span>${LName(n)} <span style="color:var(--text-dim);font-size:10px">·${t('know.cost', { n: n.cost })}</span></span>
+        <span class="p-eff" style="font-size:10px">${LDesc(n)}</span>
+        ${right}
+      </div>`;
+    }).join('');
+    return `<div style="margin-top:8px"><div style="font-weight:bold;font-size:12px;margin-bottom:2px">${br.emoji} ${LName(br)}</div>${rows}</div>`;
+  }).join('');
+  openModal(`📚 ${t('know.title')}`, `<div style="font-size:12px;color:var(--accent);margin-bottom:6px">${t('know.books', { n: books })}</div>${sections}`);
+  $('modal-body').querySelectorAll('button[data-know]').forEach(b =>
+    b.addEventListener('click', () => {
+      if (unlockKnowledge(b.dataset.know)) { playSfx('craft'); renderResBar(); updateHud(); openKnowledgeModal(); }
+      else toast(t('toast.needResource'));
+    }));
+  }
+
+  return { openModeModal, openWardrobeModal, openKnowledgeModal };
 }
