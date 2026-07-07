@@ -929,6 +929,8 @@
   "hazmat.blocked": "You can’t cross the cordon without a hazmat suit.",
   "hazmat.wornOut": "The suit is worn out. Mend it before going back in.",
   "fallout.cleared": "The fallout has settled. The cordon can be crossed bare-handed now, and the City Core beyond it has opened on the map.",
+  "mastery.up": "The paths of {name} feel familiar now — geography {stars}. You’ll see more from here on.",
+  "map.mastery": "Geography ★{n}",
   "fallout.barehandHurt": "Walked inside the cordon with no suit — the residual radiation left its mark.",
   "hazmat.wearNote": "🥽 The suit wore down a little (durability {dur} left).",
   "radio.broadcastName": "Broadcast",

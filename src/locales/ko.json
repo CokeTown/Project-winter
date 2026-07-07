@@ -929,6 +929,8 @@
   "hazmat.blocked": "방호복 없이는 봉쇄선을 넘을 수 없다.",
   "hazmat.wornOut": "방호복이 다 닳았다. 수선해야 다시 들어갈 수 있다.",
   "fallout.cleared": "낙진이 걷혔다. 봉쇄선을 맨몸으로 넘을 수 있고, 그 너머 도심 중심지가 지도에 열렸다.",
+  "mastery.up": "{name}의 길이 손에 익었다 — 지리 지식 {stars}. 다음부터는 더 잘 보인다.",
+  "map.mastery": "지리 지식 ★{n}",
   "fallout.barehandHurt": "맨몸으로 봉쇄선 안을 걸었다 — 잔류 방사능이 몸에 남았다.",
   "hazmat.wearNote": "🥽 방호복이 조금 닳았다 (내구 {dur}회 남음).",
   "radio.broadcastName": "무전 송출",

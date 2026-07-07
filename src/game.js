@@ -40,7 +40,7 @@ import { hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
   knowColdDefense, knowInsulates, knowHearthAnywhere, knowWinterComfort, knowHeatFuelMul,
   knowWaterPerDay, knowGardenAnywhere, knowGardenBonus, knowSpoilMul, knowSaltCureBonus,
   knowDirtReduce, knowCraftMul, knowComfortBonus, knowExpBonus, knowForecastLead, knowsForecast, knowBroadcastBonus } from './core/knowledge.js'; // 지식 해금·효과
-import { districtOf, rateParts, expActualRate, setExpeditionWeather } from './core/expedition.js'; // 탐험 판정 (Tier3)
+import { districtOf, rateParts, expActualRate, setExpeditionWeather, masteryTier } from './core/expedition.js'; // 탐험 판정 (Tier3) + 지역 숙련(2.0)
 import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
 import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEncounterEvents } from './core/encounter.js'; // 인카운터 술어 (Tier3)
 import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, falloutCleared } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0)
@@ -2437,7 +2437,11 @@ function openMapModal() {
     const visits = (state.regionVisits || {})[rid] || 0;
     const rate = Math.round(rateParts(rid).eff * 100);
     const cls = rate >= 50 ? 'ok' : 'lack';
-    const dots = visits > 0 ? `<span class="pin-visits" title="${t('map.visits', { n: visits })}">${'•'.repeat(Math.min(visits, 4))}</span>` : '';
+    // 2.0 지역 숙련: 티어가 생기면 발자취 점(•) 대신 지리 지식 별(★) — 단골 동네의 표식
+    const mTier = masteryTier(rid);
+    const dots = mTier > 0
+      ? `<span class="pin-visits mastery" title="${t('map.mastery', { n: mTier })}">${'★'.repeat(mTier)}</span>`
+      : visits > 0 ? `<span class="pin-visits" title="${t('map.visits', { n: visits })}">${'•'.repeat(Math.min(visits, 4))}</span>` : '';
     if (!visits && !blocked) el.classList.add('sketch');
     el.innerHTML = blocked
       ? `${regionIcon(rid, 'px-lg')}<span class="pin-rate lack">❄️</span>`
@@ -2679,10 +2683,11 @@ function showMapInfo(rid) {
   const p = rateParts(rid);
   const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC);
   const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
+  const mTier = masteryTier(rid); // 2.0 지역 숙련 — 정보줄에 지리 지식 표기
   $('map-info').innerHTML = `
     ${t('map.regionLine', { emoji: regionIcon(rid), pct: Math.round(p.eff * 100), name: LName(r), desc: LDesc(r) })}<br>
     ${t('map.riskLine', { risk: LRisk(r), dur, mult: regionDistMult(rid).toFixed(2), wicon: wxIcon(weather.type), wname: LName(WEATHERS[weather.type]), forecast: fc })}
-    · ${t('map.visits', { n: visits })}`;
+    · ${t('map.visits', { n: visits })}${mTier > 0 ? ` · <span style="color:var(--accent)">${t('map.mastery', { n: mTier })}</span>` : ''}`;
 }
 
 // 탐험 소요 시간(초): 거리 + 염좌 +30% + 이동형 거점(버스) -25%
@@ -2911,9 +2916,13 @@ function resolveExpedition() {
   // 시뮬 순수성 가드(recordNormalDay 선례): v1.6 사이클에서 이 카운터 유무가 시드 고정 시뮬의
   //   자원 궤적을 미세 변화시키는 히든 커플링 실측(생존 지표는 diff-0, 경로 미규명 — 백로그 조사).
   //   시뮬엔 지도 연출이 무의미하므로 제외 — 기준선 재현성 보존.
+  let masteryUp = 0; // 2.0 지역 숙련: 이번 귀환으로 지리 지식 티어가 올랐는가 (아래 notes에 인과문)
   if (!_simRunning) {
     state.regionVisits = state.regionVisits || {};
+    const _mPrev = masteryTier(exp.region);
     state.regionVisits[exp.region] = (state.regionVisits[exp.region] || 0) + 1;
+    const _mNow = masteryTier(exp.region);
+    if (_mNow > _mPrev) masteryUp = _mNow;
   }
   const prep = exp.prep || [];
   const startedInjured = !!state.injury;        // 다친 몸으로 출발했는가 (인과문용)
@@ -2940,6 +2949,8 @@ function resolveExpedition() {
   //   2.0 낙진: 방호복 없이(걷힌 뒤 맨몸) 들어간 트립은 barehand 표식 — 아래 잔류 방사능 롤이 읽는다.
   const barehandTrip = isForbiddenRegion(exp.region) && !hazmatUsable();
   if (isForbiddenRegion(exp.region)) { wearHazmat(); if (state.hazmat) notes.push(t('hazmat.wearNote', { dur: state.hazmat.dur })); }
+  // 2.0 지역 숙련: 티어 상승의 순간 — 성패와 무관하게 알린다 (실패한 트립도 진행이었다는 감각).
+  if (masteryUp) notes.push(t('mastery.up', { name: LName(r), stars: '★'.repeat(masteryUp) }));
   // hard=true인 기본 획득에만 하드 -30%를 적용한다. 은닉처 loot×2 버프는 hard=false로 호출해
   // 온전한 2배를 보장 — 유저가 얻은 "2배" 버프의 체감 가치를 하드가 깎지 않도록.
   // 1.1 항만 야적장: 그날 부스트되는 전리품 1종(결정론적, 왕복/시뮬 재현) · 수산시장: 겨울 결빙 절반.
@@ -2976,7 +2987,8 @@ function resolveExpedition() {
       notes.push(t('exp.note.loot2'));
       state.buff = null;
     }
-    if (Math.random() < r.furnChance) {
+    // 2.0 지역 숙련: 티어당 가구 발견율 +1%p — "단골은 좋은 물건 자리를 안다" (시뮬은 티어 0 = 기존과 동일)
+    if (Math.random() < r.furnChance + masteryTier(exp.region) * BAL.mastery.furnPerTier) {
       got.push(pickFurniture(r.pool));
       notes.push(t('exp.note.furniture'));
     }
@@ -8100,6 +8112,7 @@ function openQaPanel() {
       ${btn('day10', 'Day +10')}
       ${btn('day35', '겨울 직전(Day 35)')}
       ${btn('winter1', '겨울 +1 (낙진 시계)')}
+      ${btn('visits20', '전 지역 방문 +20 (숙련)')}
       ${btn('w_clear', '날씨 맑음')}
       ${btn('w_snow', '날씨 눈')}
       ${btn('w_rain', '날씨 비')}
@@ -8124,6 +8137,8 @@ function openQaPanel() {
       case 'day35': { const d = 35; state.gameMin += (d - state.day) * 1440; state.day = d; status('Day → 35 (겨울 직전)'); break; }
       // 2.0 낙진 시계 검수용 — 카운터만 올린다(memoir/마일스톤은 정상 passWinter 경로 전용).
       case 'winter1': state.winters = (state.winters || 0) + 1; status('넘긴 겨울 = ' + state.winters + (state.winters >= BAL.forbidden.falloutWinters ? ' · 낙진 걷힘' : '')); break;
+      // 2.0 지역 숙련 검수용 — 전 지역 방문 +20 (20/50/100 티어 도달 확인)
+      case 'visits20': { state.regionVisits = state.regionVisits || {}; for (const id of Object.keys(REGIONS)) state.regionVisits[id] = (state.regionVisits[id] || 0) + 20; status('전 지역 방문 +20 (예: 슬럼 ' + state.regionVisits.slum + '회)'); break; }
       case 'w_clear': setWeather('clear'); status('날씨 = 맑음'); break;
       case 'w_snow': setWeather('snow'); status('날씨 = 눈'); break;
       case 'w_rain': setWeather('rain'); status('날씨 = 비'); break;

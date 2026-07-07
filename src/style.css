@@ -425,6 +425,7 @@
     font-size: 12px; line-height: 0.6; letter-spacing: 2px; color: #5c4a32;
     text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
   }
+  .map-pin .pin-visits.mastery { color: #a8842f; letter-spacing: 1px; } /* 2.0 지역 숙련: 지리 지식 별 — 잉크보다 진한 금갈색 */
   .map-pin.inked-now { animation: inkIn 1.1s ease-out; }
   @keyframes inkIn { from { opacity: 0.25; filter: grayscale(1); } to { opacity: 1; filter: none; } }
   /* 셸터 점 마커 (디렉터 오더) — 해금된 내 거점. 아이콘 없이 원형: 미배치=1겹 / 배치=2겹 / 현 거처=강조. */
