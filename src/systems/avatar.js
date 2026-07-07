@@ -361,9 +361,9 @@ export function makeAvatarSystem(ctx) {
         g.rotation.y += dr * Math.min(1, dt * 6);
         av.gait += dt * 7;
         // 그림자 실시간화(디렉터 실기기: "그림자가 뒤늦게 따라온다"): 씬은 정적 최적화(autoUpdate=false)라
-        //   움직이는 놈이 직접 신고해야 한다 — wildlife moveToward와 동일한 0.12s 스로틀.
+        //   움직이는 놈이 직접 신고해야 한다. 20Hz로 상향해 스텝감 제거(디렉터: 실시간).
         av._shT = (av._shT || 0) + dt;
-        if (av._shT > 0.12) { av._shT = 0; shadowDirty(); }
+        if (av._shT > 0.05) { av._shT = 0; shadowDirty(); }
       }
     } else if (av.mode === 'sit' || av.mode === 'warm') {
       av.timer -= dt;

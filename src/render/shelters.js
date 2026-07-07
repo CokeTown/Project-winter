@@ -173,9 +173,29 @@ export function makeShelterBuilders(ctx) {
           const wz = side >= 2 ? slabCZ + (rand() - 0.5) * (slabD - 1) : slabCZ + (side === 0 ? -hd - 0.22 : hd + 0.22);
           const wg = new THREE.BoxGeometry(side < 2 ? 0.7 : 0.1, 0.9, side < 2 ? 0.1 : 0.7);
           wg.translate(wx, -1.6 - rand() * 13, wz);
-          winGeos.push(paintGeo(wg, rand() < 0.15 ? 0xd9b06a : 0x131720));
+          rand(); // (시퀀스 보존) — 종전 불켜진 창 판정 자리. 디렉터 신고: 폐허에 불켜진 창=비현실 → 전부 어둠
+          winGeos.push(paintGeo(wg, 0x131720));
         }
         roomGroup.add(new THREE.Mesh(mergeGeometries(winGeos), vcLambert));
+
+        // ── 내려가는 사다리 (디렉터: 불켜진 창 대신 현실적 — 옥탑에서 아래로 접근하는 철제 사다리) ──
+        //   건물 앞면(+z, 카메라 방향) 좌측에 세로대 2 + 가로대. 파라펫 아래에서 시작해 아래로 뻗는다.
+        {
+          const ladderMat = wallPhong({ color: 0x37373b }); ladderMat.userData.shared = true; // 어두운 철제
+          const ladder = new THREE.Group();
+          const ladH = 9.2, railGap = 0.46, rr = 0.045;
+          for (const rx of [-railGap / 2, railGap / 2]) {
+            const rail = new THREE.Mesh(new THREE.BoxGeometry(rr * 2, ladH, rr * 2), ladderMat);
+            rail.position.set(rx, -ladH / 2, 0); rail.castShadow = true; ladder.add(rail);
+          }
+          for (let i = 0; i * 0.4 <= ladH; i++) {
+            const rung = new THREE.Mesh(new THREE.BoxGeometry(railGap + rr * 2, rr * 1.5, rr * 3), ladderMat);
+            rung.position.set(0, -0.15 - i * 0.4, 0); ladder.add(rung);
+          }
+          // 앞면 좌측, 건물 전면보다 살짝 앞(+z)으로 돌출시켜 벽에 붙인 느낌
+          ladder.position.set(slabCX - slabW * 0.30, -0.25, slabCZ + (slabD + 0.4) / 2 + 0.06);
+          roomGroup.add(ladder);
+        }
 
         // ── 가벽 방 (콘크리트 옥탑 구조물 뼈대 + 주워 모은 패널/합판 가벽) ──
         // 방은 원점 중심. 컬링용 벽 4장 + 문 개구부(+z). 슬레이트 지붕은 별도(rooftopSlate).
@@ -274,16 +294,15 @@ export function makeShelterBuilders(ctx) {
         const rand = seededRand(777);
         // #71: 도심 — 잠식이 가장 짙은 셸터. 근경 빌딩(dynCull: envDyn.buildings 시야 컬링 대상)은
         //   담쟁이를 그룹 자식으로 부착, 원경은 월드 병합. ogPer = 동당 패치 밀도 가중.
-        const near = buildRuinCity(envRoot, rand, { count: 9, rMin: 13, rMax: 22, hMin: 6, hMax: 14, baseY: -18, litChance: 0.6, dynCull: true, ogPer: 1.6 });
-        buildRuinCity(envRoot, rand, { count: 16, rMin: 24, rMax: 46, hMin: 8, hMax: 20, baseY: -18, litChance: 0.45, ogPer: 1.2 });
+        // 디렉터 신고(폐허 현실감): 불켜진 창 제거 — 원경 도시 litChance 0.6/0.45 → 0 (아무도 없는 도시=어둠)
+        const near = buildRuinCity(envRoot, rand, { count: 9, rMin: 13, rMax: 22, hMin: 6, hMax: 14, baseY: -18, litChance: 0, dynCull: true, ogPer: 1.6 });
+        buildRuinCity(envRoot, rand, { count: 16, rMin: 24, rMax: 46, hMin: 8, hMax: 20, baseY: -18, litChance: 0, ogPer: 1.2 });
         ogGround((x, z) => -18.1, 15, 26, 3); // 노면 균열 사이 수풀(도로 평면 y 고정)
         // 저 멀리 화재가 난 빌딩
         const fx = 20, fz = -14, fy = -2;
-        const glow = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 6),
-          new THREE.MeshLambertMaterial({ color: 0xff8840, emissive: 0xff5f20, emissiveIntensity: 1.2 }));
-        glow.position.set(fx, fy, fz);
-        envRoot.add(glow);
-        const fire = new THREE.PointLight(0xff7030, 30, 26, 1.8);
+        // 저 멀리 화재 — 발광 구체(디렉터 신고: "태양도 아닌 빨간 공")는 건물 없이 떠 보여 제거.
+        //   원경 화광 PointLight만 남겨 어두운 폐허에 은은한 주황 물듦만 유지(밤 하늘은 moonMesh 담당).
+        const fire = new THREE.PointLight(0xff7030, 18, 24, 1.8);
         fire.position.set(fx, fy + 1, fz);
         envRoot.add(fire);
         const street = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), lamb(0x14161c));

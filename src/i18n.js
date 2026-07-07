@@ -65,8 +65,11 @@ export function applyStaticI18n(root = document) {
   root.querySelectorAll('[data-i18n-html]').forEach(el => {
     el.innerHTML = t(el.getAttribute('data-i18n-html'));
   });
+  // 네이티브 title 툴팁("웹페이지처럼" — 디렉터 신고)을 커스텀 game-tip(data-tip)으로 대체.
+  //   game.js의 플로팅 툴팁이 data-tip을 읽어 body에 게임 스타일로 띄운다. 네이티브 title은 제거.
   root.querySelectorAll('[data-i18n-title]').forEach(el => {
-    el.title = t(el.getAttribute('data-i18n-title'));
+    el.setAttribute('data-tip', t(el.getAttribute('data-i18n-title')));
+    el.removeAttribute('title');
   });
   if (typeof document !== 'undefined' && document.documentElement) {
     document.documentElement.lang = lang;

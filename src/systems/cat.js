@@ -232,8 +232,9 @@ export function makeCatSystem(ctx) {
     B(body, 4.06 * PX, 1.6 * PX, 10 * PX, belly, 0, -1.6 * PX, 6 * PX); // 배쪽 밴드 (아랫면에 얇게 덧대어 파묻힘 없이 보이게)
     for (const [sz, w] of [[3 * PX, 4.06 * PX], [7 * PX, 4.06 * PX], [10.5 * PX, 4.06 * PX]])
       B(body, w, 3.2 * PX, 2.2 * PX, stripe, 0, 0.3 * PX, sz);          // 등 줄무늬 3개 — 측면 돌출을 배 밴드와 동일(+0.03px)로 플러시(#87: 측면 요철 오독 마감)
-    // 가슴 필러 — 앉아서 가슴이 들려도 어깨와 앞다리 사이가 비어 보이지 않게 몸통 앞쪽 아래를 채움
-    B(body, 3.4 * PX, 3 * PX, 3.2 * PX, belly, 0, -2 * PX, 10.2 * PX);
+    // 가슴 필러 제거(디렉터 2026-07: 앉기 리워크 후 가슴 밑에서 흰 직사각 박스로 삐져나옴).
+    //   이 박스는 몸통 아랫면(-2px)보다 1.5px 더 아래로 하강(belly색)해 가슴 들린 앉기에서 노출됐다.
+    //   배쪽 밴드(위 belly 밴드, y=-1.6px)가 언더를 이미 커버하므로 제거. 필요 시 신 포즈에 맞춰 재튜닝.
     // ── 머리 (5×4×5px, 몸통 앞쪽에 자식으로 부착)
     const head = new THREE.Group();
     head.position.set(0, 1.5 * PX, 12 * PX + 2.5 * PX);   // 몸통 앞면(6+6=12px)에서 머리 반경(2.5px)만큼 더 앞
@@ -528,9 +529,9 @@ export function makeCatSystem(ctx) {
         // 진척 없음 감지: 목표까지 거리가 3초간 개선되지 않으면(우회로도 못 뚫으면) 목표 재선정
         if (c._bestDist === undefined || dist < c._bestDist - 0.1) { c._bestDist = dist; c._noProg = 0; }
         else { c._noProg = (c._noProg || 0) + dt; if (c._noProg > 3) { c._noProg = 0; c._bestDist = undefined; c.tgt = catFreeSpot(); } }
-        // 그림자맵은 autoUpdate=false(배터리) — 이동 중엔 10Hz로 갱신해 그림자가 실시간으로 따라온다
+        // 그림자맵은 autoUpdate=false(배터리) — 이동 중엔 20Hz로 갱신해 그림자가 실시간으로 따라온다(디렉터: 스텝감 제거)
         c._shT = (c._shT || 0) + dt;
-        if (c._shT > 0.1) { c._shT = 0; shadowDirty(); }
+        if (c._shT > 0.05) { c._shT = 0; shadowDirty(); }
         // 부드러운 방향 전환 (우회 중엔 실제 진행각을 바라본다)
         const want = heading;
         let dr = want - c.g.rotation.y;
@@ -622,10 +623,10 @@ export function makeCatSystem(ctx) {
     // 뒷다리 정강이(무릎) 굽힘 — 앉기(MC 레퍼런스: 낮게 웅크린 엉덩이): 정강이를 앞으로 접어 뒷발이 앞·아래로,
     //   + 뒷다리 피벗(엉덩이)을 낮춰 엉덩이가 바닥에 붙는다. 그 외 포즈는 0/6PX(곧은 다리)라 회귀 없음.
     {
-      const shinTgt = c.mode === 'sit' ? 1.3 : 0; // 앉기만 정강이 접어 웅크림. 엎드리기(superman)는 정강이 곧게 편 채 legB로 뒤로 쭉.
+      const shinTgt = 0; // 앉기 뒷다리 정강이 곧게(디렉터 3차): legB −1.5(수평 앞)와 합쳐 뒷다리가 지면에 곧게 뻗음. 굽히면(과거 1.3/0.4) 발끝이 말려 몸통 관통(흰 네모) → 0으로 제거.
       c._shin = (c._shin || 0) + (shinTgt - (c._shin || 0)) * Math.min(1, dt * 5);
       if (p.shin) { if (p.shin.bl) p.shin.bl.rotation.x = c._shin; if (p.shin.br) p.shin.br.rotation.x = c._shin; }
-      const bpivTgt = c.mode === 'sit' ? 3.4 * 0.02 : (c.mode === 'sprawl' ? 1.6 * 0.02 : 6 * 0.02); // 엎드리기: 엉덩이 피벗 바닥 근처로 → 수평 뒷다리가 뒤로 바닥에 눕는다
+      const bpivTgt = (c.mode === 'sit' || c.mode === 'sprawl') ? 1.6 * 0.02 : 6 * 0.02; // 앉기·엎드리기: 엉덩이 피벗 바닥 근처로 → 수평 뒷다리가 지면에 눕는다(앉기=앞, 엎드리기=뒤)
       c._bpiv = (c._bpiv === undefined ? 0.12 : c._bpiv) + (bpivTgt - (c._bpiv === undefined ? 0.12 : c._bpiv)) * Math.min(1, dt * 5);
       p.legs.bl.position.y = c._bpiv; p.legs.br.position.y = c._bpiv;
     }

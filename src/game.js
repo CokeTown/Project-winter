@@ -66,10 +66,15 @@ const buffLabel = (b) => b ? (b.labelId ? t(b.labelId) : (b.label || '')) : '';
 // HTML 속성값 안전화 (이모지/따옴표를 onerror 인라인 폴백에 넣기 위함)
 const _iconEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 // icon(name, emojiFallback, cls) → <img class="px-icon …"> 문자열. emoji 폴백 필수(로드 실패 시 텍스트로 대체).
+// 아이콘 PNG가 없는 이름(예: icon_res_book)은 첫 로드에서 404→onerror 폴백이 innerHTML 재구성마다
+// 재발화해 "깜빡임"으로 보인다(디렉터 신고: 책). 실패한 이름을 캐시해 이후엔 <img> 없이 이모지로 바로 폴백.
+const _iconMissing = new Set();
+if (typeof window !== 'undefined') window.__iconFail = (n) => _iconMissing.add(n);
 function icon(name, emoji = '', cls = '') {
   const fb = _iconEsc(emoji);
+  if (_iconMissing.has(name)) return `<span class="px-icon${cls ? ' ' + cls : ''}">${fb}</span>`;
   return `<img class="px-icon${cls ? ' ' + cls : ''}" src="img/icons/${name}.png" alt="" draggable="false"`
-    + ` onerror="this.replaceWith(document.createTextNode('${fb}'))">`;
+    + ` onerror="window.__iconFail&&window.__iconFail('${name}');this.replaceWith(document.createTextNode('${fb}'))">`;
 }
 // ID→아이콘명 매핑 (테이블 원본 대신 별도 객체). 대부분 ID가 파일명과 직결되나 예외(region slum→slums)만 명시.
 const REGION_ICON = { residential: 'icon_region_residential', commercial: 'icon_region_commercial', industrial: 'icon_region_industrial', slum: 'icon_region_slums' };
@@ -104,8 +109,8 @@ const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
 renderer.setPixelRatio(1);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFShadowMap;
-renderer.shadowMap.autoUpdate = false; // 정적 씬: 변경 시에만 갱신
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 소프트 엣지(디렉터: 더 예쁜 그림자). 하드 PCF → 부드러운 페넘브라
+renderer.shadowMap.autoUpdate = false; // 정적 씬: 변경 시에만 갱신 (이동체는 shadowDirty로 직접 신고)
 function shadowDirty() { renderer.shadowMap.needsUpdate = true; }
 
 const scene = new THREE.Scene();
@@ -185,7 +190,8 @@ scene.add(hemi);
 const moon = new THREE.DirectionalLight(0x9db4d8, 0.75);
 moon.position.set(-6, 12, -4);
 moon.castShadow = true;
-moon.shadow.mapSize.set(1024, 1024);
+moon.shadow.mapSize.set(2048, 2048); // 1024→2048: 그림자 선명도(디렉터: 예쁜 그림자). 데스크톱 데모 기준, 약한 HW는 그래픽 설정에서 하향 여지
+moon.shadow.bias = -0.0004; // 소프트섀도 + 고해상 시 표면 아크네 억제
 moon.shadow.camera.left = -16; moon.shadow.camera.right = 16;
 moon.shadow.camera.top = 16; moon.shadow.camera.bottom = -16;
 moon.shadow.camera.far = 60;
@@ -6042,16 +6048,16 @@ function updateHud() {
   // 아이콘 중심 상태 표시 (자세한 설명은 툴팁으로)
   $('hud-stat').innerHTML =
     `${W.icon}${W.penalty ? `<span style="color:var(--bad)">-${Math.round(W.penalty * 100)}%</span>` : ''}` +
-    `${injIcon ? `<span title="${state.injury ? LName(INJURIES[state.injury.type]) : ''}">${injIcon}</span>` : ''}` +
-    `${cd.limitMod ? ` <span style="color:var(--bad)" title="${LLimits(sh) || ''}">⚠️</span>` : ''}` +
-    `${state.buff ? ` <span style="color:var(--good)" title="${buffLabel(state.buff)}">✨</span>` : ''}` +
-    ` · <span style="color:var(--accent)" title="${comfortTip}">😊${cd.score} ${'★'.repeat(lv)}</span>` +
-    ` · <span title="${t('hud.cleanTip')}">🧹${Math.round(cd.clean)}</span>` +
-    ` · <span title="${t('hud.expTip', { n: state.expToday, max: EXP_PER_DAY })}">🎒${state.expToday}/${EXP_PER_DAY}</span>` +
-    ` · <span title="${t('hud.succTip')}">🏆${state.successes}</span>` +
+    `${injIcon ? `<span data-tip="${state.injury ? LName(INJURIES[state.injury.type]) : ''}">${injIcon}</span>` : ''}` +
+    `${cd.limitMod ? ` <span style="color:var(--bad)" data-tip="${LLimits(sh) || ''}">⚠️</span>` : ''}` +
+    `${state.buff ? ` <span style="color:var(--good)" data-tip="${buffLabel(state.buff)}">✨</span>` : ''}` +
+    ` · <span style="color:var(--accent)" data-tip="${comfortTip}">😊${cd.score} ${'★'.repeat(lv)}</span>` +
+    ` · <span data-tip="${t('hud.cleanTip')}">🧹${Math.round(cd.clean)}</span>` +
+    ` · <span data-tip="${t('hud.expTip', { n: state.expToday, max: EXP_PER_DAY })}">🎒${state.expToday}/${EXP_PER_DAY}</span>` +
+    ` · <span data-tip="${t('hud.succTip')}">🏆${state.successes}</span>` +
     // Nine Winters(#11): 넘긴 겨울 배지 — 1겨울부터 노출. 9 초과는 약속을 넘어선 시간 → accent
     ((state.winters || 0) >= 1
-      ? ` · <span class="hud-winters${state.winters > 9 ? ' beyond' : ''}" title="${t('winter.badge.tip', { n: state.winters })}">❄️${state.winters}${isZen() ? '' : '/9'}</span>`
+      ? ` · <span class="hud-winters${state.winters > 9 ? ' beyond' : ''}" data-tip="${t('winter.badge.tip', { n: state.winters })}">❄️${state.winters}${isZen() ? '' : '/9'}</span>`
       : '');
   renderGauge('g-hunger', state.hunger, 'hunger', '🥫');
   renderGauge('g-thirst', state.thirst, 'thirst', '💧');
@@ -6072,7 +6078,7 @@ function renderResBar() {
   bar.innerHTML = Object.entries(RESOURCES).map(([id, r]) => {
     const n = state.res[id] || 0;
     const changed = !wp && lastResSnapshot[id] != null && lastResSnapshot[id] !== n;
-    return `<div class="res-chip ${!wp && n === 0 ? 'zero' : ''} ${changed ? 'flash' : ''}" title="${LName(r)}">
+    return `<div class="res-chip ${!wp && n === 0 ? 'zero' : ''} ${changed ? 'flash' : ''}">
       <span class="re">${resIcon(id)}</span><span class="rname">${LName(r)}</span><span class="rn">${wp ? '∞' : n}</span>
     </div>`;
   }).join('');
@@ -6885,9 +6891,10 @@ function tickExpeditionUI() {
     const remain = state.exp.end - Date.now();
     const total = state.exp.dur || (REGIONS[state.exp.region].time * 1000);
     // 탐험 중간 이벤트: 진행률 50% 통과 시점에 1회, BAL 확률로 일반 인카운터 예약 (현재 시각 컨텍스트).
+    //   디렉터 2026-07: 일일 이벤트와 같은 1일 쿨다운을 공유해 "탐험+하루 스택"을 막는다(하루 최대 1회 하드캡).
     if (!state.exp.midRolled && (1 - remain / total) >= 0.5) {
       state.exp.midRolled = true;
-      if (!state.pendingEvent && Math.random() < BAL.events.midExpChance * encFreqMul()) {
+      if (!state.pendingEvent && (state.day - (state.lastEventDay || 0)) >= 1 && Math.random() < BAL.events.midExpChance * encFreqMul()) {
         drawEvent();
       }
     }
@@ -7954,6 +7961,36 @@ applyOpts();
 updateHud();
 updateClock();
 renderQuestCard();
+// ── 커스텀 플로팅 툴팁(data-tip) — 네이티브 title("웹페이지처럼" 신고) 대체 ──
+//   문서 위임 mouseover/out. body 포탈(#game-tip)이라 .panel{overflow:hidden}에 안 잘림.
+//   body는 zoom 미적용 → getBoundingClientRect(visual px) 그대로 fixed 배치(줌 보정 불요).
+(function initGameTip() {
+  if (typeof document === 'undefined') return;
+  let tip = null, cur = null;
+  const ensure = () => { if (!tip) { tip = document.createElement('div'); tip.id = 'game-tip'; document.body.appendChild(tip); } return tip; };
+  const hide = () => { if (tip) tip.style.display = 'none'; cur = null; };
+  const show = (el) => {
+    const txt = el.getAttribute('data-tip');
+    if (!txt) { hide(); return; }
+    const t = ensure(); t.textContent = txt; t.style.display = 'block';
+    const r = el.getBoundingClientRect(), tr = t.getBoundingClientRect();
+    let x = r.left + r.width / 2 - tr.width / 2;
+    x = Math.max(6, Math.min(x, window.innerWidth - tr.width - 6));
+    let y = r.top - tr.height - 8;
+    if (y < 6) y = r.bottom + 8;               // 위 공간 부족 시 아래로
+    t.style.left = Math.round(x) + 'px';
+    t.style.top = Math.round(y) + 'px';
+  };
+  document.addEventListener('mouseover', (e) => {
+    const el = e.target.closest ? e.target.closest('[data-tip]') : null;
+    if (el && el !== cur) { cur = el; show(el); }
+  });
+  document.addEventListener('mouseout', (e) => {
+    const el = e.target.closest ? e.target.closest('[data-tip]') : null;
+    if (el && (!e.relatedTarget || !el.contains(e.relatedTarget))) hide();
+  });
+  document.addEventListener('mousedown', hide, true); // 클릭(모달 열림 등) 시 즉시 숨김
+})();
 // 웹: 설치본 fetch로 loose locales 병합(비동기 베스트에포트) — 적용되면 화면 재치환. (Electron은 위 applyLocaleOverrides 동기 처리)
 loadLocaleOverridesWeb().then(a => { if (a) { applyStaticI18n(); updateHud(); renderResBar(); renderQuestCard(); } });
 if (state.minimizedEvent && EVENTS[state.minimizedEvent]) showEventChip(state.minimizedEvent); // 로드 후 내려둔 이벤트 칩 복원
