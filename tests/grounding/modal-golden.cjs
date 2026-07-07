@@ -30,7 +30,10 @@ async function snap(fn) {
   return await H.evalJs(`(()=>{const S=window.__shelter;S.simReset();if(S.hideTitle)S.hideTitle();
     const b=document.getElementById('modal-body'); if(b)b.innerHTML='';
     try{ S.${fn}(); }catch(e){ return 'ERR:'+(e&&e.message||e); }
-    const h=b?b.innerHTML:'(no modal-body)'; return h===''?'ERR:모달 미개봉(빈 modal-body)':h;})()`);
+    let h=b?b.innerHTML:'(no modal-body)';
+    // 캔버스 배경 dataURL(지도 등 1MB+ base64)은 정규화로 제거 — DOM 게이트는 마커/구조를 지킨다(픽셀은 골든 픽셀 게이트 담당).
+    if(typeof h==='string') h=h.replace(/data:image\\/[a-z+]+;base64,[A-Za-z0-9+/=]+/g,'data:image/[stripped]');
+    return h===''?'ERR:모달 미개봉(빈 modal-body)':h;})()`);
 }
 
 (async () => {
