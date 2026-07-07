@@ -729,8 +729,8 @@ export const STR = {
   'winter.badge.tip': { ko: '넘긴 겨울 {n}번', en: '{n} winters weathered' },
   'title.continueWinters': { ko: ' · ❄️{n}/9', en: ' · ❄️{n}/9' },
   // ── #74 Next Fest 데모 「첫 번째 겨울」 종료 화면 ──
-  'demo.end.title':  { ko: '첫 번째 겨울을 넘었습니다', en: 'You Made It Through the First Winter' },
-  'demo.end.body':   { ko: '{d}일. 봄이 왔고, 나는 아직 여기 있다.<br>데모는 여기까지입니다.', en: 'Day {d}. Spring came, and I\'m still here.<br>This is where the demo ends.' },
+  'demo.end.title':  { ko: '첫 번째 겨울이 왔습니다', en: 'The First Winter Has Come' },
+  'demo.end.body':   { ko: '{d}일. 첫 겨울이 시작됐다. 이 겨울을 넘길 수 있을까.<br>데모는 여기까지입니다.', en: 'Day {d}. The first winter has begun. Will I make it through?<br>This is where the demo ends.' },
   'demo.end.sub':    { ko: '정식판에는 아홉 번의 겨울이 기다립니다 — 열두 곳의 거처, 지하 노선, 봉쇄 너머의 이야기. 위시리스트에 담아 두면 겨울이 올 때 알려 드립니다.', en: 'Nine winters await in the full game — twelve shelters, the metro line, and what lies beyond the blockade. Wishlist it and we\'ll let you know when winter comes.' },
   'demo.end.back':   { ko: '타이틀로', en: 'Back to Title' },
   'demo.end.locked': { ko: '데모는 첫 번째 겨울까지 — 이 이야기는 정식판에서 이어집니다.', en: 'The demo ends after the first winter — the story continues in the full game.' },

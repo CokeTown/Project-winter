@@ -9051,9 +9051,10 @@ function tickTime(dt) {
     reportQueued = true;
     rolledOver = true;
   }
-  // #74 데모 게이트: 첫 겨울을 넘기면(봄 도달 → passWinter로 winters≥1) 그 자리에서 데모 종료.
+  // #74 데모 게이트(디렉터 2026-07 볼륨 축소): 첫 겨울이 '닥칠 때'(Day 37 = seasonOf 'winter' 진입) 그 자리에서 종료.
+  //   종전엔 겨울을 넘긴 봄(winters≥1, Day49)에 끝나 코어를 전부 경험시켰다 → "감질맛" 없음. 겨울 도착=클라이맥스 직전으로 앞당김.
   // 아침 보고 대신 종료 화면 — demoEnded가 세이브에 박혀 이후 입장에도 종료 화면·시간 동결이 유지된다.
-  if (DEMO_ED && rolledOver && !state.demoEnded && (state.winters || 0) >= 1) {
+  if (DEMO_ED && rolledOver && !state.demoEnded && seasonOf(state.day) === 'winter') {
     state.demoEnded = true;
     reportQueued = false;
     doSaveNow();
