@@ -10590,9 +10590,21 @@ function pollGamepad(dt) {
 // 마우스가 움직이면 패드 커서 숨김 (실제 마우스로 복귀)
 addEventListener('pointermove', () => { if (padState.active) showPadCursor(false); });
 
+// ── 골든 스크린샷 결정론 (Phase0 시각 회귀 게이트) ── QA 전용.
+//   측정 결과: 픽셀 노이즈가 아니라 *구조적* 차이(블록 평균이 diff를 키움 → 국소 이동체)가 리로드 diff의 정체였다.
+//   범인 = 매 프레임 Math.random으로 배회하는 고양이/야생동물/아바타(별도 모듈, Phase1 렌더 리팩토링 대상 아님) — 실시간 프레임 수 지터로 로드마다 위치가 어긋난다.
+//   해법: freezeForGolden = ①Math.random 시드 고정 ②렌더 시간 동결(dt=0) ③배회 엔티티 업데이트 스킵+숨김.
+//   그러면 골든 캡처 = 순수 정적 지오메트리+조명+날씨FX(=리팩토링 대상 코드)만 남아 로드 간 결정론적.
+let _golden = false; const _goldenT = 5.0; let _goldenHid = false;
+function freezeForGolden(seed = 12345) {
+  let s = seed >>> 0;
+  Math.random = function () { s = (s + 0x6D2B79F5) | 0; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+  windLevel = 1; _golden = true; _goldenHid = false;
+}
 function renderFrame() {
-  const dt = Math.min(clock.getDelta(), 0.1);
-  const t = clock.elapsedTime;
+  let dt = Math.min(clock.getDelta(), 0.1);
+  let t = clock.elapsedTime;
+  if (_golden) { dt = 0; t = _goldenT; } // 골든: 시간 정지 → 애니 결정론
   pollGamepad(dt);
   if (!titleVisible && !paused && !endingActive) tickTime(dt); // 타이틀·일시정지·엔딩 중엔 시간 정지
   else if (state.exp) state.exp.end += dt * 1000; // 탐험 실시간 타이머도 함께 멈춘다
@@ -10601,9 +10613,16 @@ function renderFrame() {
   updateWallCulling(dt);
   updateEnvironment(t, dt);
   updateWeather(dt, t);
-  updateCat(t, dt);
-  wildlifeSys.update(t, dt); // F-1a: 야생동물 로밍/개막 연출
-  avatarSys.update(t, dt);   // #86: 주인공 아바타 실내 생활
+  if (_golden) {
+    // 배회 엔티티 동결·숨김 (한 번 despawn/숨김 → 업데이트 스킵으로 재배회 없음)
+    if (!_goldenHid) { try { despawnCat(); } catch (e) {} _goldenHid = true; }
+    const wg = wildlifeSys.getGroup && wildlifeSys.getGroup(); if (wg) wg.visible = false;
+    const ag = avatarSys.getGroup && avatarSys.getGroup(); if (ag) ag.visible = false;
+  } else {
+    updateCat(t, dt);
+    wildlifeSys.update(t, dt); // F-1a: 야생동물 로밍/개막 연출
+    avatarSys.update(t, dt);   // #86: 주인공 아바타 실내 생활
+  }
   updateCraftFx(dt); // ④ 제작 손맛 아이콘/반짝임 연출
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   for (const it of items) {
@@ -10884,6 +10903,7 @@ window.__shelter = {
   setYaw: (rad) => { camState.yaw = camState.targetYaw = rad; },
   setPitch: (rad) => { camState.elev = THREE.MathUtils.clamp(rad, 0.05, Math.PI / 2 - 0.05); },
   setZoom: (z) => { camState.zoom = THREE.MathUtils.clamp(z, 0.2, 3.2); },
+  freezeForGolden, // Phase0 골든 게이트: Math.random 시드 고정 + 렌더 시간 동결(결정론). 이 훅 뒤 loadShelter.
   // #70 클램프 팬 QA 훅: setYaw 문법대로 target+현재값 동시 세팅(보간 대기 없이 즉시 반영). 원형 클램프 통과.
   setPan: (x, z) => { setPanTarget(x, z); camState.panX = camState.targetPanX; camState.panZ = camState.targetPanZ; },
   panState: () => ({ x: camState.panX, z: camState.panZ, tx: camState.targetPanX, tz: camState.targetPanZ, max: panMax() }),

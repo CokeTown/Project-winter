@@ -19,6 +19,9 @@
     "test:build": "vite build --mode electron && electron tests/core.test.cjs",
     "grounding": "electron tests/grounding/qa-systems.cjs && electron tests/grounding/qa-broad.cjs && electron tests/grounding/qa-breadth.cjs",
     "grounding:build": "vite build --mode electron && npm run grounding",
+    "golden": "electron tests/grounding/golden.cjs",
+    "golden:update": "electron tests/grounding/golden.cjs --update",
+    "golden:build": "vite build --mode electron && npm run golden",
     "gates": "node tools/check-i18n.mjs && node tools/check-hardcode.mjs"
   },
   "dependencies": {
