@@ -22,6 +22,9 @@
     "golden": "electron tests/grounding/golden.cjs",
     "golden:update": "electron tests/grounding/golden.cjs --update",
     "golden:build": "vite build --mode electron && npm run golden",
+    "modal-golden": "electron tests/grounding/modal-golden.cjs",
+    "modal-golden:update": "electron tests/grounding/modal-golden.cjs --update",
+    "modal-golden:build": "vite build --mode electron && npm run modal-golden",
     "gates": "node tools/check-i18n.mjs && node tools/check-hardcode.mjs"
   },
   "dependencies": {
