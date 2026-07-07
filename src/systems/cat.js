@@ -616,10 +616,10 @@ export function makeCatSystem(ctx) {
     // 뒷다리 정강이(무릎) 굽힘 — 앉기(MC 레퍼런스: 낮게 웅크린 엉덩이): 정강이를 앞으로 접어 뒷발이 앞·아래로,
     //   + 뒷다리 피벗(엉덩이)을 낮춰 엉덩이가 바닥에 붙는다. 그 외 포즈는 0/6PX(곧은 다리)라 회귀 없음.
     {
-      const shinTgt = c.mode === 'sit' ? 1.3 : (c.mode === 'sprawl' ? -1.5 : 0); // 앉기=앞으로(웅크림) / 엎드리기=뒤로(뒷다리 쭉 뻗어 접지)
+      const shinTgt = c.mode === 'sit' ? 1.3 : 0; // 앉기만 정강이 접어 웅크림. 엎드리기(superman)는 정강이 곧게 편 채 legB로 뒤로 쭉.
       c._shin = (c._shin || 0) + (shinTgt - (c._shin || 0)) * Math.min(1, dt * 5);
       if (p.shin) { if (p.shin.bl) p.shin.bl.rotation.x = c._shin; if (p.shin.br) p.shin.br.rotation.x = c._shin; }
-      const bpivTgt = (c.mode === 'sit' || c.mode === 'sprawl') ? 3.4 * 0.02 : 6 * 0.02;   // 엉덩이 피벗 y: 앉기/엎드리기 3.4PX로 낮춤
+      const bpivTgt = c.mode === 'sit' ? 3.4 * 0.02 : (c.mode === 'sprawl' ? 1.6 * 0.02 : 6 * 0.02); // 엎드리기: 엉덩이 피벗 바닥 근처로 → 수평 뒷다리가 뒤로 바닥에 눕는다
       c._bpiv = (c._bpiv === undefined ? 0.12 : c._bpiv) + (bpivTgt - (c._bpiv === undefined ? 0.12 : c._bpiv)) * Math.min(1, dt * 5);
       p.legs.bl.position.y = c._bpiv; p.legs.br.position.y = c._bpiv;
     }
@@ -635,10 +635,10 @@ export function makeCatSystem(ctx) {
     //   뻗는다(디렉터 신고 — 확대: "진짜 다리 뻗는 건 ㄴ자여야"). 그 외 포즈는 0(곧게)이라 단일 6px 다리처럼 보인다.
     //   + 기지개는 앞다리 피벗(어깨)을 낮춰 팔꿈치가 바닥 근처로 내려와 앞팔이 실제로 접지한다.
     {
-      const foreTgt = (c.mode === 'stretch' || c.mode === 'sprawl') ? 1.35 : 0; // 전완 상대 굽힘(+X: 앞팔 전방 수평). 기지개+엎드리기 = 앞다리 앞으로 접지
+      const foreTgt = c.mode === 'stretch' ? 1.35 : 0; // 기지개만 앞팔 접힘(ㄴ자). 엎드리기(superman)는 앞다리 곧게 편 채 legF로 앞으로 쭉.
       c._fore = (c._fore || 0) + (foreTgt - (c._fore || 0)) * Math.min(1, dt * 5);
       if (p.fore) { if (p.fore.fl) p.fore.fl.rotation.x = c._fore; if (p.fore.fr) p.fore.fr.rotation.x = c._fore; }
-      const pivTgt = (c.mode === 'stretch' || c.mode === 'sprawl') ? 3.6 * 0.02 : 6 * 0.02;  // 어깨 피벗 y: 기지개/엎드리기 3.6PX로 낮춤
+      const pivTgt = c.mode === 'stretch' ? 3.6 * 0.02 : (c.mode === 'sprawl' ? 1.6 * 0.02 : 6 * 0.02); // 엎드리기: 어깨 피벗 바닥 근처로 → 수평 앞다리가 앞으로 바닥에 눕는다
       c._fpiv = (c._fpiv === undefined ? 0.12 : c._fpiv) + (pivTgt - (c._fpiv === undefined ? 0.12 : c._fpiv)) * Math.min(1, dt * 5);
       p.legs.fl.position.y = c._fpiv; p.legs.fr.position.y = c._fpiv;
     }
