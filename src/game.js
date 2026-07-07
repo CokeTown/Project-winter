@@ -1511,52 +1511,25 @@ const SHELTERS = {
       const zBack = -d / 2 - 0.4;
       const roofFixed = state.bunkerRoof === 'full';   // 완전 수리 시 외피 갈라짐 메움
       const roofTemp = state.bunkerRoof === 'temp';    // 임시 덮개 시 일부만 보강
-      // #81 ⑤: 돔 외피를 '연속 곡면'으로 재구성한다.
-      //   [기존] 낱장 박스 스테이브 SEG개 + 랜덤 스킵/단축 → 슬랫 사이 틈 + 한쪽 뚫림(유저 신고).
-      //   [신규] 반쪽마다 이음매 없는 반원통 셸(CylinderGeometry openEnded)로 연속 곡면을 만들고,
-      //          그 위에 콘크리트 판 질감 스테이브를 '겹치게'(틈 없이) 덧대 폐허 디테일만 표현.
-      //          손상은 base 셸을 뚫지 않고 표면 갈라짐(짧은 크랙 판/이끼)으로만 — 항상 하늘이 막혀 보인다.
-      const depFull = d + 1.0;
-      // #81 ⑤+⑥: 정점(θ=π/2) 부근에 '정해진 구멍'을 남긴다. 셸은 이 구멍만 빼고 연속.
-      //   hole  = 구멍 열림(별이 보임) · temp = 방수포로 덮임 · full = 콘크리트로 메워 완전 연속.
-      //   랜덤 슬랫 틈/한쪽 개방은 없앤다(⑤). 손상은 정점 구멍 + 표면 크랙 판으로만.
-      const apexGap = roofFixed ? 0 : 0.34; // 라디안. full이면 구멍 없음(완전 연속).
-      // #87 ①: 돔 셸을 상/하 밴드로 분리 — 하부(벽 높이대)는 좌우 벽 컬링에, 상부(머리 위 아치)는 천장 컬링에.
-      //   연속 셸(#81)이 '먼 쪽 반'의 머리 위 구간까지 한 덩어리라, 회전해도 상부가 실내를 가리던 실기기 신고의 교정.
-      //   quadBase는 스테이브 격자의 사분면 기준각(0=우측, π/2=좌측) — 밴드가 갈라져도 판 배열은 이어져 보인다.
-      const mkArc = (tFrom, tTo, seed, quadBase) => {
+      // v1.5.3 0.9 원본 스테이브 복원(디렉터 라이브 신고: "중간에 회색 붕 뜬다" + "0.9 스테이브로 복원").
+      //   [되돌린 것] #81 연속 반원통 셸 + 상시 콘크리트 라이너(inner) + #87 상/하 밴드 분리.
+      //     → 상부 밴드가 천장 컬링으로 페이드될 때 안쪽 라이너가 회색 반투명 아치로 공중에 뜨는 아티팩트가 남았다.
+      //   [0.9 방식] 반쪽마다 낱장 박스 스테이브 SEG개. 미보수 시 일부 조각을 건너뛰거나(구멍) 짧게(단축) 만들어
+      //     '갈라진 외피 사이로 하늘/별이 보이는' 폐허 돔. 상시 라이너 없음 → 붕뜸 원천 소멸.
+      //     temp=정점 방수포, full=조각 온전 + 안쪽 콘크리트 라이너로 봉합. 좌/우 반쪽은 시야 방향 벽 컬링(정점 천장 컬링 없음).
+      const mkHalf = (thetaFrom, seed) => {
         const g = new THREE.Group();
         const rand = seededRand(seed);
-        const tStart = tFrom;
-        const tLen = tTo - tFrom;
-        if (tLen <= 0.01) return g;
-        // ── 연속 반원통 base 셸 (axis=z). 이음매 없음. ──
-        const baseCol = roofFixed ? 0xaeaaa0 : 0x9a968c;
-        const shell = new THREE.Mesh(
-          new THREE.CylinderGeometry(R, R, depFull, 24, 1, true, tStart, tLen),
-          new THREE.MeshLambertMaterial({ color: baseCol, side: THREE.DoubleSide }));
-        shell.rotation.x = Math.PI / 2;                 // 원통 축 y→z
-        shell.position.set(0, 0, zBack + depFull / 2);
-        shell.castShadow = shell.receiveShadow = true;
-        g.add(shell);
-        // 안쪽(실내 방향) 콘크리트 라이너 — 살짝 작은 반원통으로 두께감/천장 메움
-        const inner = new THREE.Mesh(
-          new THREE.CylinderGeometry(R - T, R - T, depFull, 20, 1, true, tStart, tLen),
-          wallPhong({ map: concreteTex }));
-        inner.material.side = THREE.BackSide;
-        inner.rotation.x = Math.PI / 2; inner.position.set(0, 0, zBack + depFull / 2);
-        g.add(inner);
-        // ── 표면 스테이브(콘크리트 판 질감) — 틈 없이 겹치게 덧댐 (구멍/밴드 밖 각도는 건너뜀) ──
         for (let i = 0; i < SEG; i++) {
-          const th = quadBase + (i + 0.5) * (Math.PI / 2) / SEG;
-          if (th < tStart - 0.02 || th > tStart + tLen + 0.02) continue; // 구멍 자리엔 판 없음
-          let dep = depFull;
-          // 손상: 판이 짧게 갈라진 '크랙 자국' — base 셸은 뒤에 그대로라 하늘은 막힘.
-          if (!roofFixed && rand() < 0.3) dep *= 0.55 + rand() * 0.3;
-          const arcLen = R * (Math.PI / 2) / SEG * 1.35 + 0.14; // ×1.35 겹침 → 슬랫 틈 제거
+          const th = thetaFrom + (i + 0.5) * (Math.PI / 2) / SEG;
+          // 갈라진 외피: 일부 조각은 짧거나 없음 (천장 수리하면 메워진다)
+          if (!roofFixed && rand() < 0.1 && th > 0.5 && th < Math.PI - 0.5) continue;
+          let dep = d + 1.0;
+          if (!roofFixed && rand() < 0.34) dep *= 0.5 + rand() * 0.32; // 수리하면 짧은(뚫린) 조각 없음
+          const arcLen = R * (Math.PI / 2) / SEG + 0.1;
           const col = rand() < 0.16 ? 0x5d594f : shellCols[Math.floor(rand() * shellCols.length)];
-          const m = new THREE.Mesh(new THREE.BoxGeometry(arcLen, T * 0.7, dep), lamb(col));
-          m.position.set((R + T * 0.2) * Math.cos(th), (R + T * 0.2) * Math.sin(th), zBack + dep / 2);
+          const m = new THREE.Mesh(new THREE.BoxGeometry(arcLen, T, dep), lamb(col));
+          m.position.set(R * Math.cos(th), R * Math.sin(th), zBack + dep / 2);
           m.rotation.z = th + Math.PI / 2;
           m.castShadow = m.receiveShadow = true;
           g.add(m);
@@ -1573,21 +1546,15 @@ const SHELTERS = {
         }
         return g;
       };
-      // 밴드 경계각: 하부 상단 y = R·sin(0.62) ≈ 2.53 — 벽 높이대에서 상/하가 갈라진다.
-      const THS = 0.62;
-      const rightLow = mkArc(0, THS, 21, 0);                                    // x>0 하부 (벽 컬링)
-      const rightUp = mkArc(THS, Math.PI / 2 - apexGap / 2, 22, 0);             // x>0 상부 (천장 컬링)
-      const leftUp = mkArc(Math.PI / 2 + apexGap / 2, Math.PI - THS, 43, Math.PI / 2); // x<0 상부
-      const leftLow = mkArc(Math.PI - THS, Math.PI, 44, Math.PI / 2);           // x<0 하부
-      roomGroup.add(rightLow); roomGroup.add(rightUp); roomGroup.add(leftUp); roomGroup.add(leftLow);
-      tagCeiling(rightUp, R * Math.sin(THS) + 0.2);
-      tagCeiling(leftUp, R * Math.sin(THS) + 0.2);
-      // v1.5.2(디렉터 신고 '1자 바'): 곡면 밴드는 눈 캡 부적격 — bb 상단 일자 캡이 돔 위 공중에 떠서
-      //   흰 바로 보였다(실측 y4.5/6.95). 눈 표현은 외피 자체 밝아짐(vcLambert 계절 톤)으로 충분.
-      rightLow.userData.noWeatherCap = true;
-      leftLow.userData.noWeatherCap = true;
-      wallDefs.push({ group: rightLow, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(1, 0, 0) });
-      wallDefs.push({ group: leftLow, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(-1, 0, 0) });
+      const right = mkHalf(0, 21);           // x>0 쪽
+      const left = mkHalf(Math.PI / 2, 43);  // x<0 쪽
+      roomGroup.add(right); roomGroup.add(left);
+      // #94('1자 바'): 반쪽 bb 상단(돔 정점 y≈R)에 눈 캡이 가로바로 뜨던 문제 → 캡 제외.
+      right.userData.noWeatherCap = true;
+      left.userData.noWeatherCap = true;
+      // 좌/우 반쪽은 시야 방향 벽 컬링 — 근접 반쪽이 통째로 사라져 실내 노출(0.9 방식, 정점 천장 컬링 없음).
+      wallDefs.push({ group: right, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(1, 0, 0) });
+      wallDefs.push({ group: left, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(-1, 0, 0) });
       // #87 ②: 정면 파사드 — 반달 콘크리트 벽 + 닫힌 철문. "벙커인데 앞이 뻥 뚫려있다" 실기기 신고.
       //   다른 셸터의 벽과 동일하게 컬링 참여: 기본(정면) 뷰에선 열려 실내가 보이고, 회전하면 벽 실체가 보인다.
       {
@@ -1616,31 +1583,21 @@ const SHELTERS = {
       }
       makeWalls(wallDefs);
 
-      // #81 ⑥ 천장 수리 단계별 실메시 — 정점 구멍(apexGap)을 실제로 메운다.
-      //   구멍은 θ=π/2(정점) 폭 apexGap. 그 위를 덮는 패치를 단계별로 얹어 "메워져 보이게" 한다.
-      //   1단계(temp)=방수포 패치(주름/처짐), 2단계(full)=콘크리트 패치(apexGap=0이라 base가 이미 연속 → 이음 콘크리트 스트립으로 마감).
-      const apexHalfW = R * Math.sin(apexGap / 2 || 0.17);   // 정점 구멍 반폭(x)
-      const apexY = R * Math.cos(apexGap / 2 || 0.17);       // 구멍 바닥 y (정점보다 살짝 아래)
+      // 천장 임시 덮개(temp): 정점 부근에 방수포 한 장. 완전 수리(full)는 mkHalf에서 외피가 이미 메워짐.
       if (roofTemp) {
-        // 방수포 패치: 구멍보다 넉넉히 크게, 살짝 처지고 주름진 방수포 — 구멍을 확실히 덮는다.
-        const patch = new THREE.Group();
-        const pw = apexHalfW * 2 + 1.1;
-        const tarp = new THREE.Mesh(new THREE.BoxGeometry(pw, 0.07, d + 0.7), lamb(0x53616a));
-        tarp.position.set(0, apexY + 0.12, zBack + (d + 0.7) / 2 + 0.15);
-        tarp.rotation.z = 0.05; tarp.castShadow = tarp.receiveShadow = true; patch.add(tarp);
-        // 주름 결(가로 각목) + 결속 로프 자락 — 임시 보강 느낌
-        for (const rz of [-d * 0.3, 0, d * 0.3]) B(patch, pw * 0.96, 0.05, 0.08, 0x44525a, 0, apexY + 0.17, zBack + (d + 0.7) / 2 + 0.15 + rz);
-        for (const sx of [-1, 1]) { const rope = Cyl(patch, 0.02, 0.02, 0.7, 0x2a2620, sx * apexHalfW, apexY - 0.2, zBack + 0.5, 4); rope.rotation.x = 0.5; }
-        tagCeiling(patch, ROOM.h + 0.2); roomGroup.add(patch); // ⑥-a: 부감에서 천장 덮개 투시
+        const tarp = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.06, d + 0.6), lamb(0x53616a));
+        tarp.position.set(0, R - 0.15, zBack + (d + 0.6) / 2 + 0.2);
+        tarp.rotation.z = 0.04;
+        tarp.castShadow = tarp.receiveShadow = true;
+        tagCeiling(tarp, ROOM.h + 0.2); roomGroup.add(tarp); // ⑥-a: 부감에서 천장 덮개 투시
       }
+      // 완전 수리(full): 아치 안쪽에 매끈한 콘크리트 라이너를 덧대 '온전한 천장' 느낌.
       if (roofFixed) {
-        // 콘크리트 패치: apexGap=0이라 base 셸이 이미 정점까지 연속. 그 이음매에 새로 부은 콘크리트 스트립을 얹어
-        //   '수리 흔적(밝은 콘크리트 띠)'을 남긴다 — 구멍이 메워졌음을 명시.
-        const strip = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.14, d + 0.8), wallPhong({ map: concreteTex }));
-        strip.material.color.setHex(0xc2beb4);
-        strip.position.set(0, R + 0.02, zBack + (d + 0.8) / 2 + 0.1);
-        strip.castShadow = strip.receiveShadow = true;
-        tagCeiling(strip, ROOM.h + 0.2); roomGroup.add(strip);
+        const liner = new THREE.Mesh(new THREE.CylinderGeometry(R - 0.3, R - 0.3, d + 0.9, 16, 1, true, 0, Math.PI), wallPhong({ map: concreteTex }));
+        liner.rotation.z = Math.PI / 2; liner.rotation.y = Math.PI / 2;
+        liner.position.set(0, 0, zBack + (d + 0.9) / 2);
+        liner.material.side = THREE.BackSide;
+        tagCeiling(liner, ROOM.h + 0.2); roomGroup.add(liner); // ⑥-a: 완전 수리 라이너는 실내를 덮는 천장 — 부감에서 투시
       }
       // #55 뒷문 개방(backdoor): 뒷벽 개구부 + 전실(콘크리트 방: 선반/램프) + 바닥에서 지하로 이어지는 하강 계단.
       // 전실/계단은 back(뒷벽) 그룹에 붙여 뒷벽 컬링 마스크와 함께 처리한다(카메라가 앞에서 볼 때만 노출).
@@ -1754,11 +1711,11 @@ const SHELTERS = {
           //   2번째 돔을 중앙(x=0)에 세우고, 메인 돔 뒷면(zBack)에 앞 가장자리를 접하게 배치(두 돔이 앞뒤로 나란히).
           const anteCXw = 0;                               // 후면 돔 가로 중심 = 메인 돔과 동일(중앙)
           const sR = 4.35;                                 // 후면 돔 반경 = 메인 돔 R (동일 사이즈)
-          const sDep = 5.0;                                // 후면 돔 깊이(z) — 메인 depFull(7)보다 약간 짧게(뒤로 과돌출 방지)
+          const sDep = 5.0;                                // 후면 돔 깊이(z) — 메인 돔 dep(d+1.0≈7)보다 약간 짧게(뒤로 과돌출 방지)
           const smallCz = -d / 2 - 0.4 - sDep / 2 + 0.6;   // 후면 돔 중심 z: 앞 가장자리가 메인 돔 뒷면(zBack=-d/2-0.4)에 접함
           const domeCol = 0x9a968c;
           const smallDome = new THREE.Group();
-          // 반원통 외피 (axis=z — 메인 돔 mkArc와 같은 결)
+          // 반원통 외피 (axis=z — 후면 돔은 온전한 연속 셸: 앞 돔 스테이브와 달리 불투명 매스로 유지)
           const sk = new THREE.Mesh(
             new THREE.CylinderGeometry(sR, sR, sDep, 20, 1, true, 0, Math.PI),
             new THREE.MeshLambertMaterial({ color: domeCol, side: THREE.DoubleSide }));
