@@ -111,12 +111,17 @@ tests/            ← [신설] 회귀 그물: harness.cjs(오프스크린 Electr
 
 **여기까지 = 깊이 작업에 필요한 리팩토링 완료선.** 깊이가 건드릴 로직(한파/쾌적/게이지)이 모듈화·테스트 가능해졌고, 깊이가 추가할 세이브 필드의 마이그레이션이 격리·그물화됨.
 
-**Tier 3 (진행 중):**
-- ✅ **탐험 판정(`core/expedition.js`)** — districtOf/rateParts/expActualRate. 순수 계산(RNG 없음), 날씨 페널티만 setExpeditionWeather 주입. 그물 43/43 diff-0(하드코어 RNG 포함). 정산(resolveExpedition)·출발(departExpedition)은 game.js 잔류.
-- ✅ **프로젝트 술어(`core/projects.js`)** — districtRegionOf/projectAvailable/projectRec/projectDone/projectSiteStage. 순수 상태 술어(when 게이트/진행/완공/현장단계). 투입(investProject·UI)·3D 현장 렌더는 잔류. 그물 43/43 diff-0.
-- ⬜ 날씨 판정·인카운터 선택(drawEvent)·이주/이동·오토플레이/sim·processDay 오케스트레이터.
-- ✅ **F1 헤르메틱 sim 해결(2026-07-07, 디렉터 감독)** — simReset 완전 리셋 + 렌더 부수효과(tipOnce·wildlife) `_simRunning` 가드. 근본 4원인(§5 F1). 그물 45/45(헤르메틱 가드 2 신설). **밸런스 측정이 이제 완전 신뢰 가능**(밴드→정밀 near 조임은 튜닝 여지 남겨 선택).
-**Tier 4 (10월 이후 롱테일):** 렌더/UI 분해 (`render/`, `ui/` 서브트리).
+**Tier 3 — ✅ 순수 클러스터 추출 완료 (2026-07-07):**
+- ✅ **탐험 판정(`core/expedition.js`)** — districtOf/rateParts/expActualRate. 순수 계산(RNG 없음), 날씨 페널티만 setExpeditionWeather 주입. 정산(resolveExpedition)·출발(departExpedition)은 game.js 잔류.
+- ✅ **프로젝트 술어(`core/projects.js`)** — districtRegionOf/projectAvailable/projectRec/projectDone/projectSiteStage. 순수 상태 술어. 투입(investProject·UI)·3D 현장 렌더는 잔류.
+- ✅ **seasonAdjustPool(`core/season.js` 합류)** — 셸터 날씨풀 계절 보정. seasonOf/seasonDay만 의존(RNG 시드결정적). rollWeather가 소비.
+- ✅ **인카운터 술어(`core/encounter.js`)** — eventMatches/eventWeight/eventThreePeatBlocked/pushEvHistory. 순수 술어. EVENTS는 makeEvents 런타임산물이라 setEncounterEvents 주입. eventCtx(weather/gameHour)·drawEvent(RNG)는 잔류. 그라운딩 재확인(40draw 유효·3연속0).
+- ✅ **지역 게이트+자동선택(`core/regions.js`)** — regionUnlocked/isForbiddenRegion/subwayReaches/blizzardBlocks/pickAutoRegion. 순수 판정/결정. weather.type만 setRegionsWeather 주입(blizzardBlocks 눈 판정 — 겨울·눈 봉쇄로 실동작 확인).
+- ✅ **F1 헤르메틱 sim 해결(디렉터 감독)** — simReset 완전 리셋 + 렌더 부수효과(tipOnce·wildlife) `_simRunning` 가드. 근본 4원인(§5 F1). 헤르메틱 가드 2 신설.
+- **∎ 잔여는 오케스트레이터(game.js 잔류가 정답)**: eventCtx·drawEvent·rollWeather·ensureWeather·runAutoPlay·moveToShelter·resolveExpedition·departExpedition·processDay. 렌더/RNG/액션 조율이라 core로 옮기면 순환·주입폭증 = 미완이 아니라 올바른 경계.
+- 매 추출 그물 **45/45 diff-0**. game.js 11,481→**11,165**, core **14모듈**.
+
+**Tier 4 (10월 데모 후 — 유지보수 투자):** 렌더/UI 분해 (`render/`, `ui/` 서브트리). THREE 지오메트리·컬링·모달. *유지보수 이득 확실하나(파일 정리·관심사 격리) 테스트 그물 밖 시각회귀 위험 + 데모 미차단이라 후순위.*
 
 ---
 

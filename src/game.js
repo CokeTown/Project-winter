@@ -21,7 +21,7 @@ import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, s
 import { Platform, bindPlatform } from './lib/platform.js';
 import { state, DEFAULT_STATE, opts, OPTS_DEFAULT, items } from './core/state.js'; // 모놀리스 분해 Phase 1: 공유 가변 상태
 import { isHard, isHardcore, isZen, isWallpaper, rescueEligible } from './core/mode.js'; // 난이도 예측자
-import { SEASONS, SEASON_DAYS, seasonOf, seasonDay, seasonIndex } from './core/season.js'; // 계절 달력
+import { SEASONS, SEASON_DAYS, seasonOf, seasonDay, seasonIndex, seasonAdjustPool } from './core/season.js'; // 계절 달력
 import { accWinterFuel, resAdd, resConsume, resHasAll, resConsumeAll, hasAnyFood, consumeAnyFood } from './core/economy.js'; // 자원 연산
 import { hasMod } from './core/shelter.js'; // 셸터 개조 술어
 import { coldDefenseLevel, coldSnapActive, coldSnapNetSeverity } from './core/coldsnap.js'; // 한파 술어
@@ -35,6 +35,8 @@ import { hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
   knowDirtReduce, knowCraftMul, knowComfortBonus, knowExpBonus, knowForecastLead, knowsForecast, knowBroadcastBonus } from './core/knowledge.js'; // 지식 해금·효과
 import { districtOf, rateParts, expActualRate, setExpeditionWeather } from './core/expedition.js'; // 탐험 판정 (Tier3)
 import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
+import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEncounterEvents } from './core/encounter.js'; // 인카운터 술어 (Tier3)
+import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3)
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -718,17 +720,7 @@ function beginWinterSnapshot() {
 /* ── 한파 (cold snap) — 겨울 보스 이벤트 (Phase B) ── */
 // coldDefenseLevel/coldSnapActive/coldSnapNetSeverity → core/coldsnap.js (import). 순수 술어(hearth는 SHELTER_META에서).
 // 계절이 날씨 풀을 편향시킨다
-function seasonAdjustPool(pool) {
-  const s = seasonOf().id;
-  // 초봄 꽃샘추위: 봄 1~4일차엔 눈이 완전히 비로 바뀌지 않고 절반 확률로만 남는다
-  const earlySpring = s === 'spring' && seasonDay() <= 4;
-  return pool.map(w => {
-    if (s === 'winter' && w === 'rain') return 'snow';
-    if (earlySpring && w === 'snow') return Math.random() < 0.5 ? 'rain' : 'snow';
-    if (s !== 'winter' && !earlySpring && w === 'snow') return 'rain'; // 눈은 겨울에만 (초봄 제외)
-    return w;
-  }).concat(s === 'winter' ? ['snow'] : s === 'summer' ? ['clear'] : []);
-}
+// seasonAdjustPool → core/season.js 이관 (Tier3, 순수 — seasonOf/seasonDay만 의존)
 
 /* ============================================================
    동적 날씨 (기획서: 날씨가 게임플레이에 직접 영향)
@@ -743,6 +735,7 @@ const WEATHERS = {
 const weather = { type: 'clear', nextChange: 0, pts: null, seedY: [], seedS: [] };
 setComfortWeather(() => weather.type); // core/comfort에 현재 날씨 타입 주입 (weather는 렌더 결합이라 game.js 잔류)
 setExpeditionWeather(() => WEATHERS[weather.type].penalty || 0); // core/expedition에 날씨 페널티 주입 (rateParts용)
+setRegionsWeather(() => weather.type); // core/regions에 날씨 타입 주입 (blizzardBlocks 눈 판정용)
 {
   const MAXN = 2200, SPAN = 23, TOP = 17;
   const arr = new Float32Array(MAXN * 3);
@@ -5009,13 +5002,7 @@ function mapBiomeDataUrl() {
 }
 // 항구 지역 해금 게이트: 항구 셸터(예인선)를 해금한 뒤부터 지도에 항구 구역이 뜬다.
 // 기존 4지역은 항상 해금(true). ARC-03 마커 문법 그대로, 노출 조건만 얹는다.
-function regionUnlocked(rid) {
-  if (rid === 'harborYard' || rid === 'fishMarket') return state.successes >= SHELTERS.tugboat.unlockAt;
-  if (rid === 'resort') return state.successes >= SHELTERS.lodge.unlockAt; // 1.3: 리조트 폐허는 스키 로지 해금 후에만 노출
-  // 1.4: 금지 구역(검문소·연구동)은 후반선 도달 시 지도에 노출. 진입 자체는 방호복 게이트(startExpedition)가 따로 막는다.
-  if (rid === 'checkpoint' || rid === 'lab') return state.successes >= BAL.forbidden.unlockAt;
-  return true;
-}
+// regionUnlocked/isForbiddenRegion/subwayReaches/blizzardBlocks/pickAutoRegion → core/regions.js 이관 (Tier3)
 // 항만 야적장 "오늘 바다가 준 것": 날짜로 결정론적으로 부스트 전리품 1종 선택(복권 파밍, 매일 리롤).
 // 결정론(day 기반) → 왕복 저장/시뮬 재현성 유지. 후보는 BAL.harbor.yardBoostPool.
 function harborYardBoostId(day) {
@@ -5144,14 +5131,7 @@ function openAvalancheChoice(regionId) {
 /* 1.2 폭설 봉쇄(최소 구현) — 겨울 '눈' 날씨엔 지상 지역 탐험 봉쇄. 개통된 지하 노선 구간은 예외(지하 우회).
    지하철 셸터 자체는 날씨가 닿지 않지만(weatherPool clear), 봉쇄는 '목적지 지상'이 눈에 파묻히는 것이라
    현재 어느 셸터에 있든 겨울+눈이면 판정한다. 항구 지역(harborYard/fishMarket)은 물가라 폭설 봉쇄 대상 아님. */
-const BLIZZARD_EXEMPT_REGIONS = ['harborYard', 'fishMarket']; // 지상 폭설 봉쇄에서 제외되는 지역(항구)
-function blizzardBlocks(regionId) {
-  if (!BAL.subway.blizzardBlocksExpedition) return false;
-  if (seasonOf().id !== 'winter' || weather.type !== 'snow') return false;
-  if (BLIZZARD_EXEMPT_REGIONS.includes(regionId)) return false;
-  if (subwayReaches(regionId)) return false; // 개통 구간: 지하로 돌아가므로 봉쇄 무시
-  return true;
-}
+// BLIZZARD_EXEMPT_REGIONS + blizzardBlocks → core/regions.js 이관 (Tier3)
 // 1.3 눈사태 봉쇄: 자연 봉쇄(예보 방치)로 리조트가 닫혀 있는가. 예보 당일은 봉쇄가 아니라 '선택'(우회/감수)이다.
 function avalancheBlocks(regionId) {
   if (regionId !== 'resort') return false;
@@ -5707,8 +5687,9 @@ function recordDistantLight() {
    - drawEvent(ctx): 자격+가중치로 하나 뽑아 예약. 두 호출부(아침 결산/탐험 중간)가 공유.
    - state.evHistory: 최근 발화 id 로그(최근 12건). 같은 이벤트 3연속 금지 +
      최근 7일 창 동일 이벤트 ≤2회로 가중치 감쇄 (REQ-EVT-02).
+   - 술어(eventMatches/eventWeight/eventThreePeatBlocked/pushEvHistory)는 core/encounter.js로 이관(Tier3).
+     eventCtx(weather/gameHour 결합)·drawEvent(RNG)는 여기 잔류.
 ============================================================ */
-const EV_HISTORY_MAX = 12;
 // ctx: { season, district, weather, night, day } — 없으면 현재 상태에서 유도
 function eventCtx() {
   const h = gameHour();
@@ -5721,52 +5702,7 @@ function eventCtx() {
     day: state.day,
   };
 }
-// 선언적 조건 판정. when 이 없으면 무조건 후보. cond(레거시 자유함수)도 그대로 존중.
-function eventMatches(id, ctx) {
-  const ev = EVENTS[id];
-  if (!ev || ev.special) return false;
-  const w = ev.when;
-  if (w) {
-    if (w.seasons && !w.seasons.includes(ctx.season)) return false;
-    if (w.shelters && !w.shelters.includes(ctx.shelter)) return false;
-    if (w.districts && !w.districts.includes(ctx.district)) return false;
-    if (w.weather && !w.weather.includes(ctx.weather)) return false;
-    if (w.night === true && !ctx.night) return false;
-    if (w.dayOnly === true && ctx.night) return false; // 낮 한정(caravan_pass 등)
-    if (w.minDay != null && ctx.day < w.minDay) return false;
-    if (w.needsRadio && !items.some(i => i.defId === 'radio')) return false;
-    if (w.needsCat && !state.cat) return false;
-    if (w.hasMod && !hasMod(w.hasMod)) return false;
-  }
-  if (ev.cond && !ev.cond()) return false; // 레거시/추가 자유조건
-  return true;
-}
-// 반복 억제 가중치: 직전 발화면 강한 감쇄, 7일 창 2회 이상이면 사실상 제외.
-function eventWeight(id) {
-  const hist = state.evHistory || [];
-  const last = hist[hist.length - 1];
-  if (last && last.id === id) return 0.15;              // 연속 등장 강한 억제
-  const recent7 = hist.filter(h => state.day - h.day <= 7 && h.id === id).length;
-  if (recent7 >= 2) return 0.05;                        // 7일 창 2회 이상 → 거의 안 뜸
-  if (recent7 === 1) return 0.4;
-  const base = EVENTS[id].weight || 1;
-  return base;
-}
-// 하드 가드 (REQ-EVT-02): ①최근 2건이 모두 같은 id면 3연속 금지, ②최근 7일 창에 이미 2회면 후보 제외.
-function eventThreePeatBlocked(id) {
-  const hist = state.evHistory || [];
-  const n = hist.length;
-  if (n >= 2 && hist[n - 1].id === id && hist[n - 2].id === id) return true;
-  // 7일 창(오늘 포함 직전 6일) 내 동일 이벤트가 이미 2회면 3번째 발화 차단 (REQ-EVT-02).
-  const recent7 = hist.filter(h => state.day - h.day <= 6 && h.id === id).length;
-  if (recent7 >= 2) return true;
-  return false;
-}
-function pushEvHistory(id) {
-  if (!Array.isArray(state.evHistory)) state.evHistory = [];
-  state.evHistory.push({ id, day: state.day });
-  if (state.evHistory.length > EV_HISTORY_MAX) state.evHistory.shift();
-}
+// eventMatches/eventWeight/eventThreePeatBlocked/pushEvHistory → core/encounter.js 이관 (Tier3, 순수 술어)
 // 후보 풀에서 가중 추첨해 pendingEvent 예약. 성공 시 뽑힌 id, 없으면 null.
 function drawEvent(ctx = eventCtx()) {
   if (isWallpaper()) return null; // 🖼️ 배경화면: 인카운터/이벤트 off
@@ -5812,6 +5748,7 @@ const EVENTS = makeEvents({
   runEndingSequence, doctorFragmentsComplete,
   encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도)
 });
+setEncounterEvents(EVENTS); // core/encounter 술어에 EVENTS 주입 (makeEvents 산물 — 생성 직후 1회)
 // 이벤트 선택지 비용 판정/소비: food가 섞인 cost는 신선+통조림 합산으로 취급 (신선 우선 소비 후 통조림 폴백)
 function eventCostOk(cost) {
   return Object.entries(cost).every(([id, n]) => id === 'food' ? hasAnyFood(n) : (state.res[id] || 0) >= n);
@@ -6958,18 +6895,14 @@ function subwayOpenCount() {
   return Object.keys(state.subwayOpen || {}).length;
 }
 // 특정 지역이 지하 노선으로 개통되어 있는가 (탐험 시간·봉쇄 예외 판정).
-function subwayReaches(regionId) {
-  return !!(state.subwayOpen && state.subwayOpen[regionId]);
-}
+// subwayReaches → core/regions.js 이관 (Tier3)
 
 /* ── 1.4 「금지 구역」 방호복 / 무전 송출 ──
    방호복(hazmat): 고급 제작 정점. 금지 구역(forbidden) 지역 진입 게이트 + 탐험 1회당 내구 소모.
    무전 송출: 완공된 무전 기지에서 수집 방송/기록을 송출 → 종이 지도에 생존자 불빛 점등(수집률 비례).
    주제 회수: "내가 지킨 온기가 신호가 되어 퍼진다" — 불빛은 만남이 아니라 응답하는 먼 창문(타인은 흐른다). */
 // 특정 지역이 금지 구역(방호복 필수)인가.
-function isForbiddenRegion(regionId) {
-  return !!REGIONS[regionId]?.forbidden;
-}
+// isForbiddenRegion → core/regions.js 이관 (Tier3)
 // 방호복을 입을 수 있는 상태인가 (제작됐고 내구가 남았는가).
 function hazmatUsable() {
   return !!(state.hazmat && state.hazmat.dur > 0);
@@ -9279,26 +9212,7 @@ function blackout(midFn, holdMs = 500) {
 //   가중 = eff × (1 + Σ 부족자원 산지 보너스) × (직전 방문 지역이면 감쇠).
 // 후보 = 해금된 전 지역(항구/지하 개통 포함), 폭설 봉쇄 지역 제외. 부족 판정은 BAL.auto.scarceWatch 자원만
 //   (신선식품/물은 autoEat이 따로 관리하므로 제외). 결정론 아님(Math.random 타이브레이크 없음 — 가중 최대 선택).
-function pickAutoRegion() {
-  const A = BAL.auto;
-  // 오늘 부족한(임계 미만) 자원 집합
-  const scarce = new Set(A.scarceWatch.filter(r => (state.res[r] || 0) < A.scarceThreshold));
-  let bestId = null, bestW = -1;
-  for (const id of Object.keys(REGIONS)) {
-    if (!regionUnlocked(id)) continue;      // 항구 등 미해금 제외
-    if (blizzardBlocks(id)) continue;       // 폭설 봉쇄 지상 지역 제외
-    if (isForbiddenRegion(id)) continue;    // 1.4 금지 구역은 자동 대상 아님(방호복·수동 전략 레버 — 염장/얼음낚시와 동일 원칙)
-    const eff = rateParts(id, []).eff;
-    if (eff <= 0) continue;
-    // 이 지역이 loot로 주는 부족 자원 종 수 → 가중 보너스
-    let scarceHits = 0;
-    for (const [rid] of REGIONS[id].lootRes) if (scarce.has(rid)) scarceHits++;
-    let w = eff * (1 + scarceHits * A.scarceWeightPerRes);
-    if (id === state.lastAutoRegion) w *= A.revisitDecay; // 직전 방문 지역 감쇠(연속 편중 완화)
-    if (w > bestW) { bestW = w; bestId = id; }
-  }
-  return bestId;
-}
+// pickAutoRegion → core/regions.js 이관 (Tier3, 순수 결정 로직)
 
 // 자동 진행 모드 (Day 10+ 해금): 매 게임 내 정시마다 간단한 생존 루틴을 대신 처리.
 // 자동 대상: 치료·청소·탐험(급식/취침/autoEat은 각각 processDay/자정루프/decayGauges가 자동 처리).

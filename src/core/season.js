@@ -18,3 +18,16 @@ export function seasonOf(day = state.day) { return SEASONS[Math.floor((day - 1) 
 export function seasonDay(day = state.day) { return ((day - 1) % SEASON_DAYS) + 1; }
 // 계절 절대 인덱스 (겨울 카운터 리셋 기준) — 0부터 계절마다 +1
 export function seasonIndex(day = state.day) { return Math.floor((day - 1) / SEASON_DAYS); }
+
+// 셸터 날씨 풀을 계절로 보정 (rollWeather가 소비). 눈은 겨울만(초봄 꽃샘추위 1~4일차는 절반 확률로 잔설).
+//   여름=맑음 가중, 겨울=눈 가중. Math.random은 초봄 눈/비 판정(시드 시뮬 시퀀스 내 결정적).
+export function seasonAdjustPool(pool) {
+  const s = seasonOf().id;
+  const earlySpring = s === 'spring' && seasonDay() <= 4;
+  return pool.map(w => {
+    if (s === 'winter' && w === 'rain') return 'snow';
+    if (earlySpring && w === 'snow') return Math.random() < 0.5 ? 'rain' : 'snow';
+    if (s !== 'winter' && !earlySpring && w === 'snow') return 'rain'; // 눈은 겨울에만 (초봄 제외)
+    return w;
+  }).concat(s === 'winter' ? ['snow'] : s === 'summer' ? ['clear'] : []);
+}
