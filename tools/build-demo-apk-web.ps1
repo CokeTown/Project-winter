@@ -1,7 +1,7 @@
 # Nine Winters Demo - Android APK + itch.io HTML5 web zip (friend playtest / browser demo). ASCII only.
 # One demo web bundle feeds BOTH artifacts:
 #   - release-demo\NineWinters-Demo-web-<ver>.zip   (itch.io HTML5: index.html at zip root, relative base, no SW)
-#   - release-demo\NineWinters-Demo-<ver>.apk       (Android debug APK, auto-signed, installs via unknown sources)
+#   - release-demo\NineWinters-Demo-<ver>.apk       (Android RELEASE APK, signed via android/keystore.properties, installs via unknown sources)
 # Demo gate: DEMO_BUILD=1 -> __DEMO__ in game.js (normal mode only, first-snow credits, sandbox). Build from demo-vertical-slice.
 # --mode electron => base './' (works on itch subpath AND Capacitor local assets) + SW disabled (avoids itch cache/scope issues).
 # Demo identity: -PdemoEdition=1 -> appId .demo + label "Nine Winters Demo" (installs side by side with retail).
@@ -39,16 +39,16 @@ Write-Host "[3/5] capacitor sync android (copies dist -> android assets)"
 npx cap sync android
 if ($LASTEXITCODE -ne 0) { throw "cap sync failed" }
 
-Write-Host "[4/5] gradlew assembleDebug (-PdemoEdition=1, JDK 21)"
+Write-Host "[4/5] gradlew assembleRelease (-PdemoEdition=1, JDK 21, signed via keystore.properties)"
 Push-Location android
 try {
-    & .\gradlew.bat -PdemoEdition=1 assembleDebug
+    & .\gradlew.bat -PdemoEdition=1 assembleRelease
     $rc = $LASTEXITCODE
 } finally {
     Pop-Location
 }
-if ($rc -ne 0) { throw "gradle assembleDebug failed (rc=$rc)" }
-$apkSrc = "android\app\build\outputs\apk\debug\app-debug.apk"
+if ($rc -ne 0) { throw "gradle assembleRelease failed (rc=$rc)" }
+$apkSrc = "android\app\build\outputs\apk\release\app-release.apk"
 if (-not (Test-Path $apkSrc)) { throw "APK not found at $apkSrc" }
 $apkOut = "release-demo\NineWinters-Demo-$ver.apk"
 Copy-Item $apkSrc $apkOut -Force
