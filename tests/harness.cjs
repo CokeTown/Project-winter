@@ -13,8 +13,8 @@ async function boot() {
   app.disableHardwareAcceleration();
   app.setPath('userData', path.join(os.tmpdir(), 'nw-test-' + Date.now()));
   await app.whenReady();
-  // webPreferences는 시뮬 프로브(probe22/24)와 동일하게 — contextIsolation 등 차이가 시뮬 초기상태에
-  //   영향 준 정황(테스트 105 vs 프로브 126)이 있어 config를 일치시킨다. (시뮬 비-헤르메틱성은 리팩토링 백로그)
+  // webPreferences는 시뮬 프로브(probe22/24)와 동일하게 config를 일치시킨다.
+  //   (F1 비-헤르메틱성은 2026-07-07 해결 — simReset 완전 리셋 + 렌더부수효과 _simRunning 가드. FINDINGS.md F1.)
   _win = new BrowserWindow({ show: false, width: 900, height: 600,
     webPreferences: { backgroundThrottling: false, offscreen: true } });
   _win.webContents.setFrameRate(30);

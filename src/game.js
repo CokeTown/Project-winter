@@ -9134,7 +9134,10 @@ function processDay() {
   if (!state.cat && (state.day === 2 || state.day === 3) && !state.catTeaserDone) {
     state.catTeaserDone = true;
     state.catTeaserMeow = true; // tickTime 새벽(WAKE 직후)에 소비 → meow 1회
-    if (typeof wildlifeSys !== 'undefined') { try { wildlifeSys._forceNightPrints(); } catch (e) {} }
+    // F1(헤르메틱): 시뮬 중엔 렌더 부수효과 금지. _forceNightPrints는 wildlifeSys의 영속 모듈상태
+    //   (prints/animals — simReset 대상 밖)에 의존해 Math.random을 가변 소비 → 시드 시퀀스 desync(비-헤르메틱).
+    //   발자국은 시각 연출이라 밸런스 sim엔 불필요. 실게임(_simRunning=false)은 그대로 남긴다.
+    if (!_simRunning && typeof wildlifeSys !== 'undefined') { try { wildlifeSys._forceNightPrints(); } catch (e) {} }
     notes.push(t('day.catPrints'));
   }
   // 특수 인카운터 ①: 야윈 고양이 — v0.9.1: Day 9+, 하루 15% (아직 입양 전 + 최초 1회 등장 후 재등장 없음)
@@ -10019,6 +10022,8 @@ function drainTipQueue() {
   showTipNote(tipQueue.shift());
 }
 function tipOnce(id) {
+  if (_simRunning) return; // F1(헤르메틱): 시뮬 중엔 종이 팁 렌더 금지. showTipNote→applyPaperBg가 절차적 종이 텍스처를
+  //   Math.random으로 생성(첫 호출 캐시=첫-run 래치)해 시드 시퀀스를 ~9600 소비·desync시켰다. 팁은 순수 시각.
   if (state.tipsSeen[id]) return;
   state.tipsSeen[id] = true;
   tipQueue.push(id);
@@ -11014,8 +11019,19 @@ function expectedLoot(regionId, mult = 1) {
 }
 // 시뮬 전 state 를 신규 게임 스냅샷으로 초기화 (실 UI/아이템은 건드리지 않음)
 function simReset() {
-  const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
-  Object.assign(state, fresh);
+  // F1(헤르메틱): 완전 리셋. 기존 Object.assign(state, DEFAULT_STATE)는 얕은 병합이라 이전 run이
+  //   추가한 비-DEFAULT 키(catTeaserDone/catTeaserMeow 등)가 잔존해 다음 run에 샜다 — 같은 시드·config
+  //   인데 Day30 총자원 544 vs 480(run 순번 의존). 키를 싹 비우고 DEFAULT_STATE 딥클론으로 재구성하면
+  //   state가 정확히 신규게임 상태가 된다(잔존 0). state는 const 참조라 delete+재할당해도 동일성 유지.
+  for (const k in state) delete state[k];
+  Object.assign(state, JSON.parse(JSON.stringify(DEFAULT_STATE)));
+  // 모듈 레벨 날씨도 결정값으로. simReset이 이걸 안 지워서 이전 run의 weather.type이 sim에 새던 2차 결함
+  //   (Day30 clear 544 vs storm 435). sim은 rateParts(_weatherPenalty)·comfortDetail(주입)로 읽는데,
+  //   processDay는 계절 경계에서만 rollWeather하므로 봄 Day30 창엔 낡은 날씨가 30일 내내 적용됐다.
+  //   weather는 렌더 결합이라 game.js 잔류 — sim이 읽는 type + 전이 필드만 state.weatherType과 동기화.
+  weather.type = state.weatherType; // DEFAULT_STATE 정본('clear')
+  weather.nextChange = 0;
+  weather.transPrev = null; weather.transStart = 0; weather.transK = 0; weather.transBirds = false;
 }
 let _simRunning = false; // 시뮬 중엔 계정 통계(recordNormalDay)를 오염시키지 않는다
 function simDays(n = 30, opt = {}) {

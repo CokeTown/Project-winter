@@ -19,8 +19,8 @@ const KNOWLEDGE_HASH = -451536973;
 
     // ── 1) 경제 밴드 (로테이션 config, 시드 고정) — 밸런스 회귀 그물 ──
     //   기준선 = 2026-07-06 측정(#76 인플레 캡 + 난이도 income + 하드코어 0.28).
-    //   주의: setWeather는 run() 안에서 딱 한 번만 — simReset이 weather 모듈을 안 리셋해서
-    //     이중 호출 시 시뮬 결과가 흔들림(재현성 결함, 리팩토링 백로그에 기록). 단일 호출로 결정론화.
+    //   F1 해결(2026-07-07): sim이 헤르메틱해져 setWeather 이중 호출/순서와 무관하게 결정적.
+    //     run()의 setWeather('clear')는 이제 명시성용(불필요하지만 무해). 헤르메틱 가드는 아래 §F1.
     const econ = await call(`
       const at = (snaps, d) => snaps.find(x => x.day === d) || snaps[snaps.length - 1];
       const fc = s => Math.round((s.res.food || 0) + (s.res.canned || 0));
@@ -37,8 +37,8 @@ const KNOWLEDGE_HASH = -451536973;
     const e = JSON.parse(econ);
     const band = (name, v, lo, hi) => check(name, v >= lo && v <= hi, `실측 ${v} / 밴드 ${lo}~${hi}`);
     // 노말: 굶는 날 0(코지 코어 불가침) + Day30 코지 밴드 + Day432 인플레 캡.
-    //   ※ 중반(Day30/60) 정확값은 시뮬 비-헤르메틱성으로 harness마다 ±20 흔들려(105~126) 밴드로 핀.
-    //     Day432 캡은 harness 무관 안정(339)이라 타이트하게. (헤르메틱 fix는 리팩토링 백로그 FINDINGS.md)
+    //   ※ F1 해결로 중반(Day30/60)도 이제 결정적 — 밴드는 안전 마진으로 유지(정밀 near로 조일 수 있으나
+    //     밸런스 튜닝 여지를 남긴다). Day432 캡은 harness 무관 안정(339)이라 타이트하게.
     check('경제/노말 굶는날 0 (코지 안전선)', e.normal.starve === 0, `굶는날 ${e.normal.starve}`);
     band('경제/노말 Day30 코지 밴드(100~160)', e.normal.d30, 100, 160);
     band('경제/노말 Day60(여유)', e.normal.d60, 160, 240);
@@ -52,6 +52,21 @@ const KNOWLEDGE_HASH = -451536973;
     check('경제/하드코어 완주 가능(생존 존재)', e.hcSurvive >= 1, `생존 ${e.hcSurvive}/5`);
     // 무한: 노말과 동일 안착
     near('경제/무한 Day432', e.zen.d432, 339, 4);
+
+    // ── F1 헤르메틱 회귀 가드 (2026-07-07 해결) — sim이 완전 결정적임을 박제 ──
+    //   해결: simReset이 weather.type/전 모듈상태를 완전 리셋 + tipOnce/wildlife 렌더부수효과를 _simRunning 가드
+    //   (종이 팁 텍스처가 Math.random ~9600 소비·첫-run 캐시로 시드 desync시키던 게 주범). 같은 시드·config면
+    //   (a)연속 재호출 동일 (b)시작 날씨 무관 동일이어야 한다 — 깨지면 비-헤르메틱 재발(밸런스 측정 신뢰 붕괴).
+    const herm = await call(`
+      const sig = a => JSON.stringify(a.map(s => [s.day, Math.round((s.res.food||0)+(s.res.canned||0)), s.hunger, s.thirst]));
+      S.setWeather('clear'); const A = sig(S.simDays(432, { mode:'normal', seed:31337, regions:${ROT} }));
+      S.setWeather('clear'); const B = sig(S.simDays(432, { mode:'normal', seed:31337, regions:${ROT} }));
+      S.setWeather('storm'); const C = sig(S.simDays(432, { mode:'normal', seed:31337, regions:${ROT} }));
+      return JSON.stringify({ ab: A === B, ac: A === C });
+    `);
+    const hm = JSON.parse(herm);
+    check('F1 헤르메틱: 연속 재호출 동일(결정성)', hm.ab, hm.ab ? '' : 'run1≠run2 — 비-헤르메틱 재발');
+    check('F1 헤르메틱: 시작 날씨 무관(누수 0)', hm.ac, hm.ac ? '' : 'clear≠storm — weather 누수 재발');
 
     // ── SHELTERS 데이터 무결성 (SHELTERS 데이터/빌드 분리 리팩토링 안전망) ──
     //   각 셸터의 "모든 비-함수 필드"(desc·mood·perk·upkeep·_slab 등 전부)를 deep stable 직렬화 → 해시로 핀.

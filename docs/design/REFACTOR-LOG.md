@@ -84,7 +84,7 @@ tests/            ← [신설] 회귀 그물: harness.cjs(오프스크린 Electr
 
 ## 5. 발견 (그물이 잡은 것 — 상세 `tests/FINDINGS.md`)
 
-- **F1 (⚠️ 재현성 결함)**: `simDays`(밸런스 오라클)가 **비-헤르메틱** — 같은 dist·시드인데 호출 하네스에 따라 노말 중반 수치가 흔들림(105 vs 126). `simReset`이 weather 등 모듈 상태를 안 리셋하는 게 원인 추정. Day432 캡·하드·하드코어 결론은 안정. **리팩토링 과제**: `simDays`를 헤르메틱하게 → 밸런스 측정 완전 신뢰 가능.
+- **F1 (✅ 해결 2026-07-07, 디렉터 감독)**: `simDays`(밸런스 오라클) **비-헤르메틱** 결함 완전 해결. 조사 프로토콜(재현→RNG 계수 계측→인과사슬)으로 **근본 4원인** 색출: ①`simReset`이 모듈 `weather.type` 미리셋(시작 날씨가 sim에 샘, Day30 clear 544 vs storm 435) ②`Object.assign(state,DEFAULT)` 얕은 병합이 비-DEFAULT 키(catTeaserDone 등) 방치 → 완전 클리어(delete+재구성) ③**주범**: `tipOnce`→showTipNote→applyPaperBg가 절차적 종이 텍스처를 `Math.random` **~9600회** 소비·첫-run 모듈 캐시 → 시드 시퀀스 desync(첫 run만 544, 이후 480) ④wildlife `_forceNightPrints` 렌더 부수효과 RNG. ③④는 `_simRunning` 가드(렌더 부수효과는 헤드리스 sim서 금지). **검증**: 연속 3회·시작날씨 3종 Day30/432 완전 동일 + 그물 45/45(헤르메틱 가드 2개 신설). 이제 밸런스를 **정밀값**으로 측정 가능(밴드→near 조임은 튜닝 여지 남겨 보류).
 - **F2 (✅ 안전 확인)**: #76 신규 세이브 필드(book/bookProgress/demoEnded)가 구세이브에서 안전하게 마이그레이션됨 — 유실 없음(그물이 증명).
 - **F3 (✅ 시스템 그라운딩 QA, 2026-07-07)**: 오프스크린 하네스가 **실접지 QA를 가능케 함**(구 `QA-REPORT.md` v0.9.1의 "프리뷰차단" 한계 극복 — 이제 렌더/로밍/모달/예외를 실런타임에서 실측). **두 스윕 = 26/26 green + 게임 버그 0**.
   - **영속 하네스**: `tests/grounding/` 3종 + `npm run grounding`(또는 `grounding:build`로 빌드 동반). scratchpad 아니라 리포지에 박제 — 디렉터/CTO가 언제든 재실행. 스크린샷은 `%TEMP%/nw-grounding-shots`(휘발).
@@ -115,7 +115,7 @@ tests/            ← [신설] 회귀 그물: harness.cjs(오프스크린 Electr
 - ✅ **탐험 판정(`core/expedition.js`)** — districtOf/rateParts/expActualRate. 순수 계산(RNG 없음), 날씨 페널티만 setExpeditionWeather 주입. 그물 43/43 diff-0(하드코어 RNG 포함). 정산(resolveExpedition)·출발(departExpedition)은 game.js 잔류.
 - ✅ **프로젝트 술어(`core/projects.js`)** — districtRegionOf/projectAvailable/projectRec/projectDone/projectSiteStage. 순수 상태 술어(when 게이트/진행/완공/현장단계). 투입(investProject·UI)·3D 현장 렌더는 잔류. 그물 43/43 diff-0.
 - ⬜ 날씨 판정·인카운터 선택(drawEvent)·이주/이동·오토플레이/sim·processDay 오케스트레이터.
-- ⚠️ **F1 헤르메틱 sim은 위험 항목** — simReset 전 모듈상태 리셋은 net의 기반을 건드려 잘못되면 그물 신뢰 붕괴. **디렉터 감독하 착수 권장**(자율 미착수).
+- ✅ **F1 헤르메틱 sim 해결(2026-07-07, 디렉터 감독)** — simReset 완전 리셋 + 렌더 부수효과(tipOnce·wildlife) `_simRunning` 가드. 근본 4원인(§5 F1). 그물 45/45(헤르메틱 가드 2 신설). **밸런스 측정이 이제 완전 신뢰 가능**(밴드→정밀 near 조임은 튜닝 여지 남겨 선택).
 **Tier 4 (10월 이후 롱테일):** 렌더/UI 분해 (`render/`, `ui/` 서브트리).
 
 ---
