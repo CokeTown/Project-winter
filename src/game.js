@@ -1741,8 +1741,12 @@ const SHELTERS = {
             (th < Math.PI / 2 ? rearRight : rearLeft).add(tuft);
           }
           roomGroup.add(rearRight); roomGroup.add(rearLeft);
-          wallList.push({ group: rearRight, normal: new THREE.Vector3(1, 0, 0), proxy: null });
-          wallList.push({ group: rearLeft, normal: new THREE.Vector3(-1, 0, 0), proxy: null });
+          // ★ 뒷문 해금(bunkerBackdoor) 시에만 컬링 등록 → 근접 반쪽이 열려 내부 투시. 잠김 상태는 wallList 미등록
+          //   = 항상 불투명한 온전 돔(디렉터: "불투명해야지. 문 열기 조건 달성시에만 뒤를 투명하게"). solid 스테이브라 셸 자체도 불투명.
+          if (state.bunkerBackdoor) {
+            wallList.push({ group: rearRight, normal: new THREE.Vector3(1, 0, 0), proxy: null });
+            wallList.push({ group: rearLeft, normal: new THREE.Vector3(-1, 0, 0), proxy: null });
+          }
           // 내부 바닥(콘크리트) + 어두운 받침 — 확장 돔 안이 텅 빈 껍데기가 아니라 '방'이 되게(디렉터: 내부 구현)
           const rFloor = new THREE.Mesh(new THREE.BoxGeometry(2 * sR - 0.5, 0.16, sDep - 0.15), lamb(0x6b6760));
           rFloor.position.set(0, -0.08, rearCz); rFloor.receiveShadow = true; roomGroup.add(rFloor);
@@ -1758,7 +1762,7 @@ const SHELTERS = {
           rearWall.position.set(0, 0, rearZBack);
           rearWall.userData.noWeatherCap = true;
           roomGroup.add(rearWall);
-          wallList.push({ group: rearWall, normal: new THREE.Vector3(0, 0, -1), proxy: null });
+          if (state.bunkerBackdoor) wallList.push({ group: rearWall, normal: new THREE.Vector3(0, 0, -1), proxy: null }); // 해금 시에만 컬링(잠김=불투명 뒷벽)
         }
       }
       if (!state.bunkerBackdoor) {
