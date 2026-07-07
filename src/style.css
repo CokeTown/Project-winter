@@ -513,6 +513,13 @@
     text-shadow: 0 0 18px rgba(232,168,108,0.35), 3px 3px 0 #1a1408;
     margin-bottom: 10px;
   }
+  /* #74 데모: 로고 아래 DEMO 배지 (데모 빌드에서만 JS로 표시) */
+  #title-demo-badge {
+    display: inline-block; margin: -2px auto 20px; padding: 3px 15px;
+    font-size: 13px; letter-spacing: 5px; color: var(--accent);
+    border: 2px solid var(--accent); border-radius: 4px; opacity: 0.92;
+    text-shadow: 0 0 8px rgba(232,168,108,0.4);
+  }
   #title-sub { font-size: 13px; color: var(--text-dim); letter-spacing: 3px; margin-bottom: 34px; }
   #title-menu { display: flex; flex-direction: column; gap: 9px; width: 240px; margin: 0 auto; }
   #title-menu .pixel-btn { padding: 11px 10px; font-size: 13px; }

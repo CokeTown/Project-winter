@@ -16,11 +16,16 @@ import { BAL } from '../data/balance.js';
 // weather.type 주입 (weather 객체는 파티클 등 렌더 결합이라 game.js 잔류 — 타입만 읽는다).
 let _weatherType = () => 'clear';
 export function setRegionsWeather(fn) { _weatherType = fn; }
+// #74 데모 빌드 여부 주입 (regions.js는 순수 모듈 → game.js DEMO_ED를 못 봄, weather와 동일 주입 패턴).
+let _demoLock = () => false;
+export function setRegionsDemo(fn) { _demoLock = fn; }
+const DEMO_REGIONS = new Set(['residential', 'industrial', 'slum']); // 데모 허용 파밍 지역 3종 (상업+확장 잠금)
 
 const BLIZZARD_EXEMPT_REGIONS = ['harborYard', 'fishMarket']; // 지상 폭설 봉쇄에서 제외되는 지역(항구)
 
 // 지역 해금 여부 (성공 횟수 게이트). 항구·리조트·금지구역은 대응 셸터/후반선 도달 시 지도 노출.
 export function regionUnlocked(rid) {
+  if (_demoLock()) return DEMO_REGIONS.has(rid); // #74 데모: 거주·공업·슬럼 3지역만 (상업·항구·고원·금지 전부 잠금)
   if (rid === 'harborYard' || rid === 'fishMarket') return state.successes >= SHELTER_META.tugboat.unlockAt;
   if (rid === 'resort') return state.successes >= SHELTER_META.lodge.unlockAt; // 1.3: 리조트는 스키 로지 해금 후
   if (rid === 'checkpoint' || rid === 'lab') return state.successes >= BAL.forbidden.unlockAt; // 1.4 금지구역(진입은 방호복 게이트가 별도)

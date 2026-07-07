@@ -43,7 +43,7 @@ import { hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
 import { districtOf, rateParts, expActualRate, setExpeditionWeather } from './core/expedition.js'; // 탐험 판정 (Tier3)
 import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
 import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEncounterEvents } from './core/encounter.js'; // 인카운터 술어 (Tier3)
-import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3)
+import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsDemo } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3)
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -512,6 +512,7 @@ const weather = { type: 'clear', nextChange: 0, pts: null, seedY: [], seedS: [] 
 setComfortWeather(() => weather.type); // core/comfort에 현재 날씨 타입 주입 (weather는 렌더 결합이라 game.js 잔류)
 setExpeditionWeather(() => WEATHERS[weather.type].penalty || 0); // core/expedition에 날씨 페널티 주입 (rateParts용)
 setRegionsWeather(() => weather.type); // core/regions에 날씨 타입 주입 (blizzardBlocks 눈 판정용)
+setRegionsDemo(() => DEMO_ED);         // #74 데모: 거주·공업·슬럼 3지역만 노출 (상업+확장 잠금)
 {
   const MAXN = 2200, SPAN = 23, TOP = 17;
   const arr = new Float32Array(MAXN * 3);
@@ -1548,6 +1549,7 @@ function helplessNow() {
 let helplessBusy = false; // 구제/종료 연출 중 재진입 가드 (틱마다 재호출되므로)
 // 매 상태 변화 후 호출되는 안전망 판정. 무력이면 구제 또는 종료를 연출한다.
 function checkHelpless() {
+  if (DEMO_ED && state.demoPhase === 'sandbox') return; // #74 데모 샌드박스=zen 릴랙스: 무력사망 없음(크레딧 이후 무한 puttering)
   if (helplessBusy || state.runEnded || blackoutActive) return;
   if (!helplessNow()) return;
   helplessBusy = true;
@@ -1739,6 +1741,7 @@ async function promptSleep() {
 const SLOT_MIN = 5;
 // 채워진 슬롯의 최대 번호를 찾아, 그보다 1칸 더(빈 칸) 보여준다. 하한 SLOT_MIN.
 function slotDisplayCount() {
+  if (DEMO_ED) return 2; // #74 데모: 세이브 2칸 고정
   let maxFilled = 0;
   // 상한 없이 스캔하되 실무 안전 상한(200) — 사용자가 200칸을 채우는 일은 없다.
   for (let n = 1; n <= 200; n++) { if (localStorage.getItem(slotKey(n))) maxFilled = n; }
@@ -6556,7 +6559,9 @@ function processDay() {
     notes.push(t('day.catPrints'));
   }
   // 특수 인카운터 ①: 야윈 고양이 — v0.9.1: Day 9+, 하루 15% (아직 입양 전 + 최초 1회 등장 후 재등장 없음)
-  if (!state.pendingEvent && !state.cat && !state.catEventSeen && state.day >= 9 && Math.random() < 0.15) {
+  // #74 데모: 가을 중후반(Day 30~, 첫겨울 직전)에 만나게 해 "감질맛" — 확률↑로 데모 안에 확실히 등장.
+  const catDayOk = DEMO_ED ? (seasonOf(state.day).id === 'autumn' && state.day >= 30) : (state.day >= 9);
+  if (!state.pendingEvent && !state.cat && !state.catEventSeen && catDayOk && Math.random() < (DEMO_ED ? 0.4 : 0.15)) {
     state.pendingEvent = 'cat';
     state.lastEventDay = state.day;
     state.catMusicDay = state.day; // 당첨된 날은 하루 종일 Cat OST
@@ -7032,7 +7037,11 @@ addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.stopImmediatePropagation(); settleConfirm(true); }
 }, true); // 캡처 단계: 게임 전역 ESC(설정 토글 등)보다 먼저 소비
 
+// #74 데모: 이주 허용 셸터 화이트리스트 — 컨테이너(시작)·벙커·옥탑 3곳만.
+const DEMO_SHELTERS = new Set(['container', 'bunker', 'rooftop']);
 function shelterUnlocked(id) {
+  // 데모는 화이트리스트만 (layouts OR절 무시 — 치트/구세이브로 다른 셸터가 새는 것 차단).
+  if (DEMO_ED) return DEMO_SHELTERS.has(id);
   return state.successes >= SHELTERS[id].unlockAt || (state.layouts[id]?.length > 0);
 }
 function openShelterModal() {
@@ -8092,6 +8101,15 @@ $('lang-en').addEventListener('click', () => pickTitleLang('en'));
 $('t-new').addEventListener('click', () => openSlotModal('new'));
 $('t-load').addEventListener('click', () => openSlotModal('load'));
 $('t-help').addEventListener('click', openHelpModal);
+// #74 데모: 로고 아래 DEMO 배지 노출 (데모 빌드만).
+if (DEMO_ED) { const _db = $('title-demo-badge'); if (_db) _db.style.display = ''; }
+// 게임 종료 버튼 — Electron 데스크톱(window.close 동작)에서만 노출. 웹은 브라우저가 close를 막으므로 숨김.
+if (window.nineWidget && window.nineWidget.available) {
+  const _q = $('t-quit');
+  if (_q) { _q.style.display = ''; _q.addEventListener('click', async () => {
+    if (await gameConfirm(t('title.quit.confirm'), t('title.quit'), t('confirm.cancel'))) window.close();
+  }); }
+}
 // #52: 타이틀 ⚙️ — 전용 설정 오버레이 토글 (인게임과 동일 창)
 $('t-settings').addEventListener('click', () => toggleSettingsPanel());
 /* ============================================================
