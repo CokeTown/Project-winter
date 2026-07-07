@@ -12,13 +12,16 @@ android {
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
         // #89 QA 에디션: -PqaEdition=1 이면 별도 appId(.qa)로 정식판과 나란히 설치 + 앱 이름에 [QA] 표기.
-        //   tools/build-qa.ps1 전용 스위치 — 평시 빌드는 인자 없음이라 기존과 동일.
-        applicationId "com.projectwinter.shelter" + (project.hasProperty('qaEdition') ? ".qa" : "")
-        manifestPlaceholders = [appLabel: project.hasProperty('qaEdition') ? "Nine Winters QA" : "@string/app_name"]
+        //   #74 데모: -PdemoEdition=1 이면 appId(.demo) + "Nine Winters Demo" 라벨 (친구 플레이테스트 APK, tools/build-demo-apk.ps1).
+        //   둘 다 전용 스위치 — 평시 빌드는 인자 없음이라 기존과 동일. (qa 우선, 그다음 demo)
+        def _idSuffix  = project.hasProperty('qaEdition') ? ".qa"   : (project.hasProperty('demoEdition') ? ".demo" : "")
+        def _appLabel  = project.hasProperty('qaEdition') ? "Nine Winters QA" : (project.hasProperty('demoEdition') ? "Nine Winters Demo" : "@string/app_name")
+        applicationId "com.projectwinter.shelter" + _idSuffix
+        manifestPlaceholders = [appLabel: _appLabel]
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 19
-        versionName "1.6.1-beta" + (project.hasProperty('qaEdition') ? "-qa" : "")
+        versionName "1.6.1-beta" + (project.hasProperty('qaEdition') ? "-qa" : (project.hasProperty('demoEdition') ? "-demo" : ""))
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
