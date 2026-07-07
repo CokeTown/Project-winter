@@ -9245,15 +9245,23 @@ addEventListener('pointermove', () => { if (padState.active) showPadCursor(false
 //   해법: freezeForGolden = ①Math.random 시드 고정 ②렌더 시간 동결(dt=0) ③배회 엔티티 업데이트 스킵+숨김.
 //   그러면 골든 캡처 = 순수 정적 지오메트리+조명+날씨FX(=리팩토링 대상 코드)만 남아 로드 간 결정론적.
 let _golden = false; const _goldenT = 5.0; let _goldenHid = false;
+let _goldenDt = 0, _goldenAcc = 0; // 동역학 게이트: 스테핑 중에만 dt>0, t는 _goldenAcc로 결정론적 누적
 function freezeForGolden(seed = 12345) {
   let s = seed >>> 0;
   Math.random = function () { s = (s + 0x6D2B79F5) | 0; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
-  windLevel = 1; _golden = true; _goldenHid = false;
+  windLevel = 1; _golden = true; _goldenHid = false; _goldenDt = 0; _goldenAcc = 0;
+}
+// 동역학 게이트: renderFrame을 동기 루프로 frames번 호출(rAF 개입 없음=결정론) → 눈 누적·젖음/성에 페이드가
+//   고정 dt로 확정 진행. 캡처 전 호출해 dt구동 날씨 상태를 박제한다. 루프 후 dt=0 복귀(rAF 프레임은 정지 유지).
+function stepGolden(frames = 200, dtSec = 0.1) {
+  _goldenDt = dtSec;
+  for (let i = 0; i < frames; i++) renderFrame();
+  _goldenDt = 0;
 }
 function renderFrame() {
   let dt = Math.min(clock.getDelta(), 0.1);
   let t = clock.elapsedTime;
-  if (_golden) { dt = 0; t = _goldenT; } // 골든: 시간 정지 → 애니 결정론
+  if (_golden) { dt = _goldenDt; if (_goldenDt > 0) _goldenAcc += _goldenDt; t = _goldenT + _goldenAcc; } // 골든: dt=0 정지 / 스테핑 시 고정 dt 결정론 진행
   pollGamepad(dt);
   if (!titleVisible && !paused && !endingActive) tickTime(dt); // 타이틀·일시정지·엔딩 중엔 시간 정지
   else if (state.exp) state.exp.end += dt * 1000; // 탐험 실시간 타이머도 함께 멈춘다
@@ -9553,6 +9561,7 @@ window.__shelter = {
   setPitch: (rad) => { camState.elev = THREE.MathUtils.clamp(rad, 0.05, Math.PI / 2 - 0.05); },
   setZoom: (z) => { camState.zoom = THREE.MathUtils.clamp(z, 0.2, 3.2); },
   freezeForGolden, // Phase0 골든 게이트: Math.random 시드 고정 + 렌더 시간 동결(결정론). 이 훅 뒤 loadShelter.
+  stepGolden, // 동역학 게이트: 고정 dt로 renderFrame N회 동기 스테핑 → 눈 누적·젖음 페이드 결정론 진행 후 캡처.
   // #70 클램프 팬 QA 훅: setYaw 문법대로 target+현재값 동시 세팅(보간 대기 없이 즉시 반영). 원형 클램프 통과.
   setPan: (x, z) => { setPanTarget(x, z); camState.panX = camState.targetPanX; camState.panZ = camState.targetPanZ; },
   panState: () => ({ x: camState.panX, z: camState.panZ, tx: camState.targetPanX, tz: camState.targetPanZ, max: panMax() }),

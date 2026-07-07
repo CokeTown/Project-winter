@@ -36,6 +36,10 @@ const SCENES = [
   { id: 'z_container_snow', shelter: 'container', weather: 'snow', hour: 8, snow: 0.8 },
   { id: 'z_container_night', shelter: 'container', weather: 'clear', hour: 22 },
   { id: 'z_rooftop_rain', shelter: 'rooftop', weather: 'rain', hour: 8 },
+  // 동역학 씬(steps): 정적 세팅 후 stepGolden으로 고정 dt N프레임 진행 → dt구동 날씨(적설 누적/젖음 페이드)를
+  //   결정론적으로 박제. weatherfx 이관이 누적/페이드 수식을 바꾸면 이 씬들이 diff로 검거한다(정적 씬은 못 잡음).
+  { id: 'd_snow_accum', shelter: 'container', weather: 'snow', hour: 8, snow: 0, steps: 220 },
+  { id: 'd_rain_wet', shelter: 'rooftop', weather: 'rain', hour: 8, snow: 0, steps: 220 },
 ];
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -105,7 +109,12 @@ async function settleCapture(win) {
   let pass = 0, fail = 0, skip = 0, worstP = 0, worstB = 0;
   for (const sc of SCENES) {
     await setup(sc);
-    const cur = await settleCapture(win);
+    let cur = await settleCapture(win); // 빌드 정착(+정적 씬은 이게 최종)
+    if (sc.steps) { // 동역학: 정착 후 고정 dt 스테핑으로 날씨 진행 → 재캡처
+      await ev(`window.__shelter.stepGolden(${sc.steps}, ${sc.dt || 0.1})`);
+      await sleep(60);
+      cur = await cap(win);
+    }
     const file = path.join(GOLDEN_DIR, sc.id + '.png');
     if (UPDATE) {
       const png = new PNG({ width: CW, height: CH }); cur.copy(png.data);
