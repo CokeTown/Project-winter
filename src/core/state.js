@@ -60,7 +60,9 @@ export const state = {
   coldSnapWinterKey: -1,  // 카운터가 속한 겨울 식별자 (계절 인덱스). 겨울이 바뀌면 리셋
   // ── Nine Winters 엔드게임 마일스톤 (#11) ──
   winters: 0,          // 넘긴 겨울 수 (봄으로 넘어가는 날 +1). 제목이 곧 장기 목표.
-  demoEnded: false,    // #74 데모 빌드 전용: 첫 겨울 통과로 데모가 끝난 세이브 (정식 빌드에선 항상 false)
+  demoEnded: false,    // #74 데모 빌드 전용: (구) 첫 겨울 통과로 데모가 끝난 세이브. 재설계 후 demoPhase 브리지로만 참조 (정식 빌드에선 항상 false)
+  demoPhase: 'pre-credits', // #74 재설계: 데모 아크 단계 — 'pre-credits'(3지역 본편) → 'sandbox'(첫눈 크레딧 후 4계절 무한). 정식 빌드 무관.
+  firstSnowSeen: false, // #74 재설계: 첫 겨울 '첫눈' 1회 감지 플래그 (크레딧 1회 트리거 게이트, 재입장 재발화 방지)
   winterSnap: null,    // 현재/직전 겨울 시작 시점 스냅샷 (memoir 차분 계산용)
   pendingWinterMemoir: [], // 표시 대기 중인 "그 해 겨울" 수첩 페이지 큐 (봄 첫 아침 보고 뒤로 미룸)
   doctorRadioPending: false, // 9겨울 마일스톤 후 박사 무전 대기 (라디오 미보유 시 다음 배치까지 보류)
