@@ -570,12 +570,14 @@ export function makeCatSystem(ctx) {
       if (p.faceMat.map !== want) { p.faceMat.map = want; p.faceMat.needsUpdate = true; }
     }
     // ── 꼬리 살랑 파라미터 (양 경로 공용) — 쓰다듬기 중엔 속도·진폭을 키워 만족한 살랑임
-    const petBoost = c.petPurr > 0 ? 1 + c.petPurr * 1.4 : 1; // ② 꼬리 가속(최대 ×2.4)
-    const tailSpd = (c.mode === 'play' ? 9 : c.mode === 'walk' ? 4.5 : c.mode === 'sleep' ? 0.7 : 1.6) * petBoost;
-    const tailAmp = (c.mode === 'play' ? 0.7 : c.mode === 'sleep' ? 0.12 : 0.4) * (c.petPurr > 0 ? 1 + c.petPurr * 0.5 : 1);
+    const petBoost = c.petPurr > 0 ? 1 + c.petPurr * 0.7 : 1; // ② 꼬리 가속(최대 ×1.7 — 종전 ×2.4는 과함)
+    // 디렉터(2026-07 라이브, 확대): "꼬리가 헬리콥터마냥 돈다" → 좌우(Y)+상하(X) 위상차가 원뿔 궤적을 만든다.
+    //   상하 X성분을 0.2→0.08로 크게 줄여 '회전'을 잔잔한 좌우 살랑으로, 진폭(0.4→0.26)·2마디 증폭(1.3→1.1)·pet 가속도 완화.
+    const tailSpd = (c.mode === 'play' ? 8 : c.mode === 'walk' ? 4.5 : c.mode === 'sleep' ? 0.7 : 1.4) * petBoost;
+    const tailAmp = (c.mode === 'play' ? 0.5 : c.mode === 'sleep' ? 0.1 : 0.26) * (c.petPurr > 0 ? 1 + c.petPurr * 0.3 : 1);
     const tailY0 = Math.sin(t * tailSpd) * tailAmp;
-    const tailY1 = Math.sin(t * tailSpd - 0.9) * tailAmp * 1.3;
-    const tailX0 = Math.sin(t * tailSpd * 0.6) * 0.2 - (c.mode === 'walk' ? 0.4 : 0);
+    const tailY1 = Math.sin(t * tailSpd - 0.7) * tailAmp * 1.1;
+    const tailX0 = Math.sin(t * tailSpd * 0.6) * 0.08 - (c.mode === 'walk' ? 0.4 : 0);
     // ── 귀 털기 타이머 (양 경로 공용)
     c.earNext -= dt;
     if (c.earNext <= 0) { c.earKick = 1; c.earNext = 3 + Math.random() * 8; c.earSide = Math.random() < 0.5 ? 'earL' : 'earR'; }
@@ -607,6 +609,15 @@ export function makeCatSystem(ctx) {
       const nv = cur + (hs - cur) * Math.min(1, dt * 6);
       p.legs.bl.scale.y = nv;
       p.legs.br.scale.y = nv;
+    }
+    // stretch(기지개/플레이보우): 앞다리를 아래로 늘여 전방으로 뻗은 앞발이 바닥에 닿게 (디렉터 신고 — 확대: "앞발이 떠 있음").
+    //   피벗(어깨 6PX) 고정 → scale.y로만 연장하므로 어깨 틈 없음. 발끝 y = 6PX − 6PX·sy·cos|legF| ≈ 0 (legF−0.7·sy1.32).
+    {
+      const fs = c.mode === 'stretch' ? 1.32 : 1;
+      const cur = p.legs.fl.scale.y;
+      const nv = cur + (fs - cur) * Math.min(1, dt * 5);
+      p.legs.fl.scale.y = nv;
+      p.legs.fr.scale.y = nv;
     }
     p.tail1.rotation.x = pv.t1;
     p.tail1.rotation.y = tailY0;
