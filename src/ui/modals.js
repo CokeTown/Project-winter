@@ -3,12 +3,14 @@
 //   t/BAL/DEFAULT_STATE/opts는 직접 import, $는 자체 정의. game.js 클로저(openModal/toast/
 //   wallpaperUnlocked/openSlotModal/slotKey/LASTSLOT_KEY/DEMO_ED/SHELTERS)만 ctx 주입.
 //   게이트: 모달 DOM 스냅샷(tests/grounding/modal-golden — mode)이 innerHTML 무손실을 검증.
-import { t } from '../i18n.js';
+import { t, LN as LName } from '../i18n.js'; // LName은 game.js 별칭(const LName=LN) — 모듈은 LN을 직접 alias
 import { BAL } from '../data/balance.js';
-import { DEFAULT_STATE, opts } from '../core/state.js';
+import { state, DEFAULT_STATE, opts } from '../core/state.js';
+import { OUTFITS } from '../data/items.js';
 
 export function makeModals(ctx) {
   const { openModal, toast, wallpaperUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS } = ctx;
+  const { getPaused, playSfx, scheduleSave, avatarSys } = ctx; // wardrobe 등 추가 모달 의존
   const $ = id => document.getElementById(id);
 
   function openModeModal(n) {
@@ -65,5 +67,39 @@ export function makeModals(ctx) {
     }));
   }
 
-  return { openModeModal };
+  // ★ 아래 verbatim 이동 함수들 — 코드 들여쓰기는 원본 유지(0-indent)하되 템플릿 리터럴 공백을 보존한다(모달 게이트 무손실 규율).
+  function openWardrobeModal() {
+  if (getPaused()) { toast(t('pause.blocked')); return; }
+  const ownedList = state.outfits || ['default'];
+  const cur = state.outfit || 'default';
+  const rows = Object.keys(OUTFITS).map(id => {
+    const o = OUTFITS[id];
+    const owned = ownedList.includes(id) || id === 'default';
+    const sel = id === cur;
+    const sw = (c) => `<span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:#${(c ?? 0x5a5648).toString(16).padStart(6, '0')};margin-right:3px;vertical-align:-1px"></span>`;
+    return `
+      <div class="prep-row ${sel ? 'sel' : owned ? '' : 'no'}" style="cursor:default">
+        <span>${o.emoji} ${LName(o)}</span>
+        <span class="p-eff" style="font-size:10px">${sw(o.pal.coat)}${sw(o.pal.scarf ?? 0xb8862e)}${owned ? '' : t('wardrobe.locked')}</span>
+        ${sel
+          ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('wardrobe.wearing')}</span>`
+          : owned
+            ? `<button class="pixel-btn" data-wear="${id}" style="margin-left:6px">${t('wardrobe.wear')}</button>`
+            : ''}
+      </div>`;
+  }).join('');
+  openModal(`👕 ${t('wardrobe.title')}`, `
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('wardrobe.hint')}</div>
+    ${rows}`);
+  $('modal-body').querySelectorAll('button[data-wear]').forEach(b => b.addEventListener('click', () => {
+    state.outfit = b.dataset.wear;
+    avatarSys.refreshOutfit();
+    playSfx('whoosh', { rate: 0.72, vol: 0.5, jitter: 0.06 }); // 갈아입기 = 천 스치는 스윽 (디렉터: 망치질 금지 — 전용 소스 오면 cloth로 교체)
+    toast(t('wardrobe.worn', { name: LName(OUTFITS[b.dataset.wear]) }));
+    scheduleSave();
+    openWardrobeModal(); // 착용 배지 갱신
+  }));
+  }
+
+  return { openModeModal, openWardrobeModal };
 }

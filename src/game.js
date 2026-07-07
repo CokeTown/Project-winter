@@ -3219,38 +3219,6 @@ const avatarSys = makeAvatarSystem({
 });
 
 // #86④ 옷장 — 보유 의류(제작으로 획득) 목록에서 탭하여 갈아입기. 진입: 툴바 👕 버튼 + 아바타 탭.
-function openWardrobeModal() {
-  if (paused) { toast(t('pause.blocked')); return; }
-  const ownedList = state.outfits || ['default'];
-  const cur = state.outfit || 'default';
-  const rows = Object.keys(OUTFITS).map(id => {
-    const o = OUTFITS[id];
-    const owned = ownedList.includes(id) || id === 'default';
-    const sel = id === cur;
-    const sw = (c) => `<span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:#${(c ?? 0x5a5648).toString(16).padStart(6, '0')};margin-right:3px;vertical-align:-1px"></span>`;
-    return `
-      <div class="prep-row ${sel ? 'sel' : owned ? '' : 'no'}" style="cursor:default">
-        <span>${o.emoji} ${LName(o)}</span>
-        <span class="p-eff" style="font-size:10px">${sw(o.pal.coat)}${sw(o.pal.scarf ?? 0xb8862e)}${owned ? '' : t('wardrobe.locked')}</span>
-        ${sel
-          ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('wardrobe.wearing')}</span>`
-          : owned
-            ? `<button class="pixel-btn" data-wear="${id}" style="margin-left:6px">${t('wardrobe.wear')}</button>`
-            : ''}
-      </div>`;
-  }).join('');
-  openModal(`👕 ${t('wardrobe.title')}`, `
-    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('wardrobe.hint')}</div>
-    ${rows}`);
-  $('modal-body').querySelectorAll('button[data-wear]').forEach(b => b.addEventListener('click', () => {
-    state.outfit = b.dataset.wear;
-    avatarSys.refreshOutfit();
-    playSfx('whoosh', { rate: 0.72, vol: 0.5, jitter: 0.06 }); // 갈아입기 = 천 스치는 스윽 (디렉터: 망치질 금지 — 전용 소스 오면 cloth로 교체)
-    toast(t('wardrobe.worn', { name: LName(OUTFITS[b.dataset.wear]) }));
-    scheduleSave();
-    openWardrobeModal(); // 착용 배지 갱신
-  }));
-}
 // 아바타 탭 → 옷장 (고양이 탭 선례 — 배치 모드에선 오작동 방지 차 미동작)
 function pickAvatar(e) {
   if (!avatarSys.exists()) return false;
@@ -6081,7 +6049,8 @@ function openSlotModal(mode) {
 }
 // 새 게임: 슬롯 선택 후 모드 5종(노말/하드/하드코어/무한/배경화면)을 고르는 화면 (같은 모달의 body 교체)
 // 모달 빌더 → ui/modals.js (Tier4 Phase1-⑤). t/BAL/DEFAULT_STATE/opts는 모듈이 import, game.js 클로저만 주입.
-const { openModeModal } = makeModals({ openModal, toast, wallpaperUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS });
+const { openModeModal, openWardrobeModal } = makeModals({ openModal, toast, wallpaperUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS,
+  getPaused: () => paused, playSfx, scheduleSave, avatarSys });
 const INTRO_IDS = ['intro.0', 'intro.1', 'intro.2'];
 function showIntro() {
   let i = 0;
