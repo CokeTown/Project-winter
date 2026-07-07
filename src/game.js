@@ -3333,10 +3333,13 @@ function eventCtx() {
 }
 // eventMatches/eventWeight/eventThreePeatBlocked/pushEvHistory → core/encounter.js 이관 (Tier3, 순수 술어)
 // 후보 풀에서 가중 추첨해 pendingEvent 예약. 성공 시 뽑힌 id, 없으면 null.
+// #74 데모: 인카운터 종류 축소 — 코지 세트만(방문자·동물·잔잔한 세계관 결). 거친/유틸·위치잠금은 정식판에서.
+const DEMO_EVENTS = new Set(['wanderer', 'trader', 'dog', 'seeds', 'old_calendar', 'caravan_pass', 'distant_light', 'cat_gift']);
 function drawEvent(ctx = eventCtx()) {
   if (isWallpaper()) return null; // 🖼️ 배경화면: 인카운터/이벤트 off
   const cands = Object.keys(EVENTS).filter(id =>
-    !EVENTS[id].special && eventMatches(id, ctx) && !eventThreePeatBlocked(id));
+    !EVENTS[id].special && eventMatches(id, ctx) && !eventThreePeatBlocked(id)
+    && (!DEMO_ED || DEMO_EVENTS.has(id))); // 데모는 코지 세트만
   if (!cands.length) return null;
   const weights = cands.map(eventWeight);
   let sum = weights.reduce((a, b) => a + b, 0);
