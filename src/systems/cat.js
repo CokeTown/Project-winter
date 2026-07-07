@@ -267,24 +267,20 @@ export function makeCatSystem(ctx) {
     B(tail2, 1.05 * PX, 1.05 * PX, 1.2 * PX, point, 0, 0, -6 * PX + 0.6 * PX); // 꼬리 끝 팁 (코트별 point)
     // ── 다리 4개 (2×6×2px, 가늘고 짧게 — 어깨/골반 피벗, 발끝 흰색)
     //   기립 시 다리 상단(피벗)을 어깨높이 6px(=0.12)에 두면 다리 박스(6px 길이, 중심 -3px)의 하단이 y=0(바닥)에 닿는다
-    P.legs = {}; P.fore = {};
+    P.legs = {}; P.fore = {}; P.shin = {};
     for (const [key, x, z] of [['fl', -1.4 * PX, 5 * PX], ['fr', 1.4 * PX, 5 * PX], ['bl', -1.4 * PX, -5 * PX], ['br', 1.4 * PX, -5 * PX]]) {
       const leg = new THREE.Group();
       leg.position.set(x, 6 * PX, z);
       g.add(leg); P.legs[key] = leg;
-      if (z > 0) {
-        // 앞다리 2마디(상완 3px + 전완 3px) — 곧게 편 기본값(전완 회전 0)은 종전 6px 단일다리와 동일 실루엣.
-        //   기지개(stretch)에서만 전완을 ㄴ자로 앞으로 접어 앞팔을 바닥 전방에 납작히 뻗는다(디렉터: 진짜 기지개).
-        B(leg, 2 * PX, 3 * PX, 2 * PX, fur, 0, -1.5 * PX, 0);       // 상완 3px
-        const fore = new THREE.Group();
-        fore.position.set(0, -3 * PX, 0);                          // 전완 피벗 = 팔꿈치(상완 끝)
-        leg.add(fore); P.fore[key] = fore;
-        B(fore, 2 * PX, 3 * PX, 2 * PX, fur, 0, -1.5 * PX, 0);      // 전완 3px
-        B(fore, 2.05 * PX, 1.4 * PX, 2.05 * PX, point, 0, -3 * PX + 0.7 * PX, 0); // 발끝
-      } else {
-        B(leg, 2 * PX, 6 * PX, 2 * PX, fur, 0, -3 * PX, 0);           // 뒷다리 (피벗에서 -y로 6px, 중심 -3px)
-        B(leg, 2.05 * PX, 1.4 * PX, 2.05 * PX, point, 0, -6 * PX + 0.7 * PX, 0); // 발끝
-      }
+      const front = z > 0;
+      // 모든 다리 2마디(상단 3px + 하단 3px). 하단 회전 0이면 6px 단일다리와 동일 실루엣 → walk 등 회귀 없음.
+      //   앞다리 전완(P.fore): 기지개 ㄴ자로 앞팔 전방 접지. 뒷다리 정강이(P.shin): 앉기 무릎접어 낮은 엉덩이(MC 레퍼런스).
+      B(leg, 2 * PX, 3 * PX, 2 * PX, fur, 0, -1.5 * PX, 0);          // 상단(상완/허벅지) 3px
+      const lo = new THREE.Group();
+      lo.position.set(0, -3 * PX, 0);                               // 하단 피벗 = 팔꿈치/무릎
+      leg.add(lo); (front ? P.fore : P.shin)[key] = lo;
+      B(lo, 2 * PX, 3 * PX, 2 * PX, fur, 0, -1.5 * PX, 0);          // 하단(전완/정강이) 3px
+      B(lo, 2.05 * PX, 1.4 * PX, 2.05 * PX, point, 0, -3 * PX + 0.7 * PX, 0); // 발끝
     }
     g.traverse(o => { if (o.isMesh) o.castShadow = true; });
     return { g, parts: P };
@@ -613,9 +609,19 @@ export function makeCatSystem(ctx) {
     p.legs.fr.rotation.x = frX;
     p.legs.bl.rotation.x = pv.bl - stride;
     p.legs.br.rotation.x = pv.br + stride;
-    // 앉기/그루밍: 접힌 뒷다리 발끝이 옆으로 삐져나오지 않게 축소해 몸 아래로 숨김
+    // 뒷다리 정강이(무릎) 굽힘 — 앉기(MC 레퍼런스: 낮게 웅크린 엉덩이): 정강이를 앞으로 접어 뒷발이 앞·아래로,
+    //   + 뒷다리 피벗(엉덩이)을 낮춰 엉덩이가 바닥에 붙는다. 그 외 포즈는 0/6PX(곧은 다리)라 회귀 없음.
     {
-      const hs = (c.mode === 'sit' || c.mode === 'groom') ? 0.6 : 1;
+      const shinTgt = c.mode === 'sit' ? 1.3 : 0;
+      c._shin = (c._shin || 0) + (shinTgt - (c._shin || 0)) * Math.min(1, dt * 5);
+      if (p.shin) { if (p.shin.bl) p.shin.bl.rotation.x = c._shin; if (p.shin.br) p.shin.br.rotation.x = c._shin; }
+      const bpivTgt = c.mode === 'sit' ? 3.4 * 0.02 : 6 * 0.02;   // 엉덩이 피벗 y: 앉기 3.4PX로 낮춤
+      c._bpiv = (c._bpiv === undefined ? 0.12 : c._bpiv) + (bpivTgt - (c._bpiv === undefined ? 0.12 : c._bpiv)) * Math.min(1, dt * 5);
+      p.legs.bl.position.y = c._bpiv; p.legs.br.position.y = c._bpiv;
+    }
+    // 그루밍: 접힌 뒷다리 발끝 옆삐짐 방지 축소 (앉기는 무릎접힘으로 대체 — 그루밍만 유지)
+    {
+      const hs = c.mode === 'groom' ? 0.6 : 1;
       const cur = p.legs.bl.scale.y;
       const nv = cur + (hs - cur) * Math.min(1, dt * 6);
       p.legs.bl.scale.y = nv;
