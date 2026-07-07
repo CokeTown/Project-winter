@@ -611,6 +611,12 @@ export function makeCatSystem(ctx) {
     p.head.rotation.y += (headRY - p.head.rotation.y) * Math.min(1, dt * 4);
     p.legs.fl.rotation.x = flX;
     p.legs.fr.rotation.x = frX;
+    // 엎드리기(superman): 앞다리를 좌우로 벌려 팔이 얼굴 옆으로 빠지게 (디렉터: 팔이 얼굴에 겹침). 그 외 0.
+    {
+      const splTgt = c.mode === 'sprawl' ? 0.8 : 0;
+      c._spl = (c._spl || 0) + (splTgt - (c._spl || 0)) * Math.min(1, dt * 5);
+      p.legs.fl.rotation.y = -c._spl; p.legs.fr.rotation.y = c._spl;
+    }
     p.legs.bl.rotation.x = pv.bl - stride;
     p.legs.br.rotation.x = pv.br + stride;
     // 뒷다리 정강이(무릎) 굽힘 — 앉기(MC 레퍼런스: 낮게 웅크린 엉덩이): 정강이를 앞으로 접어 뒷발이 앞·아래로,
