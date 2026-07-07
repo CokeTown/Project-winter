@@ -9,10 +9,11 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert } from '../lib/helpers.js';
 import { makeCanvasTex, floorWoodTex, wallWoodTex, metalTex, plywoodTex, brickTex, subwayTileTex, concreteTex, frostTex, beamTex, floorGlowTex } from './textures.js';
 import { SHELTER_META } from '../data/shelters.js'; // rooftop이 정적 _slab 필드 참조 (SHELTERS 순환 회피)
+import { projectSiteStage } from '../core/projects.js'; // bunker 뒷문 undercroft 단계별 성장 (순수 술어)
 
 export function makeShelterBuilders(ctx) {
   const {
-    roomGroup, envRoot, getROOM, setBlockers, setEnvDyn, getEnvDyn,
+    roomGroup, envRoot, state, getROOM, setBlockers, setEnvDyn, getEnvDyn, getWallList, setWallList, setBunkerStairs,
     wallPhong, stdWall, makeWalls, tagDecoFloor, tagDecoWall, tagCeiling, tagSway, attachToWall,
     groundPlane, wlBlock, ogGround, ogAttach, ogRock, ogZone, addRoofGrass, deadTreeGeo, pineGeo, BP,
     buildCarWreck, buildPowerPole, buildRuinCity, buildRooftopSlate,
@@ -1274,6 +1275,750 @@ export function makeShelterBuilders(ctx) {
           pk.position.set(r * Math.cos(a), GY + 4, r * Math.sin(a)); envRoot.add(pk);
         }
         envDyn = {};
+        setEnvDyn(envDyn);
+      },
+    },
+    bunker: {
+      buildRoom() {
+        const ROOM = getROOM();
+        let blockers = [];
+        const { w, d, h } = ROOM;
+        const conc = wallPhong({ map: concreteTex });
+        conc.userData.shared = true;
+        const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.8, 0.3, d + 0.8), conc.clone());
+        floor.position.y = -0.15; floor.receiveShadow = true;
+        tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 바닥은 conc.clone() — 포치/전실과 재질 분리해 바닥재만 교체
+        // 입구 앞 콘크리트 포치 (컨셉아트의 앞마당)
+        const porch = new THREE.Mesh(new THREE.BoxGeometry(w * 0.7, 0.22, 1.8), conc);
+        porch.position.set(0, -0.19, d / 2 + 1.2);
+        porch.receiveShadow = true;
+        roomGroup.add(porch);
+        B(roomGroup, w + 1.4, 0.7, d + 1.4, 0x2b2e36, 0, -0.65, 0);
+
+        // 돔 반경/두께/스테이브 수 — 뒷벽을 돔 곡면에 맞춰 자르려면(관통 방지) 뒷벽 빌드 앞에서 정의.
+        const R = 4.35, T = 0.42, SEG = 11;
+        // 뒷벽: 벽돌 + 문 + 액자 — (B-①) 벙커의 곧은 내벽. 벽지 대상.
+        //   디렉터 라이브("네모 벽돌이 타원형을 뚫고 나온다"): 꽉 찬 사각형(w×h=8.5×3)은 옆(x≈±4.25)에서 돔 반원 높이
+        //   √(R²−x²)≈0.92보다 훨씬 높아(y=3) 상단 모서리가 돔 곡면 밖으로 삐져나왔다 → 정면 파사드와 동일한 반달
+        //   Shape(반경 R−0.06)로 재구성해 돔 단면 안에 딱 맞춘다(관통 소멸, 앞뒤 반달벽 대칭).
+        const brickMat = wallPhong({ map: brickTex });
+        brickMat.userData.shared = true;
+        tagDecoWall(brickMat);
+        const back = new THREE.Group();
+        const bwShp = new THREE.Shape();
+        bwShp.moveTo(R - 0.06, 0); bwShp.absarc(0, 0, R - 0.06, 0, Math.PI, false); bwShp.lineTo(-(R - 0.06), 0);
+        const bw = new THREE.Mesh(new THREE.ExtrudeGeometry(bwShp, { depth: 0.24, bevelEnabled: false }), brickMat);
+        bw.position.z = -0.12; bw.castShadow = bw.receiveShadow = true;
+        back.add(bw);
+        const doorX = 1.1;
+        const door = new THREE.Mesh(new THREE.BoxGeometry(1.05, 2.0, 0.1), lamb(0x1a1712));
+        door.position.set(doorX, 1.0, 0.14); back.add(door);
+        const dfm = lamb(0x4a3a28);
+        const df1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.1, 0.16), dfm);
+        df1.position.set(doorX - 0.58, 1.05, 0.14); back.add(df1);
+        const df2 = df1.clone(); df2.position.x = doorX + 0.58; back.add(df2);
+        const df3 = new THREE.Mesh(new THREE.BoxGeometry(1.26, 0.1, 0.16), dfm);
+        df3.position.set(doorX, 2.1, 0.14); back.add(df3);
+        // 벽에 걸린 액자들 (컨셉아트 디테일)
+        const prand = seededRand(55);
+        for (let i = 0; i < 4; i++) {
+          const fw = 0.3 + prand() * 0.3, fh = 0.35 + prand() * 0.25;
+          const fr = new THREE.Mesh(new THREE.BoxGeometry(fw, fh, 0.05), lamb([0x6a5a40, 0x3f3a33, 0x8a7a5c][i % 3]));
+          fr.position.set(-w / 2 + 0.8 + i * 0.75 + prand() * 0.2, 1.5 + prand() * 0.6, 0.14);
+          back.add(fr);
+          const pic = new THREE.Mesh(new THREE.BoxGeometry(fw - 0.08, fh - 0.08, 0.06), lamb([0x9a8a6a, 0x5f7a70, 0xb0937a, 0x7a8a9a][i]));
+          pic.position.copy(fr.position); pic.position.z = 0.15;
+          back.add(pic);
+        }
+        back.position.set(0, 0, -d / 2 - 0.13);
+        const wallDefs = [{ group: back, pos: [0, 0, -d / 2 - 0.13], rotY: 0, normal: new THREE.Vector3(0, 0, -1) }];
+        back.position.set(...wallDefs[0].pos);
+
+        // 돔 아치 쉘 (좌/우 반쪽 스테이브 — 시야 방향 자동 컬링). R/T/SEG는 위(뒷벽 앞)에서 정의됨.
+        const shellCols = [0xb5b1a6, 0xa8a49a, 0x99958b, 0x8f8b82];
+        const grassPal = [0x6a7f4a, 0x8a8a4f, 0xa3703f, 0x5f7a45];
+        const zBack = -d / 2 - 0.4;
+        const roofFixed = state.bunkerRoof === 'full';   // 완전 수리 시 외피 갈라짐 메움
+        const roofTemp = state.bunkerRoof === 'temp';    // 임시 덮개 시 일부만 보강
+        // v1.5.3 0.9 원본 스테이브 복원(디렉터 라이브 신고: "중간에 회색 붕 뜬다" + "0.9 스테이브로 복원").
+        //   [되돌린 것] #81 연속 반원통 셸 + 상시 콘크리트 라이너(inner) + #87 상/하 밴드 분리.
+        //     → 상부 밴드가 천장 컬링으로 페이드될 때 안쪽 라이너가 회색 반투명 아치로 공중에 뜨는 아티팩트가 남았다.
+        //   [0.9 방식] 반쪽마다 낱장 박스 스테이브 SEG개. 미보수 시 일부 조각을 건너뛰거나(구멍) 짧게(단축) 만들어
+        //     '갈라진 외피 사이로 하늘/별이 보이는' 폐허 돔. 상시 라이너 없음 → 붕뜸 원천 소멸.
+        //     temp=정점 방수포, full=조각 온전 + 안쪽 콘크리트 라이너로 봉합. 좌/우 반쪽은 시야 방향 벽 컬링(정점 천장 컬링 없음).
+        //   일반화(v1.5.4): zbk=반쪽 뒤 가장자리 z, depBase=z깊이, solid=true면 온전(구멍/단축 없음, 확장 돔용).
+        const mkHalf = (thetaFrom, seed, zbk, depBase, solid) => {
+          const g = new THREE.Group();
+          const rand = seededRand(seed);
+          for (let i = 0; i < SEG; i++) {
+            const th = thetaFrom + (i + 0.5) * (Math.PI / 2) / SEG;
+            // 갈라진 외피: 일부 조각은 짧거나 없음 (천장 수리하면/solid면 메워진다)
+            if (!solid && !roofFixed && rand() < 0.1 && th > 0.5 && th < Math.PI - 0.5) continue;
+            let dep = depBase;
+            if (!solid && !roofFixed && rand() < 0.34) dep *= 0.5 + rand() * 0.32; // 수리/solid하면 짧은(뚫린) 조각 없음
+            const arcLen = R * (Math.PI / 2) / SEG + 0.1;
+            const col = rand() < 0.16 ? 0x5d594f : shellCols[Math.floor(rand() * shellCols.length)];
+            const m = new THREE.Mesh(new THREE.BoxGeometry(arcLen, T, dep), lamb(col));
+            m.position.set(R * Math.cos(th), R * Math.sin(th), zbk + dep / 2);
+            m.rotation.z = th + Math.PI / 2;
+            m.castShadow = m.receiveShadow = true;
+            g.add(m);
+            // 외피 위에 자란 풀
+            if (th > 0.35 && th < Math.PI - 0.35 && rand() < 0.5) {
+              const gh2 = 0.15 + rand() * 0.25;
+              const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.07 + rand() * 0.07, gh2, 5),
+                lamb(grassPal[Math.floor(rand() * grassPal.length)]));
+              const rr = R + T / 2 + gh2 / 2 - 0.03;
+              tuft.position.set(rr * Math.cos(th), rr * Math.sin(th), zbk + 0.6 + rand() * (dep - 1));
+              tuft.rotation.z = th - Math.PI / 2 + (rand() - 0.5) * 0.4;
+              g.add(tuft);
+            }
+          }
+          return g;
+        };
+        const right = mkHalf(0, 21, zBack, d + 1.0, false);           // x>0 쪽
+        const left = mkHalf(Math.PI / 2, 43, zBack, d + 1.0, false);  // x<0 쪽
+        roomGroup.add(right); roomGroup.add(left);
+        // #94('1자 바'): 반쪽 bb 상단(돔 정점 y≈R)에 눈 캡이 가로바로 뜨던 문제 → 캡 제외.
+        right.userData.noWeatherCap = true;
+        left.userData.noWeatherCap = true;
+        // 좌/우 반쪽은 시야 방향 벽 컬링 — 근접 반쪽이 통째로 사라져 실내 노출(0.9 방식, 정점 천장 컬링 없음).
+        wallDefs.push({ group: right, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(1, 0, 0) });
+        wallDefs.push({ group: left, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(-1, 0, 0) });
+        // #87 ②: 정면 파사드 — 반달 콘크리트 벽 + 닫힌 철문. "벙커인데 앞이 뻥 뚫려있다" 실기기 신고.
+        //   다른 셸터의 벽과 동일하게 컬링 참여: 기본(정면) 뷰에선 열려 실내가 보이고, 회전하면 벽 실체가 보인다.
+        {
+          const fR = R - 0.04;
+          const shp = new THREE.Shape();
+          shp.moveTo(fR, 0);
+          shp.absarc(0, 0, fR, 0, Math.PI, false); // 반달 외곽 (CCW)
+          shp.lineTo(-fR, 0);
+          const doorHole = new THREE.Path(); // 출입구 (CW — 외곽 반대 감김)
+          doorHole.moveTo(-0.72, 0.01); doorHole.lineTo(-0.72, 2.0); doorHole.lineTo(0.72, 2.0); doorHole.lineTo(0.72, 0.01); doorHole.closePath();
+          shp.holes.push(doorHole);
+          const facade = new THREE.Group();
+          facade.userData.noWeatherCap = true; // v1.5.2: 반달 파사드 — 일자 캡이 돔 정점 높이(y4.29, 길이 8.5)에 부유하던 '1자 바' 원흉
+          const fm = new THREE.Mesh(new THREE.ExtrudeGeometry(shp, { depth: 0.24, bevelEnabled: false }), wallPhong({ color: 0xa39f94 }));
+          fm.position.set(0, 0, d / 2 + 0.32); fm.castShadow = fm.receiveShadow = true; facade.add(fm);
+          // 닫힌 철문 두 짝 + 가로 빗장 (후면 잠긴문과 같은 문법 — 여긴 '정문')
+          const steel2 = wallPhong({ map: metalTex }); steel2.userData.shared = true;
+          for (const sx of [-1, 1]) {
+            const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.66, 1.92, 0.1), steel2);
+            leaf.position.set(sx * 0.35, 0.97, d / 2 + 0.3); leaf.castShadow = leaf.receiveShadow = true; facade.add(leaf);
+          }
+          B(facade, 1.3, 0.14, 0.1, 0x55504a, 0, 1.12, d / 2 + 0.43);
+          B(facade, 1.8, 0.24, 0.34, 0x8f8b82, 0, 2.14, d / 2 + 0.44).castShadow = true; // 상인방
+          roomGroup.add(facade);
+          wallDefs.push({ group: facade, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(0, 0, 1) });
+        }
+        makeWalls(wallDefs);
+
+        // 천장 임시 덮개(temp): 정점 부근에 방수포 한 장. 완전 수리(full)는 mkHalf에서 외피가 이미 메워짐.
+        if (roofTemp) {
+          const tarp = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.06, d + 0.6), lamb(0x53616a));
+          tarp.position.set(0, R - 0.15, zBack + (d + 0.6) / 2 + 0.2);
+          tarp.rotation.z = 0.04;
+          tarp.castShadow = tarp.receiveShadow = true;
+          tagCeiling(tarp, ROOM.h + 0.2); roomGroup.add(tarp); // ⑥-a: 부감에서 천장 덮개 투시
+        }
+        // 완전 수리(full): 아치 안쪽에 매끈한 콘크리트 라이너를 덧대 '온전한 천장' 느낌.
+        if (roofFixed) {
+          const liner = new THREE.Mesh(new THREE.CylinderGeometry(R - 0.3, R - 0.3, d + 0.9, 16, 1, true, 0, Math.PI), wallPhong({ map: concreteTex }));
+          liner.rotation.z = Math.PI / 2; liner.rotation.y = Math.PI / 2;
+          liner.position.set(0, 0, zBack + (d + 0.9) / 2);
+          liner.material.side = THREE.BackSide;
+          tagCeiling(liner, ROOM.h + 0.2); roomGroup.add(liner); // ⑥-a: 완전 수리 라이너는 실내를 덮는 천장 — 부감에서 투시
+        }
+        // #55 뒷문 개방(backdoor): 뒷벽 개구부 + 전실(콘크리트 방: 선반/램프) + 바닥에서 지하로 이어지는 하강 계단.
+        // 전실/계단은 back(뒷벽) 그룹에 붙여 뒷벽 컬링 마스크와 함께 처리한다(카메라가 앞에서 볼 때만 노출).
+        // back 그룹은 [0,0,-d/2-0.13]에 있으므로, 여기 좌표는 그 로컬 기준(더 깊은 곳 = 음의 z).
+        if (state.bunkerBackdoor) {
+          const conc2 = wallPhong({ map: concreteTex }); conc2.userData.shared = true;
+          const store = new THREE.Group();
+          const DX = -w / 4;          // 전실 가로 중심 (뒷벽 좌측)
+          const ANTE_D = 2.4;         // 전실 깊이
+          const ANTE_W = 2.8;         // 전실 폭
+          const zNear = -0.1;         // 개구부(뒷벽 안쪽) 로컬 z
+          const zFar = zNear - ANTE_D; // 전실 안쪽 벽 z
+          // 개구부 틀 (뚫린 뒷벽 표현: 문틀 + 어두운 개구부)
+          const fr = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.1, 0.12), lamb(0x3a3530));
+          fr.position.set(DX, 1.05, 0.02); store.add(fr);
+          const opening = new THREE.Mesh(new THREE.BoxGeometry(1.24, 1.9, 0.14), lamb(0x14110d));
+          opening.position.set(DX, 1.0, -0.02); store.add(opening);
+          // 전실 바닥
+          const floor2 = new THREE.Mesh(new THREE.BoxGeometry(ANTE_W, 0.2, ANTE_D), conc2);
+          floor2.position.set(DX, -0.1, (zNear + zFar) / 2); floor2.receiveShadow = true; store.add(floor2);
+          // 전실 벽 (좌/우/안쪽) + 천장
+          const wallH = 2.4;
+          B(store, 0.16, wallH, ANTE_D, 0x8f8b82, DX - ANTE_W / 2, wallH / 2 - 0.1, (zNear + zFar) / 2).receiveShadow = true; // 좌벽
+          B(store, 0.16, wallH, ANTE_D, 0x99958b, DX + ANTE_W / 2, wallH / 2 - 0.1, (zNear + zFar) / 2).receiveShadow = true; // 우벽
+          const backWall = new THREE.Mesh(new THREE.BoxGeometry(ANTE_W, wallH, 0.16), conc2);
+          backWall.position.set(DX, wallH / 2 - 0.1, zFar); backWall.receiveShadow = true; store.add(backWall);
+          B(store, ANTE_W, 0.16, ANTE_D, 0x6f6b63, DX, wallH - 0.1, (zNear + zFar) / 2); // 천장
+          // ⑥-b 개방 후: 외부(후면)에서 "덧붙은 구조물"로 보이게 전실 지붕에 돌출 처마 슬래브 + 후면 보강 리브.
+          //   (벽/천장은 실내를 향하므로 후면 실루엣이 밋밋했다 — 지붕 캡으로 부착 구조물의 덩어리감을 준다.)
+          B(store, ANTE_W + 0.5, 0.16, ANTE_D + 0.4, 0x615d55, DX, wallH + 0.02, (zNear + zFar) / 2).castShadow = true;
+          for (const sx of [-1, 1]) B(store, 0.16, wallH, 0.16, 0x565049, DX + sx * (ANTE_W / 2 + 0.08), wallH / 2 - 0.1, zFar - 0.02).castShadow = true; // 후면 모서리 기둥
+          // 선반 (기존 저장고 보너스 이전) + 상자
+          for (let s = 0; s < 2; s++) B(store, 1.9, 0.06, 0.42, 0x77543a, DX, 0.7 + s * 0.62, zFar + 0.35);
+          for (let c = 0; c < 3; c++) { const cr = B(store, 0.4, 0.4, 0.4, [0x8a6a48, 0x6a5a40, 0x7a6a54][c], DX - 0.6 + c * 0.6, 0.32, zFar + 0.9); cr.castShadow = true; }
+          // 램프 1 (전실 천장에 매달린 작은 전구)
+          Cyl(store, 0.012, 0.012, 0.5, 0x2a2622, DX + 0.7, wallH - 0.35, zNear - 0.6, 5);
+          const lb2 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6),
+            new THREE.MeshLambertMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 0.9 }));
+          lb2.position.set(DX + 0.7, wallH - 0.7, zNear - 0.6); store.add(lb2);
+
+          // ── 하강 계단: 전실 바닥 우측에서 4~5단 내려가다 어둠으로 페이드 (진입 불가, 페이크 깊이) ──
+          const stairs = new THREE.Group();
+          const SX = DX + 0.55;       // 계단 가로 위치
+          const stepW = 1.1, stepD = 0.34, stepH = 0.26, steps = 5;
+          const zStart = zNear - 0.5; // 계단 시작 z (전실 앞쪽)
+          for (let i = 0; i < steps; i++) {
+            const y = -0.1 - (i + 1) * stepH;     // 바닥(-0.1) 아래로 내려감
+            const z = zStart - i * stepD;
+            const shade = 0x5a564e - i * 0x060606; // 내려갈수록 어두워짐
+            const st = B(stairs, stepW, stepH, stepD, Math.max(0x1a1816, shade), SX, y, z);
+            st.receiveShadow = true;
+          }
+          // 계단 벽(측벽) — 어둠으로 이어지는 통로 느낌
+          B(stairs, 0.14, steps * stepH + 0.4, steps * stepD, 0x4a463f, SX - stepW / 2 - 0.05, -0.1 - (steps * stepH) / 2, zStart - (steps * stepD) / 2 + 0.1);
+          B(stairs, 0.14, steps * stepH + 0.4, steps * stepD, 0x4a463f, SX + stepW / 2 + 0.05, -0.1 - (steps * stepH) / 2, zStart - (steps * stepD) / 2 + 0.1);
+          // 검은 그라데이션 박스(페이크 깊이) — 마지막 단 아래를 완전한 어둠으로 덮는다
+          const voidBox = new THREE.Mesh(
+            new THREE.BoxGeometry(stepW + 0.3, 2.2, 1.4),
+            new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.96, fog: false }));
+          voidBox.position.set(SX, -0.1 - steps * stepH - 0.9, zStart - steps * stepD - 0.5);
+          stairs.add(voidBox);
+          // 히트 판정용 투명 프록시(클릭 영역) — 계단 전체를 감싼다
+          const hit = new THREE.Mesh(
+            new THREE.BoxGeometry(stepW + 0.4, steps * stepH + 0.6, steps * stepD + 0.6),
+            new THREE.MeshBasicMaterial({ visible: false }));
+          hit.position.set(SX, -0.1 - (steps * stepH) / 2, zStart - (steps * stepD) / 2);
+          stairs.add(hit);
+          // ── 대형 프로젝트 현장 오브젝트 (1.1 ARC-02): "막힌 통로 정리" 돌무더기 ──
+          // clearPassage 진행 단계에 따라 돌무더기가 줄어들다 통로가 열린다. (site='stairRubble')
+          // siteStage 0/1=가득, 2=절반, 3(완공)=치워짐(통로로 빛이 샌다). 계단 마지막 단 발치에 배치.
+          {
+            const sStage = projectSiteStage('clearPassage');
+            const baseY = -0.1 - steps * stepH;              // 마지막 단 바닥
+            const baseZ = zStart - (steps - 0.5) * stepD;    // 마지막 단 앞
+            const rubblePal = [0x6a655a, 0x5a564e, 0x77726a, 0x4e4a43];
+            const rrand = seededRand(87);
+            if (sStage < 3) {
+              const nRocks = sStage <= 1 ? 11 : 5;           // 가득 vs 절반
+              const rubble = new THREE.Group();
+              for (let i = 0; i < nRocks; i++) {
+                const rs = 0.16 + rrand() * 0.22;
+                const rk = new THREE.Mesh(new THREE.BoxGeometry(rs, rs * (0.7 + rrand() * 0.5), rs * (0.8 + rrand() * 0.4)),
+                  lamb(rubblePal[Math.floor(rrand() * rubblePal.length)]));
+                rk.position.set(SX + (rrand() - 0.5) * (stepW - 0.2), baseY + rs / 2 + rrand() * 0.25 * (sStage <= 1 ? 1 : 0.5), baseZ - rrand() * 0.6);
+                rk.rotation.set(rrand() * 0.6, rrand() * Math.PI, rrand() * 0.6);
+                rk.castShadow = rk.receiveShadow = true;
+                rubble.add(rk);
+              }
+              stairs.add(rubble);
+            } else {
+              // 완공: 돌무더기 대신 통로 안쪽에서 새어나오는 희미한 빛 (진입은 여전히 불가 — 1.4 대기)
+              const glow = new THREE.Mesh(new THREE.PlaneGeometry(stepW - 0.2, 1.6),
+                new THREE.MeshBasicMaterial({ color: 0x3a4a55, transparent: true, opacity: 0.5, fog: false, side: THREE.DoubleSide }));
+              glow.position.set(SX, baseY + 0.8, baseZ - 0.7);
+              stairs.add(glow);
+            }
+          }
+          setBunkerStairs(stairs); // 상호작용 대상 (game.js 계단 레이캐스트 대상 — setter 주입)
+          store.add(stairs);
+
+          // store는 back 그룹 좌표계라 back의 위치/컬링을 그대로 따른다
+          back.add(store);
+
+        }
+        // #81 ⑦→#87 ③ 격상: 후면 소형 돔(전실+하강 계단실 외피) + 짧은 연결 통로 — 뒷문 개방 여부와 무관하게 '상시' 존재.
+        //   디렉터 원안: 뒷문을 딸 수 있으려면 그 뒤에 물리 공간이 먼저 있어야 한다. E-2가 개방 후에만 세우던 것을 교정.
+        //   개방 전에는 잠긴 철문(위 lock) 뒤의 밀폐 공간으로 읽히고, 개방하면 전실(store)이 그 내부가 된다.
+        {
+          {
+            // v1.5.2(디렉터 신고 — 라이브): "소형 돔이 아니고 동일 사이즈의 돔이 뒤에" → 메인 돔과 동일 반경(R)의
+            //   2번째 돔을 중앙(x=0)에 세우고, 메인 돔 뒷면(zBack)에 앞 가장자리를 접하게 배치(두 돔이 앞뒤로 나란히).
+            // 후면(확장) 돔 — 앞 돔과 동일 반경(R)/결의 '스테이브 돔' + 내부(바닥·먼 반달벽).
+            //   디렉터 라이브: "확장된 왼쪽은 OK, 오른쪽(확장 돔)이 매끈 블롭 → 기존 돔처럼" + "확장 돔 내부도 구현".
+            //   [셸] 온전 스테이브(solid=구멍 없음) 좌/우 반쪽. 정면/외부에선 불투명 돔 실루엣(투시 없음), 후면 회전 시
+            //     근접 반쪽이 컬링돼 내부 노출(메인 돔과 동일 사상). ★ makeWalls는 wallList를 리셋하므로 재호출 불가 →
+            //     빌드된 반쪽/먼벽을 wallList에 직접 push해 동일 컬 루프(updateWallCulling)에 편입(proxy=null 가드됨).
+            const sR = 4.35, sDep = 5.0;
+            const rearCz = -d / 2 - 0.4 - sDep / 2;          // 확장 돔 중심 z (앞 가장자리가 메인 돔 뒷면 zBack=-d/2-0.4에 접함)
+            const rearZBack = rearCz - sDep / 2;             // 스테이브 뒤(먼) 가장자리 z
+            const rearRight = mkHalf(0, 61, rearZBack, sDep, true);           // x>0 반쪽 (온전)
+            const rearLeft = mkHalf(Math.PI / 2, 62, rearZBack, sDep, true);  // x<0 반쪽 (온전)
+            rearRight.userData.noWeatherCap = true; rearLeft.userData.noWeatherCap = true;
+            // 정수리 통풍구 + 외피 이끼 — 각 반쪽 그룹에 넣어 함께 컬링(허공 부유 방지, #87 사상)
+            const rsr = seededRand(311);
+            const vent = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 0.34, 10), lamb(0x77736a));
+            vent.position.set(0, sR - 0.04, rearCz); vent.castShadow = true; rearRight.add(vent);
+            for (let i = 0; i < 7; i++) {
+              const th = 0.35 + rsr() * (Math.PI - 0.7);
+              const rr = sR + 0.05;
+              const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.06 + rsr() * 0.06, 0.16 + rsr() * 0.2, 5),
+                lamb([0x6a7f4a, 0x8a8a4f, 0x5f7a45][Math.floor(rsr() * 3)]));
+              tuft.position.set(rr * Math.cos(th), rr * Math.sin(th), rearCz + (rsr() - 0.5) * (sDep - 0.6));
+              tuft.rotation.z = th - Math.PI / 2 + (rsr() - 0.5) * 0.4;
+              (th < Math.PI / 2 ? rearRight : rearLeft).add(tuft);
+            }
+            roomGroup.add(rearRight); roomGroup.add(rearLeft);
+            // ★ 뒷문 해금(bunkerBackdoor) 시에만 컬링 등록 → 근접 반쪽이 열려 내부 투시. 잠김 상태는 wallList 미등록
+            //   = 항상 불투명한 온전 돔(디렉터: "불투명해야지. 문 열기 조건 달성시에만 뒤를 투명하게"). solid 스테이브라 셸 자체도 불투명.
+            if (state.bunkerBackdoor) {
+              getWallList().push({ group: rearRight, normal: new THREE.Vector3(1, 0, 0), proxy: null });
+              getWallList().push({ group: rearLeft, normal: new THREE.Vector3(-1, 0, 0), proxy: null });
+            }
+            // 내부 바닥(콘크리트) + 어두운 받침 — 확장 돔 안이 텅 빈 껍데기가 아니라 '방'이 되게(디렉터: 내부 구현)
+            const rFloor = new THREE.Mesh(new THREE.BoxGeometry(2 * sR - 0.5, 0.16, sDep - 0.15), lamb(0x6b6760));
+            rFloor.position.set(0, -0.08, rearCz); rFloor.receiveShadow = true; roomGroup.add(rFloor);
+            B(roomGroup, 2 * sR + 0.4, 0.6, sDep + 0.3, 0x2b2e36, 0, -0.46, rearCz);
+            // 먼(뒤) 반달 벽 — 확장 돔 -z 끝을 막음. 후면 회전 시 컬링돼 내부 노출(normal -z, 메인 뒷벽과 대칭).
+            const rearWall = new THREE.Group();
+            {
+              const rwShp = new THREE.Shape();
+              rwShp.moveTo(sR - 0.06, 0); rwShp.absarc(0, 0, sR - 0.06, 0, Math.PI, false); rwShp.lineTo(-(sR - 0.06), 0);
+              const rw = new THREE.Mesh(new THREE.ExtrudeGeometry(rwShp, { depth: 0.22, bevelEnabled: false }), wallPhong({ map: concreteTex }));
+              rw.position.z = -0.11; rw.castShadow = rw.receiveShadow = true; rearWall.add(rw);
+            }
+            rearWall.position.set(0, 0, rearZBack);
+            rearWall.userData.noWeatherCap = true;
+            roomGroup.add(rearWall);
+            if (state.bunkerBackdoor) getWallList().push({ group: rearWall, normal: new THREE.Vector3(0, 0, -1), proxy: null }); // 해금 시에만 컬링(잠김=불투명 뒷벽)
+          }
+        }
+        if (!state.bunkerBackdoor) {
+          // ⑥-b 개방 전: 돔 후면에 "잠긴 철문 + 콘크리트 프레임" 매스를 뚜렷이 세운다.
+          //   유저 신고("뒤가 허전하다 / 뭔가 있어야 게이트를 인지한다") 해소 — 순수 비주얼(게이트 로직/비용 불변).
+          //   ★ back(뒷벽) 그룹은 카메라가 후면에 오면 벽 컬링으로 통째로 숨는다(실내가 보이게). 그러면 문이 안 보이므로
+          //     이 잠긴문 매스는 back이 아니라 roomGroup에 직접 붙여, 후면 외부에서도 항상 보이게 한다(컬링 무관).
+          //     back 위치 z = -d/2-0.13, 외부(-z)로 조금 더 나가 zW = -d/2-0.13-0.26.
+          const lock = new THREE.Group();
+          const LX = -w / 4;            // 좌측(뒷문 개방 시 전실이 생길 자리와 동일 위치)
+          const zW = -d / 2 - 0.13 - 0.26; // 뒷벽 바깥면 월드 z
+          // 콘크리트 문틀 프레임 (문보다 크게 — 매스감)
+          const frameW = 2.0, frameH = 2.6, frameT = 0.5;
+          B(lock, 0.32, frameH, frameT, 0x8f8b82, LX - frameW / 2, frameH / 2 - 0.1, zW).castShadow = true;
+          B(lock, 0.32, frameH, frameT, 0x99958b, LX + frameW / 2, frameH / 2 - 0.1, zW).castShadow = true;
+          // 상인방(위 보) + 하단 문지방
+          B(lock, frameW + 0.32, 0.34, frameT, 0x847f76, LX, frameH - 0.27, zW).castShadow = true;
+          B(lock, frameW + 0.1, 0.16, frameT + 0.1, 0x6f6b63, LX, 0.0, zW);
+          // 녹슨 철판 문짝 (두 짝) — 프레임보다 살짝 안쪽
+          const steelMat = wallPhong({ map: metalTex }); steelMat.userData.shared = true;
+          for (const sx of [-1, 1]) {
+            const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.82, 2.2, 0.12), steelMat);
+            leaf.position.set(LX + sx * 0.42, 1.05, zW + 0.28); leaf.castShadow = leaf.receiveShadow = true; lock.add(leaf);
+            B(lock, 0.08, 2.0, 0.06, 0x3d444c, LX + sx * 0.42, 1.05, zW + 0.21); // 세로 보강 리브
+          }
+          // 가로 빗장 (문을 가로지르는 굵은 철봉) + 자물쇠 뭉치 — "잠김"을 명확히
+          B(lock, 1.7, 0.16, 0.14, 0x55504a, LX, 1.15, zW + 0.2).castShadow = true;
+          B(lock, 0.24, 0.3, 0.2, 0x2f2b26, LX, 1.15, zW + 0.12).castShadow = true; // 자물쇠 박스
+          // 볼트 자국(모서리 리벳)
+          for (let i = 0; i < 8; i++) {
+            const bx = LX - 0.7 + (i % 4) * 0.47, by = 0.5 + Math.floor(i / 4) * 1.2;
+            Cyl(lock, 0.04, 0.04, 0.05, 0x2a2622, bx, by, zW + 0.34, 5);
+          }
+          // 경고 표식(빛바랜 스텐실 판) — 시선을 끄는 작은 색면
+          B(lock, 0.5, 0.34, 0.03, 0x9a7a2a, LX + 0.02, 1.75, zW + 0.22);
+          roomGroup.add(lock); // 컬링 무관: 후면에서 항상 노출
+        }
+
+        // 천장 펜던트 램프 (컨셉아트) — 아치 정점에서 늘어짐
+        Cyl(roomGroup, 0.015, 0.015, 1.3, 0x2a2622, 0, 3.5, -0.6, 5);
+        const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.24, 8), lamb(0x3f4a44));
+        lampShade.position.set(0, 2.82, -0.6); lampShade.castShadow = true;
+        roomGroup.add(lampShade);
+        const lb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6),
+          new THREE.MeshLambertMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 1 }));
+        lb.position.set(0, 2.7, -0.6);
+        roomGroup.add(lb);
+        blockers = [];
+        setBlockers(blockers);
+      },
+      buildEnv() {
+        let envDyn;
+        const GY = -0.85;
+        const rand = seededRand(940);
+        const gh = (x, z) => {
+          const r = Math.hypot(x, z);
+          const n = 0.8 * Math.sin(x * 0.14 + 0.6) * Math.cos(z * 0.12) + 0.5 * Math.sin(x * 0.3) * Math.sin(z * 0.26 + 1.4);
+          return GY + n * THREE.MathUtils.smoothstep(r, 7, 14) + THREE.MathUtils.smoothstep(r, 28, 58) * 2.6;
+        };
+        const cA = new THREE.Color(0x3e4a36), cB = new THREE.Color(0x4a4a3a), cC = new THREE.Color(0x35443c);
+        envRoot.add(groundPlane((x, z) => {
+          const m = 0.5 + 0.5 * Math.sin(x * 0.41 + z * 0.3) * Math.cos(z * 0.33 - x * 0.21);
+          return cA.clone().lerp(cB, m * 0.65).lerp(cC, 0.35 * (0.5 + 0.5 * Math.sin(x * 0.1 - z * 0.15)));
+        }, gh));
+        ogGround(gh, 6, 20, 6); // #71: 벙커 앞마당 수풀 클러스터(연차 비례)
+        // 무성한 들풀 (병합 1메시)
+        const tufts = [];
+        for (let i = 0; i < 260; i++) {
+          const a = rand() * Math.PI * 2, r = 5.5 + Math.pow(rand(), 0.7) * 22;
+          const x = r * Math.cos(a), z = r * Math.sin(a);
+          const th = 0.2 + rand() * 0.4;
+          const tg = new THREE.ConeGeometry(0.06 + rand() * 0.08, th, 4);
+          tg.rotateZ((rand() - 0.5) * 0.5);
+          tg.translate(x, gh(x, z) + th / 2 - 0.02, z);
+          tufts.push(paintGeo(tg, [0x55663f, 0x6a7047, 0x7d6a42, 0x4a5c3c][Math.floor(rand() * 4)]));
+        }
+        envRoot.add(new THREE.Mesh(mergeGeometries(tufts), vcLambert));
+        // 고사목 + 버려진 가전 더미 + 드럼통 (컨셉아트 앞마당의 잡동사니)
+        for (let i = 0; i < 14; i++) {
+          const a = rand() * Math.PI * 2, r = 9 + Math.pow(rand(), 0.8) * 20;
+          const x = r * Math.cos(a), z = r * Math.sin(a);
+          if (r < 12) wlBlock(x, z, 0.34); // #95
+          const geo = deadTreeGeo(rand, 0.8 + rand() * 1.2);
+          geo.rotateY(rand() * Math.PI * 2);
+          geo.translate(x, gh(x, z) - 0.05, z);
+          envRoot.add(new THREE.Mesh(geo, vcLambert));
+        }
+        const junkAt = (x, z) => {
+          const jg = new THREE.Group();
+          B(jg, 0.7, 1.1, 0.6, 0xb0aca2, 0, 0.55, 0);                    // 냉장고
+          B(jg, 0.6, 0.04, 0.5, 0x8a867c, 0.02, 1.13, 0);
+          B(jg, 0.02, 0.8, 0.4, 0x6e6a62, 0.36, 0.55, 0);
+          const wm = B(jg, 0.6, 0.6, 0.55, 0x9a958c, 0.9, 0.3, 0.3);     // 세탁기
+          wm.rotation.z = 0.12;
+          Cyl(jg, 0.18, 0.18, 0.04, 0x3a3733, 0.9, 0.62, 0.58, 10).rotation.x = Math.PI / 2;
+          jg.position.set(x, gh(x, z), z);
+          jg.rotation.y = rand() * Math.PI * 2;
+          envRoot.add(jg);
+        };
+        junkAt(6.5, 5.5); junkAt(-7.5, -4);
+        wlBlock(6.5, 5.5, 0.75); wlBlock(-7.5, -4, 0.75); // #95: 가전 더미 우회
+        for (let i = 0; i < 5; i++) {
+          const a = rand() * Math.PI * 2, r = 6 + rand() * 9;
+          const x = r * Math.cos(a), z = r * Math.sin(a);
+          if (r < 12) wlBlock(x, z, 0.42); // #95: 드럼통
+          const barrel = Cyl(envRoot, 0.32, 0.32, 0.85, [0x7a4530, 0x5c5f52, 0x6e3e28][i % 3], x, gh(x, z) + 0.42, z, 9);
+          if (rand() < 0.4) { barrel.rotation.z = Math.PI / 2 - 0.1; barrel.position.y = gh(x, z) + 0.34; }
+        }
+        buildPowerPole(envRoot, -10, 8, 0.2, gh(-10, 8));
+        // 지평선의 폐허 도시
+        buildRuinCity(envRoot, rand, { count: 13, rMin: 30, rMax: 48, hMin: 5, hMax: 14, baseY: GY, litChance: 0.12 });
+        // 반딧불이 (힐링 무드)
+        const n = 16, arr = new Float32Array(n * 3);
+        const base = [], phase = [];
+        for (let i = 0; i < n; i++) {
+          const a = rand() * Math.PI * 2, r = 7 + rand() * 8;
+          const x = r * Math.cos(a), z = r * Math.sin(a);
+          const y = gh(x, z) + 0.5 + rand() * 1.1;
+          arr.set([x, y, z], i * 3);
+          base.push({ x, y, z }); phase.push(rand() * Math.PI * 2);
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+        const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+          color: 0xd9e77a, size: 3, sizeAttenuation: false, transparent: true, opacity: 0.8, fog: false,
+        }));
+        envRoot.add(pts);
+        envDyn = { fireflies: { pts, base, phase } };
+        setEnvDyn(envDyn);
+      },
+    },
+    ship: {
+      buildRoom() {
+        const ROOM = getROOM();
+        let blockers = [];
+        const { w, d, h } = ROOM;
+        const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.3, d + 0.6), wallPhong({ color: 0x7a6248 }));
+        floor.position.y = -0.15; floor.receiveShadow = true;
+        tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 선실 바닥재 대상
+        for (let i = 0; i < 8; i++) B(roomGroup, w + 0.6, 0.02, 0.06, 0x5d452c, 0, 0.02, -d / 2 + 0.4 + i * 0.85);
+        // ── 선체: 흰 선측 + 적/청 도색 밴드 (연안 페리 특유의 색띠) + 어두운 흘수선 ──
+        B(roomGroup, w + 1.6, 3.0, d + 1.6, 0xdad6cc, 0, -1.75, 0);          // 흰 선측 상부
+        B(roomGroup, w + 1.62, 0.42, d + 1.62, 0xb43b30, 0, -0.55, 0);       // 적색 밴드
+        B(roomGroup, w + 1.62, 0.42, d + 1.62, 0x2f5f8a, 0, -1.05, 0);       // 청색 밴드
+        B(roomGroup, w + 1.7, 2.4, d + 1.7, 0x4a2f28, 0, -3.5, 0);           // 하부 선체(흘수 아래)
+        B(roomGroup, w + 1.8, 0.7, d + 1.8, 0x1f1a17, 0, -5.6, 0);           // 용골 밑동
+        // 흰 난간 (항상 표시)
+        const mkRail = (len, x, z, rotY) => {
+          const g = new THREE.Group();
+          const fm = lamb(0xc8c4b8);
+          for (let i = 0; i <= Math.round(len / 1.1); i++) {
+            const p = new THREE.Mesh(new THREE.BoxGeometry(0.08, h, 0.08), fm);
+            p.position.set(-len / 2 + i * (len / Math.round(len / 1.1)), h / 2, 0);
+            p.castShadow = true; g.add(p);
+          }
+          const rail = new THREE.Mesh(new THREE.BoxGeometry(len + 0.1, 0.08, 0.1), fm);
+          rail.position.y = h; g.add(rail);
+          const mid = new THREE.Mesh(new THREE.BoxGeometry(len + 0.1, 0.05, 0.08), lamb(0xa8a49a));
+          mid.position.y = h * 0.55; g.add(mid);
+          g.position.set(x, 0, z); g.rotation.y = rotY;
+          roomGroup.add(g);
+        };
+        mkRail(w + 0.5, 0, d / 2 + 0.25, 0);
+        mkRail(d + 0.5, -w / 2 - 0.25, 0, Math.PI / 2);
+        mkRail(d + 0.5, w / 2 + 0.25, 0, Math.PI / 2);
+        setWallList([]);
+        // ── 선실 벽(선수미 방향 뒤쪽, -z) = 흰 상부 구조 + 연속 창문 줄. 벽지 대상 + 컬링. ──
+        //   높이 2.5 유지(상단 y=2.5). (v1.5) 태양광/빗물받이 앵커는 간이집 지붕/처마로 이동 — 이 벽엔 마운트 없음.
+        const cabinMat = tagDecoWall(wallPhong({ color: 0xdad6cc })); cabinMat.userData.shared = true;
+        const cabinW = new THREE.Group();
+        const CWH = 2.5;
+        const cw = new THREE.Mesh(new THREE.BoxGeometry(w, CWH, 0.3), cabinMat);
+        cw.position.y = CWH / 2; cw.castShadow = cw.receiveShadow = true;
+        cabinW.add(cw);
+        // 연속 창문 줄 (긴 띠 유리 + 창틀 멀리언) — 페리 여객 라운지 창
+        const bandY = 1.55, bandH = 0.8;
+        const band = new THREE.Mesh(new THREE.BoxGeometry(w - 1.2, bandH, 0.14), lamb(0x243746));
+        band.position.set(-0.3, bandY, 0.16); cabinW.add(band);
+        const bandTop = new THREE.Mesh(new THREE.BoxGeometry(w - 1.0, 0.1, 0.18), lamb(0x9a958a));
+        bandTop.position.set(-0.3, bandY + bandH / 2 + 0.05, 0.16); cabinW.add(bandTop);
+        const bandBot = bandTop.clone(); bandBot.position.y = bandY - bandH / 2 - 0.05; cabinW.add(bandBot);
+        const nMul = Math.floor((w - 1.2) / 0.85);
+        for (let i = 0; i <= nMul; i++) {
+          const mx = -0.3 - (w - 1.2) / 2 + i * ((w - 1.2) / nMul);
+          B(cabinW, 0.07, bandH, 0.16, 0x9a958a, mx, bandY, 0.17);
+        }
+        // 여객 승강문(우현 쪽) → 잠긴 철문 (v1.5: 벙커 후면 잠긴문 문법 축소판 — "선실은 잠겨 있다").
+        //   갑판 쪽(+z) 면 소품이라 cabinW 자식으로 넣어 선실 벽 컬링과 함께 숨긴다(⑤ 허공 부유 방지).
+        const steelMat = wallPhong({ map: metalTex }); steelMat.userData.shared = true;
+        const steelDoor = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.9, 0.1), steelMat);
+        steelDoor.position.set(3.9, 0.95, 0.18); steelDoor.castShadow = steelDoor.receiveShadow = true;
+        cabinW.add(steelDoor);
+        B(cabinW, 1.02, 2.0, 0.06, 0x8a857a, 3.9, 1.0, 0.14); // 문틀
+        for (const sx of [-1, 1]) B(cabinW, 0.07, 1.7, 0.05, 0x3d444c, 3.9 + sx * 0.28, 0.95, 0.24); // 세로 보강 리브
+        B(cabinW, 1.06, 0.13, 0.12, 0x55504a, 3.9, 1.12, 0.26).castShadow = true; // 가로 빗장 (잠김을 명확히)
+        B(cabinW, 0.2, 0.26, 0.16, 0x2f2b26, 3.9, 1.12, 0.3); // 자물쇠 뭉치
+        for (const [bx, by] of [[-0.36, 0.35], [0.36, 0.35], [-0.36, 1.55], [0.36, 1.55]])
+          Cyl(cabinW, 0.03, 0.03, 0.05, 0x2a2622, 3.9 + bx, by, 0.24, 5); // 볼트 자국
+        B(cabinW, 0.44, 0.3, 0.03, 0x9a7a2a, 3.9, 1.62, 0.24); // 빛바랜 경고 표식(글자 없는 색면)
+        // 옅은 녹/때 줄무늬 (세월감)
+        const rr = seededRand(21);
+        for (let i = 0; i < 4; i++) {
+          const rust = new THREE.Mesh(new THREE.BoxGeometry(0.15 + rr() * 0.22, 0.5 + rr() * 0.7, 0.05), lamb(0x9a7358));
+          rust.position.set(-w / 2 + 1 + rr() * (w - 2), 0.55 + rr() * 0.9, 0.17);
+          cabinW.add(rust);
+        }
+        cabinW.position.set(0, 0, -d / 2 - 0.28);
+        // ★ 컬링 등록은 아래 간이집 벽 3면과 함께 makeWalls 1회로 일괄 — makeWalls가 wallList를 리셋하므로
+        //   따로 호출하면 먼저 등록한 벽이 목록에서 사라진다(옥탑 문법: 벽 전부를 한 번에 등록).
+        // ── 2층 데크 실루엣: 선실 지붕(=1층 천장) + 2층 상부 구조 + 상부 난간 + 창 ──
+        //   지붕은 실내 상부를 덮으므로 천장 컬링 등록(⑥-a/배치A 부감 투시). 선실 벽 뒤(-z)에 얹는다.
+        const superZ = -d / 2 - 0.28;             // 선실 벽면 z
+        const deck2 = new THREE.Group();
+        const roofSlab = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.18, 2.4), lamb(0xcfcabf));
+        roofSlab.position.set(0, CWH + 0.09, superZ - 0.9); roofSlab.castShadow = roofSlab.receiveShadow = true;
+        deck2.add(roofSlab);
+        tagCeiling(roofSlab, CWH);                 // 부감에서 1층 천장(지붕) 투시
+        // 2층 벽체(뒤로 물러난 상부 구조) — 흰 벽 + 작은 창 줄
+        const upH = 1.7;
+        const upWall = new THREE.Mesh(new THREE.BoxGeometry(w - 1.0, upH, 1.8), lamb(0xdad6cc));
+        upWall.position.set(0, CWH + 0.18 + upH / 2, superZ - 1.1); upWall.castShadow = true; deck2.add(upWall);
+        const upBand = new THREE.Mesh(new THREE.BoxGeometry(w - 2.0, 0.5, 0.12), lamb(0x243746));
+        upBand.position.set(0, CWH + 0.18 + upH * 0.62, superZ - 1.1 + 0.9); deck2.add(upBand);
+        for (let i = 0; i <= 6; i++) B(deck2, 0.06, 0.5, 0.14, 0x9a958a, -(w - 2.0) / 2 + i * ((w - 2.0) / 6), CWH + 0.18 + upH * 0.62, superZ - 1.1 + 0.9);
+        // 상부 데크 난간(선실 지붕 앞쪽 가장자리)
+        const upRail = new THREE.Group();
+        const rfm = lamb(0xc8c4b8);
+        for (let i = 0; i <= Math.round((w) / 1.0); i++) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.06), rfm); p.position.set(-w / 2 + i * (w / Math.round(w / 1.0)), 0.25, 0); upRail.add(p); }
+        const upTop = new THREE.Mesh(new THREE.BoxGeometry(w + 0.1, 0.06, 0.08), rfm); upTop.position.y = 0.5; upRail.add(upTop);
+        upRail.position.set(0, CWH + 0.18, superZ + 0.15); deck2.add(upRail);
+        roomGroup.add(deck2);
+        // ── 소형 굴뚝(페리 색띠 도색) — 2층 상부 구조 뒤 ──
+        const funnel = new THREE.Group();
+        const fbody = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.62, 1.8, 12), lamb(0xdad6cc));
+        fbody.position.y = 0.9; funnel.add(fbody);
+        B(funnel, 1.18, 0.4, 1.05, 0xb43b30, 0, 1.35, 0); // 적색 띠 (박스로 감싸 색띠 강조)
+        const fcap = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.18, 12), lamb(0x2a2622));
+        fcap.position.y = 1.82; funnel.add(fcap);
+        funnel.position.set(1.6, CWH + 0.18 + upH, superZ - 1.1);
+        funnel.rotation.z = 0.03; funnel.children.forEach(c => c.castShadow = true);
+        roomGroup.add(funnel);
+        // 마스트 + 삼각기 (실루엣 포인트)
+        Cyl(roomGroup, 0.04, 0.05, 2.2, 0x55504a, -2.6, CWH + 0.18 + upH + 1.1, superZ - 0.6, 5);
+        B(roomGroup, 0.5, 0.3, 0.02, 0xc45540, -2.35, CWH + 0.18 + upH + 1.7, superZ - 0.6);
+        // 낚싯대 + 구명튜브 (고정 소품)
+        const rod = new THREE.Group();
+        Cyl(rod, 0.02, 0.03, 2.2, 0x6a4f33, 0, 1.0, 0, 5).rotation.z = -0.7;
+        B(rod, 0.15, 0.4, 0.15, 0x55504a, -0.35, 0.2, 0);
+        rod.position.set(w / 2 - 0.7, 0, d / 2 - 0.6);
+        roomGroup.add(rod);
+        // 구명튜브 — 간이집(-x 구석)과 겹치던 좌현 자리에서 잠긴 철문 옆(우현)으로 이동. 선실 벽면 소품이라
+        //   makeWalls 뒤 attachToWall로 -z 벽 컬링에 편입(벽이 숨을 때 허공에 남지 않게 — ⑤).
+        const buoyRing = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.09, 6, 12), lamb(0xc45540));
+        buoyRing.position.set(2.6, 1.4, -d / 2 - 0.1);
+        roomGroup.add(buoyRing);
+
+        // ── (v1.5) 갑판 위 간이집 — 옥탑(#53) 가벽 문법 복제: 판자+방수포 벽 3면 + 슬레이트 지붕 ──
+        //   뒷면(-z)은 선실 벽이 겸한다. 좌표는 절대값 고정(-z/-x 구석) — 증축(extension, ROOM.w+2)은
+        //   갑판 폭만 넓히고 간이집은 그대로다(선실 벽·잠긴 철문 x3.9도 불변).
+        //   치수: 5.6×3.4×2.35. 벽 평면: 앞 z=-0.01, 좌 x=-4.59, 우 x=1.19 (내부 x∈[-4.5,1.1], z∈[-3.5,-0.1]).
+        const SW = 5.6, SD = 3.4, SH = 2.35;              // 간이집 폭/깊이/벽높이
+        const SCX = -1.7, SCZ = -1.8, SFZ = SCZ + SD / 2 + 0.09; // 중심 x/z, 앞벽 평면 z(-0.01)
+        const plyMat = wallPhong({ map: plywoodTex }); plyMat.userData.shared = true;
+        tagDecoWall(plyMat); // (B-①) 간이집 합판 낱장 — 벽지 대상 (옥탑과 동일)
+        const panelCols = [0x8a7350, 0x6e6350, 0x7d6a4a, 0x5f6a6e, 0x86745a, 0x655b48, 0x6a6660];
+        // 목재 모서리 기둥 4개 (컬링 무관 골조 — 옥탑 콘크리트 기둥의 목재판). 뒷기둥은 선실 벽면에 밀착.
+        for (const [px, pz] of [[SCX - SW / 2 - 0.09, SFZ], [SCX + SW / 2 + 0.09, SFZ], [SCX - SW / 2 - 0.09, -3.56], [SCX + SW / 2 + 0.09, -3.56]])
+          B(roomGroup, 0.14, SH + 0.06, 0.14, 0x4a3f30, px, (SH + 0.06) / 2, pz);
+        const pr = seededRand(58);
+        // 판자벽 빌더 (옥탑 mkPatchWall 문법 + 창 개구부): doorC/winC = 개구 중심 비율(0~1). 컬링 그룹 반환.
+        const mkShWall = (len, o = {}) => {
+          const g = new THREE.Group();
+          const doorW = o.doorC != null ? 1.3 : 0, winW = o.winC != null ? 0.95 : 0;
+          const doorS = o.doorC != null ? o.doorC * len - len / 2 - doorW / 2 : 0, doorE = doorS + doorW;
+          const winS = o.winC != null ? o.winC * len - len / 2 - winW / 2 : 0, winE = winS + winW;
+          let x = -len / 2;
+          const board = 0.44;
+          while (x < len / 2 - 0.02) {
+            const bw = Math.min(board + (pr() - 0.5) * 0.18, len / 2 - x);
+            const cx = x + bw / 2;
+            const inDoor = o.doorC != null && cx > doorS - bw / 2 && cx < doorE + bw / 2;
+            const inWin = o.winC != null && cx > winS - bw / 2 && cx < winE + bw / 2;
+            const mat = pr() < 0.5 ? plyMat : wallPhong({ color: panelCols[Math.floor(pr() * panelCols.length)] });
+            if (inDoor) {
+              const lh = SH - 1.8; // 문 위 상인방 (짧은 판)
+              const p = new THREE.Mesh(new THREE.BoxGeometry(bw - 0.03, lh, 0.09), mat);
+              p.position.set(cx, SH - lh / 2, 0); p.castShadow = p.receiveShadow = true; g.add(p);
+            } else if (inWin) {
+              // 창 개구부: [winS,winE] 구간만 아래턱(0~1.05)+위(1.75~벽높이)로 절개하고,
+              // 개구부 밖으로 걸친 자투리는 전고 판자로 남긴다 — 창이 창틀보다 넓게 뚫리지 않게(문간과 달리 벽 중앙 구멍은 티가 난다).
+              const cutS = Math.max(x, winS), cutE = Math.min(x + bw, winE);
+              for (const [ss, ee] of [[x, cutS], [cutE, x + bw]]) if (ee - ss > 0.05) {
+                const sp = new THREE.Mesh(new THREE.BoxGeometry(ee - ss - 0.02, SH - 0.02, 0.09), mat);
+                sp.position.set((ss + ee) / 2, (SH - 0.02) / 2, 0); sp.castShadow = sp.receiveShadow = true; g.add(sp);
+              }
+              const cw2 = cutE - cutS - 0.02;
+              if (cw2 > 0.04) {
+                const p1 = new THREE.Mesh(new THREE.BoxGeometry(cw2, 1.05, 0.09), mat);
+                p1.position.set((cutS + cutE) / 2, 0.525, 0); p1.castShadow = p1.receiveShadow = true; g.add(p1);
+                const p2 = new THREE.Mesh(new THREE.BoxGeometry(cw2, SH - 1.75, 0.09), mat);
+                p2.position.set((cutS + cutE) / 2, (SH + 1.75) / 2, 0); p2.castShadow = p2.receiveShadow = true; g.add(p2);
+              }
+            } else {
+              const ph2 = SH - (pr() < 0.3 ? 0.12 : 0) - 0.02; // 몇 장은 살짝 짧아 위가 삐죽
+              const p = new THREE.Mesh(new THREE.BoxGeometry(bw - 0.03, ph2, 0.09), mat);
+              p.position.set(cx, ph2 / 2, (pr() - 0.5) * 0.03); p.castShadow = p.receiveShadow = true; g.add(p);
+              if (pr() < 0.4) B(g, bw - 0.05, 0.06, 0.03, 0x4a3f30, cx, 0.4 + pr() * (SH - 1), 0.06); // 가로 각목
+            }
+            x += bw;
+          }
+          if (o.winC != null) {
+            // 창틀 + 불빛 유리 — 작은 면(0.9×0.6) 자기조도라 야간 밴딩 함정(대형 무텍스처 평면) 비해당.
+            const wx = o.winC * len - len / 2;
+            B(g, winW + 0.14, 0.07, 0.12, 0x3a3228, wx, 1.785, 0);
+            B(g, winW + 0.14, 0.07, 0.12, 0x3a3228, wx, 1.015, 0);
+            B(g, 0.07, 0.77, 0.12, 0x3a3228, wx - winW / 2 - 0.035, 1.4, 0);
+            B(g, 0.07, 0.77, 0.12, 0x3a3228, wx + winW / 2 + 0.035, 1.4, 0);
+            const pane = new THREE.Mesh(new THREE.BoxGeometry(winW - 0.06, 0.64, 0.05),
+              new THREE.MeshLambertMaterial({ color: 0xffd9a0, emissive: 0xc08a3a, emissiveIntensity: 0.55 }));
+            pane.position.set(wx, 1.4, 0); g.add(pane); // 밤에 "누가 산다"로 읽히는 온광 (부표등과 같은 상시 자발광 문법)
+            B(g, 0.05, 0.64, 0.08, 0x3a3228, wx, 1.4, 0);        // 멀리언 세로대
+            B(g, winW - 0.06, 0.05, 0.08, 0x3a3228, wx, 1.4, 0); // 멀리언 가로대
+          }
+          return g;
+        };
+        // 앞벽(+z): 문간(세계 x≈0.09) + 창(세계 x≈-3.2, 불빛). 좌/우벽은 민판.
+        const shFront = mkShWall(SW, { doorC: 0.82, winC: 0.232 });
+        const shLeft = mkShWall(SD);
+        const shRight = mkShWall(SD);
+        // 방수포: 우벽 상단을 덮은 자락(늘어짐 sway) + 앞벽 문 위 차양 — 벽 그룹 자식이라 벽과 함께 컬링.
+        {
+          const tarp = new THREE.Mesh(new THREE.BoxGeometry(SD * 0.72, 1.1, 0.06), lamb(0x4a5560));
+          tarp.position.set(-SD * 0.1, SH - 0.52, 0.12); tarp.rotation.z = 0.05; tarp.castShadow = true; // z0.12: 판자 지터(±0.015) 밖 — z-fight 여유
+          shRight.add(tarp);
+          const flap = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.05), lamb(0x3f4954));
+          flap.position.set(SD * 0.24, SH - 1.12, 0.19); flap.rotation.z = 0.14;
+          tagSway(flap, 0.14); // F-1a [B]: 방수포 자락 미세 sway
+          shRight.add(flap);
+          const awn = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.05, 0.5), lamb(0x4a5560));
+          awn.position.set(1.8, SH - 0.28, 0.3); awn.rotation.x = 0.42; awn.castShadow = true; // 문 위 차양
+          shFront.add(awn);
+        }
+        // ★ 벽 컬링 일괄 등록 — 법선은 (방 중심이 아니라) 간이집 기준 월드 바깥향. 선실 벽(-z)도 여기서 함께.
+        makeWalls([
+          { group: cabinW, pos: [0, 0, -d / 2 - 0.28], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+          { group: shFront, pos: [SCX, 0, SFZ], rotY: 0, normal: new THREE.Vector3(0, 0, 1) },
+          { group: shLeft, pos: [SCX - SW / 2 - 0.09, 0, SCZ], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+          { group: shRight, pos: [SCX + SW / 2 + 0.09, 0, SCZ], rotY: Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
+        ]);
+        // 문틀 (개구부 테두리) — ⑤ 앞(+z)벽 부착물 → 앞벽 컬링과 동기화 (옥탑 문법 그대로)
+        attachToWall(0, 0, 1,
+          B(roomGroup, 0.08, 1.8, 0.14, 0x3a3228, 0.09 - 0.65, 0.9, SFZ),
+          B(roomGroup, 0.08, 1.8, 0.14, 0x3a3228, 0.09 + 0.65, 0.9, SFZ),
+          B(roomGroup, 1.42, 0.1, 0.14, 0x3a3228, 0.09, 1.8, SFZ));
+        attachToWall(0, 0, -1, buoyRing); // 구명튜브 → 선실 벽 컬링 편입
+        // 슬레이트 지붕 (옥탑 buildRooftopSlate 재사용 — 치수/오프셋 파라미터화, 페리는 빈틈 없는 full 고정).
+        //   내부에서 tagCeiling(y≈2.43) 등록 → 부감에서 실내 투시. 태양광 cullJoin이 이 그룹에 편입된다.
+        buildRooftopSlate(SW, SD, SH, { cx: SCX, cz: SCZ, full: true });
+        blockers = [
+          { x: w / 2 - 0.7, z: d / 2 - 0.6, w: 0.8, d: 0.8 },       // 낚싯대 (기존)
+          { x: SCX - SW / 2 - 0.09, z: SCZ, w: 0.32, d: SD + 0.2 }, // 간이집 좌벽
+          { x: SCX + SW / 2 + 0.09, z: SCZ, w: 0.32, d: SD + 0.2 }, // 간이집 우벽
+          { x: -2.62, z: SFZ, w: 4.12, d: 0.32 },                   // 간이집 앞벽 (문간 왼쪽 — 문간 x∈[-0.56,0.74]은 비움)
+          { x: 1.01, z: SFZ, w: 0.54, d: 0.32 },                    // 간이집 앞벽 (문간 오른쪽)
+        ];
+        setBlockers(blockers);
+      },
+      buildEnv() {
+        const ROOM = getROOM();
+        let envDyn;
+        const rand = seededRand(808);
+        // 바다 (거대한 어두운 수면)
+        const sea = new THREE.Mesh(new THREE.PlaneGeometry(320, 320, 24, 24), lamb(0x14222e));
+        sea.geometry.rotateX(-Math.PI / 2);
+        const sp = sea.geometry.attributes.position;
+        for (let i = 0; i < sp.count; i++) sp.setY(i, Math.sin(sp.getX(i) * 0.3) * Math.cos(sp.getZ(i) * 0.27) * 0.18);
+        sea.geometry.computeVertexNormals();
+        sea.position.y = -6.2;
+        envRoot.add(sea);
+        // 달빛 반사 띠
+        const glint = new THREE.Mesh(new THREE.PlaneGeometry(3, 40),
+          new THREE.MeshLambertMaterial({ color: 0x2a4258, emissive: 0x1a3048, emissiveIntensity: 0.6, transparent: true, opacity: 0.5 }));
+        glint.rotation.x = -Math.PI / 2;
+        glint.position.set(-12, -6.1, -8);
+        glint.rotation.z = 0.4;
+        envRoot.add(glint);
+        // 뱃머리 (우리 배의 앞부분이 이어짐)
+        const bow = new THREE.Group();
+        B(bow, 7, 1.2, 8.4, 0x6a5a48, 0, -0.6, 0);
+        B(bow, 8, 4.8, 9, 0x5c3a30, 0, -3.6, 0);
+        const tip = new THREE.Mesh(new THREE.ConeGeometry(4.2, 6, 4), lamb(0x5c3a30));
+        tip.rotation.z = -Math.PI / 2; tip.rotation.y = Math.PI / 4;
+        tip.scale.set(1, 1, 1.4);
+        tip.position.set(3.5, -3.2, 0);
+        bow.add(tip);
+        bow.position.set(ROOM.w / 2 + 4.2, 0, 0);
+        envRoot.add(bow);
+        // 좌초한 다른 배 실루엣 (수평선)
+        const wreck = new THREE.Group();
+        B(wreck, 16, 4, 4, 0x1c2229, 0, 2, 0);
+        B(wreck, 5, 3, 3, 0x181d24, -2, 5.5, 0);
+        const wtip = new THREE.Mesh(new THREE.ConeGeometry(2.5, 5, 4), lamb(0x1c2229));
+        wtip.rotation.z = Math.PI / 2 + 0.5;
+        wtip.position.set(9, 2.5, 0);
+        wreck.add(wtip);
+        wreck.rotation.z = -0.18;
+        wreck.rotation.y = 0.7;
+        wreck.position.set(-26, -6, -20);
+        envRoot.add(wreck);
+        // 부표 + 갈매기는 없다. 등대 불빛만 멀리서.
+        const buoy = new THREE.Group();
+        const bb = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.4, 6), lamb(0x8a4535));
+        bb.position.y = 0.4;
+        buoy.add(bb);
+        const bl = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 5),
+          new THREE.MeshLambertMaterial({ color: 0xffcc66, emissive: 0xcc8822, emissiveIntensity: 1 }));
+        bl.position.y = 1.2;
+        buoy.add(bl);
+        buoy.position.set(-9, -6, 7);
+        envRoot.add(buoy);
+        ogRock(-9, -6, 7, 0.7); // #71: 바다 셸터 — 건물 잠식 대신 부표 흘수선 이끼 소량
+        // 해안선 절벽 (한쪽)
+        for (let i = 0; i < 6; i++) {
+          // #71: 치수/위치를 변수로 캡처해 암반 이끼 대상으로 등록 — rand() 호출 순서는 원본과 동일(모습 불변)
+          const rs = 2.5 + rand() * 3;
+          const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(rs, 0), lamb(0x232830));
+          const rx = -30 + rand() * 10, ry = -5.5 + rand() * 1.5, rz = 14 + rand() * 12;
+          rock.position.set(rx, ry, rz);
+          rock.rotation.set(rand() * 3, rand() * 3, rand() * 3);
+          envRoot.add(rock);
+          ogRock(rx, ry, rz, rs);
+        }
+        envDyn = { sea, seaBase: sea.position.y };
         setEnvDyn(envDyn);
       },
     },
