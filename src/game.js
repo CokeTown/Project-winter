@@ -1580,19 +1580,14 @@ const SHELTERS = {
       const leftUp = mkArc(Math.PI / 2 + apexGap / 2, Math.PI - THS, 43, Math.PI / 2); // x<0 상부
       const leftLow = mkArc(Math.PI - THS, Math.PI, 44, Math.PI / 2);           // x<0 하부
       roomGroup.add(rightLow); roomGroup.add(rightUp); roomGroup.add(leftUp); roomGroup.add(leftLow);
-      // v1.5.2(디렉터 신고 — 라이브): "돔 천장 렌더는 0.9 방식으로, 천장 보수로 막을 수 있게. 보수 전엔 0.9대로."
-      //   #87의 상부 밴드 '천장 컬링'(부감 시 뻥 열림)을 폐기하고 0.9의 좌/우 반쪽 '시야방향' 컬링으로 되돌린다.
-      //   상부 밴드도 하부와 같은 x-반쪽 normal로 벽 컬링 → 근접 반쪽만 사라지고 반대쪽+정점은 '갈라진 돔 천장'
-      //   으로 유지(부감으로 봐도 지붕이 덮인 채). 정점 구멍(apexGap)·단계별 봉합(temp/full)은 그대로라 천장 수리가 막는다.
-      // v1.5.2(디렉터 신고 '1자 바'): 곡면 밴드는 눈 캡 부적격 — bb 상단 일자 캡이 돔 위 공중에 떠 흰 바로 보였다.
+      tagCeiling(rightUp, R * Math.sin(THS) + 0.2);
+      tagCeiling(leftUp, R * Math.sin(THS) + 0.2);
+      // v1.5.2(디렉터 신고 '1자 바'): 곡면 밴드는 눈 캡 부적격 — bb 상단 일자 캡이 돔 위 공중에 떠서
+      //   흰 바로 보였다(실측 y4.5/6.95). 눈 표현은 외피 자체 밝아짐(vcLambert 계절 톤)으로 충분.
       rightLow.userData.noWeatherCap = true;
       leftLow.userData.noWeatherCap = true;
-      rightUp.userData.noWeatherCap = true;
-      leftUp.userData.noWeatherCap = true;
       wallDefs.push({ group: rightLow, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(1, 0, 0) });
-      wallDefs.push({ group: rightUp, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(1, 0, 0) });   // 상부도 우반쪽 벽 컬링(0.9 시야방향)
       wallDefs.push({ group: leftLow, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(-1, 0, 0) });
-      wallDefs.push({ group: leftUp, pos: [0, 0, 0], rotY: 0, normal: new THREE.Vector3(-1, 0, 0) });   // 상부도 좌반쪽 벽 컬링(0.9 시야방향)
       // #87 ②: 정면 파사드 — 반달 콘크리트 벽 + 닫힌 철문. "벙커인데 앞이 뻥 뚫려있다" 실기기 신고.
       //   다른 셸터의 벽과 동일하게 컬링 참여: 기본(정면) 뷰에선 열려 실내가 보이고, 회전하면 벽 실체가 보인다.
       {
@@ -1781,6 +1776,18 @@ const SHELTERS = {
               new THREE.MeshLambertMaterial({ color: shade(domeCol, 0.88) }));
             cap.position.set(anteCXw, 0, smallCz - 0.6 - sDep / 2 - 0.09);
             cap.castShadow = cap.receiveShadow = true; smallDome.add(cap);
+          }
+          // 정면 반달 캡 (디렉터 신고 — 라이브: "뒤 돔도 투시된다. 안되는 온전한 형태로"): 뒷문 해금 전(!bunkerBackdoor)엔
+          //   앞도 막아 앞뒤 다 닫힌 '온전한 불투명 돔'으로 만든다(투시 불가). 해금하면 이 캡을 없애 전실(store)이 보인다.
+          if (!state.bunkerBackdoor) {
+            const fshp = new THREE.Shape();
+            fshp.moveTo(sR - 0.02, 0);
+            fshp.absarc(0, 0, sR - 0.02, 0, Math.PI, false);
+            fshp.lineTo(-(sR - 0.02), 0);
+            const fcap = new THREE.Mesh(new THREE.ExtrudeGeometry(fshp, { depth: 0.18, bevelEnabled: false }),
+              new THREE.MeshLambertMaterial({ color: shade(domeCol, 0.92) }));
+            fcap.position.set(anteCXw, 0, smallCz - 0.6 + sDep / 2 - 0.09);
+            fcap.castShadow = fcap.receiveShadow = true; smallDome.add(fcap);
           }
           // 외피 위 이끼/풀 몇 점 — 원통 곡면 좌표로 (메인 돔과 톤 맞춤)
           const sr = seededRand(311);
