@@ -529,9 +529,8 @@ export function makeCatSystem(ctx) {
         // 진척 없음 감지: 목표까지 거리가 3초간 개선되지 않으면(우회로도 못 뚫으면) 목표 재선정
         if (c._bestDist === undefined || dist < c._bestDist - 0.1) { c._bestDist = dist; c._noProg = 0; }
         else { c._noProg = (c._noProg || 0) + dt; if (c._noProg > 3) { c._noProg = 0; c._bestDist = undefined; c.tgt = catFreeSpot(); } }
-        // 그림자맵은 autoUpdate=false(배터리) — 이동 중엔 20Hz로 갱신해 그림자가 실시간으로 따라온다(디렉터: 스텝감 제거)
-        c._shT = (c._shT || 0) + dt;
-        if (c._shT > 0.05) { c._shT = 0; shadowDirty(); }
+        // 그림자맵 autoUpdate=false — 이동 중엔 매 프레임 갱신(디렉터: 게임 Hz 그대로. 이동체=고양이/사람뿐이라 비용 감당).
+        shadowDirty();
         // 부드러운 방향 전환 (우회 중엔 실제 진행각을 바라본다)
         const want = heading;
         let dr = want - c.g.rotation.y;

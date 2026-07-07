@@ -197,7 +197,9 @@ moon.shadow.camera.top = 16; moon.shadow.camera.bottom = -16;
 moon.shadow.camera.far = 60;
 scene.add(moon);
 
-const ceilLight = new THREE.PointLight(0xffd9a0, 25, 16, 1.6);
+// 라이팅 무드(디렉터 2026-07): 실내는 더 코지하게 — 온기색 더 앰버로(0xffd9a0→0xffce84)·세기 25→29.
+//   실외 을씨년(DAY_PHASES 회색화)과 대비를 키워 "따뜻한 안 vs 죽은 밖"을 강화한다.
+const ceilLight = new THREE.PointLight(0xffce84, 29, 16, 1.6);
 ceilLight.castShadow = true;
 ceilLight.shadow.mapSize.set(512, 512);
 scene.add(ceilLight);
@@ -361,7 +363,8 @@ const DAY_PHASES = {
   dawn: { fog: 0x4a4238, skyH: 0x8a5f4a, skyZ: 0x2a3045, sunC: 0xffb27a, sunInt: 0.55, hemiC: 0x9a8f88, hemiG: 0x4a423a, hemiInt: 0.8, stars: 0.25 },
   // #54: "낮인데 낮인지 모르겠다" — 정오 광량·하늘 밝기 상향 (새벽/황혼은 유지해 하루 리듬 대비 확보.
   // 재(ash)의 뿌연 정체성은 wSun 감쇠가 담당 — 맑은 낮이 확실히 밝아야 재 날씨의 존재감도 산다)
-  day:  { fog: 0x8b95a3, skyH: 0xa9bccb, skyZ: 0x6d8398, sunC: 0xfff2d6, sunInt: 1.5, hemiC: 0xd6dfe8, hemiG: 0x77706a, hemiInt: 1.28, stars: 0 },
+  // 실외 을씨년(디렉터): 하늘·fog만 회색·냉랭화(아포칼립스 잿빛). hemi/sun(=실내 앰비언트 광원)은 유지해 실내 온기·가독성 보존.
+  day:  { fog: 0x878d94, skyH: 0xa3acb3, skyZ: 0x69747e, sunC: 0xfff2d6, sunInt: 1.5, hemiC: 0xd6dfe8, hemiG: 0x77706a, hemiInt: 1.28, stars: 0 },
   dusk: { fog: 0x50403c, skyH: 0xa05a38, skyZ: 0x2f2c4c, sunC: 0xff9a5a, sunInt: 0.6, hemiC: 0xa08a80, hemiG: 0x4a3f38, hemiInt: 0.8, stars: 0.2 },
 };
 const DAY_KEYS = [[0, 'night'], [4.5, 'night'], [6.5, 'dawn'], [9, 'day'], [16.5, 'day'], [19, 'dusk'], [21, 'night'], [24, 'night']];

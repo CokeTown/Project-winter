@@ -360,10 +360,8 @@ export function makeAvatarSystem(ctx) {
         let dr = want - g.rotation.y; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
         g.rotation.y += dr * Math.min(1, dt * 6);
         av.gait += dt * 7;
-        // 그림자 실시간화(디렉터 실기기: "그림자가 뒤늦게 따라온다"): 씬은 정적 최적화(autoUpdate=false)라
-        //   움직이는 놈이 직접 신고해야 한다. 20Hz로 상향해 스텝감 제거(디렉터: 실시간).
-        av._shT = (av._shT || 0) + dt;
-        if (av._shT > 0.05) { av._shT = 0; shadowDirty(); }
+        // 그림자 실시간화 — 이동 중엔 매 프레임 shadowDirty(디렉터: 게임 Hz 그대로. 정적 씬이라 이동체가 직접 신고).
+        shadowDirty();
       }
     } else if (av.mode === 'sit' || av.mode === 'warm') {
       av.timer -= dt;
