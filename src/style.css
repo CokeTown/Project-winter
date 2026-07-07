@@ -228,7 +228,7 @@
 
   /* ── 하단 인벤토리 바 ── */
   #toolbar {
-    bottom: 12px; left: 50%; transform: translateX(-50%);
+    bottom: 62px; left: 50%; transform: translateX(-50%); /* 하단 바 위 한 칸 (디렉터 재배치) */
     display: flex; gap: 6px; padding: 8px;
     /* zoom(--uiz) 안의 100vw는 실제 화면보다 uiz배 넓게 계산된다 — 나눠서 보정 (FHD 양끝 잘림 원인) */
     max-width: calc((100vw - 40px) / var(--uiz, 1));
@@ -241,12 +241,16 @@
   .cam-btn { position: relative; }
   .cam-btn[data-label]::before {
     content: attr(data-label);
-    position: absolute; right: calc(100% + 8px); top: 50%; transform: translateY(-50%);
+    /* 하단 가로 바용: 버튼 위로 팝업 (기존 우측 세로열의 '왼쪽' 위치는 가로 바에서 겹침/화면밖) */
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
     background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 3px;
     padding: 4px 8px; font-size: 10px; color: var(--text); white-space: nowrap;
     opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 45;
   }
   @media (hover: hover) { .cam-btn[data-label]:hover::before { opacity: 1; } }
+  /* 하단 바 가장자리 버튼: 툴팁이 화면 밖으로 안 나가게 안쪽 정렬 (편집=좌단, 👁=우단) */
+  #btn-edit[data-label]::before { left: 0; transform: none; }
+  #btn-ui-toggle[data-label]::before { left: auto; right: 0; transform: none; }
   /* 모바일(호버 없음): 퀘스트 유도(pulse) 단계에선 라벨 상시 표시 */
   .cam-btn.pulse[data-label]::before { opacity: 1; }
   /* 배치 퀘스트 단계 동안 🔧 버튼 시선 유도 */
@@ -275,7 +279,7 @@
   .tool-item.empty .cnt { background: #3a3f4d; color: var(--text-dim); }
 
   /* ── 선택 패널 ── */
-  #sel-panel { bottom: 100px; left: 50%; transform: translateX(-50%); display: none; text-align: center; }
+  #sel-panel { bottom: 118px; left: 50%; transform: translateX(-50%); display: none; text-align: center; } /* 툴바(62)+가구칩 위 (디렉터 재배치) */
   #sel-panel.show { display: block; }
   #sel-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
   #sel-panel .swatches { display: flex; gap: 8px; justify-content: center; margin-bottom: 9px; }
@@ -324,6 +328,7 @@
   }
 
   /* ── 자원 사이드바 (이름+수량, 가시성 우선) ── */
+  /* 자원바는 기존 우측 세로 그리드 유지 (디렉터: "자원만 기존 세로 형태로"). cam-ctrl만 하단으로. */
   #res-bar {
     top: 322px; right: 12px; width: 208px;
     padding: 8px 10px;
@@ -695,11 +700,23 @@
   #lcd-sub { font-size: 10px; color: #5f8a55; margin-top: 2px; }
 
   /* ── 온스크린 카메라 컨트롤 ── */
+  /* 디렉터 UI 재배치: 우측 세로열 → 하단 가로 바(우측). 편집(🔧)은 좌측 분리(#btn-edit). */
   #cam-ctrl {
-    position: absolute; right: 12px; bottom: 12px; z-index: 5;
-    display: flex; flex-direction: column; gap: 5px;
+    position: fixed; right: 12px; bottom: 10px; z-index: 6;
+    display: flex; flex-direction: row; gap: 5px; align-items: center;
     zoom: var(--uiz);
   }
+  /* 편집(배치) 버튼 — 하단 바 좌측 분리 */
+  #btn-edit {
+    position: fixed; left: 12px; bottom: 10px; z-index: 6; zoom: var(--uiz);
+  }
+  /* 게임 UI 숨김 모드: 게임플레이 패널(거점/자원/시계/탐험/할일)만 숨기고 카메라 조작·편집·토글은 유지 */
+  body.ui-hidden #hud,
+  body.ui-hidden #res-bar,
+  body.ui-hidden #clock-panel,
+  body.ui-hidden #exp-panel,
+  body.ui-hidden #quest-card { display: none !important; }
+  body.ui-hidden #btn-ui-toggle { opacity: 0.55; }
   /* 내려둔 이벤트 칩 — cam-ctrl 위쪽 우하단 (quest-card는 좌측이라 겹치지 않음) */
   #event-chip {
     position: absolute; right: 12px; bottom: 400px; z-index: 31;

@@ -331,6 +331,9 @@ export const STR = {
   'btn.edit.title': { ko: '배치 모드 — 가구 이동/회수', en: 'Arrange mode — move/reclaim furniture' },
   'edit.on':  { ko: '🔧 배치 모드 — 가구를 옮기고 회수할 수 있다', en: '🔧 Arrange mode — you can move and reclaim furniture' },
   'edit.off': { ko: '배치 모드 해제', en: 'Arrange mode off' },
+  'btn.uiToggle.title': { ko: '게임 UI 숨기기 / 보이기', en: 'Hide / show game UI' },
+  'ui.hidden': { ko: '👁 게임 UI 숨김 — 조작만 남김', en: '👁 Game UI hidden — controls only' },
+  'ui.shown':  { ko: '게임 UI 표시', en: 'Game UI shown' },
 
   /* ── 드래그 패널 제목 ── */
   'panel.collapse':   { ko: '접기/펼치기', en: 'Collapse / expand' },

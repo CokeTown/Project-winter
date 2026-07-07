@@ -7864,7 +7864,7 @@ setLang(opts.lang || 'ko');   // 세이브된 언어 적용 (기본 ko)
 applyStaticI18n();             // index.html 정적 텍스트 치환
 // 카메라 열 버튼: 브라우저 네이티브 툴팁(title) 대신 게임 스타일 좌측 라벨(::before, data-label).
 // PC=호버 시 표시, 모바일=호버가 없으니 퀘스트 유도(pulse) 중에만 상시 표시 + 토글 토스트가 보조.
-for (const b of document.querySelectorAll('#cam-ctrl .cam-btn, #btn-gear')) {
+for (const b of document.querySelectorAll('#cam-ctrl .cam-btn, #btn-gear, #btn-edit')) { // #btn-edit: 하단 바 좌측 분리 후에도 커스텀 라벨 방식 유지 (디렉터: 다른 아이콘과 동일하게)
   if (b.title) { b.dataset.label = b.title; b.removeAttribute('title'); }
 }
 loadShelter(state.current);
@@ -7904,6 +7904,8 @@ $('cam-rotr').addEventListener('click', () => { exitCatCloseup(); camState.targe
 $('cam-zin').addEventListener('click', () => { exitCatCloseup(); camState.zoom = THREE.MathUtils.clamp(camState.zoom * 1.25, 0.25, 3.2); });
 $('cam-zout').addEventListener('click', () => { exitCatCloseup(); camState.zoom = THREE.MathUtils.clamp(camState.zoom * 0.8, 0.25, 3.2); });
 $('cam-home').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw = Math.PI / 4; setPanTarget(0, 0); fitZoomForShelter(); }); // #70: 홈 복귀에 팬 0,0 리셋 포함
+// 👁 게임 UI 숨김 토글 (디렉터 UI 재배치): 게임플레이 패널만 숨기고 카메라 조작/편집은 유지. 배경화면 모드와 별개의 인게임 뷰 정리.
+{ const uib = $('btn-ui-toggle'); if (uib) uib.addEventListener('click', () => { const hid = document.body.classList.toggle('ui-hidden'); uib.classList.toggle('primary', hid); toast(t(hid ? 'ui.hidden' : 'ui.shown')); }); }
 // 패널 드래그/접기 활성화
 makeDraggablePanel($('hud'), 'hud', t('panel.hud'));
 makeDraggablePanel($('exp-panel'), 'exp', t('panel.exp'));
