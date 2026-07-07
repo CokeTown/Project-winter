@@ -40,6 +40,9 @@ const SCENES = [
   //   결정론적으로 박제. weatherfx 이관이 누적/페이드 수식을 바꾸면 이 씬들이 diff로 검거한다(정적 씬은 못 잡음).
   { id: 'd_snow_accum', shelter: 'container', weather: 'snow', hour: 8, snow: 0, steps: 220 },
   { id: 'd_rain_wet', shelter: 'rooftop', weather: 'rain', hour: 8, snow: 0, steps: 220 },
+  // bunker 뒷문 해금 상태: 후면 돔 반쪽이 wallList에 직접 push돼 컬링에 편입(잠김=불투명, 해금=투시).
+  //   이 분기를 골든으로 커버해야 bunker build의 wallList 직접조작 이관이 무손실 검증된다.
+  { id: 'z_bunker_backdoor', shelter: 'bunker', weather: 'clear', hour: 8, flags: { bunkerBackdoor: true } },
 ];
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -80,6 +83,7 @@ async function setup(sc) {
     S.simReset(); if(S.hideTitle)S.hideTitle(); if(S.setPaused)S.setPaused(true);
     S.state.current=${JSON.stringify(sc.shelter)};
     if(S.freezeForGolden)S.freezeForGolden(${SEED});
+    ${sc.flags ? `Object.assign(S.state, ${JSON.stringify(sc.flags)});` : ''}
     if(S.loadShelter)S.loadShelter(${JSON.stringify(sc.shelter)});
     if(S.setHour)S.setHour(${sc.hour});
     if(S.setWeather)S.setWeather(${JSON.stringify(sc.weather)});
@@ -92,11 +96,13 @@ const cap = async (win) => bgra2rgba((await win.webContents.capturePage()).toBit
 //   지오메트리 구축은 진행되므로, 연속 2캡처가 안정될 때까지 기다린 뒤의 프레임을 최종 캡처로 쓴다.
 async function settleCapture(win) {
   await sleep(150);
-  let prev = await cap(win);
-  for (let i = 0; i < 24; i++) { // 최대 ~3.6s
+  let prev = await cap(win), stable = 0;
+  for (let i = 0; i < 30; i++) { // 최대 ~4.6s
     await sleep(150);
     const cur = await cap(win);
-    if (diffPct(prev, cur) < 1.0) { await sleep(80); return await cap(win); } // 안정 → 한 프레임 더 여유 후 확정
+    // rooftop 야외는 빌드 도중 <1% plateau가 잠깐 생겨 조기 확정→플레이크. 연속 2회 안정 + 최소 5반복(~750ms) 경과 후에만 확정.
+    if (diffPct(prev, cur) < 1.0) { if (++stable >= 2 && i >= 4) { await sleep(80); return await cap(win); } }
+    else stable = 0;
     prev = cur;
   }
   return prev; // 타임아웃 방어(정착 실패 시 마지막 캡처)
