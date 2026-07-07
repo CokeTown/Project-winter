@@ -7282,15 +7282,16 @@ function showTutorialPage(day) {
    기존 세이브는 loadSave()에서 -1로 마이그레이션해 표시하지 않는다.
 ============================================================ */
 const QUESTS = [
+  // icon = 이모지 폴백 · img = HUD 액션 아트 아이콘(디렉터: 튜토리얼도 거점 그리드와 동일 아이콘). drink/eat는 게이지(이모지)라 그대로.
   { id: 'drink',  icon: '💧', textId: 'quest.drink.text',  loreId: 'quest.drink.lore',  doneId: 'quest.drink.done',  reward: { water: 1 } },
   { id: 'eat',    icon: '🥫', textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
-  { id: 'place',  icon: '🛏️', textId: 'quest.place.text',  loreId: 'quest.place.lore',  doneId: 'quest.place.done',  reward: { cloth: 1 } },
-  { id: 'depart', icon: '🎒', textId: 'quest.depart.text', loreId: 'quest.depart.lore', doneId: 'quest.depart.done', reward: {} },
+  { id: 'place',  icon: '🔧', img: 'icon_sys_edit',    textId: 'quest.place.text',  loreId: 'quest.place.lore',  doneId: 'quest.place.done',  reward: { cloth: 1 } },
+  { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart.text', loreId: 'quest.depart.lore', doneId: 'quest.depart.done', reward: {} },
   // '결산 리포트 확인' 단계였음 — 거점 UI에 그런 화면이 없어 유저가 길을 잃었다.
   // 취침 유도로 교체: 자고 일어나면 아침 보고가 뜨는 흐름 자체가 결산을 가르친다.
-  { id: 'sleep', icon: '🛌', textId: 'quest.sleep.text', loreId: 'quest.sleep.lore', doneId: 'quest.sleep.done', reward: { bandage: 1 } },
-  { id: 'craft',  icon: '🔨', textId: 'quest.craft.text',  loreId: 'quest.craft.lore',  doneId: 'quest.craft.done',  reward: { parts: 1 } },
-  { id: 'clean',  icon: '🧹', textId: 'quest.clean.text',  loreId: 'quest.clean.lore',  doneId: 'quest.clean.done',  reward: { water: 1 } },
+  { id: 'sleep', icon: '🛌', img: 'icon_act_sleep', textId: 'quest.sleep.text', loreId: 'quest.sleep.lore', doneId: 'quest.sleep.done', reward: { bandage: 1 } },
+  { id: 'craft',  icon: '🔨', img: 'icon_act_craft', textId: 'quest.craft.text',  loreId: 'quest.craft.lore',  doneId: 'quest.craft.done',  reward: { parts: 1 } },
+  { id: 'clean',  icon: '🧹', img: 'icon_act_clean', textId: 'quest.clean.text',  loreId: 'quest.clean.lore',  doneId: 'quest.clean.done',  reward: { water: 1 } },
 ];
 function questActive() { return state.questIdx >= 0 && state.questIdx < QUESTS.length; }
 function renderQuestCard() {
@@ -7298,7 +7299,10 @@ function renderQuestCard() {
   if (!card) return;
   if (!questActive()) { card.classList.remove('show'); return; }
   const q = QUESTS[state.questIdx];
-  $('quest-icon').textContent = q.icon;
+  const qi = $('quest-icon');
+  // 튜토리얼 아이콘 = HUD 액션 아트 아이콘(img) 우선, 없으면 이모지(게이지류). 로드 실패 시 이모지 폴백.
+  if (q.img) qi.innerHTML = `<img class="q-art" src="img/icons/${q.img}.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('${q.icon}'))">`;
+  else qi.textContent = q.icon;
   const lore = $('quest-lore');
   if (lore) lore.textContent = q.loreId ? t(q.loreId) : '';
   $('quest-text').textContent = t(q.textId);
