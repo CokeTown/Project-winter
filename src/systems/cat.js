@@ -174,23 +174,27 @@ export function makeCatSystem(ctx) {
     px(0, 0, 16, 16, P.faceBg);       // 바탕 = 털색(faceBg)
     // 콜러포인트 마스크: 눈~이마 영역을 point 색으로 덮는다 (시암/래그돌 얼굴 가면)
     if (P.mask) {
-      px(2, 3, 12, 6, P.mask);        // 이마~눈높이 가로 밴드
+      px(2, 2, 12, 7, P.mask);        // 이마~눈높이 가로 밴드
       px(2, 9, 3, 3, P.mask);         // 좌 볼로 흘러내림
       px(11, 9, 3, 3, P.mask);        // 우 볼로 흘러내림
     }
-    px(5, 10, 6, 4, P.faceMuzzle);    // 주둥이 밝은 패치 (코 지오메트리 주변, MC 얼룩 느낌)
-    for (const ex of [3, 11]) {       // 양 눈 (좌 x=3, 우 x=11), 폭 2px
+    px(4, 10, 8, 4, P.faceMuzzle);    // 주둥이 밝은 하관 패치 (코·입 주변 밝게)
+    // 큰 눈 (좌 x=3, 우 x=10, 3×4) — 디렉터(2026-07): 종전 어두운 눈(eyeDark 본체)이 "기괴" → MC식으로
+    //   밝은 홍채(eyeHi)를 크게 + 세로 동공(eyeDark) + 흰 반짝임 1px → 또렷하고 귀여운 눈.
+    for (const ex of [3, 10]) {
       if (closed) {
-        px(ex, 7, 2, 1, P.lid);       // 감은 눈(∪): 눈꺼풀 윗선
-        px(ex, 8, 1, 1, P.lid); px(ex + 1, 8, 1, 1, P.lid); // 살짝 처진 양끝
+        px(ex, 8, 3, 1, P.lid);                          // 감은 눈(⌒): 윗선
+        px(ex, 9, 1, 1, P.lid); px(ex + 2, 9, 1, 1, P.lid); // 처진 양끝
       } else {
-        px(ex, 7, 2, 3, P.eyeDark);   // 눈 본체 (코트별 눈색)
-        px(ex, 6, 2, 1, P.eyeHi);     // 위쪽 1px 하이라이트
-        px(ex, 8, 1, 1, '#0d0b09');   // 세로 동공 느낌의 검정 픽셀
+        px(ex, 6, 3, 4, P.eyeHi);                         // 밝은 홍채 (크게)
+        px(ex + 1, 6, 1, 3, P.eyeDark);                   // 세로 동공(어둡게)
+        px(ex + (ex < 8 ? 0 : 2), 6, 1, 1, '#f6f2ea');    // 눈 반짝임(스파클) 1px — 바깥 위 모서리
       }
     }
-    px(6, 12, 4, 1, P.mouth);         // 콧등 아래 입 라인
-    px(7, 13, 1, 1, P.mouth); px(8, 13, 1, 1, P.mouth);
+    // 작은 분홍 코 + 입(ω) — 귀여운 하관
+    px(7, 11, 2, 1, '#d98a86');       // 코 (분홍)
+    px(7, 12, 2, 1, P.mouth);         // 인중
+    px(6, 13, 1, 1, P.mouth); px(9, 13, 1, 1, P.mouth); // 입꼬리
   }
   function catFaceTex() {
     const id = catCoatId();
@@ -315,7 +319,7 @@ export function makeCatSystem(ctx) {
     if (roll < 0.34) { c.tgt = catFreeSpot(); c.mode = 'walk'; resetGait(c); return; }
     resetGait(c); // 정지 계열 진입 — 걷기 스윙 잔류 제거
     if (roll < 0.53) { c.mode = 'groom'; c.timer = 5 + Math.random() * 5; }
-    else if (roll < 0.68) { c.mode = Math.random() < 0.6 ? 'sprawl' : 'sleep'; c.timer = 25 + Math.random() * 35; } // 눕기: 엎드려 뻗기(sprawl) 6 : 식빵(sleep) 4 — 둘 다 배는 바닥(배 노출 없음)
+    else if (roll < 0.68) { c.mode = 'sprawl'; c.timer = 25 + Math.random() * 35; } // 눕기 = 엎드려 뻗기(sprawl)만. 디렉터(2026-07): sleep(식빵)은 sprawl과 중복·이상 → 풀에서 제거
     else if (roll < 0.8) { c.mode = 'stretch'; c.timer = 2.2; }
     else if (roll < 0.9) { c.mode = 'play'; c.timer = 3.5 + Math.random() * 2; }
     else { c.mode = 'sit'; c.timer = 8 + Math.random() * 14; }
@@ -612,10 +616,10 @@ export function makeCatSystem(ctx) {
     // 뒷다리 정강이(무릎) 굽힘 — 앉기(MC 레퍼런스: 낮게 웅크린 엉덩이): 정강이를 앞으로 접어 뒷발이 앞·아래로,
     //   + 뒷다리 피벗(엉덩이)을 낮춰 엉덩이가 바닥에 붙는다. 그 외 포즈는 0/6PX(곧은 다리)라 회귀 없음.
     {
-      const shinTgt = c.mode === 'sit' ? 1.3 : 0;
+      const shinTgt = c.mode === 'sit' ? 1.3 : (c.mode === 'sprawl' ? -1.5 : 0); // 앉기=앞으로(웅크림) / 엎드리기=뒤로(뒷다리 쭉 뻗어 접지)
       c._shin = (c._shin || 0) + (shinTgt - (c._shin || 0)) * Math.min(1, dt * 5);
       if (p.shin) { if (p.shin.bl) p.shin.bl.rotation.x = c._shin; if (p.shin.br) p.shin.br.rotation.x = c._shin; }
-      const bpivTgt = c.mode === 'sit' ? 3.4 * 0.02 : 6 * 0.02;   // 엉덩이 피벗 y: 앉기 3.4PX로 낮춤
+      const bpivTgt = (c.mode === 'sit' || c.mode === 'sprawl') ? 3.4 * 0.02 : 6 * 0.02;   // 엉덩이 피벗 y: 앉기/엎드리기 3.4PX로 낮춤
       c._bpiv = (c._bpiv === undefined ? 0.12 : c._bpiv) + (bpivTgt - (c._bpiv === undefined ? 0.12 : c._bpiv)) * Math.min(1, dt * 5);
       p.legs.bl.position.y = c._bpiv; p.legs.br.position.y = c._bpiv;
     }
@@ -631,10 +635,10 @@ export function makeCatSystem(ctx) {
     //   뻗는다(디렉터 신고 — 확대: "진짜 다리 뻗는 건 ㄴ자여야"). 그 외 포즈는 0(곧게)이라 단일 6px 다리처럼 보인다.
     //   + 기지개는 앞다리 피벗(어깨)을 낮춰 팔꿈치가 바닥 근처로 내려와 앞팔이 실제로 접지한다.
     {
-      const foreTgt = c.mode === 'stretch' ? 1.35 : 0;    // 전완 상대 굽힘(+X: 앞팔이 전방 수평으로)
+      const foreTgt = (c.mode === 'stretch' || c.mode === 'sprawl') ? 1.35 : 0; // 전완 상대 굽힘(+X: 앞팔 전방 수평). 기지개+엎드리기 = 앞다리 앞으로 접지
       c._fore = (c._fore || 0) + (foreTgt - (c._fore || 0)) * Math.min(1, dt * 5);
       if (p.fore) { if (p.fore.fl) p.fore.fl.rotation.x = c._fore; if (p.fore.fr) p.fore.fr.rotation.x = c._fore; }
-      const pivTgt = c.mode === 'stretch' ? 3.6 * 0.02 : 6 * 0.02;  // 어깨 피벗 y (PX=0.02): 기지개 3.6PX로 낮춤
+      const pivTgt = (c.mode === 'stretch' || c.mode === 'sprawl') ? 3.6 * 0.02 : 6 * 0.02;  // 어깨 피벗 y: 기지개/엎드리기 3.6PX로 낮춤
       c._fpiv = (c._fpiv === undefined ? 0.12 : c._fpiv) + (pivTgt - (c._fpiv === undefined ? 0.12 : c._fpiv)) * Math.min(1, dt * 5);
       p.legs.fl.position.y = c._fpiv; p.legs.fr.position.y = c._fpiv;
     }
