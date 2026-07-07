@@ -2,8 +2,9 @@
 
 > **한 줄**: 1.4에서 허공에 보낸 송출에 **응답이 돌아온다.** 낙진이 걷힌 세계의 심장부로 들어가 진실을 마주하고, 아홉 번째 겨울에 자신의 자리를 선택한다.
 >
-> 상태: **스케치 / 방향 확정** (디렉터 시나리오 + CTO 통합, 2026-07-08). 착수: 데모(10월) 이후 정식판 트랙.
-> 관련: [[STRATEGY-NEXTFEST.md]] §1(아치) · [[DEPTH-DESIGN.md]] §10(채택 3종) · [[WORLDVIEW.md]](캐논 — §5의 개정 제안 포함).
+> 상태: **설계 완결** (스케치 → 구현 계획까지, 디렉터↔CTO 2026-07-08). 착수: 정식판 후반 — **2.0 = 발매 1~2개월 후 최종 업데이트(진짜 엔딩)**.
+> 출시 로드맵: **1.0 발매 → 1.1~1.4 월 1회 업데이트 → 2.0「응답」 최종 업데이트.** (커스터마이징·가구 추가는 로드맵과 별개로 상시 병행.)
+> 관련: [[STRATEGY-NEXTFEST.md]] §1(아치) · [[DEPTH-DESIGN.md]] §10(채택 3종) · [[WORLDVIEW.md]](캐논 §1·§3 개정 반영). **구현 계획은 §9.**
 
 ---
 
@@ -116,3 +117,81 @@ WORLDVIEW 개정 1차로 반영됨 (각 항목에 게임 문법 번역 병기):
 - **사일로 도달 경로**: 히든 루트 전용인가(제안 — 유보한 자만 발견), 정규 루트에서도 조각 단서가 보이는가.
 - 도시별 셸터·지역 볼륨(도시당 셸터 2~3 + 지역 3 제안) 및 아트 예산.
 - 밴딧 "통행세/거래" 메커니즘의 구체 형태 — 암시장(1.2)과의 관계.
+
+---
+
+## 9. 구현 계획 (엔지니어링 스펙 — 코드베이스 접지, 2026-07-08)
+
+> DEPTH-DESIGN §9(지식 트리)와 동급의 착지 계획. 원칙: **기존 시스템 최대 재사용(♻️) · 신규 최소(🆕) · 오프스크린·사망 없음 캐논 사수 · sim 결정론/세이브 스키마 불변 우선.**
+> 각 블록 = 대체로 "데이터 추가 + 판정 훅 1~2개". 착수 순서는 §9.9. (모든 파일:함수·상태필드는 현행 코드 실측.)
+
+### 9.1 낙진 시계 + 도심 중심지 (지역·시간 게이트)
+
+- ♻️ **재사용**: `state.winters`(넘긴 겨울 수 — `passWinter` 증가·세이브 마이그레이션 완비) · `seasonIndex`/`SEASON_DAYS`(core/season.js) · `regionUnlocked`(core/regions.js — 지역 해금 단일 판정 지점) · REGIONS 스키마 + `v.id=k` 주입 루프 + `rateParts`/`rollRes` 탐험 판정 파이프라인 · `openMapModal` 마커 렌더(스케치/잉크·MAP_SAFE 자동 클램프) · 방호복 내구 게이트(`BAL.forbidden`).
+- 🆕 **신규**: (1) 낙진 시계 게이트 — `regionUnlocked`에 `state.winters >= 3` 분기(현재 `state.successes` 전용 → winters import 필요) + `startExpedition` 방호복 차단을 winters≥3에 우회하는 '맨몸 개방' 분기. (2) 도심 중심지 = REGIONS 신규 엔트리(`citycore` 가칭 — 최상위 lootRes + 고위험 injuries) + `MAP_MARKERS` 좌표 1 + `MAP.regions` 좌표 1 + 게이트 분기 + `regionIcon` 아이콘 에셋.
+- 📁 **데이터**: world.js REGIONS +1 · game.js MAP_MARKERS·MAP.regions 각 +1 · balance.js 게이트 상수(`BAL.forbidden.barehandWintersGate` 등).
+- 🚦 **게이트**: 코어45 REGIONS 해시 갱신 · 신규 마커 MAP_SAFE 프리뷰 정합(#111 선례) · sim: 겨울 게이트는 day 파생(결정론 유지) · **후반 게이트라 초·중반 밴드 불가침**.
+- ⚠️ **리스크**: '맨몸 개방'은 적/전투가 아니라 **방사능 내구·부상 확률 상향**으로만. successes×winters 이중 게이트 정책 단일화. 최상위 lootRes → 후반 인플레(luxury.surplusCap) 시뮬 재캘리브.
+
+### 9.2 적대 존재 다이얼 (밴딧·변종)
+
+- ♻️ **재사용**: `isHard`/`isHardcore`/`rescueEligible`(core/mode.js) · `BAL.encounters.freqMul` per-mode 다이얼(적대 강도 선례) · `applyInjury`+INJURIES · gloves/firstaid 완화 문법 · `exp.bag` 최소회수 안전망 + `notes[]` 인과문(손실 서사화) · 오프스크린 3채널 전부(`dropMemo`/`tryDropMemoOnExpedition` · `tryRadioBroadcast` · 밤하늘/먼불빛) + pending-popup.
+- 🆕 **신규**: `resolveExpedition`(또는 `departExpedition` 직후) **조우 롤 훅** `hostileEncounterRoll(region, mode)` — 노말=무판정(소문만) / 하드=실패 시 rollRes 전리품 몰수·감산 / 하드코어=총 미보유 시 중상 확정. 노말 전용 밴딧·변종 '목격·흔적' 소문 인카운터(events.js `when.districts`+mode) + 소문 memo/방송 서브테이블.
+- 📁 **데이터**: balance.js `BAL.hostile`(per-mode rollChance·lootLossFactor·severeInjuryChance) · lore.js 적대 소문 · events.js 목격 인카운터.
+- 🚦 **게이트**: ⚠️ **sim 결정론 최대 지점** — `resolveExpedition` RNG 스트림은 시드 시뮬 기준선(Day30 clear544/storm435)의 load-bearing. 조우 롤 `Math.random()`은 반드시 `!_simRunning` 가드 또는 시뮬 기대값 모델(game.js 시뮬 블록) 동시 확장. 모달: 중상·빈손 결과.
+- ⚠️ **리스크**: 온스크린 전투 금지(회피/거래/손실 판정층에만) · 중상≠사망 · drawEvent 조우와 파밍-조우 롤 이중화 시 빈도 폭증 방지 · 노말 '소리만·손실 0' 계약(소문에 기계적 스테이크 0).
+
+### 9.3 총 + 하드코어 중상 (로드아웃·정비)
+
+- ♻️ **재사용**: **방호복 내구 패턴 통째 복제** — `state.hazmat={dur}` + `craftHazmat`/`repairHazmat`/`wearHazmat` 3종 + `gateCost` 모드 스케일 + `BAL.forbidden` 수치. CRAFTS 레시피 스키마 · PREPS 로드아웃 슬롯 · `lab` 파밍 테이블 · INJURIES apply/treat/tick + 감염 악화 패턴.
+- 🆕 **신규**: `state.gun={dur}` + `wearGun()`(도심 중심지 탐험 시 dur−1, wearHazmat 미러) + 하드코어 게이트. INJURIES에 `critical`(중상) 정점 티어(높은 pen·장기 restH·cure=의약품 대량) + **다단계 악화**(minor→deep→critical; 현행은 →infection 1단계뿐) + `state.scars[]` 흉터.
+- 📁 **데이터**: items.js RESOURCES+gun / CRAFTS+총 레시피 / INJURIES+critical · balance.js `combat` 섹션 · i18n gun.*/injury.*.
+- 🚦 **게이트**: save.js 마이그레이션(gun·scars 기본값) → **tests/core.test.cjs MIG_HASH 스냅샷 갱신 필수** · sim 결정론(내구·중상 판정) · 골든 무영향(온스크린 없음).
+- ⚠️ **리스크**: 발사=오프스크린 판정만(전투 시스템 금지) · 하드코어 전용이라 노말/하드 밴드 불변 · 총 게이트가 '없으면 탐사 봉쇄'급 벽 안 되게 파밍/수리 캘리브 · **도심 중심지(§9.1) 선행 필요**.
+
+### 9.4 깊이 3종 (지역 숙련 · 대한파 프론트 · 부상 서사화)
+
+- **② 지역 숙련** — ♻️ `state.regionVisits`(이미 증가·마이그레이션 안전) + `rateParts` 합산 아키텍처(know()/comfort() 게터처럼 항 1줄). 🆕 `masteryBonus(regionId)` 게터(visits→성공률%p + 전리품 질) + 티어 임계 + `BAL.mastery`(**cap 필수**). ⚠️ 상한 없으면 후반 0.95 천장 조기 도달 · pickAutoRegion `revisitDecay`와 튜닝.
+- **③ 대한파 프론트** — ♻️ 한파 예보→발동→지속→종료 파이프라인 전체 + severity/방어단계(core/coldsnap.js) + `winterSnap.acc` 누적 + `winterPrepAdvice` + 눈사태(1.3)가 이미 같은 예보 문법 재사용(검증된 확장). 🆕 연례 격상 이벤트(severity 2~3·긴 리드·겨울당 1회 확정) + **자기 규율 선택 모달**(배급 반/잠 줄이기/비상식량 — Frostpunk 법령의 1인칭. **고양이 몫 금지**). 📁 balance.js `greatColdSnap` · state.js `frontWinterKey`. 🚦 **모달 골든 갱신 필수** · sim: 프론트 발령은 **겨울 고정일**(현 coldSnapForecast의 Math.random 회피). ⚠️ 기존 랜덤 한파와 이중 카운트 방지(상한 밖 별도).
+- **④ 부상 서사화** — ♻️ `winterSnap.acc` + `buildWinterMemoir` 페이지 스키마 + `pendingWinterMemoir` 큐 + 프로젝트 memoir(`memoirKey`) 통째. 🆕 winterSnap.acc 부상 통계 + memoir 부상/흉터 라인(`state.scars` 공유). 📁 i18n winter.memoir 부상 변주(im-not-strange-ai·keep-all). 🚦 무영향(종이 텍스트) · save 폴백 이미 `acc||{}`. ⚠️ 낮음 — '동작'(악화 심화)은 하드코어 전용, 기록 표시는 전 모드.
+
+### 9.5 연구실 진실 + 엔딩 3분기
+
+- ♻️ **재사용**: 1.4 research 메모 파이프라인 전체(`MEMOS_RESEARCH` 필터 · `tryDropMemoOnExpedition` research 우선 2.5배 게이트 · `collectMemo` · `pendingMemoPopup`→`showMemoPage` · 기록 탭 스포일러 게이트) · 엔딩 골격(`runEndingSequence` DOM+라인 페이저+Ending OST/SFX) · 인카운터 프레임(events.js special+textFn+choices) · doctor 스파인(`tryDoctorRadio`·`doctorFragmentsComplete`·`survivorLights`) · 9겨울 마일스톤.
+- 🆕 **신규**: (1) 연구실 진실 메모군 — GD §4 '이관/선별·규합·초대' 4단(관찰기록→'합격'→규합계획→초대)은 아직 텍스트에 없음. lore.js 신규 region 메모 + (순서 보장 시) research 드랍을 **무작위 픽 → 미수집 최소 index 순차**로 변경. (2) 엔딩 3분기 — 9겨울(`state.winters===9`) 트리거 + **체류지 가중 계산 함수(현재 없음)** → 탈출/신세계/안식 choices 인카운터 + 엔딩별 시퀀스·톤. '탈출'은 조기(9겨울 전, doctor 스파인) 가능 — Day10000 게이트와 별개 트리거. **Day10000 = '먼 에필로그'로 격하**.
+- 📁 **데이터**: lore.js 신세계/초대 메모 · events.js ending 3-choice + 조기 탈출 분기 · state.js `endingType`/체류지 누적 + save 마이그레이션 · balance.js 체류지 가중 · i18n ending.* 대량.
+- 🚦 **게이트**: 엔딩 선택 인카운터 노출 게이트(pendingEvent 다중 가드) 회귀 · sim: 9겨울/체류지 가중 확정(랜덤 회피) · 「침묵」 조명 골든 갱신 · 기록 탭 100% 수집률 갱신.
+- ⚠️ **리스크**: 조기 탈출이 9겨울 서사와 시점 충돌 · 3분기 가중은 '갑툭튀 선택지 금지'(STRATEGY §1.2) 안 어기게 **누적 신호 기반** · 구세이브 `endingSeen=true` 유저의 3분기 소급 처리 · rsc 톤(조용한 발견·두 줄) 유지.
+
+### 9.6 히든 루트 「침묵」
+
+- ♻️ **재사용**: **대형 프로젝트 엔진**(data/projects.js 테이블 + core/projects.js 술어 + `investProject` + `applyProjectEffect` switch — '테이블 추가 + case 1개') · subwayHub/subwayOpen 상태·UI · **레이캐스트 히트 패턴 통째**(`bunkerStairsObj` 전역 + `setBunkerStairs` + `pickStairs`의 조상 visible 체크 = '시각 표시 없는 순수 히트 영역'의 완성 선례) · 종이 문서 presenter(`showMemoPage`/`showTruthPage`) → 박사의 문서 · 지하철 셸터 지오('올라가는 곳 없는 역'=출구 없는 기존 시각) + **붉은 비상등 PointLight 이미 존재** · `buildRailSegments`/벙커 계단 = **조건부 현장 지오 선례**(`projectSiteStage` 게이트).
+- 🆕 **신규**: (1) 히든 터치 포인트 — `subwayHiddenObj` 전역+setter+`pickHidden`(pickStairs 복제) + pointerdown 디스패치 1줄, 게이트=subRail1~3 전부 `projectDone`, 더블탭/홀드. (2) 개척 대형 프로젝트 1개 — **단, when 스키마에 `projectDone` 게이트 부재 → `core/projects.js`의 `projectAvailable`에 술어 추가 필요 = '엔진 무수정' 계약을 깨는 유일 지점.** (3) 연구소 도달/유보 상태 (4) 박사의 문서(showTruthPage 복제) (5) 사일로 시퀀스(어둠·계기판·버튼·화이트아웃 모달) (6) 개척 후 계단/사다리 조건부 지오(`buildHiddenStair`, buildRailSegments식 게이트).
+- 🔦 **조명**: subway buildEnv **조건부 dim 분기**(히든 상태일 때만 확 줄임, 남은 광원=붉은 비상등만). **무조건 어둡게 금지** — 일반 subway 거주(버섯재배/암시장 가독) 보존.
+- 🚦 **게이트**: **골든 갱신 필수**(§5.1 명시 — 조명값 변경) · 히든 터치는 '시각 변화 0 = 골든 무충돌'이 요구사항 · 히든 개통 상태는 flags 주입 신규 골든 씬(z_bunker_backdoor 선례) · 사일로/문서 모달-골든 커버 · sim: 프로젝트/openSubwaySegment RNG 없음(**pickHidden에 Math.random 금지**).
+- ⚠️ **리스크**: 사일로·연구소를 '탐험 씬/전투'로 만들면 캐논 위배 — **지도·모달·종이·버튼만**(신규 3D 셸터 씬 금지) · 히든 터치 히트 우선순위(placing→stairs→cat→avatar→item) 충돌 · UI 힌트 0이라 QA 재현 절차 별도.
+
+### 9.7 공통 인프라 (전 블록 공통)
+
+- ⚠️ **sim 결정론이 최우선 제약**: `resolveExpedition`/`processDay`의 RNG 스트림이 시드 시뮬 기준선(Day30 clear544/storm435 · Day60 밴드)의 load-bearing. 신규 `Math.random()`(조우 롤·소문·악화·엔딩 트리거)은 **반드시 `!_simRunning` 가드 또는 시뮬 기대값 모델 동시 확장**. 확정 게이트(day/winters 파생) 우선, 랜덤은 최후.
+- 🗄️ **세이브 스키마**: 신규 state 필드(gun·scars·endingType·subwayHidden·hiddenReached·frontWinterKey…) 전부 save.js 마이그레이션 기본값 + **tests/core.test.cjs MIG_HASH 스냅샷 갱신**.
+- 🖼️ **골든**: 지도 신규 마커(프리뷰 정합) · 지하철 히든 조명(golden:update) · 신규 모달(중상·자기규율·엔딩·사일로 → modal-golden). 순수 데이터/텍스트는 골든 무영향.
+- 📐 **코어45**: REGIONS/DISTRICTS/INJURIES/BAL 해시 가드 갱신.
+
+### 9.8 스코프 경고 — 4개 도시 (§6)
+
+**현 아키텍처는 '단일 도시 내 구역(DISTRICTS) 이주' 전제** — `districtOf`·MAP·MAP_MARKERS·SHELTER_MAP 전부 flat, DISTRICTS 위 상위 계층 없음. '4개 도시 각 풀세트'는 콘텐츠 4배 + game.js 광범위 침습 + 세이브 대변경(`currentCity`)이라 **최대 스코프·최대 리스크**.
+
+- 이주 파이프라인(`moveCostFor`/`moveToShelter`/cross-district 비용·시간·layouts 보존)은 ♻️ 재사용 — '도시 간'으로 코스트만 스케일업.
+- **권장**: 풀세트 복제 대신 **도시별 파라미터화**(공유 엔진 + 도시별 데이터 세트 + `mapBiomeDataUrl` 도시별 seed) + 볼륨 축소(도시당 셸터 2~3·지역 3, §8 제안). '한 겨울 한 도시' 강제 이주가 **코지 축적(정든 집 stayDays·커스터마이즈)과 충돌** — 이주=리셋이면 코지 상실, 이월 규칙 신중히.
+
+### 9.9 착수 순서 (의존성)
+
+1. **지역·시간 게이트(§9.1)** — 도심 중심지가 총·중상·연구실·엔딩의 무대. **최우선.**
+2. **깊이 3종(§9.4)** — 독립성 높음, 기존 시스템 확장이라 안전. 1.x/데모에서도 부분 착지 가능.
+3. **적대 다이얼 + 총·중상(§9.2·§9.3)** — 도심 중심지 위에. sim 가드 동반.
+4. **연구실 진실 메모(§9.5-1)** — 순수 데이터, 병행 가능.
+5. **엔딩 3분기(§9.5-2) → 히든 루트(§9.6)** — 최후. 서사 총합 위에 얹힘.
+6. **4도시(§9.8)** — 스코프 결정 후 별도 대형 트랙.
+
+> **한 줄 결론**: 2.0의 대부분은 **기존 엔진 위 데이터+판정 훅**으로 착지한다(방호복→총, 한파→대한파, research 메모→연구실 진실, 벙커 계단 히트→히든 터치). 진짜 신규 엔진은 없고, 유일한 '엔진 수정'은 히든 루트의 `projectDone` 게이트 하나. 최대 위험은 코드가 아니라 **스코프(4도시)와 sim 결정론 가드**다.
