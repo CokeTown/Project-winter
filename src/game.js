@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { lamb, B, Cyl, shade, seededRand, paintGeo, vcLambert, josa } from './lib/helpers.js';
-import { makeCanvasTex, floorWoodTex, wallWoodTex, metalTex, plywoodTex, brickTex, subwayTileTex, concreteTex } from './render/textures.js'; // 절차 표면 텍스처 (Tier4)
+import { makeCanvasTex, floorWoodTex, wallWoodTex, metalTex, plywoodTex, brickTex, subwayTileTex, concreteTex, frostTex, beamTex, floorGlowTex } from './render/textures.js'; // 절차 텍스처 (Tier4)
 import { DEFS } from './data/furniture.js';
 import { BAL } from './data/balance.js';
 import { PROJECTS } from './data/projects.js';
@@ -443,76 +443,6 @@ const sunMotes = [];
 // ③ 한파 실내 침투(GD-THESIS L2): 무방비 한파 시 창유리 안쪽에 성에 오버레이. loadShelter마다 재수집.
 //   updateEnvironment가 coldSnapNetSeverity로 목표 투명도를 구하고 서서히 페이드(종료 시 서서히 사라짐).
 const winFrostMats = [];
-let _frostTex = null;
-function frostTex() {
-  if (_frostTex) return _frostTex;
-  // 절차적 성에: 가장자리 짙고 중앙 옅은 결정 서리 (창 모서리부터 얼어붙는 결)
-  const W = 128, H = 128;
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const g = cv.getContext('2d');
-  g.clearRect(0, 0, W, H);
-  // 가장자리 비네트: 네 변에서 안쪽으로 흰 서리
-  const grd = g.createRadialGradient(W / 2, H / 2, W * 0.18, W / 2, H / 2, W * 0.72);
-  grd.addColorStop(0, 'rgba(233,244,252,0.05)');
-  grd.addColorStop(0.55, 'rgba(224,238,250,0.34)');
-  grd.addColorStop(1, 'rgba(238,247,255,0.82)');
-  g.fillStyle = grd; g.fillRect(0, 0, W, H);
-  // 서리 결정 가지 (모서리 근처에서 안쪽으로 뻗는 흰 선)
-  g.strokeStyle = 'rgba(245,251,255,0.5)'; g.lineWidth = 1;
-  const rnd = seededRand(1373);
-  for (let i = 0; i < 90; i++) {
-    const edge = Math.floor(rnd() * 4);
-    let x, y;
-    if (edge === 0) { x = rnd() * W; y = rnd() * H * 0.22; }
-    else if (edge === 1) { x = rnd() * W; y = H - rnd() * H * 0.22; }
-    else if (edge === 2) { x = rnd() * W * 0.22; y = rnd() * H; }
-    else { x = W - rnd() * W * 0.22; y = rnd() * H; }
-    const a = rnd() * Math.PI * 2, len = 4 + rnd() * 12;
-    g.beginPath(); g.moveTo(x, y);
-    g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
-  }
-  _frostTex = new THREE.CanvasTexture(cv);
-  _frostTex.colorSpace = THREE.SRGBColorSpace;
-  return _frostTex;
-}
-let _beamTex = null;
-function beamTex() {
-  if (_beamTex) return _beamTex;
-  // 2D 소프트 빔: 세로 감쇠 × 가로 falloff(중심 밝음→가장자리 0).
-  // 가로 페이드가 없으면 옆모서리가 칼로 자른 유리판처럼 보인다 (유저 신고: "너무 직선").
-  const W = 64, H = 64;
-  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-  const g2 = cv.getContext('2d');
-  const img = g2.createImageData(W, H);
-  for (let y = 0; y < H; y++) {
-    const v = y / (H - 1);
-    const fadeV = Math.pow(1 - v, 1.4) * (0.35 + 0.65 * (1 - v)); // 창가 밝고 바닥으로 소멸
-    for (let x = 0; x < W; x++) {
-      const u = Math.abs(x / (W - 1) - 0.5) * 2; // 0=중심, 1=가장자리
-      const fadeH = Math.pow(Math.max(0, 1 - u), 1.7); // 부드러운 측면 산란
-      const a = Math.round(255 * fadeV * fadeH);
-      const i = (y * W + x) * 4;
-      img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
-      img.data[i + 3] = a;
-    }
-  }
-  g2.putImageData(img, 0, 0);
-  _beamTex = new THREE.CanvasTexture(cv);
-  return _beamTex;
-}
-let _floorGlowTex = null;
-function floorGlowTex() {
-  if (_floorGlowTex) return _floorGlowTex;
-  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
-  const g2 = cv.getContext('2d');
-  const gr = g2.createRadialGradient(32, 32, 2, 32, 32, 31);
-  gr.addColorStop(0, 'rgba(255,255,255,0.8)');
-  gr.addColorStop(0.5, 'rgba(255,255,255,0.28)');
-  gr.addColorStop(1, 'rgba(255,255,255,0)');
-  g2.fillStyle = gr; g2.fillRect(0, 0, 64, 64);
-  _floorGlowTex = new THREE.CanvasTexture(cv);
-  return _floorGlowTex;
-}
 function updateSunShafts() {
   if (!sunShafts.length && !sunMotes.length) return;
   const s = (weather.type === 'clear' && !opts.lowSpec) ? dayness : 0;

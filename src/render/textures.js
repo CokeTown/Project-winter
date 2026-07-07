@@ -6,6 +6,7 @@
    makeCanvasTex는 셸터 지오메트리 빌더가 인라인 텍스처 생성에도 쓴다(그래서 export).
    ============================================================ */
 import * as THREE from 'three';
+import { seededRand } from '../lib/helpers.js';
 
 export function makeCanvasTex(draw, w = 128, h = 128, repX = 1, repY = 1) {
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
@@ -105,3 +106,75 @@ export const concreteTex = makeCanvasTex((g, w, h) => {
   g.beginPath(); g.moveTo(10, 20); g.lineTo(34, 44); g.lineTo(30, 70); g.stroke();
   g.beginPath(); g.moveTo(90, 100); g.lineTo(74, 82); g.lineTo(84, 60); g.stroke();
 }, 128, 128, 4, 3);
+
+/* ── 레이지 캐시 텍스처 (첫 호출 시 1회 생성 후 재사용) ── */
+let _frostTex = null;
+// 절차적 성에: 가장자리 짙고 중앙 옅은 결정 서리 (창 모서리부터 얼어붙는 결). winFrostMats(수집 배열)는 렌더 상태라 game.js 잔류.
+export function frostTex() {
+  if (_frostTex) return _frostTex;
+  const W = 128, H = 128;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  g.clearRect(0, 0, W, H);
+  // 가장자리 비네트: 네 변에서 안쪽으로 흰 서리
+  const grd = g.createRadialGradient(W / 2, H / 2, W * 0.18, W / 2, H / 2, W * 0.72);
+  grd.addColorStop(0, 'rgba(233,244,252,0.05)');
+  grd.addColorStop(0.55, 'rgba(224,238,250,0.34)');
+  grd.addColorStop(1, 'rgba(238,247,255,0.82)');
+  g.fillStyle = grd; g.fillRect(0, 0, W, H);
+  // 서리 결정 가지 (모서리 근처에서 안쪽으로 뻗는 흰 선)
+  g.strokeStyle = 'rgba(245,251,255,0.5)'; g.lineWidth = 1;
+  const rnd = seededRand(1373);
+  for (let i = 0; i < 90; i++) {
+    const edge = Math.floor(rnd() * 4);
+    let x, y;
+    if (edge === 0) { x = rnd() * W; y = rnd() * H * 0.22; }
+    else if (edge === 1) { x = rnd() * W; y = H - rnd() * H * 0.22; }
+    else if (edge === 2) { x = rnd() * W * 0.22; y = rnd() * H; }
+    else { x = W - rnd() * W * 0.22; y = rnd() * H; }
+    const a = rnd() * Math.PI * 2, len = 4 + rnd() * 12;
+    g.beginPath(); g.moveTo(x, y);
+    g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
+  }
+  _frostTex = new THREE.CanvasTexture(cv);
+  _frostTex.colorSpace = THREE.SRGBColorSpace;
+  return _frostTex;
+}
+let _beamTex = null;
+// 2D 소프트 빔: 세로 감쇠 × 가로 falloff(중심 밝음→가장자리 0). 가로 페이드 없으면 옆모서리가 칼로 자른 유리판처럼 보인다.
+export function beamTex() {
+  if (_beamTex) return _beamTex;
+  const W = 64, H = 64;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g2 = cv.getContext('2d');
+  const img = g2.createImageData(W, H);
+  for (let y = 0; y < H; y++) {
+    const v = y / (H - 1);
+    const fadeV = Math.pow(1 - v, 1.4) * (0.35 + 0.65 * (1 - v)); // 창가 밝고 바닥으로 소멸
+    for (let x = 0; x < W; x++) {
+      const u = Math.abs(x / (W - 1) - 0.5) * 2; // 0=중심, 1=가장자리
+      const fadeH = Math.pow(Math.max(0, 1 - u), 1.7); // 부드러운 측면 산란
+      const a = Math.round(255 * fadeV * fadeH);
+      const i = (y * W + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
+      img.data[i + 3] = a;
+    }
+  }
+  g2.putImageData(img, 0, 0);
+  _beamTex = new THREE.CanvasTexture(cv);
+  return _beamTex;
+}
+let _floorGlowTex = null;
+// 바닥 발광 소프트 원판 (조명 아래 바닥 빛무리).
+export function floorGlowTex() {
+  if (_floorGlowTex) return _floorGlowTex;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const g2 = cv.getContext('2d');
+  const gr = g2.createRadialGradient(32, 32, 2, 32, 32, 31);
+  gr.addColorStop(0, 'rgba(255,255,255,0.8)');
+  gr.addColorStop(0.5, 'rgba(255,255,255,0.28)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g2.fillStyle = gr; g2.fillRect(0, 0, 64, 64);
+  _floorGlowTex = new THREE.CanvasTexture(cv);
+  return _floorGlowTex;
+}
