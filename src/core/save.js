@@ -37,8 +37,10 @@ export function migrateLoadedState(rawState, defaults, oldVer) {
   if (!state.mode) state.mode = 'normal'; // 구세이브는 전부 노말 취급
   // #74 데모 재설계: 구 demo 세이브(demoEnded 기반 시간컷)를 새 아크로 브리지 — 이미 끝난 데모는 sandbox로,
   //   firstSnowSeen을 켜 크레딧 재발화 방지. 정식 빌드는 demoEnded 항상 false라 pre-credits로 무해.
-  if (state.demoPhase == null) state.demoPhase = state.demoEnded ? 'sandbox' : 'pre-credits';
-  if (state.firstSnowSeen == null) state.firstSnowSeen = !!state.demoEnded;
+  //   ※ rawState로 판정(원본 세이브에 키 유무). DEFAULT_STATE.demoPhase='pre-credits'/firstSnowSeen=false가 non-null이라
+  //     state.*로 검사하면 Object.assign 뒤 절대 null이 아니어서 브리지가 죽는다(winters 마이그레이션과 동일 함정, 리뷰 지적).
+  if (rawState.demoPhase == null) state.demoPhase = state.demoEnded ? 'sandbox' : 'pre-credits';
+  if (rawState.firstSnowSeen == null) state.firstSnowSeen = !!state.demoEnded;
   if (state.hunger == null) state.hunger = 80;
   if (state.thirst == null) state.thirst = 80;
   if (state.energy == null) state.energy = 100;

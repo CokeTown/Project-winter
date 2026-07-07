@@ -6031,7 +6031,7 @@ function runEndingSequence() {
 //   runEndingSequence 골격 재사용(#ending-screen·시간정지·크로스페이드). 종료 시 하드스톱이 아니라
 //   demoPhase='sandbox'로 넘겨 게임이 계속 흐른다(브레드스 잠금은 지역/이주 게이트가 담당).
 function runDemoCredits() {
-  if (creditsActive || state.demoPhase === 'sandbox') return;
+  if (creditsActive || state.demoPhase !== 'credits') return; // 'credits' 단계에서만 (재개/중복 방지)
   creditsActive = true;
   closeModal();
   setPaused(false);
@@ -6058,6 +6058,14 @@ function runDemoCredits() {
     } else render();
   };
   render();
+}
+// #74 데모: demoPhase='credits'(첫눈 감지됨·크레딧 미완)일 때, 아침 보고 등 모달이 닫혀 첫눈이 보이는 순간 크레딧을 띄운다.
+//   렌더 루프에서 매 프레임 체크 → 중단 후 재입장(demoPhase='credits' 세이브 복원)해도 자동 재개(소프트락 방지, 리뷰 지적 수정).
+function maybeRunDemoCredits() {
+  if (!DEMO_ED || state.demoPhase !== 'credits' || creditsActive || titleVisible || blackoutActive) return;
+  if ($('modal-back')?.classList.contains('show')) return;     // 아침 보고 등 모달 닫힐 때까지 대기(보고 강제 종료 방지)
+  if ($('journal-screen')?.classList.contains('show')) return; // 수첩 페이지 닫힐 때까지 대기
+  runDemoCredits();
 }
 
 function updateClock() {
@@ -6270,8 +6278,9 @@ function processDay() {
       // #74 데모 재설계: 첫 겨울 진입 = '첫눈' 강제 → 잠시 뒤 Nine Winters 크레딧(1회). pre-credits·첫겨울(winters 0)만.
       if (DEMO_ED && state.demoPhase === 'pre-credits' && (state.winters || 0) === 0 && !state.firstSnowSeen) {
         state.firstSnowSeen = true;
+        state.demoPhase = 'credits';              // 크레딧 대기 단계 — 세이브에 각인돼 중단돼도 재입장 시 재개(소프트락 방지)
         setWeather('snow');                       // 첫눈 확정 (seasonAdjustPool은 눈을 유력하게만 해 비결정 → 강제)
-        setTimeout(() => runDemoCredits(), 2600); // 첫눈이 내리는 걸 잠시 본 뒤 크레딧
+        // 실제 크레딧은 아침 보고 등 모달이 닫혀 첫눈이 보일 때 maybeRunDemoCredits()가 띄운다(무조건 setTimeout 폐기).
       }
     }
     // ── Nine Winters(#11): 겨울을 "넘긴" 순간 = 겨울 마지막 날을 거처에서 맞고 봄으로 넘어온 오늘
@@ -6564,7 +6573,8 @@ function processDay() {
   // 특수 인카운터 ①: 야윈 고양이 — v0.9.1: Day 9+, 하루 15% (아직 입양 전 + 최초 1회 등장 후 재등장 없음)
   // #74 데모: 가을 중후반(Day 30~, 첫겨울 직전)에 만나게 해 "감질맛" — 확률↑로 데모 안에 확실히 등장.
   const catDayOk = DEMO_ED ? (seasonOf(state.day).id === 'autumn' && state.day >= 30) : (state.day >= 9);
-  if (!state.pendingEvent && !state.cat && !state.catEventSeen && catDayOk && Math.random() < (DEMO_ED ? 0.4 : 0.15)) {
+  const catChance = DEMO_ED ? (state.day >= 35 ? 1 : 0.4) : 0.15; // 데모: 가을 마지막 이틀(Day35~36) 확정 조우 — "확실히 등장" 불변식 보장(리뷰 지적)
+  if (!state.pendingEvent && !state.cat && !state.catEventSeen && catDayOk && Math.random() < catChance) {
     state.pendingEvent = 'cat';
     state.lastEventDay = state.day;
     state.catMusicDay = state.day; // 당첨된 날은 하루 종일 Cat OST
@@ -8366,6 +8376,7 @@ function renderFrame() {
   updateWallCulling(dt);
   updateEnvironment(t, dt);
   updateWeather(dt, t);
+  maybeRunDemoCredits(); // #74 데모: 첫눈 크레딧 발화/재개 — 모달 닫히고 첫눈 보일 때(중단 재입장도 자동 재개)
   if (_golden) {
     // 배회 엔티티 동결·숨김 (한 번 despawn/숨김 → 업데이트 스킵으로 재배회 없음)
     if (!_goldenHid) { try { despawnCat(); } catch (e) {} _goldenHid = true; }
