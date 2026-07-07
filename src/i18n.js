@@ -132,8 +132,8 @@ export const STR = {
   'ctrl.tap.k':      { ko: '탭', en: 'Tap' },
   'ctrl.drag':       { ko: '시점 회전 · 가구 이동(배치 모드)', en: 'Rotate view · move furniture (edit mode)' },
   'ctrl.drag.k':     { ko: '드래그', en: 'Drag' },
-  'ctrl.pinch':      { ko: '줌 인 / 아웃', en: 'Zoom in / out' },
-  'ctrl.pinch.k':    { ko: '핀치', en: 'Pinch' },
+  'ctrl.pinch':      { ko: '줌 · 화면 이동', en: 'Zoom · pan' },
+  'ctrl.pinch.k':    { ko: '두 손가락', en: 'Two fingers' },
   'ctrl.reserved':    { ko: '(시스템 예약)', en: '(system-reserved)' },
   'ctrl.pressKey':    { ko: '키 입력 대기…', en: 'Press a key…' },
   'ctrl.rebindDefault': { ko: '↺ 기본 키', en: '↺ Default keys' },
@@ -785,7 +785,7 @@ export const STR = {
   'help.shelter.b':   { ko: '구역마다 특성·유지비·제약이 다릅니다. 개조(빗물받이·텃밭...)로 자급자족.', en: 'Each district has its own traits, upkeep and limits. Modify (rain catch, garden...) for self-sufficiency.' },
   'help.time.t':      { ko: '세월', en: 'Seasons' },
   'help.time.b':      { ko: '날씨는 며칠 단위, 계절은 12일 주기. 겨울을 대비해 비축하세요. 저장은 자동.', en: 'Weather shifts over days; seasons cycle every 12 days. Stockpile for winter. Saving is automatic.' },
-  'help.camera':      { ko: '<b>카메라</b>: <kbd>우클릭 드래그</kbd> 또는 <kbd>Q</kbd>/<kbd>E</kbd> 회전 · 휠 줌 (줌아웃하면 주변 폐허가 보입니다)<br>진행 상황은 자동 저장됩니다.', en: '<b>Camera</b>: <kbd>right-click drag</kbd> or <kbd>Q</kbd>/<kbd>E</kbd> to rotate · wheel to zoom (zoom out to see the ruins around you)<br>Progress saves automatically.' },
+  'help.camera':      { ko: '<b>카메라</b>: <kbd>드래그</kbd> 또는 <kbd>Q</kbd>/<kbd>E</kbd> 회전 · <kbd>우클릭 드래그</kbd> 화면 이동 · 휠 줌 (줌아웃하면 주변 폐허가 보입니다)<br>진행 상황은 자동 저장됩니다.', en: '<b>Camera</b>: <kbd>drag</kbd> or <kbd>Q</kbd>/<kbd>E</kbd> to rotate · <kbd>right-click drag</kbd> to pan · wheel to zoom (zoom out to see the ruins around you)<br>Progress saves automatically.' },
 
   /* ── 이벤트 본문 (title / text / choices / results) ── */
   'ev.wanderer.title':  { ko: '떠돌이 생존자', en: 'Wandering Survivor' },
@@ -1249,8 +1249,8 @@ export const STR = {
   },
   'jnl.help.p5.title': { ko: '마지막 장', en: 'The Last Page' },
   'jnl.help.p5.body':  {
-    ko: '마지막 장엔 딱 한 줄. 서두르다 만 듯, 그러나 또박또박.<br><br><b>카메라</b>: <kbd>우클릭 드래그</kbd> 또는 <kbd>Q</kbd>/<kbd>E</kbd> 회전 · 휠 줌 (줌아웃하면 주변 폐허가 보인다)<br><br>진행 상황은 자동으로 저장된다. 그리고 이 수첩은, 이제 당신의 것이다.',
-    en: 'Only one line on the last page — written in haste, but carefully all the same.<br><br><b>Camera</b>: <kbd>right-click drag</kbd> or <kbd>Q</kbd>/<kbd>E</kbd> to rotate · wheel to zoom (zoom out to see the ruins around you)<br><br>Progress saves automatically. And this notebook — it\'s yours now.',
+    ko: '마지막 장엔 딱 한 줄. 서두르다 만 듯, 그러나 또박또박.<br><br><b>카메라</b>: <kbd>드래그</kbd> 또는 <kbd>Q</kbd>/<kbd>E</kbd> 회전 · <kbd>우클릭 드래그</kbd> 화면 이동 · 휠 줌 (줌아웃하면 주변 폐허가 보인다)<br><br>진행 상황은 자동으로 저장된다. 그리고 이 수첩은, 이제 당신의 것이다.',
+    en: 'Only one line on the last page — written in haste, but carefully all the same.<br><br><b>Camera</b>: <kbd>drag</kbd> or <kbd>Q</kbd>/<kbd>E</kbd> to rotate · <kbd>right-click drag</kbd> to pan · wheel to zoom (zoom out to see the ruins around you)<br><br>Progress saves automatically. And this notebook — it\'s yours now.',
   },
 
   /* ── 신규 3일 튜토리얼 (첫 게임 한정) ── */

@@ -7099,7 +7099,7 @@ const pointer = new THREE.Vector2();
 const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
 let placing = null, selected = null, dragging = null, dragStart = null;
-let orbiting = false, lastOrbX = 0;
+let orbiting = false, lastOrbX = 0, lastOrbY = 0;
 // v0.9.2 배치 모드: OFF(기본)면 화면 조작 중 기존 가구가 덥석 선택/이동되지 않는다.
 // 저장하지 않는 세션 변수 — 기능형 상호작용(라디오/촛불 토글)은 모드와 무관하게 항상 동작.
 let editMode = false;
@@ -7350,10 +7350,10 @@ canvas.addEventListener('pointerdown', e => {
     dropDragging(true);
     orbitDrag = null; orbiting = false;
     const [a, b] = [...touches.values()];
-    pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), zoom: camState.zoom, cx: (a.x + b.x) / 2 };
+    pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), zoom: camState.zoom, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
     return;
   }
-  if (e.button === 2) { orbiting = true; lastOrbX = e.clientX; return; }
+  if (e.button === 2) { orbiting = true; lastOrbX = e.clientX; lastOrbY = e.clientY; return; } // 디렉터(2026-07): 우클릭 드래그 = 팬(화면 이동)
   if (e.button !== 0 && e.pointerType === 'mouse') return;
   if (placing) { moveGhost(placing, e); finishPlacing(); return; }
   if (!editMode && pickStairs(e)) return; // #55 배치 모드가 아닐 때만 계단 상호작용 (배치 중 오작동 방지)
@@ -7383,8 +7383,8 @@ canvas.addEventListener('pointerdown', e => {
     // #70 빈 공간 드래그: 비배치·비클로즈업이면 클램프 팬, 배치 모드/클로즈업 중엔 기존 yaw 회전(팬 비활성 스펙).
     //   팬은 최저 우선순위 — 계단/고양이/가구 픽이 전부 미스인 이 else에서만 시작(select 레이캐스트 경로 불변).
     //   데드존: 팬은 8px(탭 상호작용 보호 스펙), 회전은 기존 7px 유지.
-    const pan = !editMode && !catCam.active;
-    orbitDrag = { x: e.clientX, y: e.clientY, moved: false, pan, dead: pan ? 8 : 7 };
+    // 디렉터(2026-07): 기본 드래그(한 손가락/좌클릭) = 회전. 팬(화면 이동)은 두 손가락/우클릭 전용으로 스왑.
+    orbitDrag = { x: e.clientX, y: e.clientY, moved: false, pan: false, dead: 7 };
   }
 });
 addEventListener('pointermove', e => {
@@ -7392,16 +7392,17 @@ addEventListener('pointermove', e => {
   if (pinch && touches.size >= 2) {
     const [a, b] = [...touches.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y);
-    if (catCam.active) exitCatCloseup(); // 핀치 줌/회전도 카메라 조작 → 클로즈업 해제
-    camState.zoom = THREE.MathUtils.clamp(pinch.zoom * (d / pinch.dist), 0.25, 3.2);
-    const cx = (a.x + b.x) / 2;
-    camState.targetYaw += (cx - pinch.cx) * 0.006;
-    pinch.cx = cx;
+    if (catCam.active) exitCatCloseup(); // 핀치 줌/팬도 카메라 조작 → 클로즈업 해제
+    camState.zoom = THREE.MathUtils.clamp(pinch.zoom * (d / pinch.dist), 0.25, 3.2); // 핀치 거리 = 줌(유지)
+    const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    panByScreenDelta(cx - pinch.cx, cy - pinch.cy); // 디렉터(2026-07): 두 손가락 이동 = 팬(종전 회전에서 스왑)
+    pinch.cx = cx; pinch.cy = cy;
     return;
   }
-  if (orbiting) {
-    camState.targetYaw += (e.clientX - lastOrbX) * 0.008;
-    lastOrbX = e.clientX;
+  if (orbiting) { // 디렉터(2026-07): 우클릭 드래그 = 팬(화면 이동)
+    if (catCam.active) exitCatCloseup();
+    panByScreenDelta(e.clientX - lastOrbX, e.clientY - lastOrbY);
+    lastOrbX = e.clientX; lastOrbY = e.clientY;
     return;
   }
   if (orbitDrag) {
