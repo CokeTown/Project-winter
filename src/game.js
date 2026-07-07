@@ -4741,7 +4741,7 @@ const ACHS = [
   { id: 'ending',    icon: '🚁', name: '폐허 너머로',      nameEn: 'Beyond the Ruins',   desc: 'Day 10000 — 박사와 함께 탈출', descEn: 'Day 10000 — escape with the doctor', chk: () => !!state.endingSeen },
 ];
 function checkAchievements() {
-  if (QA_ED) return; // #89 QA 에디션: 업적 전면 no-op (Steam 중계 지점 원천 차단)
+  if (QA_ED || DEMO_ED) return; // #89 QA + #74 데모: 업적 전면 no-op (정식판 마일스톤 'winter'/'nine_winters' 등 유출 차단)
   if (!state.achs) state.achs = {};
   if (state.qaUsed) return; // QA 치트로 오염된 세이브는 신규 업적 해금 무시 (기존 해금은 유지)
   for (const a of ACHS) {
@@ -6705,7 +6705,7 @@ function blackout(midFn, holdMs = 500) {
 // 자동 대상: 치료·청소·탐험(급식/취침/autoEat은 각각 processDay/자정루프/decayGauges가 자동 처리).
 // 자동 대상 아님(설계 의도 — 후반 수동 전략 레버): 염장(salt cure)·얼음낚시·대형 프로젝트·암시장.
 function runAutoPlay() {
-  if (paused || titleVisible || !opts.autoPlay || isWallpaper() || (!isZen() && state.day < 10)) return;
+  if (paused || titleVisible || !opts.autoPlay || isWallpaper() || (!isZen() && state.day < 10) || (DEMO_ED && state.demoPhase !== 'sandbox')) return; // #74 데모: 자동모드=크레딧 이후 샌드박스 한정
   if (state.injury && resHasAll(INJURIES[state.injury.type].cure)) {
     const name = LName(INJURIES[state.injury.type]);
     treatInjury();
@@ -7611,7 +7611,7 @@ function applyLowSpec() {
 // 자동 진행 체크박스는 index.html 정적 마크업(#opt-autoplay, #autoplay-row)으로 이전됨 (P2-b)
 function refreshAutoplayLock() {
   const cb = $('opt-autoplay');
-  const locked = !isZen() && state.day < 10;
+  const locked = (!isZen() && state.day < 10) || (DEMO_ED && state.demoPhase !== 'sandbox'); // #74 데모: 샌드박스 전엔 자동모드 잠금
   if (cb) cb.disabled = locked;
   const row = $('autoplay-row');
   if (row) row.title = locked ? t('opt.autoplay.locked') : t('opt.autoplay.title');
@@ -8047,7 +8047,7 @@ $('btn-edit').addEventListener('click', () => toggleEditMode());
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
 // P2-b: 자동 진행 토글 버튼 (cam-ctrl) — Day 10 미만이면 잠금 토스트, 아니면 opts.autoPlay 토글 + 체크박스 양방향 동기화
 $('btn-auto').addEventListener('click', () => {
-  if (!isZen() && state.day < 10) { toast(t('auto.locked')); return; }
+  if ((!isZen() && state.day < 10) || (DEMO_ED && state.demoPhase !== 'sandbox')) { toast(t('auto.locked')); return; }
   opts.autoPlay = !opts.autoPlay;
   const cb = $('opt-autoplay'); if (cb) cb.checked = opts.autoPlay;
   syncAutoBtn();
