@@ -100,7 +100,8 @@ export const REGIONS = {
     pool: ['lamp', 'crate', 'radio', 'dresser', 'purifier', 'generator', 'stove'], furnChance: 0.01,
     desc: '부품·건축재·연료', descEn: 'Parts, building material, fuel', risk: '높음 — 장갑 권장', riskEn: 'High — gloves advised',
     // Phase B: parts/fuel 상향 + fuel 확정 1 보장 (parts/fuel 공급 목적성)
-    lootRes: [['parts', 2, 4], ['material', 2, 3], ['fuel', 2, 3]],
+    // 디렉터(2026-07-08): 배터리 보조 소스 — 발전기·설비의 땅이라 공업 정합(주 소스는 상업 확정 1~2 유지)
+    lootRes: [['parts', 2, 4], ['material', 2, 3], ['fuel', 2, 3], ['battery', 1, 1, 0.5]],
     injuries: ['deep', 'deep', 'sprain'],
   },
   slum: {

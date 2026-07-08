@@ -1863,7 +1863,7 @@ function loadSave() {
       migrateLoadedState(data.state, defaults, oldVer);
       // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
       const elapsed = Math.max(0, (Date.now() - (state.savedAt || Date.now())) / 1000);
-      const offlineMin = Math.min(2880, elapsed * GAME_MIN_PER_SEC);
+      const offlineMin = Math.min(2880, elapsed * GAME_MIN_PER_SEC * BAL.exp.idleTimeScale); // 평시 배속과 일관(자리 비운 동안도 같은 속도) — 상한 2게임일 유지
       state.gameMin += offlineMin;
       decayGauges(offlineMin);
       return true;
@@ -3518,7 +3518,7 @@ const MOD_MOUNT = {
 const SHELTER_MOUNTS = {
   container: { // 6.4×2.9×2.4 평지붕, 벽 off 0.11. 바닥이 다리 위 — 지형 -0.73.
     roof: { y: 2.42, cx: 0, cz: 0, hw: 3.0, hd: 1.3, cullJoin: true },
-    eave: { y: 2.4, x: 3.31, z: 1.45, dir: [1, 1] },
+    eave: { y: 2.4, x: 3.31, z: 1.45, dir: [1, 1], barrel: { x: 5.5, z: 1.2 } }, // 물통은 화단 오른쪽(디렉터 2026-07-08 — 토대 블록 겹침 해소)
     wall: { face: '+z', y: 2.4, len: 6.4, off: 1.45 },
     groundY: -0.73, ground: { x: 4.4, z: 1.2, rot: Math.PI / 2 },
   },
@@ -3647,11 +3647,20 @@ function buildRainProp(eave, big, gy = 0) {
       attachToWall(0, 0, Math.sign(eave.z) || 1, gWall2);
     }
   }
-  // 물통 (모서리 바로 아래, 지형 위)
+  // 물통 (기본: 모서리 바로 아래. eave.barrel 오버라이드가 있으면 그 자리 — 디렉터 2026-07-08:
+  //   컨테이너는 토대 블록과 겹쳐 화단 오른쪽으로 이설. 파이프 하단에서 물통까지 지면 배관으로 잇는다)
+  const bx = eave.barrel ? eave.barrel.x : eave.x, bz = eave.barrel ? eave.barrel.z : eave.z;
   const br = big ? 0.44 : 0.32, bh = big ? 0.95 : 0.66;
-  const barrel = Cyl(g, br, br * 0.9, bh, big ? 0x4a6a5c : 0x5a7a8c, eave.x, gy + bh / 2, eave.z, 12);
+  const barrel = Cyl(g, br, br * 0.9, bh, big ? 0x4a6a5c : 0x5a7a8c, bx, gy + bh / 2, bz, 12);
   barrel.castShadow = true;
-  B(g, br * 1.5, 0.04, br * 1.5, 0x3a4a55, eave.x, gy + bh + 0.02, eave.z);
+  B(g, br * 1.5, 0.04, br * 1.5, 0x3a4a55, bx, gy + bh + 0.02, bz);
+  if (eave.barrel) {
+    // 지면 배관: 코너 파이프 발치 → 물통. 수평 원통 1개(복셀 문법 — 눕힌 실린더)
+    const plen = Math.hypot(bx - eave.x, bz - eave.z);
+    const pipe = Cyl(g, 0.045, 0.045, plen, gutMat, (eave.x + bx) / 2, gy + 0.06, (eave.z + bz) / 2, 6);
+    pipe.rotation.z = Math.PI / 2;
+    pipe.rotation.y = -Math.atan2(bz - eave.z, bx - eave.x);
+  }
   roomGroup.add(g);
   return g;
 }
@@ -6704,7 +6713,8 @@ function tickTime(dt) {
   if (DEMO_ED && state.demoEnded) return;
   // 탐험 시간 개편(디렉터 2026-07-08): 탐험 중엔 시계가 배속(×4)으로 흐른다 — "다녀오는 시간"이
   //   대기 중에 실제로 흘러 귀환 점프가 사라진다. 게이지 감소도 함께 가속(시간이 흐르는 만큼 몸도 소모).
-  const gmRate = GAME_MIN_PER_SEC * (state.exp ? BAL.exp.timeScale : 1);
+  //   평시 배속(디렉터 2026-07-08): 비탐험도 탐험(×4)의 80%(×3.2)로 — 게이지·부패는 게임분 기준이라 게임일 밸런스 불변.
+  const gmRate = GAME_MIN_PER_SEC * (state.exp ? BAL.exp.timeScale : BAL.exp.idleTimeScale);
   state.gameMin += dt * gmRate;
   decayGauges(dt * gmRate);
   checkHelpless(); // 배치 D: 무력 상태(게이지 바닥 + 재고 0) 안전망 판정
@@ -6932,8 +6942,8 @@ function tickExpeditionUI() {
       // 디렉터 2026-07-08: 게이지는 30게임분 단위 계단으로 차고, 남은 시간도 같은 단위로 올림 표기
       const totalMin = state.exp.durMin || (total / 1000) * GAME_MIN_PER_SEC * BAL.exp.timeScale;
       const doneMin = totalMin * (1 - remain / total);
-      const stepMin = Math.min(totalMin, Math.floor(doneMin / 30) * 30);
-      bar.style.width = `${100 * (stepMin / totalMin)}%`;
+      // 디렉터(2026-07-08): 30분 계단(floor)이 실제 진행보다 늘 뒤처져 "바가 느리다" — 바는 연속, ETA만 30분 단위 유지
+      bar.style.width = `${100 * Math.min(1, doneMin / totalMin)}%`;
       eta.textContent = t('exp.timeLeft', { d: fmtGameDur(Math.max(30, Math.ceil((totalMin - doneMin) / 30) * 30)) });
     } else renderExpPanel();
   } else if (state.injury) {
