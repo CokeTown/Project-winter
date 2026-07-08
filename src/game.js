@@ -6010,7 +6010,18 @@ function showIntro() {
       gameStarted = true;
       toast(t('intro.firstShelter'));
       // 신규 게임: 인트로 종료 직후 수첩 1페이지 (Day 1 튜토리얼 — '물부터')
-      if (state.tutDay < 1) showTutorialPage(1);
+      // #74 데모(디렉터): 퀘스트 시작 전에 기초 조작 + 하단 바 기능을 먼저 가르친다 —
+      //   가이드 2페이지를 Day 1 수첩 앞에 끼워 한 권으로(종이 연출 2연속 방지). 입력 방식별 분기.
+      if (state.tutDay < 1) {
+        if (DEMO_ED) {
+          state.tutDay = 1; scheduleSave();
+          openJournalPages([
+            { titleId: 'guide.p1.title', bodyId: isPcInput ? 'guide.p1.pc' : 'guide.p1.mobile' },
+            { titleId: 'guide.p2.title', bodyId: 'guide.p2.body' },
+            ...TUTORIAL_PAGES[1],
+          ]);
+        } else showTutorialPage(1);
+      }
     } else render();
   });
   render();
@@ -7385,12 +7396,15 @@ function showTutorialPage(day) {
    기존 세이브는 loadSave()에서 -1로 마이그레이션해 표시하지 않는다.
 ============================================================ */
 const QUESTS = DEMO_ED ? [
-  // #74 데모 온보딩(디렉터 2026-07-08): "탐험 3번 보내고, 청소하고 자기. 이 순서로."
-  //   questProgress는 현재 단계 id만 매칭하므로 depart 3연속이 각 출발마다 순차 완료된다.
+  // #74 데모 온보딩(디렉터 2026-07-08 개정): "밥먹기 → 물 마시기 → 가구 설치 → 탐험 3번 → 잠들기."
+  //   가구 설치를 반드시 가르친다(존재 자체를 모르는 유저 방지). depart 3연속은 각 출발마다 순차 완료.
+  //   drink가 2번째라 "제일 먼저 물부터" 원문 대신 데모 전용 lore(quest.drink2.lore).
+  { id: 'eat',    icon: '🥫', textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
+  { id: 'drink',  icon: '💧', textId: 'quest.drink.text',  loreId: 'quest.drink2.lore', doneId: 'quest.drink.done',  reward: { water: 1 } },
+  { id: 'place',  icon: '🔧', img: 'icon_sys_edit',    textId: 'quest.place.text',  loreId: 'quest.place.lore',  doneId: 'quest.place.done',  reward: { cloth: 1 } },
   { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart.text',  loreId: 'quest.depart.lore',  doneId: 'quest.depart.done',  reward: {} },
   { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart2.text', loreId: 'quest.depart2.lore', doneId: 'quest.depart2.done', reward: { water: 1 } },
   { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart3.text', loreId: 'quest.depart3.lore', doneId: 'quest.depart3.done', reward: { canned: 1 } },
-  { id: 'clean',  icon: '🧹', img: 'icon_act_clean',   textId: 'quest.clean.text',   loreId: 'quest.clean.lore',   doneId: 'quest.clean.done',   reward: { water: 1 } },
   { id: 'sleep',  icon: '🛌', img: 'icon_act_sleep',   textId: 'quest.sleep.text',   loreId: 'quest.sleep.lore',   doneId: 'quest.sleep.done',   reward: { bandage: 1 } },
 ] : [
   // icon = 이모지 폴백 · img = HUD 액션 아트 아이콘(디렉터: 튜토리얼도 거점 그리드와 동일 아이콘). drink/eat는 게이지(이모지)라 그대로.

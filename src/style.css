@@ -834,6 +834,9 @@
     /* 디렉터 신고(배치·색상 겹침): sel-panel이 toolbar와 같은 bottom(100)이라 뒤에 깔렸다 — 툴바 실측 높이 위로 분리 */
     #sel-panel { bottom: 198px; max-width: calc(100vw - 20px); }
     #quest-card { top: auto; bottom: 106px; }
+    /* 디렉터(데모 온보딩): 배치 모드에선 툴바(106)·선택 패널(198)이 그 자리를 쓴다 —
+       퀘스트 카드는 그 위로("가구 설치보다 위에 퀘스트"). 크기는 그대로. */
+    body.edit-mode #quest-card { bottom: 296px; }
     #modal { max-height: 72vh; }
     /* 모바일 세로: 자원바가 상단(top:156px)으로 이동하므로 쪽지는 우하단 코너 유지(데스크톱용 오프셋 되돌림) */
     #tip-note { right: 12px; width: min(260px, calc(100vw - 24px)); }
@@ -860,6 +863,7 @@
     .cam-btn { width: 32px; height: 32px; font-size: 13px; }
     #sel-panel { bottom: 60px; }
     #btn-cancel-place { bottom: 60px; }
+    body.edit-mode #quest-card { bottom: 150px; } /* 가로 폰: 툴바(4)+선택 패널(60) 위로 */
     #modal { max-height: 88vh; }
     #journal-paper, #tip-note { max-height: 92vh; overflow-y: auto; }
     #title-logo { font-size: 26px; letter-spacing: 3px; }
