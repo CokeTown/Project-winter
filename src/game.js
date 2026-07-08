@@ -1082,12 +1082,28 @@ function makeWalls(defs) {
       const bb = new THREE.Box3().setFromObject(d.group);
       const len = bb.max.x - bb.min.x, h = bb.max.y - bb.min.y;
       if (len > 0.5 && h > 0.5) {
-        proxy = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.16), shadowProxyMat);
-        proxy.position.set(d.pos[0], d.pos[1] + bb.min.y + h / 2, d.pos[2]);
+        // 디렉터 신고(문 빛 소실): 통짜 슬래브가 문 개구부까지 막아, 벽이 컬링되면 문으로 새던 빛이 죽었다.
+        //   벽 그룹에 doorGap(로컬 x 중심/폭/높이) 태그가 있으면 좌/우/상인방 3분할로 문 구멍을 남긴다.
+        proxy = new THREE.Group();
+        const slab = (sx, cx, sy, cy) => {
+          const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, 0.16), shadowProxyMat);
+          m.position.set(cx, cy, 0);
+          m.castShadow = true; m.receiveShadow = false;
+          m.raycast = () => {}; // 클릭/피킹 무간섭
+          proxy.add(m);
+        };
+        const gap = d.group.userData.doorGap;
+        if (gap) {
+          const gL = gap.x - gap.w / 2, gR = gap.x + gap.w / 2;
+          if (gL - bb.min.x > 0.05) slab(gL - bb.min.x, (bb.min.x + gL) / 2, h, bb.min.y + h / 2);         // 문 왼쪽
+          if (bb.max.x - gR > 0.05) slab(bb.max.x - gR, (gR + bb.max.x) / 2, h, bb.min.y + h / 2);         // 문 오른쪽
+          if (h - gap.h > 0.05) slab(gap.w, gap.x, h - gap.h, bb.min.y + gap.h + (h - gap.h) / 2);          // 상인방
+        } else {
+          slab(len, (bb.min.x + bb.max.x) / 2, h, bb.min.y + h / 2); // 개구부 없는 벽: 기존 통짜
+        }
+        proxy.position.set(d.pos[0], d.pos[1], d.pos[2]);
         proxy.rotation.y = d.rotY;
-        proxy.castShadow = true; proxy.receiveShadow = false;
         proxy.visible = false;          // 벽이 보일 땐 벽이 직접 그림자 — 프록시는 숨을 때만
-        proxy.raycast = () => {};       // 클릭/피킹 무간섭
         roomGroup.add(proxy);
       }
     }
@@ -2993,7 +3009,8 @@ function resolveExpedition() {
       state.pendingMemoPopup = { id: drop.id, will: drop.will };
     }
     // #76 지식: 폐허에서 성한 책 한 권 (탐험 성공 희귀 드랍 — 사치 가구 재료). 암시장 판매 부산물과 별개의 '지식' 손맛.
-    if (Math.random() < BAL.luxury.bookDropChance) { resAdd('book', 1); notes.push(t('exp.note.book')); }
+    //   #74 데모: 책은 데모에서 쓸 곳이 없다(지식·사치 비노출) — 드랍 자체 오프.
+    if (!DEMO_ED && Math.random() < BAL.luxury.bookDropChance) { resAdd('book', 1); notes.push(t('exp.note.book')); }
     state.successes++;
     state.stats.success++;
     title = t('exp.successTitle', { name: LName(r) });
@@ -4045,9 +4062,17 @@ function applyDeco() {
 // 가구는 파밍이 아니라 제작이 기본 (파밍은 극히 드문 행운)
 // CRAFTS(제작 레시피)는 src/data/items.js로 분리(콘텐츠 데이터 Phase 1). BAL 참조는 items.js가 balance.js를 import.
 // 「지식」 테크트리 모달(§9) — 4갈래×3티어, 책으로 해금. 노드 상태: 해금됨/해금가능/선행잠금/책부족.
+// #74 데모 제작 큐레이션(디렉터: "꾸미는 건 적게, 10~14가지 · 옷은 총 2벌 · 조회 자체가 불가능하게").
+//   가구 12종(코지 필수+기능) + 기본 자원 제작 유지 + 의상 1종(기본 코트 포함 총 2벌). 염장·사치(책) 제작은 비노출.
+const DEMO_CRAFT_FURN = new Set(['cushion', 'bookstack', 'crate', 'chair', 'teatable', 'rug', 'plant', 'table', 'bed', 'lantern', 'stove', 'radio']);
+const DEMO_CRAFT_OUTFIT = new Set(['navy']);
+const demoCraftOk = c => c.out.furn ? DEMO_CRAFT_FURN.has(c.out.furn)
+  : c.out.outfit ? DEMO_CRAFT_OUTFIT.has(c.out.outfit)
+  : !c.cost.salt && !c.cost.book; // 자원 제작(붕대·양초·건축재)은 유지 — 소금·책 코스트는 데모 미획득 자원이라 비노출
 function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
   const rows = CRAFTS.map((c, i) => {
+    if (DEMO_ED && !demoCraftOk(c)) return ''; // 데모: 비노출 (인덱스 보존 위해 filter 아님)
     const outLabel = c.out.res
       ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`
       : c.out.outfit
@@ -4114,8 +4139,9 @@ function openCraftModal() {
     bunkerHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🛖 ${LName(SHELTERS.bunker)}</div>${projRows.join('')}`;
   }
   // 대형 프로젝트 (1.1 ARC-02) — 현재 조건을 만족하는 프로젝트 카드. 진행 게이지(투입/필요) + 남은 자재 req-chip.
+  //   #74 데모: 확장 콘텐츠 전체 비노출 (조회 불가 원칙).
   let projHtml = '';
-  const availProjects = Object.keys(PROJECTS).filter(pid => projectAvailable(pid));
+  const availProjects = DEMO_ED ? [] : Object.keys(PROJECTS).filter(pid => projectAvailable(pid));
   if (availProjects.length) {
     const cards = availProjects.map(pid => {
       const p = PROJECTS[pid];
@@ -4217,8 +4243,9 @@ function openCraftModal() {
       </div>`;
   }
   // 1.4 금지 구역 — 방호복(제작/수리) + 무전 송출. 금지 구역 노출선 도달 후 또는 이미 방호복/기지가 있으면 노출.
+  //   #74 데모: successes가 33을 넘어도 비노출 (조회 불가 원칙 — 금지 구역은 데모 밖).
   let forbiddenHtml = '';
-  const forbiddenReached = state.successes >= BAL.forbidden.unlockAt || state.hazmatDone || state.radioBaseDone;
+  const forbiddenReached = !DEMO_ED && (state.successes >= BAL.forbidden.unlockAt || state.hazmatDone || state.radioBaseDone);
   if (forbiddenReached) {
     const F = BAL.forbidden;
     const rows2 = [];
@@ -4258,8 +4285,10 @@ function openCraftModal() {
     forbiddenHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">☢️ ${LName(DISTRICTS.research)}</div><div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${t('forbidden.intro')}</div>${rows2.join('')}`;
   }
   // 꾸미기(#13): 벽지/바닥재 스와치. 현재 셸터의 벽/바닥 재질을 교체 (셸터 지오메트리 불변).
+  //   #74 데모: 도배 옵션 축소 — 벽지 3(기본+2)·바닥 3(기본+2)만 (디렉터 "꾸미는 건 적게").
+  const DEMO_DECO = { wall: new Set(['default', 'cream', 'sage']), floor: new Set(['default', 'wood', 'carpet']) };
   const dcur = currentDeco();
-  const decoSwatches = (kind, table, sel) => Object.entries(table).map(([id, def]) => {
+  const decoSwatches = (kind, table, sel) => Object.entries(table).filter(([id]) => !DEMO_ED || DEMO_DECO[kind].has(id)).map(([id, def]) => {
     const active = (sel || 'default') === id;
     const owned = active || !def.cost || resHasAll(def.cost);
     const costTip = def.cost ? costLabel(def.cost) : t('deco.free');
@@ -5735,7 +5764,9 @@ function clampPanel(el) {
   // 경계(innerWidth/Height)는 visual px인데 preL/preT는 pre-zoom 좌표계 → z로 나눠 스케일을 맞춘다.
   //   (기존엔 visual 경계를 그대로 써서 zoom<1 모바일에서 우측 앵커 패널을 화면 중앙(left≈255)으로
   //    밀어냈다 — 시계·자원바 모바일 '난리'의 근인.)
-  const keepVisX = Math.min(preW * z, 120);
+  // 디렉터 신고(모바일 자원바 우측 잘림): 120px만 보이면 걸침을 허용하던 정책이 좁은 화면에선
+  //   "처음부터 잘린 패널"로 읽힌다 — 터치 기기는 패널 전체를 화면 안에 유지(PC는 기존 파킹 허용).
+  const keepVisX = isPcInput ? Math.min(preW * z, 120) : preW * z;
   const l = THREE.MathUtils.clamp(preL, 0, Math.max(0, (innerWidth - keepVisX) / z));
   const t = THREE.MathUtils.clamp(preT, minTop / z, Math.max(minTop / z, (innerHeight - 30) / z));
   el.style.left = l + 'px';
@@ -6126,7 +6157,8 @@ let lastResSnapshot = {};
 function renderResBar() {
   const bar = $('res-chips');
   const wp = isWallpaper();
-  bar.innerHTML = Object.entries(RESOURCES).map(([id, r]) => {
+  // #74 데모: 책·소금은 데모에서 획득 경로가 없다(지식·항구 밖) — 자원행 자체 비노출 (조회 불가 원칙)
+  bar.innerHTML = Object.entries(RESOURCES).filter(([id]) => !DEMO_ED || (id !== 'book' && id !== 'salt')).map(([id, r]) => {
     const n = state.res[id] || 0;
     const changed = !wp && lastResSnapshot[id] != null && lastResSnapshot[id] !== n;
     return `<div class="res-chip ${!wp && n === 0 ? 'zero' : ''} ${changed ? 'flash' : ''}">
@@ -6495,10 +6527,13 @@ function processDay() {
       const sellFood = Math.min(sell, state.res.food || 0);
       if (sellFood > 0) resConsume('food', sellFood);
       if (sell - sellFood > 0) resConsume('canned', sell - sellFood);
-      state.bookProgress = (state.bookProgress || 0) + sell;
-      let earnedBooks = 0;
-      while (state.bookProgress >= LX.perBook) { state.bookProgress -= LX.perBook; earnedBooks++; }
-      if (earnedBooks > 0) { resAdd('book', earnedBooks); notes.push(t('day.surplusSold', { n: sell, b: earnedBooks })); }
+      // #74 데모: 책 적립 오프 (잉여 트림 자체는 유지 — 인플레 방지 기능은 데모에도 필요)
+      if (!DEMO_ED) {
+        state.bookProgress = (state.bookProgress || 0) + sell;
+        let earnedBooks = 0;
+        while (state.bookProgress >= LX.perBook) { state.bookProgress -= LX.perBook; earnedBooks++; }
+        if (earnedBooks > 0) { resAdd('book', earnedBooks); notes.push(t('day.surplusSold', { n: sell, b: earnedBooks })); }
+      }
     }
   }
   state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - dirt);
@@ -7061,7 +7096,10 @@ function openShelterModal() {
   const curDistrict = districtOf(state.current);
   const groups = Object.entries(DISTRICTS).map(([did, dist]) => {
     const here = did === curDistrict;
-    const cards = dist.shelters.map(id => {
+    // #74 데모(디렉터: "조회 자체가 불가능해야"): 데모 셸터만 렌더 — 잠금 카드(🔒)도, 빈 구역 헤더도 내지 않는다.
+    const shelterIds = DEMO_ED ? dist.shelters.filter(id => DEMO_SHELTERS.has(id)) : dist.shelters;
+    if (DEMO_ED && !shelterIds.length) return '';
+    const cards = shelterIds.map(id => {
       const sh = SHELTERS[id];
       const unlocked = shelterUnlocked(id);
       const cur = id === state.current;
@@ -7346,7 +7384,15 @@ function showTutorialPage(day) {
    할 일 카드로 유도한다. state.questIdx로 진행 단계를 추적하며,
    기존 세이브는 loadSave()에서 -1로 마이그레이션해 표시하지 않는다.
 ============================================================ */
-const QUESTS = [
+const QUESTS = DEMO_ED ? [
+  // #74 데모 온보딩(디렉터 2026-07-08): "탐험 3번 보내고, 청소하고 자기. 이 순서로."
+  //   questProgress는 현재 단계 id만 매칭하므로 depart 3연속이 각 출발마다 순차 완료된다.
+  { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart.text',  loreId: 'quest.depart.lore',  doneId: 'quest.depart.done',  reward: {} },
+  { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart2.text', loreId: 'quest.depart2.lore', doneId: 'quest.depart2.done', reward: { water: 1 } },
+  { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart3.text', loreId: 'quest.depart3.lore', doneId: 'quest.depart3.done', reward: { canned: 1 } },
+  { id: 'clean',  icon: '🧹', img: 'icon_act_clean',   textId: 'quest.clean.text',   loreId: 'quest.clean.lore',   doneId: 'quest.clean.done',   reward: { water: 1 } },
+  { id: 'sleep',  icon: '🛌', img: 'icon_act_sleep',   textId: 'quest.sleep.text',   loreId: 'quest.sleep.lore',   doneId: 'quest.sleep.done',   reward: { bandage: 1 } },
+] : [
   // icon = 이모지 폴백 · img = HUD 액션 아트 아이콘(디렉터: 튜토리얼도 거점 그리드와 동일 아이콘). drink/eat는 게이지(이모지)라 그대로.
   { id: 'drink',  icon: '💧', textId: 'quest.drink.text',  loreId: 'quest.drink.lore',  doneId: 'quest.drink.done',  reward: { water: 1 } },
   { id: 'eat',    icon: '🥫', textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
@@ -8114,8 +8160,11 @@ $('lang-en').addEventListener('click', () => pickTitleLang('en'));
 $('t-new').addEventListener('click', () => openSlotModal('new'));
 $('t-load').addEventListener('click', () => openSlotModal('load'));
 $('t-help').addEventListener('click', openHelpModal);
-// #74 데모: 로고 아래 DEMO 배지 노출 (데모 빌드만).
-if (DEMO_ED) { const _db = $('title-demo-badge'); if (_db) _db.style.display = ''; }
+// #74 데모: 로고 아래 DEMO 배지 노출 + 지식 버튼 비노출(디렉터: "지식 창도 없어야" — 조회 불가 원칙).
+if (DEMO_ED) {
+  const _db = $('title-demo-badge'); if (_db) _db.style.display = '';
+  const _bk = $('btn-knowledge'); if (_bk) _bk.style.display = 'none';
+}
 // 게임 종료 버튼 — Electron 데스크톱(window.close 동작)에서만 노출. 웹은 브라우저가 close를 막으므로 숨김.
 if (window.nineWidget && window.nineWidget.available) {
   const _q = $('t-quit');

@@ -74,7 +74,9 @@ export function makeModals(ctx) {
   if (getPaused()) { toast(t('pause.blocked')); return; }
   const ownedList = state.outfits || ['default'];
   const cur = state.outfit || 'default';
-  const rows = Object.keys(OUTFITS).map(id => {
+  // #74 데모(디렉터: "옷도 총 2벌 · 조회 자체가 불가능하게"): 기본 코트 + 네이비만 목록에 노출.
+  const outfitIds = DEMO_ED ? Object.keys(OUTFITS).filter(id => id === 'default' || id === 'navy') : Object.keys(OUTFITS);
+  const rows = outfitIds.map(id => {
     const o = OUTFITS[id];
     const owned = ownedList.includes(id) || id === 'default';
     const sel = id === cur;

@@ -678,10 +678,11 @@
   @keyframes questcheck { 0% { opacity: 0; transform: scale(0.6); } 40% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
   body.title-mode #quest-card { display: none !important; }
   @media (max-width: 720px) {
-    #quest-card { bottom: 78px; width: 190px; padding: 6px 8px; left: 8px; }
+    /* 디렉터 신고(모바일 거대 카드): base top:340px이 남은 채 bottom만 얹혀 카드가 세로로 늘어났다 — top 해제가 근인 수정 */
+    #quest-card { top: auto; bottom: 78px; width: 180px; padding: 6px 8px; left: 8px; }
   }
   @media (max-height: 420px) {
-    #quest-card { bottom: 46px; width: 168px; }
+    #quest-card { top: auto; bottom: 46px; width: 168px; }
   }
 
 
@@ -825,13 +826,14 @@
     .tool-item .emoji { font-size: 17px; }
     /* 조작 바(디렉터 모바일 정비): zoom 축소를 끄고 실제 터치 크기로 전폭 단일 행.
        편집(🔧)=좌끝, 카메라/게임 조작 9개=그 옆부터 우끝까지 균등 배치. */
-    #cam-ctrl { zoom: 1; left: 44px; right: 6px; bottom: 8px; justify-content: space-between; gap: 2px; flex-wrap: nowrap; }
+    #cam-ctrl { zoom: 1; left: 48px; right: 6px; bottom: 8px; justify-content: space-between; gap: 2px; flex-wrap: nowrap; }
     #btn-edit { zoom: 1; left: 6px; bottom: 8px; }
-    .cam-btn { width: 33px; height: 33px; font-size: 16px; }
+    .cam-btn { width: 37px; height: 37px; font-size: 18px; } /* 디렉터: 하단 UI 조금 더 크게 (33→37) */
     /* 편집 모드 가구 툴바·팔레트는 조작 바 위로 (조작 바 zoom:1 실측 클리어런스) */
-    #toolbar { bottom: 100px; padding: 6px; }
-    #sel-panel { bottom: 100px; max-width: calc(100vw - 20px); }
-    #quest-card { bottom: 100px; }
+    #toolbar { bottom: 106px; padding: 6px; }
+    /* 디렉터 신고(배치·색상 겹침): sel-panel이 toolbar와 같은 bottom(100)이라 뒤에 깔렸다 — 툴바 실측 높이 위로 분리 */
+    #sel-panel { bottom: 198px; max-width: calc(100vw - 20px); }
+    #quest-card { top: auto; bottom: 106px; }
     #modal { max-height: 72vh; }
     /* 모바일 세로: 자원바가 상단(top:156px)으로 이동하므로 쪽지는 우하단 코너 유지(데스크톱용 오프셋 되돌림) */
     #tip-note { right: 12px; width: min(260px, calc(100vw - 24px)); }

@@ -238,6 +238,9 @@ export function makeShelterBuilders(ctx) {
             }
             x += bw;
           }
+          // 문 개구부 메타(디렉터: "문이 투명화됐을 땐 빛이 나오지 않아") — makeWalls가 섀도 프록시에
+          //   같은 구멍을 남겨, 벽이 컬링돼도 문으로 새던 빛이 그대로 산다. 로컬 x 기준.
+          if (doorC != null) g.userData.doorGap = { x: doorC * len - len / 2, w: doorW, h: 1.8 };
           return g;
         };
         // 문은 앞(+z) 벽에. 컬링을 위해 makeWalls 계약(그룹+법선)으로 등록.
