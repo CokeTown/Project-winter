@@ -7,7 +7,7 @@ const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
 const SHELTER_HASH = 1052806561; // 2026-07-08 재핀: 해금 강화 — unlockAt 사다리(옥탑25~로지290) + moveCost x5~10 (디렉터 오더)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
-const MIG_HASH = 779394296;
+const MIG_HASH = 779394296; // 데모 도료 포팅(#149)으로 paints/dyeOffer 편입 — 첫 실행에서 MIG_HASH(actual)로 재핀
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
 const MARKET_HASH = -1012304627;
 // 「지식」 테크트리 시그니처 해시 (branch/tier/cost/effect). 노드/비용/효과 변경 시 KNOWLEDGE_HASH(actual) 재핀.
@@ -259,6 +259,7 @@ const KNOWLEDGE_HASH = -451536973;
         cablecarDone: st.cablecarDone, observatoryDone: st.observatoryDone,
         avalancheForecast: st.avalancheForecast, avalancheBlockUntil: st.avalancheBlockUntil,
         sketches: typeof st.sketches, nightSkyToday: st.nightSkyToday, deco: typeof st.deco,
+        paints: typeof st.paints, dyeOffer: st.dyeOffer, // 도료 + 염료 상인 (REWARD-LOOP ② — 데모 포팅 #149)
         hazmat: st.hazmat, hazmatDone: st.hazmatDone, radioBaseDone: st.radioBaseDone,
         survivorLights: st.survivorLights, doctorRegularSeen: st.doctorRegularSeen,
         doctorRadioRegularPending: st.doctorRadioRegularPending, questIdx: st.questIdx,
@@ -297,6 +298,41 @@ const KNOWLEDGE_HASH = -451536973;
     `).catch(err => JSON.stringify({ missing: ['(t 훅 없음)'], error: String(err) }));
     const p = JSON.parse(i18n);
     check('i18n 대표 키 해석됨', p.missing.length === 0, p.missing.length ? '누락 ' + p.missing.join(',') : '');
+
+    // ── 도료 (REWARD-LOOP ② — 분류 전수·계열 비공집합·시그니처 커버·롤 유효) ──
+    const pt = await call(`
+      S.simReset();
+      const fams = Object.keys(S.PAINT_FAMILIES);
+      const count = {}; fams.forEach(f => count[f] = 0);
+      let total = 0;
+      for (const id of Object.keys(S.DEFS)) for (const c of (S.DEFS[id].colors || [])) { const f = S.paintFamilyOf(c); if (count[f] == null) return JSON.stringify({ orphan: c.toString(16) }); count[f]++; total++; }
+      const empty = fams.filter(f => count[f] === 0);
+      const cover = fams.filter(f => !Object.values(S.BAL.paint.regionFamilies).flat().includes(f));
+      const roll = S.rollPaintFamily('industrial');
+      return JSON.stringify({ nFam: fams.length, total, empty, cover, rollOk: fams.includes(roll), paintsType: typeof S.state.paints });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const pj = JSON.parse(pt);
+    if (pj.error || pj.orphan) check('도료 (예외/미아 없이)', false, pj.error || ('미아 hex ' + pj.orphan));
+    else {
+      check('도료/분류 전수 (12계열·전 색 편입·비공집합)', pj.nFam === 12 && pj.total >= 120 && pj.empty.length === 0,
+        `fam ${pj.nFam} total ${pj.total} empty ${pj.empty.join(',') || '-'}`);
+      check('도료/시그니처 커버 (전 계열 최소 1지역) + 롤 유효', pj.cover.length === 0 && pj.rollOk && pj.paintsType === 'object',
+        `cover ${pj.cover.join(',') || '-'}`);
+    }
+    // 염료 상인: 오퍼 본문 렌더 + 구매(통조림 차감·도료 +1) + 부족 거부 (모드별 값: 노말 2)
+    const dm = await call(`
+      S.simReset(); S.state.mode = 'normal'; S.state.paints = {}; S.state.res.canned = 3;
+      S.state.dyeOffer = ['redOxide', 'sage', 'mustard'];
+      const txt = S.EVENTS.dye_merchant.textFn();
+      const r0 = S.EVENTS.dye_merchant.choices[0].run(); // 2개 소비 → redOxide +1
+      const after = { canned: S.state.res.canned, paint: S.state.paints.redOxide };
+      const r1 = S.EVENTS.dye_merchant.choices[1].run(); // 잔여 1 < 2 → 거부
+      return JSON.stringify({ hasNames: txt.includes('방청 레드') && txt.includes('2'), bought: /방청 레드/.test(r0), after, denied: /모자라다/.test(r1), sage: S.state.paints.sage || 0 });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const dj = JSON.parse(dm);
+    if (dj.error) check('염료 상인 (예외 없이)', false, dj.error);
+    else check('염료 상인 (오퍼 렌더·구매 차감·부족 거부)', dj.hasNames && dj.bought && dj.after.canned === 1 && dj.after.paint === 1 && dj.denied && dj.sage === 0,
+      JSON.stringify(dj));
 
     const green = report();
     app.exit(green ? 0 : 1);

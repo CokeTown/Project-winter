@@ -58,6 +58,9 @@ export const state = {
   coldSnapForecast: 0, // 한파 발동 예정일 (day). 0=예보 없음. 예보 리드타임 동안 브리핑에 표시
   coldSnapsThisWinter: 0, // 이번 겨울 한파 발동 횟수 (겨울당 상한 제한용)
   coldSnapWinterKey: -1,  // 카운터가 속한 겨울 식별자 (계절 인덱스). 겨울이 바뀌면 리셋
+  // ── 도료 (REWARD-LOOP ② — 데모 포팅 #149. 2.0 시스템은 콘텐츠 게이트로 미포함) ──
+  paints: {},             // 보유 도료 { 계열id: 통 수 } — 1통=1회 도색(소모품). 기본색은 도료 불요
+  dyeOffer: null,         // 염료 상인 오퍼 [계열id ×3] — 슬럼 조우 시 세팅, 인카운터 본문·구매가 읽는다
   // ── Nine Winters 엔드게임 마일스톤 (#11) ──
   winters: 0,          // 넘긴 겨울 수 (봄으로 넘어가는 날 +1). 제목이 곧 장기 목표.
   demoEnded: false,    // #74 데모 빌드 전용: (구) 첫 겨울 통과로 데모가 끝난 세이브. 재설계 후 demoPhase 브리지로만 참조 (정식 빌드에선 항상 false)
