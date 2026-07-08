@@ -314,6 +314,13 @@
     pointer-events: none; word-break: keep-all;
   }
   .jackpot-toast.out { transition: opacity 0.55s ease, transform 0.55s ease; opacity: 0; transform: translateX(-50%) translateY(-14px); }
+  /* DDD-1 개봉 연출: 정산 행 스태거 공개(행당 0.3s, 상한 2.4s) — reveal 클래스가 붙은 정산 모달 한정 */
+  .loot-list.reveal .loot-item, .note-reveal {
+    opacity: 0; animation: lootPop 0.3s ease forwards;
+    animation-delay: min(calc(var(--li, 0) * 0.3s), 2.4s);
+  }
+  #modal-body.reveal-skip .loot-item, #modal-body.reveal-skip .note-reveal { animation-delay: 0s !important; }
+  @keyframes lootPop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes jackpotIn { from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.9); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
 
   /* ── 모달 (이주 / 전리품 / 도움말) ── */

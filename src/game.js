@@ -3123,19 +3123,24 @@ function resolveExpedition() {
       unlockMsg = t('exp.unlock', { emoji: sh.emoji, name: LName(sh) });
     }
   }
+  // DDD-1 개봉 연출: 정산 행이 하나씩 나타난다(지오드 까기의 리듬 — 연출만, 데이터·sim 무접점).
+  //   자원 → 가구 → 노트 순으로 스태거 인덱스(--li)가 이어지고, 노트 블록은 마지막에 통으로 뜬다.
+  let li = 0;
   const resHtml = Object.keys(gotRes).length
-    ? `<div class="loot-list">${Object.entries(gotRes).map(([id, n]) => `<div class="loot-item">${resIcon(id)} ${LName(RESOURCES[id])} +${n}</div>`).join('')}</div>`
+    ? `<div class="loot-list reveal">${Object.entries(gotRes).map(([id, n]) => `<div class="loot-item" style="--li:${li++}">${resIcon(id)} ${LName(RESOURCES[id])} +${n}</div>`).join('')}</div>`
     : '';
   const lootHtml = got.length
-    ? `<div class="loot-list">${got.map(id => `<div class="loot-item">${furnIcon(id)} ${LName(DEFS[id])}</div>`).join('')}</div>`
+    ? `<div class="loot-list reveal">${got.map(id => `<div class="loot-item" style="--li:${li++}">${furnIcon(id)} ${LName(DEFS[id])}</div>`).join('')}</div>`
     : '';
   const prepHtml = prep.length
     ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">${t('exp.usedPrep', { list: prep.map(p => `${PREPS[p].emoji}${LName(PREPS[p])}`).join(', ') })}</div>`
     : '';
   const noteHtml = notes.length
-    ? `<div style="font-size:11px;line-height:1.7;margin-top:8px">${notes.join('<br>')}</div>`
+    ? `<div class="note-reveal" style="--li:${li};font-size:11px;line-height:1.7;margin-top:8px">${notes.join('<br>')}</div>`
     : '';
   openModal(title, `${body}${resHtml}${lootHtml}${noteHtml}${prepHtml}${unlockMsg}`);
+  // 개봉 스킵: 본문 아무 데나 탭하면 남은 행 즉시 전부 공개 (기다림 강요 금지 — 코지 안전선)
+  { const mb = $('modal-body'); if (mb) { mb.classList.remove('reveal-skip'); mb.addEventListener('click', () => mb.classList.add('reveal-skip'), { once: true }); } }
   scheduleSave();
   renderInventoryBar();
   renderResBar();
