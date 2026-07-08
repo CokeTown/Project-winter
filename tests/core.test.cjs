@@ -446,7 +446,16 @@ const KNOWLEDGE_HASH = -451536973;
       S.simReset(); S.state.memos = {};
       const seq = [];
       for (let i = 0; i < 800 && seq.length < 2; i++) { const d = S.tryDropMemoOnExpedition('citycore'); if (d && d.id && d.id.slice(0, 2) === 'nw') seq.push(d.id); }
-      return JSON.stringify({ nine, fired, et, leanRest, leanNw, early1, early2, seq });
+      // 6) 9겨울 밤 경합(§9.5 검수): 라디오 보유 시 첫 무전이 구조보다 먼저 — 복선이 초대보다 앞선다.
+      //    무전 발화 밤엔 구조 예약이 소진되지 않고, 이튿날 밤 ending_choice로 온다.
+      S.simReset(); S.addItem('radio', 0, 1, 1, 0);
+      S.state.doctorRadioPending = true; S.state.endingChoicePending = true; S.state.endingType = null; S.state.pendingEvent = null;
+      S.tryDoctorRadio();
+      const clash1 = { pe: S.state.pendingEvent, pend: S.state.endingChoicePending };
+      S.state.pendingEvent = null;
+      S.tryDoctorRadio();
+      const clash2 = S.state.pendingEvent;
+      return JSON.stringify({ nine, fired, et, leanRest, leanNw, early1, early2, seq, clash1, clash2 });
     `).catch(err => JSON.stringify({ error: String(err) }));
     // 정리: escape run()의 0.4s 지연 시퀀스가 열어둔 엔딩 화면 닫기 (call 본문은 non-async라 밖에서)
     await evalJs(`new Promise(r => setTimeout(() => { const s = document.getElementById('ending-screen'); if (s) s.style.display = 'none'; r(1); }, 700))`);
@@ -461,6 +470,8 @@ const KNOWLEDGE_HASH = -451536973;
       check('엔딩/조기 탈출 (정기 교신 +7일 확정 예약·도래 발화)', ed.early1.pe === 'doctor_radio_regular' && ed.early1.d === 107 && ed.early2 === 'early_rescue',
         `pe ${ed.early1.pe} d ${ed.early1.d} then ${ed.early2}`);
       check('응답/이관의 진실 순차 드랍 (nw1 → nw2)', ed.seq[0] === 'nw1' && ed.seq[1] === 'nw2', `seq ${ed.seq.join(',')}`);
+      check('엔딩/9겨울 밤 경합 (무전 먼저 → 이튿날 구조)', ed.clash1.pe === 'doctor_radio' && ed.clash1.pend === true && ed.clash2 === 'ending_choice',
+        `pe ${ed.clash1.pe} pend ${ed.clash1.pend} then ${ed.clash2}`);
     }
 
     const green = report();

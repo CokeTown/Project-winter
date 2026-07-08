@@ -4908,6 +4908,12 @@ function recordTabHtml() {
       }
     }
   }
+  // 2.0 「응답」(citycore) 이관의 진실 — 발견 후에만 섹션 노출 (§9.5 검수: 미노출이면 수집해도 목록에
+  //   없는 유령 카운트가 된다 — research 문법 재사용)
+  {
+    const ngot = MEMOS_CITYCORE.filter(id => owned[id]).length;
+    if (ngot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionCitycore')} (${ngot}/${MEMOS_CITYCORE.length})</div>` + MEMOS_CITYCORE.map(id => memoRow(id, MEMOS)).join('');
+  }
   // v1.5: 좌초 여객선(harbor) 메모 — 발견 후에만 섹션 노출 (지하/리조트 문법 재사용)
   {
     const hgot = MEMOS_HARBOR.filter(id => owned[id]).length;
@@ -6325,7 +6331,16 @@ function passWinter(notes) {
 // 박사 무전 발화 시도 (밤, 라디오 보유 시). processDay 말미에서 호출.
 function tryDoctorRadio() {
   if (state.pendingEvent) return;                    // 다른 인카운터 대기 중이면 다음 날
-  // 2.0 엔딩 3분기 (§9.5): 9겨울 구조 인카운터 — 예약돼 있으면 최우선(그날 밤, 문 두드리는 소리)
+  // 9겨울 첫 무전 (라디오 보유 시) — 구조(ending_choice)보다 먼저: 복선이 초대보다 앞선다.
+  //   §9.5 검수(2026-07-08): 같은 밤 경합 시 구조가 무전을 밀어내던 순서 역전 교정 —
+  //   9겨울 밤=박사의 무전, 이튿날 밤=문 두드리는 소리. 라디오 미보유면 무전만 보류(구조는 막지 않는다).
+  if (state.doctorRadioPending && items.some(i => i.defId === 'radio')) {
+    state.doctorRadioPending = false;
+    state.pendingEvent = 'doctor_radio';
+    state.lastEventDay = state.day;
+    return;
+  }
+  // 2.0 엔딩 3분기 (§9.5): 9겨울 구조 인카운터 — 그날 밤, 문 두드리는 소리
   if (state.endingChoicePending && !state.endingType) {
     state.endingChoicePending = false;
     state.pendingEvent = 'ending_choice';
@@ -6336,14 +6351,6 @@ function tryDoctorRadio() {
   if (state.earlyRescueDay > 0 && state.day >= state.earlyRescueDay && !state.endingType && state.winters < 9) {
     state.earlyRescueDay = 0;
     state.pendingEvent = 'early_rescue';
-    state.lastEventDay = state.day;
-    return;
-  }
-  // 9겨울 첫 무전 (라디오 보유 시)
-  if (state.doctorRadioPending) {
-    if (!items.some(i => i.defId === 'radio')) return; // 라디오 미보유 → 다음 배치일까지 보류
-    state.doctorRadioPending = false;
-    state.pendingEvent = 'doctor_radio';
     state.lastEventDay = state.day;
     return;
   }
