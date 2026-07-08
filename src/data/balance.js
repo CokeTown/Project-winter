@@ -58,7 +58,9 @@ export const BAL = {
     hungryPenGate: 25,   // hunger/thirst 이 값 미만이면 성공률 페널티 (rateParts)
     hungryPen: 0.10,     // 허기/갈증 성공률 페널티량
     // 가방(탐사 안전망, 디렉터 2026-07-07): 출발 시 천 소모, 실패/부분이어도 랜덤 자원 최소 회수 보장(failSalvage와 max).
-    bagCost: { cloth: 2 }, // 가방 챙기기 비용 (출발 시 소모)
+    idleTimeScale: 3.2,   // 평시(비탐험) 시계 배속 — 탐험(timeScale 4)의 80% (디렉터 확정 2026-07-08)
+    bagCost: { cloth: 3, parts: 1 }, // DDD-3 내구성 승격(REWARD-LOOP ③): 1회용 챙기기 → 제작 1회(내구 6회)
+    bagDur: 6,                       // 가방 내구 — 안전망이 발동한 탐험에서만 1 마모(재제작=유지 루프)
     bagFloorMin: 1,        // 실패/부분 시 최소 확정 회수 (하한)
     bagFloorMax: 2,        // 최소 확정 회수 (상한)
   },

@@ -838,7 +838,7 @@
     #hud .shelter-name { font-size: 12px; }
     #hud .stat { font-size: 10px; }
     #hud .btn-row .pixel-btn { padding: 7px 1px; font-size: 10px; }
-    #res-bar { top: 132px; right: 8px; left: auto; width: 178px; }
+    #res-bar { top: 132px; right: 8px; left: auto; width: 216px; } /* 디렉터(2026-07-08): 178px에서 우측 열 숫자 잘림(1.6.5 실기기) — 2열 칩+스케일이 들어가는 폭으로 확대 */
     .res-chip { font-size: 11px; padding: 3px 5px; }
     #res-chips { grid-template-columns: 1fr 1fr; }
     #clock-panel { right: 8px; top: 8px; }

@@ -7,7 +7,7 @@ const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
 const SHELTER_HASH = 1052806561; // 2026-07-08 재핀: 해금 강화 — unlockAt 사다리(옥탑25~로지290) + moveCost x5~10 (디렉터 오더)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
-const MIG_HASH = -1431378856; // 2026-07-08 재핀: 도료 paints + 염료 상인 dyeOffer 편입 (직전: §9.6 히든 5종)
+const MIG_HASH = 2043240591; // 2026-07-09 재핀: 내구성 가방 bagDur 편입 (직전: 도료+염료 상인)
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
 const MARKET_HASH = -1012304627;
 // 「지식」 테크트리 시그니처 해시 (branch/tier/cost/effect). 노드/비용/효과 변경 시 KNOWLEDGE_HASH(actual) 재핀.
@@ -211,17 +211,22 @@ const KNOWLEDGE_HASH = -451536973;
       check('가방/챙기면 실패해도 빈손 없음 (최소 ≥1)', bg.minWithBag >= 1, `minWithBag ${bg.minWithBag}`);
       check('가방/없으면 실패 시 빈손 발생(대조군)', bg.sawZeroNoBag === true, `noBag zero ${bg.sawZeroNoBag}`);
     }
-    // 가방 UI: prep 모달에 가방 토글 행이 렌더되나 (data-prep 셀렉터 분리 확인)
+    // 가방 UI (DDD-3 내구성 승격): 미보유=제작 행(data-bag) → 클릭 제작 → 보유=내구 정보 행
     const bagUi = await call(`
       S.simReset(); if (S.hideTitle) S.hideTitle(); if (S.setPaused) S.setPaused(false);
-      S.state.res.cloth = 5; S.state.energy = 100; S.state.exp = null; S.state.expToday = 0;
+      S.state.res.cloth = 5; S.state.res.parts = 3; S.state.bagDur = 0; S.state.energy = 100; S.state.exp = null; S.state.expToday = 0;
       S.startExpedition('residential');
       const h = document.getElementById('modal-body').innerHTML;
-      return JSON.stringify({ bagRow: h.includes('가방 챙기기') && h.includes('data-bag'), prepRows: (h.match(/data-prep=/g)||[]).length });
+      const craftRow = h.includes('가방을 꿰맨다') && h.includes('data-bag');
+      const el = document.querySelector('#modal-body [data-bag]');
+      if (el) el.click();
+      const h2 = document.getElementById('modal-body').innerHTML;
+      return JSON.stringify({ craftRow, ownRow: h2.includes('가방 · 내구'), dur: S.state.bagDur, prepRows: (h.match(/data-prep=/g)||[]).length });
     `).catch(e => JSON.stringify({ error: String(e) }));
     const bu = JSON.parse(bagUi);
     if (bu.error) check('가방 UI (예외 없이)', false, bu.error);
-    else check('가방 UI/prep 모달에 가방 토글 행 렌더', bu.bagRow === true && bu.prepRows > 0, `bagRow ${bu.bagRow} prepRows ${bu.prepRows}`);
+    else check('가방 UI/prep 모달 (제작 행 → 클릭 제작 → 내구 정보 행)', bu.craftRow === true && bu.ownRow === true && bu.dur === 6 && bu.prepRows > 0,
+      `craft ${bu.craftRow} own ${bu.ownRow} dur ${bu.dur} prepRows ${bu.prepRows}`);
 
     // ── 게이트 코스트 스케일(§F) — 방호복 수리비 모드별 (허브도 동일 헬퍼) ──
     const gate = await call(`
@@ -381,7 +386,7 @@ const KNOWLEDGE_HASH = -451536973;
         endingType: st.endingType, endingChoicePending: st.endingChoicePending, earlyRescueDay: st.earlyRescueDay, // 2.0 §9.5
         subwayHidden: st.subwayHidden, hiddenGateDone: st.hiddenGateDone, hiddenReachPending: st.hiddenReachPending, // 2.0 §9.6
         hiddenReached: st.hiddenReached, siloFired: st.siloFired,
-        paints: typeof st.paints, dyeOffer: st.dyeOffer, // 도료 + 염료 상인 (REWARD-LOOP ②)
+        paints: typeof st.paints, dyeOffer: st.dyeOffer, bagDur: st.bagDur, // 도료 + 염료 상인 + 내구성 가방 (REWARD-LOOP ②③)
         hazmat: st.hazmat, hazmatDone: st.hazmatDone, radioBaseDone: st.radioBaseDone,
         survivorLights: st.survivorLights, doctorRegularSeen: st.doctorRegularSeen,
         doctorRadioRegularPending: st.doctorRadioRegularPending, questIdx: st.questIdx,
@@ -543,6 +548,28 @@ const KNOWLEDGE_HASH = -451536973;
     if (dj.error) check('염료 상인 (예외 없이)', false, dj.error);
     else check('염료 상인 (오퍼 렌더·구매 차감·부족 거부)', dj.hasNames && dj.bought && dj.after.canned === 1 && dj.after.paint === 1 && dj.denied && dj.sage === 0,
       JSON.stringify(dj));
+    // 내구성 가방 (DDD-3): 실패 탐험 + 보유 → 최소 회수 + 1 마모 / 미보유 → 미발동
+    const bagRes = await call(`
+      S.simReset(); if (S.hideTitle) S.hideTitle();
+      S.state.bagDur = 2;
+      S.state.exp = { region: 'residential', end: Date.now() - 1000, dur: 1, rate: 0, prep: [], startGameMin: S.state.gameMin, durMin: 120, bag: true };
+      const before = Object.entries(S.state.res).reduce((a, [k, v]) => a + v, 0);
+      S.resolveExpedition();
+      const gained = Object.entries(S.state.res).reduce((a, [k, v]) => a + v, 0) - before;
+      const durAfter = S.state.bagDur;
+      document.getElementById('modal-back').style.display = 'none';
+      S.state.bagDur = 0;
+      S.state.exp = { region: 'residential', end: Date.now() - 1000, dur: 1, rate: 0, prep: [], startGameMin: S.state.gameMin, durMin: 120, bag: false };
+      const b2 = Object.entries(S.state.res).reduce((a, [k, v]) => a + v, 0);
+      S.resolveExpedition();
+      const gained2 = Object.entries(S.state.res).reduce((a, [k, v]) => a + v, 0) - b2;
+      document.getElementById('modal-back').style.display = 'none';
+      return JSON.stringify({ gained, durAfter, gained2 });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const bagJ = JSON.parse(bagRes);
+    if (bagJ.error) check('가방 (예외 없이)', false, bagJ.error);
+    else check('가방/내구 플로어 (실패+보유=회수·1마모 / 미보유=0)', bagJ.gained >= 1 && bagJ.durAfter === 1 && bagJ.gained2 <= 0,
+      JSON.stringify(bagJ));
 
     const green = report();
     app.exit(green ? 0 : 1);
