@@ -488,7 +488,7 @@ function beginWinterSnapshot() {
   state.winterSnap = {
     day: state.day,                        // 겨울 첫날
     successStart: state.stats?.success || 0, // lifetime 탐험 성공 (차분용)
-    acc: { coldSnaps: 0, defended: 0, fuel: 0 }, // 겨울 중 누적
+    acc: { coldSnaps: 0, defended: 0, fuel: 0, injuries: 0, lastInjury: null }, // 겨울 중 누적 (§9.4-④: 부상 통계 포함)
   };
 }
 // 겨울 중 연료 소모 집계 (winterSnap.acc.fuel) — resConsume('fuel') 경로에서 호출
@@ -4915,6 +4915,17 @@ function applyInjury(type, hasBottle) {
   if (SHELTERS[state.current].perk?.injuryHalf) restH *= 0.5;
   if (hasBottle) restH *= 0.8;
   state.injury = { type, untilMin: state.gameMin + restH * 60 };
+  // 2.0 부상 서사화(§9.4-④): 겨울 memoir 부상 통계 + 흉터 기록. 서사 전용 — 경제/판정 무관.
+  //   winterSnap은 겨울에만 존재하므로 겨울 부상만 집계된다(의도 — "그 해 겨울"의 기록).
+  if (state.winterSnap?.acc) {
+    state.winterSnap.acc.injuries = (state.winterSnap.acc.injuries || 0) + 1;
+    state.winterSnap.acc.lastInjury = type;
+  }
+  if (!_simRunning) { // 흉터는 실제 플레이의 몸에만 남는다 (sim 순수성 + 세이브 오염 방지)
+    if (!Array.isArray(state.scars)) state.scars = [];
+    state.scars.push({ t: type, d: state.day });
+    if (state.scars.length > 50) state.scars.shift();
+  }
   tipOnce('tip.injury'); // 찢어진 쪽지: 첫 부상
   return t('injury.applied', { icon: inj.icon, name: LName(inj), pen: Math.round(inj.pen * 100), h: Math.round(restH) });
 }
@@ -6169,14 +6180,21 @@ function buildWinterMemoir(n) {
   const titleId = n === 1 ? 'winter.page.title.first' : 'winter.page.title';
   // 탐험 0회면 "0번 건졌다" 기계문 대신 "나서지 못한 겨울" 분기.
   const bodyId = expWon === 0 ? 'winter.page.body.noexp' : 'winter.page.body';
+  // 2.0 부상 서사화(§9.4-④): 그 겨울에 다친 몸의 기록 — 1회는 부상명으로, 여러 번은 횟수로.
+  //   무부상은 흉터가 있는 사람에게만 안도의 한 줄(첫 겨울부터 "몸 성히"는 호들갑).
+  const hurtLine = (acc.injuries || 0) >= 2 ? t('winter.memoir.hurt.many', { n: acc.injuries })
+    : (acc.injuries === 1 && INJURIES[acc.lastInjury]) ? t('winter.memoir.hurt.once', { name: LName(INJURIES[acc.lastInjury]) })
+    : (state.scars || []).length ? t('winter.memoir.unhurt') : '';
   const page = {
     titleId, titleArgs: { n },
     bodyId,
     bodyArgs: {
       days, cold: acc.coldSnaps, defended: acc.defended, exp: expWon, fuel: acc.fuel,
       cat: catLine,
-      // 2.0 대한파(§9.4-③): 그 겨울의 프론트를 한 줄로 — 규율을 골랐다면 그 흔적까지
-      closing: (acc.front ? t(acc.frontDiscipline ? 'winter.memoir.front.' + acc.frontDiscipline : 'winter.memoir.front') + '<br>' : '') + winterMemoirLine(n),
+      // 2.0 깊이(§9.4): 부상 한 줄 → 대한파 한 줄 → 그 해의 맺음말 순으로 쌓인다
+      closing: (hurtLine ? hurtLine + '<br>' : '')
+        + (acc.front ? t(acc.frontDiscipline ? 'winter.memoir.front.' + acc.frontDiscipline : 'winter.memoir.front') + '<br>' : '')
+        + winterMemoirLine(n),
     },
   };
   state.pendingWinterMemoir.push(page);

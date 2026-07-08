@@ -61,6 +61,8 @@ export const state = {
   // ── 2.0 대한파 프론트 (GD-2.0 §9.4-③) ──
   frontWinterKey: -1,     // 이번 겨울 대한파를 이미 발령했는가 (계절 인덱스 — 겨울당 1회 확정)
   front: null,            // 진행 중 대한파 부속 { discipline:'ration'|'sleepless'|'emergency'|'none'|null } — null=하드 선택 대기(모달), 노말은 발동 즉시 'none'
+  // ── 2.0 부상 서사화 (GD-2.0 §9.4-④) ──
+  scars: [],              // 아문 부상의 기록 [{t:부상id, d:day}] — memoir 흉터 라인의 재료. 서사 전용(경제 무관), 상한 50
   // ── Nine Winters 엔드게임 마일스톤 (#11) ──
   winters: 0,          // 넘긴 겨울 수 (봄으로 넘어가는 날 +1). 제목이 곧 장기 목표.
   demoEnded: false,    // #74 데모 빌드 전용: 첫 겨울 통과로 데모가 끝난 세이브 (정식 빌드에선 항상 false)

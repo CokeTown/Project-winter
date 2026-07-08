@@ -22,6 +22,19 @@ for (const k of koKeys) {
   if (!EN_HANGUL_OK.has(k) && HANGUL.test(String(en[k] ?? ''))) bad.push(`${k}: en 미번역(한글 잔존) "${String(en[k]).slice(0, 30)}"`);
 }
 for (const k of enKeys) if (!(k in ko)) bad.push(`${k}: ko 누락`);
-console.log(`i18n 항목 ${koKeys.length}개 검사 (ko.json/en.json)`);
+// ── src ↔ public 동기화 게이트 (2026-07-08 검거) ──
+//   번들·이 게이트는 src/locales를, 런타임 fetch/preload 오버라이드는 dist/locales(=public 복사본)를 읽는다.
+//   둘이 어긋나면: public에만 넣은 신규 키는 게이트 무검증, src에만 넣은 윤문은 런타임에서 구본에 덮여 무효
+//   (재윤문 155키가 실제 화면에 안 보이던 라이브 결함의 근인). 커밋 시점엔 두 벌이 반드시 동일해야 한다.
+for (const f of ['ko.json', 'en.json']) {
+  const pub = JSON.parse(fs.readFileSync(new URL(`../public/locales/${f}`, import.meta.url), 'utf8'));
+  const srcObj = f === 'ko.json' ? ko : en;
+  for (const k of Object.keys(srcObj)) {
+    if (!(k in pub)) bad.push(`${f}: public에 ${k} 누락 (src↔public 드리프트)`);
+    else if (String(srcObj[k]) !== String(pub[k])) bad.push(`${f}: ${k} 값 드리프트 (src≠public)`);
+  }
+  for (const k of Object.keys(pub)) if (!(k in srcObj)) bad.push(`${f}: src에 ${k} 누락 (public에만 존재 — 게이트 무검증 키)`);
+}
+console.log(`i18n 항목 ${koKeys.length}개 검사 (ko.json/en.json + src↔public 동기화)`);
 if (bad.length) { console.error('위반:\n' + bad.join('\n')); process.exit(1); }
 console.log('무결 ✓');

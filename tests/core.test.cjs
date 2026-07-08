@@ -275,6 +275,40 @@ const KNOWLEDGE_HASH = -451536973;
       check('프론트/노말 강도 2 · 규율 자동 none', fd.nrm.sev === 2 && fd.nrm.disc === 'none', `sev ${fd.nrm.sev} disc ${fd.nrm.disc}`);
     }
 
+    // ── 부상 서사화 (GD-2.0 §9.4-④) — 겨울 부상 집계 + 흉터 기록 + memoir 라인 3분기 ──
+    const sc = await call(`
+      S.simReset(); S.state.day = 40; // 겨울 4일차 — winterSnap 활성 구간
+      S.state.winterSnap = { day: 37, successStart: 0, acc: { coldSnaps: 0, defended: 0, fuel: 0, injuries: 0, lastInjury: null } };
+      S.state.scars = []; S.state.pendingWinterMemoir = [];
+      const it = Object.keys(S.INJURIES)[0];
+      S.applyInjury(it, false);
+      const a = { n: S.state.winterSnap.acc.injuries, last: S.state.winterSnap.acc.lastInjury === it, scars: S.state.scars.length };
+      // memoir 1회 부상 → hurt.once (부상명 포함)
+      S.state.day = 49; S.buildWinterMemoir(1);
+      const p1 = S.state.pendingWinterMemoir[S.state.pendingWinterMemoir.length - 1];
+      const hurtOnce = !!p1 && p1.bodyArgs.closing.includes('흉터가 하나');
+      // 무부상 + 흉터 보유 → unhurt (안도의 한 줄)
+      S.state.winterSnap = { day: 37, successStart: 0, acc: { coldSnaps: 0, defended: 0, fuel: 0, injuries: 0, lastInjury: null } };
+      S.buildWinterMemoir(2);
+      const p2 = S.state.pendingWinterMemoir[S.state.pendingWinterMemoir.length - 1];
+      const unhurt = !!p2 && p2.bodyArgs.closing.includes('몸 성히');
+      // 무부상 + 무흉터(첫 겨울류) → 부상 라인 없음
+      S.state.scars = [];
+      S.state.winterSnap = { day: 37, successStart: 0, acc: { coldSnaps: 0, defended: 0, fuel: 0, injuries: 0, lastInjury: null } };
+      S.buildWinterMemoir(3);
+      const p3 = S.state.pendingWinterMemoir[S.state.pendingWinterMemoir.length - 1];
+      const noLine = !!p3 && !p3.bodyArgs.closing.includes('몸 성히') && !p3.bodyArgs.closing.includes('다쳤다');
+      return JSON.stringify({ ...a, hurtOnce, unhurt, noLine });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const scd = JSON.parse(sc);
+    if (scd.error) check('부상 서사화 (예외 없이)', false, scd.error);
+    else {
+      check('흉터/겨울 부상 집계 (acc.injuries·lastInjury·scars)', scd.n === 1 && scd.last && scd.scars === 1,
+        `n ${scd.n} last ${scd.last} scars ${scd.scars}`);
+      check('흉터/memoir 라인 3분기 (1회=부상명·무부상+흉터=안도·무흉터=무언)', scd.hurtOnce && scd.unhurt && scd.noLine,
+        `once ${scd.hurtOnce} unhurt ${scd.unhurt} noLine ${scd.noLine}`);
+    }
+
     // ── 2) 구세이브 마이그레이션 — #76 신규 필드 없이 저장된 세이브가 안전하게 로드되나 ──
     //   (내가 book/bookProgress/demoEnded를 마이그레이션 테스트 없이 넣은 것 → 이 그물로 방어)
     //   포괄 스냅샷: 마이그레이션이 채우는 정적 기본값 ~40필드를 해시로 핀(save.js 추출 안전망).
