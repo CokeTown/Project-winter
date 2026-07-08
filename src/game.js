@@ -1081,12 +1081,28 @@ function makeWalls(defs) {
       const bb = new THREE.Box3().setFromObject(d.group);
       const len = bb.max.x - bb.min.x, h = bb.max.y - bb.min.y;
       if (len > 0.5 && h > 0.5) {
-        proxy = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.16), shadowProxyMat);
-        proxy.position.set(d.pos[0], d.pos[1] + bb.min.y + h / 2, d.pos[2]);
+        // 디렉터 신고(문 빛 소실): 통짜 슬래브가 문 개구부까지 막아, 벽이 컬링되면 문으로 새던 빛이 죽었다.
+        //   벽 그룹에 doorGap(로컬 x 중심/폭/높이) 태그가 있으면 좌/우/상인방 3분할로 문 구멍을 남긴다.
+        proxy = new THREE.Group();
+        const slab = (sx, cx, sy, cy) => {
+          const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, 0.16), shadowProxyMat);
+          m.position.set(cx, cy, 0);
+          m.castShadow = true; m.receiveShadow = false;
+          m.raycast = () => {}; // 클릭/피킹 무간섭
+          proxy.add(m);
+        };
+        const gap = d.group.userData.doorGap;
+        if (gap) {
+          const gL = gap.x - gap.w / 2, gR = gap.x + gap.w / 2;
+          if (gL - bb.min.x > 0.05) slab(gL - bb.min.x, (bb.min.x + gL) / 2, h, bb.min.y + h / 2);         // 문 왼쪽
+          if (bb.max.x - gR > 0.05) slab(bb.max.x - gR, (gR + bb.max.x) / 2, h, bb.min.y + h / 2);         // 문 오른쪽
+          if (h - gap.h > 0.05) slab(gap.w, gap.x, h - gap.h, bb.min.y + gap.h + (h - gap.h) / 2);          // 상인방
+        } else {
+          slab(len, (bb.min.x + bb.max.x) / 2, h, bb.min.y + h / 2); // 개구부 없는 벽: 기존 통짜
+        }
+        proxy.position.set(d.pos[0], d.pos[1], d.pos[2]);
         proxy.rotation.y = d.rotY;
-        proxy.castShadow = true; proxy.receiveShadow = false;
         proxy.visible = false;          // 벽이 보일 땐 벽이 직접 그림자 — 프록시는 숨을 때만
-        proxy.raycast = () => {};       // 클릭/피킹 무간섭
         roomGroup.add(proxy);
       }
     }
@@ -5752,7 +5768,9 @@ function clampPanel(el) {
   // 경계(innerWidth/Height)는 visual px인데 preL/preT는 pre-zoom 좌표계 → z로 나눠 스케일을 맞춘다.
   //   (기존엔 visual 경계를 그대로 써서 zoom<1 모바일에서 우측 앵커 패널을 화면 중앙(left≈255)으로
   //    밀어냈다 — 시계·자원바 모바일 '난리'의 근인.)
-  const keepVisX = Math.min(preW * z, 120);
+  // 디렉터 신고(모바일 자원바 우측 잘림): 120px만 보이면 걸침을 허용하던 정책이 좁은 화면에선
+  //   "처음부터 잘린 패널"로 읽힌다 — 터치 기기는 패널 전체를 화면 안에 유지(PC는 기존 파킹 허용).
+  const keepVisX = isPcInput ? Math.min(preW * z, 120) : preW * z;
   const l = THREE.MathUtils.clamp(preL, 0, Math.max(0, (innerWidth - keepVisX) / z));
   const t = THREE.MathUtils.clamp(preT, minTop / z, Math.max(minTop / z, (innerHeight - 30) / z));
   el.style.left = l + 'px';
