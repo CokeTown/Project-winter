@@ -456,16 +456,30 @@ const DEFS = {
     colorNames: ['호두나무', '골드', '화이트', '슬레이트'],
     colorNamesEn: ['Walnut', 'Gold', 'White', 'Slate'],
     colors: [0x6b4a32, 0xb08a3a, 0xd4cfc2, 0x4a4d52],
-    build(c, colorIdx = 0) {
+    build(c, colorIdx = 0, sketch = null) {
       const g = new THREE.Group();
-      // 절차 풍경화 (하늘/지평선/언덕 3색 띠 — 일러스트 리소스 미사용)
       const rand = seededRand(53 + colorIdx * 11);
       B(g, 0.44, 0.32, 0.04, c, 0, 0.5, 0);              // 프레임
-      const artPals = [[0x8fb0cf, 0x6a8a5a, 0x4a6042], [0xc9a06a, 0x9a7a4a, 0x5a4a34], [0x9a8ab0, 0x6a7a8a, 0x44505a]];
-      const pal = artPals[Math.floor(rand() * artPals.length)];
-      B(g, 0.34, 0.14, 0.02, pal[0], 0, 0.57, 0.021);    // 하늘
-      B(g, 0.34, 0.06, 0.02, pal[1], 0, 0.47, 0.021);    // 언덕
-      B(g, 0.34, 0.04, 0.02, pal[2], 0, 0.42, 0.021);    // 땅
+      if (sketch) {
+        // DDD-2 수집품 전시: 밤하늘 스케치를 건다 — 관측소 수집(SKETCHES)의 두 번째 보상.
+        //   스케치별 복셀 모티프(일러스트 리소스 미사용, 풍경화와 같은 문법). id는 lore.js SKETCHES 키.
+        B(g, 0.34, 0.24, 0.02, 0x101522, 0, 0.52, 0.021); // 밤하늘 패널
+        const dot = (x, y, s, col) => B(g, s, s, 0.015, col, x, y, 0.032);
+        if (sketch === 'meteor') { dot(-0.08, 0.60, 0.014, 0xfff2d6); dot(-0.02, 0.55, 0.05, 0xfff2d6); dot(0.06, 0.49, 0.014, 0xd8e2f0); dot(0.11, 0.45, 0.03, 0xfff2d6); }
+        else if (sketch === 'aurora') { B(g, 0.05, 0.16, 0.015, 0x4a8a5a, -0.08, 0.54, 0.032); B(g, 0.05, 0.19, 0.015, 0x6aaa7a, 0, 0.53, 0.032); B(g, 0.05, 0.13, 0.015, 0x4a8a5a, 0.08, 0.55, 0.032); }
+        else if (sketch === 'milkyway') { for (let i = 0; i < 7; i++) dot(-0.13 + i * 0.045, 0.44 + i * 0.026, i % 2 ? 0.012 : 0.02, i % 3 ? 0xd8e2f0 : 0x9ab0d0); }
+        else if (sketch === 'moonhalo') { dot(0, 0.53, 0.05, 0xe8e4d8); dot(-0.07, 0.53, 0.012, 0x8a92a8); dot(0.07, 0.53, 0.012, 0x8a92a8); dot(0, 0.60, 0.012, 0x8a92a8); dot(0, 0.46, 0.012, 0x8a92a8); }
+        else if (sketch === 'comet') { dot(0.09, 0.57, 0.032, 0xfff2d6); dot(0.03, 0.54, 0.018, 0xd8e2f0); dot(-0.03, 0.51, 0.014, 0xa8b8d0); dot(-0.08, 0.49, 0.01, 0x7a8aa8); }
+        else if (sketch === 'satellite') { dot(0.05, 0.57, 0.02, 0xfff2d6); dot(-0.09, 0.47, 0.01, 0x8a92a8); dot(0.11, 0.44, 0.01, 0x8a92a8); }
+        else { for (let i = 0; i < 5; i++) dot(-0.11 + i * 0.055, 0.45 + ((i * 37) % 17) * 0.01, 0.012, 0xd8e2f0); } // 폴백: 잔별
+      } else {
+        // 절차 풍경화 (하늘/지평선/언덕 3색 띠 — 일러스트 리소스 미사용)
+        const artPals = [[0x8fb0cf, 0x6a8a5a, 0x4a6042], [0xc9a06a, 0x9a7a4a, 0x5a4a34], [0x9a8ab0, 0x6a7a8a, 0x44505a]];
+        const pal = artPals[Math.floor(rand() * artPals.length)];
+        B(g, 0.34, 0.14, 0.02, pal[0], 0, 0.57, 0.021);    // 하늘
+        B(g, 0.34, 0.06, 0.02, pal[1], 0, 0.47, 0.021);    // 언덕
+        B(g, 0.34, 0.04, 0.02, pal[2], 0, 0.42, 0.021);    // 땅
+      }
       const easel = B(g, 0.06, 0.24, 0.06, shade(c, 0.8), 0, 0.14, -0.05); // 뒷받침
       easel.rotation.x = -0.3;
       return g;

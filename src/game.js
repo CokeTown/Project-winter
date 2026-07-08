@@ -1816,7 +1816,7 @@ function doSaveNow() {
     try { localStorage.setItem('nw-opts', JSON.stringify(opts)); } catch (e) { /* 저장 불가 무시 */ }
     return;
   }
-  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2) }));
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0 }));
   state.savedAt = Date.now();
   // REQ-STEAM-01: 세이브 경로를 클라우드 어댑터 경유 (현재 localStorage 위임 — 동작 불변, Steam Cloud 미러 지점).
   Platform.cloud.save(slotKey(currentSlot), JSON.stringify({ state, opts }));
@@ -2014,7 +2014,7 @@ function updateCraftFx(dt) {
 }
 function buildItemGroup(item) {
   const def = DEFS[item.defId];
-  const g = def.build(def.colors[item.colorIdx], item.colorIdx);
+  const g = def.build(def.colors[item.colorIdx], item.colorIdx, item.sketch || null); // 3인자: 액자 스케치 전시 (DDD-2, frame만 사용)
   item.glowMeshes = [];
   g.traverse(o => {
     if (o.isMesh) {
@@ -2263,7 +2263,8 @@ function loadShelter(id) {
   for (const it of (state.layouts[id] || [])) {
     if (!DEFS[it.d]) continue;
     const [cx, cz] = clampToRoom({ defId: it.d, colorIdx: it.c ?? 0, rot: it.r ?? 0 }, it.x, it.z);
-    addItem(it.d, it.c ?? 0, cx, cz, it.r ?? 0, it.o !== 0, it.y || 0);
+    const restored = addItem(it.d, it.c ?? 0, cx, cz, it.r ?? 0, it.o !== 0, it.y || 0);
+    if (it.s && restored) { restored.sketch = it.s; recolorItem(restored, restored.colorIdx); } // DDD-2: 걸어둔 스케치 복원(재빌드)
   }
   for (const it of items) {
     if (!it.y) continue;
@@ -2321,7 +2322,7 @@ async function moveToShelter(id) {
     state.gameMin += BAL.economy.moveCrossTimeMin; // 구역 간 여정 3시간
     const dn = LName(DISTRICTS[districtOf(id)]); state.dayLog.notes.push(t('move.journeyNote', { name: dn, josa: josa(dn, '으로/로') }));
   }
-  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2) }));
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0 }));
   state.stayDays = 0; // 새 집은 아직 낯설다
   loadShelter(id);
   scheduleSave();
@@ -4432,7 +4433,7 @@ function openCraftModal() {
         state.rooftopSlate = 'full';
         toast(t('rooftop.slateDone')); state.dayLog.notes.push(t('rooftop.slateDone'));
         // 지붕 지오메트리를 다시 짓는다 (가구 보존 — 벙커 재빌드와 동일 패턴)
-        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
         loadShelter('rooftop');
         closeModal();
         playSfx('craft'); scheduleSave(); renderResBar(); updateHud();
@@ -4563,7 +4564,7 @@ function openCraftModal() {
       state.dayLog.notes.push(t('craft.modNote', { name: LName(m) }));
       if (id === 'extension') {
         // 방 구조가 바뀌므로 거처를 다시 짓는다
-        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
         loadShelter(state.current);
         closeModal();
       } else {
@@ -4580,7 +4581,7 @@ function openCraftModal() {
 // 벙커 지오메트리 재빌드 (#36) — 천장 수리/뒷문 상태를 반영해 방을 다시 짓는다 (extension 개조와 동일 패턴).
 function rebuildBunkerGeometry() {
   if (state.current !== 'bunker') return;
-  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
   loadShelter('bunker');
   closeModal();
   shadowDirty();
@@ -4588,7 +4589,7 @@ function rebuildBunkerGeometry() {
 // 1.1: 현재 셸터 지오메트리 재빌드 (현장 오브젝트 단계 교체용, 벙커 외 항구 셸터). 배치 보존 후 loadShelter.
 function rebuildShelterGeometry() {
   const id = state.current;
-  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1 }));
+  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
   loadShelter(id);
   closeModal();
   shadowDirty();
@@ -7286,6 +7287,22 @@ function showSelPanel(item) {
     });
     sw.appendChild(s);
   });
+  // DDD-2 수집품 전시: 액자에 밤하늘 스케치를 건다 — 수집(SKETCHES)의 두 번째 보상 (수집한 것만 노출)
+  { const oldSk = $('sel-sketch'); if (oldSk) oldSk.remove(); }
+  if (item.defId === 'frame' && Object.keys(state.sketches || {}).length) {
+    const div = document.createElement('div');
+    div.id = 'sel-sketch';
+    div.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:8px';
+    const mk = (id, label) => `<button class="pixel-btn" data-sk="${id}" style="font-size:10px;padding:2px 6px${(item.sketch || '') === id ? ';border-color:var(--accent)' : ''}">${label}</button>`;
+    div.innerHTML = mk('', t('frame.default')) + Object.keys(state.sketches).map(id => SKETCHES[id] ? mk(id, LN(SKETCHES[id])) : '').join('');
+    $('sel-swatches').after(div);
+    div.querySelectorAll('[data-sk]').forEach(b => b.addEventListener('click', () => {
+      item.sketch = b.dataset.sk || null;
+      recolorItem(item, item.colorIdx); // 그룹 재빌드 재사용 (색 불변)
+      if (item.sketch) toast(t('frame.hung', { name: LN(SKETCHES[item.sketch]) }));
+      showSelPanel(item); scheduleSave();
+    }));
+  }
   // 조명/가전: 전원 토글 + 연료 잔량 (기획서 v0.2 UI: "양초 3개 보유 / 1일 1개 소비")
   const old = $('sel-power'); if (old) old.remove();
   const fuel = def.light?.fuel || def.appliance?.fuel;

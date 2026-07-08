@@ -769,6 +769,8 @@
   "paint.need": "Needs {name} paint. Expeditions turn it up now and then.",
   "paint.used": "Painted with {name}. {left} left.",
   "paint.haveN": "×{n}",
+  "frame.default": "Landscape",
+  "frame.hung": "{name} — hung in the frame.",
   "dye.title": "The Dye Peddler",
   "dye.text": "At the mouth of a slum alley stands a handcart loaded with paint cans. The peddler pulls back the cloth without a word.<br>Today's cans — {names}.<br>The price is {n} canned food apiece. Not a face that haggles.",
   "dye.c0": "Buy can no. 1",
