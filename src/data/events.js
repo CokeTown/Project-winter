@@ -21,6 +21,7 @@ export function makeEvents(ctx) {
     resAdd, resConsume, addMoodBuff, applyInjury, seasonOf, coldSnapActive,
     dropMemo, dropBroadcast, recordDistantLight, spawnCat, playSfx,
     runEndingSequence, doctorFragmentsComplete,
+    endingLeaning, // 2.0 §9.5: 엔딩 성향(누적 신호 기반 — 3분기 문안 뉘앙스)
     encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도 — 암시장과 캐논 공유)
   } = ctx;
   const EVENTS = {
@@ -266,6 +267,30 @@ export function makeEvents(ctx) {
           return t('ev.cat.r0') + '<br>' + t('ev.cat.coat.' + state.catCoat);
         } },
         { labelId: 'ev.cat.c1', run() { return t('ev.cat.r1'); } },
+      ],
+    },
+    // ── 2.0 엔딩 3분기 (GD-2.0 §5·§9.5) — 아홉 번째 겨울을 넘긴 봄, 어디에 있든 구조가 온다 ──
+    //   문안은 누적 성향(endingLeaning)으로 한 줄 변주되지만, 선택은 언제나 셋 다 열려 있다.
+    //   '보류'는 4번째 문 — 다음 봄에 다시 온다(passWinter 재예약). 세 갈래 모두 런은 계속된다.
+    ending_choice: {
+      special: true,
+      icon: '🚁', titleId: 'end3.title', textId: 'end3.text',
+      textFn: () => t('end3.text', { winters: state.winters }) + '<br><br>' + t('end3.lean.' + endingLeaning()),
+      choices: [
+        { labelId: 'end3.c.escape', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.r.escape'); } },
+        { labelId: 'end3.c.newworld', run() { state.endingType = 'newworld'; setTimeout(() => runEndingSequence('newworld'), 400); return t('end3.r.newworld'); } },
+        { labelId: 'end3.c.rest', run() { state.endingType = 'rest'; setTimeout(() => runEndingSequence('rest'), 400); return t('end3.r.rest'); } },
+        { labelId: 'end3.c.wait', run() { return t('end3.r.wait'); } },
+      ],
+    },
+    // 2.0 조기 탈출 (§9.5) — 박사의 정기 교신에 닿은 사람에게만, 아홉 번째 겨울 전에 한 번 열리는 문.
+    //   보류하면 이 문은 닫힌다(구조는 9겨울에 다시 온다). 진실을 다 보기 전에 떠나는 자의 엔딩.
+    early_rescue: {
+      special: true,
+      icon: '📻', titleId: 'end3.early.title', textId: 'end3.early.text',
+      choices: [
+        { labelId: 'end3.early.c0', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.early.r0'); } },
+        { labelId: 'end3.early.c1', run() { return t('end3.early.r1'); } },
       ],
     },
     ending: {

@@ -89,6 +89,15 @@ export const MEMOS = {
   // ── v1.5 좌초 여객선 (harbor) 1: 페리 리워크 — 선실이 잠긴 사유 봉합 (갑판 판잣집의 내력) ──
   //   여객선(ship) 거주 중 탐험에서 우선 드랍. 1인칭 발견 문법·두 줄 구조 유지.
   shp1: { region: 'harbor', name: '선실 철문의 쪽지', nameEn: 'Note on the Cabin Door', desc: '잠긴 철문에 못으로 박아둔 쪽지. "아래층엔 물이 찼다. 펌프로는 못 당한다. 문은 잠갔다."\n갑판 위 판잣집은 그 사람이 지었을 것이다. 차라리 이쪽이 아늑하다.', descEn: 'A note nailed to the locked steel door. "The lower decks are flooded. The pump can’t keep up. I’ve locked the door."\nThe shanty on the deck must have been theirs. Honestly, it’s snugger out here.' },
+
+  // ── 2.0 「응답」 (citycore) 4: 이관의 진실 — 관찰→선별→규합→초대 (GD-2.0 §4·§9.5) ──
+  //   도심 중심지 탐험에서 우선·순차 드랍(무작위 아님 — 폭로의 순서가 곧 리듬). rsc 12종의 다음 층:
+  //   "소각은 끝이 아니라 이관(移管)이었다." 조용한 발견의 톤·두 줄 구조·1인칭. 신세계의 양가성(도약이자
+  //   섬뜩한 순응)을 카피가 닫지 않는다 — 디렉터 확정 2026-07-08.
+  nw1: { region: 'citycore', name: '관측 대상 대장', nameEn: 'Ledger of Observed Subjects', desc: '무너진 통신국 지하의 서류철. 지상 신호마다 번호와 좌표, 버틴 날수가 나란히 적혀 있다.\n한 줄에서 오래 눈이 멎었다. 좌표가 낯익다 — 내 겨울들이 거기 있었다.', descEn: 'A file binder from beneath the collapsed relay station. Each surface signal has a number, coordinates, days endured.\nMy eyes stopped long on one line. I know those coordinates — my winters are written there.' },
+  nw2: { region: 'citycore', name: '선별 기준 각서', nameEn: 'Memorandum of Selection', desc: '타이핑된 각서. 스스로 버틴 자. 기록을 남기는 자. 불을 지킨 자 — \'데려갈 가치\'의 기준이 항목으로 늘어서 있다.\n여백에 도장 하나가 찍혀 있다. "합격."', descEn: 'A typed memorandum. Those who endured alone. Those who kept records. Those who tended a fire — the criteria of "worth taking," listed as items.\nIn the margin, a single stamp: "Selected."' },
+  nw3: { region: 'citycore', name: '규합 계획 개요', nameEn: 'Assembly Plan Brief', desc: '제본된 개요서. 남은 생존자를 한 곳에 모아 \'다음 인류\'를 시작한다는 계획 — 지도부와 규범, 자리 배치까지 이미 정해져 있다.\n우리가 함께 지을 세상이 아니라, 그들이 먼저 설계해 둔 세상이었다.', descEn: 'A bound brief. A plan to gather the remaining survivors in one place and begin the "next humanity" — leadership, rules, even seating already decided.\nNot a world we would build together. A world they had already drawn.' },
+  nw4: { region: 'citycore', name: '초대장', nameEn: 'The Invitation', desc: '봉투도 없이 놓인 한 장. 좌표와 날짜, 그리고 짧은 문장.\n"우리는 당신을 오래 지켜봤습니다. 자리는 비워 두었습니다." — 초대인지, 소환인지.', descEn: 'A single sheet, left without an envelope. Coordinates, a date, and one short sentence.\n"We have watched you for a long time. Your place is kept." — An invitation, or a summons.' },
 };
 // 유서 6종 — 지역 무관 별도 풀, 극저확률 (REQ-LORE-01)
 export const WILLS = {
@@ -110,6 +119,8 @@ export const MEMOS_RESORT = Object.keys(MEMOS).filter(id => MEMOS[id].region ===
 export const MEMOS_RESEARCH = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'research');
 // v1.5 좌초 여객선(harbor) 메모 풀 — 페리(ship) 거주 중 탐험에서 우선 드랍(갑판 판잣집의 내력).
 export const MEMOS_HARBOR = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'harbor');
+// 2.0 「응답」(citycore) 이관의 진실 풀 — 도심 중심지 탐험에서 우선·순차 드랍(정의 순서 = 폭로 순서).
+export const MEMOS_CITYCORE = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'citycore');
 
 /* ── 라디오 방송 12종 (REQ-RADIO-01) ──
    예보 3(계절)/행상 예고 1/과거 정부 안내 2/정체불명 음악 1/생존자 사연 2/기계 자동 방송 1/박사 일지 조각 2.

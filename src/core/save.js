@@ -57,6 +57,10 @@ export function migrateLoadedState(rawState, defaults, oldVer) {
   if (!Array.isArray(state.scars)) state.scars = [];
   // 2.0 총 (§9.3): 구세이브 미보유
   if (rawState.gun === undefined) state.gun = null;
+  // 2.0 엔딩 3분기 (§9.5): 구세이브 미선택. endingSeen=true(Day10000 기감상) 세이브도 3분기는 새로 만난다(소급 없음).
+  if (rawState.endingType === undefined) state.endingType = null;
+  if (rawState.endingChoicePending == null) state.endingChoicePending = false;
+  if (rawState.earlyRescueDay == null) state.earlyRescueDay = 0;
   // Phase D 마이그레이션 (#12·#35·#36) — 구세이브에 없던 필드는 기본값으로 보정
   if (!Array.isArray(state.knowledge)) state.knowledge = []; // 「지식」 트리(§9) — 구세이브 안전
   if (!Array.isArray(state.evHistory)) state.evHistory = [];

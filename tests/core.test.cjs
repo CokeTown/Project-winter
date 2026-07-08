@@ -7,7 +7,7 @@ const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
 const SHELTER_HASH = 1052806561; // 2026-07-08 재핀: 해금 강화 — unlockAt 사다리(옥탑25~로지290) + moveCost x5~10 (디렉터 오더)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
-const MIG_HASH = -2113534371; // 2026-07-08 재핀: §9.3 gun + §9.4 scars/frontWinterKey/front 필드 스냅샷 편입
+const MIG_HASH = 1719799765; // 2026-07-08 재핀: §9.5 endingType/endingChoicePending/earlyRescueDay 편입 (직전: §9.3·9.4 필드)
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
 const MARKET_HASH = -1012304627;
 // 「지식」 테크트리 시그니처 해시 (branch/tier/cost/effect). 노드/비용/효과 변경 시 KNOWLEDGE_HASH(actual) 재핀.
@@ -378,6 +378,7 @@ const KNOWLEDGE_HASH = -451536973;
         avalancheForecast: st.avalancheForecast, avalancheBlockUntil: st.avalancheBlockUntil,
         sketches: typeof st.sketches, nightSkyToday: st.nightSkyToday, deco: typeof st.deco,
         gun: st.gun, scarsIsArr: Array.isArray(st.scars), frontWinterKey: st.frontWinterKey, front: st.front, // 2.0 §9.3·§9.4 신규 필드
+        endingType: st.endingType, endingChoicePending: st.endingChoicePending, earlyRescueDay: st.earlyRescueDay, // 2.0 §9.5
         hazmat: st.hazmat, hazmatDone: st.hazmatDone, radioBaseDone: st.radioBaseDone,
         survivorLights: st.survivorLights, doctorRegularSeen: st.doctorRegularSeen,
         doctorRadioRegularPending: st.doctorRadioRegularPending, questIdx: st.questIdx,
@@ -416,6 +417,51 @@ const KNOWLEDGE_HASH = -451536973;
     `).catch(err => JSON.stringify({ missing: ['(t 훅 없음)'], error: String(err) }));
     const p = JSON.parse(i18n);
     check('i18n 대표 키 해석됨', p.missing.length === 0, p.missing.length ? '누락 ' + p.missing.join(',') : '');
+
+    // ── 엔딩 3분기 + 이관의 진실 (GD-2.0 §5·§9.5) — 스위트 끝 배치(엔딩 시퀀스 DOM 오염 회피) ──
+    const e3 = await call(`
+      // 1) 9겨울 트리거: 겨울 마지막 날 다음날(day 49, winters 8→9) processDay → passWinter 예약 →
+      //    같은 processDay 말미의 tryDoctorRadio가 그날 밤 즉시 발화(플래그는 소진돼 있음)
+      S.simReset(); S.state.winters = 8; S.state.day = 49; S.state.pendingEvent = null;
+      S.processDay();
+      const nine = { w: S.state.winters, pend: S.state.endingChoicePending };
+      const fired = S.state.pendingEvent;
+      // 2) 선택 기록: escape run → endingType (시퀀스는 0.4s 뒤 — 화면은 아래서 정리)
+      const r0 = S.EVENTS.ending_choice.choices[0].run();
+      const et = S.state.endingType;
+      // 3) 성향 결정론 (랜덤 없음): 정든 집 신호 → rest / 진실 조각 14+ → newworld
+      S.state.endingType = null; S.state.memos = {}; S.state.survivorLights = 0; S.state.doctorRegularSeen = false;
+      S.state.cat = 1; S.state.stayDays = 40;
+      const leanRest = S.endingLeaning();
+      ['rsc1','rsc2','rsc3','rsc4','rsc5','rsc6','rsc7','rsc8','rsc9','rsc10','rsc11','rsc12','nw1','nw2'].forEach(id => S.state.memos[id] = 1);
+      const leanNw = S.endingLeaning();
+      // 4) 조기 탈출: 정기 교신 예약 시 +7일 확정 → 도래일 발화
+      S.simReset(); S.state.doctorRadioRegularPending = true; S.state.doctorRegularSeen = false; S.state.pendingEvent = null; S.state.day = 100;
+      S.tryDoctorRadio();
+      const early1 = { pe: S.state.pendingEvent, d: S.state.earlyRescueDay };
+      S.state.pendingEvent = null; S.state.day = 107;
+      S.tryDoctorRadio();
+      const early2 = S.state.pendingEvent;
+      // 5) 이관의 진실 순차 드랍: citycore 반복 → nw1 → nw2 순서 (유서/일반 메모는 무시)
+      S.simReset(); S.state.memos = {};
+      const seq = [];
+      for (let i = 0; i < 800 && seq.length < 2; i++) { const d = S.tryDropMemoOnExpedition('citycore'); if (d && d.id && d.id.slice(0, 2) === 'nw') seq.push(d.id); }
+      return JSON.stringify({ nine, fired, et, leanRest, leanNw, early1, early2, seq });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    // 정리: escape run()의 0.4s 지연 시퀀스가 열어둔 엔딩 화면 닫기 (call 본문은 non-async라 밖에서)
+    await evalJs(`new Promise(r => setTimeout(() => { const s = document.getElementById('ending-screen'); if (s) s.style.display = 'none'; r(1); }, 700))`);
+    const ed = JSON.parse(e3);
+    if (ed.error) check('엔딩 3분기 (예외 없이)', false, ed.error);
+    else {
+      check('엔딩/9겨울 트리거 (passWinter 예약 → 당일 밤 발화·플래그 소진)', ed.nine.w === 9 && ed.nine.pend === false && ed.fired === 'ending_choice',
+        `w ${ed.nine.w} pend ${ed.nine.pend} fired ${ed.fired}`);
+      check('엔딩/선택 기록 (escape → endingType)', ed.et === 'escape', `et ${ed.et}`);
+      check('엔딩/성향 결정론 (정든 집=rest · 진실 14+=newworld)', ed.leanRest === 'rest' && ed.leanNw === 'newworld',
+        `rest ${ed.leanRest} nw ${ed.leanNw}`);
+      check('엔딩/조기 탈출 (정기 교신 +7일 확정 예약·도래 발화)', ed.early1.pe === 'doctor_radio_regular' && ed.early1.d === 107 && ed.early2 === 'early_rescue',
+        `pe ${ed.early1.pe} d ${ed.early1.d} then ${ed.early2}`);
+      check('응답/이관의 진실 순차 드랍 (nw1 → nw2)', ed.seq[0] === 'nw1' && ed.seq[1] === 'nw2', `seq ${ed.seq.join(',')}`);
+    }
 
     const green = report();
     app.exit(green ? 0 : 1);

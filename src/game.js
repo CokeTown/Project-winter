@@ -16,7 +16,7 @@ import { makeCulling } from './render/culling.js'; // Tier4 렌더 추출 Phase1
 import { makeCamera } from './render/camera.js'; // Tier4 렌더 추출 Phase1-③: 카메라
 import { makeScreenFx } from './render/weatherfx.js'; // Tier4 렌더 추출 Phase1-④: 화면 2D 날씨 오버레이
 import { makeModals } from './ui/modals.js'; // Tier4 UI 추출 Phase1-⑤: 모달 빌더
-import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, BROADCASTS, SKETCHES } from './data/lore.js';
+import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, MEMOS_CITYCORE, BROADCASTS, SKETCHES } from './data/lore.js';
 import { makeEvents } from './data/events.js';
 import { makeDecoTex } from './data/decotex.js';
 import { makeCatSystem } from './systems/cat.js';
@@ -3325,13 +3325,24 @@ function dropMemo() {
 // 탐험 결산에서 호출 — 확률 게이트를 여기서 관리. 수집 시 id(+will 여부) 반환.
 //   expRegion: 이번 탐험의 목적지 지역(금지 구역 기밀 문서는 '어디서 탐험했나'로 우선순위가 정해진다 — 셸터 아님).
 function tryDropMemoOnExpedition(expRegion) {
+  // 2.0 「응답」(§9.5): 도심 중심지 탐험 — 이관의 진실 4단(nw1~4)을 '순서대로' 드랍.
+  //   관찰→선별→규합→초대의 폭로 순서가 곧 서사 리듬이라 무작위 픽을 쓰지 않는다(미수집 최소 순번).
+  //   research 2.5배 밀도 문법 재사용. citycore 전용 가드라 시뮬·타 지역 스트림 무접점.
+  if (expRegion === 'citycore') {
+    const unNw = MEMOS_CITYCORE.filter(id => !(state.memos || {})[id]);
+    if (unNw.length && Math.random() < BAL.events.memoDropChance * 2.5) {
+      const id = unNw[0]; collectMemo(id); return { id, will: false };
+    }
+  }
   // 1.4 금지 구역(연구동/검문소) 탐험 — 기밀 문서(research 메모)를 최우선 드랍. 세계관의 답이 있는 곳.
   //   유서보다 우선. 문서 희소화(디렉터 지시: 기본 2%) 후에도 금지 구역은 2.5배 밀도(실효 5%) —
   //   최종장 12종은 이제 '긴 추적'이다. 종이 한 장이 귀한 세계.
+  //   2.0 §9.5: 무작위 픽 → 미수집 최소 순번(정의 순서 rsc1→rsc12)으로 — 판데믹→봉쇄→결정→박사의
+  //   서사 순서가 수집 순서와 일치한다(순차화. 실게임 전용 경로라 시뮬 스트림 무접점).
   if (isForbiddenRegion(expRegion)) {
     const unRes = MEMOS_RESEARCH.filter(id => !(state.memos || {})[id]);
     if (unRes.length && Math.random() < BAL.events.memoDropChance * 2.5) { // 금지 구역은 문서 밀도가 높다(2.5배 게이트)
-      const id = unRes[Math.floor(Math.random() * unRes.length)]; collectMemo(id); return { id, will: false };
+      const id = unRes[0]; collectMemo(id); return { id, will: false };
     }
   }
   // 유서 우선 롤
@@ -3450,6 +3461,7 @@ const EVENTS = makeEvents({
   resAdd, resConsume, addMoodBuff, applyInjury, seasonOf, coldSnapActive,
   dropMemo, dropBroadcast, recordDistantLight, spawnCat, playSfx,
   runEndingSequence, doctorFragmentsComplete,
+  endingLeaning, // 2.0 §9.5: 엔딩 성향
   encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도)
 });
 setEncounterEvents(EVENTS); // core/encounter 술어에 EVENTS 주입 (makeEvents 산물 — 생성 직후 1회)
@@ -6101,20 +6113,25 @@ function showIntro() {
    엔딩 (v1.9) — Day 10000, 박사의 구조 (이때만 Ending OST)
 ============================================================ */
 let endingActive = false;
-function runEndingSequence() {
+// 2.0 §9.5: type = 'escape'|'newworld'|'rest'(3분기) 또는 미지정(기존 Day10000 — 먼 에필로그로 격하).
+//   세 갈래 모두 시퀀스 후 런은 계속된다 — 엔딩은 서사 마침표지 세이브의 끝이 아니다(방치형 정체성).
+function runEndingSequence(type) {
   endingActive = true;
   closeModal();
   setPaused(false);
   syncBgm(true); // Ending.mp3
   playSfx('heli');
   const dayStr = state.day.toLocaleString(lang === 'en' ? 'en-US' : 'ko-KR');
-  const lines = [
-    t('ending.line0'),
-    t('ending.line1', { day: dayStr }),
-    t('ending.line2') + (state.cat ? t('ending.line2cat') : ''),
-    t('ending.line3'),
-    t('ending.line4', { day: dayStr, succ: state.successes, cat: state.cat ? t('ending.catTag') : '' }),
-  ];
+  const vars = { day: dayStr, succ: state.successes, winters: state.winters, cat: state.cat ? t('ending.catTag') : '' };
+  const lines = type
+    ? [0, 1, 2, 3, 4].map(n => t(`end3.${type}.line${n}`, vars) + (n === 2 && state.cat ? t(`end3.${type}.cat`) : ''))
+    : [
+      t('ending.line0'),
+      t('ending.line1', { day: dayStr }),
+      t('ending.line2') + (state.cat ? t('ending.line2cat') : ''),
+      t('ending.line3'),
+      t('ending.line4', { day: dayStr, succ: state.successes, cat: state.cat ? t('ending.catTag') : '' }),
+    ];
   let i = 0;
   const scr = $('ending-screen'), txt = $('ending-text'), btn = $('ending-next');
   scr.style.display = 'flex';
@@ -6127,15 +6144,25 @@ function runEndingSequence() {
     i++;
     if (i >= lines.length) {
       scr.style.display = 'none';
-      state.endingSeen = true;
+      if (!type) state.endingSeen = true; // Day10000 에필로그 감상 기록 (3분기는 endingType이 이미 기록)
       endingActive = false;
-      state.dayLog.notes.push(t('ending.note'));
+      state.dayLog.notes.push(t(type ? 'end3.note.' + type : 'ending.note'));
       scheduleSave();
       syncBgm();
-      toast(t('ending.epilogue'));
+      toast(t(type ? 'end3.after.' + type : 'ending.epilogue'));
     } else render();
   };
   render();
+}
+// 2.0 §9.5: 엔딩 성향 — "누적된 하루가 빚는다"(갑툭튀 금지, STRATEGY §1.2). 랜덤 없음(결정론).
+//   도시 체류 가중(§9.8 4도시)은 미구현 — 그 전까지는 현존 3신호로 성향을 읽는다:
+//   탈출=박사 스파인(송출 불빛·정기 교신·일지 조각) / 신세계=진실 조각(기밀 12+이관 4) / 안식=정든 집(거주·고양이·쾌적).
+function endingLeaning() {
+  const escape = (state.survivorLights || 0) + (state.doctorRegularSeen ? 3 : 0) + (doctorFragmentsComplete() ? 2 : 0);
+  const truthN = MEMOS_RESEARCH.concat(MEMOS_CITYCORE).filter(id => (state.memos || {})[id]).length;
+  const newworld = truthN >= 14 ? 6 : truthN >= 9 ? 4 : truthN >= 5 ? 2 : 0;
+  const rest = Math.min(4, Math.floor((state.stayDays || 0) / 8)) + (state.cat ? 2 : 0) + (comfortDetail().score >= 75 ? 2 : 0);
+  return escape >= newworld && escape >= rest ? 'escape' : newworld >= rest ? 'newworld' : 'rest';
 }
 
 function updateClock() {
@@ -6290,11 +6317,28 @@ function passWinter(notes) {
   // 2.0 낙진 시계 (GD-2.0 §2): 정확히 그 겨울을 넘긴 아침에 한 번 — 낙진이 걷혔다.
   //   winters는 단조 증가라 자연히 1회 발화(별도 플래그·세이브 필드 불요).
   if (state.winters === BAL.forbidden.falloutWinters) notes.push(t('fallout.cleared'));
+  // 2.0 엔딩 3분기 (§9.5): 아홉 번째 겨울을 넘긴 봄 — 어디에 있든 구조가 온다(§6 확정).
+  //   그날 밤 인카운터로 발화(tryDoctorRadio 경유). '보류'했으면 이후 매 봄 다시 세워진다.
+  if (state.winters >= 9 && !state.endingType) state.endingChoicePending = true;
   state.winterSnap = null; // 이번 겨울 스냅샷 소진 — 다음 겨울 진입 때 새로 뜬다
 }
 // 박사 무전 발화 시도 (밤, 라디오 보유 시). processDay 말미에서 호출.
 function tryDoctorRadio() {
   if (state.pendingEvent) return;                    // 다른 인카운터 대기 중이면 다음 날
+  // 2.0 엔딩 3분기 (§9.5): 9겨울 구조 인카운터 — 예약돼 있으면 최우선(그날 밤, 문 두드리는 소리)
+  if (state.endingChoicePending && !state.endingType) {
+    state.endingChoicePending = false;
+    state.pendingEvent = 'ending_choice';
+    state.lastEventDay = state.day;
+    return;
+  }
+  // 2.0 조기 탈출 (§9.5): 정기 교신 +7일 확정 제안(랜덤 없음). 보류하면 소진 — 9겨울에 다시 온다.
+  if (state.earlyRescueDay > 0 && state.day >= state.earlyRescueDay && !state.endingType && state.winters < 9) {
+    state.earlyRescueDay = 0;
+    state.pendingEvent = 'early_rescue';
+    state.lastEventDay = state.day;
+    return;
+  }
   // 9겨울 첫 무전 (라디오 보유 시)
   if (state.doctorRadioPending) {
     if (!items.some(i => i.defId === 'radio')) return; // 라디오 미보유 → 다음 배치일까지 보류
@@ -6308,6 +6352,8 @@ function tryDoctorRadio() {
     state.doctorRadioRegularPending = false;
     state.pendingEvent = 'doctor_radio_regular';
     state.lastEventDay = state.day;
+    // 2.0 §9.5: 박사와 닿은 사람에겐 조기 탈출의 문이 열린다 — 이레 뒤 확정 제안(9겨울 전이라면)
+    if (!state.endingType && state.earlyRescueDay === 0) state.earlyRescueDay = state.day + 7;
   }
 }
 // 라디오 방송 청취 시도 (#12) — 라디오 배치+ON, 하루 1회, BAL 확률로 미수집 방송 1개 예약.
@@ -8776,6 +8822,7 @@ window.__shelter = {
   readStats, writeStats, recordNormalDay, wallpaperUnlocked, slotDisplayCount,
   openModeModal, refreshAutoplayLock, runAutoPlay, openFrontChoiceModal, // 대한파 규율(§9.4-③) — modal-golden용
   repairGun, // 총 정비(§9.3) — 코어 테스트용
+  endingLeaning, tryDoctorRadio, // 엔딩 3분기(§9.5) — 코어 테스트용
 
   items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather, BAL,
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
