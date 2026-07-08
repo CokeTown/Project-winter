@@ -7315,6 +7315,26 @@ function tickExpeditionUI() {
 }
 
 const selPanel = $('sel-panel');
+// A안 (디렉터 2026-07-09): 편집 카드를 선택 가구 '옆'에 앵커 — 가구를 보면서 칠한다.
+//   radioBubble과 동일한 투영·uiz 보정(패널은 zoom:--uiz 컨텍스트라 좌표를 uiz로 나눈다).
+//   우측 우선 배치, 오른쪽이 모자라면 좌측 플립, 상하는 클램프. 데스크톱 전용 —
+//   모바일 미디어 쿼리가 --sel-x/y를 무시하고 하단 시트로 강제한다(카메라 추적 불필요).
+function positionSelPanel() {
+  if (!selected || !selected.group || !selPanel.classList.contains('show')) return;
+  const p = new THREE.Vector3();
+  selected.group.getWorldPosition(p);
+  p.y += 0.5; // 가구 몸통 높이
+  p.project(camera);
+  const uiz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--uiz')) || 1;
+  const w = selPanel.offsetWidth * uiz, h = selPanel.offsetHeight * uiz, m = 8, gap = 30;
+  const ax = (p.x * 0.5 + 0.5) * innerWidth, ay = (-p.y * 0.5 + 0.5) * innerHeight;
+  let x = ax + gap;                                   // 기본: 가구 오른쪽
+  if (x + w > innerWidth - m) x = ax - gap - w;       // 오른쪽이 모자라면 왼쪽으로 플립
+  x = Math.max(m, Math.min(innerWidth - w - m, x));
+  let y = Math.max(m, Math.min(innerHeight - h - m, ay - h / 2)); // 가구 세로 중앙 정렬
+  selPanel.style.setProperty('--sel-x', (x / uiz) + 'px');
+  selPanel.style.setProperty('--sel-y', (y / uiz) + 'px');
+}
 function showSelPanel(item) {
   const def = DEFS[item.defId];
   $('sel-name').innerHTML = `${def.emoji} ${LName(def)}`;
@@ -7365,7 +7385,7 @@ function showSelPanel(item) {
     const have = state.res[fuel] || 0;
     const div = document.createElement('div');
     div.id = 'sel-power';
-    div.style.cssText = 'font-size:10px;color:var(--text-dim);margin-bottom:8px;line-height:1.6';
+    div.style.cssText = 'font-size:9px;color:var(--text-dim);margin-bottom:6px;line-height:1.5';
     div.innerHTML = `
       <button class="pixel-btn" id="btn-power" style="width:100%;margin-bottom:4px">${item.on !== false ? t('power.on') : t('power.off')}</button>
       ${def.appliance ? `<span style="color:var(--good)">${LLabel(def.appliance)}</span><br>` : ''}
@@ -7379,6 +7399,7 @@ function showSelPanel(item) {
     });
   }
   selPanel.classList.add('show');
+  positionSelPanel(); // 내용 구성 후 크기 확정 상태에서 1차 배치 (이후 매 프레임 재투영)
 }
 function hideSelPanel() { selPanel.classList.remove('show'); }
 
@@ -8875,6 +8896,7 @@ function renderFrame() {
   }
   updateCraftFx(dt); // ④ 제작 손맛 아이콘/반짝임 연출
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
+  positionSelPanel(); // 편집 미니 카드 재투영 — 카메라 팬/줌/드래그를 따라간다 (A안)
   for (const it of items) {
     if (it.lightObj && it.on !== false && DEFS[it.defId].light?.flicker) {
       const k = 0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23);
@@ -9154,6 +9176,7 @@ window.__shelter = {
   envFx: () => ({ snowCover, wetness }),
   cat: () => getCat(),
   camera, THREE, CAT_POSES,
+  select, deselect, positionSelPanel, // 편집 미니 카드 A안 (접지 프로브용)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
   //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).
   setYaw: (rad) => { camState.yaw = camState.targetYaw = rad; },

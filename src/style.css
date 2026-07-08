@@ -291,17 +291,25 @@
   .tool-item.empty:hover { border-color: var(--bad); transform: none; }
   .tool-item.empty .cnt { background: #3a3f4d; color: var(--text-dim); }
 
-  /* ── 선택 패널 ── */
-  #sel-panel { bottom: 178px; left: 50%; transform: translateX(-50%); display: none; text-align: center; } /* 디렉터 신고(PC 배치·색상 겹침, 데모 1.6.3 포팅): 툴바 실높이 113을 56으로 잘못 잡아 44px 겹쳤다 — 실측 위로 분리 */
+  /* ── 선택 패널 — A안 컨텍스트 미니 카드 (디렉터 2026-07-09): 선택 가구 옆에 앵커되는 소형 카드.
+     좌표는 positionSelPanel()이 --sel-x/y로 매 프레임 주입(우측 우선·좌측 플립·클램프).
+     가구를 보면서 칠한다 — 중앙 대형 패널이 씬(정작 색이 바뀌는 가구)을 가리던 문제의 해소. */
+  #sel-panel {
+    left: var(--sel-x, 50%); top: var(--sel-y, 40%);
+    width: 178px; padding: 8px 9px;
+    display: none; text-align: center;
+  }
   #sel-panel.show { display: block; }
-  #sel-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
-  #sel-panel .swatches { display: flex; gap: 8px; justify-content: center; margin-bottom: 9px; }
-  .swatch { width: 22px; height: 22px; border-radius: 3px; cursor: pointer; border: 2px solid #555b6b; position: relative; }
+  #sel-panel h2 { font-size: 11px; color: var(--accent); margin-bottom: 6px; }
+  #sel-panel .swatches { display: flex; gap: 6px; justify-content: center; margin-bottom: 7px; }
+  .swatch { width: 18px; height: 18px; border-radius: 3px; cursor: pointer; border: 2px solid #555b6b; position: relative; }
   .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
   /* 도료 게이트 (REWARD-LOOP ②): 그 계열 도료가 없으면 잠금 — 어둡게 + 자물쇠 */
   .swatch.locked { opacity: 0.45; cursor: not-allowed; }
-  .swatch.locked::after { content: '🔒'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; }
-  #sel-panel .btn-row { display: flex; gap: 6px; }
+  .swatch.locked::after { content: '🔒'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  #sel-panel .btn-row { display: flex; gap: 5px; }
+  #sel-panel .btn-row .pixel-btn { flex: 1; font-size: 10px; padding: 4px 4px; }
+  #sel-panel #btn-power { font-size: 10px; padding: 4px 6px; }
   /* 잭팟 프레임 (희귀 획득 공용): 화면 상단 중앙 반짝 배너 — 도료가 첫 사용자 */
   .jackpot-toast {
     position: fixed; top: 74px; left: 50%; transform: translateX(-50%);
@@ -855,7 +863,8 @@
     /* 편집 모드 가구 툴바·팔레트는 조작 바 위로 (조작 바 zoom:1 실측 클리어런스) */
     #toolbar { bottom: 106px; padding: 6px; }
     /* 디렉터 신고(배치·색상 겹침): sel-panel이 toolbar와 같은 bottom(100)이라 뒤에 깔렸다 — 툴바 실측 높이 위로 분리 */
-    #sel-panel { bottom: 210px; max-width: calc(100vw - 20px); } /* 198은 툴바 상단과 2px 접촉(스케일 반올림) — 마진 확보 */
+    /* A안 모바일 폴백: 앵커(--sel-x/y) 무시, 하단 시트 고정 — 좁은 화면에선 가구 옆 공간이 없다 */
+    #sel-panel { top: auto; bottom: 210px; left: 50%; transform: translateX(-50%); width: auto; max-width: calc(100vw - 20px); }
     /* 세로폰에서 취소 버튼이 베이스 값으로 툴바(106~) 안에 깔렸다 — sel-panel 위 밴드로 (390×844 실측) */
     #btn-cancel-place { bottom: 240px; }
     #quest-card { top: auto; bottom: 106px; }
@@ -885,7 +894,7 @@
     .tool-item .emoji { font-size: 14px; }
     #cam-ctrl { bottom: 4px; right: 4px; gap: 3px; }
     .cam-btn { width: 32px; height: 32px; font-size: 13px; }
-    #sel-panel { bottom: 60px; }
+    #sel-panel { top: auto; bottom: 60px; left: 50%; transform: translateX(-50%); width: auto; } /* 가로폰도 하단 시트 폴백 (A안 앵커 무시) */
     #btn-cancel-place { bottom: 60px; }
     #modal { max-height: 88vh; }
     #journal-paper, #tip-note { max-height: 92vh; overflow-y: auto; }
