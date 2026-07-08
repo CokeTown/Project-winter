@@ -7,7 +7,7 @@ const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
 const SHELTER_HASH = 1052806561; // 2026-07-08 재핀: 해금 강화 — unlockAt 사다리(옥탑25~로지290) + moveCost x5~10 (디렉터 오더)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
-const MIG_HASH = 2043240591; // 2026-07-09 재핀: 내구성 가방 bagDur 편입 (직전: 도료+염료 상인)
+const MIG_HASH = -71013442; // 2026-07-09 재핀: 시그니처 도면 blueprints 편입 (직전: 내구성 가방)
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
 const MARKET_HASH = -1012304627;
 // 「지식」 테크트리 시그니처 해시 (branch/tier/cost/effect). 노드/비용/효과 변경 시 KNOWLEDGE_HASH(actual) 재핀.
@@ -386,7 +386,7 @@ const KNOWLEDGE_HASH = -451536973;
         endingType: st.endingType, endingChoicePending: st.endingChoicePending, earlyRescueDay: st.earlyRescueDay, // 2.0 §9.5
         subwayHidden: st.subwayHidden, hiddenGateDone: st.hiddenGateDone, hiddenReachPending: st.hiddenReachPending, // 2.0 §9.6
         hiddenReached: st.hiddenReached, siloFired: st.siloFired,
-        paints: typeof st.paints, dyeOffer: st.dyeOffer, bagDur: st.bagDur, // 도료 + 염료 상인 + 내구성 가방 (REWARD-LOOP ②③)
+        paints: typeof st.paints, dyeOffer: st.dyeOffer, bagDur: st.bagDur, blueprints: typeof st.blueprints, // 도료 + 염료 상인 + 가방 + 도면 (REWARD-LOOP ②③)
         hazmat: st.hazmat, hazmatDone: st.hazmatDone, radioBaseDone: st.radioBaseDone,
         survivorLights: st.survivorLights, doctorRegularSeen: st.doctorRegularSeen,
         doctorRadioRegularPending: st.doctorRadioRegularPending, questIdx: st.questIdx,
@@ -551,6 +551,9 @@ const KNOWLEDGE_HASH = -451536973;
     // 내구성 가방 (DDD-3): 실패 탐험 + 보유 → 최소 회수 + 1 마모 / 미보유 → 미발동
     const bagRes = await call(`
       S.simReset(); if (S.hideTitle) S.hideTitle();
+      // RNG 고정(0.99): rate 0 + pity(+4%p)여도 부분성공 경계(x0.5)에 안 걸리게 — 완전 실패 확정(결정론).
+      //   도료/도면/책 드랍도 0.99 미만 확률이라 전부 미발화 → 자원 델타가 가방 floor만 남는다.
+      const __or = Math.random; Math.random = () => 0.99;
       S.state.bagDur = 2;
       S.state.exp = { region: 'residential', end: Date.now() - 1000, dur: 1, rate: 0, prep: [], startGameMin: S.state.gameMin, durMin: 120, bag: true };
       const before = Object.entries(S.state.res).reduce((a, [k, v]) => a + v, 0);
@@ -563,6 +566,7 @@ const KNOWLEDGE_HASH = -451536973;
       const b2 = Object.entries(S.state.res).reduce((a, [k, v]) => a + v, 0);
       S.resolveExpedition();
       const gained2 = Object.entries(S.state.res).reduce((a, [k, v]) => a + v, 0) - b2;
+      Math.random = __or;
       document.getElementById('modal-back').style.display = 'none';
       return JSON.stringify({ gained, durAfter, gained2 });
     `).catch(err => JSON.stringify({ error: String(err) }));
@@ -570,6 +574,31 @@ const KNOWLEDGE_HASH = -451536973;
     if (bagJ.error) check('가방 (예외 없이)', false, bagJ.error);
     else check('가방/내구 플로어 (실패+보유=회수·1마모 / 미보유=0)', bagJ.gained >= 1 && bagJ.durAfter === 1 && bagJ.gained2 <= 0,
       JSON.stringify(bagJ));
+
+    // 시그니처 도면 (DDD-4): 8종 정의 무결(지역별 2~3·색 4종) + 제작 목록 도면 게이트
+    const bp = await call(`
+      S.simReset();
+      const map = S.BAL.blueprint.regionItems;
+      const ids = Object.values(map).flat();
+      const defsOk = ids.every(id => S.DEFS[id] && S.DEFS[id].colors.length === 4);
+      const perRegion = Object.values(map).every(a => a.length >= 2 && a.length <= 3);
+      S.state.blueprints = {};
+      S.openCraftModal();
+      const h0 = document.getElementById('modal-body').innerHTML;
+      const hidden = ids.every(id => !h0.includes(S.DEFS[id].name));
+      S.state.blueprints = { neonvip: 1 };
+      S.openCraftModal();
+      const h1 = document.getElementById('modal-body').innerHTML;
+      const shown = h1.includes(S.DEFS.neonvip.name) && !h1.includes(S.DEFS.suit.name);
+      document.getElementById('modal-back').style.display = 'none';
+      return JSON.stringify({ n: ids.length, defsOk, perRegion, hidden, shown });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const bpj = JSON.parse(bp);
+    if (bpj.error) check('도면 (예외 없이)', false, bpj.error);
+    else {
+      check('도면/8종 정의 무결 (지역별 2~3·색 4종)', bpj.n === 8 && bpj.defsOk && bpj.perRegion, JSON.stringify(bpj));
+      check('도면/제작 게이트 (미보유=비노출 → 보유만 노출)', bpj.hidden === true && bpj.shown === true, `hidden ${bpj.hidden} shown ${bpj.shown}`);
+    }
 
     const green = report();
     app.exit(green ? 0 : 1);

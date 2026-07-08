@@ -154,4 +154,13 @@ export const CRAFTS = [
   { out: { outfit: 'forest' }, cost: { cloth: 2, material: 1 }, hint: '옷장에 추가 — 수풀 위장색', hintEn: 'Added to wardrobe — thicket camo' },
   { out: { outfit: 'cream' }, cost: { cloth: 4 }, hint: '옷장에 추가 — 밝은 생지 그대로', hintEn: 'Added to wardrobe — undyed cream' },
   { out: { outfit: 'charcoal' }, cost: { cloth: 3, fuel: 1 }, hint: '옷장에 추가 — 숯검정 물들임', hintEn: 'Added to wardrobe — charcoal-dyed' },
+  // DDD-4 지역 시그니처 (REWARD-LOOP ② 2차): bp = 도면 게이트 — 그 지역 탐험에서 도면을 주워야 목록에 뜬다.
+  { out: { furn: 'barrelfire' }, bp: 'barrelfire', cost: { material: 2, parts: 1, fuel: 1 }, hint: '슬럼의 밤 — 드럼통에 피운 불', hintEn: "The slum's night — a fire in a drum" },
+  { out: { furn: 'graffiti' }, bp: 'graffiti', cost: { material: 1, cloth: 1 }, hint: '뜯어온 벽의 목소리', hintEn: 'A wall torn loose, still shouting' },
+  { out: { furn: 'skis' }, bp: 'skis', cost: { material: 2, cloth: 1 }, hint: '눈 좋던 시절의 한 쌍', hintEn: 'A pair from the good snow years' },
+  { out: { furn: 'skipoles' }, bp: 'skipoles', cost: { parts: 1, material: 1 }, hint: '스키 폴대 — 벽에 기대 두면 그림이 된다', hintEn: 'Ski poles — leaned on a wall, they become a picture' },
+  { out: { furn: 'snowboard' }, bp: 'snowboard', cost: { material: 2, parts: 1 }, hint: '슬로프가 사라진 보드', hintEn: 'A board that outlived its slopes' },
+  { out: { furn: 'neonvip' }, bp: 'neonvip', cost: { parts: 3, battery: 1 }, hint: '도심의 밤 한 조각 — VIP ZONE', hintEn: 'A shard of the city night — VIP ZONE' },
+  { out: { furn: 'neonair' }, bp: 'neonair', cost: { parts: 3, battery: 1 }, hint: '죽은 방송국의 불빛 — ON AIR', hintEn: "A dead station's light — ON AIR" },
+  { out: { furn: 'suit' }, bp: 'suit', cost: { cloth: 3, parts: 1 }, hint: '폐허 이전의 출근길', hintEn: 'A commute from before the ruin' },
 ];

@@ -774,6 +774,8 @@
   "paint.need": "{name} 도료가 필요하다. 탐험에서 가끔 나온다.",
   "paint.used": "{name} 도료로 칠했다. 남은 {left}통.",
   "paint.haveN": "{n}통",
+  "bp.foundNote": "무너진 서랍 틈에서 접힌 도면을 찾았다 — {name}. 만드는 법이 그려져 있다.",
+  "bp.jackpot": "도면 발견 — {name}",
   "frame.default": "풍경화",
   "frame.hung": "{name} — 액자에 걸었다.",
   "dye.title": "염료 상인",

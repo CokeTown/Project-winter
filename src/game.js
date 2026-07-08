@@ -3065,6 +3065,18 @@ function resolveExpedition() {
       notes.push(t('paint.foundNote', { name: LName(PAINT_FAMILIES[fam]) }));
       jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
     }
+    // DDD-4 시그니처 도면 (REWARD-LOOP ② 2차): 지역 독점 가구의 도면 — 도료보다 희귀한 잭팟 층.
+    //   그 지역에서만, 미보유 도면 중 하나가 뽑힌다. resolveExpedition은 sim 미사용(§9.7) — 무접점.
+    {
+      const bpPool = (BAL.blueprint.regionItems[exp.region] || []).filter(id => !(state.blueprints || {})[id]);
+      if (bpPool.length && Math.random() < BAL.blueprint.dropChance) {
+        const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
+        state.blueprints = state.blueprints || {};
+        state.blueprints[bpId] = 1;
+        notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
+        jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
+      }
+    }
     // 염료 상인 (디렉터 2026-07-08): 슬럼 한정 5% — 만나는 건 운, 사는 건 선택(통조림 교환, 모드별 값).
     if (exp.region === 'slum' && !state.pendingEvent && Math.random() < BAL.paint.merchant.chance) {
       const all = Object.keys(PAINT_FAMILIES);
@@ -4189,6 +4201,7 @@ function applyDeco() {
 function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
   const rows = CRAFTS.map((c, i) => {
+    if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
     const outLabel = c.out.res
       ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`
       : c.out.outfit
@@ -8591,6 +8604,7 @@ function openQaPanel() {
       ${btn('questSkip', '온보딩 스킵')}
       ${btn('hidden', '히든 루트 점프 (침묵)')}
       ${btn('paints', '도료 전 계열 +3')}
+      ${btn('bps', '시그니처 도면 전부')}
     </div>
     <div id="qa-status" style="font-size:11px;color:var(--good);margin-top:8px;min-height:16px"></div>`;
   openModal('🛠️ QA 치트 패널', body);
@@ -8631,6 +8645,8 @@ function openQaPanel() {
       }
       // 도료 검수용 — 전 계열 +3 (스와치 게이트·소모·도감 확인)
       case 'paints': for (const f of Object.keys(PAINT_FAMILIES)) state.paints[f] = (state.paints[f] || 0) + 3; status('도료 12계열 +3통'); break;
+      // 시그니처 도면 검수용 — 전 도면 해금 (제작 목록 노출 확인)
+      case 'bps': { state.blueprints = state.blueprints || {}; for (const ids of Object.values(BAL.blueprint.regionItems)) for (const id of ids) state.blueprints[id] = 1; status('시그니처 도면 8종 전부 해금'); break; }
     }
     updateHud(); renderResBar(); if (!state.exp) renderExpPanel(); scheduleSave();
   }));

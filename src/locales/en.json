@@ -774,6 +774,8 @@
   "paint.need": "Needs {name} paint. Expeditions turn it up now and then.",
   "paint.used": "Painted with {name}. {left} left.",
   "paint.haveN": "×{n}",
+  "bp.foundNote": "Found a folded blueprint in a broken drawer — {name}. The how-to is all there.",
+  "bp.jackpot": "Blueprint found — {name}",
   "frame.default": "Landscape",
   "frame.hung": "{name} — hung in the frame.",
   "dye.title": "The Dye Peddler",
