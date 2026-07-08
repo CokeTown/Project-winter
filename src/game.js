@@ -3015,6 +3015,12 @@ function resolveExpedition() {
       state.hasCutter = true;
       notes.push(t('cutter.foundNote'));
     }
+    // 2.0 총 드랍 (§9.3, 절단기 문법) — 하드코어 전용·도심 중심지 성공 탐험·미보유 시.
+    //   citycore는 sim 로테이션 밖이라 이 롤은 시드 시뮬 스트림과 무접점.
+    if (exp.region === 'citycore' && isHardcore() && !state.gun && Math.random() < BAL.hostile.gunDropChance) {
+      state.gun = { dur: BAL.hostile.gunDur };
+      notes.push(t('gun.foundNote', { dur: BAL.hostile.gunDur }));
+    }
     // 세계관 메모/유서 드랍 (#35) — 성공 탐험에서만. 수집 시 결산 노트 + 닫은 뒤 쪽지 팝업 예약.
     //   1.4: 금지 구역이면 이번 탐험 목적지(exp.region)를 넘겨 기밀 문서를 우선 드랍한다.
     const drop = tryDropMemoOnExpedition(exp.region);
@@ -3050,6 +3056,32 @@ function resolveExpedition() {
     state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 5);
     notes.push(t('exp.note.dirty5'));
   }
+  // ── 2.0 적대 존재 조우 (§9.2) — 도심 중심지 전용, 오프스크린 판정만. 성패 무관(돌아오는 길에 마주친다).
+  //   노말/무한 = 소리·흔적만(손실 0 — "봤지만 싸우지 않았다") / 하드 = 전리품 일부를 잃는다 /
+  //   하드코어 = 총이 있으면 1발로 격퇴(손실 0), 없으면 중상 + 전리품 손실.
+  //   가방 안전망 블록보다 앞 — "가방을 챙기면 빈손 없음" 계약은 조우 뒤에도 지켜진다.
+  //   citycore 전용 + !_simRunning 이중 가드(§9.7): 시드 시뮬 RNG 스트림 무접점.
+  if (exp.region === 'citycore' && !_simRunning && Math.random() < BAL.hostile.encounterChance) {
+    const H = BAL.hostile;
+    if (!isHard()) {
+      // 노말/무한: 존재는 소리와 흔적으로만 — 기계적 스테이크 0 (§9.2 계약)
+      notes.push(t(Math.random() < 0.5 ? 'hostile.soundNote' : 'hostile.traceNote'));
+    } else if (isHardcore() && state.gun && state.gun.dur > 0) {
+      // 하드코어 + 총: 한 발이 밤을 산다 — 손실 없이 물러선다
+      state.gun.dur--;
+      notes.push(t('hostile.gunNote', { dur: state.gun.dur }));
+      if (state.gun.dur === 0) notes.push(t('gun.emptyNote'));
+    } else {
+      // 하드: 전리품 일부를 내주고 몸을 뺀다 / 하드코어 무총: 중상까지
+      let lost = 0;
+      for (const id of Object.keys(gotRes)) {
+        const n = Math.floor(gotRes[id] * H.lootLossFactor);
+        if (n > 0) { resConsume(id, n); gotRes[id] -= n; lost += n; if (gotRes[id] <= 0) delete gotRes[id]; }
+      }
+      notes.push(t(lost > 0 ? 'hostile.robbedNote' : 'hostile.metNote'));
+      if (isHardcore()) notes.push(applyInjury('critical', prep.includes('bottle')), t('hostile.hurtNote'));
+    }
+  }
   // 가방(§E, 안전망): 실패/부분이어도 최소 회수 보장. 이미 얻은 게 floor 미만이면 지역 loot 풀에서 랜덤 자원으로 채운다
   //   (failSalvage 등과 max — 스택 아님). exp.bag는 출발 시 '가방 챙기기'로만 set → 시뮬은 미설정이라 이 블록 스킵(RNG 무영향).
   if (exp.bag && !success) {
@@ -3073,7 +3105,8 @@ function resolveExpedition() {
         type = 'minor';
         notes.push(t('exp.note.firstaid'));
       }
-      notes.push(applyInjury(type, prep.includes('bottle')));
+      // 2.0 §9.2: 조우 중상(critical)을 입은 트립이면 경상으로 덮어쓰지 않는다(부상 다운그레이드 방지)
+      if (state.injury?.type !== 'critical') notes.push(applyInjury(type, prep.includes('bottle')));
     } else if (prep.includes('gloves')) {
       injuryAvoided = true; // 부상 위험이 있었는데 장갑으로 피했다
       notes.push(t('exp.note.gloves'));
@@ -4277,6 +4310,19 @@ function openCraftModal() {
           : `<span class="p-cost">${costLabel(gateCost(F.hazmatRepairCost))}</span><button class="pixel-btn" data-hazmat="repair" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('hazmat.repairBtn')}</button>`}
       </div>`);
     }
+    // 2.0 총 정비 (§9.3, 방호복 문법) — 하드코어 + 총 보유 시에만. 제작 불가(도심 중심지 파밍 전용) — 정비만.
+    if (isHardcore() && state.gun) {
+      const H = BAL.hostile;
+      const gFull = state.gun.dur >= H.gunDur;
+      const gOk = resHasAll(gateCost(H.gunRepairCost));
+      rows2.push(`<div class="prep-row ${gFull ? 'sel' : ''}" style="cursor:default">
+        <span>🔫 ${t('gun.name')}</span>
+        <span class="p-eff" style="font-size:10px;flex:1">${t('gun.durLine', { dur: state.gun.dur, max: H.gunDur })}</span>
+        ${gFull
+          ? `<span style="color:var(--good);font-size:11px">${t('gun.ready')}</span>`
+          : `<span class="p-cost">${costLabel(gateCost(H.gunRepairCost))}</span><button class="pixel-btn" data-gun="repair" ${gOk ? '' : 'disabled'} style="margin-left:6px">${t('gun.repairBtn')}</button>`}
+      </div>`);
+    }
     // 무전 송출 카드 (기지 완공 후)
     if (state.radioBaseDone) {
       const total = broadcastableTotal();
@@ -4395,6 +4441,9 @@ function openCraftModal() {
       const done = act === 'craft' ? craftHazmat() : repairHazmat();
       if (done) openCraftModal();
     }));
+  // 2.0 총 정비 (§9.3)
+  $('modal-body').querySelectorAll('button[data-gun]').forEach(b =>
+    b.addEventListener('click', () => { if (repairGun()) openCraftModal(); }));
   // 1.4 무전 송출 (기지 완공 후) — 수집 방송/기록 1개 송출 → 지도 불빛 점등
   { const bb = $('btn-broadcast'); if (bb) bb.addEventListener('click', () => { if (doBroadcast()) openCraftModal(); }); }
   // 1.2 지하철 허브 승격 버튼
@@ -4575,6 +4624,17 @@ function repairHazmat() {
 function wearHazmat() {
   if (!state.hazmat) return;
   state.hazmat.dur = Math.max(0, state.hazmat.dur - 1);
+}
+// 2.0 총 정비 (§9.3, repairHazmat 미러) — 남은 발수를 전량 회복. 파밍 전용이라 제작 함수는 없다.
+function repairGun() {
+  if (!state.gun) { toast(t('gun.needFind')); return false; }
+  if (state.gun.dur >= BAL.hostile.gunDur) { toast(t('gun.alreadyFull')); return false; }
+  if (!resConsumeAll(gateCost(BAL.hostile.gunRepairCost))) { toast(t('toast.needMaterial')); return false; }
+  state.gun.dur = BAL.hostile.gunDur;
+  toast(t('gun.repaired', { dur: BAL.hostile.gunDur }));
+  playSfx('craft');
+  scheduleSave(); renderResBar(); updateHud();
+  return true;
 }
 // 송출 대상 = 수집한 방송(broadcasts) + 기록(memos) 통합 풀. "수집한 방송/기록을 송출"(GD).
 //   전체 송출 가능 총량(수집한 것 전부)과 이미 송출한 수를 센다.
@@ -6615,10 +6675,13 @@ function processDay() {
       }
     }
   }
-  // 부상 방치 → 감염 악화
+  // 부상 방치 → 악화. 2.0 §9.3: 하드코어는 다단계 사슬(minor→deep→critical) — 같은 롤의 목적지만
+  //   바꾼다(신규 Math.random 없음 — sim 스트림 불변). 노말/하드는 기존 →infection 그대로.
   if (state.injury && INJURIES[state.injury.type].infect && Math.random() < INJURIES[state.injury.type].infect) {
-    state.injury = { type: 'infection', untilMin: state.gameMin + INJURIES.infection.restH * 60 * recoveryMult() };
-    notes.push(t('day.infectWorse'));
+    const cur = state.injury.type;
+    const next = isHardcore() ? (cur === 'minor' ? 'deep' : 'critical') : 'infection';
+    state.injury = { type: next, untilMin: state.gameMin + INJURIES[next].restH * 60 * recoveryMult() };
+    notes.push(t(next === 'critical' ? 'day.criticalWorse' : next === 'deep' ? 'day.deepWorse' : 'day.infectWorse'));
   }
   // 고양이의 하루 (입양 후 소소한 기록)
   if (state.cat && Math.random() < 0.22) {
@@ -8701,6 +8764,7 @@ window.__shelter = {
   helplessNow, checkHelpless, doRescue, endRun, reclaimAll,
   readStats, writeStats, recordNormalDay, wallpaperUnlocked, slotDisplayCount,
   openModeModal, refreshAutoplayLock, runAutoPlay, openFrontChoiceModal, // 대한파 규율(§9.4-③) — modal-golden용
+  repairGun, // 총 정비(§9.3) — 코어 테스트용
 
   items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather, BAL,
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,

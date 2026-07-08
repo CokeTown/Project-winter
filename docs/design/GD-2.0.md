@@ -161,6 +161,7 @@ WORLDVIEW 개정 1차로 반영됨 (각 항목에 게임 문법 번역 병기):
 - 📁 **데이터**: balance.js `BAL.hostile`(per-mode rollChance·lootLossFactor·severeInjuryChance) · lore.js 적대 소문 · events.js 목격 인카운터.
 - 🚦 **게이트**: ⚠️ **sim 결정론 최대 지점** — `resolveExpedition` RNG 스트림은 시드 시뮬 기준선(Day30 clear544/storm435)의 load-bearing. 조우 롤 `Math.random()`은 반드시 `!_simRunning` 가드 또는 시뮬 기대값 모델(game.js 시뮬 블록) 동시 확장. 모달: 중상·빈손 결과.
 - ⚠️ **리스크**: 온스크린 전투 금지(회피/거래/손실 판정층에만) · 중상≠사망 · drawEvent 조우와 파밍-조우 롤 이중화 시 빈도 폭증 방지 · 노말 '소리만·손실 0' 계약(소문에 기계적 스테이크 0).
+  - **✅ 구현 확정 (2026-07-08)**: `resolveExpedition` 조우 블록 — citycore 전용 + `!_simRunning` 이중 가드, 트립당 `BAL.hostile.encounterChance`(0.35). 노말/무한=소리·흔적 노트 2종(손실 0) / 하드=이번 트립 전리품 ×0.5 몰수(가방 최소회수 안전망은 조우 **뒤**에 적용 — "챙기면 빈손 없음" 계약 유지) / 하드코어=총 1발 격퇴(손실 0) 또는 무총 시 중상+몰수. 조우 중상 뒤 실패-부상 롤이 경상으로 덮어쓰는 다운그레이드 가드. 소문 인카운터·lore 서브테이블은 §9.5 lore 저작과 함께(후속). 검증: 코어 57종(적대 3모드 계약 + Day30/60·하드코어 사망 핀 불변 = sim 스트림 무접점 입증).
 
 ### 9.3 총 + 하드코어 중상 (로드아웃·정비)
 
@@ -169,6 +170,7 @@ WORLDVIEW 개정 1차로 반영됨 (각 항목에 게임 문법 번역 병기):
 - 📁 **데이터**: items.js RESOURCES+gun / CRAFTS+총 레시피 / INJURIES+critical · balance.js `combat` 섹션 · i18n gun.*/injury.*.
 - 🚦 **게이트**: save.js 마이그레이션(gun·scars 기본값) → **tests/core.test.cjs MIG_HASH 스냅샷 갱신 필수** · sim 결정론(내구·중상 판정) · 골든 무영향(온스크린 없음).
 - ⚠️ **리스크**: 발사=오프스크린 판정만(전투 시스템 금지) · 하드코어 전용이라 노말/하드 밴드 불변 · 총 게이트가 '없으면 탐사 봉쇄'급 벽 안 되게 파밍/수리 캘리브 · **도심 중심지(§9.1) 선행 필요**.
+  - **✅ 구현 확정 (2026-07-08)**: `state.gun={dur}` — 제작 없음, citycore 성공 탐험 파밍 드랍(하드코어 전용·미보유 시 30%, 절단기 문법) + 제작대 정비 행(방호복 미러, `gateCost` 스케일, 격퇴 1회=1발·만충 6발). INJURIES `critical` 신설(pen 0.35·restH 72·timeMult 1.5·의약품 대량). **다단계 악화**: 기존 방치-악화 롤의 목적지만 모드 분기(신규 RNG 없음 — 스트림 불변) — 하드코어 minor→deep→critical / 노말·하드 기존 →infection. 흉터는 §9.4-④ scars가 자동 수확. MIG_HASH 재핀(-2113534371 — gun·scars·front 필드 스냅샷 편입). 잔여(후속): prep 모달 citycore 위험 안내 라인 · 총 파밍/수리 코스트 실측 캘리브(§9.5 사이클에서).
 
 ### 9.4 깊이 3종 (지역 숙련 · 대한파 프론트 · 부상 서사화)
 

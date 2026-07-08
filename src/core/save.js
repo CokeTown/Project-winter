@@ -55,6 +55,8 @@ export function migrateLoadedState(rawState, defaults, oldVer) {
   if (rawState.front === undefined) state.front = null;
   // 2.0 부상 서사화 (§9.4-④): 구세이브는 흉터 기록 없이 시작
   if (!Array.isArray(state.scars)) state.scars = [];
+  // 2.0 총 (§9.3): 구세이브 미보유
+  if (rawState.gun === undefined) state.gun = null;
   // Phase D 마이그레이션 (#12·#35·#36) — 구세이브에 없던 필드는 기본값으로 보정
   if (!Array.isArray(state.knowledge)) state.knowledge = []; // 「지식」 트리(§9) — 구세이브 안전
   if (!Array.isArray(state.evHistory)) state.evHistory = [];

@@ -33,6 +33,9 @@ export const INJURIES = {
   deep:      { name: '깊은 상처',   nameEn: 'Deep Wound',      icon: '🩸', pen: 0.15, restH: 24, cure: { bandage: 1, antiseptic: 1 }, infect: 0.25 },
   sprain:    { name: '염좌',        nameEn: 'Sprain',          icon: '🦵', pen: 0.10, restH: 18, timeMult: 1.3, cure: { painkiller: 1 } },
   infection: { name: '감염 위험',   nameEn: 'Infection Risk',  icon: '🤒', pen: 0.20, restH: 36, cure: { antiseptic: 1, water: 1 } },
+  // 2.0 중상 (GD-2.0 §9.3) — 부상 트리의 정점. 하드코어 도심 중심지 조우(총 미보유) + 하드코어 악화 사슬의 끝.
+  //   사망 아님("사망 없음, 탈진만" 정체성) — 의약품 소요 급증·장기 회복. memoir 흉터(§9.4-④)로 남는다.
+  critical:  { name: '중상',        nameEn: 'Critical Wound',  icon: '🚑', pen: 0.35, restH: 72, timeMult: 1.5, cure: { bandage: 2, antiseptic: 2, painkiller: 1 } },
 };
 // ---- 탐험 준비물 (기획서 v0.2: 준비물 슬롯) ----
 export const PREPS = {

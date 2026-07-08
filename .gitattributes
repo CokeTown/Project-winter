@@ -1,0 +1,3 @@
+# 골든 핀 파일은 라인엔딩 자동변환 금지 — 모달 DOM 스냅샷은 바이트 단위 비교라
+# autocrlf가 체크아웃에서 LF->CRLF로 바꾸면 위양성 diff가 난다 (2026-07-08 front_choice 검거).
+tests/grounding/modal-golden/*.html -text

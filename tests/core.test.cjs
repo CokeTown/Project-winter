@@ -7,7 +7,7 @@ const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
 const SHELTER_HASH = -1537463991;
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
-const MIG_HASH = 779394296;
+const MIG_HASH = -2113534371; // 2026-07-08 재핀: §9.3 gun + §9.4 scars/frontWinterKey/front 필드 스냅샷 편입
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
 const MARKET_HASH = -1012304627;
 // 「지식」 테크트리 시그니처 해시 (branch/tier/cost/effect). 노드/비용/효과 변경 시 KNOWLEDGE_HASH(actual) 재핀.
@@ -309,6 +309,48 @@ const KNOWLEDGE_HASH = -451536973;
         `once ${scd.hurtOnce} unhurt ${scd.unhurt} noLine ${scd.noLine}`);
     }
 
+    // ── 적대 존재 다이얼 + 총·중상 (GD-2.0 §9.2·9.3) — 모드별 결과 + 총 정비 + 악화 사슬 ──
+    //   조우는 확률(0.35)이라 반복 루프로 발생을 유도하되 상한 가드. citycore는 winters·successes 게이트 해제 후 진입.
+    const ho = await call(`
+      const H = S.BAL.hostile;
+      const unlock = (mode) => { S.simReset(); S.state.mode = mode; S.state.winters = 3; S.state.successes = 99; S.state.res.canned = 50; };
+      const trip = () => { S.state.expToday = 0; S.state.energy = 100; S.state.injury = null;
+        S.state.exp = { region: 'citycore', rate: 1, prep: [], startGameMin: S.state.gameMin }; S.resolveExpedition(); };
+      // 1) 노말 30트립: 총 미드랍(하드코어 전용) + 중상 없음 (조우=소리만, 손실 0 계약)
+      unlock('normal');
+      let normBad = false;
+      for (let i = 0; i < 30; i++) { trip(); if (S.state.gun || (S.state.injury && S.state.injury.type === 'critical')) normBad = true; }
+      // 2) 하드코어 + 총: 조우 발생 시 탄환만 줄고 중상 없음 (60트립 내 조우 기대 ~21회)
+      unlock('hardcore'); S.state.gun = { dur: H.gunDur };
+      let gunUsed = false, gunCrit = false;
+      for (let i = 0; i < 60 && !gunUsed; i++) { trip(); if (S.state.gun.dur < H.gunDur) gunUsed = true; if (S.state.injury && S.state.injury.type === 'critical') gunCrit = true; }
+      // 3) 하드코어 무총: 조우 시 중상 확정 + 흉터 기록
+      unlock('hardcore'); S.state.gun = null; S.state.scars = [];
+      let crit = false;
+      for (let i = 0; i < 60 && !crit; i++) { trip(); if (S.state.injury && S.state.injury.type === 'critical') crit = true; }
+      const scarOk = S.state.scars.some(s2 => s2.t === 'critical');
+      // 4) 총 정비: 빈 총 + 재료 → 만충
+      S.state.gun = { dur: 0 }; S.state.res.parts = 20; S.state.res.material = 20;
+      const rep = S.repairGun(); const repDur = S.state.gun.dur;
+      // 5) 악화 사슬: 하드코어 deep→critical / 노말 deep→infection (같은 롤, 목적지만 분기)
+      const worsenTo = (mode) => { unlock(mode);
+        // day=5 고정: processDay는 실게임/sim에서 day>=2로만 불린다 — day=1 직접 호출은 seasonOf(0) 엣지를 밟는다(테스트 사용법 준수)
+        for (let i = 0; i < 80; i++) { S.state.day = 5; S.state.injury = { type: 'deep', untilMin: S.state.gameMin + 9999 }; S.processDay();
+          if (S.state.injury && S.state.injury.type !== 'deep') return S.state.injury.type; } return '(no-worsen)'; };
+      const hcNext = worsenTo('hardcore'); const nmNext = worsenTo('normal');
+      return JSON.stringify({ normBad, gunUsed, gunCrit, crit, scarOk, rep, repDur, hcNext, nmNext });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const hd2 = JSON.parse(ho);
+    if (hd2.error) check('적대 다이얼 (예외 없이)', false, hd2.error);
+    else {
+      check('적대/노말 계약 (총 미드랍·중상 없음 — 소리만)', hd2.normBad === false, `normBad ${hd2.normBad}`);
+      check('적대/하드코어+총 (탄환 소모·중상 없음)', hd2.gunUsed && !hd2.gunCrit, `used ${hd2.gunUsed} crit ${hd2.gunCrit}`);
+      check('적대/하드코어 무총 (중상 + 흉터 기록)', hd2.crit && hd2.scarOk, `crit ${hd2.crit} scar ${hd2.scarOk}`);
+      check('총/정비 (빈 총 → 만충)', hd2.rep === true && hd2.repDur === 6, `rep ${hd2.rep} dur ${hd2.repDur}`);
+      check('부상/악화 사슬 (하드코어 deep→critical · 노말 deep→infection)', hd2.hcNext === 'critical' && hd2.nmNext === 'infection',
+        `hc ${hd2.hcNext} nm ${hd2.nmNext}`);
+    }
+
     // ── 2) 구세이브 마이그레이션 — #76 신규 필드 없이 저장된 세이브가 안전하게 로드되나 ──
     //   (내가 book/bookProgress/demoEnded를 마이그레이션 테스트 없이 넣은 것 → 이 그물로 방어)
     //   포괄 스냅샷: 마이그레이션이 채우는 정적 기본값 ~40필드를 해시로 핀(save.js 추출 안전망).
@@ -335,6 +377,7 @@ const KNOWLEDGE_HASH = -451536973;
         cablecarDone: st.cablecarDone, observatoryDone: st.observatoryDone,
         avalancheForecast: st.avalancheForecast, avalancheBlockUntil: st.avalancheBlockUntil,
         sketches: typeof st.sketches, nightSkyToday: st.nightSkyToday, deco: typeof st.deco,
+        gun: st.gun, scarsIsArr: Array.isArray(st.scars), frontWinterKey: st.frontWinterKey, front: st.front, // 2.0 §9.3·§9.4 신규 필드
         hazmat: st.hazmat, hazmatDone: st.hazmatDone, radioBaseDone: st.radioBaseDone,
         survivorLights: st.survivorLights, doctorRegularSeen: st.doctorRegularSeen,
         doctorRadioRegularPending: st.doctorRadioRegularPending, questIdx: st.questIdx,
