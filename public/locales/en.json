@@ -4,6 +4,8 @@
   "title.new": "✚ New Game",
   "title.load": "💾 Load",
   "title.help": "📖 Survivor's Journal",
+  "title.quit": "✖ Quit Game",
+  "title.quit.confirm": "Quit the game?",
   "title.tools.export": "Export save",
   "title.tools.import": "Import save",
   "title.tools.settings": "Settings",

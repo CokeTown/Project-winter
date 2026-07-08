@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
-const fs = require('fs');
-const path = require('path');
+// 안전망: sandbox 환경에선 fs/path require가 막힌다 — 그래도 contextBridge(nineWidget)는 살아야
+// 종료 버튼·위젯 IPC가 동작한다. 막히면 로케일 loose 오버라이드만 조용히 비활성.
+let fs = null, path = null;
+try { fs = require('fs'); path = require('path'); } catch (e) { /* sandboxed — 오버라이드 비활성 */ }
 
 // 위젯 모드 IPC 브릿지 — contextIsolation 유지, 렌더러엔 최소 표면만 노출.
 contextBridge.exposeInMainWorld('nineWidget', {
@@ -19,6 +21,7 @@ contextBridge.exposeInMainWorld('nineWidget', {
 // 렌더러 i18n 이 부팅 시 STR 위에 병합(오버라이드). 파일 없거나 깨지면 내장 기본값 유지.
 // preload 는 페이지 스크립트보다 먼저 실행되므로, 데이터를 미리 읽어 동기로 노출한다(플래시 없음).
 function readLocaleOverrides() {
+  if (!fs || !path) return { ko: null, en: null, dir: null }; // sandbox 폴백
   const dirs = [];
   try { if (process.resourcesPath) dirs.push(path.join(process.resourcesPath, 'locales')); } catch (e) { /* */ }
   dirs.push(path.join(__dirname, '..', 'dist', 'locales')); // 언팩/개발 폴백
