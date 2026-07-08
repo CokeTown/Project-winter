@@ -2021,7 +2021,7 @@ Wide isometric shelter scene at dusk, aspect ratio close to 2.14:1 (compose for 
 
 - **용도**: 가구 아이콘: 골동품 지구본
 - **목표 크기**: 256x256 (생성 비율: 1024x1024, fit: cover)
-- **배치 경로**: `assets-src/art/out/icons/icon_furn_globe.png`
+- **배치 경로**: `public/img/icons/icon_furn_globe.png`
 
 **ChatGPT에 붙여넣을 프롬프트:**
 
@@ -2037,7 +2037,7 @@ an antique tabletop globe of the old world, its faded parchment-coloured map cra
 
 - **용도**: 가구 아이콘: 축음기
 - **목표 크기**: 256x256 (생성 비율: 1024x1024, fit: cover)
-- **배치 경로**: `assets-src/art/out/icons/icon_furn_phonograph.png`
+- **배치 경로**: `public/img/icons/icon_furn_phonograph.png`
 
 **ChatGPT에 붙여넣을 프롬프트:**
 
@@ -2053,7 +2053,7 @@ an antique gramophone phonograph: a large flared brass horn rising from a small 
 
 - **용도**: 가구 아이콘: 가지 촛대
 - **목표 크기**: 256x256 (생성 비율: 1024x1024, fit: cover)
-- **배치 경로**: `assets-src/art/out/icons/icon_furn_candelabra.png`
+- **배치 경로**: `public/img/icons/icon_furn_candelabra.png`
 
 **ChatGPT에 붙여넣을 프롬프트:**
 
@@ -2069,7 +2069,7 @@ a branched brass candelabra holding several slender candles with small warm flam
 
 - **용도**: UI 아이콘: res_book
 - **목표 크기**: 256x256 (생성 비율: 1024x1024, fit: cover)
-- **배치 경로**: `assets-src/art/out/icons/icon_res_book.png`
+- **배치 경로**: `public/img/icons/icon_res_book.png`
 
 **ChatGPT에 붙여넣을 프롬프트:**
 
