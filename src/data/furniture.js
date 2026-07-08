@@ -668,12 +668,25 @@ const DEFS = {
     build(c, colorIdx = 0) {
       const g = new THREE.Group();
       const panel = B(g, 1.0, 1.1, 0.05, 0x8a7a5c, 0, 0.58, 0); panel.rotation.x = -0.09; panel.castShadow = true; // 기대 세운 합판
-      const tag = (x, y, w, h) => { const t2 = B(g, w, h, 0.02, c, x, y, 0.045); t2.rotation.x = -0.09; return t2; };
-      // 스프레이 태그: 굵은 획 몇 개 + 흘림 점 (복셀 곡선 — 픽셀 그래피티)
-      tag(-0.28, 0.72, 0.14, 0.34); tag(-0.16, 0.6, 0.26, 0.12); tag(0.04, 0.66, 0.12, 0.4);
-      tag(0.24, 0.56, 0.3, 0.14); tag(0.3, 0.76, 0.1, 0.16);
-      const t3 = B(g, 0.06, 0.14, 0.02, shade(c, 1.25), -0.05, 0.36, 0.048); t3.rotation.x = -0.09; // 흘러내린 물감
-      const t4 = B(g, 0.05, 0.09, 0.02, shade(c, 0.8), 0.18, 0.33, 0.048); t4.rotation.x = -0.09;
+      // 「GANG」 — 바이올렛 위 네이비 그림자 이중 레이어 (디렉터 확정 2026-07-09: 두 색 겹쳐 쓰기)
+      const VIOLET = 0x9a5ad4, NAVY = 0x2f3a55;
+      const gseg = (x, y, w, h) => {
+        const sh2 = B(g, w, h, 0.018, NAVY, x + 0.022, y - 0.022, 0.042); sh2.rotation.x = -0.09;   // 그림자 레이어(남색, 오프셋)
+        const tp = B(g, w, h, 0.018, VIOLET, x, y, 0.052); tp.rotation.x = -0.09;                    // 본획(보라)
+      };
+      const CY = 0.72, H = 0.3, T = 0.05;
+      // G
+      gseg(-0.36, CY, T, H); gseg(-0.29, CY + 0.125, 0.12, T); gseg(-0.29, CY - 0.125, 0.12, T); gseg(-0.24, CY - 0.06, T, 0.09); gseg(-0.27, CY - 0.01, 0.07, T);
+      // A
+      gseg(-0.13, CY, T, H); gseg(-0.03, CY, T, H); gseg(-0.08, CY + 0.125, 0.1, T); gseg(-0.08, CY - 0.02, 0.1, T);
+      // N
+      gseg(0.07, CY, T, H); gseg(0.17, CY, T, H); gseg(0.12, CY + 0.04, 0.06, T);
+      // G
+      gseg(0.27, CY, T, H); gseg(0.34, CY + 0.125, 0.12, T); gseg(0.34, CY - 0.125, 0.12, T); gseg(0.39, CY - 0.06, T, 0.09); gseg(0.36, CY - 0.01, 0.07, T);
+      // 색상 변형(colorIdx)은 포인트 획으로 — 밑줄 스프레이 + 흘러내린 물감 (도감 4색 보존)
+      const und = B(g, 0.7, 0.06, 0.02, c, 0, 0.5, 0.048); und.rotation.x = -0.09;
+      const t3 = B(g, 0.06, 0.16, 0.02, shade(c, 1.2), -0.12, 0.38, 0.048); t3.rotation.x = -0.09;
+      const t4 = B(g, 0.05, 0.1, 0.02, shade(c, 0.85), 0.2, 0.35, 0.048); t4.rotation.x = -0.09;
       return g;
     }
   },
@@ -745,11 +758,12 @@ const DEFS = {
       const bk = B(g, 0.9, 0.62, 0.05, 0x16141c, 0, 0.62, 0); bk.rotation.x = -0.07; bk.castShadow = true; // 검은 패널
       const neonMat = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 1.5 });
       const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); };
-      // V I P (픽셀 튜브 글자)
-      seg(-0.3, 0.74, 0.035, 0.2); seg(-0.22, 0.74, 0.035, 0.2); seg(-0.26, 0.655, 0.06, 0.035); // V
-      seg(-0.1, 0.72, 0.035, 0.24);                                                                // I
-      seg(0.04, 0.72, 0.035, 0.24); seg(0.11, 0.78, 0.1, 0.035); seg(0.11, 0.7, 0.1, 0.035); seg(0.15, 0.745, 0.035, 0.05); // P
-      seg(0, 0.5, 0.62, 0.03);                                                                     // ZONE 밑줄 튜브
+      // V I P — 글자만 크게 (디렉터 2026-07-09: 밑줄 제거, VIP 단독)
+      seg(-0.26, 0.66, 0.045, 0.3); seg(-0.15, 0.66, 0.045, 0.3); seg(-0.205, 0.535, 0.07, 0.045); // V
+      seg(-0.02, 0.64, 0.045, 0.34);                                                                 // I
+      seg(0.12, 0.64, 0.045, 0.34); seg(0.21, 0.755, 0.14, 0.045); seg(0.21, 0.63, 0.14, 0.045); seg(0.26, 0.695, 0.045, 0.09); // P
+      // 실제 광원 (디렉터 2026-07-09): 상시 점광 — 주변 벽·바닥에 네온 빛이 번진다 (그림자 없음, 유지비 0)
+      const lt = new THREE.PointLight(c, 1.1, 3.6, 1.7); lt.position.set(0, 0.66, 0.35); g.add(lt);
       return g;
     }
   },
@@ -764,11 +778,20 @@ const DEFS = {
       const bk = B(g, 0.9, 0.5, 0.05, 0x14161c, 0, 0.56, 0); bk.rotation.x = -0.07; bk.castShadow = true;
       const neonMat = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 1.5 });
       const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); };
-      // O N (픽셀 튜브)
-      seg(-0.3, 0.62, 0.035, 0.2); seg(-0.18, 0.62, 0.035, 0.2); seg(-0.24, 0.71, 0.09, 0.035); seg(-0.24, 0.53, 0.09, 0.035); // O
-      seg(-0.04, 0.62, 0.035, 0.2); seg(0.06, 0.62, 0.035, 0.2); seg(0.01, 0.66, 0.05, 0.035);                                  // N
-      seg(0.22, 0.62, 0.26, 0.03);   // AIR 축약 튜브 바
-      seg(0.22, 0.7, 0.05, 0.05);    // 점등 도트
+      // O N   A I R — 다섯 글자 전부 픽셀 튜브 (디렉터 2026-07-09: "ON"만은 금지, 무조건 ON AIR)
+      const CY = 0.6, H = 0.2, T = 0.032;
+      // O
+      seg(-0.37, CY, T, H); seg(-0.27, CY, T, H); seg(-0.32, CY + 0.09, 0.08, T); seg(-0.32, CY - 0.09, 0.08, T);
+      // N (좌우 기둥 + 중간 사선 흉내 가로바)
+      seg(-0.19, CY, T, H); seg(-0.09, CY, T, H); seg(-0.14, CY + 0.03, 0.06, T);
+      // A (좌우 기둥 + 상단·중간 바)
+      seg(0.03, CY, T, H); seg(0.13, CY, T, H); seg(0.08, CY + 0.09, 0.08, T); seg(0.08, CY - 0.01, 0.08, T);
+      // I
+      seg(0.21, CY, T, H);
+      // R (좌기둥 + 상단·중간 바 + 우상단 기둥 + 우하단 다리)
+      seg(0.29, CY, T, H); seg(0.345, CY + 0.09, 0.09, T); seg(0.345, CY, 0.09, T); seg(0.39, CY + 0.045, T, 0.09); seg(0.39, CY - 0.055, T, 0.1);
+      // 실제 광원 (디렉터 2026-07-09): 상시 점광 — 파란 빛이 주변에 번진다 (그림자 없음, 유지비 0)
+      const lt = new THREE.PointLight(c, 1.1, 3.6, 1.7); lt.position.set(0, 0.6, 0.35); g.add(lt);
       return g;
     }
   },
