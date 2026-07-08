@@ -331,6 +331,12 @@ export const BAL = {
     radioAntenna1: { material: 2, parts: 1 },   // 안테나 — 접시/마스트 세우기 — 3회
     radioTx1: { parts: 1, cloth: 1 },           // 송신기 — 회로 배선·절연 — 3회
     radioPower1: { parts: 1, battery: 1, fuel: 1 }, // 전원 — 발전·축전 계통 — 3회
+
+    /* 2.0 §9.6 히든 통로 개척 (「침묵」) — 역대 최고 코스트(무전 기지 약 2배·투입 12회, 디렉터 확정 2026-07-08).
+       총: 건축재3+부품1 ×4 + 부품2+천1+연료1 ×4 + 부품1+배터리1+연료1 ×4 = 건축재12/부품16/천4/배터리4/연료8. */
+    hiddenGate1: { material: 3, parts: 1 },         // 벽을 허문다 — 4회
+    hiddenGate2: { parts: 2, cloth: 1, fuel: 1 },   // 버팀목과 통로 — 4회
+    hiddenGate3: { parts: 1, battery: 1, fuel: 1 }, // 개통(등불·사다리) — 4회
   },
 
   /* ── 1.4 「금지 구역」 (신규 섹션) ──

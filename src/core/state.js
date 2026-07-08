@@ -69,6 +69,12 @@ export const state = {
   endingType: null,       // 선택한 엔딩 'escape'|'newworld'|'rest'|null. 시퀀스 후에도 런은 계속(방치형 정체성 — 엔딩은 서사 마침표)
   endingChoicePending: false, // 9겨울 구조 인카운터 예약 (passWinter가 세움 → 밤에 발화. '보류' 선택 시 다음 봄 재예약)
   earlyRescueDay: 0,      // 조기 탈출 제안일 (박사 정기 교신 +7일 확정 예약. 0=없음. 1회만 — 보류하면 9겨울에 다시)
+  // ── 2.0 히든 루트 「침묵」 (GD-2.0 §5.1·§9.6 — UI 힌트 0, 커뮤니티 발견 콘텐츠) ──
+  subwayHidden: false,    // 승강장 히든 지점(왼쪽 터널 개구부) 더블탭으로 통로 발견 — 발견 즉시 역사 조명이 붉은 비상등만으로(디렉터 확정)
+  hiddenGateDone: false,  // 개척 대형 프로젝트(hiddenGate) 완공 — 사다리 등장, "네 번째 문"
+  hiddenReachPending: false, // 개척 완공 후 첫 밤 박사 대면 인카운터 예약
+  hiddenReached: false,   // 연구소 도달·선택 유보 — 이후 사다리 터치로 박사의 문서 열람
+  siloFired: false,       // 사일로 버튼을 눌렀다 — 내부 전용(수첩·기록·업적 어디에도 안 씀. 완전 무기록 = 디렉터 확정). 재발화 방지만
   // ── Nine Winters 엔드게임 마일스톤 (#11) ──
   winters: 0,          // 넘긴 겨울 수 (봄으로 넘어가는 날 +1). 제목이 곧 장기 목표.
   demoEnded: false,    // #74 데모 빌드 전용: 첫 겨울 통과로 데모가 끝난 세이브 (정식 빌드에선 항상 false)

@@ -293,6 +293,15 @@ export function makeEvents(ctx) {
         { labelId: 'end3.early.c1', run() { return t('end3.early.r1'); } },
       ],
     },
+    // 2.0 §9.6 히든 루트 「침묵」 — 개척 완공 후 첫 밤, 통로 끝의 연구소에서 박사와 마주 앉는다.
+    //   선택지는 하나: 유보. 떠나지도, 받아들이지도 않는다(§5.1 — 유보한 자만이 문서를 발견한다).
+    hidden_reach: {
+      special: true,
+      icon: '🕳️', titleId: 'hidden.reach.title', textId: 'hidden.reach.text',
+      choices: [
+        { labelId: 'hidden.reach.c0', run() { state.hiddenReached = true; return t('hidden.reach.r0'); } },
+      ],
+    },
     ending: {
       special: true,
       icon: '🚁', titleId: 'ev.ending.title', textId: 'ev.ending.text',

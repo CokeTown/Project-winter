@@ -7,7 +7,7 @@ const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
 const SHELTER_HASH = 1052806561; // 2026-07-08 재핀: 해금 강화 — unlockAt 사다리(옥탑25~로지290) + moveCost x5~10 (디렉터 오더)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
-const MIG_HASH = 1719799765; // 2026-07-08 재핀: §9.5 endingType/endingChoicePending/earlyRescueDay 편입 (직전: §9.3·9.4 필드)
+const MIG_HASH = 681966259; // 2026-07-08 재핀: §9.6 subwayHidden/hiddenGateDone/hiddenReachPending/hiddenReached/siloFired 편입 (직전: §9.5)
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
 const MARKET_HASH = -1012304627;
 // 「지식」 테크트리 시그니처 해시 (branch/tier/cost/effect). 노드/비용/효과 변경 시 KNOWLEDGE_HASH(actual) 재핀.
@@ -379,6 +379,8 @@ const KNOWLEDGE_HASH = -451536973;
         sketches: typeof st.sketches, nightSkyToday: st.nightSkyToday, deco: typeof st.deco,
         gun: st.gun, scarsIsArr: Array.isArray(st.scars), frontWinterKey: st.frontWinterKey, front: st.front, // 2.0 §9.3·§9.4 신규 필드
         endingType: st.endingType, endingChoicePending: st.endingChoicePending, earlyRescueDay: st.earlyRescueDay, // 2.0 §9.5
+        subwayHidden: st.subwayHidden, hiddenGateDone: st.hiddenGateDone, hiddenReachPending: st.hiddenReachPending, // 2.0 §9.6
+        hiddenReached: st.hiddenReached, siloFired: st.siloFired,
         hazmat: st.hazmat, hazmatDone: st.hazmatDone, radioBaseDone: st.radioBaseDone,
         survivorLights: st.survivorLights, doctorRegularSeen: st.doctorRegularSeen,
         doctorRadioRegularPending: st.doctorRadioRegularPending, questIdx: st.questIdx,
@@ -423,6 +425,7 @@ const KNOWLEDGE_HASH = -451536973;
       // 1) 9겨울 트리거: 겨울 마지막 날 다음날(day 49, winters 8→9) processDay → passWinter 예약 →
       //    같은 processDay 말미의 tryDoctorRadio가 그날 밤 즉시 발화(플래그는 소진돼 있음)
       S.simReset(); S.state.winters = 8; S.state.day = 49; S.state.pendingEvent = null;
+      S.state.cat = 1; S.state.lastEventDay = 49; // 확률 인카운터 봉인(고양이 특수·일반 롤) — 당일 밤 발화 핀의 결정론 확보
       S.processDay();
       const nine = { w: S.state.winters, pend: S.state.endingChoicePending };
       const fired = S.state.pendingEvent;
@@ -472,6 +475,37 @@ const KNOWLEDGE_HASH = -451536973;
       check('응답/이관의 진실 순차 드랍 (nw1 → nw2)', ed.seq[0] === 'nw1' && ed.seq[1] === 'nw2', `seq ${ed.seq.join(',')}`);
       check('엔딩/9겨울 밤 경합 (무전 먼저 → 이튿날 구조)', ed.clash1.pe === 'doctor_radio' && ed.clash1.pend === true && ed.clash2 === 'ending_choice',
         `pe ${ed.clash1.pe} pend ${ed.clash1.pend} then ${ed.clash2}`);
+    }
+
+    // ── 히든 루트 「침묵」 (GD-2.0 §5.1·§9.6) — 데이터·게이트 층위(터치 레이캐스트는 접지 프로브 몫) ──
+    const hd = await call(`
+      // 1) 노출 게이트: 발견 전엔 개척 카드가 존재하지 않는다 → 발견해도 지하철 거주에서만
+      S.simReset();
+      const g0 = S.projectAvailable('hiddenGate');
+      S.state.subwayHidden = true;
+      const g1 = S.state.current === 'subway' ? '(스킵: 기본 셸터가 지하철)' : S.projectAvailable('hiddenGate');
+      S.state.current = 'subway';
+      const g2 = S.projectAvailable('hiddenGate');
+      // 2) 완공 효과: 사다리 플래그 + 대면 예약 → 그 밤 hidden_reach 발화 → 유보 기록
+      S.applyProjectEffect('subway.hiddenGate');
+      const eff = { done: S.state.hiddenGateDone, pend: S.state.hiddenReachPending };
+      S.state.pendingEvent = null;
+      S.tryDoctorRadio();
+      const fired = S.state.pendingEvent;
+      const r0 = S.EVENTS.hidden_reach.choices[0].run();
+      const reached = S.state.hiddenReached;
+      // 3) 완전 무기록: 유보·침묵 어느 쪽도 endingType을 건드리지 않는다 (siloFired는 내부 전용)
+      const et = S.state.endingType;
+      return JSON.stringify({ g0, g1, g2, eff, fired, reached, et, r0ok: !!r0 });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const hj = JSON.parse(hd);
+    if (hj.error) check('침묵 (예외 없이)', false, hj.error);
+    else {
+      check('침묵/개척 노출 게이트 (발견 전 없음 → 지하철+발견=노출)', hj.g0 === false && hj.g1 === false && hj.g2 === true,
+        `g0 ${hj.g0} g1 ${hj.g1} g2 ${hj.g2}`);
+      check('침묵/완공→대면 (사다리+예약 → 그 밤 발화 → 유보 기록)', hj.eff.done === true && hj.eff.pend === true && hj.fired === 'hidden_reach' && hj.reached === true && hj.r0ok,
+        `done ${hj.eff.done} pend ${hj.eff.pend} fired ${hj.fired} reached ${hj.reached}`);
+      check('침묵/완전 무기록 (endingType 불변)', hj.et === null, `et ${hj.et}`);
     }
 
     const green = report();

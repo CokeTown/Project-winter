@@ -15,7 +15,7 @@ import { deadTreeGeo, pineGeo, addRoofGrass, groundPlane, buildObservatorySite, 
 
 export function makeShelterBuilders(ctx) {
   const {
-    roomGroup, envRoot, state, getROOM, setBlockers, setEnvDyn, getEnvDyn, getWallList, setWallList, setBunkerStairs,
+    roomGroup, envRoot, state, getROOM, setBlockers, setEnvDyn, getEnvDyn, getWallList, setWallList, setBunkerStairs, setSubwayHidden,
     wallPhong, stdWall, makeWalls, tagCeiling, tagSway, attachToWall,
     wlBlock, ogGround, ogAttach, ogRock, ogZone, BP,
     buildCarWreck, buildPowerPole, buildRuinCity, buildRooftopSlate, buildRailSegments,
@@ -656,16 +656,32 @@ export function makeShelterBuilders(ctx) {
         // #87 스윕(디렉터: "공간이 안 읽힘"): 지하 무드는 지키되 윤곽 최소 조도 —
         //   기둥 비상등 2개(주황 픽스처) + 중앙 저강도 점광 1개 + 뒷벽 출구 표지(연녹 자기발광).
         //   조명 예산: PointLight 1개 추가(그림자 없음), 나머지는 emissive 픽스처.
-        for (const px of [-w / 4, w / 4]) {
-          const fx = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.1, 0.12),
-            new THREE.MeshLambertMaterial({ color: 0xff9a4a, emissive: 0xb55a20, emissiveIntensity: 0.9 }));
-          fx.position.set(px, h - 0.32, 0.4 + 0.36); roomGroup.add(fx);
+        if (state.subwayHidden) {
+          // §9.6 「침묵」 발견 후: 버려진 역 — 주황 픽스처·출구 표지를 끄고 붉은 비상등만 남긴다.
+          //   (디렉터 확정 2026-07-08: 통로 발견 순간부터. 일반 거주 조명은 아래 else 그대로 — 골든 불변)
+          for (const px of [-w / 4, w / 4]) {
+            const fx = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.1, 0.12),
+              new THREE.MeshLambertMaterial({ color: 0x6a1a12, emissive: 0xcc2211, emissiveIntensity: 1.0 }));
+            fx.position.set(px, h - 0.32, 0.4 + 0.36); roomGroup.add(fx);
+          }
+          const emg = new THREE.PointLight(0xff4030, 0.4, 9.5, 1.6);
+          emg.position.set(0, h - 0.5, 0.4); roomGroup.add(emg);
+          // 출구 표지는 꺼졌다 — 애초에 올라가는 곳이 없던 역이다 (자기발광 제거, 어두운 판만)
+          const exitSign = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.3, 0.08),
+            new THREE.MeshLambertMaterial({ color: 0x1c2420 }));
+          exitSign.position.set(-w / 3, h - 0.42, -d / 2 + 0.18); roomGroup.add(exitSign);
+        } else {
+          for (const px of [-w / 4, w / 4]) {
+            const fx = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.1, 0.12),
+              new THREE.MeshLambertMaterial({ color: 0xff9a4a, emissive: 0xb55a20, emissiveIntensity: 0.9 }));
+            fx.position.set(px, h - 0.32, 0.4 + 0.36); roomGroup.add(fx);
+          }
+          const emg = new THREE.PointLight(0xff9a4a, 0.34, 9.5, 1.6);
+          emg.position.set(0, h - 0.5, 0.4); roomGroup.add(emg);
+          const exitSign = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.3, 0.08),
+            new THREE.MeshLambertMaterial({ color: 0x5fae6a, emissive: 0x2c6a3a, emissiveIntensity: 1.1 }));
+          exitSign.position.set(-w / 3, h - 0.42, -d / 2 + 0.18); roomGroup.add(exitSign);
         }
-        const emg = new THREE.PointLight(0xff9a4a, 0.34, 9.5, 1.6);
-        emg.position.set(0, h - 0.5, 0.4); roomGroup.add(emg);
-        const exitSign = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.3, 0.08),
-          new THREE.MeshLambertMaterial({ color: 0x5fae6a, emissive: 0x2c6a3a, emissiveIntensity: 1.1 }));
-        exitSign.position.set(-w / 3, h - 0.42, -d / 2 + 0.18); roomGroup.add(exitSign);
         blockers = [
           { x: -w / 4, z: 0.4, w: 0.7, d: 0.7 },
           { x: w / 4, z: 0.4, w: 0.7, d: 0.7 },
@@ -725,6 +741,44 @@ export function makeShelterBuilders(ctx) {
         ogZone(0, d / 2 - 0.2, w * 0.9, 0.8, 0, 2);  // 승강장 가장자리 띠(경고선 안쪽 얇게)
         // 1.2 선로 복구 현장 오브젝트 (site='railSegment') — 허브 승격 후 노출. 구간 진행에 따라 자란다.
         buildRailSegments(w, d, h);
+        // §9.6 「침묵」 히든 히트 영역: 왼쪽 터널 개구부(붉은 비상등이 지키는 어둠 — 열차가 막은 오른쪽과 대구).
+        //   불가시 재질 = 렌더 픽셀 0(골든 무충돌), 레이캐스트 전용. 게이트·더블탭 판정은 game.js pickHidden.
+        {
+          const hz = new THREE.Mesh(new THREE.BoxGeometry(1.4, 3.0, 3.6),
+            new THREE.MeshBasicMaterial({ visible: false }));
+          hz.position.set(-w / 2 - 4.5, 1.0, d / 2 + 2.1);
+          envRoot.add(hz);
+          setSubwayHidden(hz);
+        }
+        // §9.6 개척 현장 (site='hiddenGate') — 발견 후에만, 단계별 성장: 허문 벽 → 버팀목 → 등불·사다리.
+        //   발견 전엔 어떤 단서도 없다(§5.1). 개구부 앞쪽(승강장 시야)에 세워 검은 홀을 배경으로 읽힌다.
+        {
+          const hs = projectSiteStage('hiddenGate');
+          if (state.subwayHidden && hs > 0) {
+            const g = new THREE.Group();
+            B(g, 1.1, 0.25, 3.4, 0x2a2c30, 0, 0.05, 0);           // 허문 잔해단 (1단계~)
+            B(g, 0.18, 2.4, 0.18, 0x3a342c, 0, 1.2, -1.5);        // 문설주(앞)
+            B(g, 0.18, 2.4, 0.18, 0x3a342c, 0, 1.2, 1.5);         // 문설주(뒤)
+            if (hs >= 2) {                                        // 2단계: 갱도 버팀목
+              B(g, 0.14, 2.2, 0.14, 0x6a5636, 0, 1.1, -0.9);
+              B(g, 0.14, 2.2, 0.14, 0x6a5636, 0, 1.1, 0.9);
+              B(g, 0.14, 0.14, 2.0, 0x6a5636, 0, 2.2, 0);         // 상인방
+            }
+            if (hs >= 3) {                                        // 3단계~완공: 아래로 내려가는 사다리 + 작업 등불
+              const lad = new THREE.Group();
+              for (let i = 0; i < 5; i++) B(lad, 0.5, 0.05, 0.06, 0x7a6a4a, 0, 0.3 + i * 0.45, 0);
+              B(lad, 0.06, 2.4, 0.06, 0x8a7a55, 0, 1.2, -0.25);
+              B(lad, 0.06, 2.4, 0.06, 0x8a7a55, 0, 1.2, 0.25);
+              lad.position.set(0.2, -0.9, 0);
+              g.add(lad);
+              const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5),
+                new THREE.MeshLambertMaterial({ color: 0xffd890, emissive: 0xaa7722, emissiveIntensity: 1.1 }));
+              lamp.position.set(0.3, 2.0, 0); g.add(lamp);
+            }
+            g.position.set(-w / 2 - 3.9, 0, d / 2 + 2.1);
+            envRoot.add(g);
+          }
+        }
         setEnvDyn(envDyn);
       },
     },

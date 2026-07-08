@@ -61,6 +61,12 @@ export function migrateLoadedState(rawState, defaults, oldVer) {
   if (rawState.endingType === undefined) state.endingType = null;
   if (rawState.endingChoicePending == null) state.endingChoicePending = false;
   if (rawState.earlyRescueDay == null) state.earlyRescueDay = 0;
+  // 2.0 히든 루트 「침묵」 (§9.6): 구세이브 전부 미발견 기본값
+  if (rawState.subwayHidden == null) state.subwayHidden = false;
+  if (rawState.hiddenGateDone == null) state.hiddenGateDone = false;
+  if (rawState.hiddenReachPending == null) state.hiddenReachPending = false;
+  if (rawState.hiddenReached == null) state.hiddenReached = false;
+  if (rawState.siloFired == null) state.siloFired = false;
   // Phase D 마이그레이션 (#12·#35·#36) — 구세이브에 없던 필드는 기본값으로 보정
   if (!Array.isArray(state.knowledge)) state.knowledge = []; // 「지식」 트리(§9) — 구세이브 안전
   if (!Array.isArray(state.evHistory)) state.evHistory = [];
