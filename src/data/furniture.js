@@ -622,8 +622,10 @@ const DEFS = {
         fl.position.set(cx, cy + 0.19, cz); fl.userData.glow = true; g.add(fl);
       };
       // 좌우 갈래 팔 — S자로 크게 뻗는다(가지 촛대 실루엣). 팔 끝을 수직 올림대로 세워 초를 든다.
+      //   디렉터 신고(2026-07-09): 구 -side 기울기는 바깥 끝이 아래로 처져 올림대 바닥과 0.18 떠 있었다 —
+      //   +side로 뒤집으면 안쪽 끝은 기둥(y0.93)에, 바깥 끝은 올림대 바닥(y1.11)에 정확히 닿는다.
       for (const side of [-1, 1]) {
-        const arm = B(g, 0.44, 0.035, 0.035, shade(c, 1.05), side * 0.2, 1.02, 0); arm.rotation.z = -side * 0.42;
+        const arm = B(g, 0.44, 0.035, 0.035, shade(c, 1.05), side * 0.2, 1.02, 0); arm.rotation.z = side * 0.42;
         Cyl(g, 0.03, 0.03, 0.14, c, side * 0.38, 1.18, 0, 6);          // 팔 끝 수직 올림대
         cup(side * 0.38, 1.26);                                         // 좌우 초 (중앙보다 낮게)
       }
