@@ -7,7 +7,7 @@
 import { state, opts } from './state.js';
 import { isWallpaper, isHard } from './mode.js';
 import { seasonOf } from './season.js';
-import { coldSnapNetSeverity } from './coldsnap.js';
+import { coldSnapNetSeverity, frontDiscipline } from './coldsnap.js';
 import { resConsume, hasAnyFood, consumeAnyFood } from './economy.js';
 import { BAL } from '../data/balance.js';
 
@@ -19,7 +19,9 @@ export function decayGauges(gm) {
   // 한파: 방어가 안 된 만큼(netSeverity) 배고픔 감소를 가속 (완전 방어 시 1.0)
   const coldMult = coldSnapNetSeverity() > 0 ? BAL.seasons.coldSnapHungerMult : 1;
   const summerThirst = seasonOf().id === 'summer' ? BAL.seasons.summerThirstMult : 1; // 여름 갈증 압박
-  state.hunger = Math.max(0, state.hunger - gm * BAL.gauges.hungerPerMin * winterMult * hardMul * coldMult); // v0.9.1: 22% 완화 (×0.78) — 만복 → 0까지 약 5게임일
+  // 2.0 대한파 배급 규율(§9.4-③, 하드 선택): 배고픔이 느리게 꺼진다 — 섭취 빈도가 줄어 실질 식량 절약
+  const rationMul = frontDiscipline() === 'ration' ? BAL.greatColdSnap.discipline.rationHungerMul : 1;
+  state.hunger = Math.max(0, state.hunger - gm * BAL.gauges.hungerPerMin * winterMult * hardMul * coldMult * rationMul); // v0.9.1: 22% 완화 (×0.78) — 만복 → 0까지 약 5게임일
   state.thirst = Math.max(0, state.thirst - gm * BAL.gauges.thirstPerMin * hardMul * summerThirst);          // v0.9.1: 22% 완화 (×0.78)
   if (opts.autoEat) {
     let g = 0;

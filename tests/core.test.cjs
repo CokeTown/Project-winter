@@ -233,6 +233,48 @@ const KNOWLEDGE_HASH = -451536973;
     if (gt.error) check('게이트 스케일 (예외 없이)', false, gt.error);
     else check('게이트/방호복 수리비 난이도 단조 (무한≤노말<하드≤하드코어)', gt.zen<=gt.normal && gt.normal<gt.hard && gt.hard<=gt.hardcore, `zen ${gt.zen} normal ${gt.normal} hard ${gt.hard} hardcore ${gt.hardcore}`);
 
+    // ── 대한파 프론트 (GD-2.0 §9.4-③) — 발동/강도/규율 효과/종료/노말 분기 ──
+    //   sim 제외(!_simRunning 가드)는 별도 명제가 아니라 위 경제 밴드+헤르메틱 핀이 그대로 지킨다
+    //   (프론트가 sim에 새면 하드코어 사망 핀이 5%대로 붕괴 — 2026-07-08 20시드 실측으로 검거된 회귀).
+    const fr = await call(`
+      // 하드: 겨울 8일차(day 44) 발동 — 강도 3, until=day+2, 규율 선택 대기(null)
+      S.simReset(); S.state.mode = 'hard'; S.state.day = 44;
+      S.state.winterSnap = { day: 37, successStart: 0, acc: { coldSnaps: 0, defended: 0, fuel: 0 } };
+      S.processDay();
+      const hit = { front: !!(S.state.coldSnap && S.state.coldSnap.front), sev: S.state.coldSnap ? S.state.coldSnap.severity : 0,
+        until: S.state.coldSnap ? S.state.coldSnap.until : 0, discNull: !!(S.state.front && S.state.front.discipline === null),
+        accFront: !!S.state.winterSnap.acc.front };
+      // 규율 효과: 쾌적(배급 -3 / 비상 -4) + 취침(쪽잠 -15) — none 대비 차분
+      S.state.front.discipline = 'none';      const lmNone = S.comfortDetail().limitMod;
+      const rNone = S.restEnergyValue(22, false).energy;
+      S.state.front.discipline = 'ration';    const lmRation = S.comfortDetail().limitMod;
+      S.state.front.discipline = 'emergency'; const lmEmg = S.comfortDetail().limitMod;
+      S.state.front.discipline = 'sleepless'; const rSleepless = S.restEnergyValue(22, false).energy;
+      // 종료(until 지남): coldSnap·front 접힘 + memoir acc에 규율 기록
+      S.state.day = 47; S.processDay();
+      const ended = { snap: S.state.coldSnap, front: S.state.front,
+        accDisc: S.state.winterSnap ? S.state.winterSnap.acc.frontDiscipline : null };
+      // 노말: 강도 2 + 규율 자동 'none'(모달 대기 없음)
+      S.simReset(); S.state.day = 44;
+      S.state.winterSnap = { day: 37, successStart: 0, acc: { coldSnaps: 0, defended: 0, fuel: 0 } };
+      S.processDay();
+      const nrm = { sev: S.state.coldSnap ? S.state.coldSnap.severity : 0, disc: S.state.front ? S.state.front.discipline : null };
+      return JSON.stringify({ hit, lmNone, lmRation, lmEmg, rNone, rSleepless, ended, nrm });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const fd = JSON.parse(fr);
+    if (fd.error) check('대한파 프론트 (예외 없이)', false, fd.error);
+    else {
+      check('프론트/하드 발동 (겨울 8일차·강도 3·3일·규율 대기)',
+        fd.hit.front && fd.hit.sev === 3 && fd.hit.until === 46 && fd.hit.discNull && fd.hit.accFront,
+        `sev ${fd.hit.sev} until ${fd.hit.until} discNull ${fd.hit.discNull}`);
+      check('프론트/규율 쾌적 (배급 -3 · 비상 -4)', fd.lmRation === fd.lmNone - 3 && fd.lmEmg === fd.lmNone - 4,
+        `none ${fd.lmNone} ration ${fd.lmRation} emg ${fd.lmEmg}`);
+      check('프론트/규율 쪽잠 취침 -15', fd.rSleepless === Math.max(0, fd.rNone - 15), `none ${fd.rNone} sleepless ${fd.rSleepless}`);
+      check('프론트/종료 (접힘 + memoir 규율 기록)', fd.ended.snap === null && fd.ended.front === null && fd.ended.accDisc === 'sleepless',
+        `accDisc ${fd.ended.accDisc}`);
+      check('프론트/노말 강도 2 · 규율 자동 none', fd.nrm.sev === 2 && fd.nrm.disc === 'none', `sev ${fd.nrm.sev} disc ${fd.nrm.disc}`);
+    }
+
     // ── 2) 구세이브 마이그레이션 — #76 신규 필드 없이 저장된 세이브가 안전하게 로드되나 ──
     //   (내가 book/bookProgress/demoEnded를 마이그레이션 테스트 없이 넣은 것 → 이 그물로 방어)
     //   포괄 스냅샷: 마이그레이션이 채우는 정적 기본값 ~40필드를 해시로 핀(save.js 추출 안전망).

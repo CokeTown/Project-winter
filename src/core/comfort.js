@@ -8,7 +8,7 @@
 import { state, items } from './state.js';
 import { seasonOf } from './season.js';
 import { hasMod } from './shelter.js';
-import { coldSnapNetSeverity } from './coldsnap.js';
+import { coldSnapNetSeverity, frontDiscipline } from './coldsnap.js';
 import { knowInsulates, knowHearthAnywhere, knowComfortBonus } from './knowledge.js';
 import { DEFS } from '../data/furniture.js';
 import { SHELTER_META } from '../data/shelters.js';
@@ -67,6 +67,10 @@ export function comfortDetail() {
   if (sh.needsLight && light <= 0) limitMod -= sh.needsLight;
   // 한파: 방어 안 된 만큼 쾌적함 페널티 (완전 방어 시 0)
   if (coldSnapNetSeverity() > 0) limitMod -= BAL.seasons.coldSnapComfortPen;
+  // 2.0 대한파 자기 규율(§9.4-③): 배급 반(-3)·비상식량 개봉(-4)의 살림 그늘 — 프론트 기간만
+  const disc = frontDiscipline();
+  if (disc === 'ration') limitMod -= BAL.greatColdSnap.discipline.rationComfort;
+  if (disc === 'emergency') limitMod -= BAL.greatColdSnap.discipline.emergencyComfort;
   // 온풍기(heater) 가동 시 겨울 쾌적 보너스
   let heatMod = 0;
   if (seasonOf().id === 'winter' && items.some(i => i.on !== false && DEFS[i.defId]?.appliance?.effect === 'heat')) heatMod += BAL.economy.heaterWinterComfort;

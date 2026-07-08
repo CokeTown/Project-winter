@@ -31,7 +31,7 @@ import { isHard, isHardcore, isZen, isWallpaper, rescueEligible } from './core/m
 import { SEASONS, SEASON_DAYS, seasonOf, seasonDay, seasonIndex, seasonAdjustPool } from './core/season.js'; // 계절 달력
 import { accWinterFuel, resAdd, resConsume, resHasAll, resConsumeAll, hasAnyFood, consumeAnyFood } from './core/economy.js'; // 자원 연산
 import { hasMod } from './core/shelter.js'; // 셸터 개조 술어
-import { coldDefenseLevel, coldSnapActive, coldSnapNetSeverity } from './core/coldsnap.js'; // 한파 술어
+import { coldDefenseLevel, coldSnapActive, coldSnapNetSeverity, frontActive, frontDiscipline } from './core/coldsnap.js'; // 한파 술어 + 대한파 프론트(2.0)
 import { comfortDetail, comfortLevel, comfortExpBonus, recoveryMult, bunkerComfortBonus, themeSetActive, activeThemeSets, setComfortWeather } from './core/comfort.js'; // 쾌적 계산
 import { decayGauges, isExhausted } from './core/gauges.js'; // 생존 게이지 감소
 import { migrateLoadedState } from './core/save.js'; // 세이브 마이그레이션
@@ -1682,7 +1682,9 @@ function restEnergyValue(atHour, collapse = false) {
     return { hasBed, collapse: true, energy: Math.min(100, BAL.rest.floorEnergy) };
   }
   const onsenRest = hasMod('onsen') ? BAL.highland.onsenRestBonus : 0; // 1.3 온천: 취침 에너지 회복 보너스(대형)
-  const base = (hasBed ? BAL.rest.bedEnergy : BAL.rest.floorEnergy) + (cozy >= BAL.rest.cozyThreshold ? BAL.rest.cozyBonus : 0) + onsenRest;
+  // 2.0 대한파 쪽잠 규율(§9.4-③): 불침번을 서느라 제대로 못 잔다 — 프론트 기간 취침 회복 감량
+  const sleepless = frontDiscipline() === 'sleepless' ? BAL.greatColdSnap.discipline.sleeplessRestPen : 0;
+  const base = (hasBed ? BAL.rest.bedEnergy : BAL.rest.floorEnergy) + (cozy >= BAL.rest.cozyThreshold ? BAL.rest.cozyBonus : 0) + onsenRest - sleepless;
   // #88 탐험 피로: 한도까지 탐험한 날은 밤샘 페널티가 가중된다(이른 취침 보너스는 그대로 — 일찍 자면 무손해).
   let hourMod = restHourMod(hour);
   if (state.expFatigue != null && hourMod < 0) hourMod *= BAL.rest.expFatigueLateMult;
@@ -6172,7 +6174,9 @@ function buildWinterMemoir(n) {
     bodyId,
     bodyArgs: {
       days, cold: acc.coldSnaps, defended: acc.defended, exp: expWon, fuel: acc.fuel,
-      cat: catLine, closing: winterMemoirLine(n),
+      cat: catLine,
+      // 2.0 대한파(§9.4-③): 그 겨울의 프론트를 한 줄로 — 규율을 골랐다면 그 흔적까지
+      closing: (acc.front ? t(acc.frontDiscipline ? 'winter.memoir.front.' + acc.frontDiscipline : 'winter.memoir.front') + '<br>' : '') + winterMemoirLine(n),
     },
   };
   state.pendingWinterMemoir.push(page);
@@ -6236,6 +6240,31 @@ function tryRadioBroadcast(notes) {
   state.pendingBroadcast = id;                           // tickTime 이 결산 뒤 모달로 연다
   notes.push(t('radio.heardNote', { title: LN(BROADCASTS[id]) }));
 }
+// ── 2.0 대한파 자기 규율 선택 (§9.4-③, 하드/하드코어 전용 — 디렉터 확정 2026-07-08) ──
+// 프론트 발동 아침 보고를 닫은 뒤 1회. 하나를 고르면 프론트가 끝날 때까지 지속(변경 불가).
+// state.front.discipline === null 이 "선택 대기" — tickTime 드레인 체인이 이 모달을 연다.
+function openFrontChoiceModal() {
+  const D = BAL.greatColdSnap.discipline;
+  const row = (id, name, desc) => `
+    <button class="pixel-btn" data-front="${id}" style="display:block;width:100%;text-align:left;margin:6px 0;padding:8px 10px;white-space:normal">
+      <b>${name}</b><br><span style="font-size:10px;opacity:.75">${desc}</span>
+    </button>`;
+  openModal(t('front.choice.title'), `
+    <div style="line-height:1.8;margin-bottom:8px">${t('front.choice.body')}</div>
+    ${row('ration', t('front.disc.ration'), t('front.disc.ration.desc'))}
+    ${row('sleepless', t('front.disc.sleepless'), t('front.disc.sleepless.desc'))}
+    ${row('emergency', t('front.disc.emergency'), t('front.disc.emergency.desc', { n: D.emergencyCanned }))}
+    ${row('none', t('front.disc.none'), t('front.disc.none.desc'))}`, 'frontChoice');
+  $('modal-body').querySelectorAll('[data-front]').forEach(b => b.addEventListener('click', () => {
+    if (!state.front || state.front.discipline !== null) { closeModal(); return; } // 중복 클릭/유령 상태 가드
+    const id = b.getAttribute('data-front');
+    state.front.discipline = id;
+    if (id === 'emergency') { resAdd('canned', D.emergencyCanned); renderResBar(); }
+    state.dayLog.notes.push(t('front.disc.chose.' + id));
+    toast(t('front.disc.chose.' + id));
+    closeModal(); updateHud(); scheduleSave();
+  }));
+}
 
 /* ============================================================
    하루 처리 & 일일 리포트 (기획서 v0.2: SYSTEM 03/04/07)
@@ -6289,16 +6318,55 @@ function processDay() {
       notes.push(t('coldsnap.hit'));
       toast(t('coldsnap.toast'));
     }
+    // ── 2.0 대한파 프론트 (§9.4-③): 연례 1회 확정, 겨울 고정일 발령 — 랜덤 없음.
+    //    기존 랜덤 한파 상한(coldSnapsThisWinter) 밖 별도. 진행 중 랜덤 한파가 있으면 더 강한 쪽으로 흡수.
+    //    ※ sim 제외(!_simRunning — regionVisits와 같은 순수성 가드): 프론트가 활성인 3일간 4)의 예보 롤이
+    //      멎어 sim 실현 한파가 2.2→1.6회/겨울로 줄고 하드코어 치명성이 붕괴한다(사망 25%→5%, 20시드 실측).
+    //      sim은 경제 회귀 측정기라 베이스라인 불가침 — 실게임은 프론트(강도 2~3, 3일)가 얹혀 더 험하다.
+    {
+      const GC = BAL.greatColdSnap;
+      const sd = seasonDay(state.day);
+      if (inWinter && state.frontWinterKey !== wk && !isWallpaper() && !_simRunning) {
+        // 예보 (발동 전날들 — 오프라인 스킵으로 예보일을 건너뛰어도 발동은 아래 >= 가 잡는다)
+        if (sd >= GC.forecastSeasonDay && sd < GC.hitSeasonDay) {
+          notes.push(t('front.forecast', { n: GC.hitSeasonDay - sd }));
+        }
+        // 발동
+        if (sd >= GC.hitSeasonDay && sd <= GC.hitSeasonDay + GC.durDays - 1) {
+          state.frontWinterKey = wk;
+          const hadSnap = !!state.coldSnap; // 진행 중 랜덤 한파를 흡수하는 경우 — memoir 이중 카운트 방지
+          const sev = isHard() ? GC.severityHard : GC.severityNormal;
+          const until = state.day + (GC.hitSeasonDay + GC.durDays - 1 - sd); // 남은 프론트 일수만큼
+          state.coldSnap = {
+            until: Math.max(until, state.coldSnap?.until || 0),
+            severity: Math.max(sev, state.coldSnap?.severity || 0),
+            front: true,
+          };
+          // ※ coldSnapForecast는 건드리지 않는다 — 예보된 랜덤 한파는 프론트가 끝난 뒤 그대로 도래(상한 밖 "별도" 원칙).
+          //   지우면 겨울 총 압박일수가 줄어 하드코어 치명성이 붕괴한다(실측 사망 25%→5%, 2026-07-08 프로브).
+          state.front = { discipline: isHard() ? null : 'none' }; // 하드/하드코어만 규율 선택 대기(null → 아침 보고 뒤 모달)
+          if (state.winterSnap?.acc) { if (!hadSnap) state.winterSnap.acc.coldSnaps++; state.winterSnap.acc.front = true; }
+          notes.push(t('front.hit'));
+          toast(t('front.toast'));
+        }
+      }
+    }
     // 2) 진행 중인 한파: 오늘 방어 여부에 따른 서사 (하루 1회)
     if (state.coldSnap && inWinter && state.day <= state.coldSnap.until) {
       const defended = coldSnapNetSeverity() <= 0;
       if (defended && state.winterSnap?.acc) state.winterSnap.acc.defended++; // memoir: 방어 성공한 한파-일
-      notes.push(defended ? t('coldsnap.defended') : t('coldsnap.exposed'));
+      notes.push(defended ? (state.coldSnap.front ? t('front.defended') : t('coldsnap.defended'))
+        : (state.coldSnap.front ? t('front.exposed') : t('coldsnap.exposed')));
     }
-    // 3) 한파 종료
+    // 3) 한파 종료 — 프론트였다면 규율도 함께 접는다 (그 밤을 넘겼다)
     if (state.coldSnap && (!inWinter || state.day > state.coldSnap.until)) {
+      const wasFront = !!state.coldSnap.front;
       state.coldSnap = null;
-      notes.push(t('coldsnap.ended'));
+      if (wasFront) {
+        if (state.front?.discipline && state.front.discipline !== 'none' && state.winterSnap?.acc) state.winterSnap.acc.frontDiscipline = state.front.discipline;
+        state.front = null;
+        notes.push(t('front.ended'));
+      } else notes.push(t('coldsnap.ended'));
     }
     // 4) 예보 발령: 겨울 중, 미발동·미예보, 겨울당 상한 미만, 확률 판정 → 리드타임 뒤로 예약
     //    하드는 한파가 더 잦고(확률 ×1.6) 더 많이 온다(상한 +1) — "첫 겨울이 진짜 시험" (v1.0.0)
@@ -6361,6 +6429,8 @@ function processDay() {
     const fuelId = def.light?.fuel || (def.appliance?.effect !== 'power' ? def.appliance?.fuel : null);
     if (!fuelId || it.on === false) continue;
     if (it.defId === 'candle' && state.day % 2 === 0) continue; // 캔들 스툴은 격일 소비
+    // 2.0 대한파 쪽잠 규율(§9.4-③): 불침번이 불씨를 지킨다 — 난방류(난로·온풍기) 연료 격일 소비
+    if (frontDiscipline() === 'sleepless' && state.day % 2 === 0 && (it.defId === 'stove' || def.appliance?.effect === 'heat')) continue;
     if (!consumeFuel(fuelId, 1)) {
       setItemPower(it, false);
       notes.push(t('day.fuelOut', { fuel: LName(RESOURCES[fuelId]), name: LName(def) }));
@@ -6823,6 +6893,9 @@ function tickTime(dt) {
     const day = state.pendingTutorial;
     state.pendingTutorial = null;
     showTutorialPage(day);
+  } else if (state.front && state.front.discipline === null && !reportQueued && !state.pendingEvent && !state.pendingTutorial && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
+    // 2.0 대한파 자기 규율(§9.4-③): 발동 아침 보고를 닫은 뒤 하드/하드코어만 — 프론트를 어떻게 넘길지 정한다.
+    openFrontChoiceModal();
   } else if (state.pendingAutoNotice && !reportQueued && !state.pendingEvent && !state.pendingTutorial && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
     // Day 10 자동 진행 해금 안내 — 아무도 존재/조건을 모른다는 피드백으로 1회 전용 팝업
     state.pendingAutoNotice = false;
@@ -7004,6 +7077,13 @@ function openModal(title, html, kind = null) {
   $('modal-back').classList.add('show');
 }
 function closeModal() {
+  // 2.0 대한파 규율(§9.4-③): 선택 없이 창을 닫으면 "그냥 버틴다"로 확정 — 매 틱 재오픈 루프 방지
+  if (modalKind === 'frontChoice' && state.front && state.front.discipline === null) {
+    state.front.discipline = 'none';
+    state.dayLog.notes.push(t('front.disc.chose.none'));
+    toast(t('front.disc.chose.none'));
+    scheduleSave();
+  }
   $('modal-back').classList.remove('show');
   modalKind = null;
 }
@@ -8594,7 +8674,8 @@ window.__shelter = {
   // 배치 D QA 훅: 무력/구제/종료/통계/전체수거
   helplessNow, checkHelpless, doRescue, endRun, reclaimAll,
   readStats, writeStats, recordNormalDay, wallpaperUnlocked, slotDisplayCount,
-  openModeModal, refreshAutoplayLock, runAutoPlay,
+  openModeModal, refreshAutoplayLock, runAutoPlay, openFrontChoiceModal, // 대한파 규율(§9.4-③) — modal-golden용
+
   items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather, BAL,
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,

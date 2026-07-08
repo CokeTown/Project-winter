@@ -58,6 +58,9 @@ export const state = {
   coldSnapForecast: 0, // 한파 발동 예정일 (day). 0=예보 없음. 예보 리드타임 동안 브리핑에 표시
   coldSnapsThisWinter: 0, // 이번 겨울 한파 발동 횟수 (겨울당 상한 제한용)
   coldSnapWinterKey: -1,  // 카운터가 속한 겨울 식별자 (계절 인덱스). 겨울이 바뀌면 리셋
+  // ── 2.0 대한파 프론트 (GD-2.0 §9.4-③) ──
+  frontWinterKey: -1,     // 이번 겨울 대한파를 이미 발령했는가 (계절 인덱스 — 겨울당 1회 확정)
+  front: null,            // 진행 중 대한파 부속 { discipline:'ration'|'sleepless'|'emergency'|'none'|null } — null=하드 선택 대기(모달), 노말은 발동 즉시 'none'
   // ── Nine Winters 엔드게임 마일스톤 (#11) ──
   winters: 0,          // 넘긴 겨울 수 (봄으로 넘어가는 날 +1). 제목이 곧 장기 목표.
   demoEnded: false,    // #74 데모 빌드 전용: 첫 겨울 통과로 데모가 끝난 세이브 (정식 빌드에선 항상 false)
