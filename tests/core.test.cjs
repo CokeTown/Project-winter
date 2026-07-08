@@ -599,6 +599,26 @@ const KNOWLEDGE_HASH = -451536973;
       check('도면/8종 정의 무결 (지역별 2~3·색 4종)', bpj.n === 8 && bpj.defsOk && bpj.perRegion, JSON.stringify(bpj));
       check('도면/제작 게이트 (미보유=비노출 → 보유만 노출)', bpj.hidden === true && bpj.shown === true, `hidden ${bpj.hidden} shown ${bpj.shown}`);
     }
+    // 복귀 서프라이즈 (DDD-5): 게이트(240분+·35%)·고양이 분기·손실 없음 — RNG 고정으로 결정론
+    const og = await call(`
+      S.simReset();
+      const or = Math.random;
+      Math.random = () => 0.99; const none = S.rollOfflineGift(2880);          // 롤 미발화
+      Math.random = () => 0.0;  const short = S.rollOfflineGift(100);          // 시간 미달
+      const c0 = S.state.res.cloth || 0; S.state.cat = 1;
+      const cat = S.rollOfflineGift(2880);                                      // 발화(고양이 60% 분기)
+      const dCloth = (S.state.res.cloth || 0) - c0;
+      S.state.cat = null; const f0 = S.state.res.food || 0;
+      const bird = S.rollOfflineGift(300);                                      // 발화(새 분기)
+      const dFood = (S.state.res.food || 0) - f0;
+      Math.random = or;
+      const notes = (S.state.dayLog.notes || []).filter(n => n.includes('🐈') || n.includes('🐦')).length;
+      return JSON.stringify({ none, short, cat, dCloth, bird, dFood, notes });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const oj = JSON.parse(og);
+    if (oj.error) check('복귀 서프라이즈 (예외 없이)', false, oj.error);
+    else check('복귀 서프라이즈 (게이트·고양이/새 분기·소액 지급·노트)', oj.none === false && oj.short === false && oj.cat === true && oj.dCloth === 1 && oj.bird === true && oj.dFood === 1 && oj.notes === 2,
+      JSON.stringify(oj));
 
     const green = report();
     app.exit(green ? 0 : 1);

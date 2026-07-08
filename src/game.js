@@ -1877,12 +1877,22 @@ function loadSave() {
       const offlineMin = Math.min(2880, elapsed * GAME_MIN_PER_SEC * BAL.exp.idleTimeScale); // 평시 배속과 일관(자리 비운 동안도 같은 속도) — 상한 2게임일 유지
       state.gameMin += offlineMin;
       decayGauges(offlineMin);
+      rollOfflineGift(offlineMin); // DDD-5 복귀 서프라이즈 — 반나절 이상 비웠다면 가끔 작은 따뜻함이 문가에
       return true;
     }
   } catch (e) { /* ignore */ }
   return false;
 }
 
+// DDD-5 복귀 서프라이즈 (방치형 재접속 훅): 오프라인 4게임시간+ 시 35%로 소액 선물 1건 — 수첩 노트로만
+//   조용히 알린다(다음 결산에 노출, 토스트 없음 — 조용한 발견). 손실 서프라이즈 금지(코지 안전선),
+//   도료·도면 등 희귀는 능동 플레이 전용 유지. 로드 경로라 sim/시드 무접점.
+function rollOfflineGift(offlineMin) {
+  if (offlineMin < 240 || Math.random() >= 0.35) return false;
+  if (state.cat && Math.random() < 0.6) { resAdd('cloth', 1); state.dayLog.notes.push(t('offline.catGift')); }
+  else { resAdd('food', 1); state.dayLog.notes.push(t('offline.birdGift')); }
+  return true;
+}
 /* ============================================================
    아이템 관리 (배치 / 이동 / 충돌 / 인벤토리)
 ============================================================ */
@@ -9108,6 +9118,7 @@ window.__shelter = {
   bunkerUndercroftRoute, showTruthPage, tryDoctorRadio,
   showDoctorDocPage, runSiloSequence, applyProjectEffect, // §9.6 「침묵」 (코어 테스트·접지 프로브용)
   PAINT_FAMILIES, paintFamilyOf, rollPaintFamily, jackpotToast, showSelPanel, DEFS, BAL, // 도료 (REWARD-LOOP ②) + 데이터 핸들
+  rollOfflineGift, // DDD-5 복귀 서프라이즈 (코어 테스트용)
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
