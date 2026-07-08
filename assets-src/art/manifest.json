@@ -1250,6 +1250,46 @@
       "fit": "cover",
       "dest": "assets-src/art/out/steam_header_clean.png",
       "prompt": "Wide isometric shelter scene at dusk, aspect ratio close to 2.14:1 (compose for a 1536x1024 canvas cropped to a wide 460x215 band, keep key content in the middle band and leave the upper sky relatively open and uncluttered). A cozy cutaway shipping-container room viewed wide to show two furnished corners: on one side a neatly made bed with a warm candle on a nightstand, on the other a small wood stove glowing orange and stacked crates, warm orange candle and firelight filling the interior. Outside the container's open side, a distant ruined post-apocalyptic city skyline and leafless trees stand against a cold blue-grey twilight sky, gentle snow falling. Strong warm-vs-cool contrast: glowing orange interior against desaturated blue dusk exterior. Cozy pixel art, isometric, soft dithering. ABSOLUTELY NO TEXT, NO LETTERS, NO WORDMARK anywhere in the image — leave the sky clean and empty for a logo to be added later."
+    },
+    {
+      "id": "icon_furn_globe",
+      "purpose": "가구 아이콘: 골동품 지구본",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_globe.png",
+      "prompt": "an antique tabletop globe of the old world, its faded parchment-coloured map cradled in a brass meridian ring on a turned wooden stand. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent (the brass meridian ring), crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_phonograph",
+      "purpose": "가구 아이콘: 축음기",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_phonograph.png",
+      "prompt": "an antique gramophone phonograph: a large flared brass horn rising from a small wooden turntable box with a side crank. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent (the brass horn), crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_furn_candelabra",
+      "purpose": "가구 아이콘: 가지 촛대",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_furn_candelabra.png",
+      "prompt": "a branched brass candelabra holding several slender candles with small warm flames and a little dripping wax. Pixel art game inventory icon, single object centered on a fully transparent background, 3/4 top-down angle, chunky readable silhouette that stays clear at 32px, muted desaturated post-apocalyptic palette with one warm amber accent (the glowing candle flames), crisp 1px dark outline, soft single-direction top-left light, subtle dithered shading, no text, no frame, no background."
+    },
+    {
+      "id": "icon_res_book",
+      "purpose": "UI 아이콘: res_book",
+      "w": 256,
+      "h": 256,
+      "genSize": "1024x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/icon_res_book.png",
+      "prompt": "a single closed hardcover book with a deep red cloth cover, gold-edged pages, and a frayed ribbon bookmark. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
     }
   ]
 }
