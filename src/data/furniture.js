@@ -618,6 +618,169 @@ const DEFS = {
       return g;
     }
   },
+
+  /* ── DDD-4 지역 시그니처 8종 (REWARD-LOOP ② 2차 — 디렉터 확정 2026-07-09) ──
+     도면(blueprint) 드랍으로만 제작이 열리는 지역 독점 장식. 파워 0(코지 안전선) — 전부 순수 치장.
+     발광류(화로·네온)는 emissive 재질만(전원·연료 유지비 없음). 기대 세움류는 noCollide(벽에 붙여 배치). */
+  // 슬럼 ① 드럼통 화로 — 슬럼의 밤 그 자체. 탄 드럼통 + 장작 + 불꽃(자기발광)
+  barrelfire: {
+    name: '드럼통 화로', nameEn: 'Barrel Fire', emoji: '🛢️', fp: { w: 0.7, d: 0.7 },
+    colorNames: ['방청 레드', '올리브 드럼', '재 그레이', '슬레이트'],
+    colorNamesEn: ['Red Oxide', 'Olive Drum', 'Ash Gray', 'Slate'],
+    colors: [0xa8433f, 0x6a7047, 0x8a8f96, 0x46557a],
+    build(c) {
+      const g = new THREE.Group();
+      const drum = Cyl(g, 0.3, 0.3, 0.62, c, 0, 0.31, 0, 12); drum.castShadow = true;
+      Cyl(g, 0.31, 0.31, 0.04, shade(c, 0.7), 0, 0.06, 0, 12);   // 하단 림
+      Cyl(g, 0.31, 0.31, 0.04, shade(c, 0.7), 0, 0.58, 0, 12);   // 상단 림
+      B(g, 0.16, 0.1, 0.03, 0x1c1a17, 0, 0.42, 0.295);           // 그을린 절개부
+      // 삐져나온 장작 + 불꽃(자기발광 — 광원 없음, 재질만)
+      const log = Cyl(g, 0.035, 0.035, 0.5, 0x5a4632, 0.12, 0.66, 0.05, 6); log.rotation.z = 0.6;
+      const fl = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.26, 6),
+        new THREE.MeshLambertMaterial({ color: 0xffb050, emissive: 0xff7a20, emissiveIntensity: 1.4 }));
+      fl.position.set(0, 0.76, 0); fl.userData.glow = true; g.add(fl);
+      const fl2 = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.16, 5),
+        new THREE.MeshLambertMaterial({ color: 0xffd487, emissive: 0xffaa40, emissiveIntensity: 1.6 }));
+      fl2.position.set(0.07, 0.72, 0.04); fl2.userData.glow = true; g.add(fl2);
+      return g;
+    }
+  },
+  // 슬럼 ② 그래피티 패널 — 뜯어온 합판에 남은 스프레이 태그. 벽에 기대 세운다.
+  graffiti: {
+    name: '그래피티 패널', nameEn: 'Graffiti Panel', emoji: '🎨', fp: { w: 1.0, d: 0.3 }, noCollide: true,
+    colorNames: ['네온 핑크', '라임', '시안', '선셋 오렌지'],
+    colorNamesEn: ['Neon Pink', 'Lime', 'Cyan', 'Sunset Orange'],
+    colors: [0xd4548a, 0x8fc45a, 0x4aa8b8, 0xd4854a],
+    build(c, colorIdx = 0) {
+      const g = new THREE.Group();
+      const panel = B(g, 1.0, 1.1, 0.05, 0x8a7a5c, 0, 0.58, 0); panel.rotation.x = -0.09; panel.castShadow = true; // 기대 세운 합판
+      const tag = (x, y, w, h) => { const t2 = B(g, w, h, 0.02, c, x, y, 0.045); t2.rotation.x = -0.09; return t2; };
+      // 스프레이 태그: 굵은 획 몇 개 + 흘림 점 (복셀 곡선 — 픽셀 그래피티)
+      tag(-0.28, 0.72, 0.14, 0.34); tag(-0.16, 0.6, 0.26, 0.12); tag(0.04, 0.66, 0.12, 0.4);
+      tag(0.24, 0.56, 0.3, 0.14); tag(0.3, 0.76, 0.1, 0.16);
+      const t3 = B(g, 0.06, 0.14, 0.02, shade(c, 1.25), -0.05, 0.36, 0.048); t3.rotation.x = -0.09; // 흘러내린 물감
+      const t4 = B(g, 0.05, 0.09, 0.02, shade(c, 0.8), 0.18, 0.33, 0.048); t4.rotation.x = -0.09;
+      return g;
+    }
+  },
+  // 리조트 ① 스키 한 쌍 — 벽에 기대 교차 세운 낡은 스키
+  skis: {
+    name: '스키 한 쌍', nameEn: 'Pair of Skis', emoji: '🎿', fp: { w: 0.5, d: 0.3 }, noCollide: true,
+    colorNames: ['체리 레드', '빙하 블루', '머스터드', '민트'],
+    colorNamesEn: ['Cherry Red', 'Glacier Blue', 'Mustard', 'Mint'],
+    colors: [0xa8433f, 0x54688a, 0xb08a3a, 0x93b5a5],
+    build(c) {
+      const g = new THREE.Group();
+      for (const side of [-1, 1]) {
+        const ski = new THREE.Group();
+        B(ski, 0.11, 1.5, 0.04, c, 0, 0.75, 0);                        // 판
+        B(ski, 0.11, 0.1, 0.05, shade(c, 0.75), 0, 1.48, 0.012);      // 팁(위로 젖힘 흉내)
+        B(ski, 0.09, 0.14, 0.06, 0x3a3d42, 0, 0.7, 0.02);             // 바인딩
+        ski.position.set(side * 0.11, 0, 0); ski.rotation.z = side * 0.1; ski.rotation.x = -0.12; // 기대 세움 + 팔자 교차
+        g.add(ski);
+      }
+      return g;
+    }
+  },
+  // 리조트 ② 스키 폴대 — 바스켓 링이 남은 폴 한 쌍
+  skipoles: {
+    name: '스키 폴대', nameEn: 'Ski Poles', emoji: '⛷️', fp: { w: 0.4, d: 0.25 }, noCollide: true,
+    colorNames: ['레이싱 레드', '네이비', '크롬', '올리브'],
+    colorNamesEn: ['Racing Red', 'Navy', 'Chrome', 'Olive'],
+    colors: [0xa8433f, 0x46557a, 0xb0b4ba, 0x6a7047],
+    build(c) {
+      const g = new THREE.Group();
+      for (const side of [-1, 1]) {
+        const pole = new THREE.Group();
+        Cyl(pole, 0.018, 0.018, 1.15, c, 0, 0.575, 0, 6);              // 샤프트
+        Cyl(pole, 0.035, 0.028, 0.09, shade(c, 0.7), 0, 1.12, 0, 8);   // 그립
+        Cyl(pole, 0.075, 0.075, 0.02, 0x3a3d42, 0, 0.14, 0, 8);        // 바스켓 링
+        pole.position.set(side * 0.08, 0, 0); pole.rotation.z = side * 0.08; pole.rotation.x = -0.1;
+        g.add(pole);
+      }
+      return g;
+    }
+  },
+  // 리조트 ③ 스노우보드 — 벽에 기대 세운 보드 (복셀 라운드 — 끝단 계단)
+  snowboard: {
+    name: '스노우보드', nameEn: 'Snowboard', emoji: '🏂', fp: { w: 0.5, d: 0.3 }, noCollide: true,
+    colorNames: ['선셋', '딥 퍼플', '아이스 블루', '라임'],
+    colorNamesEn: ['Sunset', 'Deep Purple', 'Ice Blue', 'Lime'],
+    colors: [0xc9662f, 0x9a8ab0, 0x93a8bb, 0x8fc45a],
+    build(c) {
+      const g = new THREE.Group();
+      const bd = new THREE.Group();
+      B(bd, 0.34, 1.3, 0.05, c, 0, 0.72, 0);                           // 몸판
+      B(bd, 0.26, 0.09, 0.05, c, 0, 1.41, 0);                          // 상단 라운드(계단)
+      B(bd, 0.26, 0.09, 0.05, c, 0, 0.03, 0);                          // 하단 라운드
+      B(bd, 0.3, 0.5, 0.02, shade(c, 1.25), 0, 0.85, 0.03);            // 데크 그래픽 밴드
+      B(bd, 0.1, 0.12, 0.06, 0x3a3d42, 0, 1.0, 0.03);                  // 바인딩 위
+      B(bd, 0.1, 0.12, 0.06, 0x3a3d42, 0, 0.5, 0.03);                  // 바인딩 아래
+      bd.rotation.x = -0.12; g.add(bd);                                 // 기대 세움
+      return g;
+    }
+  },
+  // 도심 ① 네온 사인 「VIP ZONE」 — 보라 계열 튜브(자기발광). 받침 프레임에 기대 세운다.
+  neonvip: {
+    name: '네온 사인 · VIP ZONE', nameEn: 'Neon Sign · VIP ZONE', emoji: '🍸', fp: { w: 0.9, d: 0.3 }, noCollide: true,
+    colorNames: ['바이올렛', '마젠타', '핑크', '블루 바이올렛'],
+    colorNamesEn: ['Violet', 'Magenta', 'Pink', 'Blue Violet'],
+    colors: [0x9a5ad4, 0xc44aa8, 0xd46a9a, 0x6a5ad4],
+    build(c) {
+      const g = new THREE.Group();
+      const bk = B(g, 0.9, 0.62, 0.05, 0x16141c, 0, 0.62, 0); bk.rotation.x = -0.07; bk.castShadow = true; // 검은 패널
+      const neonMat = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 1.5 });
+      const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); };
+      // V I P (픽셀 튜브 글자)
+      seg(-0.3, 0.74, 0.035, 0.2); seg(-0.22, 0.74, 0.035, 0.2); seg(-0.26, 0.655, 0.06, 0.035); // V
+      seg(-0.1, 0.72, 0.035, 0.24);                                                                // I
+      seg(0.04, 0.72, 0.035, 0.24); seg(0.11, 0.78, 0.1, 0.035); seg(0.11, 0.7, 0.1, 0.035); seg(0.15, 0.745, 0.035, 0.05); // P
+      seg(0, 0.5, 0.62, 0.03);                                                                     // ZONE 밑줄 튜브
+      return g;
+    }
+  },
+  // 도심 ② 네온 사인 「ON AIR」 — 파랑 계열. 죽은 방송국의 파편.
+  neonair: {
+    name: '네온 사인 · ON AIR', nameEn: 'Neon Sign · ON AIR', emoji: '🎙️', fp: { w: 0.9, d: 0.3 }, noCollide: true,
+    colorNames: ['일렉트릭 블루', '시안', '아쿠아', '인디고'],
+    colorNamesEn: ['Electric Blue', 'Cyan', 'Aqua', 'Indigo'],
+    colors: [0x4a7ad4, 0x4aa8b8, 0x5ac4b0, 0x5a5ad4],
+    build(c) {
+      const g = new THREE.Group();
+      const bk = B(g, 0.9, 0.5, 0.05, 0x14161c, 0, 0.56, 0); bk.rotation.x = -0.07; bk.castShadow = true;
+      const neonMat = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 1.5 });
+      const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); };
+      // O N (픽셀 튜브)
+      seg(-0.3, 0.62, 0.035, 0.2); seg(-0.18, 0.62, 0.035, 0.2); seg(-0.24, 0.71, 0.09, 0.035); seg(-0.24, 0.53, 0.09, 0.035); // O
+      seg(-0.04, 0.62, 0.035, 0.2); seg(0.06, 0.62, 0.035, 0.2); seg(0.01, 0.66, 0.05, 0.035);                                  // N
+      seg(0.22, 0.62, 0.26, 0.03);   // AIR 축약 튜브 바
+      seg(0.22, 0.7, 0.05, 0.05);    // 점등 도트
+      return g;
+    }
+  },
+  // 도심 ③ 양복 랙 — 행거 스탠드에 걸린 재킷. 폐허 이전의 출근길.
+  suit: {
+    name: '양복 랙', nameEn: 'Suit Rack', emoji: '👔', fp: { w: 0.7, d: 0.4 },
+    colorNames: ['차콜', '네이비', '버건디', '카멜'],
+    colorNamesEn: ['Charcoal', 'Navy', 'Burgundy', 'Camel'],
+    colors: [0x3a3d42, 0x2f3a55, 0x6a3a3f, 0x9a7a4a],
+    build(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.18, 0.18, 0.03, 0x4a4640, 0, 0.02, 0, 10);              // 받침
+      Cyl(g, 0.02, 0.02, 1.5, 0x6a6660, 0, 0.75, 0, 6);                // 기둥
+      B(g, 0.5, 0.025, 0.025, 0x6a6660, 0, 1.48, 0);                   // 가로 봉
+      // 옷걸이 + 재킷 (어깨/몸판/팔) + 안에 받쳐 입은 셔츠
+      B(g, 0.36, 0.05, 0.06, 0x8a7a5c, 0, 1.4, 0);                     // 옷걸이 어깨
+      const jk = (w, h, x, y, z2, col) => { const m = B(g, w, h, 0.09, col, x, y, z2); m.castShadow = true; return m; };
+      jk(0.4, 0.14, 0, 1.3, 0, c);                                     // 어깨판
+      jk(0.34, 0.5, 0, 1.02, 0, c);                                    // 몸판
+      B(g, 0.06, 0.34, 0.02, 0xe8e4d8, 0, 1.1, 0.05);                  // 셔츠 브이라인
+      B(g, 0.03, 0.22, 0.022, shade(c, 0.6), 0, 1.08, 0.055);          // 타이
+      jk(0.09, 0.42, -0.21, 1.06, 0, shade(c, 0.9));                   // 왼팔
+      jk(0.09, 0.42, 0.21, 1.06, 0, shade(c, 0.9));                    // 오른팔
+      return g;
+    }
+  },
 };
 
 

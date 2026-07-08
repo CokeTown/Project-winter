@@ -337,6 +337,18 @@ export const BAL = {
   /* ── 도료 (REWARD-LOOP ② 1차 착지 — 디렉터 확정 2026-07-08: 소모품 1통=1회·12계열·지역 시그니처) ──
      성공 탐험 저확률 드랍(잭팟 층 — 감사의 "희귀 티어 부재" 처방). 기대 통 1개/약 6성공 —
      스와치 124색 완주는 초장기 수집 목표(도감·업적 3종이 스코어보드). 파워 아님(코지 안전선). */
+  /* ── 시그니처 도면 (DDD-4 / REWARD-LOOP ② 2차 — 디렉터 확정 2026-07-09) ──
+     지역 독점 가구의 제작 도면 — 성공 탐험 저확률(도료 10%보다 희귀), 그 지역에서만.
+     노말 성공률 기준 슬럼 2종 기대 ~33성공, 도심 3종 ~50성공 — 장기 pull. */
+  blueprint: {
+    dropChance: 0.06,
+    regionItems: {
+      slum: ['barrelfire', 'graffiti'],
+      resort: ['skis', 'skipoles', 'snowboard'],
+      citycore: ['neonvip', 'neonair', 'suit'],
+    },
+  },
+
   paint: {
     dropChance: 0.16,     // 성공 탐험당 도료 1통 확률
     merchant: { chance: 0.05 }, // 염료 상인 — 슬럼 탐험당 조우 확률(성패 무관). 값은 dyeCost(모드별 통조림 2/3/4)

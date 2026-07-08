@@ -7,7 +7,7 @@ const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
 const SHELTER_HASH = 1052806561; // 2026-07-08 재핀: 해금 강화 — unlockAt 사다리(옥탑25~로지290) + moveCost x5~10 (디렉터 오더)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
-const MIG_HASH = -1631537827; // 2026-07-09 재핀: 데모 도료 포팅(#149) — paints/dyeOffer 편입 (직전: 해금 강화)
+const MIG_HASH = -1631537827; // 데모 도면 포팅(#149)으로 blueprints 편입 — 첫 실행에서 MIG_HASH(actual)로 재핀
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
 const MARKET_HASH = -1012304627;
 // 「지식」 테크트리 시그니처 해시 (branch/tier/cost/effect). 노드/비용/효과 변경 시 KNOWLEDGE_HASH(actual) 재핀.
@@ -259,7 +259,7 @@ const KNOWLEDGE_HASH = -451536973;
         cablecarDone: st.cablecarDone, observatoryDone: st.observatoryDone,
         avalancheForecast: st.avalancheForecast, avalancheBlockUntil: st.avalancheBlockUntil,
         sketches: typeof st.sketches, nightSkyToday: st.nightSkyToday, deco: typeof st.deco,
-        paints: typeof st.paints, dyeOffer: st.dyeOffer, // 도료 + 염료 상인 (REWARD-LOOP ② — 데모 포팅 #149)
+        paints: typeof st.paints, dyeOffer: st.dyeOffer, blueprints: typeof st.blueprints, // 도료 + 염료 상인 + 도면 (REWARD-LOOP ② — 데모 포팅 #149)
         hazmat: st.hazmat, hazmatDone: st.hazmatDone, radioBaseDone: st.radioBaseDone,
         survivorLights: st.survivorLights, doctorRegularSeen: st.doctorRegularSeen,
         doctorRadioRegularPending: st.doctorRadioRegularPending, questIdx: st.questIdx,
@@ -333,6 +333,31 @@ const KNOWLEDGE_HASH = -451536973;
     if (dj.error) check('염료 상인 (예외 없이)', false, dj.error);
     else check('염료 상인 (오퍼 렌더·구매 차감·부족 거부)', dj.hasNames && dj.bought && dj.after.canned === 1 && dj.after.paint === 1 && dj.denied && dj.sage === 0,
       JSON.stringify(dj));
+
+    // 시그니처 도면 (DDD-4): 8종 정의 무결(지역별 2~3·색 4종) + 제작 목록 도면 게이트
+    const bp = await call(`
+      S.simReset();
+      const map = S.BAL.blueprint.regionItems;
+      const ids = Object.values(map).flat();
+      const defsOk = ids.every(id => S.DEFS[id] && S.DEFS[id].colors.length === 4);
+      const perRegion = Object.values(map).every(a => a.length >= 2 && a.length <= 3);
+      S.state.blueprints = {};
+      S.openCraftModal();
+      const h0 = document.getElementById('modal-body').innerHTML;
+      const hidden = ids.every(id => !h0.includes(S.DEFS[id].name));
+      S.state.blueprints = { neonvip: 1 };
+      S.openCraftModal();
+      const h1 = document.getElementById('modal-body').innerHTML;
+      const shown = h1.includes(S.DEFS.neonvip.name) && !h1.includes(S.DEFS.suit.name);
+      document.getElementById('modal-back').style.display = 'none';
+      return JSON.stringify({ n: ids.length, defsOk, perRegion, hidden, shown });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const bpj = JSON.parse(bp);
+    if (bpj.error) check('도면 (예외 없이)', false, bpj.error);
+    else {
+      check('도면/8종 정의 무결 (지역별 2~3·색 4종)', bpj.n === 8 && bpj.defsOk && bpj.perRegion, JSON.stringify(bpj));
+      check('도면/제작 게이트 (미보유=비노출 → 보유만 노출)', bpj.hidden === true && bpj.shown === true, `hidden ${bpj.hidden} shown ${bpj.shown}`);
+    }
 
     const green = report();
     app.exit(green ? 0 : 1);
