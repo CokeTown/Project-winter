@@ -534,6 +534,30 @@ const KNOWLEDGE_HASH = -451536973;
       check('도료/시그니처 커버 (전 계열 최소 1지역) + 롤 유효', pj.cover.length === 0 && pj.rollOk && pj.paintsType === 'object',
         `cover ${pj.cover.join(',') || '-'}`);
     }
+    // 네온 안료 + 그래피티 희귀도 (디렉터 2026-07-09): 네온=일반 풀 분리·시그니처 게이트, 그래피티=가중 하향
+    const nb = await call(`
+      const inCommon = 'neonPigment' in S.PAINT_FAMILIES, inAll = 'neonPigment' in S.PAINT_ALL;
+      let rollLeak = false; for (let i = 0; i < 400; i++) if (S.rollPaintFamily('citycore') === 'neonPigment') { rollLeak = true; break; }
+      const neonGate = S.paintFamilyRequired('neonvip', S.DEFS.neonvip.colors[1]) === 'neonPigment'
+        && S.paintFamilyRequired('neonair', S.DEFS.neonair.colors[1]) === 'neonPigment';
+      const normalGate = S.paintFamilyRequired('chair', S.DEFS.chair.colors[1]) === S.paintFamilyOf(S.DEFS.chair.colors[1]);
+      S.simReset(); if (S.hideTitle) S.hideTitle();
+      const it = S.addItem('neonvip', 0, 0, 0, 0); S.state.paints = {};
+      S.showSelPanel(it);
+      const lockedNoPigment = document.querySelectorAll('#sel-swatches .swatch')[1].classList.contains('locked');
+      S.state.paints.neonPigment = 1; S.showSelPanel(it);
+      document.querySelectorAll('#sel-swatches .swatch')[1].click();
+      const painted = it.colorIdx === 1 && (S.state.paints.neonPigment || 0) === 0;
+      const gw = (S.BAL.blueprint.weights || {}).graffiti;
+      return JSON.stringify({ inCommon, inAll, rollLeak, neonGate, normalGate, lockedNoPigment, painted, gw });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const nbj = JSON.parse(nb);
+    if (nbj.error) check('네온/그래피티 (예외 없이)', false, nbj.error);
+    else {
+      check('네온 안료 분리 (일반 풀 밖·PAINT_ALL 안·롤 무유출)', nbj.inCommon === false && nbj.inAll === true && nbj.rollLeak === false, JSON.stringify(nbj));
+      check('네온 게이트 (시그니처=안료·일반=hex·무안료 잠금→소모)', nbj.neonGate && nbj.normalGate && nbj.lockedNoPigment && nbj.painted, JSON.stringify(nbj));
+      check('그래피티 희귀도 (가중 < 1)', typeof nbj.gw === 'number' && nbj.gw < 1, `gw ${nbj.gw}`);
+    }
     // 염료 상인: 오퍼 본문 렌더 + 구매(통조림 차감·도료 +1) + 부족 거부 (모드별 값: 노말 2)
     const dm = await call(`
       S.simReset(); S.state.mode = 'normal'; S.state.paints = {}; S.state.res.canned = 3;

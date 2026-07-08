@@ -17,7 +17,7 @@ import { makeCamera } from './render/camera.js'; // Tier4 렌더 추출 Phase1-�
 import { makeScreenFx } from './render/weatherfx.js'; // Tier4 렌더 추출 Phase1-④: 화면 2D 날씨 오버레이
 import { makeModals } from './ui/modals.js'; // Tier4 UI 추출 Phase1-⑤: 모달 빌더
 import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, MEMOS_CITYCORE, BROADCASTS, SKETCHES } from './data/lore.js';
-import { PAINT_FAMILIES, paintFamilyOf } from './data/paints.js'; // 도료 12계열 (REWARD-LOOP ②)
+import { PAINT_FAMILIES, RARE_PAINTS, PAINT_ALL, paintFamilyOf, paintFamilyRequired } from './data/paints.js'; // 도료 12계열 + 희귀 안료 (REWARD-LOOP ②)
 import { makeEvents } from './data/events.js';
 import { makeDecoTex } from './data/decotex.js';
 import { makeCatSystem } from './systems/cat.js';
@@ -3075,12 +3075,22 @@ function resolveExpedition() {
       notes.push(t('paint.foundNote', { name: LName(PAINT_FAMILIES[fam]) }));
       jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
     }
+    // 네온 안료 (디렉터 2026-07-09): 도심 전용 최희귀 도료 — 일반 도료 풀과 무관한 별도 저확률 롤.
+    //   네온 시그니처 가구(VIP·ON AIR) 색은 이걸로만 칠한다 → "그 색은 도심에서만".
+    if (exp.region === 'citycore' && Math.random() < BAL.paint.neonDropChance) {
+      state.paints.neonPigment = (state.paints.neonPigment || 0) + 1;
+      notes.push(t('paint.neonNote'));
+      jackpotToast(`🌈 ${t('paint.neonJackpot')}`, RARE_PAINTS.neonPigment.swatch);
+    }
     // DDD-4 시그니처 도면 (REWARD-LOOP ② 2차): 지역 독점 가구의 도면 — 도료보다 희귀한 잭팟 층.
-    //   그 지역에서만, 미보유 도면 중 하나가 뽑힌다. resolveExpedition은 sim 미사용(§9.7) — 무접점.
+    //   그 지역에서만, 미보유 도면 중 가중 픽(그래피티는 weights로 더 희귀 — 디렉터 2026-07-09).
     {
       const bpPool = (BAL.blueprint.regionItems[exp.region] || []).filter(id => !(state.blueprints || {})[id]);
       if (bpPool.length && Math.random() < BAL.blueprint.dropChance) {
-        const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
+        const w = BAL.blueprint.weights || {};
+        const total = bpPool.reduce((a, id) => a + (w[id] ?? 1), 0);
+        let r = Math.random() * total, bpId = bpPool[bpPool.length - 1];
+        for (const id of bpPool) { r -= (w[id] ?? 1); if (r < 0) { bpId = id; break; } }
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
         notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
@@ -7313,19 +7323,20 @@ function showSelPanel(item) {
   def.colors.forEach((c, i) => {
     const s = document.createElement('div');
     // 도료 게이트 (REWARD-LOOP ②): 기본색(0)·현재색은 무료, 다른 색은 그 계열 도료 1통 소모.
-    const fam = paintFamilyOf(c);
+    //   시그니처 발광 가구(네온)는 hex 계열이 아니라 도심 전용 '네온 안료'를 요구한다(paintFamilyRequired).
+    const fam = paintFamilyRequired(item.defId, c);
     const have = state.paints[fam] || 0;
     const needsPaint = i !== 0 && i !== item.colorIdx;
     const locked = needsPaint && have < 1;
     s.className = 'swatch' + (i === item.colorIdx ? ' active' : '') + (locked ? ' locked' : '');
     s.style.background = '#' + c.toString(16).padStart(6, '0');
-    s.title = LColor(def, i) + (i === 0 ? '' : ` — ${LName(PAINT_FAMILIES[fam])} ${t('paint.haveN', { n: have })}`);
+    s.title = LColor(def, i) + (i === 0 ? '' : ` — ${LName(PAINT_ALL[fam])} ${t('paint.haveN', { n: have })}`);
     s.addEventListener('click', () => {
       if (i === item.colorIdx) return;
       if (needsPaint) {
-        if (have < 1) { toast(t('paint.need', { name: LName(PAINT_FAMILIES[fam]) })); return; }
+        if (have < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
         state.paints[fam] = have - 1;
-        toast(t('paint.used', { name: LName(PAINT_FAMILIES[fam]), left: have - 1 }));
+        toast(t('paint.used', { name: LName(PAINT_ALL[fam]), left: have - 1 }));
       }
       recolorItem(item, i); markCollection(item.defId, i); showSelPanel(item); scheduleSave();
     });
@@ -8654,7 +8665,7 @@ function openQaPanel() {
         break;
       }
       // 도료 검수용 — 전 계열 +3 (스와치 게이트·소모·도감 확인)
-      case 'paints': for (const f of Object.keys(PAINT_FAMILIES)) state.paints[f] = (state.paints[f] || 0) + 3; status('도료 12계열 +3통'); break;
+      case 'paints': for (const f of Object.keys(PAINT_ALL)) state.paints[f] = (state.paints[f] || 0) + 3; status('도료 12계열 + 네온 안료 +3통'); break;
       // 시그니처 도면 검수용 — 전 도면 해금 (제작 목록 노출 확인)
       case 'bps': { state.blueprints = state.blueprints || {}; for (const ids of Object.values(BAL.blueprint.regionItems)) for (const id of ids) state.blueprints[id] = 1; status('시그니처 도면 8종 전부 해금'); break; }
     }
@@ -9117,7 +9128,7 @@ window.__shelter = {
   broadcastableTotal, broadcastSentCount, pickUnsentSignal, targetSurvivorLights, doBroadcast,
   bunkerUndercroftRoute, showTruthPage, tryDoctorRadio,
   showDoctorDocPage, runSiloSequence, applyProjectEffect, // §9.6 「침묵」 (코어 테스트·접지 프로브용)
-  PAINT_FAMILIES, paintFamilyOf, rollPaintFamily, jackpotToast, showSelPanel, DEFS, BAL, // 도료 (REWARD-LOOP ②) + 데이터 핸들
+  PAINT_FAMILIES, RARE_PAINTS, PAINT_ALL, paintFamilyOf, paintFamilyRequired, rollPaintFamily, jackpotToast, showSelPanel, DEFS, BAL, // 도료+희귀 안료 (REWARD-LOOP ②) + 데이터 핸들
   rollOfflineGift, // DDD-5 복귀 서프라이즈 (코어 테스트용)
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,

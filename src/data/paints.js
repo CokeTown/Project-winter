@@ -21,6 +21,16 @@ export const PAINT_FAMILIES = {
   slateBlue:   { name: '슬레이트 블루', nameEn: 'Slate Blue',  swatch: 0x46557a, icon: '🪣' },
   lavender:    { name: '라벤더',       nameEn: 'Lavender',     swatch: 0x9a8aa8, icon: '🪣' },
 };
+// 희귀 안료 (디렉터 확정 2026-07-09) — 일반 12계열과 분리된 도시 전용 최희귀 도료.
+//   일반 파밍 풀(rollPaintFamily)에 안 들어간다 — 지정 지역 전용 저확률 드랍으로만 나온다.
+//   시그니처 발광 가구(네온)의 색은 이 안료로만 칠할 수 있어 "그 색은 그 도시에서만"이 한 층 깊어진다.
+export const RARE_PAINTS = {
+  neonPigment: { name: '네온 안료', nameEn: 'Neon Pigment', swatch: 0x9a5ad4, icon: '🌈', region: 'citycore' },
+};
+// 시그니처 아이템별 도료 게이트 오버라이드: 기본색(0) 외 스와치는 hex 계열이 아니라 이 안료를 요구한다.
+export const SIGNATURE_PAINT = { neonvip: 'neonPigment', neonair: 'neonPigment' };
+// 이름/스와치 조회용 통합 맵 (일반 12 + 희귀). rollPaintFamily는 PAINT_FAMILIES만 쓴다(희귀는 별도 드랍).
+export const PAINT_ALL = { ...PAINT_FAMILIES, ...RARE_PAINTS };
 // hex → HSL (h: 0~360, s/l: 0~1)
 function hslOf(hex) {
   const r = ((hex >> 16) & 255) / 255, g = ((hex >> 8) & 255) / 255, b = (hex & 255) / 255;
@@ -46,4 +56,9 @@ export function paintFamilyOf(hex) {
   if (h < 190) return 'sage';
   if (h < 262) return 'slateBlue';
   return 'lavender';
+}
+// 도색에 실제로 요구되는 계열: 시그니처 아이템은 전용 안료를, 나머지는 hex 자동 분류를 따른다.
+//   game.js showSelPanel이 스와치 게이트/툴팁/소모에 이걸 쓴다(기본색 0은 호출 전에 무료 처리).
+export function paintFamilyRequired(defId, hex) {
+  return SIGNATURE_PAINT[defId] || paintFamilyOf(hex);
 }
