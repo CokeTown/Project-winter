@@ -8181,6 +8181,14 @@ $('lang-en').addEventListener('click', () => pickTitleLang('en'));
 $('t-new').addEventListener('click', () => openSlotModal('new'));
 $('t-load').addEventListener('click', () => openSlotModal('load'));
 $('t-help').addEventListener('click', openHelpModal);
+// 게임 종료 버튼 — Electron 데스크톱(window.close 동작)에서만 노출. 웹은 브라우저가 close를 막으므로 숨김.
+// (데모 1.6.3 포팅 — preload sandbox 사망으로 nineWidget이 증발해 영구 숨김이던 결함도 main.cjs에서 함께 수정)
+if (window.nineWidget && window.nineWidget.available) {
+  const _q = $('t-quit');
+  if (_q) { _q.style.display = ''; _q.addEventListener('click', async () => {
+    if (await gameConfirm(t('title.quit.confirm'), t('title.quit'), t('confirm.cancel'))) window.close();
+  }); }
+}
 // #52: 타이틀 ⚙️ — 전용 설정 오버레이 토글 (인게임과 동일 창)
 $('t-settings').addEventListener('click', () => toggleSettingsPanel());
 /* ============================================================

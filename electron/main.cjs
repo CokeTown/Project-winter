@@ -22,6 +22,10 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      // Electron 20+는 렌더러 sandbox가 기본 ON — preload의 require('fs')(로케일 loose 오버라이드)가
+      // 모듈 로드에서 죽어 contextBridge 전체(nineWidget: 종료 버튼·위젯 모드·디스플레이 IPC)가 증발한다.
+      // 로컬 파일만 로드하는 셸이라 sandbox만 끄고 contextIsolation/nodeIntegration 방어선은 유지.
+      sandbox: false,
       preload: path.join(__dirname, 'preload.cjs'),
     },
   });

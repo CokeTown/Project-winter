@@ -4,6 +4,8 @@
   "title.new": "✚ 새 게임",
   "title.load": "💾 불러오기",
   "title.help": "📖 생존 수첩",
+  "title.quit": "✖ 게임 종료",
+  "title.quit.confirm": "게임을 종료할까요?",
   "title.tools.export": "세이브 내보내기",
   "title.tools.import": "세이브 가져오기",
   "title.tools.settings": "설정",

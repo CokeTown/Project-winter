@@ -292,7 +292,7 @@
   .tool-item.empty .cnt { background: #3a3f4d; color: var(--text-dim); }
 
   /* ── 선택 패널 ── */
-  #sel-panel { bottom: 118px; left: 50%; transform: translateX(-50%); display: none; text-align: center; } /* 툴바(62)+가구칩 위 (디렉터 재배치) */
+  #sel-panel { bottom: 178px; left: 50%; transform: translateX(-50%); display: none; text-align: center; } /* 디렉터 신고(PC 배치·색상 겹침, 데모 1.6.3 포팅): 툴바 실높이 113을 56으로 잘못 잡아 44px 겹쳤다 — 실측 위로 분리 */
   #sel-panel.show { display: block; }
   #sel-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
   #sel-panel .swatches { display: flex; gap: 8px; justify-content: center; margin-bottom: 9px; }
@@ -671,12 +671,17 @@
   #quest-card.done-flash .q-check { display: block; }
   @keyframes questcheck { 0% { opacity: 0; transform: scale(0.6); } 40% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
   body.title-mode #quest-card { display: none !important; }
+  /* 디렉터 신고(PC 배치·퀘스트 겹침, 데모 1.6.3 포팅): top:340 고정 앵커는 lore 길이·창 높이에 따라
+     툴바를 덮는다(1265×795 실측 여유 11px). 배치 모드에선 bottom 앵커로 툴바 위에.
+     모바일 값은 아래 미디어 블록이 같은 셀렉터로 덮어쓴다. */
+  body.edit-mode #quest-card { top: auto; bottom: 170px; }
   @media (max-width: 720px) {
     /* 디렉터 신고(모바일 거대 카드): base top:340px이 남은 채 bottom만 얹혀 카드가 세로로 늘어났다 — top 해제가 근인 수정 */
     #quest-card { top: auto; bottom: 78px; width: 180px; padding: 6px 8px; left: 8px; }
   }
   @media (max-height: 420px) {
     #quest-card { top: auto; bottom: 46px; width: 168px; }
+    body.edit-mode #quest-card { bottom: 150px; } /* 가로 폰: 툴바(4)+선택 패널(60) 위로 */
   }
 
 
@@ -797,7 +802,8 @@
   .cam-btn.primary { border-color: var(--accent); color: var(--accent); background: rgba(107,90,64,0.35); }
 
   #btn-cancel-place {
-    position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
+    /* bottom 100은 툴바(62~175 실측) 한가운데 — 배치 중 취소 버튼이 툴바에 깔렸다. 툴바 위로. */
+    position: absolute; bottom: 178px; left: 50%; transform: translateX(-50%);
     display: none; z-index: 6; padding: 9px 18px; font-size: 12px;
     zoom: var(--uiz);
   }
@@ -826,8 +832,12 @@
     /* 편집 모드 가구 툴바·팔레트는 조작 바 위로 (조작 바 zoom:1 실측 클리어런스) */
     #toolbar { bottom: 106px; padding: 6px; }
     /* 디렉터 신고(배치·색상 겹침): sel-panel이 toolbar와 같은 bottom(100)이라 뒤에 깔렸다 — 툴바 실측 높이 위로 분리 */
-    #sel-panel { bottom: 198px; max-width: calc(100vw - 20px); }
+    #sel-panel { bottom: 210px; max-width: calc(100vw - 20px); } /* 198은 툴바 상단과 2px 접촉(스케일 반올림) — 마진 확보 */
+    /* 세로폰에서 취소 버튼이 베이스 값으로 툴바(106~) 안에 깔렸다 — sel-panel 위 밴드로 (390×844 실측) */
+    #btn-cancel-place { bottom: 240px; }
     #quest-card { top: auto; bottom: 106px; }
+    /* 배치 모드: 툴바(106)·선택 패널(210)이 그 자리를 쓴다 — 퀘스트 카드는 그 위로 */
+    body.edit-mode #quest-card { bottom: 296px; }
     #modal { max-height: 72vh; }
     /* 모바일 세로: 자원바가 상단(top:156px)으로 이동하므로 쪽지는 우하단 코너 유지(데스크톱용 오프셋 되돌림) */
     #tip-note { right: 12px; width: min(260px, calc(100vw - 24px)); }
