@@ -5,7 +5,7 @@ const { boot, evalJs, call, check, near, report, app } = require('./harness.cjs'
 
 const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
-const SHELTER_HASH = -1537463991;
+const SHELTER_HASH = 1052806561; // 2026-07-08 재핀: 해금 강화 — unlockAt 사다리(옥탑25~로지290) + moveCost x5~10 (디렉터 오더)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
 const MIG_HASH = 779394296;
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
