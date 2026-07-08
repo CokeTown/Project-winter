@@ -170,4 +170,21 @@ export const SHELTER_META = {
     mood: { fog: 0x1a2436, fogNear: 20, fogFar: 62, skyH: 0x22314a, skyZ: 0x0a1120, hemiSky: 0x94a6c8, hemiGround: 0x484038, hemiInt: 0.72, moonC: 0xaec4e0, moonInt: 0.82, stars: 1.0, fire: 0.9 },
     perk: { cozyMult: 1.3, forecast: true, label: '🔥 벽난로 로지 — 쾌적 효과 1.3배 · 날씨 예보', labelEn: '🔥 Hearth lodge — comfort effects ×1.3 · weather forecast' },
   },
+
+  /* ── 2.0 동부 「대도시」 셸터 1: 세관 (GD-2.0 §6.0.5 — 심부 진행 관문) ──
+     국경 검문소의 심사 홀. TLOU 3년차 식생 + 동부 노을 팔레트(mood). unlockAt 9999 = 동부 관문
+     시스템 착지 전까지 이주 목록 비노출 — 기초 모델링 선제작분(QA loadShelter로만 진입).
+     퍽·코스트는 자리값(밸런스는 동부 경제 설계와 함께 캘리브). */
+  customs: {
+    name: '세관', nameEn: 'Customs House', emoji: '🛃', unlockAt: 9999, viewH: 17, ceilY: 2.7,
+    desc: '국경 검문소의 심사 홀. 통과하지 못한 짐들이 아직 컨베이어 위에 놓여 있다 — 이제 국경은 나 하나를 위해 열려 있다.',
+    descEn: 'The inspection hall of a border checkpoint. Luggage that never cleared still sits on the belt — now the border stands open for one.',
+    room: { w: 7.6, d: 6.2, h: 2.7 },
+    baseComfort: 6,
+    mood: { fog: 0x2a161a, fogNear: 22, fogFar: 62, skyH: 0x8a3040, skyZ: 0x160a12, hemiSky: 0xc08a70, hemiGround: 0x3a3028, hemiInt: 0.66, moonC: 0xd8a890, moonInt: 0.75, stars: 0.8 },
+    weatherPool: ['clear', 'rain', 'clear', 'snow'],
+    perk: { label: '🛃 관문의 집 — 동부 대도시의 문턱', labelEn: '🛃 Home at the gate — threshold of the eastern metropolis' },
+    moveCost: { material: 32, parts: 24 },
+    limits: '🏙️ 도심 3년차 — 식생이 벽을 타고 오른다', limitsEn: '🏙️ Year three downtown — greenery climbs the walls',
+  },
 };

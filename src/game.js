@@ -1240,6 +1240,14 @@ const SHELTERS = {
     ...SHELTER_META.lodge, // build 함수 → render/shelters.js
     ..._shelterBuilders.lodge,
   },
+
+  /* ── 2.0 동부 「대도시」 셸터 1: 세관 (§6.0.5 — 심부 진행 관문, 세관==다리 → 역 → 펜트하우스) ──
+     국경 검문소의 심사 홀이 거처. 밖은 차단기·검문 캐노피·컨테이너 야적·트럭 행렬 — TLOU 3년차 식생.
+     unlockAt 9999 = 동부 관문 시스템 착지 전 이주 목록 비노출(기초 모델링 선제작 — Opus 디테일 패스 대기). */
+  customs: {
+    ...SHELTER_META.customs, // build 함수 → render/shelters.js
+    ..._shelterBuilders.customs,
+  },
 };
 
 /* ── 1.3 관측소 현장 오브젝트 (site='observatory') ──
@@ -2566,6 +2574,7 @@ const SHELTER_MAP = {
   ship: { x: 14, y: 78 }, lighthouse: { x: 21, y: 73 },       // 잿빛 해안
   tugboat: { x: 46, y: 75 }, controltower: { x: 52, y: 72 },  // 얼어붙은 항구
   lodge: { x: 81, y: 27 },                                    // 고요한 고원
+  customs: { x: 94, y: 52 },                                  // 2.0 동부 관문 (지도 동쪽 끝 — §6.0.5)
 };
 /* ── 지도 리워크 2차(디렉터: 타르코프 Woods식 진짜 지형도) ──
    지역별 색면 폐기. 회백 종이 전면 + 초록은 '식생'만 + 갈색 등고선(높이장 marching-squares)이
@@ -3729,6 +3738,11 @@ const SHELTER_MOUNTS = {
     roof: { y: 3.15, cx: 0, cz: 1.55, hw: 2.6, hd: 1.1, pitch: 0.38 },
     eave: { y: 3.0, x: 4.31, z: 3.31, dir: [1, 1] },
     groundY: -0.88, ground: { x: 5.5, z: 1.7, rot: Math.PI / 2 },
+  },
+  customs: { // 2.0 동부: 7.6×6.2×2.7 평지붕 콘크리트 청사. 마당 아스팔트 -0.55 (§6.0.5 기초 모델링)
+    roof: { y: 2.72, cx: 0, cz: 0, hw: 3.6, hd: 2.9 },
+    eave: { y: 2.6, x: 3.91, z: 2.6, dir: [1, 1] },
+    groundY: -0.55, ground: { x: 2.8, z: 2.4, rot: 0 },
   },
 };
 function modAvailable(id, shelterId) {
