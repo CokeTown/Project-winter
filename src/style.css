@@ -296,9 +296,25 @@
   #sel-panel.show { display: block; }
   #sel-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
   #sel-panel .swatches { display: flex; gap: 8px; justify-content: center; margin-bottom: 9px; }
-  .swatch { width: 22px; height: 22px; border-radius: 3px; cursor: pointer; border: 2px solid #555b6b; }
+  .swatch { width: 22px; height: 22px; border-radius: 3px; cursor: pointer; border: 2px solid #555b6b; position: relative; }
   .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  /* 도료 게이트 (REWARD-LOOP ②): 그 계열 도료가 없으면 잠금 — 어둡게 + 자물쇠 */
+  .swatch.locked { opacity: 0.45; cursor: not-allowed; }
+  .swatch.locked::after { content: '🔒'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; }
   #sel-panel .btn-row { display: flex; gap: 6px; }
+  /* 잭팟 프레임 (희귀 획득 공용): 화면 상단 중앙 반짝 배너 — 도료가 첫 사용자 */
+  .jackpot-toast {
+    position: fixed; top: 74px; left: 50%; transform: translateX(-50%);
+    z-index: 220; padding: 9px 18px; border-radius: 6px;
+    background: linear-gradient(135deg, rgba(24, 20, 12, 0.95), rgba(40, 32, 16, 0.95));
+    border: 1px solid var(--jp, #ffd88a); color: #ffeecc;
+    font-size: calc(12px * var(--uiz, 1)); font-weight: bold; letter-spacing: 0.3px;
+    box-shadow: 0 0 14px var(--jp, #ffd88a), 0 4px 16px rgba(0, 0, 0, 0.5);
+    animation: jackpotIn 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+    pointer-events: none; word-break: keep-all;
+  }
+  .jackpot-toast.out { transition: opacity 0.55s ease, transform 0.55s ease; opacity: 0; transform: translateX(-50%) translateY(-14px); }
+  @keyframes jackpotIn { from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.9); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
 
   /* ── 모달 (이주 / 전리품 / 도움말) ── */
   #modal-back {

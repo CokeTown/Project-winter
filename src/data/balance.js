@@ -339,6 +339,28 @@ export const BAL = {
     hiddenGate3: { parts: 1, battery: 1, fuel: 1 }, // 개통(등불·사다리) — 4회
   },
 
+  /* ── 도료 (REWARD-LOOP ② 1차 착지 — 디렉터 확정 2026-07-08: 소모품 1통=1회·12계열·지역 시그니처) ──
+     성공 탐험 저확률 드랍(잭팟 층 — 감사의 "희귀 티어 부재" 처방). 기대 통 1개/약 6성공 —
+     스와치 124색 완주는 초장기 수집 목표(도감·업적 3종이 스코어보드). 파워 아님(코지 안전선). */
+  paint: {
+    dropChance: 0.16,     // 성공 탐험당 도료 1통 확률
+    merchant: { chance: 0.05 }, // 염료 상인 — 슬럼 탐험당 조우 확률(성패 무관). 값은 dyeCost(모드별 통조림 2/3/4)
+    signatureWeight: 0.7, // 그 지역 시그니처 계열에서 뽑힐 확률 (나머지 30%는 전 계열 균일 — 어디서든 가끔은)
+    // 지역 → 시그니처 계열 ("그 색은 거기서 잘 나온다" — 어려운 곳에 갈 이유. 12계열 전부 최소 1지역 보유)
+    regionFamilies: {
+      residential: ['whitewash', 'sage', 'oakStain'],
+      commercial: ['mustard', 'terracotta', 'slateBlue'],
+      industrial: ['redOxide', 'ashgray', 'charcoal'],
+      slum: ['walnutStain', 'olive', 'charcoal'],
+      harborYard: ['slateBlue', 'whitewash'],
+      fishMarket: ['sage', 'ashgray'],
+      resort: ['lavender', 'whitewash', 'sage'],
+      checkpoint: ['olive', 'ashgray'],
+      lab: ['charcoal', 'slateBlue'],
+      citycore: ['lavender', 'mustard', 'redOxide'],
+    },
+  },
+
   /* ── 1.4 「금지 구역」 (신규 섹션) ──
      방호복·체류·금지 구역 지역·무전 송출 수치. 전부 신규라 기존 BAL 불가침 원칙과 무관.
      경제 게이트: 금지 구역은 방호복(고급 제작 정점) 필수라 기본 시뮬(container)에 영향 없음 —

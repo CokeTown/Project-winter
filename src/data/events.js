@@ -23,6 +23,7 @@ export function makeEvents(ctx) {
     runEndingSequence, doctorFragmentsComplete,
     endingLeaning, // 2.0 §9.5: 엔딩 성향(누적 신호 기반 — 3분기 문안 뉘앙스)
     encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도 — 암시장과 캐논 공유)
+    PAINT_FAMILIES, buyDye, dyeCost, // 염료 상인 (디렉터 2026-07-08 — 도료 교환 채널)
   } = ctx;
   const EVENTS = {
     wanderer: {
@@ -291,6 +292,22 @@ export function makeEvents(ctx) {
       choices: [
         { labelId: 'end3.early.c0', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.early.r0'); } },
         { labelId: 'end3.early.c1', run() { return t('end3.early.r1'); } },
+      ],
+    },
+    // 염료 상인 (디렉터 2026-07-08): 슬럼 탐험 5% — 손수레 위 페인트 통 셋. 통조림 교환,
+    //   모드별 값 차등(노말·무한 2 / 하드 3 / 하드코어 4). 만나는 건 운, 사는 건 선택 — 도료 드랍의 교환 채널.
+    dye_merchant: {
+      special: true,
+      icon: '🎨', titleId: 'dye.title', textId: 'dye.text',
+      textFn: () => t('dye.text', {
+        names: (state.dyeOffer || []).map((f, i) => `${i + 1}. ${LN(PAINT_FAMILIES[f])}`).join(' · '),
+        n: dyeCost(),
+      }),
+      choices: [
+        { labelId: 'dye.c0', run() { return buyDye(0); } },
+        { labelId: 'dye.c1', run() { return buyDye(1); } },
+        { labelId: 'dye.c2', run() { return buyDye(2); } },
+        { labelId: 'dye.pass', run() { return t('dye.r.pass'); } },
       ],
     },
     // 2.0 §9.6 히든 루트 「침묵」 — 개척 완공 후 첫 밤, 통로 끝의 연구소에서 박사와 마주 앉는다.

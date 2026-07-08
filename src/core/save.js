@@ -67,6 +67,9 @@ export function migrateLoadedState(rawState, defaults, oldVer) {
   if (rawState.hiddenReachPending == null) state.hiddenReachPending = false;
   if (rawState.hiddenReached == null) state.hiddenReached = false;
   if (rawState.siloFired == null) state.siloFired = false;
+  // 도료 (REWARD-LOOP ②): 구세이브 빈 팔레트로 시작. 이미 칠한 가구·도감은 그대로(소급 몰수 없음 — 기득권 인정)
+  if (state.paints == null || typeof state.paints !== 'object') state.paints = {};
+  if (rawState.dyeOffer === undefined) state.dyeOffer = null; // 염료 상인 오퍼 — 구세이브 없음
   // Phase D 마이그레이션 (#12·#35·#36) — 구세이브에 없던 필드는 기본값으로 보정
   if (!Array.isArray(state.knowledge)) state.knowledge = []; // 「지식」 트리(§9) — 구세이브 안전
   if (!Array.isArray(state.evHistory)) state.evHistory = [];

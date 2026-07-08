@@ -75,6 +75,9 @@ export const state = {
   hiddenReachPending: false, // 개척 완공 후 첫 밤 박사 대면 인카운터 예약
   hiddenReached: false,   // 연구소 도달·선택 유보 — 이후 사다리 터치로 박사의 문서 열람
   siloFired: false,       // 사일로 버튼을 눌렀다 — 내부 전용(수첩·기록·업적 어디에도 안 씀. 완전 무기록 = 디렉터 확정). 재발화 방지만
+  // ── 도료 (REWARD-LOOP ② — 디렉터 확정 2026-07-08) ──
+  paints: {},             // 보유 도료 { 계열id: 통 수 } — 1통=1회 도색(소모품). 기본색은 도료 불요
+  dyeOffer: null,         // 염료 상인 오퍼 [계열id ×3] — 슬럼 조우 시 세팅, 인카운터 본문·구매가 읽는다
   // ── Nine Winters 엔드게임 마일스톤 (#11) ──
   winters: 0,          // 넘긴 겨울 수 (봄으로 넘어가는 날 +1). 제목이 곧 장기 목표.
   demoEnded: false,    // #74 데모 빌드 전용: 첫 겨울 통과로 데모가 끝난 세이브 (정식 빌드에선 항상 false)

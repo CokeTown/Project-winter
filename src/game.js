@@ -17,6 +17,7 @@ import { makeCamera } from './render/camera.js'; // Tier4 렌더 추출 Phase1-�
 import { makeScreenFx } from './render/weatherfx.js'; // Tier4 렌더 추출 Phase1-④: 화면 2D 날씨 오버레이
 import { makeModals } from './ui/modals.js'; // Tier4 UI 추출 Phase1-⑤: 모달 빌더
 import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, MEMOS_CITYCORE, BROADCASTS, SKETCHES } from './data/lore.js';
+import { PAINT_FAMILIES, paintFamilyOf } from './data/paints.js'; // 도료 12계열 (REWARD-LOOP ②)
 import { makeEvents } from './data/events.js';
 import { makeDecoTex } from './data/decotex.js';
 import { makeCatSystem } from './systems/cat.js';
@@ -3047,6 +3048,23 @@ function resolveExpedition() {
     }
     // #76 지식: 폐허에서 성한 책 한 권 (탐험 성공 희귀 드랍 — 사치 가구 재료). 암시장 판매 부산물과 별개의 '지식' 손맛.
     if (Math.random() < BAL.luxury.bookDropChance) { resAdd('book', 1); notes.push(t('exp.note.book')); }
+    // 도료 드랍 (REWARD-LOOP ② — 잭팟 층): 성공 탐험 저확률, 지역 시그니처 계열 가중.
+    //   resolveExpedition은 sim 미사용(§9.7) — 책 드랍과 같은 스트림, 시드 시뮬 무접점.
+    if (Math.random() < BAL.paint.dropChance) {
+      const fam = rollPaintFamily(exp.region);
+      state.paints[fam] = (state.paints[fam] || 0) + 1;
+      notes.push(t('paint.foundNote', { name: LName(PAINT_FAMILIES[fam]) }));
+      jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
+    }
+    // 염료 상인 (디렉터 2026-07-08): 슬럼 한정 5% — 만나는 건 운, 사는 건 선택(통조림 교환, 모드별 값).
+    if (exp.region === 'slum' && !state.pendingEvent && Math.random() < BAL.paint.merchant.chance) {
+      const all = Object.keys(PAINT_FAMILIES);
+      const offer = [];
+      while (offer.length < 3) { const f = all[Math.floor(Math.random() * all.length)]; if (!offer.includes(f)) offer.push(f); }
+      state.dyeOffer = offer;
+      state.pendingEvent = 'dye_merchant';
+      state.lastEventDay = state.day;
+    }
     state.successes++;
     state.stats.success++;
     title = t('exp.successTitle', { name: LName(r) });
@@ -3475,6 +3493,7 @@ const EVENTS = makeEvents({
   runEndingSequence, doctorFragmentsComplete,
   endingLeaning, // 2.0 §9.5: 엔딩 성향
   encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도)
+  PAINT_FAMILIES, buyDye, dyeCost, // dye merchant ctx (REWARD-LOOP)
 });
 setEncounterEvents(EVENTS); // core/encounter 술어에 EVENTS 주입 (makeEvents 산물 — 생성 직후 1회)
 // 이벤트 선택지 비용 판정/소비: food가 섞인 cost는 신선+통조림 합산으로 취급 (신선 우선 소비 후 통조림 폴백)
@@ -7243,10 +7262,23 @@ function showSelPanel(item) {
   sw.innerHTML = '';
   def.colors.forEach((c, i) => {
     const s = document.createElement('div');
-    s.className = 'swatch' + (i === item.colorIdx ? ' active' : '');
+    // 도료 게이트 (REWARD-LOOP ②): 기본색(0)·현재색은 무료, 다른 색은 그 계열 도료 1통 소모.
+    const fam = paintFamilyOf(c);
+    const have = state.paints[fam] || 0;
+    const needsPaint = i !== 0 && i !== item.colorIdx;
+    const locked = needsPaint && have < 1;
+    s.className = 'swatch' + (i === item.colorIdx ? ' active' : '') + (locked ? ' locked' : '');
     s.style.background = '#' + c.toString(16).padStart(6, '0');
-    s.title = LColor(def, i);
-    s.addEventListener('click', () => { recolorItem(item, i); markCollection(item.defId, i); showSelPanel(item); scheduleSave(); });
+    s.title = LColor(def, i) + (i === 0 ? '' : ` — ${LName(PAINT_FAMILIES[fam])} ${t('paint.haveN', { n: have })}`);
+    s.addEventListener('click', () => {
+      if (i === item.colorIdx) return;
+      if (needsPaint) {
+        if (have < 1) { toast(t('paint.need', { name: LName(PAINT_FAMILIES[fam]) })); return; }
+        state.paints[fam] = have - 1;
+        toast(t('paint.used', { name: LName(PAINT_FAMILIES[fam]), left: have - 1 }));
+      }
+      recolorItem(item, i); markCollection(item.defId, i); showSelPanel(item); scheduleSave();
+    });
     sw.appendChild(s);
   });
   // 조명/가전: 전원 토글 + 연료 잔량 (기획서 v0.2 UI: "양초 3개 보유 / 1일 1개 소비")
@@ -7489,6 +7521,38 @@ function showSketchPage(id) {
   const body = `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${t('sketch.tag')}</div>` +
     `<div style="white-space:pre-line;line-height:1.9">${LD(s)}</div>`;
   openJournalPages([{ title: LN(s), body }]);
+}
+/* ── 도료 (REWARD-LOOP ② 1차 착지 — 디렉터 확정 2026-07-08) ──
+   스와치 공짜 클릭 → 도료 게이트: 칠하려면 그 색 계열의 도료 1통이 필요하다(기본색 0번은 무료).
+   드랍은 성공 탐험 저확률 + 지역 시그니처 계열 가중 — "그 색은 거기서 잘 나온다"가 pull이 된다. */
+// 지역 시그니처 가중 계열 뽑기 (드랍 롤 전용 — resolveExpedition 안에서만 호출, sim 무접점)
+function rollPaintFamily(region) {
+  const sig = BAL.paint.regionFamilies[region];
+  const all = Object.keys(PAINT_FAMILIES);
+  if (sig && sig.length && Math.random() < BAL.paint.signatureWeight) return sig[Math.floor(Math.random() * sig.length)];
+  return all[Math.floor(Math.random() * all.length)];
+}
+// 염료 상인 (디렉터 2026-07-08): 모드별 통조림 값 — 노말·무한 2 / 하드 3 / 하드코어 4
+function dyeCost() { return isHardcore() ? 4 : state.mode === 'hard' ? 3 : 2; }
+function buyDye(i) {
+  const fam = (state.dyeOffer || [])[i];
+  if (!fam) return '';
+  const n = dyeCost();
+  if ((state.res.canned || 0) < n) return t('dye.r.noGoods');
+  state.res.canned -= n;
+  state.paints[fam] = (state.paints[fam] || 0) + 1;
+  renderResBar();
+  return t('dye.r.bought', { name: LName(PAINT_FAMILIES[fam]), n });
+}
+// 잭팟 프레임 (공용): 희귀 획득 전용 연출 — 반짝이는 배너 + SFX. 도료가 첫 사용자, 이후 희귀 티어 공용.
+function jackpotToast(msg, hex = 0xffd88a) {
+  const el = document.createElement('div');
+  el.className = 'jackpot-toast';
+  el.style.setProperty('--jp', '#' + hex.toString(16).padStart(6, '0'));
+  el.textContent = msg;
+  document.body.appendChild(el);
+  playSfx('craft', { vol: 0.5 });
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 600); }, 3200);
 }
 // 1.4 최종장 "그날의 진실" — 기밀 문서 12종 전부 수집 시 열리는 회고 페이지(다중 페이지, 메모 페이지 문법).
 //   조용한 발견의 톤: 극적 폭로가 아니라 흩어진 기록을 이어 붙인 한 사람의 정리. 지시조 금지.
@@ -8483,6 +8547,7 @@ function openQaPanel() {
       ${btn('cat', '고양이 소환')}
       ${btn('questSkip', '온보딩 스킵')}
       ${btn('hidden', '히든 루트 점프 (침묵)')}
+      ${btn('paints', '도료 전 계열 +3')}
     </div>
     <div id="qa-status" style="font-size:11px;color:var(--good);margin-top:8px;min-height:16px"></div>`;
   openModal('🛠️ QA 치트 패널', body);
@@ -8521,6 +8586,8 @@ function openQaPanel() {
         status('히든 루트: 통로 발견 직후 상태 (개척 카드는 지하철 거주에서)');
         break;
       }
+      // 도료 검수용 — 전 계열 +3 (스와치 게이트·소모·도감 확인)
+      case 'paints': for (const f of Object.keys(PAINT_FAMILIES)) state.paints[f] = (state.paints[f] || 0) + 3; status('도료 12계열 +3통'); break;
     }
     updateHud(); renderResBar(); if (!state.exp) renderExpPanel(); scheduleSave();
   }));
@@ -8981,6 +9048,7 @@ window.__shelter = {
   broadcastableTotal, broadcastSentCount, pickUnsentSignal, targetSurvivorLights, doBroadcast,
   bunkerUndercroftRoute, showTruthPage, tryDoctorRadio,
   showDoctorDocPage, runSiloSequence, applyProjectEffect, // §9.6 「침묵」 (코어 테스트·접지 프로브용)
+  PAINT_FAMILIES, paintFamilyOf, rollPaintFamily, jackpotToast, showSelPanel, DEFS, BAL, // 도료 (REWARD-LOOP ②) + 데이터 핸들
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
   coldSnapActive, coldSnapNetSeverity, coldDefenseLevel, winterPrepAdvice, seasonIndex,
