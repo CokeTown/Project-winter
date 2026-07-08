@@ -46,6 +46,10 @@ export const BAL = {
   /* ── 탐험 (startExpedition / _simDaysInner 탐험 비용) ── */
   exp: {
     perDay: 5,           // EXP_PER_DAY: 하루 탐험 가능 횟수
+    /* 탐험 시간 개편 (디렉터 2026-07-08): 탐험 소요(인게임) = expDuration(실대기 초) × timeScale(분).
+       탐험 중엔 시계가 이 배속으로 흘러 대기가 끝나는 순간 소요시간이 정확히 다 흘러 있다 —
+       귀환 순간의 시간 점프(구 +2~5시간 "그냥 지나는" 이슈) 폐지. 공업 45초 → 3시간, 도심 80초 → 5시간20분. */
+    timeScale: 4,        // 탐험 중 시간 배속 (실1초 = 게임4분. 평상시 1분)
     energyCost: 20,      // 탐험 1회 에너지 소모
     hungerCost: 4,       // 탐험 1회 배고픔 소모 (sim 경로)
     thirstCost: 5,       // 탐험 1회 갈증 소모 (sim 경로)

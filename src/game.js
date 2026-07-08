@@ -2695,7 +2695,8 @@ function showMapInfo(rid) {
     return;
   }
   const p = rateParts(rid);
-  const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC);
+  const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC * BAL.exp.timeScale); // 인게임 소요(배속 반영) — 공업 3시간
+
   const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
   $('map-info').innerHTML = `
     ${t('map.regionLine', { emoji: regionIcon(rid), pct: Math.round(p.eff * 100), name: LName(r), desc: LDesc(r) })}<br>
@@ -2836,7 +2837,7 @@ function openPrepModal(regionId) {
     if (p.hungryPen) lines.push(`<span style="color:var(--bad)">${t('prep.hungryPen', { pct: Math.round(p.hungryPen * 100) })}</span>`);
     const cost = {};
     for (const id of selected) for (const [rid, n] of Object.entries(PREPS[id].cost)) cost[rid] = (cost[rid] || 0) + n;
-    const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC); // 실초→게임 시간 표기
+    const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC * BAL.exp.timeScale); // 인게임 소요(배속 반영) 표기
     const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
     $('modal-body').innerHTML = `
       <div class="rate-line">
@@ -2904,7 +2905,9 @@ async function departExpedition(regionId, prep, opts2 = {}) {
   // 성공률 버프/디버프는 이번 출발에 반영되어 소진 (물자 좌표 버프는 정산 시)
   if (state.buff?.exp) state.buff = null;
   // #94(디렉터): 출발 시각 기록 — 귀환 정산이 '대기 중 이미 흐른 게임 시간'을 차감해 이중 계산을 없앤다.
-  state.exp = { region: regionId, end: Date.now() + dur, dur, rate: p.eff, prep, startGameMin: state.gameMin, bag: bagOk };
+  // durMin = 이번 트립의 인게임 소요(분) — 출발 시점 확정(도중에 염좌 회복/노선 개통돼도 이번 트립은 그대로)
+  state.exp = { region: regionId, end: Date.now() + dur, dur, rate: p.eff, prep, startGameMin: state.gameMin,
+    durMin: Math.round(expDuration(r) * GAME_MIN_PER_SEC * BAL.exp.timeScale), bag: bagOk };
   closeModal();
   scheduleSave();
   renderExpPanel();
@@ -2940,9 +2943,10 @@ function resolveExpedition() {
   state.exp = null;
   state.stats.exp++;
   // 탐험을 다녀오면 하루가 그만큼 흘러 있다 (거리 비례 2~5시간)
-  // #94(디렉터 신고): 대기 중에도 시계가 흐르는데 귀환 때 전액을 또 점프해 '시간이 두 번 깎이던' 이중 계산 —
-  //   의도 소요에서 대기 중 경과분을 차감한 나머지만 점프한다(총 경과 = 탐험 소요). 구세이브(기록 없음)는 기존 전액.
-  const expIntendedMin = 120 + expDuration(r) * 2.5;
+  // 탐험 시간 개편(디렉터 2026-07-08, #94 후속): 소요시간은 대기 중 배속(tickTime ×timeScale)으로
+  //   이미 다 흘렀다 — 정상 귀환의 점프는 0. 아래 차감식은 안전망으로만 남는다(앱 종료 후 오프라인
+  //   정산이 1배속으로 흘렀거나, 구세이브 in-flight 탐험처럼 durMin이 없는 경우의 잔여분 보전).
+  const expIntendedMin = exp.durMin != null ? exp.durMin : 120 + expDuration(r) * 2.5; // 폴백=구식
   const expPassedMin = (exp.startGameMin != null) ? Math.max(0, state.gameMin - exp.startGameMin) : 0;
   state.gameMin += Math.max(0, expIntendedMin - expPassedMin);
   state.expToday = (state.expToday || 0) + 1;
@@ -6785,8 +6789,11 @@ function runAutoPlay() {
 }
 function tickTime(dt) {
   // #74 데모 재설계: (구) demoEnded tickTime 동결 제거 — 크레딧 후 4계절 무한 샌드박스는 시간이 흐른다.
-  state.gameMin += dt * GAME_MIN_PER_SEC;
-  decayGauges(dt * GAME_MIN_PER_SEC);
+  // 탐험 시간 개편(디렉터 2026-07-08): 탐험 중엔 시계가 배속(×4)으로 흐른다 — "다녀오는 시간"이
+  //   대기 중에 실제로 흘러 귀환 점프가 사라진다. 게이지 감소도 함께 가속(시간이 흐르는 만큼 몸도 소모).
+  const gmRate = GAME_MIN_PER_SEC * (state.exp ? BAL.exp.timeScale : 1);
+  state.gameMin += dt * gmRate;
+  decayGauges(dt * gmRate);
   checkHelpless(); // 배치 D: 무력 상태(게이지 바닥 + 재고 0) 안전망 판정
   const curHour = Math.floor(state.gameMin / 60);
   if (curHour !== lastAutoHour) {
@@ -7001,8 +7008,12 @@ function tickExpeditionUI() {
     if (remain <= 0) { resolveExpedition(); return; }
     const bar = $('exp-bar'), eta = $('exp-eta');
     if (bar) {
-      bar.style.width = `${100 * (1 - remain / total)}%`;
-      eta.textContent = t('exp.timeLeft', { d: fmtGameDur((remain / 1000) * GAME_MIN_PER_SEC) });
+      // 디렉터 2026-07-08: 게이지는 30게임분 단위 계단으로 차고, 남은 시간도 같은 단위로 올림 표기
+      const totalMin = state.exp.durMin || (total / 1000) * GAME_MIN_PER_SEC * BAL.exp.timeScale;
+      const doneMin = totalMin * (1 - remain / total);
+      const stepMin = Math.min(totalMin, Math.floor(doneMin / 30) * 30);
+      bar.style.width = `${100 * (stepMin / totalMin)}%`;
+      eta.textContent = t('exp.timeLeft', { d: fmtGameDur(Math.max(30, Math.ceil((totalMin - doneMin) / 30) * 30)) });
     } else renderExpPanel();
   } else if (state.injury) {
     const el = $('injury-eta');
