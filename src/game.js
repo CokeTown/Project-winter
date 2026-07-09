@@ -7026,6 +7026,9 @@ function renderInventoryBar() {
   }
   for (const [id, def] of Object.entries(DEFS)) {
     const cnt = state.inventory[id] || 0;
+    // 데모 콘텐츠 게이트 (디렉터 2026-07-09): 2.0 시그니처(리조트·도심 지역독점)는 데모에서 도면이 안 떨어진다
+    //   → 이름·존재 자체를 감춘다("조회 자체 불가" 원칙, 제작창과 동일). 데모 화이트리스트 + 보유분 + 해금 도면만 노출.
+    if (DEMO_ED && cnt <= 0 && !DEMO_CRAFT_FURN.has(id) && !(state.blueprints || {})[id]) continue;
     const el = document.createElement('div');
     el.className = 'tool-item' + (cnt <= 0 ? ' empty' : '');
     el.innerHTML = `<span class="emoji">${furnIcon(id)}</span><span>${LName(def)}</span><span class="cnt">${cnt}</span>`;
