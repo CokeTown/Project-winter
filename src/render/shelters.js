@@ -2124,7 +2124,8 @@ export function makeShelterBuilders(ctx) {
           { group: mk(d, { window: { winW: 1.1, winH: 0.7, winY: 1.4, winX: 0.8 }, frameColor: 0x555149, skyColor: 0x6a3a34 }), pos: [-w / 2 - 0.11, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
           { group: mk(d), pos: [w / 2 + 0.11, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
         ]);
-        // 심사 카운터 (+x 벽면): 긴 데스크 + 금 간 유리 파티션 프레임 3칸
+        // 심사 카운터 (+x 벽면): 긴 데스크 + 파티션 3칸 — customsSeal 개조 시 유리 대신 판자 봉쇄
+        const mods = state.mods?.customs || [];
         const deskX = w / 2 - 0.55;
         B(roomGroup, 0.9, 0.95, 4.2, 0x8a8276, deskX, 0.48, -0.2);
         B(roomGroup, 1.0, 0.06, 4.4, 0x9a938a, deskX, 0.98, -0.2);
@@ -2132,7 +2133,13 @@ export function makeShelterBuilders(ctx) {
           const pz = -1.9 + i * 1.6;
           B(roomGroup, 0.06, 0.9, 0.06, 0x4a463f, deskX, 1.5, pz - 0.6); B(roomGroup, 0.06, 0.9, 0.06, 0x4a463f, deskX, 1.5, pz + 0.6);
           B(roomGroup, 0.05, 0.06, 1.26, 0x4a463f, deskX, 1.95, pz);
-          if (i !== 1) B(roomGroup, 0.02, 0.8, 1.1, 0xaebfc2, deskX, 1.5, pz); // 유리(가운데 칸은 깨져 없음)
+          if (mods.includes('customsSeal')) {
+            // 판자 봉쇄: 가로 판 3장 + 비스듬한 덧판 — 외풍이 멎는다 (comfort.js customsSeal 상쇄와 세트)
+            for (let k = 0; k < 3; k++) B(roomGroup, 0.06, 0.22, 1.2, 0x6a5238, deskX, 1.22 + k * 0.3, pz);
+            const brace = B(roomGroup, 0.07, 0.16, 1.3, 0x5a4530, deskX + 0.01, 1.5, pz); brace.rotation.x = 0.5;
+          } else if (i !== 1) {
+            B(roomGroup, 0.02, 0.8, 1.1, 0xaebfc2, deskX, 1.5, pz); // 유리(가운데 칸은 깨져 없음)
+          }
         }
         // 수하물 컨베이어 (+z 뒷벽): 벨트 + 스캐너 아치 + 방치된 여행가방 2
         const beltZ = d / 2 - 0.62;
@@ -2142,9 +2149,15 @@ export function makeShelterBuilders(ctx) {
         B(roomGroup, 0.5, 0.5, 0.9, 0x1e1c1a, 0.6, 0.85, beltZ);           // 스캐너 터널 구멍
         B(roomGroup, 0.8, 0.5, 0.4, 0x6a4436, -2.2, 0.83, beltZ, );        // 가방 1 (가죽)
         B(roomGroup, 0.62, 0.42, 0.34, 0x2e4456, -0.2, 0.79, beltZ);       // 가방 2 (하드케이스)
-        // 압수품 선반 (-x 벽): 2단 + 잡동 상자들
-        for (const sy of [0.9, 1.6]) B(roomGroup, 0.5, 0.05, 3.4, 0x6a635a, -w / 2 + 0.36, sy, 0.6);
-        for (let i = 0; i < 6; i++) B(roomGroup, 0.32 + rand() * 0.2, 0.26 + rand() * 0.16, 0.34, [0x8a6a4a, 0x5a6a5a, 0x74584a][i % 3], -w / 2 + 0.36, (i < 3 ? 0.9 : 1.6) + 0.18, -0.7 + (i % 3) * 1.3);
+        // 압수품 선반 (-x 벽): 2단 + 잡동 상자들 — customsClear 개조로 철거 가능(벽이 비면 배치 자유)
+        if (!mods.includes('customsClear')) {
+          for (const sy of [0.9, 1.6]) B(roomGroup, 0.5, 0.05, 3.4, 0x6a635a, -w / 2 + 0.36, sy, 0.6);
+          for (let i = 0; i < 6; i++) B(roomGroup, 0.32 + rand() * 0.2, 0.26 + rand() * 0.16, 0.34, [0x8a6a4a, 0x5a6a5a, 0x74584a][i % 3], -w / 2 + 0.36, (i < 3 ? 0.9 : 1.6) + 0.18, -0.7 + (i % 3) * 1.3);
+        } else {
+          // 철거 흔적: 브래킷 자국 4점 + 벽 변색 띠 (뜯어낸 자리)
+          for (let i = 0; i < 4; i++) B(roomGroup, 0.06, 0.08, 0.06, 0x55504a, -w / 2 + 0.16, i < 2 ? 0.9 : 1.6, -0.4 + (i % 2) * 2.0);
+          B(roomGroup, 0.015, 0.9, 3.2, 0xc5bfb2, -w / 2 + 0.13, 1.25, 0.6);
+        }
         // 안내판 (+z 벽 부착: 파란 판 + 흰 획 — 컬링 동기화)
         const signs = [];
         signs.push(B(roomGroup, 1.7, 0.5, 0.04, 0x2e4a6a, -2.2, 2.15, d / 2 + 0.1));

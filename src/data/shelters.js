@@ -185,6 +185,7 @@ export const SHELTER_META = {
     weatherPool: ['clear', 'rain', 'clear', 'snow'],
     perk: { label: '🛃 관문의 집 — 동부 대도시의 문턱', labelEn: '🛃 Home at the gate — threshold of the eastern metropolis' },
     moveCost: { material: 32, parts: 24 },
-    limits: '🏙️ 도심 3년차 — 식생이 벽을 타고 오른다', limitsEn: '🏙️ Year three downtown — greenery climbs the walls',
+    cold: 5, // 심사 창구가 뚫린 청사 — 외풍. 창구 봉쇄(customsSeal) 개조로 해소
+    limits: '🏙️ 심사 창구로 바람이 든다 — 악천후 쾌적 -5 (창구 봉쇄로 해소)', limitsEn: '🏙️ Wind slips through the booths — comfort -5 in bad weather (fix by sealing them)',
   },
 };
