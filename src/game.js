@@ -3028,7 +3028,11 @@ function resolveExpedition() {
     if (!DEMO_ED && Math.random() < BAL.luxury.bookDropChance) { resAdd('book', 1); notes.push(t('exp.note.book')); }
     // 도료 드랍 (REWARD-LOOP ② — 데모 포팅 #149, 데모에도 활성 = 도파민 층): 성공 탐험 저확률, 지역 시그니처 계열 가중.
     //   resolveExpedition은 sim 미사용 — 책 드랍과 같은 스트림, 시드 시뮬 무접점.
-    if (Math.random() < BAL.paint.dropChance) {
+    // #149 데모 피티: 짧은 세션에서 잭팟 0회로 끝나는 걸 막는다 — 희귀(도료·도면) 전무 + 성공 5회째부터 도료 확정.
+    //   상태 필드 없이 기존 카운터로 판정(세이브 스키마 불변). 시뮬은 이 분기를 지나도 데모 빌드에서만 참(정식 무접점).
+    const demoPity = DEMO_ED && !_simRunning && state.stats.success >= 4
+      && !Object.keys(state.paints || {}).length && !Object.keys(state.blueprints || {}).length;
+    if (demoPity || Math.random() < BAL.paint.dropChance * (DEMO_ED ? 1.5 : 1)) {
       const fam = rollPaintFamily(exp.region);
       state.paints[fam] = (state.paints[fam] || 0) + 1;
       notes.push(t('paint.foundNote', { name: LName(PAINT_FAMILIES[fam]) }));
@@ -3038,7 +3042,7 @@ function resolveExpedition() {
     //   그 지역에서만, 미보유 도면 중 하나가 뽑힌다. resolveExpedition은 sim 미사용(§9.7) — 무접점.
     {
       const bpPool = (BAL.blueprint.regionItems[exp.region] || []).filter(id => !(state.blueprints || {})[id]);
-      if (bpPool.length && Math.random() < BAL.blueprint.dropChance) {
+      if (bpPool.length && Math.random() < BAL.blueprint.dropChance * (DEMO_ED ? 1.5 : 1)) { // #149 데모 상향 — 짧은 세션 보정
         const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
@@ -4131,7 +4135,17 @@ const demoCraftOk = c => c.out.furn ? DEMO_CRAFT_FURN.has(c.out.furn)
 function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
   const rows = CRAFTS.map((c, i) => {
-    if (DEMO_ED && !demoCraftOk(c) && !c.bp) return ''; // 데모: 비노출 (인덱스 보존 위해 filter 아님). 도면(bp) 레시피는 큐레이션 예외 — 아래 도면 게이트가 잠근다
+    if (DEMO_ED && !demoCraftOk(c) && !c.bp) {
+      // #149 ??? 실루엣: 크레딧 후 샌드박스에서만, 가구 한정 — 이름·효과·코스트 전부 숨김("조회 불가" 원칙 유지).
+      //   존재만 암시해 "본편에 더 있다"를 손끝으로 느끼게 한다 (구매 전환 장치).
+      if (state.demoPhase !== 'sandbox' || !c.out.furn) return '';
+      return `
+      <div class="prep-row no" style="cursor:default;opacity:.55">
+        <span>🔒 ???</span>
+        <span class="p-eff" style="font-size:10px">${t('craft.fullOnly')}</span>
+        <span class="p-cost"></span>
+      </div>`;
+    }
     if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
     const outLabel = c.out.res
       ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`

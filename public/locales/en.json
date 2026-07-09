@@ -402,6 +402,7 @@
   "craft.modIntro": "Modifications are permanently installed in this shelter.",
   "craft.noMods": "No modifications available for this shelter.",
   "craft.make": "Craft",
+  "craft.fullOnly": "Craftable in the full game",
   "craft.installed": "✓ Installed",
   "craft.install": "Install",
   "craft.doneRes": "{emoji} {name} ×{n} crafted",
