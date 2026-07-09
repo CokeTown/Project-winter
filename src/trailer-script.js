@@ -21,14 +21,26 @@ function fadeEl() {
 }
 async function fade(toBlack) { fadeEl().style.opacity = toBlack ? '1' : '0'; await sleep(250); }
 
-function dress(list) {
+function dressOne(piece) {
   const S = $S(); const ids = Object.keys(S.DEFS);
-  for (const [re, x, z, rot] of list) {
-    const m = ids.filter((k) => re.test(k)); if (!m.length) continue;
-    const it = { defId: m[0], colorIdx: 0, rot: rot || 0 };
-    const p = S.clampToRoom(it, x, z);
-    S.addItem(m[0], 0, p[0], p[1], rot || 0, true);
-  }
+  const [re, x, z, rot] = piece;
+  const m = ids.filter((k) => re.test(k)); if (!m.length) return null;
+  const it = { defId: m[0], colorIdx: 0, rot: rot || 0 };
+  const p = S.clampToRoom(it, x, z);
+  return S.addItem(m[0], 0, p[0], p[1], rot || 0, true);
+}
+function dress(list) { for (const piece of list) dressOne(piece); }
+// 배치 순간 스케일 바운스(0→1.12→1.0) — 스톱모션으로 "탁" 얹는 손맛. 비균등 스케일 보존.
+function popIn(group) {
+  if (!group) return;
+  const bx = group.scale.x, by = group.scale.y, bz = group.scale.z;
+  const t0 = performance.now(); const DUR = 300;
+  (function step() {
+    const t = Math.min(1, (performance.now() - t0) / DUR);
+    const s = t < 0.6 ? (t / 0.6) * 1.12 : 1.12 - ((t - 0.6) / 0.4) * 0.12;
+    group.scale.set(bx * s, by * s, bz * s);
+    if (t < 1) requestAnimationFrame(step); else group.scale.set(bx, by, bz);
+  })();
 }
 const HOME_FULL = [[/stove|hearth/i, -2.2, -1.6, 0], [/^bed$/i, 2.2, 0.6, 1], [/rug/i, 0, -0.4, 0], [/bookshelf/i, -2.6, 0.8, 1], [/lamp$/i, 2.4, -2, 0], [/plant/i, 2.8, -0.6, 0], [/teatable/i, 0.9, -1.3, 0], [/cushion/i, -1, -0.2, 0], [/candle$/i, 0.95, -1.25, 0]];
 function loadHome() { const S = $S(); S.state.current = 'rooftop'; S.loadShelter('rooftop'); }
@@ -53,10 +65,16 @@ const beats = [
     const S = $S(); loadHome(); S.setWeather('clear'); S.setHour(14); cam(0.95, 0.6, 0.5);
     await fade(false); await sleep(500);
     for (const piece of HOME_FULL) {
-      dress([piece]);
+      const it = dressOne(piece);
+      if (it && it.group) popIn(it.group); // 놓이는 순간 스케일 바운스
       await sleep(620); // 스톱모션 템포
     }
-    await sleep(900); // 완성된 방 홀드
+    // B6 복선: 완성된 방에 고양이가 들어와 앉는다 — spawnCat은 async라 await로 확정 후 개방부에 고정(확실히 보이게)
+    S.state.cat = 1; if (S.spawnCat) await S.spawnCat();
+    const bc = S.cat && S.cat();
+    if (bc && bc.g) { bc.g.position.set(-0.9, bc.g.position.y, -0.15); bc.g.rotation.y = 0.6; } // 방석 위에 앉는다 ("방석에 앉는 고양이" — B6 복선)
+    if (S.setCatMode) S.setCatMode('sit');
+    await sleep(1600); // 완성된 방 + 고양이 홀드
   } },
   // ── B3 전리품: 정산 스태거 개봉 + 잭팟 팝업 유지 + 획득창 희귀 하이라이트(도료=금빛/도면=핑크 글로우) ──
   //    (자막: With What you loot — 편집)
@@ -102,6 +120,7 @@ const beats = [
   //    무암전 하드컷 — 리듬을 위해 페이드 없음. (자막: where ever you want — 편집)
   { id: 'tour', label: 'B4 shelter tour day-to-night', async run() {
     const S = $S();
+    S.state.cat = 0; if (S.despawnCat) S.despawnCat(); // 투어는 가구만 — B2 복선 캣이 12셸터에 재소환되지 않도록 정리
     const TOUR = ['container', 'bus', 'cabin', 'rooftop', 'greenhouse', 'subway', 'ship', 'tugboat', 'lighthouse', 'controltower', 'lodge', 'bunker'];
     let first = true;
     for (let i = 0; i < TOUR.length; i++) {
@@ -111,8 +130,9 @@ const beats = [
       S.setHour(10 + (12.5 * i) / (TOUR.length - 1)); // 10시 → 22시 30분 — 낮에서 밤으로
       cam(1.3, 0.65, 0.5);
       if (first) { await fade(false); first = false; }
-      $T().cam([{ at: 0, zoom: 1.3 }, { at: 1, zoom: 1.12 }], 1080, 'out'); // 서서히 줌아웃 (await 없이 컷 시간과 병행)
-      await sleep(1120);
+      const last = i === TOUR.length - 1; // 마지막 셸터(벙커)는 더 오래 머문다 — 리듬이 "쌓이다 멎는" 마무리
+      $T().cam([{ at: 0, zoom: 1.3 }, { at: 1, zoom: last ? 1.05 : 1.12 }], last ? 1800 : 1080, 'out'); // 서서히 줌아웃 (await 없이 컷 시간과 병행)
+      await sleep(last ? 1800 : 1120);
     }
   } },
   // ── B5 해가 뜨고 진다 + 날씨 3종: 맑음(아침) → 비(정오) → 눈(저물녘) 연속 스윕 ──
@@ -126,13 +146,14 @@ const beats = [
       (function step() {
         const t = Math.min(1, (performance.now() - T0) / DUR);
         S.setHour(5.5 + t * 15.5); // 05:30 → 21:00 — 해가 뜨고 진다
-        if (t > 0.36 && w === 0) { w = 1; S.setWeather('rain'); }
-        if (t > 0.7 && w === 1) { w = 2; S.setWeather('snow'); }
+        // 날씨를 시간대 감정에 포갠다: 비=해질녘(≈16시, To live), 눈=밤 진입(≈19시, To Rest)
+        if (t > 0.677 && w === 0) { w = 1; S.setWeather('rain'); }
+        if (t > 0.871 && w === 1) { w = 2; S.setWeather('snow'); }
         if (t >= 1) return resolve();
         requestAnimationFrame(step);
       })();
     });
-    await sleep(600);
+    await sleep(1800); // 눈 내리는 밤에 머문다 — 눈이 충분히 쌓이고 자막 "To Rest" 자리
   } },
   // ── B6 고양이: 미디엄 샷 → "클릭하면 나오는" 그 확대 클로즈업으로 전환 (자막: With your Lovely Friend — 편집) ──
   { id: 'cat', label: 'B6 cat -> closeup', async run() {
@@ -141,20 +162,35 @@ const beats = [
     S.setWeather('clear'); S.setHour(16); cam(1.1, 0.6, 0.5);
     S.state.cat = 1; if (S.spawnCat) S.spawnCat();
     await fade(false); await sleep(1400); // 고양이가 자리 잡는다
+    // 고양이를 방 개방부(벽·기둥에서 떨어진 곳)로 데려와 앉힌다 — 근접 궤도 클로즈업 카메라가 벽을 파고드는
+    //   클리핑을 막는다(실측: 기본 스폰이 벽 근처면 catCam이 지오메트리로 파묻힘). rot 0 = 얼굴이 보이는 각도.
     const c = S.cat && S.cat();
-    if (c && c.g && S.setPan) { S.setPan(c.g.position.x, c.g.position.z); cam(1.6, 0.6, 0.52); } // 미디엄
-    await sleep(2200);
-    if (S.enterCatCloseup) S.enterCatCloseup(); // 인게임 "클릭했을 때"의 그 확대 전환
+    if (c && c.g) { c.g.position.set(0.3, c.g.position.y, 0.6); c.g.rotation.y = 0; }
+    if (S.setCatMode) S.setCatMode('sit'); // 앉힘 고정(timer=999) — 미디엄~클로즈업 동안 돌아다니지 않게
+    if (S.setPan) { S.setPan(0.3, 0.6); cam(1.6, 0.6, 0.52); } // 미디엄 — 고정 위치를 향해
+    await sleep(1800);
+    try { if (S.playSfx) S.playSfx('meow2', { jitter: 0.04, vol: 0.8 }); } catch (e) {} // "클릭하고 싶어지는" 순간을 소리로 — 관람용 결정론(고정 클립)
+    await sleep(520); // 야옹이 먼저 들리고 나서
+    if (c && c.g) { c.g.position.set(0.3, c.g.position.y, 0.6); c.g.rotation.y = 0; } // 진입 직전 위치·각도 재고정
+    if (S.enterCatCloseup) S.enterCatCloseup(); // 인게임 "클릭했을 때"의 그 확대 전환 — 이제 클리핑 없이 고양이 얼굴이 꽉 찬다
     await sleep(3400);
     if (S.exitCatCloseup) S.exitCatCloseup();
     if (S.setPan) S.setPan(0, 0);
   } },
   // ── B7 엔딩 홀드: 눈 내리는 밤, 완성된 집 — 자막 "Until 9 winters pass." 자리 (편집) ──
-  { id: 'ending', label: 'B7 ending hold', async run() {
-    const S = $S(); S.state.day = 300; loadHome(); dress(HOME_FULL); S.setWeather('snow'); S.setHour(21); cam(0.62, 0.9, 0.46);
+  { id: 'ending', label: 'B7 ending hold + candle callback', async run() {
+    const S = $S(); S.state.cat = 0; if (S.despawnCat) S.despawnCat(); // 엔딩은 촛불에 집중 — 고양이 정리 (loadHome 전에 꺼야 재소환 안 됨)
+    S.state.day = 300; loadHome(); dress(HOME_FULL); S.setWeather('snow'); S.setHour(21); cam(0.62, 0.9, 0.46);
     await fade(false);
-    await $T().cam([{ at: 0, zoom: 0.62, yaw: 0.9 }, { at: 1, zoom: 0.78, yaw: 0.7 }], 5200, 'inout'); // 아주 느린 접근
-    await sleep(1600); // 자막 자리 홀드
+    await $T().cam([{ at: 0, zoom: 0.62, yaw: 0.9 }, { at: 1, zoom: 0.78, yaw: 0.7 }], 4200, 'inout'); // 아주 느린 접근
+    await sleep(700); // 완성된 집 홀드
+    // ── B1 수미상관: 방 안 다른 광원을 끄고, 켜진 촛불 하나만 남긴다 (오프닝 촛불로의 회귀) ──
+    for (const it of S.items) if (/lamp$|stove|hearth/i.test(it.defId)) S.setItemPower(it, false);
+    S.setHour(23.6); // 방이 더 깊은 밤으로 잠긴다
+    const cd = S.items.find((it) => /candle$/i.test(it.defId));
+    if (cd && S.setPan) S.setPan(cd.x, cd.z);
+    await $T().cam([{ at: 0, zoom: 0.78, yaw: 0.7 }, { at: 1, zoom: 2.7, yaw: 0.52 }], 3200, 'inout'); // 촛불로 깊게 다가간다 — 화면 중앙에 촛불
+    await sleep(1600); // 촛불만 남은 홀드 — 자막 "Until 9 winters pass." 옆에 그 촛불
   } },
 ];
 
@@ -165,8 +201,11 @@ async function prep() {
   if (S.opts) S.opts.bgm = false; if (S.syncBgm) S.syncBgm(); // 오디오: BGM 뮤트(OST·라이터 소리는 편집에서), SFX만
   if (S.hideTitle) S.hideTitle();
   if (S.setPaused) S.setPaused(true);
+  // 종이 Tip 원천 차단: tipOnce는 tipsSeen[id]가 참이면 렌더를 건너뛴다 → "항상 참" 프록시로 교체(관람 중 팁 팝업 금지).
+  //   날씨 전환(비 등)이 트리거하던 늦은 팁이 hideUI 재차폐 창(수백 ms)에 새어 나오던 문제 해소.
+  try { if (S.state) S.state.tipsSeen = new Proxy({}, { get: () => true }); } catch (e) {}
   $T().hideUI(true);
-  if (!_hideTick) _hideTick = setInterval(() => { if (!window.__trailerScript._keepUI) $T().hideUI(true); }, 1200); // 늦은 팁·토스트 상시 검거 (전리품 비트 예외)
+  if (!_hideTick) _hideTick = setInterval(() => { if (!window.__trailerScript._keepUI) $T().hideUI(true); }, 700); // 늦은 토스트 등 잔여 UI 상시 검거 (전리품 비트 예외)
   fadeEl(); // 암전 상태로 시작
 }
 async function playBeat(i) { await prep(); await beats[i].run(); }

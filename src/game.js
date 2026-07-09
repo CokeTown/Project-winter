@@ -9561,7 +9561,7 @@ window.__shelter = {
   endingLeaning, tryDoctorRadio, // 엔딩 3분기(§9.5) — 코어 테스트용
 
   items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather, BAL,
-  addItem, removeItem, loadShelter, moveToShelter, setItemPower,
+  addItem, removeItem, loadShelter, moveToShelter, setItemPower, playSfx,
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
