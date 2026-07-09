@@ -2507,56 +2507,88 @@ export function makeShelterBuilders(ctx) {
        실내는 럭셔리의 잔해(그랜드 피아노·홈바·떨어진 샹들리에) + 3년 덩굴. */
     penthouse: {
       buildRoom() {
+        // 콘페키 리워크 (디렉터 2026-07-09: "요리노부의 펜트하우스 느낌" — 크롤링 확인: 금장 오크+대리석,
+        //   일본식 미니멀×아메리칸 럭셔리, 멀티레벨, 이구아나 테라리엄, 중앙 병풍, 침대 뒤 금고 기둥, 창가 수반).
         const { w, d, h } = getROOM();
         const rand = seededRand(2407);
-        // 바닥: 밝은 대리석 톤 석판 + 큰 러그
+        // 바닥: 어두운 대리석 + 금장 줄눈 띠 — 조망 창 쪽으로 얕은 수반(워터 피처)
         const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ map: stoneBlockTex }));
-        floor.material.color.setHex(0xe8e2d4);
+        floor.material.color.setHex(0x57504a);
         floor.position.y = -0.125; floor.receiveShadow = true;
         tagDecoFloor(floor); roomGroup.add(floor);
-        B(roomGroup, 3.4, 0.02, 2.4, 0x5a3c44, -1.2, 0.012, 0.4); B(roomGroup, 3.0, 0.022, 2.0, 0x6e4a52, -1.2, 0.013, 0.4);
-        // 벽: 석재 — 조망 통창(-z 대형 2) + -x 창 1
-        const wallMat = wallPhong({ map: stoneBlockTex });
+        for (const gz of [-1.1, 1.1]) B(roomGroup, w * 0.8, 0.012, 0.05, 0xb08a3a, -0.4, 0.006, gz); // 금장 인레이
+        // 수반: 창가 폭 전체 얕은 검은 트레이 + 수면 + 연잎·이끼 (3년의 물)
+        B(roomGroup, w - 2.4, 0.16, 0.9, 0x16141a, -0.6, 0.08, -d / 2 + 0.62);
+        const water = new THREE.Mesh(new THREE.BoxGeometry(w - 2.6, 0.03, 0.74), new THREE.MeshLambertMaterial({ color: 0x2a4a4e, transparent: true, opacity: 0.85 }));
+        water.position.set(-0.6, 0.16, -d / 2 + 0.62); roomGroup.add(water);
+        for (let i = 0; i < 6; i++) { const lily = Cyl(roomGroup, 0.09 + rand() * 0.07, 0.09 + rand() * 0.07, 0.02, 0x3c5626, -3.4 + rand() * 6, 0.185, -d / 2 + 0.5 + rand() * 0.3, 7); }
+        // 벽: 다크 오크 슬랫 톤 + 금장 몰딩 띠. -z 파노라마 통창(도시 조망)
+        const wallMat = wallPhong({ map: wallWoodTex });
         wallMat.userData.shared = true;
         const mk = (len, opts) => stdWall(len, h, wallMat, opts);
         makeWalls([
-          { group: mk(w, { window: { winW: 3.0, winH: 1.5, winY: 1.35, winX: -1.9 }, frameColor: 0x3a3630, skyColor: 0x1c1830 }), pos: [0, 0, -d / 2 - 0.11], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+          { group: mk(w, { window: { winW: 3.4, winH: 1.6, winY: 1.35, winX: -1.6 }, frameColor: 0x2a241e, skyColor: 0x1c1830 }), pos: [0, 0, -d / 2 - 0.11], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
           { group: mk(w), pos: [0, 0, d / 2 + 0.11], rotY: Math.PI, normal: new THREE.Vector3(0, 0, 1) },
-          { group: mk(d, { window: { winW: 2.0, winH: 1.3, winY: 1.4, winX: 0 }, frameColor: 0x3a3630, skyColor: 0x1c1830 }), pos: [-w / 2 - 0.11, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+          { group: mk(d, { window: { winW: 1.8, winH: 1.4, winY: 1.4, winX: -0.6 }, frameColor: 0x2a241e, skyColor: 0x1c1830 }), pos: [-w / 2 - 0.11, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
           { group: mk(d), pos: [w / 2 + 0.11, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
         ]);
-        // 천장 몰딩 테두리 (컬링 그룹)
+        // 금장 몰딩(허리 띠) — 뒷벽 부착(컬링 동기화)
+        const gild = [];
+        gild.push(B(roomGroup, w - 0.4, 0.07, 0.03, 0xb08a3a, 0, 1.05, d / 2 + 0.1));
+        attachToWall(0, 0, 1, ...gild);
+        // 천장: 다크 슬랫 리브 + 금장 테 (컬링 그룹)
         {
           const roofG = new THREE.Group();
-          for (const [mw2, md2, mx2, mz2] of [[w, 0.3, 0, -d / 2 + 0.15], [w, 0.3, 0, d / 2 - 0.15], [0.3, d, -w / 2 + 0.15, 0], [0.3, d, w / 2 - 0.15, 0]]) {
-            const m2 = new THREE.Mesh(new THREE.BoxGeometry(mw2, 0.14, md2), lamb(0xcfc8b8)); m2.position.set(mx2, h - 0.07, mz2); roofG.add(m2);
-          }
+          for (let i = 0; i < 7; i++) { const rib3 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.1, d - 0.6), lamb(0x2e2620)); rib3.position.set(-w / 2 + 1 + i * (w - 2) / 6, h - 0.06, 0); roofG.add(rib3); }
+          for (const mz3 of [-d / 2 + 0.2, d / 2 - 0.2]) { const trim = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, 0.16), lamb(0xb08a3a)); trim.position.set(0, h - 0.05, mz3); roofG.add(trim); }
           tagCeiling(roofG, h - 0.05); roomGroup.add(roofG);
         }
-        // 그랜드 피아노 잔해 (+x 안쪽): 검은 바디 + 기울어진 뚜껑 + 다리 하나 부러져 주저앉음
-        const px3 = w / 2 - 1.7;
-        const body = B(roomGroup, 1.9, 0.5, 1.3, 0x16141a, px3, 0.62, 1.2); body.rotation.z = -0.07;
-        B(roomGroup, 1.7, 0.06, 1.1, 0x1e1c24, px3 - 0.15, 0.95, 1.2, 0).rotation.z = 0.4; // 뚜껑
-        B(roomGroup, 1.5, 0.12, 0.3, 0xd8d2c2, px3 - 0.6, 0.5, 0.5);                        // 건반
-        for (const [lx2, lz2, bk] of [[px3 - 0.8, 0.7, 0], [px3 + 0.8, 0.7, 0], [px3 + 0.8, 1.8, 1]])
-          if (!bk) B(roomGroup, 0.12, 0.5, 0.12, 0x16141a, lx2, 0.25, lz2); else B(roomGroup, 0.5, 0.12, 0.12, 0x16141a, lx2 - 0.1, 0.08, lz2, 0.5);
-        // 홈바 (-x 벽): 카운터 + 깨진 병 진열
-        B(roomGroup, 0.8, 1.0, 2.6, 0x3a2c22, -w / 2 + 0.62, 0.5, -1.2);
-        B(roomGroup, 0.9, 0.06, 2.75, 0x55432e, -w / 2 + 0.62, 1.03, -1.2);
-        for (const sy of [1.6, 2.1]) B(roomGroup, 0.35, 0.05, 2.4, 0x55432e, -w / 2 + 0.3, sy, -1.2);
-        for (let i = 0; i < 7; i++) { const bt = B(roomGroup, 0.09, 0.22 + rand() * 0.12, 0.09, [0x3a5a3c, 0x5a3a2c, 0x2c3a5a][i % 3], -w / 2 + 0.3, (i < 4 ? 1.6 : 2.1) + 0.15, -2.2 + (i % 4) * 0.6); if (rand() < 0.4) bt.rotation.z = 1.5; }
-        // 떨어진 샹들리에 (중앙 바닥 — 럭셔리의 추락)
-        { const ch2 = new THREE.Group();
-          const ring = Cyl(ch2, 0.55, 0.55, 0.1, 0x8a7a4c, 0, 0.1, 0, 10);
-          for (let k = 0; k < 6; k++) { const a2 = Math.PI * 2 * (k / 6); const arm2 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.06, 0.06), lamb(0x8a7a4c)); arm2.position.set(Math.cos(a2) * 0.5, 0.16, Math.sin(a2) * 0.5); arm2.rotation.y = -a2; ch2.add(arm2); }
-          for (let k = 0; k < 8; k++) { const cr3 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.12, 0.05), lamb(0xd8e2ec)); cr3.position.set((rand() - 0.5) * 1.4, 0.06, (rand() - 0.5) * 1.2); cr3.rotation.y = rand() * 3; ch2.add(cr3); }
-          ch2.position.set(1.2, 0, -1.4); ch2.rotation.z = 0.12; roomGroup.add(ch2);
-          B(roomGroup, 0.05, 0.8, 0.05, 0x6a5a38, 1.2, h - 0.4, -1.4); } // 끊긴 체인
-        // 전복된 가죽 소파 + 3년 덩굴(창가)
-        B(roomGroup, 2.0, 0.5, 0.8, 0x4a2e26, -2.8, 0.35, -1.8, 0).rotation.x = 0.9;
-        for (let i = 0; i < 5; i++) B(roomGroup, 0.3 + rand() * 0.3, 0.3 + rand() * 0.4, 0.3, rand() < 0.5 ? 0x2e4420 : 0x3c5626, -w / 3 + rand() * 2, 0.15 + (i % 3) * 0.35, -d / 2 + 0.4 + rand() * 0.3);
-        const pot = Cyl(roomGroup, 0.22, 0.17, 0.34, 0x8a6a4c, 3.4, 0.17, -2.2, 8);
-        for (let i = 0; i < 3; i++) B(roomGroup, 0.08, 0.5 + rand() * 0.3, 0.08, 0x4a3c28, 3.4 + (rand() - 0.5) * 0.2, 0.6, -2.2, (rand() - 0.5) * 0.6); // 말라죽은 화분
+        // 멀티레벨: 오크 플랫폼 단(+x 침실 존, 0.14 높이) + 좌측 짧은 계단 4단(AV패드 방향 장식)
+        B(roomGroup, 3.6, 0.14, d - 1.6, 0x4a3826, w / 2 - 1.9, 0.07, 0.3);
+        B(roomGroup, 3.6, 0.03, 0.06, 0xb08a3a, w / 2 - 1.9, 0.155, 0.3 - (d - 1.6) / 2 + 0.03); // 단 코 금장
+        for (let s4 = 0; s4 < 4; s4++) B(roomGroup, 1.1, 0.12 + s4 * 0.12, 0.34, 0x3a2c20, -w / 2 + 0.66, (0.12 + s4 * 0.12) / 2, d / 2 - 0.5 - s4 * 0.36);
+        B(roomGroup, 1.3, 0.06, 0.06, 0x8a8578, -w / 2 + 0.66, 1.0, d / 2 - 1.9); // 상부 유리문 프레임 암시
+        // 낮은 플랫폼 침대 (단 위) + 나이트스탠드 2 — 금고 스위치의 그 침대
+        B(roomGroup, 2.2, 0.24, 1.7, 0x2e2620, w / 2 - 1.9, 0.26, 0.9);
+        B(roomGroup, 2.0, 0.16, 1.5, 0xd8d2c6, w / 2 - 1.9, 0.44, 0.9);
+        B(roomGroup, 0.9, 0.1, 0.5, 0xe6e0d4, w / 2 - 1.9, 0.53, 0.35);
+        for (const nz of [0.0, 1.8]) B(roomGroup, 0.45, 0.4, 0.45, 0x3a2c20, w / 2 - 0.55, 0.34, nz);
+        // 금고 기둥 (+x 벽, 침대 뒤): 다크 우드 기둥 + 반쯤 열린 금장 패널 + 빈 금고(이미 털린 지 3년)
+        const vault = [];
+        vault.push(B(roomGroup, 0.5, h - 0.2, 0.9, 0x241c16, w / 2 - 0.14, (h - 0.2) / 2, 0.9));
+        vault.push(B(roomGroup, 0.1, 0.7, 0.55, 0x16141a, w / 2 - 0.42, 1.35, 0.9));                 // 열린 공동(빈 금고)
+        const door2 = B(roomGroup, 0.06, 0.74, 0.5, 0xb08a3a, w / 2 - 0.52, 1.35, 1.32); door2.rotation.y = 0.9; vault.push(door2); // 반쯤 열린 금장 도어
+        attachToWall(1, 0, 0, ...vault);
+        // 이구아나 테라리엄 (뒷벽 좌측 — 유리 상자 + 살아남은 초록 이구아나 + 히트램프 잔해)
+        B(roomGroup, 1.3, 0.5, 0.7, 0x2e2620, -2.9, 0.25, d / 2 - 0.55);
+        const terra = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.62), new THREE.MeshLambertMaterial({ color: 0xaebfc2, transparent: true, opacity: 0.22 }));
+        terra.position.set(-2.9, 0.85, d / 2 - 0.55); roomGroup.add(terra);
+        B(roomGroup, 0.5, 0.14, 0.16, 0x4a7a3c, -3.0, 0.6, d / 2 - 0.55);                             // 이구아나 몸통
+        B(roomGroup, 0.3, 0.08, 0.08, 0x4a7a3c, -2.65, 0.58, d / 2 - 0.5, 0.3);                       // 꼬리
+        B(roomGroup, 0.12, 0.1, 0.12, 0x5a8a48, -3.28, 0.64, d / 2 - 0.55);                           // 머리
+        for (let i = 0; i < 3; i++) B(roomGroup, 0.2 + rand() * 0.2, 0.2 + rand() * 0.2, 0.2, 0x3c5626, -2.9 + (rand() - 0.5) * 0.8, 0.6, d / 2 - 0.55); // 테라리엄 안 수풀(3년)
+        // 중앙 대형 병풍 (3첩 — 숨던 그 스크린)
+        for (let p4 = 0; p4 < 3; p4++) {
+          const sx4 = -0.9 + p4 * 0.85, ry = (p4 - 1) * 0.35;
+          const fr = B(roomGroup, 0.85, 1.8, 0.06, 0x2e2620, sx4, 0.95, 0.5); fr.rotation.y = ry;
+          const pane2 = B(roomGroup, 0.7, 1.6, 0.03, 0xd8cfb8, sx4, 0.95, 0.52); pane2.rotation.y = ry;
+        }
+        // 바 (좌벽): 검은 대리석 상판 + 금장 다리 + 병·잔 (더 하이스트의 잔 2개는 티테이블에)
+        B(roomGroup, 0.7, 0.95, 2.2, 0x1c1a20, -w / 2 + 0.58, 0.48, -1.5);
+        B(roomGroup, 0.8, 0.06, 2.35, 0x0e0c12, -w / 2 + 0.58, 1.0, -1.5);
+        for (const bz4 of [-2.4, -0.6]) B(roomGroup, 0.06, 0.9, 0.06, 0xb08a3a, -w / 2 + 0.85, 0.45, bz4);
+        for (let i = 0; i < 5; i++) { const bt2 = B(roomGroup, 0.08, 0.24 + rand() * 0.1, 0.08, [0x3a5a3c, 0x2c3a5a, 0x5a3a2c][i % 3], -w / 2 + 0.5, 1.15, -2.3 + i * 0.4); if (rand() < 0.3) bt2.rotation.z = 1.5; }
+        // 선큰 라운지 느낌: 낮은 ㄱ자 소파 + 낮은 티테이블 + 잔 2 (조용한 오마주)
+        B(roomGroup, 2.4, 0.42, 0.8, 0x3a3440, -1.6, 0.29, -1.7);
+        B(roomGroup, 0.8, 0.42, 1.6, 0x3a3440, -2.9, 0.29, -0.9);
+        B(roomGroup, 1.2, 0.3, 0.7, 0x241c16, -1.2, 0.23, -0.7);
+        B(roomGroup, 1.3, 0.04, 0.8, 0x0e0c12, -1.2, 0.4, -0.7);
+        for (const gx4 of [-1.45, -0.95]) Cyl(roomGroup, 0.05, 0.04, 0.12, 0xcfd8dc, gx4, 0.48, -0.7, 6);
+        // 기울어진 대형 아트 캔버스 + 유리 파편 소량 + 3년 덩굴(수반 곁)
+        const art = B(roomGroup, 1.8, 1.2, 0.06, 0x6e2436, 2.2, 0.75, d / 2 - 0.2); art.rotation.z = -0.1;
+        B(roomGroup, 1.2, 0.5, 0.03, 0xb08a3a, 2.2, 0.8, d / 2 - 0.16, -0.1);
+        for (let i = 0; i < 4; i++) { const sh4 = B(roomGroup, 0.14 + rand() * 0.12, 0.02, 0.1 + rand() * 0.1, 0xaebfc2, -0.5 + rand() * 2, 0.015, -1.9 + rand() * 0.6); sh4.rotation.y = rand() * 3; }
+        for (let i = 0; i < 4; i++) B(roomGroup, 0.26 + rand() * 0.24, 0.25 + rand() * 0.3, 0.26, rand() < 0.5 ? 0x2e4420 : 0x3c5626, -3.6 + rand() * 1.2, 0.24 + (i % 2) * 0.3, -d / 2 + 0.5 + rand() * 0.4);
         setBlockers([]);
       },
       buildEnv() {
