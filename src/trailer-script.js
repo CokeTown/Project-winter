@@ -39,20 +39,32 @@ const beats = [
     stovePower(true);
     await $T().cam([{ at: 0, zoom: 1.18 }, { at: 1, zoom: 1.3 }], 3600, 'out');
   } },
-  { id: 'morning', label: 'B2a morning', async run() {
-    const S = $S(); S.setWeather('clear'); S.setHour(8.5); cam(1.05, 0.5, 0.5);
+  { id: 'raincatch', label: 'B2a rain catch', async run() { // 생활: 빗물받이 — 비 오는 처마 근접 (앵커 실좌표 2.88,-2.48 — docs/TRAILER-SCRIPT.md)
+    const S = $S(); S.state.mods.rooftop = ['raincatch']; home(); S.setWeather('rain'); S.setHour(13);
+    cam(1.7, 0.9, 0.55); if (S.setPan) S.setPan(2.9, -2.5); // 뒷모서리 처마의 물통
     await fade(false);
-    await $T().cam([{ at: 0, yaw: 0.5 }, { at: 1, yaw: 0.72 }], 3200, 'inout');
+    await $T().cam([{ at: 0, zoom: 1.7 }, { at: 1, zoom: 1.82 }], 3400, 'inout');
+    if (S.setPan) S.setPan(0, 0); S.state.mods.rooftop = [];
   } },
-  { id: 'noon', label: 'B2b noon', async run() {
-    const S = $S(); S.setWeather('clear'); S.setHour(13.5); cam(0.72, 0.85, 0.48);
+  { id: 'garden', label: 'B2b garden', async run() { // 생활: 결실 텃밭 근접 (마당 — slab frontX/Z 기준 실좌표)
+    const S = $S(); S.state.mods.rooftop = ['rooftopGarden']; S.state.rooftopGardenStage = 2; home(); S.setWeather('clear'); S.setHour(15);
+    const sl = (S.SHELTERS.rooftop && S.SHELTERS.rooftop._slab) || { frontX: 3, frontZ: 3 };
+    cam(1.6, 0.55, 0.52); if (S.setPan) S.setPan(sl.frontX - 3.2, sl.frontZ - 3.0);
     await fade(false);
-    await $T().cam([{ at: 0, zoom: 0.72 }, { at: 1, zoom: 0.82, yaw: 0.7 }], 3200, 'inout');
+    await $T().cam([{ at: 0, yaw: 0.55 }, { at: 1, yaw: 0.68 }], 3400, 'inout');
+    if (S.setPan) S.setPan(0, 0); S.state.mods.rooftop = [];
   } },
-  { id: 'duskrain', label: 'B2c dusk rain', async run() {
-    const S = $S(); S.setWeather('rain'); S.setHour(19.5); cam(0.9, 0.95, 0.48);
-    await fade(false);
-    await $T().cam([{ at: 0, zoom: 0.9 }, { at: 1, zoom: 1.05 }], 3200, 'inout');
+  { id: 'cat', label: 'B2c cat closeup', async run() { // 생활: 고양이 클로즈업 — 미니멀 드레싱(침대 배제 = 지오 클리핑 방지)
+    const S = $S(); S.state.current = 'rooftop'; S.loadShelter('rooftop');
+    dress([[/stove|hearth/i, -2.2, -1.6, 0], [/rug/i, 0, -0.4, 0], [/cushion/i, -0.6, -0.2, 0], [/lamp$/i, 2.4, -2, 0]]);
+    S.setWeather('clear'); S.setHour(16); cam(1.1, 0.6, 0.5);
+    S.state.cat = 1; if (S.spawnCat) S.spawnCat();
+    await fade(false); await sleep(1400); // 고양이가 자리 잡을 시간
+    // 전용 클로즈업 카메라 대신 실좌표 추적 미디엄 샷 — 가구 지오 클리핑 원천 차단(스크립트 정본 결정)
+    const c = S.cat && S.cat();
+    if (c && c.g && S.setPan) { S.setPan(c.g.position.x, c.g.position.z); cam(1.75, 0.6, 0.52); }
+    await sleep(3200);
+    if (S.setPan) S.setPan(0, 0);
   } },
   { id: 'loot', label: 'B2d loot reveal', async run() { // 상자 개봉: 정산 스태거 개봉(DDD-1) + 도료·도면 잭팟이 함께 터지는 쇼케이스
     const S = $S(); S.setWeather('clear'); S.setHour(11.5); cam(1.0, 0.6, 0.5);
@@ -66,6 +78,16 @@ const beats = [
     Math.random = or;
     const mb = document.getElementById('modal-back'); if (mb) mb.style.display = '';
     await sleep(7200); // 행 스태거 공개 + 잭팟 토스트 감상
+    if (mb) mb.style.display = 'none';
+    window.__trailerScript._keepUI = false;
+  } },
+  { id: 'map', label: 'B3a paper map', async run() { // 종이 지도 — 지도 UI 자체가 컷
+    const S = $S(); S.setWeather('clear'); S.setHour(9);
+    await fade(false); await sleep(400);
+    window.__trailerScript._keepUI = true;
+    if (S.openMapModal) S.openMapModal();
+    const mb = document.getElementById('modal-back'); if (mb) mb.style.display = '';
+    await sleep(3400);
     if (mb) mb.style.display = 'none';
     window.__trailerScript._keepUI = false;
   } },
@@ -96,11 +118,22 @@ const beats = [
     S.playVignetteRaw(false); // 해넘이
     await sleep(13600); // 12초 + 여운/페이드
   } },
-  { id: 'homecoming', label: 'B6 homecoming', async run() {
+  { id: 'homecoming', label: 'B6 homecoming + logo', async run() {
     const S = $S(); S.state.day = 300; home(); S.setWeather('snow'); S.setHour(20.5); cam(0.55, 0.95, 0.46);
     await fade(false);
     await $T().cam([{ at: 0, zoom: 0.55, yaw: 0.95 }, { at: 1, zoom: 1.12, yaw: 0.58 }], 5800, 'inout');
-    await sleep(900); // 마지막 프레임을 머금는다 (로고/카피는 편집 단계에서 이 위에 얹는다)
+    // 로고 + 카피 페이드인 (에디션 자체 오버레이 — 게임 UI 아님. CTA는 편집 몫)
+    window.__trailerScript._keepUI = true;
+    const lg = document.createElement('div');
+    lg.style.cssText = 'position:fixed;inset:0;z-index:394;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity 1.2s;text-shadow:0 2px 14px #000';
+    const copy = (S.t && S.t('trailer.copy')) || '';
+    lg.innerHTML = '<div style="font-size:64px;color:#ffe9c8;letter-spacing:6px">Nine Winters</div>'
+      + '<div style="margin-top:14px;font-size:20px;color:#d8c8b0">' + copy + '</div>';
+    document.body.appendChild(lg);
+    requestAnimationFrame(() => { lg.style.opacity = '1'; });
+    await sleep(2800);
+    lg.remove();
+    window.__trailerScript._keepUI = false;
   } },
 ];
 
@@ -108,6 +141,7 @@ let _hideTick = null;
 async function prep() {
   const S = $S();
   Storage.prototype.setItem = function () {}; // 관람 전용: 어떤 경로로도 세이브를 쓰지 않는다
+  if (S.opts) S.opts.bgm = false; if (S.syncBgm) S.syncBgm(); // 오디오 정책: BGM 뮤트(OST는 편집에서), SFX만
   if (S.hideTitle) S.hideTitle();
   if (S.setPaused) S.setPaused(true);
   $T().hideUI(true);
