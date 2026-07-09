@@ -3081,6 +3081,7 @@ function resolveExpedition() {
   const gotRes = {};   // 자원 획득
   let got = [];        // 가구 획득
   const notes = [];
+  const special = [];  // 희귀 전리품 박스(도료/도면/책 등) — 정산창에 희귀도별 빛나는 테두리로 (디렉터 2026-07-09)
   let title, body;
   // 1.4 금지 구역 탐험 — 성패와 무관하게 방호복이 노출됐다: 내구 -1. 다 닳으면 다음 진입이 차단된다(수리 필요).
   //   2.0 낙진: 방호복 없이(걷힌 뒤 맨몸) 들어간 트립은 barehand 표식 — 아래 잔류 방사능 롤이 읽는다.
@@ -3156,6 +3157,7 @@ function resolveExpedition() {
       const fam = rollPaintFamily(exp.region);
       state.paints[fam] = (state.paints[fam] || 0) + 1;
       notes.push(t('paint.foundNote', { name: LName(PAINT_FAMILIES[fam]) }));
+      special.push({ icon: '🪣', label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
       jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
     }
     // 네온 안료 (디렉터 2026-07-09): 도심 전용 최희귀 도료 — 일반 도료 풀과 무관한 별도 저확률 롤.
@@ -3163,6 +3165,7 @@ function resolveExpedition() {
     if (exp.region === 'citycore' && Math.random() < BAL.paint.neonDropChance) {
       state.paints.neonPigment = (state.paints.neonPigment || 0) + 1;
       notes.push(t('paint.neonNote'));
+      special.push({ icon: '🌈', label: LName(RARE_PAINTS.neonPigment), n: 1, tier: 'legendary', swatch: RARE_PAINTS.neonPigment.swatch });
       jackpotToast(`🌈 ${t('paint.neonJackpot')}`, RARE_PAINTS.neonPigment.swatch);
     }
     // DDD-4 시그니처 도면 (REWARD-LOOP ② 2차): 지역 독점 가구의 도면 — 도료보다 희귀한 잭팟 층.
@@ -3177,6 +3180,7 @@ function resolveExpedition() {
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
         notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
+        special.push({ icon: '📐', label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'legendary' });
         jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
       }
     }
@@ -3320,10 +3324,15 @@ function resolveExpedition() {
   //   자원 → 가구 → 노트 순으로 스태거 인덱스(--li)가 이어지고, 노트 블록은 마지막에 통으로 뜬다.
   let li = 0;
   const resHtml = Object.keys(gotRes).length
-    ? `<div class="loot-list reveal">${Object.entries(gotRes).map(([id, n]) => `<div class="loot-item" style="--li:${li++}">${resIcon(id)} ${LName(RESOURCES[id])} +${n}</div>`).join('')}</div>`
+    ? `<div class="loot-list reveal">${Object.entries(gotRes).map(([id, n]) => `<div class="loot-item${id === 'book' ? ' rare' : ''}" style="--li:${li++}">${resIcon(id)} ${LName(RESOURCES[id])} +${n}</div>`).join('')}</div>`
     : '';
   const lootHtml = got.length
     ? `<div class="loot-list reveal">${got.map(id => `<div class="loot-item" style="--li:${li++}">${furnIcon(id)} ${LName(DEFS[id])}</div>`).join('')}</div>`
+    : '';
+  // 희귀 전리품(도료=희귀 보라 / 도면·네온 안료=전설 금색): 획득 난이도별 빛나는 테두리 박스 (디렉터 2026-07-09).
+  //   도료엔 실제 색 스와치 점을 붙여 "무슨 색을 주웠는지" 한눈에. 스태거는 가구 다음 클라이맥스로.
+  const specialHtml = special.length
+    ? `<div class="loot-list reveal">${special.map(s => `<div class="loot-item ${s.tier}" style="--li:${li++}">${s.swatch != null ? `<span class="loot-dot" style="background:#${(s.swatch & 0xffffff).toString(16).padStart(6, '0')}"></span>` : ''}${s.icon} ${s.label}${s.n ? ` +${s.n}` : ''}</div>`).join('')}</div>`
     : '';
   const prepHtml = prep.length
     ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">${t('exp.usedPrep', { list: prep.map(p => `${PREPS[p].emoji}${LName(PREPS[p])}`).join(', ') })}</div>`
@@ -3331,7 +3340,7 @@ function resolveExpedition() {
   const noteHtml = notes.length
     ? `<div class="note-reveal" style="--li:${li};font-size:11px;line-height:1.7;margin-top:8px">${notes.join('<br>')}</div>`
     : '';
-  openModal(title, `${body}${resHtml}${lootHtml}${noteHtml}${prepHtml}${unlockMsg}`);
+  openModal(title, `${body}${resHtml}${lootHtml}${specialHtml}${noteHtml}${prepHtml}${unlockMsg}`);
   // 개봉 스킵: 본문 아무 데나 탭하면 남은 행 즉시 전부 공개 (기다림 강요 금지 — 코지 안전선)
   { const mb = $('modal-body'); if (mb) { mb.classList.remove('reveal-skip'); mb.addEventListener('click', () => mb.classList.add('reveal-skip'), { once: true }); } }
   scheduleSave();

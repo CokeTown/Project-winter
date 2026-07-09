@@ -778,6 +778,7 @@
   "paint.neonJackpot": "Found neon pigment — the color of the city",
   "bp.foundNote": "Found a folded blueprint in a broken drawer — {name}. The how-to is all there.",
   "bp.jackpot": "Blueprint found — {name}",
+  "bp.lootLabel": "{name} Blueprint",
   "offline.catGift": "🐈 While you were away, the cat left a scrap of cloth by the door. Better not to ask where it came from.",
   "offline.birdGift": "🐦 Traces of a bird on the sill. Instead of crumbs, a few acorns were left behind.",
   "frame.default": "Landscape",
