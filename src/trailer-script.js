@@ -108,7 +108,8 @@ async function play(opts = {}) {
   } while (opts.loop);
 }
 window.__trailerScript = { beats, play, playBeat };
-// 트레일러 에디션 게이트: ?trailer=1 로 부팅하면 자동 재생(루프) — 일반 부팅은 완전 무접점
-if (/[?&]trailer=1/.test(location.search)) {
+// 트레일러 에디션 게이트: ?trailer=1 부팅 또는 영상 에디션 빌드(TRAILER_BUILD=1)면 자동 재생(루프) — 일반 부팅은 완전 무접점
+const TRAILER_ED = typeof __TRAILER_EDITION__ !== 'undefined' && !!__TRAILER_EDITION__;
+if (TRAILER_ED || /[?&]trailer=1/.test(location.search)) {
   window.addEventListener('load', () => { setTimeout(() => { window.__trailerScript.play({ loop: true }); }, 1800); });
 }
