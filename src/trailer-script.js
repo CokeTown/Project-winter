@@ -54,6 +54,21 @@ const beats = [
     await fade(false);
     await $T().cam([{ at: 0, zoom: 0.9 }, { at: 1, zoom: 1.05 }], 3200, 'inout');
   } },
+  { id: 'loot', label: 'B2d loot reveal', async run() { // 상자 개봉: 정산 스태거 개봉(DDD-1) + 도료·도면 잭팟이 함께 터지는 쇼케이스
+    const S = $S(); S.setWeather('clear'); S.setHour(11.5); cam(1.0, 0.6, 0.5);
+    await fade(false); await sleep(700);
+    // 관람용 결정론: RNG를 낮게 고정해 성공 + 도료(10%) + 도면(6%)이 전부 터지는 정산을 재현
+    const or = Math.random; Math.random = () => 0.05;
+    S.state.paints = {}; S.state.blueprints = {};
+    S.state.exp = { region: 'slum', end: Date.now() - 1000, dur: 1, rate: 5, prep: [], startGameMin: S.state.gameMin, durMin: 120 }; // 슬럼 = 도면 보유 지역 — 도료+도면 더블 잭팟
+    window.__trailerScript._keepUI = true; // 이 비트 동안 재차폐 정지 — 정산 모달·잭팟 프레임이 주인공
+    S.resolveExpedition();
+    Math.random = or;
+    const mb = document.getElementById('modal-back'); if (mb) mb.style.display = '';
+    await sleep(7200); // 행 스태거 공개 + 잭팟 토스트 감상
+    if (mb) mb.style.display = 'none';
+    window.__trailerScript._keepUI = false;
+  } },
   { id: 'outside', label: 'B3 outside', async run() {
     const S = $S(); S.setWeather('snow'); S.setHour(6.5); cam(0.48, 1.15, 0.42);
     await fade(false);
@@ -96,7 +111,7 @@ async function prep() {
   if (S.hideTitle) S.hideTitle();
   if (S.setPaused) S.setPaused(true);
   $T().hideUI(true);
-  if (!_hideTick) _hideTick = setInterval(() => $T().hideUI(true), 1200); // 늦게 스폰되는 팁·토스트 상시 검거
+  if (!_hideTick) _hideTick = setInterval(() => { if (!window.__trailerScript._keepUI) $T().hideUI(true); }, 1200); // 늦게 스폰되는 팁·토스트 상시 검거 (개봉 비트는 예외)
   fadeEl(); // 암전 상태로 시작
 }
 async function playBeat(i) { await prep(); await beats[i].run(); }
