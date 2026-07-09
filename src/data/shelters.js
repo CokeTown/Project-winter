@@ -188,4 +188,20 @@ export const SHELTER_META = {
     cold: 5, // 심사 창구가 뚫린 청사 — 외풍. 창구 봉쇄(customsSeal) 개조로 해소
     limits: '🏙️ 심사 창구로 바람이 든다 — 악천후 쾌적 -5 (창구 봉쇄로 해소)', limitsEn: '🏙️ Wind slips through the booths — comfort -5 in bad weather (fix by sealing them)',
   },
+
+  /* ── 2.0 동부 「대도시」 셸터 2: 다리 관리소 (§6.0.5 — 세관==다리 진입 층위) ──
+     무너진 현수교 옆 석조 관리소. 낮=끊어진 다리 조망, 밤=별의 집(stars 1.0 + 은하수 + 큰 달 — 밤하늘 확장 첫 사용자).
+     석재 텍스처(stoneBlockTex — "텍스처 고급" 오더 1호). unlockAt 9999 = 관문 시스템 전 비노출. */
+  bridgehouse: {
+    name: '다리 관리소', nameEn: 'Bridge Keeper House', emoji: '🌉', unlockAt: 9999, viewH: 18, ceilY: 2.6,
+    desc: '무너진 현수교 옆 석조 관리소. 낮에는 끊어진 다리가, 밤에는 온 하늘의 별이 창밖에 걸린다.',
+    descEn: 'A stone keeper house beside the fallen span. By day the broken bridge hangs in the window; by night, every star in the sky.',
+    room: { w: 6.8, d: 5.6, h: 2.6 },
+    baseComfort: 7,
+    mood: { fog: 0x1c1622, fogNear: 24, fogFar: 70, skyH: 0x3a2440, skyZ: 0x0a0a16, hemiSky: 0x9a90c0, hemiGround: 0x3a3430, hemiInt: 0.68, moonC: 0xd8e2f8, moonInt: 0.95, stars: 1.0, milkyway: true, moonScale: 2.3, moonPos: [-0.25, 0.6, -0.75] },
+    weatherPool: ['clear', 'clear', 'clear', 'rain'], // 별의 집 — 맑은 밤이 잦다
+    perk: { label: '🌌 별의 관측석 — 밤하늘이 온전히 보인다', labelEn: '🌌 A seat under the stars — the night sky, unbroken' },
+    moveCost: { material: 34, parts: 26 },
+    limits: '🌉 협곡의 집 — 겨울 바람 소리가 크다', limitsEn: '🌉 A house over the gorge — the winter wind is loud',
+  },
 };

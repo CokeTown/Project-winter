@@ -107,6 +107,25 @@ export const concreteTex = makeCanvasTex((g, w, h) => {
   g.beginPath(); g.moveTo(90, 100); g.lineTo(74, 82); g.lineTo(84, 60); g.stroke();
 }, 128, 128, 4, 3);
 
+// 2.0 동부 상급 텍스처 (디렉터: "다리·대합실 텍스처는 고급으로") — 석재 블록 벽.
+//   어긋난 줄눈 + 블록별 톤 변주 + 상단 하이라이트 결 + 하단 물때·이끼 얼룩. 다리 관리소·역 대합실 공유.
+export const stoneBlockTex = makeCanvasTex((g, w, h) => {
+  g.fillStyle = '#8a8177'; g.fillRect(0, 0, w, h);
+  const rows = 4, bh = h / rows;
+  for (let r = 0; r < rows; r++) {
+    const off = (r % 2) * (w / 4);
+    for (let c = -1; c < 3; c++) {
+      const x = c * (w / 2) + off, y = r * bh;
+      g.fillStyle = ['#8d8478', '#867d72', '#918879', '#83796e'][(r * 3 + c + 4) % 4];
+      g.fillRect(x + 2, y + 2, w / 2 - 4, bh - 4);
+      g.strokeStyle = 'rgba(40,36,30,0.55)'; g.lineWidth = 2; g.strokeRect(x + 1, y + 1, w / 2 - 2, bh - 2);
+      g.fillStyle = 'rgba(255,255,255,0.06)'; g.fillRect(x + 3, y + 3, w / 2 - 6, 3);
+    }
+  }
+  g.fillStyle = 'rgba(20,24,18,0.16)';
+  for (let i = 0; i < 14; i++) g.fillRect((i * 41 + 7) % w, h - 8 - (i * 13) % 20, 6 + (i % 5) * 3, 4 + (i % 3) * 2);
+}, 128, 128, 3, 3);
+
 /* ── 레이지 캐시 텍스처 (첫 호출 시 1회 생성 후 재사용) ── */
 let _frostTex = null;
 // 절차적 성에: 가장자리 짙고 중앙 옅은 결정 서리 (창 모서리부터 얼어붙는 결). winFrostMats(수집 배열)는 렌더 상태라 game.js 잔류.

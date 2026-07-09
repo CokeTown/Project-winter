@@ -77,7 +77,7 @@ export const DISTRICTS = {
   // 2.0 동부 「대도시」 — 세관 너머 신영토(GD-2.0 §6.0.5). 관문 셸터만 우선 편입(기초 모델링 단계).
   //   districtOf/moveCostFor 정합용 — 파밍 지역·접근성 보너스는 동부 지역 8종 설계와 함께 붙는다.
   eastcity: {
-    name: '동부 관문', nameEn: 'Eastern Gate', emoji: '🛃', shelters: ['customs'],
+    name: '동부 관문', nameEn: 'Eastern Gate', emoji: '🛃', shelters: ['customs', 'bridgehouse'],
     desc: '국경 검문소 너머, 동쪽 대도시의 문턱. 3년 만에 다시 열린 길이다.',
     descEn: 'Past the border checkpoint, the threshold of the eastern metropolis. The road has been shut for three years.',
     regionBonus: {},

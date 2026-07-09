@@ -342,7 +342,48 @@ const stars = (() => {
 const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(3.2, 16, 12),
   new THREE.MeshBasicMaterial({ color: 0xcdd8ea, fog: false })); // 창백한 차가운 달 (붉은 원 신고 대응)
 moonMesh.position.copy(moon.position.clone().normalize().multiplyScalar(115));
+const moonBasePos = moonMesh.position.clone(); // mood.moonPos 미지정 시 복원용 기본 방위
 scene.add(moonMesh);
+
+// 2.0 동부 밤하늘 확장 (디렉터: "다리에서 별이 수놓이고 은하수까지, 달도 크게") — mood 플래그로만 발동.
+//   milkyway: 기울어진 대원 밴드를 따라 촘촘한 미광 성점 900 + 성운 미광 스프라이트 3점.
+//   moonScale: 달 메시 스케일 배수. 플래그 없는 셸터는 기존과 픽셀 동일(골든 무접점).
+const milkyway = (() => {
+  const g2 = new THREE.Group();
+  const srand = seededRand(4207);
+  const pos = [];
+  for (let i = 0; i < 900; i++) {
+    const a = srand() * Math.PI * 2;
+    const spread = (srand() + srand() + srand() - 1.5) * 0.16; // 근사 가우시안 산포(밴드 두께)
+    const e = spread + 0.35 * Math.sin(a * 0.5);               // 완만히 휘는 밴드
+    const v = new THREE.Vector3(Math.cos(e) * Math.cos(a), Math.sin(e), Math.cos(e) * Math.sin(a)).multiplyScalar(118);
+    v.applyAxisAngle(new THREE.Vector3(0, 0, 1), 0.96);        // 55도 기울임
+    if (v.y < 6) continue;                                     // 지평선 아래 제외
+    pos.push(v.x, v.y, v.z);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g2.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xdfe8ff, size: 1.9, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.72 })));
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const c2 = cv.getContext('2d');
+  const rg = c2.createRadialGradient(32, 32, 2, 32, 32, 31);
+  rg.addColorStop(0, 'rgba(190,205,255,0.5)'); rg.addColorStop(1, 'rgba(190,205,255,0)');
+  c2.fillStyle = rg; c2.fillRect(0, 0, 64, 64);
+  const nebTex = new THREE.CanvasTexture(cv);
+  for (const [nx, ny, nz, s] of [[-40, 70, -70, 46], [20, 90, -50, 60], [60, 60, 40, 40]]) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: nebTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.5 }));
+    sp.scale.set(s, s * 0.55, 1); sp.position.set(nx, ny, nz); g2.add(sp);
+  }
+  g2.visible = false;
+  scene.add(g2); return g2;
+})();
+function updateMilkyway() {
+  milkyway.visible = !!currentMood.milkyway && stars.material.opacity > 0.05;
+  if (!milkyway.visible) return;
+  const k = Math.min(1, stars.material.opacity);
+  milkyway.children[0].material.opacity = 0.72 * k;
+  for (let i = 1; i < milkyway.children.length; i++) milkyway.children[i].material.opacity = 0.5 * k;
+}
 
 let currentMood = { stars: 0.85 };
 function applyMood(m) {
@@ -354,6 +395,9 @@ function applyMood(m) {
   moon.color.setHex(m.moonC); moon.intensity = m.moonInt;
   stars.material.opacity = m.stars;
   moonMesh.visible = m.moonVisible !== false;
+  moonMesh.scale.setScalar(m.moonScale || 1); // 동부 밤하늘: 큰 달 (기본 1 — 기존 셸터 불변)
+  if (m.moonPos) moonMesh.position.set(m.moonPos[0], m.moonPos[1], m.moonPos[2]).normalize().multiplyScalar(115); else moonMesh.position.copy(moonBasePos); // 달 방위 지정(다리: 협곡 위 하늘)
+  updateMilkyway();
 }
 
 /* ============================================================
@@ -443,6 +487,7 @@ function applyTimeLighting() {
   hemi.intensity = A.hemiInt + (B.hemiInt - A.hemiInt) * f;
   const starsBase = A.stars + (B.stars - A.stars) * f;
   stars.material.opacity = starsBase * (weather.type === 'clear' ? 1 : 0.25);
+  updateMilkyway(); // 은하수는 별 불투명도를 따라 뜨고 진다 (milkyway 무드 셸터 한정)
   dayness = THREE.MathUtils.clamp((hemi.intensity - 0.7) / 0.35, 0, 1);
   // #54: 지역(지구)별 무드 틴트 — 어디에 있는지가 색으로 읽히게. 낮에만 은은하게(18%×dayness).
   // 외곽=갈색 헤이즈 / 도심=차가운 회청 / 초원=옅은 초록기 / 숲=짙은 초록 / 해안=푸른 습기
@@ -1247,6 +1292,12 @@ const SHELTERS = {
   customs: {
     ...SHELTER_META.customs, // build 함수 → render/shelters.js
     ..._shelterBuilders.customs,
+  },
+
+  /* ── 2.0 동부 「대도시」 셸터 2: 다리 관리소 (§6.0.5 — 밤하늘 확장(은하수·큰 달) 첫 사용자) ── */
+  bridgehouse: {
+    ...SHELTER_META.bridgehouse, // build 함수 → render/shelters.js
+    ..._shelterBuilders.bridgehouse,
   },
 };
 
@@ -2575,6 +2626,7 @@ const SHELTER_MAP = {
   tugboat: { x: 46, y: 75 }, controltower: { x: 52, y: 72 },  // 얼어붙은 항구
   lodge: { x: 81, y: 27 },                                    // 고요한 고원
   customs: { x: 94, y: 52 },                                  // 2.0 동부 관문 (지도 동쪽 끝 — §6.0.5)
+  bridgehouse: { x: 91, y: 43 },                              // 2.0 동부 다리 관리소 (세관 북서 — 협곡)
 };
 /* ── 지도 리워크 2차(디렉터: 타르코프 Woods식 진짜 지형도) ──
    지역별 색면 폐기. 회백 종이 전면 + 초록은 '식생'만 + 갈색 등고선(높이장 marching-squares)이
@@ -3746,6 +3798,11 @@ const SHELTER_MOUNTS = {
     roof: { y: 2.72, cx: 0, cz: 0, hw: 3.6, hd: 2.9 },
     eave: { y: 2.6, x: 3.91, z: 2.6, dir: [1, 1] },
     groundY: -0.55, ground: { x: 2.8, z: 2.4, rot: 0 },
+  },
+  bridgehouse: { // 2.0 동부: 6.8×5.6×2.6 석조 평지붕. 협곡 절벽 위 마당 -0.6 (§6.0.5 기초 모델링)
+    roof: { y: 2.62, cx: 0, cz: 0, hw: 3.2, hd: 2.6 },
+    eave: { y: 2.5, x: 3.51, z: 2.3, dir: [1, 1] },
+    groundY: -0.6, ground: { x: 2.4, z: 2.0, rot: 0 },
   },
 };
 function modAvailable(id, shelterId) {
