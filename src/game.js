@@ -5374,18 +5374,18 @@ function buildJungleSunScene(rise) {
   sun.position.set(6, 4, -240); scene.add(sun);
   const gcv = document.createElement('canvas'); gcv.width = gcv.height = 256;
   const gg = gcv.getContext('2d'); const rg = gg.createRadialGradient(128, 128, 6, 128, 128, 127);
-  rg.addColorStop(0, 'rgba(255,190,110,0.95)'); rg.addColorStop(0.4, 'rgba(255,110,50,0.4)'); rg.addColorStop(1, 'rgba(255,90,40,0)');
+  rg.addColorStop(0, 'rgba(255,168,70,0.95)'); rg.addColorStop(0.4, 'rgba(250,80,28,0.45)'); rg.addColorStop(1, 'rgba(235,50,18,0)');
   gg.fillStyle = rg; gg.fillRect(0, 0, 256, 256);
   const glowTex = new THREE.CanvasTexture(gcv);
   const mkGlow = (sc) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })); sp.scale.set(sc, sc, 1); scene.add(sp); return sp; };
   const glowCore = mkGlow(85), glowMid = mkGlow(190), glowWide = mkGlow(340);
   const scv = document.createElement('canvas'); scv.width = 256; scv.height = 32; // 지평선이 달궈지는 수평 스트릭
   const sg2 = scv.getContext('2d'); const sgr = sg2.createLinearGradient(0, 0, 256, 0);
-  sgr.addColorStop(0, 'rgba(255,140,60,0)'); sgr.addColorStop(0.5, 'rgba(255,190,120,0.7)'); sgr.addColorStop(1, 'rgba(255,140,60,0)');
+  sgr.addColorStop(0, 'rgba(250,90,30,0)'); sgr.addColorStop(0.5, 'rgba(255,170,90,0.75)'); sgr.addColorStop(1, 'rgba(250,90,30,0)');
   sg2.fillStyle = sgr; sg2.fillRect(0, 0, 256, 32);
   const streak = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(scv), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
   streak.scale.set(300, 12, 1); scene.add(streak);
-  const rayMat = new THREE.MeshBasicMaterial({ color: 0xffb668, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide });
+  const rayMat = new THREE.MeshBasicMaterial({ color: 0xff9a44, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide });
   const rayGroup = new THREE.Group(); // 사광 — 타워 틈새로만 뻗는다(협곡 뒤 배치라 실루엣이 자연 차폐)
   for (let i = 0; i < 7; i++) { const pv = new THREE.Group(); const rp = new THREE.Mesh(new THREE.PlaneGeometry(2.6 + (i % 3), 150), rayMat); rp.position.y = 75; pv.add(rp); pv.rotation.z = -0.9 + i * 0.3; rayGroup.add(pv); }
   rayGroup.position.set(6, 4, -239.5); scene.add(rayGroup);
@@ -5397,6 +5397,17 @@ function buildJungleSunScene(rise) {
   ];
   const layers = []; const vegMats = [];
   const glintMat = new THREE.MeshBasicMaterial({ color: 0xffc478, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+  const wcv = document.createElement('canvas'); wcv.width = 64; wcv.height = 128; // 창문 격자 — 박스가 '건물'이 된다 (레이어 색이 곱해짐)
+  const wg2 = wcv.getContext('2d'); wg2.fillStyle = '#ded6cc'; wg2.fillRect(0, 0, 64, 128);
+  for (let r = 0; r < 18; r++) {
+    if (r % 5 === 2 && srand() < 0.3) { wg2.fillStyle = '#4a423e'; wg2.fillRect(0, 4 + r * 6.8, 64, 4.6); continue; } // 붕괴로 뚫린 층
+    for (let c = 0; c < 8; c++) {
+      const wr = srand();
+      wg2.fillStyle = wr < 0.16 ? '#55493f' : (wr < 0.55 ? '#a89c90' : '#c4bab0'); // 깨진 구멍/유리/프레임
+      wg2.fillRect(3 + c * 7.6, 4 + r * 6.8, 4.8, 4.2);
+    }
+  }
+  const winTex = new THREE.CanvasTexture(wcv); winTex.colorSpace = THREE.SRGBColorSpace;
   const jaggedCrown = (mat, x, top, w, z) => { // 무너진 상층부 — 어긋난 계단 실루엣 + 철근
     let cw = w * 0.9, cy = top;
     const nj = 2 + Math.floor(srand() * 2);
@@ -5409,7 +5420,7 @@ function buildJungleSunScene(rise) {
     for (let j = 0; j < 2; j++) { const rb = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.6 + srand() * 1.8, 0.16), mat); rb.position.set(x + (srand() - 0.5) * w * 0.6, cy + 0.8, z); rb.rotation.z = (srand() - 0.5) * 0.7; scene.add(rb); }
   };
   for (let L = 0; L < 4; L++) {
-    const mat = new THREE.MeshBasicMaterial({ color: 0x1a1420 });
+    const mat = new THREE.MeshBasicMaterial({ color: 0x1a1420, map: L < 3 ? winTex : null });
     const vegMat = new THREE.MeshBasicMaterial({ color: 0x141a0e });
     const [zb, n, hm, hv, wm, wv, yb] = JG[L];
     for (let i = 0; i < n; i++) {
@@ -5428,9 +5439,12 @@ function buildJungleSunScene(rise) {
       if (srand() < 0.5) { // 도시를 되찾는 초목: 옥상 수관 + 외벽 넝쿨 폭포
         const nb2 = 1 + Math.floor(srand() * 3);
         for (let b = 0; b < nb2; b++) { const cw2 = 1.5 + srand() * 3; const cn2 = new THREE.Mesh(new THREE.BoxGeometry(cw2, 1 + srand() * 1.6, 5), vegMat); cn2.position.set(x4 + (srand() - 0.5) * tw4 * 0.8, topY + 0.5, z4); scene.add(cn2); }
-        const ivH = th4 * (0.3 + srand() * 0.45);
-        const iv = new THREE.Mesh(new THREE.BoxGeometry(0.8 + srand() * 1.6, ivH, 0.4), vegMat);
-        iv.position.set(x4 - tw4 / 2 + srand() * tw4, topY - ivH / 2 + 0.4, z4 + 4.1); scene.add(iv);
+        const nSheet = 1 + (srand() < 0.4 ? 1 : 0); // 벽면을 덮는 넝쿨 시트 — 폭을 키워 '잠식'으로
+        for (let sI = 0; sI < nSheet; sI++) {
+          const ivH = th4 * (0.35 + srand() * 0.45);
+          const iv = new THREE.Mesh(new THREE.BoxGeometry(2 + srand() * tw4 * 0.4, ivH, 0.4), vegMat);
+          iv.position.set(x4 - tw4 / 2 + srand() * tw4, topY - ivH / 2 + 0.4, z4 + 4.1); scene.add(iv);
+        }
       }
       if (L >= 1 && L < 3 && Math.abs(x4 - 6) < 62 && srand() < 0.55) { // 지는 해가 깨진 유리에 박힌다
         for (let gI2 = 0; gI2 < 2; gI2++) { const gq = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.8), glintMat); gq.position.set(x4 + (srand() - 0.5) * tw4 * 0.7, yb + th4 * (0.3 + srand() * 0.6), z4 + 4.15); scene.add(gq); }
@@ -5442,6 +5456,22 @@ function buildJungleSunScene(rise) {
   const lean2 = new THREE.Mesh(new THREE.BoxGeometry(10, 30, 8), layers[1]); lean2.position.set(-96, 4, -156); lean2.rotation.z = 0.42; scene.add(lean2);
   const stump2 = new THREE.Mesh(new THREE.BoxGeometry(11, 12, 8), layers[1]); stump2.position.set(-110, 0, -158); scene.add(stump2);
   jaggedCrown(layers[1], -110, 5.6, 11, -158);
+  // 가로수/자생목 — 건물 사이 골목을 채우는 수관 (도시를 되찾는 숲)
+  for (let i = 0; i < 11; i++) {
+    const tx3 = -120 + srand() * 240, tz3 = -70 - srand() * 60;
+    if (Math.abs(tx3 - 6) < 14) continue;
+    const th5 = 6 + srand() * 7;
+    const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.7, th5, 0.7), vegMats[2]); trunk.position.set(tx3, -6 + th5 / 2, tz3); scene.add(trunk);
+    let cy3 = -6 + th5 - 1;
+    for (let b = 0; b < 2 + Math.floor(srand() * 2); b++) { const cw3 = 3 + srand() * 3.5; const cn3 = new THREE.Mesh(new THREE.BoxGeometry(cw3, 1.6 + srand() * 1.4, cw3 * 0.8), vegMats[2]); cn3.position.set(tx3 + (srand() - 0.5) * 1.6, cy3, tz3); scene.add(cn3); cy3 += 1.2; }
+  }
+  // 폐 트러스 연결교 — 타워 사이에 걸린 잔해, 넝쿨이 늘어진다
+  const tb2 = new THREE.Group();
+  const chT = new THREE.Mesh(new THREE.BoxGeometry(26, 0.5, 1.2), layers[2]); chT.position.y = 3.2; tb2.add(chT);
+  const chB = new THREE.Mesh(new THREE.BoxGeometry(26, 0.7, 1.4), layers[2]); tb2.add(chB);
+  for (let i = 0; i < 7; i++) { const dg2 = new THREE.Mesh(new THREE.BoxGeometry(0.35, 4.4, 0.5), layers[2]); dg2.position.set(-11 + i * 3.7, 1.6, 0); dg2.rotation.z = (i % 2 ? 0.62 : -0.62); tb2.add(dg2); }
+  tb2.position.set(-52, 15, -100); tb2.rotation.z = -0.04; scene.add(tb2);
+  for (let i = 0; i < 4; i++) { const vnH = 2 + srand() * 2.5; const vn2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, vnH, 0.4), vegMats[2]); vn2.position.set(-62 + srand() * 22, 15 - vnH / 2 + 0.3, -99.4); scene.add(vn2); }
   // 새 떼 + 노을 구름 띠(타워 위, 아래에서 달궈진) + 황혼 별
   const birdMat = new THREE.MeshBasicMaterial({ color: 0x0c0a10 });
   for (let i = 0; i < 6; i++) {
@@ -5493,13 +5523,13 @@ function buildJungleSunScene(rise) {
     camera.position.z = 42 - 3.5 * t; camera.lookAt(0, 22, -80); // 슬로 돌리인
     const g2 = skyCv.getContext('2d');
     const gr2 = g2.createLinearGradient(0, 0, 0, 1024);
-    lerpC(0x0c1024, 0x2e4468, kn, _tc1); lerpC(0x66242e, 0xb87848, kn, _tc2); lerpC(0x8a3020, 0xf09a4e, kn, _tc4); lerpC(0xa82818, 0xffc257, Math.min(1, kn * 1.2), _tc3);
+    lerpC(0x200a1a, 0xb82a1e, kn, _tc1); lerpC(0x6a1c2a, 0xe85228, kn, _tc2); lerpC(0xa03424, 0xff8434, kn, _tc4); lerpC(0xb03a20, 0xffc44e, Math.min(1, kn * 1.2), _tc3); // 하늘 전체가 탄다 (RDR 포스터)
     gr2.addColorStop(0, '#' + _tc1.getHexString()); gr2.addColorStop(0.5, '#' + _tc2.getHexString()); gr2.addColorStop(0.78, '#' + _tc4.getHexString()); gr2.addColorStop(1, '#' + _tc3.getHexString());
     g2.fillStyle = gr2; g2.fillRect(0, 0, 2, 1024); skyTex.needsUpdate = true;
     const sunY = -10 + 30 * kn;                    // 협곡 사이 낮은 호 — 옥상선에 걸린 해가 골목으로 진다
     const gy = Math.max(sunY, -2);
     sun.position.y = sunY;
-    lerpC(0xff5a22, 0xfff2c8, kn, sunMat.color);   // 지평선에선 녹은 쇳물, 떠 있을 땐 백열
+    lerpC(0xff4a14, 0xffd23e, kn, sunMat.color);   // 지평선에선 녹은 쇳물, 떠 있을 땐 진한 골드
     glowCore.position.set(6, gy, -239); glowMid.position.set(6, gy, -239); glowWide.position.set(6, gy, -239);
     glowCore.material.opacity = 0.85 + 0.1 * Math.sin(t * 46);          // 이글거림 — 코어가 떨린다
     glowMid.material.opacity = 0.5 + 0.4 * (1 - kn) + 0.05 * Math.sin(t * 33);
@@ -5508,18 +5538,18 @@ function buildJungleSunScene(rise) {
     streak.material.opacity = 0.25 + 0.5 * (1 - kn); streak.scale.x = 300 + 6 * Math.sin(t * 21);
     rayGroup.position.y = gy; rayGroup.rotation.z = t * 0.05;
     rayMat.opacity = 0.015 + 0.1 * Math.pow(kn, 1.6); // 해가 잠기면 광선도 급히 죽는다
-    lerpC(0x241018, 0x7a5a42, kn, scene.fog.color); // 먼지 낀 대기
-    lerpC(0x2c1420, 0x4e3a4a, kn, layers[0].color);  // 원경 — 잔광에 물든 마우브
-    lerpC(0x1e0f1e, 0x322a42, kn, layers[1].color);
-    lerpC(0x120a16, 0x1e1a2c, kn, layers[2].color);
-    lerpC(0x080609, 0x100e18, kn, layers[3].color);  // 전경 옥상선 — 거의 검게
-    lerpC(0x2a2818, 0x4a4630, kn, vegMats[0].color); // 초목 — 역광의 올리브
-    lerpC(0x1c2014, 0x30341e, kn, vegMats[1].color);
-    lerpC(0x12160c, 0x1e2412, kn, vegMats[2].color);
-    lerpC(0x0a0e08, 0x121608, kn, vegMats[3].color);
-    lerpC(0x5a2434, 0xd88a4a, kn, hazeMats[0].color); // 안개 밴드 — 해에 가까울수록 달궈진다
-    lerpC(0x46202e, 0xb87042, kn, hazeMats[1].color);
-    lerpC(0x321822, 0x94583a, kn, hazeMats[2].color);
+    lerpC(0x2a0e18, 0xb85838, kn, scene.fog.color); // 붉은 먼지가 낀 대기
+    lerpC(0x38141e, 0x8a3a44, kn, layers[0].color);  // 원경 — 잔광에 익은 적갈 (창문 텍스처가 곱해짐)
+    lerpC(0x26101e, 0x5c2434, kn, layers[1].color);
+    lerpC(0x180a14, 0x3a1824, kn, layers[2].color);
+    lerpC(0x0a060a, 0x180d14, kn, layers[3].color);  // 전경 옥상선 — 거의 검게
+    lerpC(0x2a2014, 0x4a3824, kn, vegMats[0].color); // 초목 — 역광의 마른 올리브
+    lerpC(0x1e1810, 0x342818, kn, vegMats[1].color);
+    lerpC(0x141008, 0x241c10, kn, vegMats[2].color);
+    lerpC(0x0a0806, 0x141008, kn, vegMats[3].color);
+    lerpC(0x6a1c20, 0xf07034, kn, hazeMats[0].color); // 안개 밴드 — 해에 가까울수록 달궈진다
+    lerpC(0x521824, 0xd85428, kn, hazeMats[1].color);
+    lerpC(0x3a1220, 0xa84224, kn, hazeMats[2].color);
     glintMat.opacity = 0.15 + 0.7 * kn;              // 유리 파편광은 해와 함께 죽는다
     for (let i = 0; i < emN; i++) {                  // 불씨 부유
       emArr[i * 3 + 1] += 0.045; emArr[i * 3] += Math.sin(t * 6 + emSeed[i]) * 0.05;
@@ -5527,7 +5557,7 @@ function buildJungleSunScene(rise) {
     }
     emGeo.attributes.position.needsUpdate = true;
     emMat.opacity = 0.28 + 0.14 * Math.sin(t * 27) * Math.sin(t * 7 + 1);
-    lerpC(0xb03422, 0xe89a62, kn, cloudMat.color);
+    lerpC(0x8a2818, 0xff9a4e, kn, cloudMat.color);
     stMat.opacity = Math.max(0, (0.22 - kn) / 0.22) * 0.9; // 어스름에만 별이 스민다
   };
   update(0);
