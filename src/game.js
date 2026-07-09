@@ -102,6 +102,11 @@ const KEY_NS = QA_ED ? 'qa-' : DEMO_ED ? 'demo-' : '';
 const SAVE_KEY = KEY_NS + 'project-shelter-web-v2';
 const LASTSLOT_KEY = KEY_NS + 'project-shelter' + '-lastslot'; // 이어하기 포인터도 에디션별 분리 (QA가 정식 포인터를 밀면 빈 슬롯 이어하기 오노출)
 const OLD_SAVE_KEY = 'project-shelter-web-v1';
+// #90 데모 오디트: 서사 콘텐츠도 데모 스코프로 — "조회 자체 불가"(후반·2.0 서사는 목록/총계에도 안 보인다).
+//   방송: 예보·상인·통금·배급·음악만(박사/생존자/비컨 = 본편 서사). 메모: 데모 3지역 풀만(연구소 등 비노출).
+const DEMO_BROADCASTS = new Set(['fc_spring', 'fc_summer', 'fc_winter', 'merchant_ad', 'gov_curfew', 'gov_ration', 'music_unknown']);
+const DEMO_MEMO_REGIONS = ['residential', 'industrial', 'slum'];
+const DEMO_ACH_HIDE = new Set(['nine_winters', 'ending']); // 엔드게임 도전과제 텍스트 = 스포일러
 const GAME_MIN_PER_SEC = 1.0;   // 실제 1초 = 게임 1분 (하루 = 실시간 24분) — v1.5.1 디렉터 확정(순삭감 완화, 1.5→1.0)
 //   게이지 소모·부패·스폰 주기는 전부 '게임 분' 기준이라 게임일 밸런스 불변. 오프라인 정산·탐험 차감식(#94)도 이 상수를 공유해 일관.
 const WAKE_HOUR = 7;            // 취침 후 기상 시각 (07:00) — sleepUntilMorning/결산 게이트 공용 (v1.2.0)
@@ -1775,7 +1780,7 @@ function readStats() {
 function writeStats(s) { Platform.cloud.save('nw-stats', JSON.stringify(s)); }
 // 노말 모드에서 도달한 최고 생존일 갱신 (배경화면 해금 통계). day는 현재 게임일.
 function recordNormalDay(day) {
-  if (_simRunning || state.mode !== 'normal' || state.qaUsed) return; // 시뮬레이션은 계정 통계 오염 금지
+  if (_simRunning || state.mode !== 'normal' || state.qaUsed || DEMO_ED) return; // 시뮬·데모는 계정 통계 오염 금지 (#90: 공유 nw-stats에 데모 기록 누출 차단)
   const s = readStats();
   if ((s.normalBestDay || 0) < day) { s.normalBestDay = day; writeStats(s); }
 }
@@ -3306,8 +3311,10 @@ function pickUncollectedMemo(region) {
   const owned = state.memos || {};
   const tryPool = pool => pool.filter(id => !owned[id]);
   let region0 = region || (['residential', 'commercial', 'industrial', 'slum'].includes(districtRegionOf(state.current)) ? districtRegionOf(state.current) : null);
+  if (DEMO_ED && region0 && !DEMO_MEMO_REGIONS.includes(region0)) region0 = null; // #90: 데모 스코프 밖 지역 풀 금지
   if (region0) { const p = tryPool(MEMOS_BY_REGION[region0] || []); if (p.length) return p[Math.floor(Math.random() * p.length)]; }
-  const all = tryPool(Object.keys(MEMOS));
+  // #90: 데모는 전체 폴백 금지 — 3지역 풀 소진 시 무드랍(연구소·리조트 등 후반 메모가 새지 않게)
+  const all = tryPool(DEMO_ED ? DEMO_MEMO_REGIONS.flatMap(rg => MEMOS_BY_REGION[rg] || []) : Object.keys(MEMOS));
   if (all.length) return all[Math.floor(Math.random() * all.length)];
   return null;
 }
@@ -4876,7 +4883,8 @@ function recordTabHtml() {
     ? `<div class="prep-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>📄</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
     : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
   let sections = '';
-  for (const rg of ['residential', 'commercial', 'industrial', 'slum']) {
+  // #90: 데모는 스코프 내 지역 섹션만 — 잠긴 지역(상업지구 등)은 존재 자체를 안 보인다
+  for (const rg of (DEMO_ED ? DEMO_MEMO_REGIONS : ['residential', 'commercial', 'industrial', 'slum'])) {
     const ids = MEMOS_BY_REGION[rg];
     const gotN = ids.filter(id => owned[id]).length;
     sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t(regionKeys[rg])} (${gotN}/${ids.length})</div>` + ids.map(id => memoRow(id, MEMOS)).join('');
@@ -4916,8 +4924,8 @@ function recordTabHtml() {
   const willIds = Object.keys(WILLS);
   const willGot = willIds.filter(id => owned[id]).length;
   sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
-  // 라디오 로그
-  const radioRows = Object.keys(BROADCASTS).map(id => bown[id]
+  // 라디오 로그 (#90: 데모는 수집 가능한 방송 슬롯만 — 본편 서사 방송은 총계에도 안 잡힌다)
+  const radioRows = Object.keys(BROADCASTS).filter(id => !DEMO_ED || DEMO_BROADCASTS.has(id)).map(id => bown[id]
     ? `<div class="prep-row" style="cursor:pointer" data-broadcast="${id}"><span>📻</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
     : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
   const distant = state.distantLight?.count
@@ -4931,10 +4939,12 @@ function recordTabHtml() {
       : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
     sketchSec = `<div class="report-sec"><span class="r-title">${t('record.sketchTitle', { n: sketchesCollected(), total: sketchesTotal() })}</span>${rows}</div>`;
   }
-  const total = memosTotal();
+  // #90: 데모 총계는 데모 풀 기준 — "63개 중 6개" 같은 표기로 숨은 콘텐츠 규모가 새지 않게
+  const total = DEMO_ED ? DEMO_MEMO_REGIONS.reduce((a, rg) => a + (MEMOS_BY_REGION[rg] || []).length, 0) + Object.keys(WILLS).length : memosTotal();
+  const radioTotal = DEMO_ED ? DEMO_BROADCASTS.size : broadcastsTotal();
   return `
     <div class="report-sec"><span class="r-title">${t('record.memoTitle', { n: memosCollected(), total })}</span>${sections}</div>
-    <div class="report-sec"><span class="r-title">${t('record.radioTitle', { n: broadcastsCollected(), total: broadcastsTotal() })}</span>${radioRows}</div>
+    <div class="report-sec"><span class="r-title">${t('record.radioTitle', { n: broadcastsCollected(), total: radioTotal })}</span>${radioRows}</div>
     ${sketchSec}
     ${distant}`;
 }
@@ -4944,7 +4954,7 @@ function journalTabBar(active) {
 }
 function openJournalModal(tab = 'journal') {
   const se = seasonOf();
-  const achsHtml = ACHS.map(a => {
+  const achsHtml = ACHS.filter(a => !DEMO_ED || !DEMO_ACH_HIDE.has(a.id)).map(a => { // #90: 엔드게임 도전과제 텍스트 비노출
     const got = state.achs?.[a.id];
     return `<div class="prep-row" style="cursor:default;${got ? '' : 'opacity:0.4'}">
       <span style="font-size:16px">${a.icon}</span>
@@ -4952,13 +4962,15 @@ function openJournalModal(tab = 'journal') {
       <span class="p-cost">${LDesc(a)}${got ? ' ✓' : ''}</span>
     </div>`;
   }).join('');
-  const colHtml = Object.entries(DEFS).map(([id, def]) => {
+  // #90: 데모 도감은 데모에서 얻을 수 있는 가구만(화이트리스트+해금 도면+이미 수집분) — 84종 전체 이모지 나열은 규모 누출
+  const colDefs = Object.entries(DEFS).filter(([id]) => !DEMO_ED || DEMO_CRAFT_FURN.has(id) || (state.blueprints || {})[id] || (state.collection || {})[id]);
+  const colHtml = colDefs.map(([id, def]) => {
     const arr = state.collection?.[id] || [];
     const sw = def.colors.map((c, i) =>
       `<span title="${LColor(def, i)}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-left:3px;background:${arr[i] ? '#' + c.toString(16).padStart(6, '0') : '#22252d'};border:1px solid ${arr[i] ? 'var(--accent)' : '#333'}"></span>`).join('');
     return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${def.emoji}${sw}</span>`;
   }).join('');
-  const colTotal = Object.values(DEFS).reduce((a, d) => a + d.colors.length, 0);
+  const colTotal = colDefs.reduce((a, [, d]) => a + d.colors.length, 0);
   // 테마 세트 도감 뱃지 (#13): 충족 시 강조.
   const themeBadges = THEME_SETS.map(ts => {
     const done = themeSetActive(ts);
@@ -5091,8 +5103,8 @@ function pickStairs(e) {
   if (!vis) return false;
   const hits = raycaster.intersectObject(bunkerStairsObj, true);
   if (!hits.length) return false;
-  // 극저확률(memo willDropChance 밴드)로 계단 메모 발견 — 미수집일 때만
-  if (!(state.memos || {}).stair1 && Math.random() < 0.06) {
+  // 극저확률(memo willDropChance 밴드)로 계단 메모 발견 — 미수집일 때만. #90: 1.4 복선이라 데모 제외.
+  if (!DEMO_ED && !(state.memos || {}).stair1 && Math.random() < 0.06) {
     collectMemo('stair1');
     scheduleSave();
     showMemoPage('stair1', false);
@@ -6331,7 +6343,7 @@ function buildNinthWinterMilestone() {
 function passWinter(notes) {
   state.winters = (state.winters || 0) + 1;
   buildWinterMemoir(state.winters);
-  if (state.winters === 9) buildNinthWinterMilestone();
+  if (state.winters === 9 && !DEMO_ED) buildNinthWinterMilestone(); // #90: 9겨울 서사(박사 무전)는 데모 샌드박스서 미발화
   notes.push(t('winter.passed', { n: state.winters }));
   state.winterSnap = null; // 이번 겨울 스냅샷 소진 — 다음 겨울 진입 때 새로 뜬다
 }
@@ -6358,7 +6370,8 @@ function tryRadioBroadcast(notes) {
   if (state.lastBroadcastDay === state.day) return;      // 하루 1회
   if (!items.some(i => i.defId === 'radio' && i.on !== false)) return; // 라디오 ON 필요
   if (Math.random() >= BAL.events.radioListenChance) return;
-  const un = Object.keys(BROADCASTS).filter(id => !(state.broadcasts || {})[id]);
+  // #90: 데모는 서사 방송(박사/생존자/비컨) 제외 — 예보·상인·통금·배급·음악만 수집 가능
+  const un = Object.keys(BROADCASTS).filter(id => (!DEMO_ED || DEMO_BROADCASTS.has(id)) && !(state.broadcasts || {})[id]);
   if (!un.length) return;                                // 다 모음
   const id = un[Math.floor(Math.random() * un.length)];
   state.lastBroadcastDay = state.day;
@@ -6710,7 +6723,7 @@ function processDay() {
     notes.push(t('day.catHint'));
   }
   // 특수 인카운터 ②: 구조 — Day 10000 초과, 하루 5%
-  if (!state.pendingEvent && state.day > 10000 && !state.endingSeen && Math.random() < 0.05) {
+  if (!DEMO_ED && !state.pendingEvent && state.day > 10000 && !state.endingSeen && Math.random() < 0.05) { // #90: 엔딩은 본편 전용
     state.pendingEvent = 'ending';
     state.lastEventDay = state.day;
   }
