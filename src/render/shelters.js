@@ -2592,24 +2592,31 @@ export function makeShelterBuilders(ctx) {
         setBlockers([]);
       },
       buildEnv() {
+        // 리워크 (디렉터 2026-07-09): 헬리패드·급수탑 테라스 철거 — 야외는 조망면(-z) 발코니만.
+        //   발코니 = META.balcony 배치 칸(방석·촛대류)의 실체. 유리 난간 + 금장 핸드레일(콘페키).
         const GY = -0.3;
         const rand = seededRand(2408);
-        // 옥상 테라스: 슬래브 + 유리 난간(깨진 장 2) + 헬리패드 H
-        const slab = B(envRoot, 24, 0.5, 18, 0x6e6a62, 1, GY - 0.26, 1); slab.receiveShadow = true;
-        for (let i = 0; i < 10; i++) {
-          const gx3 = -10 + i * 2.4;
-          B(envRoot, 0.1, 1.1, 0.1, 0x4a4640, gx3, GY + 0.55, 9.8);
-          if (i !== 3 && i !== 7) B(envRoot, 2.2, 0.9, 0.05, 0x3a4450, gx3 + 1.2, GY + 0.6, 9.85).material.transparent = true;
+        // 빌딩 몸체: 방 발밑 매스가 도시 협곡으로 내려간다 (우리 타워)
+        const core = B(envRoot, 12.4, 52, 9.2, 0x2a2632, 0, -26.3, 0.4); core.castShadow = true;
+        // 발코니 데크 (조망면 -z): 오크 플랭크 + 유리 난간(2장 결손) + 금장 핸드레일
+        B(envRoot, 8.4, 0.16, 2.1, 0x3a2c20, 0, -0.08, -4.95);
+        for (let i = 0; i < 11; i++) B(envRoot, 0.68, 0.022, 1.9, i % 2 ? 0x55432e : 0x4a3826, -3.7 + i * 0.74, 0.012, -4.95);
+        for (let i = 0; i < 8; i++) {                                              // 외곽 난간 (x 방향)
+          const gx3 = -3.85 + i * 1.1;
+          B(envRoot, 0.09, 1.05, 0.09, 0x3a3630, gx3, 0.52, -5.92);
+          if (i !== 2 && i !== 5 && i < 7) { const gl = B(envRoot, 1.0, 0.8, 0.04, 0x3a4450, gx3 + 0.55, 0.55, -5.94); gl.material.transparent = true; gl.material.opacity = 0.5; }
         }
-        Cyl(envRoot, 3.6, 3.6, 0.06, 0x8a8578, 6.5, GY + 0.03, 5.5, 24);
-        B(envRoot, 0.5, 0.07, 2.6, 0xd8d2c2, 5.6, GY + 0.08, 5.5); B(envRoot, 0.5, 0.07, 2.6, 0xd8d2c2, 7.4, GY + 0.08, 5.5); B(envRoot, 1.4, 0.07, 0.5, 0xd8d2c2, 6.5, GY + 0.08, 5.5); // H
-        // 급수탑 + 안테나 (우리 옥상)
-        { const wt = new THREE.Group();
-          for (const [lx3, lz3] of [[-0.7, -0.7], [0.7, -0.7], [-0.7, 0.7], [0.7, 0.7]]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.6, 0.14), lamb(0x4a3c30)); leg.position.set(lx3, 0.8, lz3); wt.add(leg); }
-          const tank = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 1.8, 10), lamb(0x5e4a38)); tank.position.y = 2.5; tank.castShadow = true; wt.add(tank);
-          const cone = new THREE.Mesh(new THREE.ConeGeometry(1.2, 0.7, 10), lamb(0x4a3c30)); cone.position.y = 3.75; wt.add(cone);
-          wt.position.set(-8.5, GY, -4); envRoot.add(wt); }
-        Cyl(envRoot, 0.05, 0.08, 4.5, 0x3a3630, -10.5, GY + 2.2, 3, 6);
+        B(envRoot, 8.0, 0.07, 0.09, 0xb08a3a, 0, 1.06, -5.92);                     // 금장 핸드레일
+        for (const sx5 of [-4.12, 4.12]) {                                          // 양측 난간
+          B(envRoot, 0.09, 1.05, 0.09, 0x3a3630, sx5, 0.52, -4.2); B(envRoot, 0.09, 1.05, 0.09, 0x3a3630, sx5, 0.52, -5.6);
+          const gl2 = B(envRoot, 0.04, 0.8, 1.5, 0x3a4450, sx5, 0.55, -4.9); gl2.material.transparent = true; gl2.material.opacity = 0.5;
+          B(envRoot, 0.09, 0.07, 1.8, 0xb08a3a, sx5, 1.06, -4.9);
+        }
+        // 발코니 코너 화분 2 (3년 수풀)
+        for (const px5 of [-3.6, 3.6]) {
+          Cyl(envRoot, 0.28, 0.22, 0.4, 0x2e2620, px5, 0.2, -5.4, 8);
+          for (let i = 0; i < 3; i++) B(envRoot, 0.26 + rand() * 0.2, 0.24 + rand() * 0.25, 0.26, rand() < 0.5 ? 0x2e4420 : 0x3c5626, px5 + (rand() - 0.5) * 0.3, 0.5 + i * 0.16, -5.4 + (rand() - 0.5) * 0.3);
+        }
         // ── 둘러싼 마천루 (첨탑 포위 — 위로 솟고 아래로 꺼진다) ──
         const towers = [
           [-26, -18, 9, 34], [-15, -30, 11, 46], [4, -34, 10, 40], [22, -26, 12, 52], [34, -10, 9, 30],
@@ -2646,10 +2653,6 @@ export function makeShelterBuilders(ctx) {
           const bx3 = -10 + rand() * 24, by3 = 10 + rand() * 8, bz3 = -14 - rand() * 8;
           B(envRoot, 0.7, 0.1, 0.2, 0x0e0c12, bx3 - 0.3, by3, bz3, 0.35); B(envRoot, 0.7, 0.1, 0.2, 0x0e0c12, bx3 + 0.3, by3, bz3, -0.35);
         }
-        // 테라스 화단 잔해 + 3년 수풀 (지면이 없으니 수동)
-        B(envRoot, 3.2, 0.45, 0.9, 0x55524c, -6, GY + 0.22, 7.5);
-        for (let i = 0; i < 8; i++) B(envRoot, 0.35 + rand() * 0.4, 0.3 + rand() * 0.4, 0.4, rand() < 0.5 ? 0x1c2a18 : 0x24361e, -7.2 + rand() * 2.6, GY + 0.55, 7.3 + rand() * 0.5);
-        for (let i = 0; i < 6; i++) B(envRoot, 0.3 + rand() * 0.3, 0.2 + rand() * 0.25, 0.3, 0x24361e, -10 + rand() * 20, GY + 0.12, -6 + rand() * 14);
       },
     },
   };

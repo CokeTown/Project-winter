@@ -2175,6 +2175,14 @@ function recolorItem(item, colorIdx) {
 function clampToRoom(item, x, z) {
   const fp = footprintOf(item);
   const mx = ROOM.w / 2 - fp.w / 2 - 0.06, mz = ROOM.d / 2 - fp.d / 2 - 0.06;
+  // 2.0 발코니 배치 칸 (디렉터 2026-07-09): META.balcony가 있는 셸터는 허용 소품(방석·촛대류)에 한해
+  //   방 밖 발코니 사각형에도 놓을 수 있다. 포인터가 방 앞 경계(-z 조망면)를 넘으면 발코니로 클램프 —
+  //   드래그가 자연스럽게 두 존을 오간다. 저장/로드도 이 함수를 지나므로 발코니 좌표가 그대로 보존된다.
+  const bal = SHELTERS[state.current]?.balcony;
+  if (bal && bal.allow.includes(item.defId) && z < -mz) {
+    const bx0 = bal.x0 + fp.w / 2, bx1 = bal.x1 - fp.w / 2, bz0 = bal.z0 + fp.d / 2, bz1 = bal.z1 - fp.d / 2;
+    if (bx1 >= bx0 && bz1 >= bz0) return [THREE.MathUtils.clamp(x, bx0, bx1), THREE.MathUtils.clamp(z, bz0, bz1)];
+  }
   return [THREE.MathUtils.clamp(x, -mx, mx), THREE.MathUtils.clamp(z, -mz, mz)];
 }
 // 표면 스태킹: 소품(stackable)을 테이블 등(surface) 위에 올릴 수 있다
@@ -3824,10 +3832,10 @@ const SHELTER_MOUNTS = {
     eave: { y: 3.3, x: 5.61, z: 3.0, dir: [1, 1] },
     groundY: -0.5, ground: { x: 3.4, z: 2.6, rot: 0 },
   },
-  penthouse: { // 2.0 동부: 9.5×6.5×2.9 최상층. 옥상 테라스 슬래브 -0.3 (§6.0.5 기초 모델링)
-    roof: { y: 2.92, cx: 0, cz: 0, hw: 4.5, hd: 3.0 },
-    eave: { y: 2.8, x: 4.86, z: 2.7, dir: [1, 1] },
-    groundY: -0.3, ground: { x: 3.0, z: 2.2, rot: 0 },
+  penthouse: { // 2.0 동부: 11×7.5×2.9 최상층 + 발코니(-z 데크). 확대 리워크 (§6.0.5)
+    roof: { y: 2.92, cx: 0, cz: 0, hw: 5.2, hd: 3.6 },
+    eave: { y: 2.8, x: 5.61, z: 3.86, dir: [1, 1] },
+    groundY: -0.3, ground: { x: 3.4, z: 2.8, rot: 0 },
   },
 };
 function modAvailable(id, shelterId) {
@@ -9276,6 +9284,7 @@ window.__shelter = {
   cat: () => getCat(),
   camera, THREE, CAT_POSES,
   select, deselect, positionSelPanel, // 편집 미니 카드 A안 (접지 프로브용)
+  clampToRoom, // 발코니 배치 칸 (접지 프로브용)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
   //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).
   setYaw: (rad) => { camState.yaw = camState.targetYaw = rad; },
