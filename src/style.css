@@ -12,6 +12,8 @@
     --text: #d8d5cc;
     --text-dim: #8a8d99;
     --uiz: 1;
+    --rarity-rare: #b06ee6;   /* 희귀 = 보라 (도료·책) */
+    --rarity-legend: #ffcf49; /* 전설 = 금색 (도면·네온 안료) */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   /* ── 생성 아트 아이콘 (#19): 이모지 UI 교체 ── */
@@ -361,6 +363,23 @@
   .loot-item {
     border: 2px solid var(--panel-border); border-radius: 4px;
     padding: 6px 10px; font-size: 12px; background: #1c1f28;
+  }
+  /* 정산 희귀도 테두리 (디렉터 2026-07-09): 획득 난이도별 빛나는 테두리 — 희귀=보라, 전설=금색.
+     글로우 펄스는 ::after로(박스 자체 animation은 개봉 리빌 lootPop이 차지 — 충돌 방지). */
+  .loot-item.rare { border-color: var(--rarity-rare); position: relative; }
+  .loot-item.legendary { border-color: var(--rarity-legend); position: relative; }
+  .loot-item.rare::after, .loot-item.legendary::after {
+    content: ''; position: absolute; inset: -2px; border-radius: 5px; pointer-events: none;
+    animation: rarityGlow 1.5s ease-in-out infinite alternate;
+  }
+  .loot-item.rare::after { box-shadow: 0 0 9px 1px rgba(176, 110, 230, 0.6), inset 0 0 6px rgba(176, 110, 230, 0.3); }
+  .loot-item.legendary::after { box-shadow: 0 0 12px 1px rgba(255, 207, 73, 0.68), inset 0 0 7px rgba(255, 207, 73, 0.36); animation-duration: 1.2s; }
+  @keyframes rarityGlow { from { opacity: 0.42; } to { opacity: 1; } }
+  /* 도료 스와치 점 — "무슨 색을 주웠는지" 박스 안에서 바로 (테두리=등급, 점=실제 색) */
+  .loot-dot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    margin-right: 3px; vertical-align: -1px;
+    border: 1px solid rgba(0, 0, 0, 0.45); box-shadow: 0 0 3px rgba(255, 255, 255, 0.15);
   }
 
   /* ── 자원 사이드바 (이름+수량, 가시성 우선) ── */

@@ -682,6 +682,7 @@
   "paint.haveN": "{n}통",
   "bp.foundNote": "무너진 서랍 틈에서 접힌 도면을 찾았다 — {name}. 만드는 법이 그려져 있다.",
   "bp.jackpot": "도면 발견 — {name}",
+  "bp.lootLabel": "{name} 도면",
   "offline.catGift": "🐈 자리를 비운 사이, 고양이가 문가에 천 조각을 물어다 뒀다. 어디서 났는지는 묻지 않기로 했다.",
   "offline.birdGift": "🐦 창턱에 새가 다녀간 자국. 부스러기 대신 도토리 몇 알이 놓여 있었다.",
   "frame.default": "풍경화",
