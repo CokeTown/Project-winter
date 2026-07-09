@@ -9491,6 +9491,63 @@ function _simDaysInner(n, opt) {
   return snaps;
 }
 
+/* ── 트레일러 연출 모드 (#75): window.__trailer — 콘솔/하네스 전용, UI·시뮬 무접점 ──
+   스팀 예고편 촬영 삼종: hideUI(차폐) · cam(키프레임 이징 무빙) · record(렌더 캔버스 webm).
+   플레이어 노출 없음(버튼·키 바인딩 없음) — 개발자 콘솔/오프스크린 하네스에서만 부른다. */
+window.__trailer = {
+  hideUI(on = true) { // 캔버스 계보만 남기고 전부 숨김/복원
+    let node = renderer.domElement; const keep = new Set();
+    while (node && node !== document.body) { keep.add(node); node = node.parentElement; }
+    const walk = (el) => { for (const ch of el.children) {
+      if (ch === renderer.domElement) continue;
+      if (keep.has(ch)) walk(ch); else ch.style.display = on ? 'none' : '';
+    } };
+    walk(document.body);
+  },
+  // 카메라 키프레임 플레이어: frames=[{at:0..1, zoom?, yaw?, elev?, panX?, panZ?}] — 빠진 축은 현재값 유지
+  cam(frames, durMs = 4000, easing = 'inout') {
+    return new Promise((resolve) => {
+      const E = { linear: (t) => t, out: (t) => 1 - Math.pow(1 - t, 3), inout: (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2 };
+      const ez = E[easing] || E.inout;
+      const t0 = performance.now();
+      const lp = (a, b, k) => a + (b - a) * k;
+      const sample = (k) => {
+        let i = 0; while (i < frames.length - 1 && frames[i + 1].at <= k) i++;
+        const a = frames[i], b = frames[Math.min(i + 1, frames.length - 1)];
+        const span = Math.max(1e-6, b.at - a.at); const kk = Math.min(1, Math.max(0, (k - a.at) / span));
+        const g = (p, cur) => (a[p] == null && b[p] == null) ? cur : lp(a[p] != null ? a[p] : cur, b[p] != null ? b[p] : cur, kk);
+        camState.zoom = g('zoom', camState.zoom);
+        camState.targetYaw = camState.yaw = g('yaw', camState.yaw);
+        camState.elev = g('elev', camState.elev);
+        camState.targetPanX = camState.panX = g('panX', camState.panX);
+        camState.targetPanZ = camState.panZ = g('panZ', camState.panZ);
+      };
+      (function step() {
+        const k = Math.min(1, (performance.now() - t0) / durMs);
+        sample(ez(k));
+        if (k >= 1) return resolve();
+        requestAnimationFrame(step);
+      })();
+    });
+  },
+  // 렌더 캔버스 webm 녹화 → base64 반환(하네스가 파일로 저장). 브라우저 콘솔에서는 다운로드 링크 생성이 편하다.
+  async record(durMs = 5000, fps = 60, kbps = 20000) {
+    const stream = renderer.domElement.captureStream(fps);
+    const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: kbps * 1000 });
+    const chunks = [];
+    rec.ondataavailable = (ev) => { if (ev.data && ev.data.size) chunks.push(ev.data); };
+    const stopped = new Promise((res) => { rec.onstop = res; });
+    rec.start(250);
+    await new Promise((r) => setTimeout(r, durMs));
+    rec.stop(); await stopped;
+    const buf = await new Blob(chunks, { type: 'video/webm' }).arrayBuffer();
+    const u8 = new Uint8Array(buf); let bin = '';
+    for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+    return btoa(bin);
+  },
+};
+
 // 디버그/테스트용 핸들
 window.__shelter = {
   simDays, simReset, expectedLoot,
