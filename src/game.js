@@ -10,6 +10,7 @@ import { PROJECTS } from './data/projects.js';
 import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS, OUTFITS } from './data/items.js';
 import { DISTRICTS, REGIONS } from './data/world.js';
 import { SHELTER_META } from './data/shelters.js'; // 셸터 데이터 필드(분리 Phase 1) — build 함수는 아래 SHELTERS에서 병합
+import './trailer-script.js'; // 트레일러 에디션 시나리오 (#75) — window.__trailerScript 등록 + ?trailer=1 자동 재생 게이트
 import { makeShelterBuilders } from './render/shelters.js'; // Tier4 렌더 추출 Phase1-①: 셸터 build 함수(ctx 주입)
 import { tagDecoWall } from './render/props.js'; // 순수 프롭 빌더(deco 태그) — game.js 직접 사용분
 import { makeCulling } from './render/culling.js'; // Tier4 렌더 추출 Phase1-②: 벽/천장 컬링
@@ -9531,8 +9532,8 @@ window.__trailer = {
     });
   },
   // 렌더 캔버스 webm 녹화 → base64 반환(하네스가 파일로 저장). 브라우저 콘솔에서는 다운로드 링크 생성이 편하다.
-  async record(durMs = 5000, fps = 60, kbps = 20000) {
-    const stream = renderer.domElement.captureStream(fps);
+  async record(durMs = 5000, fps = 60, kbps = 20000, canvasEl = null) { // canvasEl: 비네트 등 독립 캔버스 녹화용
+    const stream = (canvasEl || renderer.domElement).captureStream(fps);
     const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
     const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: kbps * 1000 });
     const chunks = [];
@@ -9615,6 +9616,7 @@ window.__shelter = {
   select, deselect, positionSelPanel, // 편집 미니 카드 A안 (접지 프로브용)
   clampToRoom, // 발코니 배치 칸 (접지 프로브용)
   playJungleSunVignette, pickBalconyView, vignetteState: () => vignetteActive, // 비네트 러너 (접지 프로브용)
+  playVignetteRaw: (rise) => playVignette(() => buildJungleSunScene(rise), 12000, null), // 트레일러용 무보상 재생(기록·저장 없음)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
   //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).
   setYaw: (rad) => { camState.yaw = camState.targetYaw = rad; },
