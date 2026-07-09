@@ -1039,6 +1039,8 @@
   "avalanche.detourHurt": "⚠️ 우회로의 눈길에서 미끄러졌다.",
   "nightsky.foundNote": "🌌 맑은 밤, 하늘이 무언가를 보여줬다 — 수첩에 「{title}」을 스케치했다.",
   "sketch.tag": "밤하늘 스케치",
+  "sight.jungleSun.note": "발코니에 나가 콘크리트 정글 너머로 해가 넘어가는 걸 오래 봤다. 불 꺼진 도시도 이 시간엔 빛난다.",
+  "sight.jungleSun.first": "본 광경 — 콘크리트 정글의 해",
   "record.sketchTitle": "밤하늘 스케치 ({n}/{total})",
   "record.regionResort": "리조트 폐허",
   "memo.tagRegion.research": "금지 구역에서 — 봉쇄선 너머의 기록",

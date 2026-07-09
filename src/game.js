@@ -5323,6 +5323,162 @@ function pickStairs(e) {
 //     게이트 미충족/첫 탭은 "눌리지만 아무 표시가 없다"(§5.1) — 히트만 소비.
 //   발견 후: 개척(hiddenGate) 완공 + 대면 유보(hiddenReached)를 마쳤다면 같은 지점 탭 = 박사의 문서.
 //   sim 결정론: 확정 게이트만, Math.random 없음(§9.7).
+/* ── 비네트 러너 (승인 스펙 2026-07-09): 독립 원근 씬 풀스크린 오버레이 — t 0→1 애니메이션, 탭 스킵 ──
+   게임 씬과 완전 분리(자체 renderer/scene/camera) — 직교 카메라 제약 무관, sim 무접점(연출 전용). */
+let vignetteActive = false;
+function playVignette(build, durMs, onDone) {
+  if (vignetteActive) return; vignetteActive = true;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:400;background:#000;opacity:0;transition:opacity .6s';
+  const cv = document.createElement('canvas'); cv.style.cssText = 'width:100%;height:100%'; ov.appendChild(cv); document.body.appendChild(ov);
+  const vr = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+  const v = build();
+  const fit = () => { vr.setSize(innerWidth, innerHeight, false); v.camera.aspect = innerWidth / innerHeight; v.camera.updateProjectionMatrix(); };
+  fit(); addEventListener('resize', fit);
+  requestAnimationFrame(() => { ov.style.opacity = '1'; });
+  const t0 = performance.now(); let done = false;
+  const finish = () => {
+    if (done) return; done = true;
+    removeEventListener('resize', fit);
+    ov.style.opacity = '0';
+    setTimeout(() => { ov.remove(); vr.dispose(); disposeDeep(v.scene); vignetteActive = false; if (onDone) onDone(); }, 650);
+  };
+  ov.addEventListener('pointerdown', finish); // 탭 = 스킵/종료
+  (function loop() {
+    if (done) return;
+    const t = Math.min(1, (performance.now() - t0) / durMs);
+    v.update(t); vr.render(v.scene, v.camera);
+    if (t >= 1) { setTimeout(finish, 1100); return; } // 마지막 프레임을 잠시 머금고 닫는다
+    requestAnimationFrame(loop);
+  })();
+}
+// 「콘크리트 정글의 해」 — 펜트하우스 발코니 조망 비네트. 아침(<12시)=해돋이, 이후=해넘이.
+//   전 구간을 골든아워→어스름으로 압축(밋밋한 '낮' 없음). 실루엣은 역광으로 어둡게, 지평선만 타오른다.
+function buildJungleSunScene(rise) {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(44, innerWidth / innerHeight, 0.1, 600);
+  camera.position.set(0, 10, 42); camera.lookAt(0, 22, -80);
+  const skyCv = document.createElement('canvas'); skyCv.width = 2; skyCv.height = 1024;
+  const skyTex = new THREE.CanvasTexture(skyCv); skyTex.colorSpace = THREE.SRGBColorSpace;
+  scene.background = skyTex;
+  scene.fog = new THREE.Fog(0x2a1626, 70, 380);
+  const _tcB = new THREE.Color();
+  const lerpC = (h1, h2, k, tgt) => tgt.setHex(h1).lerp(_tcB.setHex(h2), k);
+  const _tc1 = new THREE.Color(); const _tc2 = new THREE.Color(); const _tc3 = new THREE.Color();
+  // 태양(타워 뒤 먼 평면) + 글로우
+  const sunMat = new THREE.MeshBasicMaterial({ color: 0xff9a4a, fog: false });
+  const sun = new THREE.Mesh(new THREE.CircleGeometry(8.5, 44), sunMat);
+  sun.position.set(6, 4, -240); scene.add(sun);
+  const gcv = document.createElement('canvas'); gcv.width = gcv.height = 256;
+  const gg = gcv.getContext('2d'); const rg = gg.createRadialGradient(128, 128, 6, 128, 128, 127);
+  rg.addColorStop(0, 'rgba(255,190,110,0.95)'); rg.addColorStop(0.4, 'rgba(255,110,50,0.4)'); rg.addColorStop(1, 'rgba(255,90,40,0)');
+  gg.fillStyle = rg; gg.fillRect(0, 0, 256, 256);
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gcv), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+  glow.scale.set(150, 150, 1); scene.add(glow);
+  // 콘크리트 정글 실루엣 4겹: 원경(지평선 잔광에 물듦)→전경 옥상선(발코니에서 내려다보는 낮은 지붕들)
+  const srand = seededRand(2409);
+  const JG = [ // [zBase, n, hMin, hVar, wMin, wVar, yBase]
+    [-210, 16, 16, 26, 9, 14, -6], [-160, 13, 13, 22, 8, 13, -6],
+    [-105, 10, 9, 18, 8, 12, -6], [-58, 9, 2.5, 7, 14, 12, -6],
+  ];
+  const layers = [];
+  for (let L = 0; L < 4; L++) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0x1a1420 });
+    const [zb, n, hm, hv, wm, wv, yb] = JG[L];
+    for (let i = 0; i < n; i++) {
+      const tw4 = wm + srand() * wv, th4 = hm + srand() * hv;
+      const x4 = -150 + (i / (n - 1)) * 300 + (srand() - 0.5) * 14;
+      if (L < 3 && Math.abs(x4 - 6) < 13 + L * 3) continue; // 협곡: 해가 지는 골목을 비워둔다 (맨해튼헨지)
+      const bd4 = new THREE.Mesh(new THREE.BoxGeometry(tw4, th4, 8), mat);
+      bd4.position.set(x4, yb + th4 / 2, zb + srand() * 16);
+      scene.add(bd4);
+      if (L < 3 && srand() < 0.4) { const an3 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 4 + srand() * 4, 0.5), mat); an3.position.set(bd4.position.x, yb + th4 + 2, bd4.position.z); scene.add(an3); }
+      if (L === 3 && srand() < 0.5) { const wt2 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.8, 1.6), mat); wt2.position.set(bd4.position.x + (srand() - 0.5) * tw4 * 0.6, yb + th4 + 0.9, bd4.position.z); scene.add(wt2); } // 옥상 물탱크
+    }
+    layers.push(mat);
+  }
+  // 새 떼 + 노을 구름 띠(타워 위, 아래에서 달궈진) + 황혼 별
+  const birdMat = new THREE.MeshBasicMaterial({ color: 0x0c0a10 });
+  for (let i = 0; i < 6; i++) {
+    const bx5 = -34 + srand() * 68, by5 = 30 + srand() * 16;
+    for (const s5 of [-1, 1]) { const wing = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.16, 0.3), birdMat); wing.position.set(bx5 + s5 * 0.55, by5, -120); wing.rotation.z = s5 * 0.4; scene.add(wing); }
+  }
+  const ccv = document.createElement('canvas'); ccv.width = 256; ccv.height = 64; // 소프트 구름 스트릭 (박스 금지 — 막대기로 보임)
+  const cg = ccv.getContext('2d');
+  for (const [sx, sy, sw, sh, a] of [[10, 22, 236, 18, 0.5], [40, 12, 150, 12, 0.35], [80, 36, 140, 14, 0.4]]) {
+    const lg = cg.createRadialGradient(sx + sw / 2, sy + sh / 2, 2, sx + sw / 2, sy + sh / 2, sw / 2);
+    lg.addColorStop(0, 'rgba(255,255,255,' + a + ')'); lg.addColorStop(1, 'rgba(255,255,255,0)');
+    cg.save(); cg.translate(sx + sw / 2, sy + sh / 2); cg.scale(1, sh / sw); cg.translate(-(sx + sw / 2), -(sy + sh / 2));
+    cg.fillStyle = lg; cg.beginPath(); cg.arc(sx + sw / 2, sy + sh / 2, sw / 2, 0, Math.PI * 2); cg.fill(); cg.restore();
+  }
+  const cloudTex = new THREE.CanvasTexture(ccv); cloudTex.colorSpace = THREE.SRGBColorSpace;
+  const cloudMat = new THREE.SpriteMaterial({ map: cloudTex, color: 0xd86a3c, transparent: true, opacity: 0.75, depthWrite: false, fog: false });
+  for (const [cx5, cy5, csc] of [[-58, 50, 130], [52, 62, 160], [-4, 42, 95]]) {
+    const cl2 = new THREE.Sprite(cloudMat); cl2.position.set(cx5, cy5, -236); cl2.scale.set(csc, csc * 0.22, 1); scene.add(cl2);
+  }
+  // 최전경: 발코니 난간 실루엣 (여기 서서 보고 있다는 시점 근거)
+  const railMat = new THREE.MeshBasicMaterial({ color: 0x0a080e });
+  const parapet = new THREE.Mesh(new THREE.BoxGeometry(200, 5.2, 2), railMat); parapet.position.set(0, 3.2, 20); scene.add(parapet);
+  const handrail = new THREE.Mesh(new THREE.BoxGeometry(200, 0.5, 2.4), new THREE.MeshBasicMaterial({ color: 0x2a2018 })); handrail.position.set(0, 6.1, 20); scene.add(handrail);
+  const stGeo = new THREE.BufferGeometry(); const stPos = [];
+  for (let i = 0; i < 240; i++) stPos.push(-260 + srand() * 520, 34 + srand() * 150, -250);
+  stGeo.setAttribute('position', new THREE.Float32BufferAttribute(stPos, 3));
+  const stMat = new THREE.PointsMaterial({ color: 0xcdd8ff, size: 1.3, transparent: true, opacity: 0, fog: false, sizeAttenuation: false });
+  scene.add(new THREE.Points(stGeo, stMat));
+  const update = (t) => {
+    const kn = rise ? t : 1 - t;                   // kn 0=어스름 1=골든아워 (해돋이는 증가, 해넘이는 감소)
+    const g2 = skyCv.getContext('2d');
+    const gr2 = g2.createLinearGradient(0, 0, 0, 1024);
+    lerpC(0x10142c, 0x486a9e, kn, _tc1); lerpC(0x582838, 0x8aa0c0, kn, _tc2); lerpC(0x902c30, 0xffc46a, Math.min(1, kn * 1.25), _tc3);
+    gr2.addColorStop(0, '#' + _tc1.getHexString()); gr2.addColorStop(0.52, '#' + _tc2.getHexString()); gr2.addColorStop(1, '#' + _tc3.getHexString());
+    g2.fillStyle = gr2; g2.fillRect(0, 0, 2, 1024); skyTex.needsUpdate = true;
+    const sunY = -10 + 30 * kn;                    // 협곡 사이 낮은 호 — 옥상선에 걸린 해가 골목으로 진다
+    sun.position.y = sunY; glow.position.set(6, Math.max(sunY, -2), -239);
+    lerpC(0xff5a2c, 0xffd88a, kn, sunMat.color);
+    glow.material.opacity = 0.55 + 0.45 * (1 - kn);
+    lerpC(0x2a1626, 0x6a7898, kn, scene.fog.color);
+    lerpC(0x30182a, 0x564a66, kn, layers[0].color);  // 원경 — 잔광에 물든 마우브
+    lerpC(0x221226, 0x3a3450, kn, layers[1].color);
+    lerpC(0x160e1c, 0x262238, kn, layers[2].color);
+    lerpC(0x0c0a12, 0x141220, kn, layers[3].color);  // 전경 옥상선 — 거의 검게
+    lerpC(0xc84c30, 0xf0c8a0, kn, cloudMat.color);
+    stMat.opacity = Math.max(0, (0.22 - kn) / 0.22) * 0.9; // 어스름에만 별이 스민다
+  };
+  update(0);
+  return { scene, camera, update };
+}
+function playJungleSunVignette() {
+  const rise = gameHour() < 12;
+  playVignette(() => buildJungleSunScene(rise), 12000, () => {
+    state.sights = state.sights || {};
+    const first = !state.sights.jungleSun;
+    state.sights.jungleSun = (state.sights.jungleSun || 0) + 1;
+    addMoodBuff(2, 1);                                            // 익일 무드: "그 하늘을 생각했다"
+    state.dayLog.notes.push(t('sight.jungleSun.note'));
+    if (first) jackpotToast(`🌇 ${t('sight.jungleSun.first')}`, 0xffb04a);
+    scheduleSave();
+  });
+}
+// 발코니 조망 트리거 (디렉터 2026-07-09): 펜트하우스 발코니 데크 더블탭 → 「콘크리트 정글의 해」.
+//   시각 표시 0 — 데크 자체가 트리거(y=0 평면 히트를 balcony 사각형으로 판정, 히든 더블탭 문법).
+let balconyTapAt = 0;
+function pickBalconyView(e) {
+  const bal = SHELTERS[state.current]?.balcony;
+  if (!bal || vignetteActive || paused) return false;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  const tr = -raycaster.ray.origin.y / raycaster.ray.direction.y;
+  if (!(tr > 0)) return false;
+  const px = raycaster.ray.origin.x + raycaster.ray.direction.x * tr;
+  const pz = raycaster.ray.origin.z + raycaster.ray.direction.z * tr;
+  if (px < bal.x0 || px > bal.x1 || pz < bal.z0 || pz > bal.z1) return false;
+  const nb = performance.now();
+  if (nb - balconyTapAt > 450) { balconyTapAt = nb; return true; }
+  balconyTapAt = 0;
+  playJungleSunVignette();
+  return true;
+}
+
 let hiddenTapAt = 0;
 function pickHidden(e) {
   if (!subwayHiddenObj || state.current !== 'subway') return false;
@@ -5559,7 +5715,7 @@ canvas.addEventListener('pointerdown', e => {
     };
   } else {
     // §9.6 「침묵」 히든 지점 — 모든 픽 미스 후의 최하위 히트 (시각 표시 0, 소비 시 팬/회전도 시작 안 함)
-    if (!editMode && pickHidden(e)) return;
+    if (!editMode && (pickHidden(e) || pickBalconyView(e))) return;
     // #70 빈 공간 드래그: 비배치·비클로즈업이면 클램프 팬, 배치 모드/클로즈업 중엔 기존 yaw 회전(팬 비활성 스펙).
     //   팬은 최저 우선순위 — 계단/고양이/가구 픽이 전부 미스인 이 else에서만 시작(select 레이캐스트 경로 불변).
     //   데드존: 팬은 8px(탭 상호작용 보호 스펙), 회전은 기존 7px 유지.
@@ -9285,6 +9441,7 @@ window.__shelter = {
   camera, THREE, CAT_POSES,
   select, deselect, positionSelPanel, // 편집 미니 카드 A안 (접지 프로브용)
   clampToRoom, // 발코니 배치 칸 (접지 프로브용)
+  playJungleSunVignette, pickBalconyView, vignetteState: () => vignetteActive, // 비네트 러너 (접지 프로브용)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
   //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).
   setYaw: (rad) => { camState.yaw = camState.targetYaw = rad; },
