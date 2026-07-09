@@ -220,4 +220,20 @@ export const SHELTER_META = {
     moveCost: { material: 36, parts: 28 },
     cold: 4, limits: '🕳️ 무너진 천장 — 악천후 쾌적 -4 (지붕 틈을 막으면 해소)', limitsEn: '🕳️ Broken ceiling — comfort -4 in bad weather (fix by patching the gap)',
   },
+
+  /* ── 2.0 동부 「대도시」 셸터 4: 펜트하우스 (§6.0.5 — 심부 진행 종점, "고성 첨탑들에 둘러싸인" 압도) ──
+     마천루 꼭대기의 럭셔리 펜트하우스 잔해. 조망이 정체성 — env가 주역(둘러싼 초고층 + 아득한 아래 안개).
+     unlockAt 9999 = 관문 시스템 전 비노출. */
+  penthouse: {
+    name: '펜트하우스', nameEn: 'Penthouse', emoji: '🏙️', unlockAt: 9999, viewH: 22, ceilY: 2.9,
+    desc: '구름 높이의 펜트하우스. 사방의 마천루가 고성의 첨탑처럼 나를 둘러싸고, 발밑엔 안개에 잠긴 도시가 있다.',
+    descEn: 'A penthouse at cloud height. The towers stand around you like castle spires, and below, a city drowned in fog.',
+    room: { w: 9.5, d: 6.5, h: 2.9 },
+    baseComfort: 8,
+    mood: { fog: 0x1a1622, fogNear: 26, fogFar: 78, skyH: 0x2c2338, skyZ: 0x0b0a14, hemiSky: 0x9a92b8, hemiGround: 0x3a3630, hemiInt: 0.7, moonC: 0xccd4ec, moonInt: 0.9, stars: 0.9 },
+    weatherPool: ['clear', 'clear', 'snow', 'rain'],
+    perk: { label: '🏙️ 첨탑들의 왕좌 — 도시 전체가 창밖에 있다', labelEn: '🏙️ A throne among spires — the whole city hangs in the window' },
+    moveCost: { material: 40, parts: 32 },
+    limits: '🌬️ 고층 강풍 — 겨울 바람이 유리를 두드린다', limitsEn: '🌬️ High-rise wind — winter rattles the glass',
+  },
 };

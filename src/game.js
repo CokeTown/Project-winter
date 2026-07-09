@@ -1305,6 +1305,12 @@ const SHELTERS = {
     ...SHELTER_META.terminal, // build 함수 → render/shelters.js
     ..._shelterBuilders.terminal,
   },
+
+  /* ── 2.0 동부 「대도시」 셸터 4: 펜트하우스 (§6.0.5 — 심부 진행 종점, 첨탑들의 왕좌) ── */
+  penthouse: {
+    ...SHELTER_META.penthouse, // build 함수 → render/shelters.js
+    ..._shelterBuilders.penthouse,
+  },
 };
 
 /* ── 1.3 관측소 현장 오브젝트 (site='observatory') ──
@@ -2634,6 +2640,7 @@ const SHELTER_MAP = {
   customs: { x: 94, y: 52 },                                  // 2.0 동부 관문 (지도 동쪽 끝 — §6.0.5)
   bridgehouse: { x: 91, y: 43 },                              // 2.0 동부 다리 관리소 (세관 북서 — 협곡)
   terminal: { x: 88, y: 49 },                                 // 2.0 동부 역 대합실 (도심 심부 2층위)
+  penthouse: { x: 85, y: 45 },                                // 2.0 동부 펜트하우스 (심부 종점)
 };
 /* ── 지도 리워크 2차(디렉터: 타르코프 Woods식 진짜 지형도) ──
    지역별 색면 폐기. 회백 종이 전면 + 초록은 '식생'만 + 갈색 등고선(높이장 marching-squares)이
@@ -3816,6 +3823,11 @@ const SHELTER_MOUNTS = {
     roof: { y: 3.42, cx: 0, cz: 0, hw: 5.2, hd: 3.3 },
     eave: { y: 3.3, x: 5.61, z: 3.0, dir: [1, 1] },
     groundY: -0.5, ground: { x: 3.4, z: 2.6, rot: 0 },
+  },
+  penthouse: { // 2.0 동부: 9.5×6.5×2.9 최상층. 옥상 테라스 슬래브 -0.3 (§6.0.5 기초 모델링)
+    roof: { y: 2.92, cx: 0, cz: 0, hw: 4.5, hd: 3.0 },
+    eave: { y: 2.8, x: 4.86, z: 2.7, dir: [1, 1] },
+    groundY: -0.3, ground: { x: 3.0, z: 2.2, rot: 0 },
   },
 };
 function modAvailable(id, shelterId) {
