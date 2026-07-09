@@ -1299,6 +1299,12 @@ const SHELTERS = {
     ...SHELTER_META.bridgehouse, // build 함수 → render/shelters.js
     ..._shelterBuilders.bridgehouse,
   },
+
+  /* ── 2.0 동부 「대도시」 셸터 3: 역 대합실 (§6.0.5 — 신광+빛 웅덩이의 나무, TLOU 아트리움) ── */
+  terminal: {
+    ...SHELTER_META.terminal, // build 함수 → render/shelters.js
+    ..._shelterBuilders.terminal,
+  },
 };
 
 /* ── 1.3 관측소 현장 오브젝트 (site='observatory') ──
@@ -2627,6 +2633,7 @@ const SHELTER_MAP = {
   lodge: { x: 81, y: 27 },                                    // 고요한 고원
   customs: { x: 94, y: 52 },                                  // 2.0 동부 관문 (지도 동쪽 끝 — §6.0.5)
   bridgehouse: { x: 91, y: 43 },                              // 2.0 동부 다리 관리소 (세관 북서 — 협곡)
+  terminal: { x: 88, y: 49 },                                 // 2.0 동부 역 대합실 (도심 심부 2층위)
 };
 /* ── 지도 리워크 2차(디렉터: 타르코프 Woods식 진짜 지형도) ──
    지역별 색면 폐기. 회백 종이 전면 + 초록은 '식생'만 + 갈색 등고선(높이장 marching-squares)이
@@ -3711,6 +3718,7 @@ const SHELTER_MODS = {
   // 2.0 동부 세관 (디렉터 2026-07-09: "shelter라고 하면 응당 안전해야 하니까") — buildRoom 지오 분기라 rebuild 플래그.
   customsClear: { name: '선반 철거', nameEn: 'Clear the Shelves', emoji: '🧹', cost: {}, desc: '압수품 선반을 뜯어낸다 — 벽이 비고, 내 것을 놓을 자리가 생긴다', descEn: 'Tear out the seizure shelves — the wall clears for things of your own', only: ['customs'], rebuild: true },
   customsSeal: { name: '창구 봉쇄', nameEn: 'Seal the Booths', emoji: '🪵', cost: { material: 3, cloth: 1 }, desc: '심사 창구를 판자로 막는다 — 외풍이 멎는다 (악천후 쾌적 하락 해소)', descEn: 'Board up the inspection booths — the draft stops (no comfort loss in bad weather)', only: ['customs'], rebuild: true },
+  terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '🧱', cost: { material: 4, cloth: 1 }, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
   bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '🛢️', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
 };
 // 개조가 셸터의 어느 앵커에 붙는지 선언 (ARC-01: 콘텐츠는 테이블).
@@ -3803,6 +3811,11 @@ const SHELTER_MOUNTS = {
     roof: { y: 2.62, cx: 0, cz: 0, hw: 3.2, hd: 2.6 },
     eave: { y: 2.5, x: 3.51, z: 2.3, dir: [1, 1] },
     groundY: -0.6, ground: { x: 2.4, z: 2.0, rot: 0 },
+  },
+  terminal: { // 2.0 동부: 11×7×3.4 대합실 홀. 역전 광장 -0.5 (§6.0.5 기초 모델링)
+    roof: { y: 3.42, cx: 0, cz: 0, hw: 5.2, hd: 3.3 },
+    eave: { y: 3.3, x: 5.61, z: 3.0, dir: [1, 1] },
+    groundY: -0.5, ground: { x: 3.4, z: 2.6, rot: 0 },
   },
 };
 function modAvailable(id, shelterId) {

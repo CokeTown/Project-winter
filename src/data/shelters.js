@@ -204,4 +204,20 @@ export const SHELTER_META = {
     moveCost: { material: 34, parts: 26 },
     limits: '🌉 협곡의 집 — 겨울 바람 소리가 크다', limitsEn: '🌉 A house over the gorge — the winter wind is loud',
   },
+
+  /* ── 2.0 동부 「대도시」 셸터 3: 역 대합실 (§6.0.5 — 심부 진행 2층위, 펜실베이니아 역 레퍼런스) ──
+     거대한 아치 홀의 한구석이 거처. 무너진 천장으로 신광이 들고, 빛 웅덩이엔 나무가 자란다(TLOU 아트리움).
+     석재 텍스처 공유(stoneBlockTex). unlockAt 9999 = 관문 시스템 전 비노출. */
+  terminal: {
+    name: '역 대합실', nameEn: 'Grand Terminal Hall', emoji: '🚉', unlockAt: 9999, viewH: 20, ceilY: 3.4,
+    desc: '거대한 아치 천장 아래, 매표소 옆 한 칸이 나의 집. 무너진 지붕 틈으로 해가 들고, 그 빛 웅덩이에서 나무 한 그루가 자란다.',
+    descEn: 'One corner beneath the great arched ceiling, beside the ticket booths. Sun falls through the broken roof, and in that pool of light a tree grows.',
+    room: { w: 11, d: 7, h: 3.4 },
+    baseComfort: 6,
+    mood: { fog: 0x18120c, fogNear: 20, fogFar: 56, skyH: 0x2a1e14, skyZ: 0x0a0806, hemiSky: 0x8a7a64, hemiGround: 0x3a3228, hemiInt: 0.64, moonC: 0xc8b89a, moonInt: 0.6, stars: 0.3 },
+    weatherPool: ['clear', 'clear', 'rain', 'snow'],
+    perk: { label: '🚉 빛 웅덩이의 홀 — 도시 한가운데의 성소', labelEn: '🚉 A hall with a pool of light — a sanctuary mid-city' },
+    moveCost: { material: 36, parts: 28 },
+    cold: 4, limits: '🕳️ 무너진 천장 — 악천후 쾌적 -4 (지붕 틈을 막으면 해소)', limitsEn: '🕳️ Broken ceiling — comfort -4 in bad weather (fix by patching the gap)',
+  },
 };

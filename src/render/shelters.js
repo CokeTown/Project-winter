@@ -2364,5 +2364,142 @@ export function makeShelterBuilders(ctx) {
         ogGround((x, z) => GY, 12, 22, 5, (x, z) => z > -6);                     // 마당 3년차 수풀 (절벽 밖 제외)
       },
     },
+
+    /* ── 2.0 동부 「대도시」 셸터 3: 역 대합실 (GD-2.0 §6.0.5 기초 모델링 — Fable) ──
+       펜 역 레퍼런스: 석재 홀 + 필라스터 + 부채창 장식 + 매표 부스 + 무너진 천장 신광 + 빛 웅덩이의 나무(TLOU).
+       terminalPatch 개조 시 천장 틈이 판자로 덮이고 신광이 꺼진다(comfort.js 상쇄와 세트). 나무는 남는다. */
+    terminal: {
+      buildRoom() {
+        const { w, d, h } = getROOM();
+        const rand = seededRand(2405);
+        const patched = (state.mods?.terminal || []).includes('terminalPatch');
+        // 바닥: 석판 + 중앙 대리석 띠
+        const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ map: stoneBlockTex }));
+        floor.material.color.setHex(0xd2cabc);
+        floor.position.y = -0.125; floor.receiveShadow = true;
+        tagDecoFloor(floor); roomGroup.add(floor);
+        B(roomGroup, w * 0.7, 0.012, 1.4, 0xc2b8a4, 0, 0.006, 0);
+        B(roomGroup, w * 0.7, 0.014, 0.08, 0x9a8f7c, 0, 0.007, -0.7); B(roomGroup, w * 0.7, 0.014, 0.08, 0x9a8f7c, 0, 0.007, 0.7);
+        // 벽: 석재 — 앞벽 홀 조망 창
+        const wallMat = wallPhong({ map: stoneBlockTex });
+        wallMat.userData.shared = true;
+        const mk = (len, opts) => stdWall(len, h, wallMat, opts);
+        makeWalls([
+          { group: mk(w, { window: { winW: 1.8, winH: 1.0, winY: 1.5, winX: 2.6 }, frameColor: 0x4a443c, skyColor: 0x2a2014 }), pos: [0, 0, -d / 2 - 0.11], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+          { group: mk(w), pos: [0, 0, d / 2 + 0.11], rotY: Math.PI, normal: new THREE.Vector3(0, 0, 1) },
+          { group: mk(d), pos: [-w / 2 - 0.11, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+          { group: mk(d), pos: [w / 2 + 0.11, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
+        ]);
+        // 부채창 장식 (+z 뒷벽 상부 — 반원 판 + 방사 살, 컬링 동기화)
+        const fan = [];
+        const fanC = new THREE.Mesh(new THREE.CircleGeometry(1.3, 24, 0, Math.PI), lamb(0x2a2014));
+        fanC.position.set(-2.2, h - 1.35, d / 2 + 0.1); fan.push(fanC); roomGroup.add(fanC);
+        for (let k = 0; k <= 4; k++) { const rib2 = B(roomGroup, 0.08, 1.28, 0.05, 0x4a443c, -2.2, h - 1.35, d / 2 + 0.12); rib2.rotation.z = Math.PI * (k / 4) - Math.PI / 2; fan.push(rib2); }
+        fan.push(B(roomGroup, 2.7, 0.1, 0.06, 0x4a443c, -2.2, h - 1.35, d / 2 + 0.12));
+        attachToWall(0, 0, 1, ...fan);
+        // 필라스터 (좌우 벽 반기둥 2쌍 + 주두 — 벽 컬링 동기화)
+        for (const [px2, nx2] of [[-w / 2 + 0.18, -1], [w / 2 - 0.18, 1]]) {
+          const side = [];
+          for (const pz2 of [-1.8, 1.8]) {
+            side.push(B(roomGroup, 0.36, h - 0.4, 0.5, 0x9a9184, px2, (h - 0.4) / 2, pz2));
+            side.push(B(roomGroup, 0.5, 0.22, 0.64, 0xaaa294, px2, h - 0.4, pz2));
+          }
+          attachToWall(nx2, 0, 0, ...side);
+        }
+        // 매표 부스 (+x 벽): 목재 카운터 + 창살 2칸 + 안내 색판
+        const bX = w / 2 - 0.62;
+        B(roomGroup, 1.0, 1.05, 3.2, 0x55432e, bX, 0.53, -0.4);
+        B(roomGroup, 1.1, 0.07, 3.35, 0x6a5238, bX, 1.1, -0.4);
+        for (let i = 0; i < 2; i++) {
+          const pz2 = -1.3 + i * 1.8;
+          B(roomGroup, 0.07, 1.1, 0.09, 0x55432e, bX, 1.7, pz2 - 0.7); B(roomGroup, 0.07, 1.1, 0.09, 0x55432e, bX, 1.7, pz2 + 0.7);
+          B(roomGroup, 0.06, 0.08, 1.45, 0x55432e, bX, 2.26, pz2);
+          for (let k2 = 0; k2 < 5; k2++) B(roomGroup, 0.035, 1.05, 0.035, 0x3a3026, bX, 1.68, pz2 - 0.52 + k2 * 0.26);
+        }
+        B(roomGroup, 0.06, 0.34, 1.0, 0x2e4a6a, bX + 0.42, 2.55, -0.4);
+        // 벤치 2 (하나 전복) + 여행가방
+        B(roomGroup, 2.2, 0.12, 0.5, 0x55432e, -2.6, 0.5, -1.6); B(roomGroup, 2.2, 0.5, 0.12, 0x55432e, -2.6, 0.8, -1.86);
+        for (const lx of [-3.5, -1.7]) B(roomGroup, 0.14, 0.5, 0.4, 0x3a3026, lx, 0.25, -1.6);
+        const tip = B(roomGroup, 2.0, 0.12, 0.5, 0x4a3a28, 0.6, 0.3, -2.2); tip.rotation.z = 1.25;
+        B(roomGroup, 0.7, 0.45, 0.35, 0x6a4436, -4.2, 0.23, 0.8); B(roomGroup, 0.55, 0.38, 0.3, 0x2e4456, -3.9, 0.19, 1.5);
+        // 행선판 — 한쪽 체인 끊겨 기울어짐 (뒷벽 상부)
+        const brd = [];
+        brd.push(B(roomGroup, 0.05, 0.9, 0.05, 0x3a3630, 2.0, h - 0.5, d / 2 + 0.08));
+        const panel = B(roomGroup, 2.6, 0.9, 0.1, 0x11150f, 2.7, h - 1.25, d / 2 + 0.09); panel.rotation.z = -0.14; brd.push(panel);
+        for (let i = 0; i < 6; i++) { const row = B(roomGroup, 0.7, 0.09, 0.04, 0x6a7a4c, 1.9 + (i % 3) * 0.85, h - 1.05 - Math.floor(i / 3) * 0.3, d / 2 + 0.15); row.rotation.z = -0.14; brd.push(row); }
+        attachToWall(0, 0, 1, ...brd);
+        // 무너진 천장: 슬래브 2장 + 구멍(중앙 우측) — patched면 판자 덮개
+        {
+          const roofG = new THREE.Group();
+          const slab = (sw, sx) => { const s2 = new THREE.Mesh(new THREE.BoxGeometry(sw, 0.22, d + 0.4), wallPhong({ map: concreteTex })); s2.material.color.setHex(0x8a8478); s2.position.set(sx, h + 0.1, 0); roofG.add(s2); };
+          slab(w * 0.52, -w * 0.24); slab(w * 0.2, w * 0.4);
+          for (let i = 0; i < 5; i++) { const j = new THREE.Mesh(new THREE.BoxGeometry(0.5 + rand() * 0.7, 0.2, 0.6 + rand() * 0.8), lamb(0x77706a)); j.position.set(w * 0.08 + rand() * 1.6, h + 0.08, -d / 2 + 0.6 + rand() * (d - 1.2)); j.rotation.y = rand(); roofG.add(j); }
+          if (patched) {
+            const cover = new THREE.Mesh(new THREE.BoxGeometry(w * 0.24, 0.1, d + 0.2), lamb(0x6a5238)); cover.position.set(w * 0.14, h + 0.06, 0); roofG.add(cover);
+            for (let i = 0; i < 4; i++) { const pl = new THREE.Mesh(new THREE.BoxGeometry(w * 0.23, 0.04, 0.5), lamb(0x5a4530)); pl.position.set(w * 0.14, h + 0.13, -d / 2 + 0.8 + i * 1.6); roofG.add(pl); }
+          }
+          tagCeiling(roofG, h + 0.02); roomGroup.add(roofG);
+        }
+        // 신광 + 빛 웅덩이 + 나무 (patched면 신광·웅덩이 꺼짐 — 나무는 이미 자란 생명이라 남는다)
+        const TX = 2.6, TZ = 1.2;
+        if (!patched) {
+          for (const [sx2, sw2, lean] of [[TX - 0.4, 1.6, -0.16], [TX + 0.6, 0.9, -0.22]]) {
+            const shaft = new THREE.Mesh(new THREE.BoxGeometry(sw2, h + 0.6, 2.6), new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending, depthWrite: false }));
+            shaft.position.set(sx2, h / 2, TZ - 0.3); shaft.rotation.z = lean; roomGroup.add(shaft);
+          }
+          for (let i = 0; i < 3; i++) {
+            const pool = new THREE.Mesh(new THREE.BoxGeometry(2.4 - i * 0.7, 0.012, 1.8 - i * 0.5), new THREE.MeshBasicMaterial({ color: 0xffcf8a, transparent: true, opacity: 0.1 + i * 0.05, blending: THREE.AdditiveBlending }));
+            pool.position.set(TX + 0.2 - i * 0.2, 0.02 + i * 0.008, TZ); roomGroup.add(pool);
+          }
+        }
+        Cyl(roomGroup, 0.14, 0.18, 1.6, 0x2a1c10, TX, 0.8, TZ, 7);
+        const br2 = B(roomGroup, 0.09, 0.9, 0.09, 0x2a1c10, TX + 0.35, 1.75, TZ + 0.1); br2.rotation.z = 0.5;
+        for (let i = 0; i < 8; i++) {
+          const ly = 1.7 + rand() * 1.2;
+          B(roomGroup, 0.5 + rand() * 0.6, 0.32 + rand() * 0.3, 0.5 + rand() * 0.5, ly > 2.4 && !patched ? 0x6a8a3c : (rand() < 0.5 ? 0x2e4420 : 0x3c5626), TX + (rand() - 0.5) * 1.6, ly, TZ + (rand() - 0.5) * 1.2);
+        }
+        for (let i = 0; i < 6; i++) B(roomGroup, 0.22 + rand() * 0.2, 0.18 + rand() * 0.2, 0.22, rand() < 0.4 ? 0x6a8a3c : 0x35492a, TX + (rand() - 0.5) * 2.4, 0.1, TZ + (rand() - 0.5) * 2.0);
+        for (let i = 0; i < 5; i++) { const j2 = B(roomGroup, 0.5 + rand() * 0.7, 0.25 + rand() * 0.35, 0.5 + rand() * 0.6, rand() < 0.5 ? 0x8a8478 : 0x6e6a60, TX + 0.6 + (rand() - 0.5) * 1.8, 0.15 + rand() * 0.25, TZ - 0.8 + (rand() - 0.5) * 1.2); j2.rotation.y = rand(); }
+        setBlockers([]);
+      },
+      buildEnv() {
+        const GY = -0.5;
+        const rand = seededRand(2406);
+        // 역전 광장 (석판) + 균열
+        const plaza = B(envRoot, 50, 0.3, 36, 0x59544c, 0, GY - 0.15, 2); plaza.receiveShadow = true;
+        for (let i = 0; i < 8; i++) { const cr2 = B(envRoot, 0.8 + rand() * 2.2, 0.014, 0.14, 0x3a3630, -18 + rand() * 36, GY + 0.008, -10 + rand() * 24); cr2.rotation.y = rand() * 3; }
+        // 무너진 파사드 아치 잔해 2 (역사의 껍데기)
+        for (const [ax, az, aw2] of [[-12, -10, 7], [11, -11, 5.5]]) {
+          for (const lx of [-aw2 / 2, aw2 / 2]) B(envRoot, 1.4, 7 + rand() * 2, 1.4, 0x77706a, ax + lx, GY + 3.6, az);
+          for (let k = 0; k <= 6; k++) { const seg2 = B(envRoot, 1.2, 0.9, 1.1, 0x8a8478, ax + Math.cos(Math.PI * (k / 6)) * aw2 / 2, GY + 7 + Math.sin(Math.PI * (k / 6)) * 2.2, az); seg2.rotation.z = Math.PI * (k / 6) - Math.PI / 2; }
+        }
+        // 가로등 3 (하나 꺾임) + 짐수레
+        for (const [gx2, bent] of [[-7, 0], [4, 0], [9, 0.9]]) {
+          const pole2 = Cyl(envRoot, 0.09, 0.11, 4.2, 0x3a3630, gx2, GY + 2.1, 8, 7); if (bent) { pole2.rotation.z = bent; pole2.position.y = GY + 1.5; }
+          B(envRoot, 0.5, 0.3, 0.3, 0x2a2622, gx2 + (bent ? 1.8 : 0), GY + (bent ? 2.6 : 4.3), 8);
+        }
+        B(envRoot, 1.6, 0.5, 0.9, 0x55432e, -3, GY + 0.55, 6.5);
+        for (const wx2 of [-3.6, -2.4]) { const wl = Cyl(envRoot, 0.3, 0.3, 0.16, 0x2a2622, wx2, GY + 0.3, 7.0, 8); wl.rotation.x = Math.PI / 2; }
+        // 선로 3가닥 + 멈춘 열차 실루엣 (대승강장 예고)
+        for (let tr = 0; tr < 3; tr++) {
+          const tz2 = -16 - tr * 3;
+          B(envRoot, 44, 0.12, 0.16, 0x4a453e, 0, GY + 0.06, tz2 - 0.5); B(envRoot, 44, 0.12, 0.16, 0x4a453e, 0, GY + 0.06, tz2 + 0.5);
+          for (let s3 = 0; s3 < 14; s3++) B(envRoot, 0.9, 0.06, 2.2, 0x3a3026, -21 + s3 * 3.2, GY + 0.02, tz2);
+        }
+        { const train = new THREE.Group();
+          for (let c4 = 0; c4 < 3; c4++) {
+            const car = new THREE.Mesh(new THREE.BoxGeometry(8, 2.6, 2.4), lamb(c4 ? 0x2c2430 : 0x342a36)); car.position.set(-6 + c4 * 8.6, 1.5, 0); car.castShadow = true; train.add(car);
+            for (let wi = 0; wi < 4; wi++) { const win2 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 0.08), lamb(0x161018)); win2.position.set(-9 + c4 * 8.6 + wi * 1.8, 1.9, 1.22); train.add(win2); }
+          }
+          train.position.set(2, GY, -22); envRoot.add(train);
+          for (let i = 0; i < 6; i++) B(envRoot, 0.5 + rand() * 0.7, 0.4 + rand() * 0.4, 0.6, rand() < 0.5 ? 0x1c2a18 : 0x24361e, -4 + rand() * 18, GY + 0.25, -21 + rand() * 2); }
+        // 원경 도심 + 3년차 수풀
+        for (let i = 0; i < 7; i++) {
+          const bw2 = 4 + rand() * 5, bh3 = 7 + rand() * 12;
+          B(envRoot, bw2, bh3, 4, i % 2 ? 0x2a2026 : 0x221a20, -28 + i * 10 + rand() * 3, GY + bh3 / 2, -38 - rand() * 6);
+        }
+        ogGround((x, z) => GY, 16, 26, 6, (x, z) => z > -14);
+      },
+    },
   };
 }

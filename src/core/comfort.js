@@ -63,8 +63,8 @@ export function comfortDetail() {
   let limitMod = 0;
   const wt = _weatherType();
   // 단열 지식(§9): 얇은 셸터 악천후 쾌적 페널티 무효 (insulation 개조와 동급).
-  //   customsSeal(2.0 세관 창구 봉쇄)도 동급 — 판자로 외풍을 막는다("shelter는 응당 안전해야").
-  if (sh.cold && (wt === 'rain' || wt === 'snow' || wt === 'storm') && !hasMod('insulation') && !hasMod('insulationPlus') && !hasMod('customsSeal') && !knowInsulates()) limitMod -= sh.cold;
+  //   customsSeal(세관 창구 봉쇄)·terminalPatch(대합실 지붕 틈 막기)도 동급 — "shelter는 응당 안전해야".
+  if (sh.cold && (wt === 'rain' || wt === 'snow' || wt === 'storm') && !hasMod('insulation') && !hasMod('insulationPlus') && !hasMod('customsSeal') && !hasMod('terminalPatch') && !knowInsulates()) limitMod -= sh.cold;
   if (sh.needsLight && light <= 0) limitMod -= sh.needsLight;
   // 한파: 방어 안 된 만큼 쾌적함 페널티 (완전 방어 시 0)
   if (coldSnapNetSeverity() > 0) limitMod -= BAL.seasons.coldSnapComfortPen;
