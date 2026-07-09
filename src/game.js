@@ -5330,7 +5330,10 @@ function playVignette(build, durMs, onDone) {
   if (vignetteActive) return; vignetteActive = true;
   const ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;z-index:400;background:#000;opacity:0;transition:opacity .6s';
-  const cv = document.createElement('canvas'); cv.style.cssText = 'width:100%;height:100%'; ov.appendChild(cv); document.body.appendChild(ov);
+  const cv = document.createElement('canvas'); cv.style.cssText = 'width:100%;height:100%;filter:contrast(1.15) saturate(1.16)'; ov.appendChild(cv);
+  const vf = document.createElement('div'); // 시네마틱 비네트 프레임 (모서리 감광)
+  vf.style.cssText = 'position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 46%, transparent 52%, rgba(10,4,2,0.6) 100%)';
+  ov.appendChild(vf); document.body.appendChild(ov);
   const vr = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
   const v = build();
   const fit = () => { vr.setSize(innerWidth, innerHeight, false); v.camera.aspect = innerWidth / innerHeight; v.camera.updateProjectionMatrix(); };
@@ -5364,39 +5367,81 @@ function buildJungleSunScene(rise) {
   scene.fog = new THREE.Fog(0x2a1626, 70, 380);
   const _tcB = new THREE.Color();
   const lerpC = (h1, h2, k, tgt) => tgt.setHex(h1).lerp(_tcB.setHex(h2), k);
-  const _tc1 = new THREE.Color(); const _tc2 = new THREE.Color(); const _tc3 = new THREE.Color();
-  // 태양(타워 뒤 먼 평면) + 글로우
-  const sunMat = new THREE.MeshBasicMaterial({ color: 0xff9a4a, fog: false });
-  const sun = new THREE.Mesh(new THREE.CircleGeometry(8.5, 44), sunMat);
+  const _tc1 = new THREE.Color(); const _tc2 = new THREE.Color(); const _tc3 = new THREE.Color(); const _tc4 = new THREE.Color();
+  // 태양: 서부의 이글거리는 해 — 백열 코어 + 3겹 코로나 + 수평 번 스트릭 + 틈새 광선
+  const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff0c0, fog: false });
+  const sun = new THREE.Mesh(new THREE.CircleGeometry(11.5, 48), sunMat);
   sun.position.set(6, 4, -240); scene.add(sun);
   const gcv = document.createElement('canvas'); gcv.width = gcv.height = 256;
   const gg = gcv.getContext('2d'); const rg = gg.createRadialGradient(128, 128, 6, 128, 128, 127);
   rg.addColorStop(0, 'rgba(255,190,110,0.95)'); rg.addColorStop(0.4, 'rgba(255,110,50,0.4)'); rg.addColorStop(1, 'rgba(255,90,40,0)');
   gg.fillStyle = rg; gg.fillRect(0, 0, 256, 256);
-  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gcv), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-  glow.scale.set(150, 150, 1); scene.add(glow);
+  const glowTex = new THREE.CanvasTexture(gcv);
+  const mkGlow = (sc) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })); sp.scale.set(sc, sc, 1); scene.add(sp); return sp; };
+  const glowCore = mkGlow(85), glowMid = mkGlow(190), glowWide = mkGlow(340);
+  const scv = document.createElement('canvas'); scv.width = 256; scv.height = 32; // 지평선이 달궈지는 수평 스트릭
+  const sg2 = scv.getContext('2d'); const sgr = sg2.createLinearGradient(0, 0, 256, 0);
+  sgr.addColorStop(0, 'rgba(255,140,60,0)'); sgr.addColorStop(0.5, 'rgba(255,190,120,0.7)'); sgr.addColorStop(1, 'rgba(255,140,60,0)');
+  sg2.fillStyle = sgr; sg2.fillRect(0, 0, 256, 32);
+  const streak = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(scv), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+  streak.scale.set(300, 12, 1); scene.add(streak);
+  const rayMat = new THREE.MeshBasicMaterial({ color: 0xffb668, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide });
+  const rayGroup = new THREE.Group(); // 사광 — 타워 틈새로만 뻗는다(협곡 뒤 배치라 실루엣이 자연 차폐)
+  for (let i = 0; i < 7; i++) { const pv = new THREE.Group(); const rp = new THREE.Mesh(new THREE.PlaneGeometry(2.6 + (i % 3), 150), rayMat); rp.position.y = 75; pv.add(rp); pv.rotation.z = -0.9 + i * 0.3; rayGroup.add(pv); }
+  rayGroup.position.set(6, 4, -239.5); scene.add(rayGroup);
   // 콘크리트 정글 실루엣 4겹: 원경(지평선 잔광에 물듦)→전경 옥상선(발코니에서 내려다보는 낮은 지붕들)
   const srand = seededRand(2409);
   const JG = [ // [zBase, n, hMin, hVar, wMin, wVar, yBase]
     [-210, 16, 16, 26, 9, 14, -6], [-160, 13, 13, 22, 8, 13, -6],
     [-105, 10, 9, 18, 8, 12, -6], [-58, 9, 2.5, 7, 14, 12, -6],
   ];
-  const layers = [];
+  const layers = []; const vegMats = [];
+  const glintMat = new THREE.MeshBasicMaterial({ color: 0xffc478, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+  const jaggedCrown = (mat, x, top, w, z) => { // 무너진 상층부 — 어긋난 계단 실루엣 + 철근
+    let cw = w * 0.9, cy = top;
+    const nj = 2 + Math.floor(srand() * 2);
+    for (let j = 0; j < nj; j++) {
+      const ch = 1.2 + srand() * 2.2; cw *= 0.55 + srand() * 0.25;
+      const cb = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, 6), mat);
+      cb.position.set(x + (srand() - 0.5) * w * 0.4, cy + ch / 2, z); cb.rotation.z = (srand() - 0.5) * 0.12; scene.add(cb);
+      cy += ch * 0.7;
+    }
+    for (let j = 0; j < 2; j++) { const rb = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.6 + srand() * 1.8, 0.16), mat); rb.position.set(x + (srand() - 0.5) * w * 0.6, cy + 0.8, z); rb.rotation.z = (srand() - 0.5) * 0.7; scene.add(rb); }
+  };
   for (let L = 0; L < 4; L++) {
     const mat = new THREE.MeshBasicMaterial({ color: 0x1a1420 });
+    const vegMat = new THREE.MeshBasicMaterial({ color: 0x141a0e });
     const [zb, n, hm, hv, wm, wv, yb] = JG[L];
     for (let i = 0; i < n; i++) {
       const tw4 = wm + srand() * wv, th4 = hm + srand() * hv;
       const x4 = -150 + (i / (n - 1)) * 300 + (srand() - 0.5) * 14;
       if (L < 3 && Math.abs(x4 - 6) < 13 + L * 3) continue; // 협곡: 해가 지는 골목을 비워둔다 (맨해튼헨지)
       const bd4 = new THREE.Mesh(new THREE.BoxGeometry(tw4, th4, 8), mat);
-      bd4.position.set(x4, yb + th4 / 2, zb + srand() * 16);
+      const z4 = zb + srand() * 16;
+      bd4.position.set(x4, yb + th4 / 2, z4);
+      if (srand() < 0.3) bd4.rotation.z = (srand() - 0.5) * 0.06; // 침하로 기운 몸체
       scene.add(bd4);
-      if (L < 3 && srand() < 0.4) { const an3 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 4 + srand() * 4, 0.5), mat); an3.position.set(bd4.position.x, yb + th4 + 2, bd4.position.z); scene.add(an3); }
-      if (L === 3 && srand() < 0.5) { const wt2 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.8, 1.6), mat); wt2.position.set(bd4.position.x + (srand() - 0.5) * tw4 * 0.6, yb + th4 + 0.9, bd4.position.z); scene.add(wt2); } // 옥상 물탱크
+      const topY = yb + th4;
+      if (L < 3 && srand() < 0.38) jaggedCrown(mat, x4, topY - 0.6, tw4, z4); // 붕괴 크라운
+      else if (L < 3 && srand() < 0.4) { const an3 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 4 + srand() * 4, 0.5), mat); an3.position.set(x4, topY + 2, z4); an3.rotation.z = (srand() - 0.5) * 0.3; scene.add(an3); }
+      if (L === 3 && srand() < 0.5) { const wt2 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.8, 1.6), mat); wt2.position.set(x4 + (srand() - 0.5) * tw4 * 0.6, topY + 0.9, z4); scene.add(wt2); } // 옥상 물탱크
+      if (srand() < 0.5) { // 도시를 되찾는 초목: 옥상 수관 + 외벽 넝쿨 폭포
+        const nb2 = 1 + Math.floor(srand() * 3);
+        for (let b = 0; b < nb2; b++) { const cw2 = 1.5 + srand() * 3; const cn2 = new THREE.Mesh(new THREE.BoxGeometry(cw2, 1 + srand() * 1.6, 5), vegMat); cn2.position.set(x4 + (srand() - 0.5) * tw4 * 0.8, topY + 0.5, z4); scene.add(cn2); }
+        const ivH = th4 * (0.3 + srand() * 0.45);
+        const iv = new THREE.Mesh(new THREE.BoxGeometry(0.8 + srand() * 1.6, ivH, 0.4), vegMat);
+        iv.position.set(x4 - tw4 / 2 + srand() * tw4, topY - ivH / 2 + 0.4, z4 + 4.1); scene.add(iv);
+      }
+      if (L >= 1 && L < 3 && Math.abs(x4 - 6) < 62 && srand() < 0.55) { // 지는 해가 깨진 유리에 박힌다
+        for (let gI2 = 0; gI2 < 2; gI2++) { const gq = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.8), glintMat); gq.position.set(x4 + (srand() - 0.5) * tw4 * 0.7, yb + th4 * (0.3 + srand() * 0.6), z4 + 4.15); scene.add(gq); }
+      }
     }
-    layers.push(mat);
+    layers.push(mat); vegMats.push(vegMat);
   }
+  // 세트피스: 이웃에 기대 쓰러진 타워 + 전단된 그루터기 (TLOU의 그 장면)
+  const lean2 = new THREE.Mesh(new THREE.BoxGeometry(10, 30, 8), layers[1]); lean2.position.set(-96, 4, -156); lean2.rotation.z = 0.42; scene.add(lean2);
+  const stump2 = new THREE.Mesh(new THREE.BoxGeometry(11, 12, 8), layers[1]); stump2.position.set(-110, 0, -158); scene.add(stump2);
+  jaggedCrown(layers[1], -110, 5.6, 11, -158);
   // 새 떼 + 노을 구름 띠(타워 위, 아래에서 달궈진) + 황혼 별
   const birdMat = new THREE.MeshBasicMaterial({ color: 0x0c0a10 });
   for (let i = 0; i < 6; i++) {
@@ -5416,10 +5461,28 @@ function buildJungleSunScene(rise) {
   for (const [cx5, cy5, csc] of [[-58, 50, 130], [52, 62, 160], [-4, 42, 95]]) {
     const cl2 = new THREE.Sprite(cloudMat); cl2.position.set(cx5, cy5, -236); cl2.scale.set(csc, csc * 0.22, 1); scene.add(cl2);
   }
-  // 최전경: 발코니 난간 실루엣 (여기 서서 보고 있다는 시점 근거)
+  // 층간 안개 밴드 — 공기원근을 실제 매질로 (소프트 그라데이션 플레인 3장)
+  const hcv = document.createElement('canvas'); hcv.width = 32; hcv.height = 64;
+  const hg = hcv.getContext('2d'); const hgr = hg.createLinearGradient(0, 0, 0, 64);
+  hgr.addColorStop(0, 'rgba(255,255,255,0)'); hgr.addColorStop(0.5, 'rgba(255,255,255,0.85)'); hgr.addColorStop(1, 'rgba(255,255,255,0)');
+  hg.fillStyle = hgr; hg.fillRect(0, 0, 32, 64);
+  const hazeTex = new THREE.CanvasTexture(hcv);
+  const hazeMats = [];
+  for (const [hy, hz, hh, ho] of [[7, -186, 30, 0.55], [5, -130, 22, 0.45], [3, -76, 15, 0.35]]) {
+    const hm2 = new THREE.MeshBasicMaterial({ map: hazeTex, transparent: true, opacity: ho, depthWrite: false, fog: false, color: 0xc06a3a });
+    const hp = new THREE.Mesh(new THREE.PlaneGeometry(400, hh), hm2); hp.position.set(0, hy, hz); scene.add(hp); hazeMats.push(hm2);
+  }
+  // 재와 불씨 — 죽은 도시 위를 떠도는 것들
+  const emN = 54; const emArr = new Float32Array(emN * 3); const emSeed = [];
+  for (let i = 0; i < emN; i++) { emArr[i * 3] = -90 + srand() * 180; emArr[i * 3 + 1] = 4 + srand() * 44; emArr[i * 3 + 2] = -70 + srand() * 30; emSeed.push(srand() * Math.PI * 2); }
+  const emGeo = new THREE.BufferGeometry(); emGeo.setAttribute('position', new THREE.BufferAttribute(emArr, 3));
+  const emMat = new THREE.PointsMaterial({ color: 0xffb060, size: 2.2, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, sizeAttenuation: false });
+  scene.add(new THREE.Points(emGeo, emMat));
+  // 최전경: 발코니 난간 실루엣 (여기 서서 보고 있다는 시점 근거) + 난간을 타는 넝쿨
   const railMat = new THREE.MeshBasicMaterial({ color: 0x0a080e });
   const parapet = new THREE.Mesh(new THREE.BoxGeometry(200, 5.2, 2), railMat); parapet.position.set(0, 3.2, 20); scene.add(parapet);
   const handrail = new THREE.Mesh(new THREE.BoxGeometry(200, 0.5, 2.4), new THREE.MeshBasicMaterial({ color: 0x2a2018 })); handrail.position.set(0, 6.1, 20); scene.add(handrail);
+  for (let i = 0; i < 9; i++) { const tf2 = new THREE.Mesh(new THREE.BoxGeometry(0.8 + srand() * 1.8, 0.6 + srand() * 1.4, 1.6), railMat); tf2.position.set(-46 + srand() * 92, 6.4 + tf2.geometry.parameters.height / 2 - 0.2, 20); scene.add(tf2); } // 파라펫 위 풀 포기
   const stGeo = new THREE.BufferGeometry(); const stPos = [];
   for (let i = 0; i < 240; i++) stPos.push(-260 + srand() * 520, 34 + srand() * 150, -250);
   stGeo.setAttribute('position', new THREE.Float32BufferAttribute(stPos, 3));
@@ -5427,21 +5490,44 @@ function buildJungleSunScene(rise) {
   scene.add(new THREE.Points(stGeo, stMat));
   const update = (t) => {
     const kn = rise ? t : 1 - t;                   // kn 0=어스름 1=골든아워 (해돋이는 증가, 해넘이는 감소)
+    camera.position.z = 42 - 3.5 * t; camera.lookAt(0, 22, -80); // 슬로 돌리인
     const g2 = skyCv.getContext('2d');
     const gr2 = g2.createLinearGradient(0, 0, 0, 1024);
-    lerpC(0x10142c, 0x486a9e, kn, _tc1); lerpC(0x582838, 0x8aa0c0, kn, _tc2); lerpC(0x902c30, 0xffc46a, Math.min(1, kn * 1.25), _tc3);
-    gr2.addColorStop(0, '#' + _tc1.getHexString()); gr2.addColorStop(0.52, '#' + _tc2.getHexString()); gr2.addColorStop(1, '#' + _tc3.getHexString());
+    lerpC(0x0c1024, 0x2e4468, kn, _tc1); lerpC(0x66242e, 0xb87848, kn, _tc2); lerpC(0x8a3020, 0xf09a4e, kn, _tc4); lerpC(0xa82818, 0xffc257, Math.min(1, kn * 1.2), _tc3);
+    gr2.addColorStop(0, '#' + _tc1.getHexString()); gr2.addColorStop(0.5, '#' + _tc2.getHexString()); gr2.addColorStop(0.78, '#' + _tc4.getHexString()); gr2.addColorStop(1, '#' + _tc3.getHexString());
     g2.fillStyle = gr2; g2.fillRect(0, 0, 2, 1024); skyTex.needsUpdate = true;
     const sunY = -10 + 30 * kn;                    // 협곡 사이 낮은 호 — 옥상선에 걸린 해가 골목으로 진다
-    sun.position.y = sunY; glow.position.set(6, Math.max(sunY, -2), -239);
-    lerpC(0xff5a2c, 0xffd88a, kn, sunMat.color);
-    glow.material.opacity = 0.55 + 0.45 * (1 - kn);
-    lerpC(0x2a1626, 0x6a7898, kn, scene.fog.color);
-    lerpC(0x30182a, 0x564a66, kn, layers[0].color);  // 원경 — 잔광에 물든 마우브
-    lerpC(0x221226, 0x3a3450, kn, layers[1].color);
-    lerpC(0x160e1c, 0x262238, kn, layers[2].color);
-    lerpC(0x0c0a12, 0x141220, kn, layers[3].color);  // 전경 옥상선 — 거의 검게
-    lerpC(0xc84c30, 0xf0c8a0, kn, cloudMat.color);
+    const gy = Math.max(sunY, -2);
+    sun.position.y = sunY;
+    lerpC(0xff5a22, 0xfff2c8, kn, sunMat.color);   // 지평선에선 녹은 쇳물, 떠 있을 땐 백열
+    glowCore.position.set(6, gy, -239); glowMid.position.set(6, gy, -239); glowWide.position.set(6, gy, -239);
+    glowCore.material.opacity = 0.85 + 0.1 * Math.sin(t * 46);          // 이글거림 — 코어가 떨린다
+    glowMid.material.opacity = 0.5 + 0.4 * (1 - kn) + 0.05 * Math.sin(t * 33);
+    glowWide.material.opacity = 0.26 + 0.2 * (1 - kn);
+    streak.position.set(6, Math.max(sunY, -1), -239.2);
+    streak.material.opacity = 0.25 + 0.5 * (1 - kn); streak.scale.x = 300 + 6 * Math.sin(t * 21);
+    rayGroup.position.y = gy; rayGroup.rotation.z = t * 0.05;
+    rayMat.opacity = 0.015 + 0.1 * Math.pow(kn, 1.6); // 해가 잠기면 광선도 급히 죽는다
+    lerpC(0x241018, 0x7a5a42, kn, scene.fog.color); // 먼지 낀 대기
+    lerpC(0x2c1420, 0x4e3a4a, kn, layers[0].color);  // 원경 — 잔광에 물든 마우브
+    lerpC(0x1e0f1e, 0x322a42, kn, layers[1].color);
+    lerpC(0x120a16, 0x1e1a2c, kn, layers[2].color);
+    lerpC(0x080609, 0x100e18, kn, layers[3].color);  // 전경 옥상선 — 거의 검게
+    lerpC(0x2a2818, 0x4a4630, kn, vegMats[0].color); // 초목 — 역광의 올리브
+    lerpC(0x1c2014, 0x30341e, kn, vegMats[1].color);
+    lerpC(0x12160c, 0x1e2412, kn, vegMats[2].color);
+    lerpC(0x0a0e08, 0x121608, kn, vegMats[3].color);
+    lerpC(0x5a2434, 0xd88a4a, kn, hazeMats[0].color); // 안개 밴드 — 해에 가까울수록 달궈진다
+    lerpC(0x46202e, 0xb87042, kn, hazeMats[1].color);
+    lerpC(0x321822, 0x94583a, kn, hazeMats[2].color);
+    glintMat.opacity = 0.15 + 0.7 * kn;              // 유리 파편광은 해와 함께 죽는다
+    for (let i = 0; i < emN; i++) {                  // 불씨 부유
+      emArr[i * 3 + 1] += 0.045; emArr[i * 3] += Math.sin(t * 6 + emSeed[i]) * 0.05;
+      if (emArr[i * 3 + 1] > 52) emArr[i * 3 + 1] = 4;
+    }
+    emGeo.attributes.position.needsUpdate = true;
+    emMat.opacity = 0.28 + 0.14 * Math.sin(t * 27) * Math.sin(t * 7 + 1);
+    lerpC(0xb03422, 0xe89a62, kn, cloudMat.color);
     stMat.opacity = Math.max(0, (0.22 - kn) / 0.22) * 0.9; // 어스름에만 별이 스민다
   };
   update(0);
