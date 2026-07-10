@@ -1439,5 +1439,8 @@
   "end3.rebuild.note": "아홉 번째 겨울이 지났다. 지도에 불빛이 돌아오고 있다.",
   "hidden.silo.leave": "돌아선다",
   "map.deepOpen": "슬럼 골목이 눈에 익었다. 막다른 줄 알았던 담 뒤로, 안쪽으로 이어지는 길이 보이기 시작한다.",
-  "map.deepOpenToast": "🕳️ 새 지역이 지도에 표시됩니다: 뒷골목 심부"
+  "map.deepOpenToast": "🕳️ 새 지역이 지도에 표시됩니다: 뒷골목 심부",
+  "btn.uiPin.title": "UI 배치 고정",
+  "ui.pinned": "📌 UI 배치가 고정됐습니다. 패널을 옮기려면 다시 눌러 푸십시오.",
+  "ui.unpinned": "📌 UI 배치 고정이 풀렸습니다."
 }

@@ -6569,6 +6569,8 @@ function makeDraggablePanel(el, key, title) {
   let drag = null;
   head.addEventListener('pointerdown', ev => {
     if (ev.target === minBtn) return;
+    if (uiState.pinned) return; // 📌 UI 고정(디렉터 2026-07-10): 드래그 시작 자체를 막는다 — 접기(–)는 유지
+
     const z = getUiz();
     const r = el.getBoundingClientRect();
     // dx/dy는 visual 좌표계 안에서의 오프셋이므로 그대로 두되, 매 이동마다 pre-zoom으로 환산해 되돌린다
@@ -9261,6 +9263,22 @@ $('cam-zout').addEventListener('click', () => { exitCatCloseup(); camState.zoom 
 $('cam-home').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw = Math.PI / 4; setPanTarget(0, 0); fitZoomForShelter(); }); // #70: 홈 복귀에 팬 0,0 리셋 포함
 // 👁 게임 UI 숨김 토글 (디렉터 UI 재배치): 게임플레이 패널만 숨기고 카메라 조작/편집은 유지. 배경화면 모드와 별개의 인게임 뷰 정리.
 { const uib = $('btn-ui-toggle'); if (uib) uib.addEventListener('click', () => { const hid = document.body.classList.toggle('ui-hidden'); uib.classList.toggle('primary', hid); toast(t(hid ? 'ui.hidden' : 'ui.shown')); }); }
+// 📌 UI 배치 고정 토글 (디렉터 2026-07-10): 패널 드래그를 잠가 실수 이동을 원천 차단.
+//   uiState.pinned에 영속(패널 위치와 같은 저장소) — 재시작해도 고정 유지. 접기(–)·숨김(👁)은 별개.
+{
+  const pb = $('btn-ui-pin');
+  const syncPin = () => {
+    if (pb) pb.classList.toggle('primary', !!uiState.pinned);
+    document.body.classList.toggle('ui-pinned', !!uiState.pinned);
+  };
+  if (pb) pb.addEventListener('click', () => {
+    uiState.pinned = !uiState.pinned;
+    saveUiState();
+    syncPin();
+    toast(t(uiState.pinned ? 'ui.pinned' : 'ui.unpinned'));
+  });
+  syncPin(); // 부팅 복원
+}
 // 패널 드래그/접기 활성화
 makeDraggablePanel($('hud'), 'hud', t('panel.hud'));
 makeDraggablePanel($('exp-panel'), 'exp', t('panel.exp'));

@@ -1439,5 +1439,8 @@
   "end3.rebuild.note": "The ninth winter has passed. The lights are coming back to the map.",
   "hidden.silo.leave": "Turn away",
   "map.deepOpen": "The slum alleys are familiar now. Behind a wall I took for a dead end, a way deeper in is starting to show.",
-  "map.deepOpenToast": "🕳️ New area on the map: Back-Alley Depths"
+  "map.deepOpenToast": "🕳️ New area on the map: Back-Alley Depths",
+  "btn.uiPin.title": "Lock UI layout",
+  "ui.pinned": "📌 UI layout locked. Press again to unlock and move panels.",
+  "ui.unpinned": "📌 UI layout unlocked."
 }

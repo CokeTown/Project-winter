@@ -746,6 +746,9 @@
     font-size: 10px; color: var(--text-dim); letter-spacing: 1px;
   }
   .p-head:active { cursor: grabbing; }
+  /* 📌 UI 배치 고정: 드래그 잠금 상태 — 손이 못 잡는 헤더 (디렉터 2026-07-10) */
+  body.ui-pinned .p-head, body.ui-pinned .p-head:active { cursor: default; }
+  body.ui-pinned .p-head .p-title { opacity: 0.75; }
   .p-head .p-title { flex: 1; overflow: hidden; white-space: nowrap; }
   .p-head .p-min {
     background: #2c3140; border: 1px solid var(--panel-border); border-radius: 2px;
