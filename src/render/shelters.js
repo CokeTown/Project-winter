@@ -203,9 +203,6 @@ export function makeShelterBuilders(ctx) {
         tagDecoWall(plyMat); // (B-①) 옥탑 가벽의 합판 낱장 — 벽지 대상 (색판 낱장은 폐허 자재감 유지)
         // 뒤섞인 판자 팔레트 (색·재질 뒤섞인 도시 폐허 자재)
         const panelCols = [0x8a7350, 0x6e6350, 0x7d6a4a, 0x5f6a6e, 0x86745a, 0x655b48, 0x6a6660];
-        // 콘크리트 옥탑 뼈대 기둥 4개 (모서리)
-        for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]])
-          B(roomGroup, 0.18, h + 0.1, 0.18, 0x5a5a57, sx * (w / 2 + 0.09), (h + 0.1) / 2, sz * (d / 2 + 0.09));
         // 패널 가벽 빌더: 방 한 변을 낱장 판자를 세로로 잇대어 채운다 (문 개구부 지원)
         const pr = seededRand(53);
         const mkPatchWall = (len, doorC) => {
@@ -250,6 +247,12 @@ export function makeShelterBuilders(ctx) {
           { group: mkPatchWall(d), pos: [-w / 2 - 0.09, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
           { group: mkPatchWall(d), pos: [w / 2 + 0.09, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
         ]);
+        // 콘크리트 옥탑 뼈대 기둥 4개 (모서리) — 칩 task_ad77c624 본수정: 종전엔 makeWalls 이전에
+        //   roomGroup 직속 생성이라 컬링 미편입 → 전면 벽이 페이드돼도 검은 막대 2개가 시야 정중앙에
+        //   남던 것(트레일러 B0 신고의 원인). 앞(+z)/뒤(-z) 벽 컬링에 편입해 벽과 함께 페이드한다.
+        for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]])
+          attachToWall(0, 0, sz,
+            B(roomGroup, 0.18, h + 0.1, 0.18, 0x5a5a57, sx * (w / 2 + 0.09), (h + 0.1) / 2, sz * (d / 2 + 0.09)));
         // 문틀 (개구부 테두리) — ⑤ 앞(+z)벽 부착물 → +z 벽 컬링과 동기화(허공 부유 방지)
         const doorX = 0; // 앞벽 중앙
         attachToWall(0, 0, 1,
