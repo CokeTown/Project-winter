@@ -2643,6 +2643,7 @@ const MAP_MARKERS = {
   commercial:  { x: 74, y: 18 },  // 우상 무너진 빌딩(도심)
   industrial:  { x: 18, y: 56 },  // 좌하 공장
   slum:        { x: 78, y: 57 },  // 우하 판자촌
+  slumdeep:    { x: 86, y: 64 },  // #167 판자촌 안쪽 — 슬럼 핀의 대각 안깊이 (숙련 ★1 해금 전엔 비노출)
   // #85 도시 전도: 확장 5종을 지리 서사대로 — 항구 벨트(남쪽 해안 하단), 리조트(북동 산정),
   //   금지 구역(동남 봉쇄선 너머 — 슬럼 아래로 격리감). 남동 밀집을 풀어 마커 간 간격 확보.
   harborYard:  { x: 38, y: 79 },  // 하단 좌중 야적장(컨테이너 부두)
@@ -3106,6 +3107,11 @@ function resolveExpedition() {
   if (isForbiddenRegion(exp.region)) { wearHazmat(); if (state.hazmat) notes.push(t('hazmat.wearNote', { dur: state.hazmat.dur })); }
   // 2.0 지역 숙련: 티어 상승의 순간 — 성패와 무관하게 알린다 (실패한 트립도 진행이었다는 감각).
   if (masteryUp) notes.push(t('mastery.up', { name: LName(r), stars: '★'.repeat(masteryUp) }));
+  // #167 2겹화: 슬럼 ★1 도달의 그 귀환에서 심부가 열린다 — 지도에 새 핀 + 아침 보고 한 줄.
+  if (masteryUp === 1 && exp.region === 'slum') {
+    notes.push(t('map.deepOpen'));
+    toast(t('map.deepOpenToast'));
+  }
   // hard=true인 기본 획득에만 하드 -30%를 적용한다. 은닉처 loot×2 버프는 hard=false로 호출해
   // 온전한 2배를 보장 — 유저가 얻은 "2배" 버프의 체감 가치를 하드가 깎지 않도록.
   // 1.1 항만 야적장: 그날 부스트되는 전리품 1종(결정론적, 왕복/시뮬 재현) · 수산시장: 겨울 결빙 절반.
@@ -7910,7 +7916,9 @@ function tickExpeditionUI() {
     //   일일 쿨다운 미공유(즉흥 발견의 결) · 탐험당 1회 · 발동 시 이번 탐험 일반 중간 인카운터는 양보(팝업 과밀 방지).
     if (!state.exp.riskRolled && (1 - remain / total) >= 0.35) {
       state.exp.riskRolled = true;
-      if (!state.pendingEvent && !isWallpaper() && Math.random() < (BAL.events.riskExpChance || 0) * encFreqMul()) {
+      // #167: 뒷골목 심부는 무너짐이 잦다 — 리스크 인카운터 배수 (riskDeepMul)
+      const deepMul = state.exp.region === 'slumdeep' ? (BAL.events.riskDeepMul || 1.5) : 1;
+      if (!state.pendingEvent && !isWallpaper() && Math.random() < (BAL.events.riskExpChance || 0) * deepMul * encFreqMul()) {
         state.pendingEvent = 'collapsed_entrance';
         state.exp.midRolled = true;
       }
@@ -9997,4 +10005,6 @@ window.__shelter = {
   applyAccessibility, gamepad: () => padState,
   // #170 REV3 엔딩 개정 QA 훅: 사일로 돌아서기·재건 비네트·밤 발화 채널·겨울 통과 직접 구동
   runSiloSequence, runRebuildSequence, tryDoctorRadio, runEndingSequence, passWinter,
+  // #167 2겹화 QA 훅: 지역 게이트·숙련 티어·성공률 분해 직접 조회
+  regionUnlocked, masteryTier, rateParts,
 };

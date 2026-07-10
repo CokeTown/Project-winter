@@ -594,6 +594,7 @@ export function makeEvents(ctx) {
       icon: '🧱', titleId: 'ev.collapse.title',
       textFn: () => {
         const rg = state.exp && state.exp.region;
+        if (rg === 'slumdeep') return t('ev.collapse.text.slum'); // #167 심부: 슬럼 문안 공유 (같은 골목의 안쪽)
         return t(['slum', 'residential', 'industrial', 'harbor'].includes(rg) ? `ev.collapse.text.${rg}` : 'ev.collapse.text');
       },
       choices: [

@@ -120,6 +120,16 @@ export const REGIONS = {
     lootRes: [['parts', 2, 2], ['cloth', 2, 2], ['painkiller', 1, 1, 0.15], ['antiseptic', 1, 1, 0.15]],
     injuries: ['deep', 'sprain', 'infection'],
   },
+  // #167 지역 2겹화 파일럿: 슬럼의 속 — 겉(슬럼 숙련 ★1)을 아는 사람에게만 열리는 안쪽 골목.
+  //   신규 UI 개념 0: 지도 핀·탐험·숙련·컨디션 문법 전부 재사용. 기본율은 표층보다 낮고(제 숙련을
+  //   따로 쌓는다), 전리품 플로어는 더 높다 — 아무도 못 턴 방들. 무너짐(#165)이 잦다(riskDeepMul).
+  slumdeep: {
+    name: '뒷골목 심부', nameEn: 'Back-Alley Depths', emoji: '🕳️', rate: 0.22, time: 85,
+    pool: Object.keys(DEFS), furnChance: 0.05,
+    desc: '슬럼의 안쪽 · 아무도 못 턴 방들', descEn: 'The inside of the slums · rooms no one has looted', risk: '극도로 높음 — 무너짐이 잦다', riskEn: 'Extreme — collapses are frequent',
+    lootRes: [['parts', 2, 3], ['cloth', 2, 3], ['material', 1, 2], ['painkiller', 1, 1, 0.25], ['antiseptic', 1, 1, 0.25], ['canned', 1, 1, 0.2]],
+    injuries: ['deep', 'infection'],
+  },
   // ── 1.1 항구 지역 2종 (harbor 해금 = 항구 셸터 해금 이후. 지도 마커 항구 구역) ──
   harborYard: {
     name: '항만 야적장', nameEn: 'Harbor Yard', emoji: '🚢', rate: 0.5, time: 45,

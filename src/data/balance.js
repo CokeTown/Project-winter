@@ -213,6 +213,7 @@ export const BAL = {
     // #165 탐험 리스크 인카운터 (디렉터 2026-07-10): 진행률 35% 지점 별도 롤 — "무너진 입구" Yes/No.
     //   Yes = 치장템(도료·도면) 가중 드랍 + 부상 리스크(모드별). 탐험당 최대 1회, 발동 시 일반 중간 인카운터는 양보.
     riskExpChance: 0.22,   // 탐험당 리스크 인카운터 발동 확률 (~5탐험에 1번 꼴)
+    riskDeepMul: 1.5,      // #167 뒷골목 심부 배수 — 속은 자주 무너진다 (0.22×1.5=0.33)
     riskInjury: { normal: 0.25, hard: 0.32, hardcore: 0.38, zen: 0.2, wallpaper: 0 }, // Yes 선택 시 경상 확률 — 리스크 트레이드오프의 값
     memoDropChance: 0.02,  // 탐험 성공 시 지역 메모 1개 드랍 확률 (디렉터 지시: 문서 희소화 12%→2% — 종이 한 장이 귀해야 한다)
     willDropChance: 0.02,  // 탐험 성공 시 생존자 유서 드랍 확률 (극저확률, REQ-LORE-01: 1.5~2.5% 밴드)
@@ -398,6 +399,7 @@ export const BAL = {
       commercial: ['mustard', 'terracotta', 'slateBlue'],
       industrial: ['redOxide', 'ashgray', 'charcoal'],
       slum: ['walnutStain', 'olive', 'charcoal'],
+      slumdeep: ['charcoal', 'terracotta', 'olive'], // #167 심부: 오래 탄 것과 오래된 벽돌의 색
       harborYard: ['slateBlue', 'whitewash'],
       fishMarket: ['sage', 'ashgray'],
       resort: ['lavender', 'whitewash', 'sage'],

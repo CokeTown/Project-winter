@@ -1407,7 +1407,7 @@
   "map.cond.richTip": "Yields are good these days (+25%)",
   "map.cond.leanTip": "Picked thin these days (-20%)",
   "end3.inv.title": "The Invitation on the Table",
-  "end3.inv.text": "The invitation hasn't moved from the table all night. One line of coordinates, one date — three days from now.<br>They don't knock on doors. They're the kind of people who never have to.",
+  "end3.inv.text": "The invitation hasn't moved from the table all night. One line of coordinates, one date. Three days from now.<br>They don't knock on doors. They're the kind of people who never have to.",
   "end3.inv.c0": "Go to the coordinates",
   "end3.inv.c1": "Put it in the stove",
   "end3.inv.c2": "Keep it in the drawer",
@@ -1422,7 +1422,7 @@
   "end3.due.r0": "I put the paper in my pocket and stepped out. A single sheet of paper, and it was the heaviest thing I carried.",
   "end3.due.r1": "Noon came and went. I split firewood all afternoon. An axe is good for clearing the head.",
   "end3.call.title": "Transmission at Night",
-  "end3.call.text": "Near midnight, the radio came alive on its own. The doctor. A long stretch of nothing but static, then —<br>\"…An opening record came through. Near your coordinates.\" And then no questions at all.<br>\"The route is still alive. I'll ask just once more. Will you come?\"",
+  "end3.call.text": "Near midnight, the radio came alive on its own. The doctor. A long stretch of nothing but static before the words came.<br>\"…An opening record came through. Near your coordinates.\" And then no questions at all.<br>\"The route is still alive. I'll ask just once more. Will you come?\"",
   "end3.call.c0": "Go",
   "end3.call.c1": "Stay",
   "end3.call.r0": "I wrote down the coordinates. The pencil didn't sit right in my hand.",
@@ -1437,5 +1437,7 @@
   "end3.rebuild.line3": "The migratory birds are back. Seems they knew before I did that the sky had thinned.",
   "end3.rebuild.line4": "The world hadn't ended. The winter was just very, very long.",
   "end3.rebuild.note": "The ninth winter has passed. The lights are coming back to the map.",
-  "hidden.silo.leave": "Turn away"
+  "hidden.silo.leave": "Turn away",
+  "map.deepOpen": "The slum alleys are familiar now. Behind a wall I took for a dead end, a way deeper in is starting to show.",
+  "map.deepOpenToast": "🕳️ New area on the map: Back-Alley Depths"
 }

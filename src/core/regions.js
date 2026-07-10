@@ -8,7 +8,7 @@
    ============================================================ */
 import { state } from './state.js';
 import { seasonOf } from './season.js';
-import { rateParts } from './expedition.js';
+import { rateParts, masteryTier } from './expedition.js';
 import { REGIONS } from '../data/world.js';
 import { SHELTER_META } from '../data/shelters.js';
 import { BAL } from '../data/balance.js';
@@ -30,6 +30,9 @@ export function regionUnlocked(rid) {
   if (rid === 'resort') return state.successes >= SHELTER_META.lodge.unlockAt; // 1.3: 리조트는 스키 로지 해금 후
   if (rid === 'checkpoint' || rid === 'lab') return state.successes >= BAL.forbidden.unlockAt; // 1.4 금지구역(진입은 방호복 게이트가 별도)
   if (rid === 'citycore') return falloutCleared(); // 2.0: 봉쇄선 너머 수도의 심장 — 낙진이 걷혀야만
+  // #167 2겹화 파일럿: 뒷골목 심부는 겉(슬럼)을 아는 사람에게만 — 숙련 ★1(20회 시도)이 곧 열쇠.
+  //   "다시 마주칠 때 더 보인다"(DEPTH-DESIGN)의 공간 적용. 해금 전엔 지도에 아예 없다(소문조차 없음).
+  if (rid === 'slumdeep') return masteryTier('slum') >= 1;
   return true;
 }
 export function isForbiddenRegion(regionId) {
