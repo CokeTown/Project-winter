@@ -11,7 +11,7 @@ import { KNOWLEDGE, KNOWLEDGE_BRANCHES } from '../data/knowledge.js';
 import { hasKnowledge, knowledgePrereqMet, unlockKnowledge } from '../core/knowledge.js';
 
 export function makeModals(ctx) {
-  const { openModal, toast, wallpaperUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS } = ctx;
+  const { openModal, toast, wallpaperUnlocked, zenUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS } = ctx;
   const { getPaused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud } = ctx; // 추가 모달 의존
   const $ = id => document.getElementById(id);
 
@@ -19,16 +19,18 @@ export function makeModals(ctx) {
     const card = (mode, titleId, tagId, descId, opt = {}) => {
       const lock = opt.locked;
       // ★ 템플릿 리터럴 선행 공백 = 출력 HTML에 그대로 들어감. 코드 들여쓰기와 무관하게 원본(4/6/8칸) 유지 (모달 게이트 무손실).
+      // #158 잠금 문구는 카드별 키(mode.<id>.lock/{n}) — zen=겨울 1(모드 무관), wallpaper=코지 겨울 2.
       return `
     <div class="slot-card mode-card ${lock ? 'locked' : ''}" data-mode="${mode}" data-locked="${lock ? 1 : 0}">
       <div class="sl-body">
         <div class="mc-title">${lock ? '🔒 ' : ''}${t(titleId)}</div>
         <div class="mc-tag">${t(tagId)}</div>
-        <div class="sl-meta">${lock ? t('mode.wallpaper.lock', { n: BAL.rescue.unlockDay }) : t(descId)}</div>${opt.extra || ''}
+        <div class="sl-meta">${lock ? t('mode.' + mode + '.lock', { n: opt.lockN }) : t(descId)}</div>${opt.extra || ''}
       </div>
     </div>`;
     };
     const wpLocked = !wallpaperUnlocked();
+    const zenLocked = zenUnlocked ? !zenUnlocked() : false;
     // #74 데모: 코지+도전 2모드 (#159, 디렉터 2026-07-10 — "그래야 이 게임을 더 잘 알지").
     //   도전(하드)은 상업지구가 추가로 열린다(core/regions.js DEMO_HARD_REGIONS). 하드코어·무한·배경화면은 정식판의 것.
     const demoHardNote = DEMO_ED ? `<div class="sl-meta" style="color:var(--accent);margin-top:2px">${t('demo.hardPerk')}</div>` : '';
@@ -38,13 +40,17 @@ export function makeModals(ctx) {
         ? card('hard', 'mode.hard', 'mode.hard.tag', 'mode.hard.desc', { extra: demoHardNote })
         : card('hard', 'mode.hard', 'mode.hard.tag', 'mode.hard.desc')
         + card('hardcore', 'mode.hardcore', 'mode.hardcore.tag', 'mode.hardcore.desc')
-        + card('zen', 'mode.zen', 'mode.zen.tag', 'mode.zen.desc')
-        + card('wallpaper', 'mode.wallpaper', 'mode.wallpaper.tag', 'mode.wallpaper.desc', { locked: wpLocked }))
+        + card('zen', 'mode.zen', 'mode.zen.tag', 'mode.zen.desc', { locked: zenLocked, lockN: BAL.modes.zenWinters })
+        + card('wallpaper', 'mode.wallpaper', 'mode.wallpaper.tag', 'mode.wallpaper.desc', { locked: wpLocked, lockN: BAL.modes.wallpaperWinters }))
       + `</div><button class="pixel-btn mode-back">${t('mode.back')}</button>`;
     openModal(t('mode.pick.title'), body);
     $('modal-body').querySelector('.mode-back').addEventListener('click', () => openSlotModal('new'));
     $('modal-body').querySelectorAll('.mode-card').forEach(c => c.addEventListener('click', () => {
-      if (c.dataset.locked === '1') { toast(t('mode.wallpaper.lockToast', { n: BAL.rescue.unlockDay })); return; }
+      if (c.dataset.locked === '1') {
+        const m0 = c.dataset.mode;
+        toast(t('mode.' + m0 + '.lockToast', { n: m0 === 'zen' ? BAL.modes.zenWinters : BAL.modes.wallpaperWinters }));
+        return;
+      }
       const m = c.dataset.mode;
       const fresh = JSON.parse(JSON.stringify(DEFAULT_STATE));
       fresh.savedAt = Date.now();
