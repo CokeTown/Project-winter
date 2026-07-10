@@ -67,12 +67,14 @@ There is no death scene. No hand pushing you forward. What is here is only an in
 
 ---
 
-## 3. 태그 (스팀 등록 순 — 가중치는 앞쪽이 크다, 태그 마법사 §7-c 정본)
+## 3. 태그 (스팀 등록 순 20개 — 가중치는 앞쪽이 크다, 실제 목차 검증 2026-07-11)
 
-Cozy, Base Building, Life Sim, Idler, Cats, Post-apocalyptic, Relaxing, Survival, Crafting, Resource Management, Exploration, Atmospheric, Story Rich, Wholesome, Singleplayer, Voxel, Winter, Indie
+Cozy, 기지 건설, 생활 시뮬레이션, 아이들러, 고양이, 포스트아포칼립스, 릴랙싱, 생존, 크래프팅, 자원관리, 탐험, 분위기 있는, 풍부한 스토리, 복수 결말, 선택의 중요성, 감정적인, 깊은 세계관, 복셀, 싱글플레이어, 인디
 
-> 정정(2026-07-11): 구 목록의 `Pixel Graphics`·`2.5D`는 오류 — 게임 렌더는 **3D 복셀 + 아이소메트릭**이다(픽셀아트는 인카운터 삽화 스타일일 뿐). `Voxel`로 교체.
-> 순서 정정: COMMS-KIT §1("살림을 판다, 서바이벌 아님") — Cozy/Base Building/Life Sim을 앞세우고 Survival은 8번째로 내림.
+> **Cozy**는 스팀 태그 목차(카테고리)엔 없고 「기타」 자유검색으로만 추가 가능 — 우리 관객의 1순위 발견 태그라 반드시 검색해 넣는다(안 뜨면 "아늑한"도 시도).
+> 여유분/러너업(20 초과 시): 눈, 웅장한 사운드트랙, 양식화된, 아이소메트릭, 3D, 관리, 컨트롤러, 심리적, 리플레이 가치.
+> 정정(2026-07-11): 구 목록의 `Pixel Graphics`·`2.5D`는 오류 — 게임 렌더는 **3D 복셀 + 아이소메트릭**(픽셀아트는 인카운터 삽화뿐). `복셀`로 교체.
+> 순서: COMMS-KIT §1("살림을 판다, 서바이벌 아님") — Cozy/기지 건설/생활 시뮬레이션 앞세우고 생존은 8번째.
 
 ---
 
