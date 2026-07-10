@@ -4942,6 +4942,11 @@ function recordTabHtml() {
   // #90: 데모 총계는 데모 풀 기준 — "63개 중 6개" 같은 표기로 숨은 콘텐츠 규모가 새지 않게
   const total = DEMO_ED ? DEMO_MEMO_REGIONS.reduce((a, rg) => a + (MEMOS_BY_REGION[rg] || []).length, 0) + Object.keys(WILLS).length : memosTotal();
   const radioTotal = DEMO_ED ? DEMO_BROADCASTS.size : broadcastsTotal();
+  // ??? 티저 (디렉터 2026-07-09): 잠긴 규모는 보여주되 내용(제목)은 은닉 — "뭐가 더 있지?"가 구매 동기가 된다
+  if (DEMO_ED) {
+    const hiddenN = (memosTotal() - total) + (broadcastsTotal() - radioTotal);
+    sections += `<div class="prep-row" style="cursor:default;opacity:0.55;border-top:1px solid var(--panel-border);margin-top:6px"><span>🔒</span><span>???</span><span class="p-cost">${t('demo.moreRecords', { n: hiddenN })}</span></div>`;
+  }
   return `
     <div class="report-sec"><span class="r-title">${t('record.memoTitle', { n: memosCollected(), total })}</span>${sections}</div>
     <div class="report-sec"><span class="r-title">${t('record.radioTitle', { n: broadcastsCollected(), total: radioTotal })}</span>${radioRows}</div>
@@ -4970,7 +4975,13 @@ function openJournalModal(tab = 'journal') {
       `<span title="${LColor(def, i)}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-left:3px;background:${arr[i] ? '#' + c.toString(16).padStart(6, '0') : '#22252d'};border:1px solid ${arr[i] ? 'var(--accent)' : '#333'}"></span>`).join('');
     return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${def.emoji}${sw}</span>`;
   }).join('');
-  const colTotal = colDefs.reduce((a, [, d]) => a + d.colors.length, 0);
+  let colTotal = colDefs.reduce((a, [, d]) => a + d.colors.length, 0);
+  // ??? 티저 (디렉터 2026-07-09): 도감에도 "미확인 N종" 실루엣 — 규모만 노출, 정체(이모지·이름)는 은닉
+  let colTeaser = '';
+  if (DEMO_ED) {
+    const hiddenFurn = Object.keys(DEFS).length - colDefs.length;
+    if (hiddenFurn > 0) colTeaser = `<div style="font-size:11px;opacity:0.55;margin-top:4px">🔒 ??? — ${t('demo.moreFurn', { n: hiddenFurn })}</div>`;
+  }
   // 테마 세트 도감 뱃지 (#13): 충족 시 강조.
   const themeBadges = THEME_SETS.map(ts => {
     const done = themeSetActive(ts);
@@ -4981,7 +4992,7 @@ function openJournalModal(tab = 'journal') {
       ${t('journal.statsLine', { day: state.day, sicon: se.icon, exp: state.stats.exp, succ: state.stats.success, craft: state.stats.craft || 0, stay: state.stayDays || 0 })}
     </div>
     ${comfortBreakdownHtml()}
-    <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount(), total: colTotal })}</span><br>${colHtml}</div>
+    <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount(), total: colTotal })}</span><br>${colHtml}${colTeaser}</div>
     <div class="report-sec"><span class="r-title">${t('deco.themeBadgeTitle', { n: activeThemeSets().length, total: THEME_SETS.length })}</span><br>${themeBadges}</div>
     <div class="report-sec"><span class="r-title">${t('journal.achTitle', { n: Object.values(state.achs || {}).filter(Boolean).length, total: ACHS.length })}</span></div>
     ${achsHtml}`;

@@ -403,6 +403,8 @@
   "craft.noMods": "No modifications available for this shelter.",
   "craft.make": "Craft",
   "craft.fullOnly": "Craftable in the full game",
+  "demo.moreFurn": "{n} undiscovered furnishings — found in the full game",
+  "demo.moreRecords": "{n} records still locked — found in the full game",
   "craft.installed": "✓ Installed",
   "craft.install": "Install",
   "craft.doneRes": "{emoji} {name} ×{n} crafted",
