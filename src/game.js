@@ -3043,7 +3043,7 @@ function resolveExpedition() {
       const fam = rollPaintFamily(exp.region);
       state.paints[fam] = (state.paints[fam] || 0) + 1;
       notes.push(t('paint.foundNote', { name: LName(PAINT_FAMILIES[fam]) }));
-      special.push({ icon: '🪣', label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
+      special.push({ icon: icon('icon_loot_paint', '🪣'), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
       jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
     }
     // DDD-4 시그니처 도면 (REWARD-LOOP ② 2차): 지역 독점 가구의 도면 — 도료보다 희귀한 잭팟 층.
@@ -3055,7 +3055,7 @@ function resolveExpedition() {
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
         notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
-        special.push({ icon: '📐', label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'legendary' });
+        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'legendary' });
         jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
       }
     }
@@ -4888,7 +4888,7 @@ function recordTabHtml() {
   const bown = state.broadcasts || {};
   const regionKeys = { residential: 'record.regionRes', commercial: 'record.regionCom', industrial: 'record.regionInd', slum: 'record.regionSlum' };
   const memoRow = (id, tbl) => owned[id]
-    ? `<div class="prep-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>📄</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    ? `<div class="prep-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>${icon('icon_rec_memo', '📄')}</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
     : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
   let sections = '';
   // #90: 데모는 스코프 내 지역 섹션만 — 잠긴 지역(상업지구 등)은 존재 자체를 안 보인다
@@ -4934,7 +4934,7 @@ function recordTabHtml() {
   sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
   // 라디오 로그 (#90: 데모는 수집 가능한 방송 슬롯만 — 본편 서사 방송은 총계에도 안 잡힌다)
   const radioRows = Object.keys(BROADCASTS).filter(id => !DEMO_ED || DEMO_BROADCASTS.has(id)).map(id => bown[id]
-    ? `<div class="prep-row" style="cursor:pointer" data-broadcast="${id}"><span>📻</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    ? `<div class="prep-row" style="cursor:pointer" data-broadcast="${id}"><span>${icon('icon_rec_radio', '📻')}</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
     : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
   const distant = state.distantLight?.count
     ? `<div class="report-sec"><span class="r-title">${t('record.distantTitle', { n: state.distantLight.count })}</span></div>` : '';
@@ -4943,7 +4943,7 @@ function recordTabHtml() {
   let sketchSec = '';
   if (state.observatoryDone || sketchesCollected() > 0) {
     const rows = Object.keys(SKETCHES).map(id => sown[id]
-      ? `<div class="prep-row" style="cursor:pointer" data-sketch="${id}"><span>🌌</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+      ? `<div class="prep-row" style="cursor:pointer" data-sketch="${id}"><span>${icon('icon_rec_sketch', '🌌')}</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
       : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
     sketchSec = `<div class="report-sec"><span class="r-title">${t('record.sketchTitle', { n: sketchesCollected(), total: sketchesTotal() })}</span>${rows}</div>`;
   }
@@ -4953,7 +4953,7 @@ function recordTabHtml() {
   // ??? 티저 (디렉터 2026-07-09): 잠긴 규모는 보여주되 내용(제목)은 은닉 — "뭐가 더 있지?"가 구매 동기가 된다
   if (DEMO_ED) {
     const hiddenN = (memosTotal() - total) + (broadcastsTotal() - radioTotal);
-    sections += `<div class="prep-row" style="cursor:default;opacity:0.55;border-top:1px solid var(--panel-border);margin-top:6px"><span>🔒</span><span>???</span><span class="p-cost">${t('demo.moreRecords', { n: hiddenN })}</span></div>`;
+    sections += `<div class="prep-row" style="cursor:default;opacity:0.55;border-top:1px solid var(--panel-border);margin-top:6px"><span>${icon('icon_sys_locked', '🔒')}</span><span>???</span><span class="p-cost">${t('demo.moreRecords', { n: hiddenN })}</span></div>`;
   }
   return `
     <div class="report-sec"><span class="r-title">${t('record.memoTitle', { n: memosCollected(), total })}</span>${sections}</div>
@@ -4988,7 +4988,7 @@ function openJournalModal(tab = 'journal') {
   let colTeaser = '';
   if (DEMO_ED) {
     const hiddenFurn = Object.keys(DEFS).length - colDefs.length;
-    if (hiddenFurn > 0) colTeaser = `<div style="font-size:11px;opacity:0.55;margin-top:4px">🔒 ??? — ${t('demo.moreFurn', { n: hiddenFurn })}</div>`;
+    if (hiddenFurn > 0) colTeaser = `<div style="font-size:11px;opacity:0.55;margin-top:4px">${icon('icon_sys_locked', '🔒')} ??? — ${t('demo.moreFurn', { n: hiddenFurn })}</div>`;
   }
   // 테마 세트 도감 뱃지 (#13): 충족 시 강조.
   const themeBadges = THEME_SETS.map(ts => {
