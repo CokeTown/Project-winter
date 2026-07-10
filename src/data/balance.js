@@ -340,6 +340,8 @@ export const BAL = {
   /* ── 시그니처 도면 (DDD-4 / REWARD-LOOP ② 2차 — 디렉터 확정 2026-07-09) ──
      지역 독점 가구의 제작 도면 — 성공 탐험 저확률(도료 10%보다 희귀), 그 지역에서만.
      노말 성공률 기준 슬럼 2종 기대 ~33성공, 도심 3종 ~50성공 — 장기 pull. */
+  // #157 가구 티어 업그레이드 코스트 (그 자리 손질): key=목표 티어. 총합 = "온전한 가구 하나" 값.
+  tierUp: { 2: { material: 2 }, 3: { material: 2, parts: 1 } },
   blueprint: {
     dropChance: 0.06,
     regionItems: {
