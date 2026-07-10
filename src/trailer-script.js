@@ -1,5 +1,6 @@
-/* ── 트레일러 에디션 시나리오 v3 (#75 — 디렉터 스크립트 2026-07-09): 스크립트로만 동작하는 관람용 데모 ──
-   구성(디렉터 정본): 촛불 점화 → 꾸미기 스톱모션 → 탐험 전리품(희귀 골드/핑크 하이라이트+잭팟 유지)
+/* ── 트레일러 에디션 시나리오 v4 (#75 — 디렉터 2026-07-10 "첫 5~10초에 버티컬 슬라이스와 훅 전부"): ──
+   구성: **B0 10초 슬라이스(코지+고양이+생존 — 옥탑 눈밤 푸시인 → 정산 더블 잭팟 → 침대 T1→T3 모핑)**
+   → 촛불 점화 → 꾸미기 스톱모션 → 탐험 전리품(희귀 골드/핑크 하이라이트+잭팟 유지)
    → 전 셸터 투어(1.4 기준 12셸터, 컷당 ~1초, 낮→밤, 서서히 줌아웃) → 해 뜨고 지고+날씨 3종 스윕
    → 고양이(미디엄 → 클릭 시의 그 확대 클로즈업 전환) → 눈 내리는 밤 홀드(자막 자리).
    자막·라이터 소리·OST는 전부 디렉터가 편집에서 얹는다 — 에디션은 그림과 SFX만.
@@ -48,6 +49,60 @@ function cam(z, y, p) { const S = $S(); if (S.setZoom) S.setZoom(z); if (S.setYa
 
 /* 각 비트: run()은 검은 화면에서 무대를 깔고 fade(false)로 열며, 화면을 켜둔 채 끝난다(비트 간 짧은 암전은 play()가). */
 const beats = [
+  // ── B0 10초 슬라이스 (디렉터 2026-07-10): 첫 5~10초에 버티컬 슬라이스+훅 전부 — 코지·고양이·생존 ──
+  //    옥탑 한 씬에서 로딩 없이 3악장: ①코지 홀드(풀데코+고양이+눈밤 푸시인 4s) ②생존 컷(정산 개봉+더블 잭팟 2.6s)
+  //    ③성장 스냅(침대 T1→T2→T3 모핑 3s) — 마지막 프레임이 다시 코지로 닫힌다. 자막·OST는 디렉터 편집.
+  { id: 'slice', label: 'B0 10s vertical slice', async run() {
+    const S = $S(); loadHome();
+    dress(HOME_FULL);
+    // 침대를 T1(바닥 매트리스)로 강등 — ③에서 T1→T3 성장을 보여주기 위해
+    const bed = S.items.find((i) => /^bed$/i.test(i.defId));
+    if (bed && S.recolorItem) { bed.tier = 1; S.recolorItem(bed, bed.colorIdx); }
+    S.state.catCoat = 'tabby'; // 관람용 결정론: 치즈 태비 — 밤 러그 위에서도 또렷한 밝은 코트 (검은 고양이 실종 방지)
+    S.state.cat = 1; if (S.spawnCat) await S.spawnCat();
+    const c = S.cat && S.cat();
+    if (c && c.g) { c.g.position.set(-0.55, c.g.position.y, -0.55); c.g.rotation.y = 0.9; } // 러그 위 난로 불빛권
+    if (S.setCatMode) S.setCatMode('sit');
+    if (c) { c.mode = 'sit'; c.timer = 999; c.tgt = null; } // 10초 동안 앉은 채 깜빡임만 (#155)
+    // 옥탑 전면(+x,+z) 코너 기둥 숨김 — 컬링 미편입 골조가 오프닝 정중앙에 검은 막대로 선다(본수정은 칩 task_ad77c624)
+    if (c && c.g) {
+      let root = c.g; while (root.parent) root = root.parent;
+      root.traverse((o) => {
+        if (o.isMesh && o.geometry && o.geometry.parameters
+          && Math.abs(o.geometry.parameters.width - 0.18) < 0.001 && Math.abs(o.geometry.parameters.depth - 0.18) < 0.001
+          && o.geometry.parameters.height > 2 && o.position.z > 1) o.visible = false; // 전면(z+) 라인 기둥 2개 다
+      });
+    }
+    S.setWeather('snow'); S.setHour(20.7); cam(0.62, 1.0, 0.46);
+    await fade(false);
+    // ① 코지 홀드 — 눈 내리는 밤, 따뜻한 방과 고양이로 푸시인
+    window.__b0 = 'cozy';
+    await $T().cam([{ at: 0, zoom: 0.62 }, { at: 1, zoom: 0.92 }], 4000, 'out');
+    window.__b0 = 'loot';
+    // ② 생존 컷 — 정산 개봉 + 더블 잭팟 (B3와 같은 결정론 RNG — 모달 자체가 훅)
+    const or = Math.random; Math.random = () => 0.05;
+    S.state.paints = {}; S.state.blueprints = {};
+    S.state.exp = { region: 'slum', end: Date.now() - 1000, dur: 1, rate: 5, prep: [], startGameMin: S.state.gameMin, durMin: 120 };
+    window.__trailerScript._keepUI = true;
+    S.resolveExpedition();
+    Math.random = or;
+    const mb = document.getElementById('modal-back'); if (mb) mb.style.display = '';
+    // 잭팟 토스트 스택은 이제 본 게임이 자체 처리(top 오프셋) — 스크립트 보정 불요
+    await sleep(2600);
+    if (mb) mb.style.display = 'none';
+    document.querySelectorAll('.jackpot-toast').forEach((tEl) => tEl.remove());
+    window.__trailerScript._keepUI = false;
+    // ③ 성장 스냅 — 침대로 살짝 다가가며 T1→T2→T3. "폐허를 주워, 집을 깎는다"
+    $T().cam([{ at: 0, zoom: 0.92 }, { at: 1, zoom: 1.08 }], 2900, 'out');
+    for (const tier of [2, 3]) {
+      await sleep(950);
+      window.__b0 = 'morph' + tier;
+      if (bed && S.recolorItem) { bed.tier = tier; S.recolorItem(bed, bed.colorIdx); popIn(bed.group); }
+    }
+    await sleep(300); window.__b0 = 'hold';
+    await sleep(800); // T3 침대 + 고양이 + 눈밤 홀드 — 코지로 귀결
+    S.state.cat = 0; if (S.despawnCat) S.despawnCat(); // 다음 비트(B1 촛불 어둠)에 고양이 잔류 방지
+  } },
   // ── B1 촛불 점화: 전 광원 소등 상태에서 촛불 하나만 켜지며 방이 드러난다 (라이터 소리는 디렉터 편집) ──
   { id: 'candle', label: 'B1 candle light', async run() {
     const S = $S(); loadHome();

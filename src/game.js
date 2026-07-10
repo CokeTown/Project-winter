@@ -9641,6 +9641,7 @@ window.__shelter = {
   bunkerUndercroftRoute, showTruthPage, tryDoctorRadio,
   showDoctorDocPage, runSiloSequence, applyProjectEffect, // §9.6 「침묵」 (코어 테스트·접지 프로브용)
   PAINT_FAMILIES, RARE_PAINTS, PAINT_ALL, paintFamilyOf, paintFamilyRequired, rollPaintFamily, jackpotToast, showSelPanel, DEFS, BAL, // 도료+희귀 안료 (REWARD-LOOP ②) + 데이터 핸들
+  recolorItem, // 트레일러 B0 티어 모핑(T1→T3 재빌드) + QA 색/티어 스왑 프로브용
   rollOfflineGift, // DDD-5 복귀 서프라이즈 (코어 테스트용)
   tickRadioBubble, clearRadioBubble, latestRadioItem, positionRadioBubble,
   radioBubbleState: () => radioBubble ? { shown: radioBubble.el.style.display !== 'none', left: radioBubble.el.style.left, top: radioBubble.el.style.top, text: radioBubble.el.textContent } : null,
