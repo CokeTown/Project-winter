@@ -8066,6 +8066,9 @@ function jackpotToast(msg, hex = 0xffd88a) {
   const el = document.createElement('div');
   el.className = 'jackpot-toast';
   el.style.setProperty('--jp', '#' + hex.toString(16).padStart(6, '0'));
+  // 동시 잭팟(도료+도면)은 겹치면 안 읽힌다 — 살아있는 토스트 수만큼 아래로 스택
+  const live = document.querySelectorAll('.jackpot-toast:not(.out)').length;
+  if (live) el.style.top = `calc(74px + ${live} * 44px * var(--uiz, 1))`;
   el.textContent = msg;
   document.body.appendChild(el);
   playSfx('craft', { vol: 0.5 });
