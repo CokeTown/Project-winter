@@ -88,7 +88,15 @@ export const BAL = {
      "재기 가능선" — 하루치 안전망이지 난이도가 아니다(노말 정상 플레이는 도달 0). */
   rescue: {
     food: 3, water: 4, fuel: 2, canned: 2,
-    unlockDay: 150, // 배경화면 모드 해금: 노말 모드 누적 최고 생존일 도달 기준
+    unlockDay: 150, // (구) 배경화면 해금 기준 — #158 겨울 기반(modes.wallpaperWinters)으로 대체, 구제 물자 값만 존치
+  },
+
+  /* ── 모드 언락 게이트 (#158, 디렉터 2026-07-10) ──
+     "게임을 먼저 겪고 와라" — 무한은 어느 모드로든 겨울 1번, 꾸미기(배경화면)는 코지로 겨울 2번.
+     겨울 N번 넘김 = 최고 생존일이 N년째 봄에 닿음 (1년 = 계절 12일 × 4 = 48일 → N×48+1일). */
+  modes: {
+    zenWinters: 1,       // 무한 해금: 겨울 1번 (모드 무관 최고 생존일 기준)
+    wallpaperWinters: 2, // 꾸미기 해금: 코지(노말) 겨울 2번
   },
 
   /* ── 성공률 pity 보정 (expActualRate / resolveExpedition) ── */
@@ -347,6 +355,8 @@ export const BAL = {
   /* ── 시그니처 도면 (DDD-4 / REWARD-LOOP ② 2차 — 디렉터 확정 2026-07-09) ──
      지역 독점 가구의 제작 도면 — 성공 탐험 저확률(도료 10%보다 희귀), 그 지역에서만.
      노말 성공률 기준 슬럼 2종 기대 ~33성공, 도심 3종 ~50성공 — 장기 pull. */
+  // #157 가구 티어 업그레이드 코스트 (그 자리 손질): key=목표 티어. 총합 = "온전한 가구 하나" 값.
+  tierUp: { 2: { material: 2 }, 3: { material: 2, parts: 1 } },
   blueprint: {
     dropChance: 0.06,
     regionItems: {

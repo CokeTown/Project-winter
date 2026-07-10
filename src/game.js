@@ -1852,13 +1852,20 @@ function readStats() {
   try { return JSON.parse(Platform.cloud.load('nw-stats') || '{}') || {}; } catch (e) { return {}; }
 }
 function writeStats(s) { Platform.cloud.save('nw-stats', JSON.stringify(s)); }
-// 노말 모드에서 도달한 최고 생존일 갱신 (배경화면 해금 통계). day는 현재 게임일.
+// 계정 통계 갱신 (#158 모드 언락): bestDay=모드 무관 최고 생존일, normalBestDay=코지(노말) 최고 생존일.
 function recordNormalDay(day) {
-  if (_simRunning || state.mode !== 'normal' || state.qaUsed) return; // 시뮬레이션은 계정 통계 오염 금지
+  if (_simRunning || state.qaUsed) return; // 시뮬레이션/QA는 계정 통계 오염 금지
   const s = readStats();
-  if ((s.normalBestDay || 0) < day) { s.normalBestDay = day; writeStats(s); }
+  let dirty = false;
+  if ((s.bestDay || 0) < day) { s.bestDay = day; dirty = true; }
+  if (state.mode === 'normal' && (s.normalBestDay || 0) < day) { s.normalBestDay = day; dirty = true; }
+  if (dirty) writeStats(s);
 }
-function wallpaperUnlocked() { return (readStats().normalBestDay || 0) >= (BAL.rescue?.unlockDay || 150); }
+// 겨울 N번 넘김 판정: 1년 = SEASON_DAYS×4 — N년째 봄(=N×48+1일) 도달이 곧 겨울 N번 통과.
+const wintersPassedOf = (day) => Math.floor(((day || 0) - 1) / (SEASON_DAYS * 4));
+function wallpaperUnlocked() { return wintersPassedOf(readStats().normalBestDay) >= BAL.modes.wallpaperWinters; }
+// 무한 해금 (#158): 어느 모드로든 겨울 1번 — 구버전 스탯(bestDay 부재)은 normalBestDay 폴백.
+function zenUnlocked() { const s = readStats(); return wintersPassedOf(Math.max(s.bestDay || 0, s.normalBestDay || 0)) >= BAL.modes.zenWinters; }
 let currentSlot = parseInt(localStorage.getItem(LASTSLOT_KEY) || '1', 10) || 1;
 function readSlot(n) {
   try { return JSON.parse(localStorage.getItem(slotKey(n)) || 'null'); } catch (e) { return null; }
@@ -1888,7 +1895,7 @@ function doSaveNow() {
     try { localStorage.setItem('nw-opts', JSON.stringify(opts)); } catch (e) { /* 저장 불가 무시 */ }
     return;
   }
-  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0 }));
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0 }));
   state.savedAt = Date.now();
   // REQ-STEAM-01: 세이브 경로를 클라우드 어댑터 경유 (현재 localStorage 위임 — 동작 불변, Steam Cloud 미러 지점).
   Platform.cloud.save(slotKey(currentSlot), JSON.stringify({ state, opts }));
@@ -2096,7 +2103,7 @@ function updateCraftFx(dt) {
 }
 function buildItemGroup(item) {
   const def = DEFS[item.defId];
-  const g = def.build(def.colors[item.colorIdx], item.colorIdx, item.sketch || null); // 3인자: 액자 스케치 전시 (DDD-2, frame만 사용)
+  const g = def.build(def.colors[item.colorIdx], item.colorIdx, item.sketch || null, item.tier || 3); // 3인자: 액자 스케치(DDD-2, frame) · 4인자: 가구 티어(#157, tiered 가구만 분기)
   item.glowMeshes = [];
   g.traverse(o => {
     if (o.isMesh) {
@@ -2131,8 +2138,9 @@ function syncTransform(item) {
   item.group.rotation.y = item.rot * Math.PI / 2;
   shadowDirty();
 }
-function addItem(defId, colorIdx, x, z, rot, on = true, y = 0) {
-  const item = { defId, colorIdx, x, z, rot, on, y, support: null };
+function addItem(defId, colorIdx, x, z, rot, on = true, y = 0, tier = 0) {
+  // #157 가구 티어: tiered 가구만 유효(1~3). 미지정=3 — 구세이브의 기존 배치는 현행 모델(T3) 그대로.
+  const item = { defId, colorIdx, x, z, rot, on, y, support: null, tier: DEFS[defId].tiered ? (tier || 3) : 0 };
   item.group = buildItemGroup(item);
   syncTransform(item);
   itemsRoot.add(item.group);
@@ -2353,7 +2361,7 @@ function loadShelter(id) {
   for (const it of (state.layouts[id] || [])) {
     if (!DEFS[it.d]) continue;
     const [cx, cz] = clampToRoom({ defId: it.d, colorIdx: it.c ?? 0, rot: it.r ?? 0 }, it.x, it.z);
-    const restored = addItem(it.d, it.c ?? 0, cx, cz, it.r ?? 0, it.o !== 0, it.y || 0);
+    const restored = addItem(it.d, it.c ?? 0, cx, cz, it.r ?? 0, it.o !== 0, it.y || 0, it.t ?? 3);
     if (it.s && restored) { restored.sketch = it.s; recolorItem(restored, restored.colorIdx); } // DDD-2: 걸어둔 스케치 복원(재빌드)
   }
   for (const it of items) {
@@ -2412,7 +2420,7 @@ async function moveToShelter(id) {
     state.gameMin += BAL.economy.moveCrossTimeMin; // 구역 간 여정 3시간
     const dn = LName(DISTRICTS[districtOf(id)]); state.dayLog.notes.push(t('move.journeyNote', { name: dn, josa: josa(dn, '으로/로') }));
   }
-  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0 }));
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0 }));
   state.stayDays = 0; // 새 집은 아직 낯설다
   loadShelter(id);
   scheduleSave();
@@ -3082,6 +3090,7 @@ function resolveExpedition() {
   const gotRes = {};   // 자원 획득
   let got = [];        // 가구 획득
   const notes = [];
+  const special = [];  // 희귀 전리품 박스(도료/도면/책 등) — 정산창에 희귀도별 빛나는 테두리로 (디렉터 2026-07-09)
   let title, body;
   // 1.4 금지 구역 탐험 — 성패와 무관하게 방호복이 노출됐다: 내구 -1. 다 닳으면 다음 진입이 차단된다(수리 필요).
   //   2.0 낙진: 방호복 없이(걷힌 뒤 맨몸) 들어간 트립은 barehand 표식 — 아래 잔류 방사능 롤이 읽는다.
@@ -3157,6 +3166,7 @@ function resolveExpedition() {
       const fam = rollPaintFamily(exp.region);
       state.paints[fam] = (state.paints[fam] || 0) + 1;
       notes.push(t('paint.foundNote', { name: LName(PAINT_FAMILIES[fam]) }));
+      special.push({ icon: icon('icon_loot_paint', '🪣'), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
       jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
     }
     // 네온 안료 (디렉터 2026-07-09): 도심 전용 최희귀 도료 — 일반 도료 풀과 무관한 별도 저확률 롤.
@@ -3164,6 +3174,7 @@ function resolveExpedition() {
     if (exp.region === 'citycore' && Math.random() < BAL.paint.neonDropChance) {
       state.paints.neonPigment = (state.paints.neonPigment || 0) + 1;
       notes.push(t('paint.neonNote'));
+      special.push({ icon: '🌈', label: LName(RARE_PAINTS.neonPigment), n: 1, tier: 'legendary', swatch: RARE_PAINTS.neonPigment.swatch });
       jackpotToast(`🌈 ${t('paint.neonJackpot')}`, RARE_PAINTS.neonPigment.swatch);
     }
     // DDD-4 시그니처 도면 (REWARD-LOOP ② 2차): 지역 독점 가구의 도면 — 도료보다 희귀한 잭팟 층.
@@ -3178,6 +3189,7 @@ function resolveExpedition() {
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
         notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
+        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'legendary' });
         jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
       }
     }
@@ -3321,10 +3333,15 @@ function resolveExpedition() {
   //   자원 → 가구 → 노트 순으로 스태거 인덱스(--li)가 이어지고, 노트 블록은 마지막에 통으로 뜬다.
   let li = 0;
   const resHtml = Object.keys(gotRes).length
-    ? `<div class="loot-list reveal">${Object.entries(gotRes).map(([id, n]) => `<div class="loot-item" style="--li:${li++}">${resIcon(id)} ${LName(RESOURCES[id])} +${n}</div>`).join('')}</div>`
+    ? `<div class="loot-list reveal">${Object.entries(gotRes).map(([id, n]) => `<div class="loot-item${id === 'book' ? ' rare' : ''}" style="--li:${li++}">${resIcon(id)} ${LName(RESOURCES[id])} +${n}</div>`).join('')}</div>`
     : '';
   const lootHtml = got.length
     ? `<div class="loot-list reveal">${got.map(id => `<div class="loot-item" style="--li:${li++}">${furnIcon(id)} ${LName(DEFS[id])}</div>`).join('')}</div>`
+    : '';
+  // 희귀 전리품(도료=희귀 보라 / 도면·네온 안료=전설 금색): 획득 난이도별 빛나는 테두리 박스 (디렉터 2026-07-09).
+  //   도료엔 실제 색 스와치 점을 붙여 "무슨 색을 주웠는지" 한눈에. 스태거는 가구 다음 클라이맥스로.
+  const specialHtml = special.length
+    ? `<div class="loot-list reveal">${special.map(s => `<div class="loot-item ${s.tier}" style="--li:${li++}">${s.swatch != null ? `<span class="loot-dot" style="background:#${(s.swatch & 0xffffff).toString(16).padStart(6, '0')}"></span>` : ''}${s.icon} ${s.label}${s.n ? ` +${s.n}` : ''}</div>`).join('')}</div>`
     : '';
   const prepHtml = prep.length
     ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">${t('exp.usedPrep', { list: prep.map(p => `${PREPS[p].emoji}${LName(PREPS[p])}`).join(', ') })}</div>`
@@ -3332,7 +3349,7 @@ function resolveExpedition() {
   const noteHtml = notes.length
     ? `<div class="note-reveal" style="--li:${li};font-size:11px;line-height:1.7;margin-top:8px">${notes.join('<br>')}</div>`
     : '';
-  openModal(title, `${body}${resHtml}${lootHtml}${noteHtml}${prepHtml}${unlockMsg}`);
+  openModal(title, `${body}${resHtml}${lootHtml}${specialHtml}${noteHtml}${prepHtml}${unlockMsg}`);
   // 개봉 스킵: 본문 아무 데나 탭하면 남은 행 즉시 전부 공개 (기다림 강요 금지 — 코지 안전선)
   { const mb = $('modal-body'); if (mb) { mb.classList.remove('reveal-skip'); mb.addEventListener('click', () => mb.classList.add('reveal-skip'), { once: true }); } }
   scheduleSave();
@@ -4328,7 +4345,7 @@ function applyDeco() {
 // 「지식」 테크트리 모달(§9) — 4갈래×3티어, 책으로 해금. 노드 상태: 해금됨/해금가능/선행잠금/책부족.
 function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
-  const rows = CRAFTS.map((c, i) => {
+  const rowArr = CRAFTS.map((c, i) => {
     if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
     const outLabel = c.out.res
       ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`
@@ -4347,7 +4364,14 @@ function openCraftModal() {
           ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('craft.owned')}</span>`
           : `<button class="pixel-btn" data-craft="${i}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('craft.make')}</button>`}
       </div>`;
-  }).join('');
+  });
+  // 복장 분리 (디렉터 2026-07-10): 옷 제작이 가구와 한 목록에 섞여 있던 것을 섹션으로 구분.
+  //   data-craft 인덱스는 원본 CRAFTS 기준이라 클릭 배선 무변 — 표시만 재배열.
+  const goodsRows = CRAFTS.map((c, i) => c.out.outfit ? '' : rowArr[i]).join('');
+  const outfitRows = CRAFTS.map((c, i) => c.out.outfit ? rowArr[i] : '').join('');
+  const secHead = (emoji, key) => `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${emoji} ${t(key)}</div>`;
+  const rows = secHead('🪑', 'craft.catGoods') + goodsRows
+    + (outfitRows.trim() ? secHead('🧥', 'craft.catOutfit') + outfitRows : '');
   // 현재 거처에 설치 가능한 개조
   const sh = SHELTERS[state.current];
   const modRows = Object.entries(SHELTER_MODS)
@@ -4594,7 +4618,7 @@ function openCraftModal() {
         state.rooftopSlate = 'full';
         toast(t('rooftop.slateDone')); state.dayLog.notes.push(t('rooftop.slateDone'));
         // 지붕 지오메트리를 다시 짓는다 (가구 보존 — 벙커 재빌드와 동일 패턴)
-        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
+        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
         loadShelter('rooftop');
         closeModal();
         playSfx('craft'); scheduleSave(); renderResBar(); updateHud();
@@ -4725,7 +4749,7 @@ function openCraftModal() {
       state.dayLog.notes.push(t('craft.modNote', { name: LName(m) }));
       if (id === 'extension' || m.rebuild) {
         // 방 구조가 바뀌므로 거처를 다시 짓는다 (rebuild: buildRoom 지오 분기 개조 — 세관 선반 철거/창구 봉쇄)
-        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
+        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
         loadShelter(state.current);
         closeModal();
       } else {
@@ -4742,7 +4766,7 @@ function openCraftModal() {
 // 벙커 지오메트리 재빌드 (#36) — 천장 수리/뒷문 상태를 반영해 방을 다시 짓는다 (extension 개조와 동일 패턴).
 function rebuildBunkerGeometry() {
   if (state.current !== 'bunker') return;
-  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
+  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
   loadShelter('bunker');
   closeModal();
   shadowDirty();
@@ -4750,7 +4774,7 @@ function rebuildBunkerGeometry() {
 // 1.1: 현재 셸터 지오메트리 재빌드 (현장 오브젝트 단계 교체용, 벙커 외 항구 셸터). 배치 보존 후 loadShelter.
 function rebuildShelterGeometry() {
   const id = state.current;
-  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
+  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
   loadShelter(id);
   closeModal();
   shadowDirty();
@@ -5074,7 +5098,7 @@ function recordTabHtml() {
   const bown = state.broadcasts || {};
   const regionKeys = { residential: 'record.regionRes', commercial: 'record.regionCom', industrial: 'record.regionInd', slum: 'record.regionSlum' };
   const memoRow = (id, tbl) => owned[id]
-    ? `<div class="prep-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>📄</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    ? `<div class="prep-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>${icon('icon_rec_memo', '📄')}</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
     : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
   let sections = '';
   for (const rg of ['residential', 'commercial', 'industrial', 'slum']) {
@@ -5125,7 +5149,7 @@ function recordTabHtml() {
   sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
   // 라디오 로그
   const radioRows = Object.keys(BROADCASTS).map(id => bown[id]
-    ? `<div class="prep-row" style="cursor:pointer" data-broadcast="${id}"><span>📻</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    ? `<div class="prep-row" style="cursor:pointer" data-broadcast="${id}"><span>${icon('icon_rec_radio', '📻')}</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
     : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
   const distant = state.distantLight?.count
     ? `<div class="report-sec"><span class="r-title">${t('record.distantTitle', { n: state.distantLight.count })}</span></div>` : '';
@@ -5134,7 +5158,7 @@ function recordTabHtml() {
   let sketchSec = '';
   if (state.observatoryDone || sketchesCollected() > 0) {
     const rows = Object.keys(SKETCHES).map(id => sown[id]
-      ? `<div class="prep-row" style="cursor:pointer" data-sketch="${id}"><span>🌌</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+      ? `<div class="prep-row" style="cursor:pointer" data-sketch="${id}"><span>${icon('icon_rec_sketch', '🌌')}</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
       : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
     sketchSec = `<div class="report-sec"><span class="r-title">${t('record.sketchTitle', { n: sketchesCollected(), total: sketchesTotal() })}</span>${rows}</div>`;
   }
@@ -5697,7 +5721,7 @@ function startPlacing(defId) {
   }
   cancelPlacing();
   deselect();
-  const item = addItem(defId, 0, 0, 0, 0);
+  const item = addItem(defId, 0, 0, 0, 0, true, 0, DEFS[defId].tiered ? 1 : 0); // #157: 새 배치는 T1부터 — 손질해서 키운다
   placing = item;
   item._valid = !collides(item, 0, 0);
   setGhostVisual(item, item._valid ? 'valid' : 'invalid');
@@ -6600,7 +6624,7 @@ function openSlotModal(mode) {
 }
 // 새 게임: 슬롯 선택 후 모드 5종(노말/하드/하드코어/무한/배경화면)을 고르는 화면 (같은 모달의 body 교체)
 // 모달 빌더 → ui/modals.js (Tier4 Phase1-⑤). t/BAL/DEFAULT_STATE/opts는 모듈이 import, game.js 클로저만 주입.
-const { openModeModal, openWardrobeModal, openKnowledgeModal } = makeModals({ openModal, toast, wallpaperUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS,
+const { openModeModal, openWardrobeModal, openKnowledgeModal } = makeModals({ openModal, toast, wallpaperUnlocked, zenUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS,
   getPaused: () => paused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud });
 const INTRO_IDS = ['intro.0', 'intro.1', 'intro.2'];
 function showIntro() {
@@ -7758,6 +7782,29 @@ function showSelPanel(item) {
       showSelPanel(item); scheduleSave();
     }));
   }
+  // #157 가구 티어: 그 자리 손질 업그레이드 — T1→T2→T3. 수거·재제작이 아니라 "손질"이 테마.
+  { const oldUp = $('sel-tierup'); if (oldUp) oldUp.remove(); }
+  if (def.tiered && (item.tier || 3) < 3) {
+    const next = (item.tier || 3) + 1;
+    const cost = BAL.tierUp[next] || {};
+    const can = resHasAll(cost);
+    const div = document.createElement('div');
+    div.id = 'sel-tierup';
+    div.style.cssText = 'margin-bottom:8px';
+    div.innerHTML = `<button class="pixel-btn" id="btn-tierup" ${can ? '' : 'disabled'} style="width:100%">${t('sel.upgrade', { n: next })}</button>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:2px">${costLabel(cost)}</div>`;
+    $('sel-swatches').after(div);
+    $('btn-tierup').addEventListener('click', () => {
+      if (!resHasAll(cost)) { toast(t('sel.upgradeLack')); return; }
+      resConsumeAll(cost);
+      item.tier = next;
+      recolorItem(item, item.colorIdx); // 그룹 재빌드 — 티어 복셀 교체
+      markCollection(item.defId, item.colorIdx);
+      playSfx('craft');
+      toast(t('sel.upgraded'));
+      showSelPanel(item); renderResBar(); scheduleSave();
+    });
+  }
   // 조명/가전: 전원 토글 + 연료 잔량 (기획서 v0.2 UI: "양초 3개 보유 / 1일 1개 소비")
   const old = $('sel-power'); if (old) old.remove();
   const fuel = def.light?.fuel || def.appliance?.fuel;
@@ -8027,6 +8074,9 @@ function jackpotToast(msg, hex = 0xffd88a) {
   const el = document.createElement('div');
   el.className = 'jackpot-toast';
   el.style.setProperty('--jp', '#' + hex.toString(16).padStart(6, '0'));
+  // 동시 잭팟(도료+도면)은 겹치면 안 읽힌다 — 살아있는 토스트 수만큼 아래로 스택
+  const live = document.querySelectorAll('.jackpot-toast:not(.out)').length;
+  if (live) el.style.top = `calc(74px + ${live} * 44px * var(--uiz, 1))`;
   el.textContent = msg;
   document.body.appendChild(el);
   playSfx('craft', { vol: 0.5 });
@@ -9279,7 +9329,10 @@ function renderFrame() {
   positionSelPanel(); // 편집 미니 카드 재투영 — 카메라 팬/줌/드래그를 따라간다 (A안)
   for (const it of items) {
     if (it.lightObj && it.on !== false && DEFS[it.defId].light?.flicker) {
-      const k = 0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23);
+      // flickSlow(촛불): 저속 일렁임 + 깊은 딥 — "호롱호롱". 일반 flicker(랜턴 등): 기존 잰 흔들림.
+      const k = DEFS[it.defId].light.flickSlow
+        ? 0.72 + 0.26 * Math.sin(t * 3.1) * Math.sin(t * 1.7) + 0.1 * Math.sin(t * 7.3)
+        : 0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23);
       it.lightObj.intensity = it.lightBase * k;
       if (it.glowSprite) it.glowSprite.material.opacity = it.glowBase * (0.6 + 0.4 * k); // 헤일로도 함께 일렁임
     }
