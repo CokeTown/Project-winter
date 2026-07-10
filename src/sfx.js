@@ -37,8 +37,10 @@ export function setSfxVol(v) {
 /* ── 버퍼 로드 (lazy + 캐시) ── */
 function loadBuf(name) {
   if (bufCache.has(name)) return Promise.resolve(bufCache.get(name));
+  // ogg 우선, 없으면 mp3 폴백 (#93 purr.mp3 — 이 머신에 ffmpeg가 없어 원본 그대로 탑재. decodeAudioData는 mp3 지원)
   const p = fetch(`sfx/${name}.ogg`)
-    .then(r => { if (!r.ok) throw new Error(name); return r.arrayBuffer(); })
+    .then(r => { if (!r.ok) throw new Error('ogg'); return r.arrayBuffer(); })
+    .catch(() => fetch(`sfx/${name}.mp3`).then(r => { if (!r.ok) throw new Error(name); return r.arrayBuffer(); }))
     .then(ab => ctx.decodeAudioData(ab))
     .then(buf => { bufCache.set(name, buf); return buf; })
     .catch(() => { bufCache.delete(name); return null; });
@@ -46,8 +48,9 @@ function loadBuf(name) {
   return p;
 }
 
-/* ── 원샷 재생 ── */
-export function playSfx(name, { vol = 1, rate = 1, jitter = 0.06 } = {}) {
+/* ── 원샷 재생 ──
+ * dur(초) 지정 시 그 시점에서 fade(초)로 잦아들며 정지 — 긴 소스(purr 등)를 짧게 쓰는 용도 */
+export function playSfx(name, { vol = 1, rate = 1, jitter = 0.06, dur = 0, fade = 0.4 } = {}) {
   if (!ctx) return;
   loadBuf(name).then(buf => {
     if (!buf || !ctx) return;
@@ -58,6 +61,11 @@ export function playSfx(name, { vol = 1, rate = 1, jitter = 0.06 } = {}) {
     g.gain.value = vol;
     src.connect(g); g.connect(master);
     src.start(0);
+    if (dur > 0 && buf.duration > dur) {
+      g.gain.setValueAtTime(vol, ctx.currentTime);
+      g.gain.setTargetAtTime(0, ctx.currentTime + Math.max(0, dur - fade), fade / 3);
+      src.stop(ctx.currentTime + dur + fade);
+    }
   });
 }
 
