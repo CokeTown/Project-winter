@@ -46,6 +46,21 @@ function popIn(group) {
 const HOME_FULL = [[/stove|hearth/i, -2.2, -1.6, 0], [/^bed$/i, 2.2, 0.6, 1], [/rug/i, 0, -0.4, 0], [/bookshelf/i, -2.6, 0.8, 1], [/lamp$/i, 2.4, -2, 0], [/plant/i, 2.8, -0.6, 0], [/teatable/i, 0.9, -1.3, 0], [/cushion/i, -1, -0.2, 0], [/candle$/i, 0.95, -1.25, 0]];
 function loadHome() { const S = $S(); S.state.current = 'rooftop'; S.loadShelter('rooftop'); }
 function cam(z, y, p) { const S = $S(); if (S.setZoom) S.setZoom(z); if (S.setYaw) S.setYaw(y); if (S.setPitch) S.setPitch(p); }
+// 아바타 비켜서기 (디렉터 신고 2026-07-10: 고양이가 아바타에 겹쳐 안 보임) — 고양이 픽스 지점에서
+//   반경 clearR 밖으로 걸어 나갈 때까지 암전을 잡아둔다(캡 maxMs). 도착하면 pickIdle(6~16s)라 비트 동안 안 돌아온다.
+async function avatarAside(x, z, clearX, clearZ, clearR = 0.9, maxMs = 1600) {
+  const S = $S();
+  try {
+    if (!S.avatarWalkTo) return;
+    S.avatarWalkTo(x, z);
+    const t0 = Date.now();
+    while (Date.now() - t0 < maxMs) {
+      const a = S.avatarState && S.avatarState();
+      if (!a || Math.hypot(a.x - clearX, a.z - clearZ) > clearR) break;
+      await sleep(120);
+    }
+  } catch (e) {}
+}
 
 /* 각 비트: run()은 검은 화면에서 무대를 깔고 fade(false)로 열며, 화면을 켜둔 채 끝난다(비트 간 짧은 암전은 play()가). */
 const beats = [
@@ -74,6 +89,8 @@ const beats = [
       });
     }
     S.setWeather('snow'); S.setHour(20.7); cam(0.62, 1.0, 0.46);
+    // 아바타를 난로 앞으로 — 러그 위 고양이(-0.55,-0.55)에 겹쳐 서던 것(신고). 난롯가의 사람 + 러그 위 고양이 구도.
+    await avatarAside(-1.9, -1.35, -0.55, -0.55);
     await fade(false);
     // ① 코지 홀드 — 눈 내리는 밤, 따뜻한 방과 고양이로 푸시인
     window.__b0 = 'cozy';
@@ -125,6 +142,7 @@ const beats = [
       await sleep(620); // 스톱모션 템포
     }
     // B6 복선: 완성된 방에 고양이가 들어와 앉는다 — spawnCat은 async라 await로 확정 후 개방부에 고정(확실히 보이게)
+    await avatarAside(1.7, -1.8, -0.9, -0.15); // 아바타는 창가 쪽으로 — 방석 위 고양이를 가리지 않게 (신고 동일 계열)
     S.state.cat = 1; if (S.spawnCat) await S.spawnCat();
     const bc = S.cat && S.cat();
     if (bc && bc.g) { bc.g.position.set(-0.9, bc.g.position.y, -0.15); bc.g.rotation.y = 0.6; } // 방석 위에 앉는다 ("방석에 앉는 고양이" — B6 복선)
@@ -215,6 +233,7 @@ const beats = [
     const S = $S(); loadHome();
     dress([[/rug/i, 0, -0.4, 0], [/cushion/i, -0.6, -0.2, 0], [/candle$/i, 0.9, -1.3, 0]]); // 미니멀 — 클로즈업 클리핑 방지
     S.setWeather('clear'); S.setHour(16); cam(1.1, 0.6, 0.5);
+    await avatarAside(-1.8, -1.5, 0.3, 0.6); // 미디엄 샷에서 아바타가 고양이(0.3,0.6)를 가리지 않게 좌후방으로 (신고 동일 계열)
     S.state.cat = 1; if (S.spawnCat) S.spawnCat();
     await fade(false); await sleep(1400); // 고양이가 자리 잡는다
     // 고양이를 방 개방부(벽·기둥에서 떨어진 곳)로 데려와 앉힌다 — 근접 궤도 클로즈업 카메라가 벽을 파고드는
