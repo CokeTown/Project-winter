@@ -67,9 +67,12 @@ There is no death scene. No hand pushing you forward. What is here is only an in
 
 ---
 
-## 3. 태그 (15개, 스팀 등록 순)
+## 3. 태그 (스팀 등록 순 — 가중치는 앞쪽이 크다, 태그 마법사 §7-c 정본)
 
-Idle, Cozy, Survival, Base Building, Post-apocalyptic, Pixel Graphics, Relaxing, Crafting, Exploration, Singleplayer, Atmospheric, Cats, Building, Resource Management, 2.5D
+Cozy, Base Building, Life Sim, Idler, Cats, Post-apocalyptic, Relaxing, Survival, Crafting, Resource Management, Exploration, Atmospheric, Story Rich, Wholesome, Singleplayer, Voxel, Winter, Indie
+
+> 정정(2026-07-11): 구 목록의 `Pixel Graphics`·`2.5D`는 오류 — 게임 렌더는 **3D 복셀 + 아이소메트릭**이다(픽셀아트는 인카운터 삽화 스타일일 뿐). `Voxel`로 교체.
+> 순서 정정: COMMS-KIT §1("살림을 판다, 서바이벌 아님") — Cozy/Base Building/Life Sim을 앞세우고 Survival은 8번째로 내림.
 
 ---
 

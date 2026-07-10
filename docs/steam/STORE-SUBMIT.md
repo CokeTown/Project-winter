@@ -158,6 +158,27 @@ EN one-line (문서 참조용) — Minimum: Windows 10 64-bit, Dual-core 2 GHz, 
 
 ---
 
+## 7-c. 태그 마법사 (9단계) — 단계별 선택 정본
+
+> 전략: COMMS-KIT §1 "살림을 판다, 서바이벌 아님". 상위 장르를 **캐주얼+시뮬레이션**으로 잡아
+> 첫인상을 코지로 세팅. Survival은 존재하되 앞에 두지 않는다. 태그 순서 = 검색 가중치(앞이 큼).
+
+| 단계 | 선택 | 메모 |
+|---|---|---|
+| **1. 상위 장르** (1~2개) | **시뮬레이션 · 캐주얼** | 아늑한 셸터/살림 시뮬 + 저압 방치. 액션/RPG/전략 아님. 어드벤처는 상위엔 안 둠(스토리 우선 오인). |
+| **2. 장르** | 생활 시뮬레이션(Life Sim) · 서바이벌 · 방치형(Idler) | 서바이벌 포함하되 리드 아님. |
+| **3. 하위 장르** | 아늑함(Cozy) · 기지 건설(Base Building) · 제작(Crafting) · 자원 관리 | 코어 루프 명시. |
+| **4. 시각적 요소 및 시점** | **복셀(Voxel) · 아이소메트릭 · 3D · 양식화(Stylized)** | ⚠️ Pixel Graphics·2.5D 아님(3D 복셀). |
+| **5. 테마 및 분위기** | 아늑함 · 포스트 아포칼립스 · 편안한(Relaxing) · 감성적(Emotional) · 분위기 있는(Atmospheric) · 고양이 · 겨울 | 정서 코어. |
+| **6. 특징** | 싱글 플레이어 · Steam 도전 과제 · Steam Cloud · 컨트롤러 지원(#14, 부분→검증 후 전체) | §7-b와 정합(브릿지 게이트 동일). |
+| **7. 플레이어** | 싱글 플레이어 | 멀티 없음. |
+| **8. 기타** (검색 추가, 순서=가중치) | Cozy → Base Building → Life Sim → Idler → Cats → Post-apocalyptic → Relaxing → Survival → Crafting → Resource Management → Exploration → Atmospheric → Story Rich → Wholesome → Singleplayer → Voxel → Winter → Indie | 최대 20개. PAGE-COPY §3와 동일 정본. |
+| **9. 평가** | 검토 후 제출 | — |
+
+**핵심 결정**: ①상위 장르 = 캐주얼+시뮬레이션(서바이벌 상위 노출 금지) ②시각 태그 = 복셀/아이소메트릭(픽셀·2.5D 오류 정정) ③Survival은 8번째로.
+
+---
+
 ## 8. 가격 (출시 단계 Propose Pricing에서)
 
 - 본편 **$11.49** (KRW 자동 환산 후 ₩12,500선으로 수동 보정 권장) / Supporter Pack **$3.99** / OST 별도 — [SKU-PLAN.md](SKU-PLAN.md) §0.
