@@ -167,6 +167,7 @@ export function makeCatSystem(ctx) {
   //   16×16 그리드에 그려 NearestFilter로 픽셀 유지. 코트별로 캐시(코트 바뀌면 새 텍스처).
   const _catFaceTexByCoat = {};      // coatId → CanvasTexture (기본 눈)
   const _catFaceHappyByCoat = {};    // coatId → CanvasTexture (감은 눈)
+  const _catFaceSleepyByCoat = {};   // coatId → CanvasTexture (#155 반쯤 감긴 눈 — 졸림)
   function _drawFaceCommon(g2, w, closed) {
     const P = catPalette();
     const cell = w / 16;
@@ -182,9 +183,14 @@ export function makeCatSystem(ctx) {
     // 큰 눈 (좌 x=3, 우 x=10, 3×4) — 디렉터(2026-07): 종전 어두운 눈(eyeDark 본체)이 "기괴" → MC식으로
     //   밝은 홍채(eyeHi)를 크게 + 세로 동공(eyeDark) + 흰 반짝임 1px → 또렷하고 귀여운 눈.
     for (const ex of [3, 10]) {
-      if (closed) {
+      if (closed === true) {
         px(ex, 8, 3, 1, P.lid);                          // 감은 눈(⌒): 윗선
         px(ex, 9, 1, 1, P.lid); px(ex + 2, 9, 1, 1, P.lid); // 처진 양끝
+      } else if (closed === 'sleepy') {
+        // #155 졸린 반눈: 윗눈꺼풀이 홍채 절반을 덮는다 — 아래 2px만 홍채·동공 끝이 보인다
+        px(ex, 6, 3, 2, P.lid);                           // 내려온 윗눈꺼풀
+        px(ex, 8, 3, 2, P.eyeHi);                         // 드러난 홍채 하단
+        px(ex + 1, 8, 1, 2, P.eyeDark);                   // 동공 끝
       } else {
         px(ex, 6, 3, 4, P.eyeHi);                         // 밝은 홍채 (크게)
         px(ex + 1, 6, 1, 3, P.eyeDark);                   // 세로 동공(어둡게)
@@ -213,6 +219,16 @@ export function makeCatSystem(ctx) {
     tex.repeat.set(1, 1);
     tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
     _catFaceHappyByCoat[id] = tex;
+    return tex;
+  }
+  // #155 졸린 반눈 — 엎드려 쉬는(sprawl) 동안. 같은 얼굴 문법, 눈만 반쯤.
+  function catFaceSleepyTex() {
+    const id = catCoatId();
+    if (_catFaceSleepyByCoat[id]) return _catFaceSleepyByCoat[id];
+    const tex = makeCanvasTex((g2, w) => _drawFaceCommon(g2, w, 'sleepy'), 16, 16);
+    tex.repeat.set(1, 1);
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    _catFaceSleepyByCoat[id] = tex;
     return tex;
   }
   function buildCatMesh() {
@@ -575,9 +591,18 @@ export function makeCatSystem(ctx) {
       if (c.petHappy === 0 && p && p.faceMat) { p.faceMat.map = catFaceTex(); p.faceMat.needsUpdate = true; }
     }
     if (c.petPurr > 0) c.petPurr = Math.max(0, c.petPurr - dt / (PET_HAPPY_MS / 1000));
-    // 눈 감은 얼굴로 스왑 (활성 동안 유지). 복셀 경로 전용(faceMat) — 리깅 경로는 사운드/꼬리만.
+    // 표정 스왑 (#155) — 우선순위: 쓰다듬기(감음) > 엎드림 오래(잠듦) > 엎드림(졸린 반눈) > 깜빡임 > 기본.
+    //   복셀 경로 전용(faceMat) — 리깅 경로는 사운드/꼬리만.
     if (p && p.faceMat) {
-      const want = c.petHappy > 0 ? catFaceHappyTex() : catFaceTex();
+      c.blinkNext = (c.blinkNext ?? (2 + Math.random() * 5)) - dt;   // 다음 깜빡임까지
+      if (c.blinkNext <= 0) { c.blinkHold = 0.13; c.blinkNext = 4 + Math.random() * 8; }
+      if (c.blinkHold > 0) c.blinkHold -= dt;
+      c.sprawlFor = c.mode === 'sprawl' ? (c.sprawlFor || 0) + dt : 0; // 엎드린 누적 시간
+      const want = c.petHappy > 0 ? catFaceHappyTex()
+        : c.sprawlFor > 12 ? catFaceHappyTex()        // 오래 엎드림 — 잠들었다(감은 눈)
+          : c.sprawlFor > 2 ? catFaceSleepyTex()      // 엎드려 쉬는 중 — 졸린 반눈
+            : c.blinkHold > 0 ? catFaceHappyTex()     // 깜빡 — 짧게 감았다 뜬다
+              : catFaceTex();
       if (p.faceMat.map !== want) { p.faceMat.map = want; p.faceMat.needsUpdate = true; }
     }
     // ── 꼬리 살랑 파라미터 (양 경로 공용) — 쓰다듬기 중엔 속도·진폭을 키워 만족한 살랑임
@@ -717,7 +742,7 @@ export function makeCatSystem(ctx) {
   return {
     spawnCat, despawnCat, updateCat,
     catPointBlocked, catSupportValid,
-    catFaceTex, catFaceHappyTex,
+    catFaceTex, catFaceHappyTex, catFaceSleepyTex, // #155 졸린 반눈 — QA 프로브용 노출
     getCat: () => catObj,
     isSpawning: () => _catSpawning,
     getCatSupportDirty: () => catSupportDirty,
