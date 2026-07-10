@@ -1887,7 +1887,7 @@ function doSaveNow() {
     try { localStorage.setItem('nw-opts', JSON.stringify(opts)); } catch (e) { /* 저장 불가 무시 */ }
     return;
   }
-  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0 }));
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0 }));
   state.savedAt = Date.now();
   // REQ-STEAM-01: 세이브 경로를 클라우드 어댑터 경유 (현재 localStorage 위임 — 동작 불변, Steam Cloud 미러 지점).
   Platform.cloud.save(slotKey(currentSlot), JSON.stringify({ state, opts }));
@@ -2095,7 +2095,7 @@ function updateCraftFx(dt) {
 }
 function buildItemGroup(item) {
   const def = DEFS[item.defId];
-  const g = def.build(def.colors[item.colorIdx], item.colorIdx, item.sketch || null); // 3인자: 액자 스케치 전시 (DDD-2, frame만 사용)
+  const g = def.build(def.colors[item.colorIdx], item.colorIdx, item.sketch || null, item.tier || 3); // 3인자: 액자 스케치(DDD-2, frame) · 4인자: 가구 티어(#157, tiered 가구만 분기)
   item.glowMeshes = [];
   g.traverse(o => {
     if (o.isMesh) {
@@ -2130,8 +2130,9 @@ function syncTransform(item) {
   item.group.rotation.y = item.rot * Math.PI / 2;
   shadowDirty();
 }
-function addItem(defId, colorIdx, x, z, rot, on = true, y = 0) {
-  const item = { defId, colorIdx, x, z, rot, on, y, support: null };
+function addItem(defId, colorIdx, x, z, rot, on = true, y = 0, tier = 0) {
+  // #157 가구 티어: tiered 가구만 유효(1~3). 미지정=3 — 구세이브의 기존 배치는 현행 모델(T3) 그대로.
+  const item = { defId, colorIdx, x, z, rot, on, y, support: null, tier: DEFS[defId].tiered ? (tier || 3) : 0 };
   item.group = buildItemGroup(item);
   syncTransform(item);
   itemsRoot.add(item.group);
@@ -2352,7 +2353,7 @@ function loadShelter(id) {
   for (const it of (state.layouts[id] || [])) {
     if (!DEFS[it.d]) continue;
     const [cx, cz] = clampToRoom({ defId: it.d, colorIdx: it.c ?? 0, rot: it.r ?? 0 }, it.x, it.z);
-    const restored = addItem(it.d, it.c ?? 0, cx, cz, it.r ?? 0, it.o !== 0, it.y || 0);
+    const restored = addItem(it.d, it.c ?? 0, cx, cz, it.r ?? 0, it.o !== 0, it.y || 0, it.t ?? 3);
     if (it.s && restored) { restored.sketch = it.s; recolorItem(restored, restored.colorIdx); } // DDD-2: 걸어둔 스케치 복원(재빌드)
   }
   for (const it of items) {
@@ -2411,7 +2412,7 @@ async function moveToShelter(id) {
     state.gameMin += BAL.economy.moveCrossTimeMin; // 구역 간 여정 3시간
     const dn = LName(DISTRICTS[districtOf(id)]); state.dayLog.notes.push(t('move.journeyNote', { name: dn, josa: josa(dn, '으로/로') }));
   }
-  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0 }));
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0 }));
   state.stayDays = 0; // 새 집은 아직 낯설다
   loadShelter(id);
   scheduleSave();
@@ -4609,7 +4610,7 @@ function openCraftModal() {
         state.rooftopSlate = 'full';
         toast(t('rooftop.slateDone')); state.dayLog.notes.push(t('rooftop.slateDone'));
         // 지붕 지오메트리를 다시 짓는다 (가구 보존 — 벙커 재빌드와 동일 패턴)
-        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
+        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
         loadShelter('rooftop');
         closeModal();
         playSfx('craft'); scheduleSave(); renderResBar(); updateHud();
@@ -4740,7 +4741,7 @@ function openCraftModal() {
       state.dayLog.notes.push(t('craft.modNote', { name: LName(m) }));
       if (id === 'extension' || m.rebuild) {
         // 방 구조가 바뀌므로 거처를 다시 짓는다 (rebuild: buildRoom 지오 분기 개조 — 세관 선반 철거/창구 봉쇄)
-        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
+        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
         loadShelter(state.current);
         closeModal();
       } else {
@@ -4757,7 +4758,7 @@ function openCraftModal() {
 // 벙커 지오메트리 재빌드 (#36) — 천장 수리/뒷문 상태를 반영해 방을 다시 짓는다 (extension 개조와 동일 패턴).
 function rebuildBunkerGeometry() {
   if (state.current !== 'bunker') return;
-  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
+  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
   loadShelter('bunker');
   closeModal();
   shadowDirty();
@@ -4765,7 +4766,7 @@ function rebuildBunkerGeometry() {
 // 1.1: 현재 셸터 지오메트리 재빌드 (현장 오브젝트 단계 교체용, 벙커 외 항구 셸터). 배치 보존 후 loadShelter.
 function rebuildShelterGeometry() {
   const id = state.current;
-  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0 }));
+  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
   loadShelter(id);
   closeModal();
   shadowDirty();
@@ -5712,7 +5713,7 @@ function startPlacing(defId) {
   }
   cancelPlacing();
   deselect();
-  const item = addItem(defId, 0, 0, 0, 0);
+  const item = addItem(defId, 0, 0, 0, 0, true, 0, DEFS[defId].tiered ? 1 : 0); // #157: 새 배치는 T1부터 — 손질해서 키운다
   placing = item;
   item._valid = !collides(item, 0, 0);
   setGhostVisual(item, item._valid ? 'valid' : 'invalid');
@@ -7772,6 +7773,29 @@ function showSelPanel(item) {
       if (item.sketch) toast(t('frame.hung', { name: LN(SKETCHES[item.sketch]) }));
       showSelPanel(item); scheduleSave();
     }));
+  }
+  // #157 가구 티어: 그 자리 손질 업그레이드 — T1→T2→T3. 수거·재제작이 아니라 "손질"이 테마.
+  { const oldUp = $('sel-tierup'); if (oldUp) oldUp.remove(); }
+  if (def.tiered && (item.tier || 3) < 3) {
+    const next = (item.tier || 3) + 1;
+    const cost = BAL.tierUp[next] || {};
+    const can = resHasAll(cost);
+    const div = document.createElement('div');
+    div.id = 'sel-tierup';
+    div.style.cssText = 'margin-bottom:8px';
+    div.innerHTML = `<button class="pixel-btn" id="btn-tierup" ${can ? '' : 'disabled'} style="width:100%">${t('sel.upgrade', { n: next })}</button>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:2px">${costLabel(cost)}</div>`;
+    $('sel-swatches').after(div);
+    $('btn-tierup').addEventListener('click', () => {
+      if (!resHasAll(cost)) { toast(t('sel.upgradeLack')); return; }
+      resConsumeAll(cost);
+      item.tier = next;
+      recolorItem(item, item.colorIdx); // 그룹 재빌드 — 티어 복셀 교체
+      markCollection(item.defId, item.colorIdx);
+      playSfx('craft');
+      toast(t('sel.upgraded'));
+      showSelPanel(item); renderResBar(); scheduleSave();
+    });
   }
   // 조명/가전: 전원 토글 + 연료 잔량 (기획서 v0.2 UI: "양초 3개 보유 / 1일 1개 소비")
   const old = $('sel-power'); if (old) old.remove();
