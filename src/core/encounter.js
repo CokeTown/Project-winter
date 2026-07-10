@@ -32,6 +32,10 @@ export function eventMatches(id, ctx) {
     if (w.needsRadio && !items.some(i => i.defId === 'radio')) return false;
     if (w.needsCat && !state.cat) return false;
     if (w.hasMod && !hasMod(w.hasMod)) return false;
+    // #163b 절박 티어 (디렉터 2026-07-10): 겨울이 지날수록 세상이 야위는 네거티브 이벤트는
+    //   생존·혹한 전용 — 코지에는 절대 오지 않는다. minWinters=발화 최소 경과 겨울 수.
+    if (w.modes && !w.modes.includes(state.mode)) return false;
+    if (w.minWinters != null && (ctx.winters || 0) < w.minWinters) return false;
   }
   if (ev.cond && !ev.cond()) return false; // 레거시/추가 자유조건
   return true;

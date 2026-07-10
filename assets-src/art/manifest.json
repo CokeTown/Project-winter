@@ -783,23 +783,23 @@
     },
     {
       "id": "ev_wanderer",
-      "purpose": "이벤트 일러스트: 떠돌이 생존자",
+      "purpose": "이벤트 일러스트: 떠돌이 생존자 (#163 무설 재생성)",
       "w": 640,
       "h": 360,
       "genSize": "1536x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/ev_wanderer.png",
-      "prompt": "A weary wanderer in a heavy patched coat and scarf standing at the door of a small shelter at dusk, holding a dim lantern, snow drifting, the shelter's warm light spilling onto their face. Cozy pixel art illustration, isometric-leaning cinematic angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+      "prompt": "A weary wanderer in a heavy patched coat standing at the door of a small shelter on a mild rainy night, holding a dim lantern, warm light spilling onto their face, wet ground reflections. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against a muted neutral dusk, no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
     },
     {
       "id": "ev_thief",
-      "purpose": "이벤트 일러스트: 침입의 흔적",
+      "purpose": "이벤트 일러스트: 침입의 흔적 (#163 무설 재생성)",
       "w": 640,
       "h": 360,
       "genSize": "1536x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/ev_thief.png",
-      "prompt": "Fresh scattered footprints in snow around the corner of a shelter at dawn, an overturned crate and a torn cloth on the ground, cold pale morning light, no people visible. Cozy pixel art illustration, isometric-leaning cinematic angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+      "prompt": "A candlelit storehouse door at night with muddy footprints leading away across bare wet ground, an overturned crate and a dropped sack. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against a muted neutral dusk, no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
     },
     {
       "id": "map_paper",
@@ -813,23 +813,23 @@
     },
     {
       "id": "ev_trader",
-      "purpose": "이벤트 일러스트: trader",
+      "purpose": "이벤트 일러스트: trader (#163 무설 재생성)",
       "w": 640,
       "h": 360,
       "genSize": "1536x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/ev_trader.png",
-      "prompt": "A traveling trader with a huge overloaded backpack of pots and tools standing at a snowy path near a small shelter, lantern light between them, ready to move on. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+      "prompt": "A hooded peddler stacked high with pots and pans standing in a ruined street at dusk in light rain, lantern glow, bare wet ground. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against a muted neutral dusk, no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
     },
     {
       "id": "ev_dog",
-      "purpose": "이벤트 일러스트: dog",
+      "purpose": "이벤트 일러스트: dog (#163 무설 재생성)",
       "w": 640,
       "h": 360,
       "genSize": "1536x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/ev_dog.png",
-      "prompt": "A thin stray dog with hopeful eyes sitting at the edge of a shelter's light in falling snow, tail making a small sweep in the snow. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+      "prompt": "A thin stray dog sitting beside a small candle at the edge of a shelter yard on a bare autumn night, ribs showing, hopeful eyes, a few fallen leaves. Cozy pixel art illustration, cinematic isometric-leaning angle, golden late-afternoon light with amber falling leaves, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
     },
     {
       "id": "ev_storm",
@@ -873,13 +873,13 @@
     },
     {
       "id": "ev_cat",
-      "purpose": "이벤트 일러스트: cat",
+      "purpose": "이벤트 일러스트: cat (#163 무설 재생성)",
       "w": 640,
       "h": 360,
       "genSize": "1536x1024",
       "fit": "cover",
       "dest": "assets-src/art/out/icons/ev_cat.png",
-      "prompt": "An orange tabby cat stepping carefully through snow toward a warm doorway light at dusk, small paw prints trailing behind. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+      "prompt": "An orange tabby cat walking toward a candlelit shelter door across fallen autumn leaves at night, leaving a little trail through the leaves, warm light ahead. Cozy pixel art illustration, cinematic isometric-leaning angle, golden late-afternoon light with amber falling leaves, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
     },
     {
       "id": "ev_doctor_radio",
@@ -1350,6 +1350,346 @@
       "fit": "cover",
       "dest": "public/img/icons/icon_sys_locked.png",
       "prompt": "a heavy rounded brass padlock with a keyhole, slightly worn edges Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+    },
+    {
+      "id": "ev_thaw_stream",
+      "purpose": "이벤트 일러스트(#163 spring): 해빙 개울",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_thaw_stream.png",
+      "prompt": "A thin stream of snowmelt cutting across a shelter yard at dawn, a tin basin set out to catch it, the last shrinking patches of snow on dark wet earth. Cozy pixel art illustration, cinematic isometric-leaning angle, soft green dawn light over wet thawing earth with warm lantern accents, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_first_sprout",
+      "purpose": "이벤트 일러스트(#163 spring): 콘크리트 새싹",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_first_sprout.png",
+      "prompt": "A single green sprout pushing through a crack in broken concrete, low close angle, gentle morning light, a small tin watering can beside it. Cozy pixel art illustration, cinematic isometric-leaning angle, soft green dawn light over wet thawing earth with warm lantern accents, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_returning_birds",
+      "purpose": "이벤트 일러스트(#163 spring): 철새 북행",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_returning_birds.png",
+      "prompt": "A V formation of birds crossing a pale spring sky over a ruined city skyline, seen from a shelter yard below. Cozy pixel art illustration, cinematic isometric-leaning angle, soft green dawn light over wet thawing earth with warm lantern accents, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_melt_reveal",
+      "purpose": "이벤트 일러스트(#163 spring): 눈 녹은 자리",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_melt_reveal.png",
+      "prompt": "Receding snow at the corner of a yard revealing a half-buried crate and cloth, wet ground, early spring light. Cozy pixel art illustration, cinematic isometric-leaning angle, soft green dawn light over wet thawing earth with warm lantern accents, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_bee_swarm",
+      "purpose": "이벤트 일러스트(#163 spring): 창틀의 벌",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_bee_swarm.png",
+      "prompt": "A few bees hovering under the wooden windowsill of a patched shelter, a tiny wax comb just beginning, soft spring morning light. Cozy pixel art illustration, cinematic isometric-leaning angle, soft green dawn light over wet thawing earth with warm lantern accents, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_mud_tracks",
+      "purpose": "이벤트 일러스트(#163 spring): 진창 바퀴 자국",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_mud_tracks.png",
+      "prompt": "Deep cart wheel ruts pressed into wet mud leading away past a fence into morning mist, puddles reflecting a pale sky. Cozy pixel art illustration, cinematic isometric-leaning angle, soft green dawn light over wet thawing earth with warm lantern accents, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_cicada_evening",
+      "purpose": "이벤트 일러스트(#163 summer): 첫 매미",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_cicada_evening.png",
+      "prompt": "A ruined city street at deep summer dusk, dense overgrown trees alive with cicadas, one small shelter window glowing warm. Cozy pixel art illustration, cinematic isometric-leaning angle, deep humid summer dusk, lush overgrown greens with warm lamplight, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_mosquito_net",
+      "purpose": "이벤트 일러스트(#163 summer): 모기장",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_mosquito_net.png",
+      "prompt": "A candlelit shelter window at night with cloth screen tacked over the frame, moths and mosquitoes crowding outside the glass, humid darkness. Cozy pixel art illustration, cinematic isometric-leaning angle, deep humid summer dusk, lush overgrown greens with warm lamplight, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_wild_berries",
+      "purpose": "이벤트 일러스트(#163 summer): 산딸기",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_wild_berries.png",
+      "prompt": "Wild bramble heavy with ripe red berries overtaking a collapsed fence, hot summer daylight, a woven basket set below. Cozy pixel art illustration, cinematic isometric-leaning angle, deep humid summer dusk, lush overgrown greens with warm lamplight, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_sudden_shower",
+      "purpose": "이벤트 일러스트(#163 summer): 소나기",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_sudden_shower.png",
+      "prompt": "A sudden heavy summer shower over a shelter yard with a rainbow breaking through behind, a tin basin catching rain on shining wet ground. Cozy pixel art illustration, cinematic isometric-leaning angle, deep humid summer dusk, lush overgrown greens with warm lamplight, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_heat_haze",
+      "purpose": "이벤트 일러스트(#163 summer): 아지랑이",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_heat_haze.png",
+      "prompt": "Heat shimmer rising from a cracked asphalt road between ruins at harsh summer noon, deep cool shade under a shelter awning in the foreground. Cozy pixel art illustration, cinematic isometric-leaning angle, deep humid summer dusk, lush overgrown greens with warm lamplight, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_firefly_field",
+      "purpose": "이벤트 일러스트(#163 summer): 반딧불이",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_firefly_field.png",
+      "prompt": "Dozens of fireflies rising from tall grass at the edge of a dark yard at night, warm floating lights, the shelter lantern switched off. Cozy pixel art illustration, cinematic isometric-leaning angle, deep humid summer dusk, lush overgrown greens with warm lamplight, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_acorn_cache",
+      "purpose": "이벤트 일러스트(#163 autumn): 도토리 저장고",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_acorn_cache.png",
+      "prompt": "A neat hidden heap of acorns behind a woodpile in golden autumn light, a squirrel tail vanishing at the edge of frame. Cozy pixel art illustration, cinematic isometric-leaning angle, golden late-afternoon light with amber falling leaves, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_leaf_drift",
+      "purpose": "이벤트 일러스트(#163 autumn): 낙엽 마당",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_leaf_drift.png",
+      "prompt": "A shelter yard buried under fallen amber leaves with more drifting in the air, late golden afternoon. Cozy pixel art illustration, cinematic isometric-leaning angle, golden late-afternoon light with amber falling leaves, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_first_frost",
+      "purpose": "이벤트 일러스트(#163 autumn): 첫서리",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_first_frost.png",
+      "prompt": "Thin frost patterns on the inside of a shelter window at dawn, a tiny house and cat drawn by fingertip in the frost, cold amber morning light. Cozy pixel art illustration, cinematic isometric-leaning angle, golden late-afternoon light with amber falling leaves, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_geese_south",
+      "purpose": "이벤트 일러스트(#163 autumn): 기러기 남행",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_geese_south.png",
+      "prompt": "A line of geese flying low over a ruined skyline heading south, autumn evening sky in amber and slate. Cozy pixel art illustration, cinematic isometric-leaning angle, golden late-afternoon light with amber falling leaves, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_pickling_day",
+      "purpose": "이벤트 일러스트(#163 autumn): 갈무리",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_pickling_day.png",
+      "prompt": "A shelter table crowded with jars and tins being sealed, steam rising from a pot, autumn light through the window, preserves lined on a shelf. Cozy pixel art illustration, cinematic isometric-leaning angle, golden late-afternoon light with amber falling leaves, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_spider_web",
+      "purpose": "이벤트 일러스트(#163 autumn): 아침 거미줄",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_spider_web.png",
+      "prompt": "A dew-beaded spiderweb stretched across a shelter window frame at morning, silver threads glinting against autumn amber. Cozy pixel art illustration, cinematic isometric-leaning angle, golden late-afternoon light with amber falling leaves, absolutely no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_icicle_row",
+      "purpose": "이벤트 일러스트(#163 winter): 고드름",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_icicle_row.png",
+      "prompt": "A row of thick clear icicles hanging from shelter eaves like teeth, low winter sunset light caught in their tips. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_frozen_sparrow",
+      "purpose": "이벤트 일러스트(#163 winter): 언 참새",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_frozen_sparrow.png",
+      "prompt": "A small puffed-up sparrow huddled on a snowy doorstep before an opening door, warm light spilling out over it. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_snowman_scarf",
+      "purpose": "이벤트 일러스트(#163 winter): 누군가의 눈사람",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_snowman_scarf.png",
+      "prompt": "A snowman standing alone in an empty snowy lot at dusk with a real knitted scarf wound around its neck, a distant shelter light. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_clear_winter_night",
+      "purpose": "이벤트 일러스트(#163 winter): 겨울 별하늘",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_clear_winter_night.png",
+      "prompt": "A brilliant starry sky over a dark ruined city after a cold snap, white breath rising from a small figure looking up from a shelter yard. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_blizzard_warning",
+      "purpose": "이벤트 일러스트(#163 winter): 폭설 전야",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_blizzard_warning.png",
+      "prompt": "An old radio glowing on a shelter table at night, the window showing an eerily calm sky with heavy storm clouds massing over roofs. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against cold blue dusk, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_red_balloon",
+      "purpose": "이벤트 일러스트(#163 common): 빨간 풍선",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_red_balloon.png",
+      "prompt": "A single red balloon drifting on the wind over gray ruined rooftops, small and bright against a vast muted sky. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against a muted neutral dusk, no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_doorstep_bundle",
+      "purpose": "이벤트 일러스트(#163 common): 문 앞의 꾸러미",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_doorstep_bundle.png",
+      "prompt": "A small cloth bundle tied with string left on a shelter doorstep with a folded note tucked under it, early morning light. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against a muted neutral dusk, no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_music_box",
+      "purpose": "이벤트 일러스트(#163 common): 오르골",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_music_box.png",
+      "prompt": "An old brass music box opened on a workbench under candlelight, tiny gears and a bent pin visible, a small screwdriver beside it. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against a muted neutral dusk, no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_cat_dream",
+      "purpose": "이벤트 일러스트(#163 common): 고양이의 꿈",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_cat_dream.png",
+      "prompt": "An orange tabby cat deep asleep on a cushion beside a stove, paws twitching mid-dream, warm firelight. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against a muted neutral dusk, no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_old_photo",
+      "purpose": "이벤트 일러스트(#163 common): 벽 틈의 사진",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_old_photo.png",
+      "prompt": "An old photograph of a smiling family slipped out from behind torn wallpaper, held gently up to candlelight. Cozy pixel art illustration, cinematic isometric-leaning angle, warm candlelight against a muted neutral dusk, no snow, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_silent_frequency",
+      "purpose": "이벤트 일러스트(#163 desperate): 침묵한 주파수",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_silent_frequency.png",
+      "prompt": "A radio on a dark table emitting only static, its dial glowing weakly, a notebook beside it with one frequency crossed out. Cozy pixel art illustration, cinematic isometric-leaning angle, ashen desaturated palette, thin cold light, worn threadbare mood, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_barren_traps",
+      "purpose": "이벤트 일러스트(#163 desperate): 빈 덫",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_barren_traps.png",
+      "prompt": "An empty wire snare in thin dead brush dusted with frost, no tracks anywhere on the gray depleted ground. Cozy pixel art illustration, cinematic isometric-leaning angle, ashen desaturated palette, thin cold light, worn threadbare mood, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_looted_cache",
+      "purpose": "이벤트 일러스트(#163 desperate): 털린 은닉처",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_looted_cache.png",
+      "prompt": "A hidden cache box dug open in the ground, rocks scattered, lid thrown aside, nothing left inside, cold trampled earth. Cozy pixel art illustration, cinematic isometric-leaning angle, ashen desaturated palette, thin cold light, worn threadbare mood, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_desperate_knock",
+      "purpose": "이벤트 일러스트(#163 desperate): 문 너머의 목소리",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_desperate_knock.png",
+      "prompt": "A barred shelter door seen from inside at night, the faint shadow of someone leaning against the door crack, a candle guttering low. Cozy pixel art illustration, cinematic isometric-leaning angle, ashen desaturated palette, thin cold light, worn threadbare mood, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_stripped_district",
+      "purpose": "이벤트 일러스트(#163 desperate): 앞서 다녀간 손",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_stripped_district.png",
+      "prompt": "A ransacked apartment interior with every cupboard open and drawers dumped on the floor, dust hanging in thin gray light. Cozy pixel art illustration, cinematic isometric-leaning angle, ashen desaturated palette, thin cold light, worn threadbare mood, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_harsh_barter",
+      "purpose": "이벤트 일러스트(#163 desperate): 겨울의 값",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_harsh_barter.png",
+      "prompt": "A half-empty peddler cart under a bridge in winter holding a few cans and a single fuel canister, two wary figures keeping their distance in ashen snow. Cozy pixel art illustration, cinematic isometric-leaning angle, ashen desaturated palette, thin cold light, worn threadbare mood, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
     }
   ]
 }

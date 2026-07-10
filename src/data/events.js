@@ -64,6 +64,8 @@ export function makeEvents(ctx) {
     },
     storm: {
       icon: '🌪️', titleId: 'ev.storm.title', textId: 'ev.storm.text',
+      // #163 재게이트(아트 재분배): 일러스트가 무설(헐벗은 나무+강풍) = 환절기 돌풍 — 가을·봄으로 보낸다.
+      when: { seasons: ['autumn', 'spring'] },
       choices: [
         { labelId: 'ev.storm.c0', cost: { material: 1 }, run() { return t('ev.storm.r0'); } },
         { labelId: 'ev.storm.c1', run() { state.cleanBy[state.current] = Math.max(0, (state.cleanBy[state.current] ?? 70) - 10); return t('ev.storm.r1'); } },
@@ -91,6 +93,8 @@ export function makeEvents(ctx) {
     },
     seeds: {
       icon: '🌱', titleId: 'ev.seeds.title', textId: 'ev.seeds.text',
+      // #163 재게이트: 씨앗=파종 — 봄 정체성으로. (일러스트는 중립 정물이라 그대로)
+      when: { seasons: ['spring'] },
       choices: [
         { labelId: 'ev.seeds.c0', cost: { water: 2 }, run() {
           if (state.current === 'greenhouse') { resAdd('food', 3); return t('ev.seeds.r.green'); }
@@ -249,6 +253,337 @@ export function makeEvents(ctx) {
       ],
     },
   
+    /* ── #163 계절 인카운터 확충 (디렉터 2026-07-10) — 봄6·여름6·가을6·겨울5 + 공용5 ──
+       원칙: 접촉 스펙트럼(직접 대면 최소 — 흔적·거리·간접) · 보상 소폭(자원 ±1~2, 기분 1~3).
+       아트: public/img/events/ev_<id>.png — 결손 시 일러스트 생략 폴백. */
+
+    // ── 봄: 해빙·재생·젖은 흙 ──
+    thaw_stream: {
+      icon: '💧', titleId: 'ev.thawstream.title', textId: 'ev.thawstream.text',
+      when: { seasons: ['spring'] },
+      choices: [
+        { labelId: 'ev.thawstream.c0', run() { resAdd('water', 2); return t('ev.thawstream.r0'); } },
+        { labelId: 'ev.thawstream.c1', run() { addMoodBuff(2, 2); return t('ev.thawstream.r1'); } },
+      ],
+    },
+    first_sprout: {
+      icon: '🌱', titleId: 'ev.firstsprout.title', textId: 'ev.firstsprout.text',
+      when: { seasons: ['spring'] },
+      choices: [
+        { labelId: 'ev.firstsprout.c0', cost: { water: 1 }, run() {
+          addMoodBuff(2, 3);
+          if (Math.random() < 0.5) { resAdd('food', 1); return t('ev.firstsprout.r0grew'); }
+          return t('ev.firstsprout.r0');
+        } },
+        { labelId: 'ev.firstsprout.c1', run() { addMoodBuff(1, 1); return t('ev.firstsprout.r1'); } },
+      ],
+    },
+    returning_birds: {
+      icon: '🕊️', titleId: 'ev.returningbirds.title', textId: 'ev.returningbirds.text',
+      when: { seasons: ['spring'], dayOnly: true },
+      choices: [
+        { labelId: 'ev.returningbirds.c0', run() {
+          addMoodBuff(2, 2);
+          const detail = items.some(i => i.defId === 'telescope');
+          return detail ? t('ev.returningbirds.r0detail') : t('ev.returningbirds.r0');
+        } },
+      ],
+    },
+    melt_reveal: {
+      icon: '🥾', titleId: 'ev.meltreveal.title', textId: 'ev.meltreveal.text',
+      when: { seasons: ['spring'] },
+      choices: [
+        { labelId: 'ev.meltreveal.c0', run() {
+          const pick = ['cloth', 'parts', 'canned'][Math.floor(Math.random() * 3)];
+          resAdd(pick, 1);
+          return t('ev.meltreveal.r0', { name: LN(RESOURCES[pick]) });
+        } },
+        { labelId: 'ev.meltreveal.c1', run() { return t('ev.meltreveal.r1'); } },
+      ],
+    },
+    bee_swarm: {
+      icon: '🐝', titleId: 'ev.beeswarm.title', textId: 'ev.beeswarm.text',
+      when: { seasons: ['spring'] },
+      choices: [
+        { labelId: 'ev.beeswarm.c0', run() {
+          addMoodBuff(2, 3);
+          if (Math.random() < 0.5) { resAdd('food', 1); state.dayLog.notes.push(t('ev.beeswarm.note0')); return t('ev.beeswarm.r0honey'); }
+          return t('ev.beeswarm.r0');
+        } },
+        { labelId: 'ev.beeswarm.c1', run() { return t('ev.beeswarm.r1'); } },
+      ],
+    },
+    mud_tracks: {
+      icon: '🛻', titleId: 'ev.mudtracks.title', textId: 'ev.mudtracks.text',
+      when: { seasons: ['spring'], dayOnly: true },
+      choices: [
+        { labelId: 'ev.mudtracks.c0', run() {
+          if (Math.random() < 0.55) { resAdd('canned', 1); return t('ev.mudtracks.r0good'); }
+          const msg = applyInjury('minor', false); state.dayLog.notes.push(msg); return t('ev.mudtracks.r0bad');
+        } },
+        { labelId: 'ev.mudtracks.c1', run() { addMoodBuff(1, 1); return t('ev.mudtracks.r1'); } },
+      ],
+    },
+
+    // ── 여름: 더위·부패·소나기·생명 소리 ──
+    cicada_evening: {
+      icon: '🎶', titleId: 'ev.cicada.title', textId: 'ev.cicada.text',
+      when: { seasons: ['summer'] },
+      choices: [
+        { labelId: 'ev.cicada.c0', run() { addMoodBuff(2, 2); return state.cat ? t('ev.cicada.r0cat') : t('ev.cicada.r0'); } },
+      ],
+    },
+    mosquito_net: {
+      icon: '🦟', titleId: 'ev.mosquitonet.title', textId: 'ev.mosquitonet.text',
+      when: { seasons: ['summer'] },
+      choices: [
+        { labelId: 'ev.mosquitonet.c0', cost: { cloth: 1 }, run() { return t('ev.mosquitonet.r0'); } },
+        { labelId: 'ev.mosquitonet.c1', run() { addMoodBuff(-1, 2); return t('ev.mosquitonet.r1'); } },
+      ],
+    },
+    wild_berries: {
+      icon: '🫐', titleId: 'ev.wildberries.title', textId: 'ev.wildberries.text',
+      when: { seasons: ['summer'], dayOnly: true },
+      choices: [
+        { labelId: 'ev.wildberries.c0', run() { resAdd('food', 2); return t('ev.wildberries.r0'); } },
+        { labelId: 'ev.wildberries.c1', run() { addMoodBuff(2, 2); return t('ev.wildberries.r1'); } },
+      ],
+    },
+    sudden_shower: {
+      icon: '🌦️', titleId: 'ev.suddenshower.title', textId: 'ev.suddenshower.text',
+      when: { seasons: ['summer'], dayOnly: true },
+      choices: [
+        { labelId: 'ev.suddenshower.c0', run() { resAdd('water', 1); addMoodBuff(2, 2); return t('ev.suddenshower.r0'); } },
+      ],
+    },
+    heat_haze: {
+      icon: '🥵', titleId: 'ev.heathaze.title', textId: 'ev.heathaze.text',
+      when: { seasons: ['summer'], dayOnly: true },
+      choices: [
+        { labelId: 'ev.heathaze.c0', run() { addMoodBuff(1, 1); return t('ev.heathaze.r0'); } },
+        { labelId: 'ev.heathaze.c1', cost: { water: 1 }, run() { addMoodBuff(2, 2); return t('ev.heathaze.r1'); } },
+      ],
+    },
+    firefly_field: {
+      icon: '✨', titleId: 'ev.firefly.title', textId: 'ev.firefly.text',
+      when: { seasons: ['summer'], night: true },
+      choices: [
+        { labelId: 'ev.firefly.c0', run() { addMoodBuff(3, 2); return t('ev.firefly.r0'); } },
+      ],
+    },
+
+    // ── 가을: 낙엽·갈무리·겨울의 예감 ──
+    acorn_cache: {
+      icon: '🌰', titleId: 'ev.acorncache.title', textId: 'ev.acorncache.text',
+      when: { seasons: ['autumn'] },
+      choices: [
+        { labelId: 'ev.acorncache.c0', run() { resAdd('food', 1); return t('ev.acorncache.r0'); } },
+        { labelId: 'ev.acorncache.c1', run() { addMoodBuff(2, 2); return t('ev.acorncache.r1'); } },
+      ],
+    },
+    leaf_drift: {
+      icon: '🍂', titleId: 'ev.leafdrift.title', textId: 'ev.leafdrift.text',
+      when: { seasons: ['autumn'] },
+      choices: [
+        { labelId: 'ev.leafdrift.c0', run() { resAdd('fuel', 1); return t('ev.leafdrift.r0'); } },
+        { labelId: 'ev.leafdrift.c1', run() { addMoodBuff(2, 2); return state.cat ? t('ev.leafdrift.r1cat') : t('ev.leafdrift.r1'); } },
+      ],
+    },
+    first_frost: {
+      icon: '🪟', titleId: 'ev.firstfrost.title', textId: 'ev.firstfrost.text',
+      when: { seasons: ['autumn'] },
+      choices: [
+        { labelId: 'ev.firstfrost.c0', cost: { cloth: 1 }, run() { addMoodBuff(1, 2); state.dayLog.notes.push(t('ev.firstfrost.note0')); return t('ev.firstfrost.r0'); } },
+        { labelId: 'ev.firstfrost.c1', run() { addMoodBuff(1, 1); return t('ev.firstfrost.r1'); } },
+      ],
+    },
+    geese_south: {
+      icon: '🦆', titleId: 'ev.geesesouth.title', textId: 'ev.geesesouth.text',
+      when: { seasons: ['autumn'], dayOnly: true },
+      choices: [
+        { labelId: 'ev.geesesouth.c0', run() {
+          addMoodBuff(2, 2);
+          const detail = items.some(i => i.defId === 'telescope');
+          return detail ? t('ev.geesesouth.r0detail') : t('ev.geesesouth.r0');
+        } },
+      ],
+    },
+    pickling_day: {
+      icon: '🥫', titleId: 'ev.picklingday.title', textId: 'ev.picklingday.text',
+      when: { seasons: ['autumn'] },
+      choices: [
+        { labelId: 'ev.picklingday.c0', cost: { food: 2, water: 1 }, run() { resAdd('canned', 2); return t('ev.picklingday.r0'); } },
+        { labelId: 'ev.picklingday.c1', run() { return t('ev.picklingday.r1'); } },
+      ],
+    },
+    spider_web: {
+      icon: '🕸️', titleId: 'ev.spiderweb.title', textId: 'ev.spiderweb.text',
+      when: { seasons: ['autumn'] },
+      choices: [
+        { labelId: 'ev.spiderweb.c0', run() { addMoodBuff(2, 2); return t('ev.spiderweb.r0'); } },
+        { labelId: 'ev.spiderweb.c1', run() { state.cleanBy[state.current] = Math.min(100, (state.cleanBy[state.current] ?? 70) + 5); return t('ev.spiderweb.r1'); } },
+      ],
+    },
+
+    // ── 겨울: 신규 5 (기존 coldsnap_stranger·frozen_pipe·snow_prints 합류 → 8) ──
+    icicle_row: {
+      icon: '🧊', titleId: 'ev.iciclerow.title', textId: 'ev.iciclerow.text',
+      when: { seasons: ['winter'] },
+      choices: [
+        { labelId: 'ev.iciclerow.c0', run() { resAdd('water', 2); return t('ev.iciclerow.r0'); } },
+        { labelId: 'ev.iciclerow.c1', run() { addMoodBuff(1, 1); return t('ev.iciclerow.r1'); } },
+      ],
+    },
+    frozen_sparrow: {
+      icon: '🐦', titleId: 'ev.frozensparrow.title', textId: 'ev.frozensparrow.text',
+      when: { seasons: ['winter'] },
+      choices: [
+        { labelId: 'ev.frozensparrow.c0', cost: { fuel: 1 }, run() { addMoodBuff(3, 3); state.dayLog.notes.push(t('ev.frozensparrow.note0')); return t('ev.frozensparrow.r0'); } },
+        { labelId: 'ev.frozensparrow.c1', run() { addMoodBuff(-1, 1); return t('ev.frozensparrow.r1'); } },
+      ],
+    },
+    snowman_scarf: {
+      icon: '⛄', titleId: 'ev.snowmanscarf.title', textId: 'ev.snowmanscarf.text',
+      when: { seasons: ['winter'] },
+      choices: [
+        { labelId: 'ev.snowmanscarf.c0', run() { resAdd('cloth', 1); addMoodBuff(-1, 1); return t('ev.snowmanscarf.r0'); } },
+        { labelId: 'ev.snowmanscarf.c1', run() { addMoodBuff(2, 2); return t('ev.snowmanscarf.r1'); } },
+      ],
+    },
+    clear_winter_night: {
+      icon: '🌌', titleId: 'ev.winternight.title', textId: 'ev.winternight.text',
+      when: { seasons: ['winter'], weather: ['clear'], night: true },
+      choices: [
+        { labelId: 'ev.winternight.c0', run() { addMoodBuff(3, 2); return t('ev.winternight.r0'); } },
+      ],
+    },
+    blizzard_warning: {
+      icon: '📻', titleId: 'ev.blizzardwarn.title', textId: 'ev.blizzardwarn.text',
+      when: { seasons: ['winter'], needsRadio: true },
+      choices: [
+        { labelId: 'ev.blizzardwarn.c0', run() { addMoodBuff(1, 1); state.dayLog.notes.push(t('ev.blizzardwarn.note0')); return t('ev.blizzardwarn.r0'); } },
+        { labelId: 'ev.blizzardwarn.c1', run() { return t('ev.blizzardwarn.r1'); } },
+      ],
+    },
+
+    // ── 공용: 무계절 ──
+    red_balloon: {
+      icon: '🎈', titleId: 'ev.redballoon.title', textId: 'ev.redballoon.text',
+      weight: 0.6,
+      choices: [
+        { labelId: 'ev.redballoon.c0', run() { addMoodBuff(2, 2); return t('ev.redballoon.r0'); } },
+      ],
+    },
+    doorstep_bundle: {
+      icon: '🧺', titleId: 'ev.doorstepbundle.title', textId: 'ev.doorstepbundle.text',
+      weight: 0.6,
+      choices: [
+        { labelId: 'ev.doorstepbundle.c0', run() {
+          const pick = ['canned', 'cloth', 'bandage'][Math.floor(Math.random() * 3)];
+          resAdd(pick, 1);
+          return t('ev.doorstepbundle.r0', { name: LN(RESOURCES[pick]) });
+        } },
+        { labelId: 'ev.doorstepbundle.c1', cost: { water: 1 }, run() {
+          const pick = ['canned', 'cloth', 'bandage'][Math.floor(Math.random() * 3)];
+          resAdd(pick, 1); addMoodBuff(3, 3); state.dayLog.notes.push(t('ev.doorstepbundle.note1'));
+          return t('ev.doorstepbundle.r1', { name: LN(RESOURCES[pick]) });
+        } },
+      ],
+    },
+    music_box: {
+      icon: '🎼', titleId: 'ev.musicbox.title', textId: 'ev.musicbox.text',
+      choices: [
+        { labelId: 'ev.musicbox.c0', cost: { parts: 1 }, run() { addMoodBuff(3, 3); return t('ev.musicbox.r0'); } },
+        { labelId: 'ev.musicbox.c1', run() { return t('ev.musicbox.r1'); } },
+      ],
+    },
+    cat_dream: {
+      icon: '🐾', titleId: 'ev.catdream.title', textId: 'ev.catdream.text',
+      when: { needsCat: true },
+      choices: [
+        { labelId: 'ev.catdream.c0', run() { addMoodBuff(2, 2); return t('ev.catdream.r0'); } },
+      ],
+    },
+    old_photo: {
+      icon: '🖼️', titleId: 'ev.oldphoto.title', textId: 'ev.oldphoto.text',
+      weight: 0.7,
+      choices: [
+        { labelId: 'ev.oldphoto.c0', run() { addMoodBuff(2, 2); return t('ev.oldphoto.r0'); } },
+        { labelId: 'ev.oldphoto.c1', run() { addMoodBuff(1, 1); return t('ev.oldphoto.r1'); } },
+      ],
+    },
+
+    /* ── #163b 절박 티어 (디렉터 2026-07-10): 겨울이 지날수록 세상이 야윈다 ──
+       생존·혹한 전용(modes) + 경과 겨울 게이트(minWinters). 코지에는 오지 않는다.
+       자원은 해마다 줄어드는 세계 — 이벤트가 그 결핍을 서사로 보여준다. */
+    silent_frequency: {
+      icon: '📻', titleId: 'ev.silentfreq.title', textId: 'ev.silentfreq.text',
+      when: { modes: ['hard', 'hardcore'], minWinters: 1, needsRadio: true },
+      choices: [
+        { labelId: 'ev.silentfreq.c0', run() { addMoodBuff(-1, 2); state.dayLog.notes.push(t('ev.silentfreq.note0')); return t('ev.silentfreq.r0'); } },
+        { labelId: 'ev.silentfreq.c1', run() { return t('ev.silentfreq.r1'); } },
+      ],
+    },
+    barren_traps: {
+      icon: '🪤', titleId: 'ev.barrentraps.title', textId: 'ev.barrentraps.text',
+      when: { modes: ['hard', 'hardcore'], minWinters: 1 },
+      choices: [
+        { labelId: 'ev.barrentraps.c0', cost: { food: 1 }, run() {
+          if (Math.random() < 0.5) { resAdd('food', 2); return t('ev.barrentraps.r0good'); }
+          return t('ev.barrentraps.r0bad');
+        } },
+        { labelId: 'ev.barrentraps.c1', run() { addMoodBuff(-1, 1); return t('ev.barrentraps.r1'); } },
+      ],
+    },
+    looted_cache: {
+      icon: '📦', titleId: 'ev.lootedcache.title', textId: 'ev.lootedcache.text',
+      when: { modes: ['hard', 'hardcore'], minWinters: 1 },
+      choices: [
+        { labelId: 'ev.lootedcache.c0', run() {
+          const held = ['canned', 'fuel', 'battery', 'food'].filter(r => (state.res[r] || 0) > 0);
+          if (!held.length) return t('ev.lootedcache.r0none');
+          const pick = held[Math.floor(Math.random() * held.length)];
+          resConsume(pick, 1); addMoodBuff(-1, 1);
+          return t('ev.lootedcache.r0', { name: LN(RESOURCES[pick]) });
+        } },
+        { labelId: 'ev.lootedcache.c1', run() {
+          if (Math.random() < 0.5) { addMoodBuff(1, 1); return t('ev.lootedcache.r1good'); }
+          const held = ['canned', 'fuel', 'battery', 'food'].filter(r => (state.res[r] || 0) > 0);
+          if (!held.length) return t('ev.lootedcache.r0none');
+          const pick = held[Math.floor(Math.random() * held.length)];
+          resConsume(pick, 1); addMoodBuff(-2, 2);
+          return t('ev.lootedcache.r1bad', { name: LN(RESOURCES[pick]) });
+        } },
+      ],
+    },
+    desperate_knock: {
+      icon: '🚪', titleId: 'ev.desperateknock.title', textId: 'ev.desperateknock.text',
+      when: { modes: ['hard', 'hardcore'], minWinters: 2, night: true },
+      choices: [
+        { labelId: 'ev.desperateknock.c0', cost: { canned: 1 }, run() { addMoodBuff(2, 3); state.dayLog.notes.push(t('ev.desperateknock.note0')); return t('ev.desperateknock.r0'); } },
+        { labelId: 'ev.desperateknock.c1', run() { addMoodBuff(-2, 2); state.dayLog.notes.push(t('ev.desperateknock.note1')); return t('ev.desperateknock.r1'); } },
+      ],
+    },
+    stripped_district: {
+      icon: '🗄️', titleId: 'ev.strippeddistrict.title', textId: 'ev.strippeddistrict.text',
+      when: { modes: ['hard', 'hardcore'], minWinters: 2 },
+      choices: [
+        { labelId: 'ev.strippeddistrict.c0', run() {
+          if (Math.random() < 0.5) { resAdd('parts', 1); return t('ev.strippeddistrict.r0good'); }
+          const msg = applyInjury('minor', false); state.dayLog.notes.push(msg); return t('ev.strippeddistrict.r0bad');
+        } },
+        { labelId: 'ev.strippeddistrict.c1', run() { addMoodBuff(-1, 1); return t('ev.strippeddistrict.r1'); } },
+      ],
+    },
+    harsh_barter: {
+      icon: '🛒', titleId: 'ev.harshbarter.title', textId: 'ev.harshbarter.text',
+      when: { modes: ['hard', 'hardcore'], minWinters: 2, seasons: ['winter'], dayOnly: true },
+      choices: [
+        { labelId: 'ev.harshbarter.c0', cost: { canned: 3 }, run() { resAdd('fuel', 1); return t('ev.harshbarter.r0'); } },
+        { labelId: 'ev.harshbarter.c1', run() { return t('ev.harshbarter.r1'); } },
+      ],
+    },
+
     /* ── 특수 인카운터 (일반 풀에서 제외) ── */
     cat: {
       special: true,

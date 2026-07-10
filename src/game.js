@@ -3429,7 +3429,7 @@ function recordDistantLight() {
    - 술어(eventMatches/eventWeight/eventThreePeatBlocked/pushEvHistory)는 core/encounter.js로 이관(Tier3).
      eventCtx(weather/gameHour 결합)·drawEvent(RNG)는 여기 잔류.
 ============================================================ */
-// ctx: { season, district, weather, night, day } — 없으면 현재 상태에서 유도
+// ctx: { season, district, weather, night, day, winters } — 없으면 현재 상태에서 유도
 function eventCtx() {
   const h = gameHour();
   return {
@@ -3439,6 +3439,7 @@ function eventCtx() {
     weather: weather.type,
     night: h >= 21 || h < 6, // 야간(밤~새벽). 아침 결산 draw는 '지난밤' 사건 허용 위해 caller가 override.
     day: state.day,
+    winters: wintersPassedOf(state.day), // #163b 절박 티어: 경과 겨울 수 (해가 갈수록 세상이 야윈다)
   };
 }
 // eventMatches/eventWeight/eventThreePeatBlocked/pushEvHistory → core/encounter.js 이관 (Tier3, 순수 술어)
