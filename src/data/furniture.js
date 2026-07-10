@@ -206,7 +206,8 @@ const DEFS = {
     colorNames: ['우드', '화이트', '블랙', '라벤더'],
     colorNamesEn: ['Wood', 'White', 'Black', 'Lavender'],
     colors: [0x8a6a48, 0xd4cfc2, 0x46484a, 0x9a8aa8],
-    light: { color: 0xffa050, intensity: 3, dist: 4, y: 0.75, flicker: true, fuel: 'candle', comfort: 6 },
+    // 디렉터 2026-07-10: 촛불은 은은하게 — 세기 3→1.6, 반경 4→3.2. flickSlow=호롱호롱(저속 일렁임, 렌더 루프 전용 파형).
+    light: { color: 0xffa050, intensity: 1.6, dist: 3.2, y: 0.75, flicker: true, flickSlow: true, fuel: 'candle', comfort: 6 },
     build(c) {
       const g = new THREE.Group();
       Cyl(g, 0.2, 0.22, 0.05, c, 0, 0.42, 0, 10);

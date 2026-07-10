@@ -9294,7 +9294,10 @@ function renderFrame() {
   positionSelPanel(); // 편집 미니 카드 재투영 — 카메라 팬/줌/드래그를 따라간다 (A안)
   for (const it of items) {
     if (it.lightObj && it.on !== false && DEFS[it.defId].light?.flicker) {
-      const k = 0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23);
+      // flickSlow(촛불): 저속 일렁임 + 깊은 딥 — "호롱호롱". 일반 flicker(랜턴 등): 기존 잰 흔들림.
+      const k = DEFS[it.defId].light.flickSlow
+        ? 0.72 + 0.26 * Math.sin(t * 3.1) * Math.sin(t * 1.7) + 0.1 * Math.sin(t * 7.3)
+        : 0.8 + 0.25 * Math.sin(t * 11) * Math.sin(t * 5.3) + 0.1 * Math.sin(t * 23);
       it.lightObj.intensity = it.lightBase * k;
       if (it.glowSprite) it.glowSprite.material.opacity = it.glowBase * (0.6 + 0.4 * k); // 헤일로도 함께 일렁임
     }
