@@ -1057,5 +1057,6 @@
   "quest.craft.lore": "'What you scavenge is only material. Hands make it into things. Two cloth makes one bandage.'",
   "quest.craft.done": "The feeling of making something. It's been a while.",
   "quest.clean.lore": "'Last — keep it clean. Sickness moves into a dirty home before you do.'",
-  "quest.clean.done": "The notebook's first chapter ends here. The rhythm of these days is yours now."
+  "quest.clean.done": "The notebook's first chapter ends here. The rhythm of these days is yours now.",
+  "demo.hardPerk": "🔓 Demo challenge mode: the Commercial District opens as an extra scavenging area."
 }

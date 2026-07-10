@@ -105,7 +105,9 @@ const OLD_SAVE_KEY = 'project-shelter-web-v1';
 // #90 데모 오디트: 서사 콘텐츠도 데모 스코프로 — "조회 자체 불가"(후반·2.0 서사는 목록/총계에도 안 보인다).
 //   방송: 예보·상인·통금·배급·음악만(박사/생존자/비컨 = 본편 서사). 메모: 데모 3지역 풀만(연구소 등 비노출).
 const DEMO_BROADCASTS = new Set(['fc_spring', 'fc_summer', 'fc_winter', 'merchant_ad', 'gov_curfew', 'gov_ration', 'music_unknown']);
+// #159 데모 지역 풀은 모드 따라 달라진다: 코지=3지역, 도전(하드)=+상업지구 (지도 게이트 core/regions.js와 동일 기준)
 const DEMO_MEMO_REGIONS = ['residential', 'industrial', 'slum'];
+const demoMemoRegions = () => state.mode === 'hard' ? [...DEMO_MEMO_REGIONS, 'commercial'] : DEMO_MEMO_REGIONS;
 const DEMO_ACH_HIDE = new Set(['nine_winters', 'ending']); // 엔드게임 도전과제 텍스트 = 스포일러
 const GAME_MIN_PER_SEC = 1.0;   // 실제 1초 = 게임 1분 (하루 = 실시간 24분) — v1.5.1 디렉터 확정(순삭감 완화, 1.5→1.0)
 //   게이지 소모·부패·스폰 주기는 전부 '게임 분' 기준이라 게임일 밸런스 불변. 오프라인 정산·탐험 차감식(#94)도 이 상수를 공유해 일관.
@@ -3312,10 +3314,10 @@ function pickUncollectedMemo(region) {
   const owned = state.memos || {};
   const tryPool = pool => pool.filter(id => !owned[id]);
   let region0 = region || (['residential', 'commercial', 'industrial', 'slum'].includes(districtRegionOf(state.current)) ? districtRegionOf(state.current) : null);
-  if (DEMO_ED && region0 && !DEMO_MEMO_REGIONS.includes(region0)) region0 = null; // #90: 데모 스코프 밖 지역 풀 금지
+  if (DEMO_ED && region0 && !demoMemoRegions().includes(region0)) region0 = null; // #90: 데모 스코프 밖 지역 풀 금지
   if (region0) { const p = tryPool(MEMOS_BY_REGION[region0] || []); if (p.length) return p[Math.floor(Math.random() * p.length)]; }
   // #90: 데모는 전체 폴백 금지 — 3지역 풀 소진 시 무드랍(연구소·리조트 등 후반 메모가 새지 않게)
-  const all = tryPool(DEMO_ED ? DEMO_MEMO_REGIONS.flatMap(rg => MEMOS_BY_REGION[rg] || []) : Object.keys(MEMOS));
+  const all = tryPool(DEMO_ED ? demoMemoRegions().flatMap(rg => MEMOS_BY_REGION[rg] || []) : Object.keys(MEMOS));
   if (all.length) return all[Math.floor(Math.random() * all.length)];
   return null;
 }
@@ -4892,7 +4894,7 @@ function recordTabHtml() {
     : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
   let sections = '';
   // #90: 데모는 스코프 내 지역 섹션만 — 잠긴 지역(상업지구 등)은 존재 자체를 안 보인다
-  for (const rg of (DEMO_ED ? DEMO_MEMO_REGIONS : ['residential', 'commercial', 'industrial', 'slum'])) {
+  for (const rg of (DEMO_ED ? demoMemoRegions() : ['residential', 'commercial', 'industrial', 'slum'])) {
     const ids = MEMOS_BY_REGION[rg];
     const gotN = ids.filter(id => owned[id]).length;
     sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t(regionKeys[rg])} (${gotN}/${ids.length})</div>` + ids.map(id => memoRow(id, MEMOS)).join('');
@@ -4948,7 +4950,7 @@ function recordTabHtml() {
     sketchSec = `<div class="report-sec"><span class="r-title">${t('record.sketchTitle', { n: sketchesCollected(), total: sketchesTotal() })}</span>${rows}</div>`;
   }
   // #90: 데모 총계는 데모 풀 기준 — "63개 중 6개" 같은 표기로 숨은 콘텐츠 규모가 새지 않게
-  const total = DEMO_ED ? DEMO_MEMO_REGIONS.reduce((a, rg) => a + (MEMOS_BY_REGION[rg] || []).length, 0) + Object.keys(WILLS).length : memosTotal();
+  const total = DEMO_ED ? demoMemoRegions().reduce((a, rg) => a + (MEMOS_BY_REGION[rg] || []).length, 0) + Object.keys(WILLS).length : memosTotal();
   const radioTotal = DEMO_ED ? DEMO_BROADCASTS.size : broadcastsTotal();
   // ??? 티저 (디렉터 2026-07-09): 잠긴 규모는 보여주되 내용(제목)은 은닉 — "뭐가 더 있지?"가 구매 동기가 된다
   if (DEMO_ED) {

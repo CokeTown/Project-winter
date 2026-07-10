@@ -24,15 +24,19 @@ export function makeModals(ctx) {
       <div class="sl-body">
         <div class="mc-title">${lock ? '🔒 ' : ''}${t(titleId)}</div>
         <div class="mc-tag">${t(tagId)}</div>
-        <div class="sl-meta">${lock ? t('mode.wallpaper.lock', { n: BAL.rescue.unlockDay }) : t(descId)}</div>
+        <div class="sl-meta">${lock ? t('mode.wallpaper.lock', { n: BAL.rescue.unlockDay }) : t(descId)}</div>${opt.extra || ''}
       </div>
     </div>`;
     };
     const wpLocked = !wallpaperUnlocked();
-    // #74 데모: 노말만 — 모드 다양성은 정식판의 것 (Next Fest 「첫 번째 겨울」 게이트와 한 몸)
+    // #74 데모: 코지+도전 2모드 (#159, 디렉터 2026-07-10 — "그래야 이 게임을 더 잘 알지").
+    //   도전(하드)은 상업지구가 추가로 열린다(core/regions.js DEMO_HARD_REGIONS). 하드코어·무한·배경화면은 정식판의 것.
+    const demoHardNote = DEMO_ED ? `<div class="sl-meta" style="color:var(--accent);margin-top:2px">${t('demo.hardPerk')}</div>` : '';
     const body = `<div class="mode-scroll">`
       + card('normal', 'mode.normal', 'mode.normal.tag', 'mode.normal.desc')
-      + (DEMO_ED ? '' : card('hard', 'mode.hard', 'mode.hard.tag', 'mode.hard.desc')
+      + (DEMO_ED
+        ? card('hard', 'mode.hard', 'mode.hard.tag', 'mode.hard.desc', { extra: demoHardNote })
+        : card('hard', 'mode.hard', 'mode.hard.tag', 'mode.hard.desc')
         + card('hardcore', 'mode.hardcore', 'mode.hardcore.tag', 'mode.hardcore.desc')
         + card('zen', 'mode.zen', 'mode.zen.tag', 'mode.zen.desc')
         + card('wallpaper', 'mode.wallpaper', 'mode.wallpaper.tag', 'mode.wallpaper.desc', { locked: wpLocked }))

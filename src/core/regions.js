@@ -20,12 +20,14 @@ export function setRegionsWeather(fn) { _weatherType = fn; }
 let _demoLock = () => false;
 export function setRegionsDemo(fn) { _demoLock = fn; }
 const DEMO_REGIONS = new Set(['residential', 'industrial', 'slum']); // 데모 허용 파밍 지역 3종 (상업+확장 잠금)
+// #159 데모 도전(하드) 한정 추가 개방 — "도전을 고르면 도시가 조금 더 열린다" (디렉터 2026-07-10)
+const DEMO_HARD_REGIONS = new Set(['commercial']);
 
 const BLIZZARD_EXEMPT_REGIONS = ['harborYard', 'fishMarket']; // 지상 폭설 봉쇄에서 제외되는 지역(항구)
 
 // 지역 해금 여부 (성공 횟수 게이트). 항구·리조트·금지구역은 대응 셸터/후반선 도달 시 지도 노출.
 export function regionUnlocked(rid) {
-  if (_demoLock()) return DEMO_REGIONS.has(rid); // #74 데모: 거주·공업·슬럼 3지역만 (상업·항구·고원·금지 전부 잠금)
+  if (_demoLock()) return DEMO_REGIONS.has(rid) || (state.mode === 'hard' && DEMO_HARD_REGIONS.has(rid)); // #74 데모 3지역 + #159 도전=상업지구
   if (rid === 'harborYard' || rid === 'fishMarket') return state.successes >= SHELTER_META.tugboat.unlockAt;
   if (rid === 'resort') return state.successes >= SHELTER_META.lodge.unlockAt; // 1.3: 리조트는 스키 로지 해금 후
   if (rid === 'checkpoint' || rid === 'lab') return state.successes >= BAL.forbidden.unlockAt; // 1.4 금지구역(진입은 방호복 게이트가 별도)
