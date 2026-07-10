@@ -5674,8 +5674,22 @@ function petCatResponse() {
   if (!_cat) return;
   _cat.petHappy = PET_HAPPY_MS / 1000; // 남은 눈감김 시간(초)
   _cat.petPurr = 1;                     // 꼬리 가속 계수(1→0 감쇠)
-  // 갸르릉: assets-src/Cat_sound에 전용 파일 없음 → 기존 야옹을 저피치(rate<1)로 재생해 그르릉 톤 근사.
-  playSfx(['meow1', 'meow2', 'meow3'][Math.floor(Math.random() * 3)], { rate: 0.55, jitter: 0.03, vol: 0.85 });
+  // #93 진짜 갸르릉 (디렉터 소스 Cat_purr): 저피치 야옹 근사를 전용 사운드로 교체. 눈감김 2초에 맞춰 잦아든다.
+  playSfx('purr', { vol: 0.9, jitter: 0.02, dur: 2.6, fade: 0.6 });
+}
+// #93 방석 골골 기믹: 잠든 고양이(엎드림 12초+ 또는 sleep)가 방석 위면 은은한 골골이 이따금 —
+//   코지 사운드스케이프. 방석 반경 0.5, 11~17초 간격, 낮은 볼륨(0.28)으로 "방에 고양이가 산다"는 배음.
+let _purrNext = 3;
+function tickCatPurr(dt) {
+  const c = getCat();
+  const asleep = c && (c.mode === 'sleep' || (c.mode === 'sprawl' && (c.sprawlFor || 0) > 12));
+  if (!asleep) { _purrNext = 3; return; }
+  _purrNext -= dt;
+  if (_purrNext > 0) return;
+  _purrNext = 11 + Math.random() * 6;
+  const onCushion = items.some(it => /cushion/i.test(it.defId)
+    && Math.hypot((it.x ?? 0) - c.g.position.x, (it.z ?? 0) - c.g.position.z) < 0.5);
+  if (onCushion) playSfx('purr', { vol: 0.28, rate: 0.95, jitter: 0.03, dur: 6, fade: 1.4 });
 }
 function pickItem(e) {
   pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
@@ -9321,6 +9335,7 @@ function renderFrame() {
     const ag = avatarSys.getGroup && avatarSys.getGroup(); if (ag) ag.visible = false;
   } else {
     updateCat(t, dt);
+    tickCatPurr(dt);           // #93: 방석 골골 기믹 (잠든 고양이 + 방석)
     wildlifeSys.update(t, dt); // F-1a: 야생동물 로밍/개막 연출
     avatarSys.update(t, dt);   // #86: 주인공 아바타 실내 생활
   }
