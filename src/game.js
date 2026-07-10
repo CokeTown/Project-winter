@@ -5699,6 +5699,10 @@ function pickBalconyView(e) {
 
 let hiddenTapAt = 0;
 function pickHidden(e) {
+  // 침묵 루트는 생존·혹한 전용 (디렉터 확정 2026-07-10): 코지에서 이 벽은 영원히 그냥 벽이다.
+  //   히든 사슬 전체(발견→개척→유보→문서→사일로)가 subwayHidden에서 시작하므로 이 게이트 하나로 봉인.
+  //   메트로 2033 오마주 — 그 무게는 겨울이 이빨을 드러내는 모드의 것.
+  if (!isHard()) return false;
   if (!subwayHiddenObj || state.current !== 'subway') return false;
   pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   raycaster.setFromCamera(pointer, camera);
@@ -9837,6 +9841,9 @@ window.__shelter = {
   wallProxyState: () => wallList.map(w => ({ show: w.group.visible, proxy: w.proxy ? w.proxy.visible : null })), // #97 QA
   avatarWalkTo: (x, z) => avatarSys._walkTo(x, z), // #86 QA: 경유점 라우팅 실증
   FIELD_SPOTS, resolveFieldSpot, // #164 QA: 떠오른 자리 데이터/회수 (프로브 결정론 검증용)
+  // 침묵 모드 게이트 QA (디렉터 2026-07-10 — 생존·혹한 전용): 실탭 경로(pickHidden)를 좌표로 재현
+  hiddenTapProbe: (x, y) => pickHidden({ clientX: x, clientY: y }),
+  hiddenSpotXY: () => { if (!subwayHiddenObj) return null; const v = new THREE.Vector3(); subwayHiddenObj.getWorldPosition(v); v.project(camera); return { x: (v.x + 1) / 2 * innerWidth, y: (-v.y + 1) / 2 * innerHeight }; },
   // #98 QA: 개조 소품 월드 bb 덤프 (증축 겹침 판정용)
   modPropBBoxes: () => { const out = {}; roomGroup.traverse(o => { if (o.userData && o.userData.modProp) { const b = new THREE.Box3().setFromObject(o); out[o.userData.modProp] = { minX: +b.min.x.toFixed(2), maxX: +b.max.x.toFixed(2), minZ: +b.min.z.toFixed(2), maxZ: +b.max.z.toFixed(2) }; } }); return out; },
   wlObstacleList: () => wlObstacles.slice(), // #95 QA: 등록 장애물 덤프 (프로브 침범 판정용)
