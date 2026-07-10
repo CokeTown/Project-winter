@@ -3632,6 +3632,34 @@ function playEventSting(id) {
   playSfx('sting', { rate: STING_RATE[tone], jitter: 0.03 });
 }
 // title/text/choice label 은 언어 전환 시점(showEvent) 에 t() 로 해석하므로 id 로 보관한다.
+// #165 무너진 입구 보상 롤 (디렉터 2026-07-10): Yes의 값 — 치장템(도료·도면) 가중, 최희귀 고양이 루트,
+//   나머지는 잡동사니 위로. 부상 리스크는 이벤트 쪽(choices.run)에서 별도 롤 — 보상과 독립이라 "얻고도 다칠" 수 있다.
+function collapseEntranceLoot() {
+  const region = state.exp ? state.exp.region : 'slum';
+  const r = Math.random();
+  // 최희귀: 어둠 속의 야옹 — 고양이 미보유·미조우일 때만. 입양 인카운터로 연결(집 문앞 재회 플로우 그대로).
+  if (!state.cat && !state.catEventSeen && r < 0.08) {
+    state.pendingEvent = 'cat';
+    return t('ev.collapse.rCat');
+  }
+  if (r < 0.5) { // 도료 (지역 시그니처 계열 가중 — 기존 잭팟 층 재사용)
+    const fam = rollPaintFamily(region);
+    state.paints[fam] = (state.paints[fam] || 0) + 1;
+    jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
+    return t('ev.collapse.rPaint', { name: LName(PAINT_FAMILIES[fam]) });
+  }
+  const bpPool = (BAL.blueprint.regionItems[region] || []).filter(id => !(state.blueprints || {})[id]);
+  if (r < 0.68 && bpPool.length) { // 시그니처 도면 (미보유 한정)
+    const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
+    state.blueprints = state.blueprints || {};
+    state.blueprints[bpId] = 1;
+    jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
+    return t('ev.collapse.rBp', { name: LName(DEFS[bpId]) });
+  }
+  const rid = Math.random() < 0.5 ? 'cloth' : 'parts';
+  resAdd(rid, 1);
+  return t('ev.collapse.rJunk', { name: LN(RESOURCES[rid]) });
+}
 // 인카운터 테이블은 src/data/events.js로 분리(콘텐츠 데이터 Phase 1). 함수 필드가 game.js
 // 내부 심볼을 참조하므로 팩토리 makeEvents(ctx)에 의존성 주입해 생성한다(원본과 동작 동일).
 // state/items/weather는 const 참조라 재할당되지 않아 클로저 캡처가 안전하다.
@@ -3644,6 +3672,7 @@ const EVENTS = makeEvents({
   endingLeaning, // 2.0 §9.5: 엔딩 성향
   encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도)
   PAINT_FAMILIES, buyDye, dyeCost, // dye merchant ctx (REWARD-LOOP)
+  collapseEntranceLoot, // #165 탐험 리스크 인카운터 — 보상 롤 위임 (game.js 심볼 전부 여기 있음)
 });
 setEncounterEvents(EVENTS); // core/encounter 술어에 EVENTS 주입 (makeEvents 산물 — 생성 직후 1회)
 // 이벤트 선택지 비용 판정/소비: food가 섞인 cost는 신선+통조림 합산으로 취급 (신선 우선 소비 후 통조림 폴백)
@@ -7707,6 +7736,15 @@ function tickExpeditionUI() {
   if (state.exp) {
     const remain = state.exp.end - Date.now();
     const total = state.exp.dur || (REGIONS[state.exp.region].time * 1000);
+    // #165 탐험 리스크 인카운터 (디렉터 2026-07-10): 진행률 35% 지점 별도 롤 — "무너진 입구" Yes/No.
+    //   일일 쿨다운 미공유(즉흥 발견의 결) · 탐험당 1회 · 발동 시 이번 탐험 일반 중간 인카운터는 양보(팝업 과밀 방지).
+    if (!state.exp.riskRolled && (1 - remain / total) >= 0.35) {
+      state.exp.riskRolled = true;
+      if (!state.pendingEvent && !isWallpaper() && Math.random() < (BAL.events.riskExpChance || 0) * encFreqMul()) {
+        state.pendingEvent = 'collapsed_entrance';
+        state.exp.midRolled = true;
+      }
+    }
     // 탐험 중간 이벤트: 진행률 50% 통과 시점에 1회, BAL 확률로 일반 인카운터 예약 (현재 시각 컨텍스트).
     //   디렉터 2026-07: 일일 이벤트와 같은 1일 쿨다운을 공유해 "탐험+하루 스택"을 막는다(하루 최대 1회 하드캡).
     if (!state.exp.midRolled && (1 - remain / total) >= 0.5) {

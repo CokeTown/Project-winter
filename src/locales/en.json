@@ -1370,5 +1370,19 @@
   "ev.harshbarter.c0": "🥫 Pay it (canned 3)",
   "ev.harshbarter.c1": "Shake my head",
   "ev.harshbarter.r0": "Three cans became one of fuel. Said nothing to the cart's back as it rolled off. They have a winter too. <b>(fuel +1)</b>",
-  "ev.harshbarter.r1": "The cart moved on without a second look. Winter prices do not bend. We both know it."
+  "ev.harshbarter.r1": "The cart moved on without a second look. Winter prices do not bend. We both know it.",
+  "ev.collapse.title": "A Collapsed Opening",
+  "ev.collapse.text": "A roar up the road — one side of an old building slumps, opening a gap that leads inside. The dust is settling. Now is likely the only time this can be entered.",
+  "ev.collapse.text.slum": "A plank wall crashes down, revealing a sealed-off shop deep in the alley. Darkness shows through the shutter gap. Now is likely the only time this can be entered.",
+  "ev.collapse.text.residential": "A garden wall gives way, exposing a half-basement window behind it. The curtains are still hanging. Now is likely the only time this can be entered.",
+  "ev.collapse.text.industrial": "Rusted scaffolding folds and punches a hole in the factory's flank. Cold machine air drifts out. Now is likely the only time this can be entered.",
+  "ev.collapse.text.harbor": "The leaning crane finally goes over, tearing a container open. The gap shows the inside. Now is likely the only time this can be entered.",
+  "ev.collapse.c0": "🧱 Go in",
+  "ev.collapse.c1": "Walk past",
+  "ev.collapse.rCat": "A meow from the dark. Two eyes catch the lantern light — a small shadow picks its way over the rubble, coming closer.",
+  "ev.collapse.rPaint": "A dusty toolbox — with an unopened tin of paint inside. <b>({name} +1)</b>",
+  "ev.collapse.rBp": "Under a fallen shelf, a folded blueprint. My hands shook a little unfolding it. <b>({name} blueprint)</b>",
+  "ev.collapse.rJunk": "Anything worth taking was long gone. Still, not empty-handed. <b>({name} +1)</b>",
+  "ev.collapse.rHurt": "On the way out the rubble shifted underfoot. My ankle throbs. <b>(injured)</b>",
+  "ev.collapse.r1": "The structure looks untrustworthy. Today, stick to the plan. The next rain will bury that gap again."
 }

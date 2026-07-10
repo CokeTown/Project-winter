@@ -24,6 +24,7 @@ export function makeEvents(ctx) {
     endingLeaning, // 2.0 §9.5: 엔딩 성향(누적 신호 기반 — 3분기 문안 뉘앙스)
     encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도 — 암시장과 캐논 공유)
     PAINT_FAMILIES, buyDye, dyeCost, // 염료 상인 (디렉터 2026-07-08 — 도료 교환 채널)
+    collapseEntranceLoot, // #165 탐험 리스크 인카운터 — 보상 롤 (도료·도면·고양이·잡동사니)
   } = ctx;
   const EVENTS = {
     wanderer: {
@@ -582,6 +583,31 @@ export function makeEvents(ctx) {
       choices: [
         { labelId: 'ev.harshbarter.c0', cost: { canned: 3 }, run() { resAdd('fuel', 1); return t('ev.harshbarter.r0'); } },
         { labelId: 'ev.harshbarter.c1', run() { return t('ev.harshbarter.r1'); } },
+      ],
+    },
+
+    /* ── #165 탐험 리스크 인카운터 (디렉터 2026-07-10) — 특수: 탐험 진행률 35% 지점에서만 예약(tickExpeditionUI) ──
+       "건물이 무너지며 새 입구가 생겼다. 들어가시겠습니까?" — Yes = 치장템 가중 드랍 + 부상 리스크(모드별). No = 안전.
+       문안은 탐험 목적지(state.exp.region)별 변형. */
+    collapsed_entrance: {
+      special: true,
+      icon: '🧱', titleId: 'ev.collapse.title',
+      textFn: () => {
+        const rg = state.exp && state.exp.region;
+        return t(['slum', 'residential', 'industrial', 'harbor'].includes(rg) ? `ev.collapse.text.${rg}` : 'ev.collapse.text');
+      },
+      choices: [
+        { labelId: 'ev.collapse.c0', run() {
+          let out = collapseEntranceLoot();
+          const inj = (BAL.events.riskInjury && BAL.events.riskInjury[state.mode]) ?? 0.28;
+          if (Math.random() < inj) {
+            const msg = applyInjury('minor', false);
+            state.dayLog.notes.push(msg);
+            out += '<br>' + t('ev.collapse.rHurt');
+          }
+          return out;
+        } },
+        { labelId: 'ev.collapse.c1', run() { return t('ev.collapse.r1'); } },
       ],
     },
 
