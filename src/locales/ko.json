@@ -1060,5 +1060,6 @@
   "quest.clean.done": "수첩의 첫 장이 끝났다. 이제 이 하루의 리듬은 당신의 것이다.",
   "demo.hardPerk": "🔓 데모 도전 모드: 탐험 지역에 상업지구가 추가로 열린다.",
   "mode.zen.lock": "겨울을 {n}번 넘긴 사람의 것이다.",
-  "mode.zen.lockToast": "어느 모드로든 겨울 {n}번을 넘기면 열린다."
+  "mode.zen.lockToast": "어느 모드로든 겨울 {n}번을 넘기면 열린다.",
+  "demo.autoLocked": "자동 진행은 첫눈 크레딧 이후의 것이다 — 첫 겨울까지는 내 손으로."
 }

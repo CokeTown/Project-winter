@@ -6216,6 +6216,10 @@ function runDemoCredits() {
       creditsActive = false;
       state.demoPhase = 'sandbox';   // 이제부터 4계절 무한 샌드박스 (동결 없음)
       state.dayLog.notes.push(t('demo.credits.note'));
+      // 자동모드 신고 수정: 샌드박스가 열리는 바로 이 순간 자동 진행 해금 안내를 예약 —
+      //   (모달 큐가 크레딧 종료 후 화면이 비면 띄운다). Day 10 조기 팝업은 위 롤오버 게이트가 억제.
+      if (!state.autoNoticeShown) { state.autoNoticeShown = true; state.pendingAutoNotice = true; }
+      refreshAutoplayLock();         // 잠금 즉시 해제 (설정 체크박스·🤖 버튼 활성화)
       flushSave();                   // 재입장 시 크레딧 재발화 방지 (firstSnowSeen + demoPhase 각인)
       syncBgm();                     // 날씨/계절 BGM 복귀
       toast(t('demo.credits.toast'));
@@ -6927,7 +6931,9 @@ function tickTime(dt) {
     refreshAutoplayLock();
     // Day 10 도달(또는 이미 지난 구세이브 첫 부팅 이후 롤오버): 자동 진행 해금 1회 안내
     // 노말/하드: Day 10 도달 시 해금 안내. 무한(zen): 이미 첫날부터 열려 있으므로 첫 아침 롤오버에 안내.
-    if ((isZen() || state.day >= 10) && !state.autoNoticeShown) { state.autoNoticeShown = true; state.pendingAutoNotice = true; }
+    // 데모(1.6.x 자동모드 신고 수정): 샌드박스 전엔 자동모드가 잠겨 있으므로 안내도 억제 —
+    //   Day 10 팝업이 "열렸다"고 약속하고 refreshAutoplayLock이 도로 꺼버리던 거짓 해금 해소. 안내는 크레딧 직후 발화.
+    if ((isZen() || state.day >= 10) && (!DEMO_ED || state.demoPhase === 'sandbox') && !state.autoNoticeShown) { state.autoNoticeShown = true; state.pendingAutoNotice = true; }
     processDay();
     reportQueued = true;
     rolledOver = true;
@@ -7913,7 +7919,8 @@ function refreshAutoplayLock() {
   const locked = (!isZen() && state.day < 10) || (DEMO_ED && state.demoPhase !== 'sandbox'); // #74 데모: 샌드박스 전엔 자동모드 잠금
   if (cb) cb.disabled = locked;
   const row = $('autoplay-row');
-  if (row) row.title = locked ? t('opt.autoplay.locked') : t('opt.autoplay.title');
+  // 데모 잠금 사유는 Day 10이 아니라 크레딧 — "Day 10부터" 문구가 데모에선 거짓이었다(자동모드 신고 일부)
+  if (row) row.title = locked ? t(DEMO_ED ? 'demo.autoLocked' : 'opt.autoplay.locked') : t('opt.autoplay.title');
   if (locked && opts.autoPlay) { opts.autoPlay = false; if (cb) cb.checked = false; }
   syncAutoBtn();
 }
@@ -8346,7 +8353,8 @@ $('btn-edit').addEventListener('click', () => toggleEditMode());
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
 // P2-b: 자동 진행 토글 버튼 (cam-ctrl) — Day 10 미만이면 잠금 토스트, 아니면 opts.autoPlay 토글 + 체크박스 양방향 동기화
 $('btn-auto').addEventListener('click', () => {
-  if ((!isZen() && state.day < 10) || (DEMO_ED && state.demoPhase !== 'sandbox')) { toast(t('auto.locked')); return; }
+  if (DEMO_ED && state.demoPhase !== 'sandbox') { toast(t('demo.autoLocked')); return; } // 데모: 잠금 사유를 정직하게(크레딧 이후)
+  if (!isZen() && state.day < 10) { toast(t('auto.locked')); return; }
   opts.autoPlay = !opts.autoPlay;
   const cb = $('opt-autoplay'); if (cb) cb.checked = opts.autoPlay;
   syncAutoBtn();

@@ -1060,5 +1060,6 @@
   "quest.clean.done": "The notebook's first chapter ends here. The rhythm of these days is yours now.",
   "demo.hardPerk": "🔓 Demo challenge mode: the Commercial District opens as an extra scavenging area.",
   "mode.zen.lock": "It belongs to those who have crossed {n} winter.",
-  "mode.zen.lockToast": "Opens after crossing {n} winter in any mode."
+  "mode.zen.lockToast": "Opens after crossing {n} winter in any mode.",
+  "demo.autoLocked": "Auto-play belongs to the days after the first-snow credits — until the first winter, it is your own hands."
 }
