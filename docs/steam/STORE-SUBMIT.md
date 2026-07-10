@@ -102,15 +102,31 @@
 
 ---
 
-## 7. 시스템 요구사항 (Electron 실측 기반 — v1.9.0 빌드 재검산 2026-07-10)
+## 7. 시스템 요구사항 (스팀 백엔드 폼 필드별 — 폼 언어 = 영어, v1.9.0 실측 2026-07-10)
 
-**최소** — OS: Windows 10 64-bit / CPU: 듀얼코어 2GHz / RAM: 4GB / GPU: WebGL2 지원(내장 그래픽 가능) / 저장공간: 1GB
-**권장** — OS: Windows 11 64-bit / CPU: 쿼드코어 / RAM: 8GB / GPU: WebGL2 지원 외장 / 저장공간: 2GB
+> 스팀 "시스템 요구 사항" 폼의 각 칸에 그대로 붙여넣는다. 폼 언어가 영어이므로 **값은 영어**로 입력.
+> 빈 칸(사운드 카드·VR·추가 알림)은 비워 둔다 — 억지로 채우면 오히려 노이즈.
 
-EN — Minimum: Windows 10 64-bit, Dual-core 2GHz, 4GB RAM, WebGL2-capable GPU (integrated OK), 1GB storage. Recommended: Windows 11 64-bit, Quad-core, 8GB RAM, dedicated WebGL2 GPU, 2GB storage.
+| 스팀 폼 필드 | 최소 (Minimum) | 권장 (Recommended) |
+|---|---|---|
+| **OS version** | Windows 10 64-bit | Windows 11 64-bit |
+| **Processor** | Dual-core 2 GHz | Quad-core 2.5 GHz+ |
+| **Memory** | `4` GB | `8` GB |
+| **Graphics** | WebGL 2.0-capable GPU (integrated graphics OK) | Dedicated WebGL 2.0-capable GPU |
+| **Network (광대역)** | ☐ 체크 안 함 (싱글플레이·오프라인) | ☐ 체크 안 함 |
+| **DirectX Version** | N/A (기본값 유지) | N/A |
+| **Disk Space** | `1` GB (또는 `1024` MB) | `2` GB |
+| **Sound Card** | (비움) | (비움) |
+| **VR 기기 및 지원** | (비움) | (비움) |
+| **추가 알림** | (비움) | (비움) |
 
-> 근거: v1.9.0 설치 후 실크기 575MB 실측 + 설치 중 설치본(275MB)·해제 공간 동시 소요 → 최소 1GB로 상향.
-> 세이브·업데이트 여유 포함 권장 2GB. RAM은 오프스크린 하네스 장주행(#25 배터리 최적화) 기준 내장 그래픽에서도 코지 프레임 유지.
+**근거**:
+- **저장공간** — v1.9.0 설치 후 실측 575MB. 스팀은 depot를 자체 다운로드·해제하므로 우리 NSIS 설치본과 무관. 세이브·업데이트·depot 여유 포함해 최소 1GB / 권장 2GB.
+- **DirectX = N/A** — Electron/WebGL2 게임이라 사용자가 특정 DirectX 런타임을 설치할 필요 없음(내부적으론 Chromium ANGLE이 D3D11 경유). 값을 강제로 넣지 않는다. 리뷰어가 값을 요구하면 "11"로.
+- **네트워크 = 미체크** — 완전 오프라인 싱글플레이(스팀 실적/클라우드 세이브는 네트워크 요건 아님).
+- **RAM/CPU** — 저폴리 복셀 + 배터리 최적화(#25)로 내장 그래픽에서도 코지 프레임 유지. 4GB/듀얼코어가 진짜 바닥값.
+
+EN one-line (문서 참조용) — Minimum: Windows 10 64-bit, Dual-core 2 GHz, 4 GB RAM, WebGL 2.0-capable GPU (integrated OK), 1 GB storage. Recommended: Windows 11 64-bit, Quad-core 2.5 GHz+, 8 GB RAM, dedicated WebGL 2.0-capable GPU, 2 GB storage.
 
 ---
 
