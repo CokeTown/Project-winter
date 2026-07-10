@@ -74,7 +74,27 @@ const DEFS = {
   chair: {
     name: '의자', nameEn: 'Chair', emoji: '🪑', fp: { w: 0.6, d: 0.6 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
-    build(c) {
+    tiered: true, // #157: T1 뒤집은 우유짝(등받이 없음) → T2 삐걱 나무 의자 → T3 현행. 착석면 높이 동일.
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const crate = 0x8a7550;
+        B(g, 0.48, 0.06, 0.48, crate, 0, 0.43, 0);                           // 윗면(앉는 데)
+        for (const s of [-0.21, 0, 0.21]) B(g, 0.48, 0.34, 0.05, shade(crate, 0.85), 0, 0.22, s); // 세로 널
+        B(g, 0.05, 0.34, 0.48, shade(crate, 0.8), -0.21, 0.22, 0); B(g, 0.05, 0.34, 0.48, shade(crate, 0.82), 0.21, 0.22, 0);
+        B(g, 0.2, 0.012, 0.2, shade(crate, 0.6), 0.08, 0.462, 0.05);         // 얼룩
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        B(g, 0.5, 0.07, 0.5, shade(c, 0.8), 0, 0.46, 0);
+        const back = B(g, 0.5, 0.55, 0.07, shade(c, 0.78), 0, 0.82, -0.22);
+        back.rotation.x = -0.06;                                             // 등받이 살짝 뒤로 밀림
+        B(g, 0.03, 0.4, 0.015, shade(c, 0.5), 0.1, 0.85, -0.185);            // 등받이 갈라짐 선
+        const legs = [[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]];
+        legs.forEach(([x, z], i) => B(g, 0.07, 0.45, 0.07, i === 1 ? 0x9a8a6a : shade(c, 0.7), x, 0.22, z)); // 다리 하나 교체목
+        return g;
+      }
       const g = new THREE.Group();
       B(g, 0.5, 0.07, 0.5, c, 0, 0.46, 0);
       B(g, 0.5, 0.55, 0.07, c, 0, 0.82, -0.22);
@@ -87,7 +107,30 @@ const DEFS = {
     name: '테이블', nameEn: 'Table', emoji: '🪵', fp: { w: 1.5, d: 0.9 },
     surface: { y: 0.77, w: 1.3, d: 0.72 }, // 상판 위에 소품을 올릴 수 있음
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
-    build(c) {
+    tiered: true, // #157: T1 벽돌+합판 → T2 긁힌 원목(다리 하나 딴색) → T3 현행. 상판 높이 동일(스태킹 정합).
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const brick = 0x8a5138, ply = 0xa8895e;
+        for (const z of [-0.28, 0.28]) {                                     // 벽돌 기둥 2개
+          B(g, 0.34, 0.24, 0.24, brick, -0.5, 0.12, z); B(g, 0.34, 0.24, 0.24, shade(brick, 0.85), -0.5, 0.36, z);
+          B(g, 0.34, 0.24, 0.24, shade(brick, 0.9), 0.5, 0.12, z); B(g, 0.34, 0.24, 0.24, brick, 0.5, 0.36, z);
+        }
+        B(g, 0.34, 0.2, 0.72, shade(brick, 0.8), -0.5, 0.58, 0); B(g, 0.34, 0.2, 0.72, shade(brick, 0.82), 0.5, 0.58, 0);
+        const top = B(g, 1.4, 0.05, 0.8, ply, 0, 0.74, 0);                   // 합판 한 장(얇음)
+        top.rotation.y = 0.02;                                               // 삐뚤게 얹힘
+        B(g, 0.4, 0.012, 0.3, shade(ply, 0.7), 0.3, 0.77, 0.15);             // 얼룩
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        B(g, 1.4, 0.09, 0.8, shade(c, 0.82), 0, 0.72, 0);                    // 상판(바랜 톤)
+        B(g, 0.7, 0.015, 0.05, shade(c, 0.55), -0.1, 0.77, 0.1);             // 긴 긁힘
+        B(g, 0.25, 0.015, 0.2, shade(c, 0.68), 0.4, 0.77, -0.2);             // 컵자국 얼룩
+        const legs = [[-0.6, -0.3], [0.6, -0.3], [-0.6, 0.3], [0.6, 0.3]];
+        legs.forEach(([x, z], i) => B(g, 0.09, 0.7, 0.09, i === 2 ? 0x9a8a6a : shade(c, 0.75), x, 0.35, z)); // 다리 하나 딴색(교체목)
+        return g;
+      }
       const g = new THREE.Group();
       B(g, 1.4, 0.09, 0.8, c, 0, 0.72, 0);
       for (const [x, z] of [[-0.6, -0.3], [0.6, -0.3], [-0.6, 0.3], [0.6, 0.3]])
@@ -315,7 +358,37 @@ const DEFS = {
     colorNamesEn: ['Cast Iron', 'Brick Red', 'Cream', 'Olive'],
     colors: [0x3a3d42, 0x8a5138, 0xcfc8ba, 0x6a7047],
     light: { color: 0xff8c3a, intensity: 9, dist: 8, y: 0.7, flicker: true, fuel: 'fuel', comfort: 12 },
-    build(c) {
+    tiered: true, // #157: T1 돌+깡통 화덕 → T2 녹슨 주물 → T3 현행. 화창 발광·광원 y는 공통(라이트 정합).
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const stone = 0x6a6660;
+        for (const [x, z, s] of [[-0.32, 0.14, 0.2], [0.3, 0.18, 0.18], [-0.18, -0.22, 0.19], [0.2, -0.2, 0.17], [0.36, -0.02, 0.15], [-0.36, -0.05, 0.16]])
+          B(g, s, 0.22, s, shade(stone, 0.9 + (x + z) * 0.1), x, 0.11, z);   // 둘러놓은 돌
+        Cyl(g, 0.17, 0.19, 0.4, 0x55504a, 0, 0.32, 0, 10);                   // 그을린 깡통 몸통
+        Cyl(g, 0.17, 0.17, 0.06, 0x2e2b28, 0, 0.55, 0, 10);                  // 검은 아가리
+        const win = B(g, 0.2, 0.16, 0.03, 0xff9c46, 0, 0.34, 0.18);          // 작은 화구
+        win.material.emissive = new THREE.Color(0xff7020);
+        win.material.emissiveIntensity = 1.3; win.userData.glow = true;
+        B(g, 0.5, 0.02, 0.4, 0x2e2b28, 0, 0.005, 0.3);                       // 바닥 그을음
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        const rust = 0x6e4a38;
+        B(g, 0.82, 0.68, 0.56, shade(c, 0.8), 0, 0.4, 0);                    // 몸통(칙칙)
+        B(g, 0.24, 0.2, 0.02, rust, -0.22, 0.55, 0.29);                      // 녹 얼룩 ①
+        B(g, 0.18, 0.26, 0.02, shade(rust, 0.85), 0.26, 0.3, 0.29);          // 녹 얼룩 ②
+        B(g, 0.9, 0.07, 0.62, shade(c, 0.7), 0, 0.05, 0);                    // 받침
+        const win = B(g, 0.36, 0.26, 0.03, 0xff9c46, 0.03, 0.4, 0.29);       // 화창(삐뚤)
+        win.material.emissive = new THREE.Color(0xff7020);
+        win.material.emissiveIntensity = 1.3; win.userData.glow = true;
+        const door = B(g, 0.46, 0.36, 0.04, shade(c, 0.62), 0.03, 0.4, 0.28); // 문틀 — 살짝 기욺
+        door.rotation.z = 0.06;
+        Cyl(g, 0.08, 0.08, 1.1, shade(c, 0.65), 0.26, 1.3, -0.1, 8).rotation.x = 0.05; // 연통(기욺·짧음)
+        B(g, 0.82, 0.05, 0.56, shade(c, 0.95), 0, 0.76, 0);                  // 상판
+        return g;
+      }
       const g = new THREE.Group();
       B(g, 0.9, 0.75, 0.6, c, 0, 0.45, 0);                        // 몸통
       B(g, 0.96, 0.08, 0.66, shade(c, 0.8), 0, 0.06, 0);          // 받침
@@ -338,7 +411,23 @@ const DEFS = {
     colorNames: ['머스터드', '와인', '세이지', '인디고'],
     colorNamesEn: ['Mustard', 'Wine', 'Sage', 'Indigo'],
     colors: [0xbb9440, 0x8f4a4a, 0x8a9a78, 0x4a5680],
-    build(c) {
+    tiered: true, // #157: T1 접어 쌓은 옷가지 → T2 해진 방석(납작·기움) → T3 현행 도톰.
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        B(g, 0.55, 0.07, 0.5, shade(c, 0.6), 0, 0.035, 0);                   // 접은 옷 ①(바랜)
+        const f2 = B(g, 0.48, 0.06, 0.44, shade(c, 0.75), 0.04, 0.1, -0.03); // 접은 옷 ②(어긋남)
+        f2.rotation.y = 0.15;
+        B(g, 0.4, 0.05, 0.36, 0x8a8474, -0.03, 0.155, 0.04);                 // 맨 위 회색 옷
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        const body = Cyl(g, 0.3, 0.34, 0.1, shade(c, 0.78), 0, 0.06, 0, 12); // 납작 꺼짐
+        body.scale.z = 0.9; body.rotation.z = 0.04;                          // 살짝 기움
+        B(g, 0.16, 0.02, 0.14, shade(c, 1.2), 0.08, 0.115, 0.06);            // 기운 헝겊 패치
+        return g;
+      }
       const g = new THREE.Group();
       const body = Cyl(g, 0.3, 0.34, 0.16, c, 0, 0.09, 0, 12);
       body.scale.z = 0.92;
@@ -411,7 +500,37 @@ const DEFS = {
     colorNamesEn: ['Brass', 'Cast Iron', 'Red', 'Mint'],
     colors: [0xb08a3a, 0x4a4d52, 0xa8433f, 0x93b5a5],
     light: { color: 0xffc060, intensity: 5, dist: 6, y: 1.15, flicker: true, fuel: 'candle', comfort: 7 },
-    build(c) {
+    tiered: true, // #157: T1 나뭇가지+유리병 → T2 녹슨 랜턴(뿌연 유리) → T3 현행. 광원 y 공통.
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const stick = 0x6e5638;
+        B(g, 0.3, 0.06, 0.3, shade(stick, 0.8), 0, 0.03, 0);                 // 판자 받침
+        const pole = Cyl(g, 0.028, 0.035, 1.15, stick, 0, 0.62, 0, 5);       // 거친 막대(비스듬)
+        pole.rotation.z = 0.05;
+        Cyl(g, 0.01, 0.01, 0.22, 0x55504a, 0.2, 1.1, 0, 4).rotation.z = 1.1; // 철사 걸이
+        Cyl(g, 0.085, 0.075, 0.2, 0x9aa89a, 0.28, 0.98, 0, 8);               // 유리병
+        const glassJ = Cyl(g, 0.055, 0.055, 0.12, 0xffd898, 0.28, 0.97, 0, 8);
+        glassJ.material.emissive = new THREE.Color(0xffaa40);
+        glassJ.material.emissiveIntensity = 1.1; glassJ.userData.glow = true;
+        Cyl(g, 0.05, 0.05, 0.03, 0x55504a, 0.28, 1.09, 0, 8);                // 병목 철사
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        const rust = shade(c, 0.62);
+        Cyl(g, 0.14, 0.18, 0.05, rust, 0, 0.03, 0, 8);
+        Cyl(g, 0.03, 0.03, 1.15, shade(c, 0.7), 0, 0.62, 0, 6);
+        const arm = B(g, 0.3, 0.03, 0.03, rust, 0.13, 1.2, 0);
+        arm.rotation.z = -0.08;                                              // 걸이 팔 처짐
+        Cyl(g, 0.012, 0.012, 0.12, 0x26282c, 0.26, 1.12, 0, 5);
+        B(g, 0.16, 0.2, 0.16, shade(c, 0.68), 0.26, 0.98, 0);                // 녹슨 몸체
+        const glassD = B(g, 0.1, 0.12, 0.1, 0xd8c090, 0.26, 0.98, 0);        // 뿌연 유리(어둡게)
+        glassD.material.emissive = new THREE.Color(0xcc8830);
+        glassD.material.emissiveIntensity = 0.8; glassD.userData.glow = true;
+        B(g, 0.1, 0.04, 0.1, rust, 0.26, 1.1, 0);
+        return g;
+      }
       const g = new THREE.Group();
       Cyl(g, 0.14, 0.18, 0.05, shade(c, 0.8), 0, 0.03, 0, 8);     // 받침
       Cyl(g, 0.03, 0.03, 1.15, shade(c, 0.9), 0, 0.62, 0, 6);     // 기둥
