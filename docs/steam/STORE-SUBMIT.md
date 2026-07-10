@@ -102,12 +102,15 @@
 
 ---
 
-## 7. 시스템 요구사항 (Electron 실측 기반)
+## 7. 시스템 요구사항 (Electron 실측 기반 — v1.9.0 빌드 재검산 2026-07-10)
 
-**최소** — OS: Windows 10 64-bit / CPU: 듀얼코어 2GHz / RAM: 4GB / GPU: WebGL2 지원(내장 그래픽 가능) / 저장공간: 600MB
-**권장** — OS: Windows 11 64-bit / CPU: 쿼드코어 / RAM: 8GB / GPU: WebGL2 지원 외장 / 저장공간: 1GB
+**최소** — OS: Windows 10 64-bit / CPU: 듀얼코어 2GHz / RAM: 4GB / GPU: WebGL2 지원(내장 그래픽 가능) / 저장공간: 1GB
+**권장** — OS: Windows 11 64-bit / CPU: 쿼드코어 / RAM: 8GB / GPU: WebGL2 지원 외장 / 저장공간: 2GB
 
-EN — Minimum: Windows 10 64-bit, Dual-core 2GHz, 4GB RAM, WebGL2-capable GPU (integrated OK), 600MB storage. Recommended: Windows 11 64-bit, Quad-core, 8GB RAM, dedicated WebGL2 GPU, 1GB storage.
+EN — Minimum: Windows 10 64-bit, Dual-core 2GHz, 4GB RAM, WebGL2-capable GPU (integrated OK), 1GB storage. Recommended: Windows 11 64-bit, Quad-core, 8GB RAM, dedicated WebGL2 GPU, 2GB storage.
+
+> 근거: v1.9.0 설치 후 실크기 575MB 실측 + 설치 중 설치본(275MB)·해제 공간 동시 소요 → 최소 1GB로 상향.
+> 세이브·업데이트 여유 포함 권장 2GB. RAM은 오프스크린 하네스 장주행(#25 배터리 최적화) 기준 내장 그래픽에서도 코지 프레임 유지.
 
 ---
 
