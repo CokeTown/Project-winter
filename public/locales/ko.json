@@ -407,6 +407,8 @@
   "craft.modIntro": "개조는 이 거처에 영구히 남는다.",
   "craft.noMods": "이 거처에 붙일 개조가 없다.",
   "craft.make": "제작",
+  "craft.catGoods": "가구·물품",
+  "craft.catOutfit": "복장",
   "craft.installed": "✓ 설치됨",
   "craft.install": "설치",
   "craft.doneRes": "{emoji} {name} ×{n} 만들었다",

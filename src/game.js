@@ -4336,7 +4336,7 @@ function applyDeco() {
 // 「지식」 테크트리 모달(§9) — 4갈래×3티어, 책으로 해금. 노드 상태: 해금됨/해금가능/선행잠금/책부족.
 function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
-  const rows = CRAFTS.map((c, i) => {
+  const rowArr = CRAFTS.map((c, i) => {
     if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
     const outLabel = c.out.res
       ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`
@@ -4355,7 +4355,14 @@ function openCraftModal() {
           ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('craft.owned')}</span>`
           : `<button class="pixel-btn" data-craft="${i}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('craft.make')}</button>`}
       </div>`;
-  }).join('');
+  });
+  // 복장 분리 (디렉터 2026-07-10): 옷 제작이 가구와 한 목록에 섞여 있던 것을 섹션으로 구분.
+  //   data-craft 인덱스는 원본 CRAFTS 기준이라 클릭 배선 무변 — 표시만 재배열.
+  const goodsRows = CRAFTS.map((c, i) => c.out.outfit ? '' : rowArr[i]).join('');
+  const outfitRows = CRAFTS.map((c, i) => c.out.outfit ? rowArr[i] : '').join('');
+  const secHead = (emoji, key) => `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${emoji} ${t(key)}</div>`;
+  const rows = secHead('🪑', 'craft.catGoods') + goodsRows
+    + (outfitRows.trim() ? secHead('🧥', 'craft.catOutfit') + outfitRows : '');
   // 현재 거처에 설치 가능한 개조
   const sh = SHELTERS[state.current];
   const modRows = Object.entries(SHELTER_MODS)
