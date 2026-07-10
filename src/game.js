@@ -1851,13 +1851,20 @@ function readStats() {
   try { return JSON.parse(Platform.cloud.load('nw-stats') || '{}') || {}; } catch (e) { return {}; }
 }
 function writeStats(s) { Platform.cloud.save('nw-stats', JSON.stringify(s)); }
-// 노말 모드에서 도달한 최고 생존일 갱신 (배경화면 해금 통계). day는 현재 게임일.
+// 계정 통계 갱신 (#158 모드 언락): bestDay=모드 무관 최고 생존일, normalBestDay=코지(노말) 최고 생존일.
 function recordNormalDay(day) {
-  if (_simRunning || state.mode !== 'normal' || state.qaUsed) return; // 시뮬레이션은 계정 통계 오염 금지
+  if (_simRunning || state.qaUsed) return; // 시뮬레이션/QA는 계정 통계 오염 금지
   const s = readStats();
-  if ((s.normalBestDay || 0) < day) { s.normalBestDay = day; writeStats(s); }
+  let dirty = false;
+  if ((s.bestDay || 0) < day) { s.bestDay = day; dirty = true; }
+  if (state.mode === 'normal' && (s.normalBestDay || 0) < day) { s.normalBestDay = day; dirty = true; }
+  if (dirty) writeStats(s);
 }
-function wallpaperUnlocked() { return (readStats().normalBestDay || 0) >= (BAL.rescue?.unlockDay || 150); }
+// 겨울 N번 넘김 판정: 1년 = SEASON_DAYS×4 — N년째 봄(=N×48+1일) 도달이 곧 겨울 N번 통과.
+const wintersPassedOf = (day) => Math.floor(((day || 0) - 1) / (SEASON_DAYS * 4));
+function wallpaperUnlocked() { return wintersPassedOf(readStats().normalBestDay) >= BAL.modes.wallpaperWinters; }
+// 무한 해금 (#158): 어느 모드로든 겨울 1번 — 구버전 스탯(bestDay 부재)은 normalBestDay 폴백.
+function zenUnlocked() { const s = readStats(); return wintersPassedOf(Math.max(s.bestDay || 0, s.normalBestDay || 0)) >= BAL.modes.zenWinters; }
 let currentSlot = parseInt(localStorage.getItem(LASTSLOT_KEY) || '1', 10) || 1;
 function readSlot(n) {
   try { return JSON.parse(localStorage.getItem(slotKey(n)) || 'null'); } catch (e) { return null; }
@@ -6616,7 +6623,7 @@ function openSlotModal(mode) {
 }
 // 새 게임: 슬롯 선택 후 모드 5종(노말/하드/하드코어/무한/배경화면)을 고르는 화면 (같은 모달의 body 교체)
 // 모달 빌더 → ui/modals.js (Tier4 Phase1-⑤). t/BAL/DEFAULT_STATE/opts는 모듈이 import, game.js 클로저만 주입.
-const { openModeModal, openWardrobeModal, openKnowledgeModal } = makeModals({ openModal, toast, wallpaperUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS,
+const { openModeModal, openWardrobeModal, openKnowledgeModal } = makeModals({ openModal, toast, wallpaperUnlocked, zenUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS,
   getPaused: () => paused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud });
 const INTRO_IDS = ['intro.0', 'intro.1', 'intro.2'];
 function showIntro() {
