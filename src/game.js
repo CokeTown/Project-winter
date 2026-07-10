@@ -9698,6 +9698,7 @@ window.__shelter = {
   openWardrobeModal, OUTFITS, // #86④ QA: 옷장
   wallProxyState: () => wallList.map(w => ({ show: w.group.visible, proxy: w.proxy ? w.proxy.visible : null })), // #97 QA
   avatarWalkTo: (x, z) => avatarSys._walkTo(x, z), // #86 QA: 경유점 라우팅 실증
+  applyOpts, // 트레일러 에디션: 관람용 디스플레이 정본화(pixel=1 등)를 런타임에 적용
   // #98 QA: 개조 소품 월드 bb 덤프 (증축 겹침 판정용)
   modPropBBoxes: () => { const out = {}; roomGroup.traverse(o => { if (o.userData && o.userData.modProp) { const b = new THREE.Box3().setFromObject(o); out[o.userData.modProp] = { minX: +b.min.x.toFixed(2), maxX: +b.max.x.toFixed(2), minZ: +b.min.z.toFixed(2), maxZ: +b.max.z.toFixed(2) }; } }); return out; },
   wlObstacleList: () => wlObstacles.slice(), // #95 QA: 등록 장애물 덤프 (프로브 침범 판정용)

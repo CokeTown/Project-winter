@@ -197,12 +197,19 @@ const beats = [
     const TOUR = ['container', 'bus', 'cabin', 'rooftop', 'greenhouse', 'subway', 'ship', 'tugboat', 'lighthouse', 'controltower', 'lodge', 'bunker'];
     let first = true;
     for (let i = 0; i < TOUR.length; i++) {
+      // 컷 정돈 (디렉터 신고 "끊김"): 씬 재빌드 스톨(수백 ms)이 하드컷 중 프리즈로 보이던 것 —
+      //   컷마다 2프레임 마이크로 암전을 먼저 커밋해 두고, 그 뒤에서 로드한다. 스톨은 검은 프레임 속으로.
+      if (!first) {
+        fadeEl().style.transition = 'opacity .07s'; fadeEl().style.opacity = '1';
+        await new Promise((r) => requestAnimationFrame(r)); await new Promise((r) => requestAnimationFrame(r));
+      }
       S.state.current = TOUR[i]; S.loadShelter(TOUR[i]);
       dress(HOME_FULL);
       S.setWeather('clear');
       S.setHour(10 + (12.5 * i) / (TOUR.length - 1)); // 10시 → 22시 30분 — 낮에서 밤으로
       cam(1.3, 0.65, 0.5);
       if (first) { await fade(false); first = false; }
+      else { await new Promise((r) => requestAnimationFrame(r)); fadeEl().style.opacity = '0'; await sleep(90); fadeEl().style.transition = 'opacity .22s'; } // 스냅한 .07s 리빌 후 기본 페이드 복원
       const last = i === TOUR.length - 1; // 마지막 셸터(벙커)는 더 오래 머문다 — 리듬이 "쌓이다 멎는" 마무리
       $T().cam([{ at: 0, zoom: 1.3 }, { at: 1, zoom: last ? 1.05 : 1.12 }], last ? 1800 : 1080, 'out'); // 서서히 줌아웃 (await 없이 컷 시간과 병행)
       await sleep(last ? 1800 : 1120);
@@ -269,12 +276,28 @@ const beats = [
 ];
 
 let _hideTick = null;
+let _warmed = false;
 async function prep() {
   const S = $S();
   Storage.prototype.setItem = function () {}; // 관람 전용: 어떤 경로로도 세이브를 쓰지 않는다
   if (S.opts) S.opts.bgm = false; if (S.syncBgm) S.syncBgm(); // 오디오: BGM 뮤트(OST·라이터 소리는 편집에서), SFX만
   if (S.hideTitle) S.hideTitle();
   if (S.setPaused) S.setPaused(true);
+  // 프레임 정본화 (디렉터 신고 2026-07-10 "프레임/끊김 그대로") — 원인 실측 2건:
+  //   ① 기본 pixel=3 저해상 RT의 재양자화가 느린 푸시인에서 픽셀 스텝 저더로 보임 → 관람 빌드는 네이티브 해상도.
+  //     (색 양자화 quant·디더는 유지 = 픽셀아트 톤 그대로, 해상도만 캡처급. 4K 녹화에 유리)
+  //   ② 셸터 첫 로드마다 셰이더 컴파일+씬 빌드 스톨(실측 500~733ms)이 컷마다 보임 → 부팅 1회 선워밍(암전 뒤).
+  if (S.opts) { S.opts.pixel = 1; S.opts.fpsCap = 60; S.opts.lowSpec = false; }
+  try { if (S.applyOpts) S.applyOpts(); } catch (e) {}
+  if (!_warmed) {
+    _warmed = true;
+    const WARM = ['container', 'bus', 'cabin', 'greenhouse', 'subway', 'ship', 'tugboat', 'lighthouse', 'controltower', 'lodge', 'bunker', 'rooftop'];
+    for (const id of WARM) {
+      try { S.state.current = id; S.loadShelter(id); } catch (e) {}
+      await new Promise((r) => requestAnimationFrame(r)); // 2프레임 = 실렌더 강제 → 머티리얼/셰이더 컴파일 완납
+      await new Promise((r) => requestAnimationFrame(r));
+    }
+  }
   // 종이 Tip 원천 차단: tipOnce는 tipsSeen[id]가 참이면 렌더를 건너뛴다 → "항상 참" 프록시로 교체(관람 중 팁 팝업 금지).
   //   날씨 전환(비 등)이 트리거하던 늦은 팁이 hideUI 재차폐 창(수백 ms)에 새어 나오던 문제 해소.
   try { if (S.state) S.state.tipsSeen = new Proxy({}, { get: () => true }); } catch (e) {}
