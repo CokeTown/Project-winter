@@ -7417,18 +7417,27 @@ function processDay() {
   // 1.3 밤하늘 수집 — 관측소 완공 후 맑은 밤 하루 1회 확률로 미수집 스케치 1종.
   tryNightSky(notes);
   // #164 「떠오른 자리」 + 지역 컨디션 (디렉터 2026-07-10 — 반복 타파). 배경화면 모드는 무대상.
+  //   ⚠️ 난수는 공유 Math.random을 쓰지 않는다 — 시드 시뮬(하드코어 치사성 등 밴드 테스트)의 스트림을
+  //   밀어버리기 때문(실측: 데모 스위트 50/51 회귀). 런 시드+일자 해시의 자체 스트림 → 시뮬 무접점
+  //   + 세이브 재로드 리롤 방지(같은 날은 같은 소문) 보너스.
   if (!isWallpaper()) {
+    if (state.spotSeed == null) state.spotSeed = Date.now() % 2147483647; // 런당 1회 (RNG 스트림 무접점)
+    const dayRand = (salt) => {
+      let x = (Math.imul(state.day, 73856093) ^ Math.imul(salt, 19349663) ^ state.spotSeed) >>> 0;
+      x = Math.imul(x ^ (x >>> 13), 1274126177);
+      return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+    };
     // 만료: 놓친 스팟은 조용히 사라진다 — 아침 보고 한 줄(갈증).
     if (state.fieldSpot && state.day > state.fieldSpot.until) {
       notes.push(t('spot.gone', { name: t('spot.' + state.fieldSpot.id) }));
       state.fieldSpot = null;
     }
     // 스폰: 스팟 없을 때만, 해금 지역 한정, 숙련 티어 가중(단골 동네일수록 눈에 띈다).
-    if (!state.fieldSpot && Math.random() < BAL.fieldSpots.spawnChance) {
+    if (!state.fieldSpot && dayRand(1) < BAL.fieldSpots.spawnChance) {
       const cands = Object.entries(FIELD_SPOTS).filter(([, s]) => regionUnlocked(s.region) && !isForbiddenRegion(s.region));
       if (cands.length) {
         const ws = cands.map(([, s]) => 1 + masteryTier(s.region) * BAL.fieldSpots.masteryWeight);
-        let roll = Math.random() * ws.reduce((a, b) => a + b, 0), pick = cands[cands.length - 1];
+        let roll = dayRand(2) * ws.reduce((a, b) => a + b, 0), pick = cands[cands.length - 1];
         for (let i = 0; i < cands.length; i++) { roll -= ws[i]; if (roll < 0) { pick = cands[i]; break; } }
         state.fieldSpot = { id: pick[0], region: pick[1].region, until: state.day + BAL.fieldSpots.lifeDays };
         notes.push(t('spot.appeared', { name: t('spot.' + pick[0]), region: LName(REGIONS[pick[1].region]) }));
@@ -7437,9 +7446,10 @@ function processDay() {
     // 지역 컨디션 사이클: cycleDays마다 풍(+25%)/평/마름(-20%) 리롤 — 최적 루트 고정을 깨는 로테이션.
     if (!state.regionCond || state.day >= (state.regionCond.until || 0)) {
       const lv = {};
+      let salt = 10;
       for (const rid of Object.keys(REGIONS)) {
         if (isForbiddenRegion(rid)) continue;
-        const cr = Math.random();
+        const cr = dayRand(salt++);
         lv[rid] = cr < BAL.regionCond.richChance ? 1 : cr < BAL.regionCond.richChance + BAL.regionCond.leanChance ? -1 : 0;
       }
       state.regionCond = { until: state.day + BAL.regionCond.cycleDays, lv };
