@@ -3158,7 +3158,7 @@ function resolveExpedition() {
       const fam = rollPaintFamily(exp.region);
       state.paints[fam] = (state.paints[fam] || 0) + 1;
       notes.push(t('paint.foundNote', { name: LName(PAINT_FAMILIES[fam]) }));
-      special.push({ icon: '🪣', label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
+      special.push({ icon: icon('icon_loot_paint', '🪣'), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
       jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
     }
     // 네온 안료 (디렉터 2026-07-09): 도심 전용 최희귀 도료 — 일반 도료 풀과 무관한 별도 저확률 롤.
@@ -3181,7 +3181,7 @@ function resolveExpedition() {
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
         notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
-        special.push({ icon: '📐', label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'legendary' });
+        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'legendary' });
         jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
       }
     }
@@ -5090,7 +5090,7 @@ function recordTabHtml() {
   const bown = state.broadcasts || {};
   const regionKeys = { residential: 'record.regionRes', commercial: 'record.regionCom', industrial: 'record.regionInd', slum: 'record.regionSlum' };
   const memoRow = (id, tbl) => owned[id]
-    ? `<div class="prep-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>📄</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    ? `<div class="prep-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>${icon('icon_rec_memo', '📄')}</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
     : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
   let sections = '';
   for (const rg of ['residential', 'commercial', 'industrial', 'slum']) {
@@ -5141,7 +5141,7 @@ function recordTabHtml() {
   sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
   // 라디오 로그
   const radioRows = Object.keys(BROADCASTS).map(id => bown[id]
-    ? `<div class="prep-row" style="cursor:pointer" data-broadcast="${id}"><span>📻</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    ? `<div class="prep-row" style="cursor:pointer" data-broadcast="${id}"><span>${icon('icon_rec_radio', '📻')}</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
     : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
   const distant = state.distantLight?.count
     ? `<div class="report-sec"><span class="r-title">${t('record.distantTitle', { n: state.distantLight.count })}</span></div>` : '';
@@ -5150,7 +5150,7 @@ function recordTabHtml() {
   let sketchSec = '';
   if (state.observatoryDone || sketchesCollected() > 0) {
     const rows = Object.keys(SKETCHES).map(id => sown[id]
-      ? `<div class="prep-row" style="cursor:pointer" data-sketch="${id}"><span>🌌</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+      ? `<div class="prep-row" style="cursor:pointer" data-sketch="${id}"><span>${icon('icon_rec_sketch', '🌌')}</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
       : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
     sketchSec = `<div class="report-sec"><span class="r-title">${t('record.sketchTitle', { n: sketchesCollected(), total: sketchesTotal() })}</span>${rows}</div>`;
   }
