@@ -10,7 +10,7 @@
    ctx 필드(모두 game.js가 소유·정의): 데이터 t,LN,RESOURCES,DEFS,MEMOS,
          MEMOS_RESEARCH,BROADCASTS,BAL / 상태참조 state,items / 함수 resAdd,resConsume,
          addMoodBuff,applyInjury,seasonOf,coldSnapActive,dropMemo,dropBroadcast,
-         recordDistantLight,spawnCat,playSfx,runEndingSequence,doctorFragmentsComplete.
+         recordDistantLight,spawnCat,playSfx,runEndingSequence,runRebuildSequence,doctorFragmentsComplete.
          (state/items는 const 참조 — game.js에서 재할당되지 않아 캡처가 안전하다.)
    출처: game.js EVENTS (원본 그대로 이동, 팩토리로 래핑).
    ============================================================ */
@@ -20,7 +20,7 @@ export function makeEvents(ctx) {
     state, items,
     resAdd, resConsume, addMoodBuff, applyInjury, seasonOf, coldSnapActive,
     dropMemo, dropBroadcast, recordDistantLight, spawnCat, playSfx,
-    runEndingSequence, doctorFragmentsComplete,
+    runEndingSequence, runRebuildSequence, doctorFragmentsComplete,
     endingLeaning, // 2.0 §9.5: 엔딩 성향(누적 신호 기반 — 3분기 문안 뉘앙스)
     encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도 — 암시장과 캐논 공유)
     PAINT_FAMILIES, buyDye, dyeCost, // 염료 상인 (디렉터 2026-07-08 — 도료 교환 채널)
@@ -631,18 +631,16 @@ export function makeEvents(ctx) {
         { labelId: 'ev.cat.c1', run() { return t('ev.cat.r1'); } },
       ],
     },
-    // ── 2.0 엔딩 3분기 (GD-2.0 §5·§9.5) — 아홉 번째 겨울을 넘긴 봄, 어디에 있든 구조가 온다 ──
-    //   문안은 누적 성향(endingLeaning)으로 한 줄 변주되지만, 선택은 언제나 셋 다 열려 있다.
-    //   '보류'는 4번째 문 — 다음 봄에 다시 온다(passWinter 재예약). 세 갈래 모두 런은 계속된다.
+    // ── 문 두드리는 소리 (#170 REV3: ENDINGS-REV3 §3d) — 재건의 봄, 비네트의 종결부로만 발화 ──
+    //   신세계 선택지는 제거: 초대장은 이미 흘렀다(그 문은 겨울 3~4의 것). 보류도 제거 — 아홉 번의
+    //   겨울이 이미 답을 빚었다. 문안은 누적 성향(endingLeaning) 한 줄 변주 유지. 두 갈래 모두 런은 계속된다.
     ending_choice: {
       special: true,
       icon: '🚁', titleId: 'end3.title', textId: 'end3.text',
       textFn: () => t('end3.text', { winters: state.winters }) + '<br><br>' + t('end3.lean.' + endingLeaning()),
       choices: [
         { labelId: 'end3.c.escape', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.r.escape'); } },
-        { labelId: 'end3.c.newworld', run() { state.endingType = 'newworld'; setTimeout(() => runEndingSequence('newworld'), 400); return t('end3.r.newworld'); } },
         { labelId: 'end3.c.rest', run() { state.endingType = 'rest'; setTimeout(() => runEndingSequence('rest'), 400); return t('end3.r.rest'); } },
-        { labelId: 'end3.c.wait', run() { return t('end3.r.wait'); } },
       ],
     },
     // 2.0 조기 탈출 (§9.5) — 박사의 정기 교신에 닿은 사람에게만, 아홉 번째 겨울 전에 한 번 열리는 문.
@@ -653,6 +651,45 @@ export function makeEvents(ctx) {
       choices: [
         { labelId: 'end3.early.c0', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.early.r0'); } },
         { labelId: 'end3.early.c1', run() { return t('end3.early.r1'); } },
+      ],
+    },
+    // ── #170 REV3 초대장 (ENDINGS-REV3 §3a) — 진실 4단 완성 다음 아침, 종이가 그들의 노크다 ──
+    //   그들은 오지 않는다(접촉 스펙트럼 §3: 재회는 엔딩뿐). 신세계는 내가 가는 엔딩.
+    //   소각/마감 보류(endingStayed)가 안식의 능동 선언 — 이후 무전 조기 구조도 오지 않는다.
+    invitation_choice: {
+      special: true,
+      icon: '📄', titleId: 'end3.inv.title', textId: 'end3.inv.text',
+      choices: [
+        { labelId: 'end3.inv.c0', run() { state.endingType = 'newworld'; state.invitationHeld = false; setTimeout(() => runEndingSequence('newworld'), 400); return t('end3.inv.r0'); } },
+        { labelId: 'end3.inv.c1', run() { state.endingStayed = true; state.invitationHeld = false; state.dayLog.notes.push(t('end3.inv.note')); return t('end3.inv.r1'); } },
+        { labelId: 'end3.inv.c2', run() { return t('end3.inv.r2'); } },
+      ],
+    },
+    // 초대장 마감일 아침 — 서랍의 종이가 마지막으로 묻는다(1회). 흘려보내면 안식 확정.
+    invitation_due: {
+      special: true,
+      icon: '📄', titleId: 'end3.due.title', textId: 'end3.due.text',
+      choices: [
+        { labelId: 'end3.due.c0', run() { state.endingType = 'newworld'; setTimeout(() => runEndingSequence('newworld'), 400); return t('end3.due.r0'); } },
+        { labelId: 'end3.due.c1', run() { state.endingStayed = true; state.dayLog.notes.push(t('end3.inv.note')); return t('end3.due.r1'); } },
+      ],
+    },
+    // ── #170 REV3 밤의 교신 (ENDINGS-REV3 §3c) — 사일로를 보고 돌아선 자에게, 박사의 마지막 물음 ──
+    //   무기록 원칙: 사일로·버튼·문서를 직접 말하지 않는다("개방 기록"까지만). 박사도 게임도 판단하지 않는다.
+    doctor_call: {
+      special: true,
+      icon: '📻', titleId: 'end3.call.title', textId: 'end3.call.text',
+      choices: [
+        { labelId: 'end3.call.c0', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.call.r0'); } },
+        { labelId: 'end3.call.c1', run() { return t('end3.call.r1'); } },
+      ],
+    },
+    // ── #170 REV3 재건의 봄 도입 (ENDINGS-REV3 §3d) — 카드 5장은 runRebuildSequence(ending-screen)가 맡는다 ──
+    rebuilding: {
+      special: true,
+      icon: '🌱', titleId: 'end3.rb.title', textId: 'end3.rb.text',
+      choices: [
+        { labelId: 'end3.rb.c0', run() { setTimeout(() => runRebuildSequence(), 400); return t('end3.rb.r0'); } },
       ],
     },
     // 염료 상인 (디렉터 2026-07-08): 슬럼 탐험 5% — 손수레 위 페인트 통 셋. 통조림 교환,

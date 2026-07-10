@@ -3716,7 +3716,7 @@ const EVENTS = makeEvents({
   state, items,
   resAdd, resConsume, addMoodBuff, applyInjury, seasonOf, coldSnapActive,
   dropMemo, dropBroadcast, recordDistantLight, spawnCat, playSfx,
-  runEndingSequence, doctorFragmentsComplete,
+  runEndingSequence, runRebuildSequence, doctorFragmentsComplete,
   endingLeaning, // 2.0 §9.5: 엔딩 성향
   encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도)
   PAINT_FAMILIES, buyDye, dyeCost, // dye merchant ctx (REWARD-LOOP)
@@ -5154,7 +5154,8 @@ const ACHS = [
   { id: 'col42',     icon: '🖼️', name: '큐레이터',         nameEn: 'Curator',            desc: '도감 50%',                    descEn: 'Collection 50%',                     chk: () => collectionCount() >= 42 },
   { id: 'colAll',    icon: '🏛️', name: '폐허의 박물관장',  nameEn: 'Museum Keeper of the Ruins', desc: '도감 100% (84색상)',   descEn: 'Collection 100% (84 colors)',        chk: () => collectionCount() >= 84 },
   { id: 'cat',       icon: '🐈', name: '고양이 집사',      nameEn: 'Cat Servant',        desc: '길고양이를 가족으로 맞이하다', descEn: 'Welcome a stray cat as family',      chk: () => !!state.cat },
-  { id: 'ending',    icon: '🚁', name: '폐허 너머로',      nameEn: 'Beyond the Ruins',   desc: 'Day 10000 — 박사와 함께 탈출', descEn: 'Day 10000 — escape with the doctor', chk: () => !!state.endingSeen },
+  // #170 REV3: Day 10000 폐지 — 스포일러 없는 문안으로 완화. chk는 탈출 성립(구세이브 endingSeen 호환).
+  { id: 'ending',    icon: '🚁', name: '폐허 너머로',      nameEn: 'Beyond the Ruins',   desc: '박사와 함께, 폐허 너머로',     descEn: 'With the doctor, beyond the ruins',  chk: () => !!state.endingSeen || state.endingType === 'escape' },
   // 암호 업적 (디렉터 승인 2026-07-10, 메트로 2033 오마주 문법): 내용은 안 보이고 존재만 보인다 —
   //   글로벌 달성률이 커뮤니티 고고학을 유도. quiet=무음 해금(침묵 시퀀스의 무기록 톤 보존), hidden=미해금 시 ???.
   { id: 'silence',   icon: '▪️', name: '침묵',             nameEn: 'Silence',            desc: '…',                            descEn: '…',                                  quiet: true, hidden: true, chk: () => !!state.siloFired },
@@ -6794,6 +6795,40 @@ function runEndingSequence(type) {
   };
   render();
 }
+// #170 REV3: 재건 목격 (겨울 9) — 카드 5장 + 세계 변화(지도 불빛 전점등), 종결부로 노크를 세운다.
+//   연출은 전부 기존 자산 조합: ending-screen 페이저 + survivorLights + 아침 보고 노트.
+//   시퀀스 후에도 런은 계속된다(zen 정신) — 재건은 업적이 아니라 보상 그 자체.
+function runRebuildSequence() {
+  endingActive = true;
+  closeModal();
+  setPaused(false);
+  syncBgm(true); // Ending.mp3 — 밝은 회귀 톤 재사용
+  const lines = [0, 1, 2, 3, 4].map(n => t('end3.rebuild.line' + n));
+  let i = 0;
+  const scr = $('ending-screen'), txt = $('ending-text'), btn = $('ending-next');
+  scr.style.display = 'flex';
+  const render = () => {
+    txt.style.animation = 'none'; void txt.offsetWidth; txt.style.animation = '';
+    txt.innerHTML = lines[i];
+    btn.textContent = i === lines.length - 1 ? t('ending.back') : t('intro.next');
+  };
+  btn.onclick = () => { // onclick 대입: 재실행 시 리스너 중복 방지 (runEndingSequence 동일 패턴)
+    i++;
+    if (i >= lines.length) {
+      scr.style.display = 'none';
+      endingActive = false;
+      state.rebuildSeen = true;
+      // 지도의 불빛 전점등 — 켜진 불빛은 꺼지지 않는다(기존 규칙). MAP_LIGHT_MAX=12가 "셀 수 없이"의 상한.
+      state.survivorLights = Math.max(state.survivorLights || 0, MAP_LIGHT_MAX);
+      state.dayLog.notes.push(t('end3.rebuild.note'));
+      // 종결부: 그 봄, 문 두드리는 소리 — 다음 밤 tryDoctorRadio가 세운다
+      state.endingChoicePending = true;
+      scheduleSave();
+      syncBgm();
+    } else render();
+  };
+  render();
+}
 // 2.0 §9.5: 엔딩 성향 — "누적된 하루가 빚는다"(갑툭튀 금지, STRATEGY §1.2). 랜덤 없음(결정론).
 //   도시 체류 가중(§9.8 4도시)은 미구현 — 그 전까지는 현존 3신호로 성향을 읽는다:
 //   탈출=박사 스파인(송출 불빛·정기 교신·일지 조각) / 신세계=진실 조각(기밀 12+이관 4) / 안식=정든 집(거주·고양이·쾌적).
@@ -6957,9 +6992,11 @@ function passWinter(notes) {
   // 2.0 낙진 시계 (GD-2.0 §2): 정확히 그 겨울을 넘긴 아침에 한 번 — 낙진이 걷혔다.
   //   winters는 단조 증가라 자연히 1회 발화(별도 플래그·세이브 필드 불요).
   if (state.winters === BAL.forbidden.falloutWinters) notes.push(t('fallout.cleared'));
-  // 2.0 엔딩 3분기 (§9.5): 아홉 번째 겨울을 넘긴 봄 — 어디에 있든 구조가 온다(§6 확정).
-  //   그날 밤 인카운터로 발화(tryDoctorRadio 경유). '보류'했으면 이후 매 봄 다시 세워진다.
-  if (state.winters >= 9 && !state.endingType) state.endingChoicePending = true;
+  // #170 REV3: 아홉 번째 겨울을 넘긴 봄 — 재건 목격. 남은 자(조기 이탈 escape/newworld 제외)에게만,
+  //   침묵(siloFired)이면 아무것도 오지 않는다(침묵의 그림자 — 재건의 주체가 사라졌다).
+  //   노크(ending_choice)는 이제 재건 비네트의 종결부로만 발화한다(runRebuildSequence 말미).
+  if (state.winters >= 9 && !state.rebuildSeen && !state.siloFired
+      && state.endingType !== 'escape' && state.endingType !== 'newworld') state.rebuildPending = true;
   state.winterSnap = null; // 이번 겨울 스냅샷 소진 — 다음 겨울 진입 때 새로 뜬다
 }
 // 박사 무전 발화 시도 (밤, 라디오 보유 시). processDay 말미에서 호출.
@@ -6974,15 +7011,38 @@ function tryDoctorRadio() {
     state.lastEventDay = state.day;
     return;
   }
-  // 2.0 엔딩 3분기 (§9.5): 9겨울 구조 인카운터 — 그날 밤, 문 두드리는 소리
+  // #170 REV3 마이그레이션: 구판 endingChoicePending(9겨울 노크 예약)은 재건 비네트로 승격한다 —
+  //   노크는 재건의 종결부다. 침묵(siloFired)·조기 이탈 세이브는 예약만 소거(아무것도 오지 않는다).
+  if (state.endingChoicePending && !state.rebuildSeen) {
+    state.endingChoicePending = false;
+    if (!state.siloFired && state.endingType !== 'escape' && state.endingType !== 'newworld') state.rebuildPending = true;
+  }
+  // #170 REV3: 재건의 봄 — 도입 모달(rebuilding) → 카드(runRebuildSequence) → 노크(ending_choice) 순.
+  if (state.rebuildPending && !state.rebuildSeen) {
+    state.rebuildPending = false;
+    state.pendingEvent = 'rebuilding';
+    state.lastEventDay = state.day;
+    return;
+  }
+  // #170 REV3: 재건을 본 다음 밤, 문 두드리는 소리 — endingChoicePending은 runRebuildSequence 말미가 세운다.
   if (state.endingChoicePending && !state.endingType) {
     state.endingChoicePending = false;
     state.pendingEvent = 'ending_choice';
     state.lastEventDay = state.day;
     return;
   }
-  // 2.0 조기 탈출 (§9.5): 정기 교신 +7일 확정 제안(랜덤 없음). 보류하면 소진 — 9겨울에 다시 온다.
-  if (state.earlyRescueDay > 0 && state.day >= state.earlyRescueDay && !state.endingType && state.winters < 9) {
+  // #170 REV3: 밤의 교신 — 사일로를 보고 돌아선 자에게 +2일 밤, 박사의 마지막 물음(1회).
+  //   무기록 원칙: doctorCallSeen은 발화 시점에 세워 내려두기·닫기로도 재발화하지 않는다.
+  if (state.siloSeen > 0 && !state.siloFired && !state.doctorCallSeen && !state.endingType
+      && state.day >= state.siloSeen + 2) {
+    state.doctorCallSeen = true;
+    state.pendingEvent = 'doctor_call';
+    state.lastEventDay = state.day;
+    return;
+  }
+  // 2.0 조기 탈출 (§9.5): 정기 교신 +7일 확정 제안(랜덤 없음). 보류하면 소진.
+  //   #170 REV3: 안식을 선언한 사람(endingStayed)에겐 더 묻지 않는다 — 이미 답했다.
+  if (state.earlyRescueDay > 0 && state.day >= state.earlyRescueDay && !state.endingType && !state.endingStayed && state.winters < 9) {
     state.earlyRescueDay = 0;
     state.pendingEvent = 'early_rescue';
     state.lastEventDay = state.day;
@@ -7414,9 +7474,23 @@ function processDay() {
     state.catEventSeen = true; // 거절해도 다시는 뜨지 않음
     notes.push(t('day.catHint'));
   }
-  // 특수 인카운터 ②: 구조 — Day 10000 초과, 하루 5%
-  if (!state.pendingEvent && state.day > 10000 && !state.endingSeen && Math.random() < 0.05) {
-    state.pendingEvent = 'ending';
+  // (구) 특수 인카운터 ②: Day 10000 구조 — #170 REV3에서 폐지. 탈출의 문은 이제 셋뿐이다:
+  //   무전 조기 구조(early_rescue) / 밤의 교신(doctor_call) / 재건 후 노크(ending_choice).
+  // 특수 인카운터 ②': 초대장 (#170 REV3) — 진실 4단(nw1~4) 완성 다음 아침, 종이가 그들의 노크다(1회).
+  //   그들은 문을 두드리지 않는다: 좌표와 날짜(사흘 뒤)가 이미 초대장에 있다. 랜덤 없음(폭로의 리듬은 결정론).
+  if (!state.pendingEvent && !state.invitationSeen && !state.endingType
+      && MEMOS_CITYCORE.every(id => (state.memos || {})[id])) {
+    state.pendingEvent = 'invitation_choice';
+    state.invitationSeen = true;
+    state.invitationHeld = true;              // 서랍 보류 기본값 — 선택이 답하면 내려간다
+    state.invitationDue = state.day + 3;      // 인쇄된 날짜 — 1회성의 디제시스
+    state.lastEventDay = state.day;
+  }
+  // 초대장 마감일 아침 — 서랍의 종이가 마지막으로 묻는다(1회). 이후 문은 세계의 시간으로 닫힌다.
+  if (!state.pendingEvent && state.invitationSeen && state.invitationHeld && !state.endingType && !state.endingStayed
+      && state.invitationDue > 0 && state.day >= state.invitationDue) {
+    state.pendingEvent = 'invitation_due';
+    state.invitationHeld = false;
     state.lastEventDay = state.day;
   }
   // Nine Winters(#11): 9겨울 마일스톤 박사 무전 — 라디오 보유 시 밤에 1회 (미보유 시 다음 배치까지 보류)
@@ -8269,16 +8343,38 @@ function runSiloSequence() {
   const lines = [0, 1, 2, 3].map(n => t('hidden.silo.line' + n));
   let i = 0;
   const scr = $('ending-screen'), txt = $('ending-text'), btn = $('ending-next');
+  // #170 REV3 「돌아선다」: 버튼 앞까지 가서 누르지 않는 자의 문 — 마지막 줄에서만 노출.
+  //   목격(siloSeen)만 기록하고 평소의 밤으로 돌아간다. 며칠 뒤, 밤의 교신(doctor_call)이 온다.
+  let leaveBtn = document.getElementById('silo-leave');
+  if (!leaveBtn) {
+    leaveBtn = document.createElement('button');
+    leaveBtn.id = 'silo-leave';
+    leaveBtn.className = 'pixel-btn';
+    btn.parentNode.insertBefore(leaveBtn, btn.nextSibling);
+  }
+  leaveBtn.textContent = t('hidden.silo.leave');
+  leaveBtn.style.display = 'none';
+  leaveBtn.onclick = () => {
+    leaveBtn.style.display = 'none';
+    scr.style.display = 'none';
+    btn.onclick = null;
+    siloActive = false;
+    if (!state.siloSeen) state.siloSeen = state.day; // 목격 기록 — 눌렀는지 아닌지는 어디에도 없다
+    flushSave();
+    syncBgm(true); // 침묵을 걷는다 — 앰비언스·난롯불은 syncSfxAmbience 틱이 복원
+  };
   scr.style.display = 'flex';
   const render = () => {
     txt.style.animation = 'none'; void txt.offsetWidth; txt.style.animation = '';
     txt.innerHTML = lines[i];
     btn.textContent = i === lines.length - 1 ? t('hidden.silo.press') : t('intro.next');
+    leaveBtn.style.display = i === lines.length - 1 ? '' : 'none';
   };
   btn.onclick = () => { // onclick 대입: 리스너 중복 방지 (runEndingSequence 동일 패턴)
     i++;
     if (i >= lines.length) {
       btn.onclick = null;
+      leaveBtn.style.display = 'none';
       state.siloFired = true; // 내부 전용 — 어디에도 표시하지 않는다
       flushSave();
       // 화이트아웃: 흰 덮개가 천천히 차오르고, 잠시 머문 뒤 타이틀로(리로드). 소리 없음. 그러고 끝.
@@ -9899,4 +9995,6 @@ window.__shelter = {
   // Phase E (#14 입력 · #34 Steam · 접근성) QA 훅
   Platform, KEYBINDS, keyForAction, actionForEvent, saveKeybinds, resetKeybinds,
   applyAccessibility, gamepad: () => padState,
+  // #170 REV3 엔딩 개정 QA 훅: 사일로 돌아서기·재건 비네트·밤 발화 채널·겨울 통과 직접 구동
+  runSiloSequence, runRebuildSequence, tryDoctorRadio, runEndingSequence, passWinter,
 };

@@ -428,12 +428,13 @@ const KNOWLEDGE_HASH = -451536973;
 
     // ── 엔딩 3분기 + 이관의 진실 (GD-2.0 §5·§9.5) — 스위트 끝 배치(엔딩 시퀀스 DOM 오염 회피) ──
     const e3 = await call(`
-      // 1) 9겨울 트리거: 겨울 마지막 날 다음날(day 49, winters 8→9) processDay → passWinter 예약 →
-      //    같은 processDay 말미의 tryDoctorRadio가 그날 밤 즉시 발화(플래그는 소진돼 있음)
+      // 1) 9겨울 트리거 (#170 REV3): winters 8→9 processDay → passWinter가 재건(rebuildPending) 예약 →
+      //    같은 processDay 말미의 tryDoctorRadio가 그날 밤 재건의 봄(rebuilding) 발화(플래그 소진).
+      //    노크(ending_choice)는 재건 비네트의 종결부가 세운다.
       S.simReset(); S.state.winters = 8; S.state.day = 49; S.state.pendingEvent = null;
       S.state.cat = 1; S.state.lastEventDay = 49; // 확률 인카운터 봉인(고양이 특수·일반 롤) — 당일 밤 발화 핀의 결정론 확보
       S.processDay();
-      const nine = { w: S.state.winters, pend: S.state.endingChoicePending };
+      const nine = { w: S.state.winters, pend: S.state.rebuildPending };
       const fired = S.state.pendingEvent;
       // 2) 선택 기록: escape run → endingType (시퀀스는 0.4s 뒤 — 화면은 아래서 정리)
       const r0 = S.EVENTS.ending_choice.choices[0].run();
@@ -455,8 +456,8 @@ const KNOWLEDGE_HASH = -451536973;
       S.simReset(); S.state.memos = {};
       const seq = [];
       for (let i = 0; i < 800 && seq.length < 2; i++) { const d = S.tryDropMemoOnExpedition('citycore'); if (d && d.id && d.id.slice(0, 2) === 'nw') seq.push(d.id); }
-      // 6) 9겨울 밤 경합(§9.5 검수): 라디오 보유 시 첫 무전이 구조보다 먼저 — 복선이 초대보다 앞선다.
-      //    무전 발화 밤엔 구조 예약이 소진되지 않고, 이튿날 밤 ending_choice로 온다.
+      // 6) 9겨울 밤 경합(§9.5 검수·#170 REV3): 라디오 보유 시 첫 무전이 먼저 — 복선이 재건보다 앞선다.
+      //    무전 발화 밤엔 예약이 소진되지 않고, 이튿날 밤 구판 예약(endingChoicePending)이 재건의 봄으로 승격 발화.
       S.simReset(); S.addItem('radio', 0, 1, 1, 0);
       S.state.doctorRadioPending = true; S.state.endingChoicePending = true; S.state.endingType = null; S.state.pendingEvent = null;
       S.tryDoctorRadio();
@@ -471,7 +472,7 @@ const KNOWLEDGE_HASH = -451536973;
     const ed = JSON.parse(e3);
     if (ed.error) check('엔딩 3분기 (예외 없이)', false, ed.error);
     else {
-      check('엔딩/9겨울 트리거 (passWinter 예약 → 당일 밤 발화·플래그 소진)', ed.nine.w === 9 && ed.nine.pend === false && ed.fired === 'ending_choice',
+      check('엔딩/9겨울 트리거 (passWinter 재건 예약 → 당일 밤 rebuilding 발화·플래그 소진)', ed.nine.w === 9 && ed.nine.pend === false && ed.fired === 'rebuilding',
         `w ${ed.nine.w} pend ${ed.nine.pend} fired ${ed.fired}`);
       check('엔딩/선택 기록 (escape → endingType)', ed.et === 'escape', `et ${ed.et}`);
       check('엔딩/성향 결정론 (정든 집=rest · 진실 14+=newworld)', ed.leanRest === 'rest' && ed.leanNw === 'newworld',
@@ -479,7 +480,7 @@ const KNOWLEDGE_HASH = -451536973;
       check('엔딩/조기 탈출 (정기 교신 +7일 확정 예약·도래 발화)', ed.early1.pe === 'doctor_radio_regular' && ed.early1.d === 107 && ed.early2 === 'early_rescue',
         `pe ${ed.early1.pe} d ${ed.early1.d} then ${ed.early2}`);
       check('응답/이관의 진실 순차 드랍 (nw1 → nw2)', ed.seq[0] === 'nw1' && ed.seq[1] === 'nw2', `seq ${ed.seq.join(',')}`);
-      check('엔딩/9겨울 밤 경합 (무전 먼저 → 이튿날 구조)', ed.clash1.pe === 'doctor_radio' && ed.clash1.pend === true && ed.clash2 === 'ending_choice',
+      check('엔딩/9겨울 밤 경합 (무전 먼저 → 이튿날 재건의 봄)', ed.clash1.pe === 'doctor_radio' && ed.clash1.pend === true && ed.clash2 === 'rebuilding',
         `pe ${ed.clash1.pe} pend ${ed.clash1.pend} then ${ed.clash2}`);
     }
 
