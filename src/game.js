@@ -5155,6 +5155,9 @@ const ACHS = [
   { id: 'colAll',    icon: '🏛️', name: '폐허의 박물관장',  nameEn: 'Museum Keeper of the Ruins', desc: '도감 100% (84색상)',   descEn: 'Collection 100% (84 colors)',        chk: () => collectionCount() >= 84 },
   { id: 'cat',       icon: '🐈', name: '고양이 집사',      nameEn: 'Cat Servant',        desc: '길고양이를 가족으로 맞이하다', descEn: 'Welcome a stray cat as family',      chk: () => !!state.cat },
   { id: 'ending',    icon: '🚁', name: '폐허 너머로',      nameEn: 'Beyond the Ruins',   desc: 'Day 10000 — 박사와 함께 탈출', descEn: 'Day 10000 — escape with the doctor', chk: () => !!state.endingSeen },
+  // 암호 업적 (디렉터 승인 2026-07-10, 메트로 2033 오마주 문법): 내용은 안 보이고 존재만 보인다 —
+  //   글로벌 달성률이 커뮤니티 고고학을 유도. quiet=무음 해금(침묵 시퀀스의 무기록 톤 보존), hidden=미해금 시 ???.
+  { id: 'silence',   icon: '▪️', name: '침묵',             nameEn: 'Silence',            desc: '…',                            descEn: '…',                                  quiet: true, hidden: true, chk: () => !!state.siloFired },
 ];
 function checkAchievements() {
   if (QA_ED) return; // #89 QA 에디션: 업적 전면 no-op (Steam 중계 지점 원천 차단)
@@ -5163,6 +5166,7 @@ function checkAchievements() {
   for (const a of ACHS) {
     if (!state.achs[a.id] && a.chk()) {
       Platform.achievements.unlock(a.id); // 어댑터 경유(로컬 state.achs 위임 + Steam 중계 지점) — 동작 불변
+      if (a.quiet) continue; // 침묵 등 무음 업적: 연출 없이 기록만 — 게임은 판단하지 않는다
       toast(t('ach.unlocked', { icon: a.icon, name: LName(a) }));
       state.dayLog.notes.push(t('ach.note', { name: LName(a) }));
       playSfx('ring');
@@ -5254,9 +5258,10 @@ function openJournalModal(tab = 'journal') {
   const se = seasonOf();
   const achsHtml = ACHS.map(a => {
     const got = state.achs?.[a.id];
+    const veiled = a.hidden && !got; // 암호 업적: 미해금 시 존재만 — 이름·아이콘 은닉
     return `<div class="prep-row" style="cursor:default;${got ? '' : 'opacity:0.4'}">
-      <span style="font-size:16px">${a.icon}</span>
-      <span>${LName(a)}</span>
+      <span style="font-size:16px">${veiled ? '▫️' : a.icon}</span>
+      <span>${veiled ? '???' : LName(a)}</span>
       <span class="p-cost">${LDesc(a)}${got ? ' ✓' : ''}</span>
     </div>`;
   }).join('');
