@@ -566,11 +566,11 @@
   "demo.end.sub": "Nine winters await in the full game — twelve shelters, the metro line, and what lies beyond the blockade. Wishlist it and we'll let you know when winter comes.",
   "demo.end.back": "Back to Title",
   "demo.end.locked": "The demo ends after the first winter — the story continues in the full game.",
-  "demo.credits.0": "The first winter has passed.",
+  "demo.credits.0": "The first snow fell. Then the cold snap came.",
   "demo.credits.1": "You warmed the soup. You mended the wall.<br>You kept something alive<br>in a world that had already ended.",
-  "demo.credits.2": "Eight winters wait beyond the snow —<br>a home still half-empty, still yours to fill.",
-  "demo.credits.3": "The rest of the story is waiting.<br>See you on Steam — by a warmer fire.<br><br><b>Search \"Nine Winters\" · Wishlist</b>",
-  "demo.credits.close": "Keep dwelling ▸",
+  "demo.credits.2": "Beyond this winter, eight more remain —<br>a home still half empty, but yours.",
+  "demo.credits.3": "Winter is coming.",
+  "demo.credits.close": "To title ▸",
   "demo.credits.note": "At the end of the first winter, the credits rolled.",
   "demo.credits.toast": "The winters keep returning — at your own pace.",
   "winter.page.title": "Winter №{n}",
@@ -1061,5 +1061,7 @@
   "demo.hardPerk": "🔓 Demo challenge mode: the Commercial District opens as an extra scavenging area.",
   "mode.zen.lock": "It belongs to those who have crossed {n} winter.",
   "mode.zen.lockToast": "Opens after crossing {n} winter in any mode.",
-  "demo.autoLocked": "Auto-play belongs to the days after the first-snow credits — until the first winter, it is your own hands."
+  "demo.autoLocked": "Auto-play belongs to the full game — these fifteen days are your own hands.",
+  "demo.credits.4": "<b>Nine Winters</b><br><br>Q4 2026 · Steam<br><br>Your home and your cat<br>carry over to the full game.<br><br>Add it to your wishlist —<br>we will let you know when the first winter arrives.",
+  "demo.regionLocked": "Still locked — it belongs to Survival mode."
 }

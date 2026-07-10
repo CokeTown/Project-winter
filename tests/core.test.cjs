@@ -36,6 +36,20 @@ const KNOWLEDGE_HASH = -451536973;
     `);
     const e = JSON.parse(econ);
     const band = (name, v, lo, hi) => check(name, v >= lo && v <= hi, `실측 ${v} / 밴드 ${lo}~${hi}`);
+    // 1.7.0 데모 15일 컷: 데모 빌드는 계절 4일 달력 — 본편 달력 기준 밴드·하드코어 치사성 불변식이 성립하지 않는다
+    //   (하드코어는 데모 미노출). 대신 데모 자체 불변식: 코지·생존 15일 완주 경제(굶는 날 0)를 건다.
+    const demo15 = await call('return S.BAL.seasons.daysPerSeason');
+    if (Number(demo15) === 4) {
+      const d15 = JSON.parse(await call(`
+        const run = (mode, seed) => { const a = S.simDays(15, { mode, seed, regions: ${ROT} });
+          return { starve: a.filter(x => x.starving).length,
+            fc: Math.round(((a[a.length-1].res.food||0) + (a[a.length-1].res.canned||0))) }; };
+        return JSON.stringify({ normal: run('normal', 11111), hard: run('hard', 11111) });
+      `));
+      check('데모15/코지 15일 굶는날 0', d15.normal.starve === 0, `굶는날 ${d15.normal.starve}`);
+      check('데모15/생존 15일 굶는날 0', d15.hard.starve === 0, `굶는날 ${d15.hard.starve}`);
+      check('데모15/코지 Day15 물자 양수', d15.normal.fc > 0, `물자 ${d15.normal.fc}`);
+    } else {
     // 노말: 굶는 날 0(코지 코어 불가침) + Day30 코지 밴드 + Day432 인플레 캡.
     //   ※ F1 해결로 중반(Day30/60)도 이제 결정적 — 밴드는 안전 마진으로 유지(정밀 near로 조일 수 있으나
     //     밸런스 튜닝 여지를 남긴다). Day432 캡은 harness 무관 안정(339)이라 타이트하게.
@@ -52,6 +66,7 @@ const KNOWLEDGE_HASH = -451536973;
     check('경제/하드코어 완주 가능(생존 존재)', e.hcSurvive >= 1, `생존 ${e.hcSurvive}/5`);
     // 무한: 노말과 동일 안착
     near('경제/무한 Day432', e.zen.d432, 339, 4);
+    } // 데모15 분기 끝 (본편 달력 밴드 블록)
 
     // ── F1 헤르메틱 회귀 가드 (2026-07-07 해결) — sim이 완전 결정적임을 박제 ──
     //   해결: simReset이 weather.type/전 모듈상태를 완전 리셋 + tipOnce/wildlife 렌더부수효과를 _simRunning 가드

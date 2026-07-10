@@ -2469,7 +2469,22 @@ function openMapModal() {
   for (const [rid, r] of Object.entries(REGIONS)) {
     const p = MAP_MARKERS[rid];
     if (!p) continue;
-    if (!regionUnlocked(rid)) continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
+    // 1.7.0 데모 「궁금한 문」(디렉터 공유 커뮤니티 인사이트: "어딜 막으면 궁금해할까에 포인트를 잡아라"):
+    //   기본 4지구 중 잠긴 곳(코지의 상업지구)은 숨기지 않고 🔒 실루엣으로 — 이름·수치는 은닉("조회 불가" 원칙 유지).
+    //   항구·고원·금지구역 등 확장 지역은 기존대로 완전 비노출(규모 누출 방지).
+    if (!regionUnlocked(rid)) {
+      if (DEMO_ED && ['residential', 'commercial', 'industrial', 'slum'].includes(rid)) {
+        const lk = document.createElement('div');
+        lk.className = 'map-pin region sketch';
+        lk.style.left = Math.min(MAP_SAFE.x1, Math.max(MAP_SAFE.x0, p.x)) + '%';
+        lk.style.top = Math.min(MAP_SAFE.y1, Math.max(MAP_SAFE.y0, p.y)) + '%';
+        lk.style.opacity = '0.55';
+        lk.title = t('demo.regionLocked');
+        lk.innerHTML = `${icon('icon_sys_locked', '🔒')}<span class="pin-rate lack">???</span>`;
+        wrap.appendChild(lk);
+      }
+      continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
+    }
     const el = document.createElement('div');
     el.className = 'map-pin region';
     // #85 수용 규칙(#87 임시 가드의 정식화): 렌더에서 안전영역 자동 클램프 — 신규 지역 좌표 실수를 원천 차단
@@ -4152,7 +4167,9 @@ function applyDeco() {
 // 「지식」 테크트리 모달(§9) — 4갈래×3티어, 책으로 해금. 노드 상태: 해금됨/해금가능/선행잠금/책부족.
 // #74 데모 제작 큐레이션(디렉터: "꾸미는 건 적게, 10~14가지 · 옷은 총 2벌 · 조회 자체가 불가능하게").
 //   가구 12종(코지 필수+기능) + 기본 자원 제작 유지 + 의상 1종(기본 코트 포함 총 2벌). 염장·사치(책) 제작은 비노출.
-const DEMO_CRAFT_FURN = new Set(['cushion', 'bookstack', 'crate', 'chair', 'teatable', 'rug', 'plant', 'table', 'bed', 'lantern', 'stove', 'radio']);
+// 1.7.0 15일 컷(디렉터 "가구 수는 조금 줄이고"): 12종 → 8종 — 티어 6종(성장 루프) + 러그(꾸미기 맛) + 라디오(기록 루프).
+//   bookstack·crate·plant·teatable 제외 → 제작창 ??? 실루엣으로 넘어가 "본편에 더 있다" 장치가 됨.
+const DEMO_CRAFT_FURN = new Set(['cushion', 'chair', 'rug', 'table', 'bed', 'lantern', 'stove', 'radio']);
 const DEMO_CRAFT_OUTFIT = new Set(['navy']);
 const demoCraftOk = c => c.out.furn ? DEMO_CRAFT_FURN.has(c.out.furn)
   : c.out.outfit ? DEMO_CRAFT_OUTFIT.has(c.out.outfit)
@@ -4161,9 +4178,9 @@ function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
   const rowArr = CRAFTS.map((c, i) => {
     if (DEMO_ED && !demoCraftOk(c) && !c.bp) {
-      // #149 ??? 실루엣: 크레딧 후 샌드박스에서만, 가구 한정 — 이름·효과·코스트 전부 숨김("조회 불가" 원칙 유지).
-      //   존재만 암시해 "본편에 더 있다"를 손끝으로 느끼게 한다 (구매 전환 장치).
-      if (state.demoPhase !== 'sandbox' || !c.out.furn) return '';
+      // #149 ??? 실루엣: 가구 한정 — 이름·효과·코스트 전부 숨김("조회 불가" 원칙 유지).
+      //   1.7.0: 샌드박스 제거로 상시 노출 — 15일 내내 "본편에 더 있다"를 손끝으로 느끼게 한다 (구매 전환 장치).
+      if (!c.out.furn) return '';
       return `
       <div class="prep-row no" style="cursor:default;opacity:.55">
         <span>🔒 ???</span>
@@ -6198,9 +6215,14 @@ function runDemoCredits() {
   if (creditsActive || state.demoPhase !== 'credits') return; // 'credits' 단계에서만 (재개/중복 방지)
   creditsActive = true;
   closeModal();
+  // 페이퍼 레이어(종이 팁/수첩)는 크레딧보다 위에 뜰 수 있다 — 강제 정리 (showDemoEnd 선례)
+  const jscr = $('journal-screen');
+  if (jscr) { jscr.classList.remove('show'); jscr.style.display = 'none'; }
+  journalOpen = false;
+  { const tn = $('tip-note'); if (tn) tn.style.display = 'none'; } // 찢어진 쪽지 팁(z 55)이 크레딧 위를 덮지 않게
   setPaused(false);
   syncBgm(true); // Ending_Credits.mp3 크로스페이드
-  const lines = [t('demo.credits.0'), t('demo.credits.1'), t('demo.credits.2'), t('demo.credits.3')];
+  const lines = [t('demo.credits.0'), t('demo.credits.1'), t('demo.credits.2'), t('demo.credits.3'), t('demo.credits.4')];
   let i = 0;
   const scr = $('ending-screen'), txt = $('ending-text'), btn = $('ending-next');
   scr.style.display = 'flex';
@@ -6212,27 +6234,34 @@ function runDemoCredits() {
   btn.onclick = () => { // onclick 대입: 재실행 시 리스너 중복 방지
     i++;
     if (i >= lines.length) {
-      scr.style.display = 'none';
-      creditsActive = false;
-      state.demoPhase = 'sandbox';   // 이제부터 4계절 무한 샌드박스 (동결 없음)
-      state.dayLog.notes.push(t('demo.credits.note'));
-      // 자동모드 신고 수정: 샌드박스가 열리는 바로 이 순간 자동 진행 해금 안내를 예약 —
-      //   (모달 큐가 크레딧 종료 후 화면이 비면 띄운다). Day 10 조기 팝업은 위 롤오버 게이트가 억제.
-      if (!state.autoNoticeShown) { state.autoNoticeShown = true; state.pendingAutoNotice = true; }
-      refreshAutoplayLock();         // 잠금 즉시 해제 (설정 체크박스·🤖 버튼 활성화)
-      flushSave();                   // 재입장 시 크레딧 재발화 방지 (firstSnowSeen + demoPhase 각인)
-      syncBgm();                     // 날씨/계절 BGM 복귀
-      toast(t('demo.credits.toast'));
+      // 1.7.0 15일 컷: 샌드박스 제거 — 데모는 여기서 끝난다. 'over' 각인 후 타이틀로.
+      //   (재입장해 이어하면 마지막 카드만 다시 보여주고 타이틀로 — maybeRunDemoCredits의 'over' 분기)
+      state.demoPhase = 'over';
+      flushSave();
+      location.reload();
     } else render();
   };
   render();
 }
+// 1.7.0: 완주('over') 세이브 재입장 — 마지막 카드(출시 예고)만 다시 보여주고 타이틀로. 진행은 없다.
+function runDemoOverCard() {
+  if (creditsActive) return;
+  creditsActive = true;
+  closeModal();
+  const scr = $('ending-screen'), txt = $('ending-text'), btn = $('ending-next');
+  scr.style.display = 'flex';
+  txt.innerHTML = t('demo.credits.4');
+  btn.textContent = t('demo.credits.close');
+  btn.onclick = () => { scr.style.display = 'none'; creditsActive = false; location.reload(); };
+}
 // #74 데모: demoPhase='credits'(첫눈 감지됨·크레딧 미완)일 때, 아침 보고 등 모달이 닫혀 첫눈이 보이는 순간 크레딧을 띄운다.
 //   렌더 루프에서 매 프레임 체크 → 중단 후 재입장(demoPhase='credits' 세이브 복원)해도 자동 재개(소프트락 방지, 리뷰 지적 수정).
 function maybeRunDemoCredits() {
-  if (!DEMO_ED || state.demoPhase !== 'credits' || creditsActive || titleVisible || blackoutActive) return;
+  if (!DEMO_ED || creditsActive || titleVisible || blackoutActive) return;
+  if (state.demoPhase !== 'credits' && state.demoPhase !== 'over') return;
   if ($('modal-back')?.classList.contains('show')) return;     // 아침 보고 등 모달 닫힐 때까지 대기(보고 강제 종료 방지)
   if ($('journal-screen')?.classList.contains('show')) return; // 수첩 페이지 닫힐 때까지 대기
+  if (state.demoPhase === 'over') { runDemoOverCard(); return; } // 1.7.0: 완주 세이브 재입장 — 출시 예고 카드만
   runDemoCredits();
 }
 
@@ -6445,12 +6474,13 @@ function processDay() {
     rollWeather(); // 새 계절의 날씨로
     if (se.id === 'winter') { // 겨울 진입: memoir용 스냅샷
       tipOnce('tip.winter'); beginWinterSnapshot();
-      // #74 데모 재설계: 첫 겨울 진입 = '첫눈' 강제 → 잠시 뒤 Nine Winters 크레딧(1회). pre-credits·첫겨울(winters 0)만.
+      // 1.7.0 데모 15일 컷: 첫 겨울 진입(Day 13) = '첫눈' 연출 + 한파 결정론 예약. 크레딧은 Day 15 롤오버가 띄운다.
+      //   "겨울이 하드해질 때 끝"(디렉터 2026-07-10) — 2일차 한파 발동 → 3일차 한파 한복판 아침에 크레딧.
       if (DEMO_ED && state.demoPhase === 'pre-credits' && (state.winters || 0) === 0 && !state.firstSnowSeen) {
         state.firstSnowSeen = true;
-        state.demoPhase = 'credits';              // 크레딧 대기 단계 — 세이브에 각인돼 중단돼도 재입장 시 재개(소프트락 방지)
         setWeather('snow');                       // 첫눈 확정 (seasonAdjustPool은 눈을 유력하게만 해 비결정 → 강제)
-        // 실제 크레딧은 아침 보고 등 모달이 닫혀 첫눈이 보일 때 maybeRunDemoCredits()가 띄운다(무조건 setTimeout 폐기).
+        state.coldSnapForecast = state.day + 1;   // 내일(겨울 2일차) 한파 발동 — 결정론 배달
+        notes.push(t('coldsnap.forecast', { n: 1 }));
       }
     }
     // ── Nine Winters(#11): 겨울을 "넘긴" 순간 = 겨울 마지막 날을 거처에서 맞고 봄으로 넘어온 오늘
@@ -6744,9 +6774,12 @@ function processDay() {
     notes.push(t('day.catPrints'));
   }
   // 특수 인카운터 ①: 야윈 고양이 — v0.9.1: Day 9+, 하루 15% (아직 입양 전 + 최초 1회 등장 후 재등장 없음)
-  // #74 데모: 가을 중후반(Day 30~, 첫겨울 직전)에 만나게 해 "감질맛" — 확률↑로 데모 안에 확실히 등장.
-  const catDayOk = DEMO_ED ? (seasonOf(state.day).id === 'autumn' && state.day >= 30) : (state.day >= 9);
-  const catChance = DEMO_ED ? (state.day >= 35 ? 1 : 0.4) : 0.15; // 데모: 가을 마지막 이틀(Day35~36) 확정 조우 — "확실히 등장" 불변식 보장(리뷰 지적)
+  // 1.7.0 데모 15일 컷: 가을 시작(Day 9) 확정 조우 — 겨울까지 6일, 고양이와 함께 첫 한파를 맞는다 (디렉터 지정).
+  //   데모는 대기 중인 일반 인카운터가 있어도 고양이가 선점한다(15일 안에 일반 인카운터 하나 유실은 무해 —
+  //   E2E 실측: 방랑자가 pendingEvent를 점유해 고양이가 영영 못 뜨던 것).
+  const catDayOk = DEMO_ED ? (state.day >= 9) : (state.day >= 9);
+  const catChance = DEMO_ED ? 1 : 0.15;
+  if (DEMO_ED && state.pendingEvent && state.pendingEvent !== 'cat' && !state.cat && !state.catEventSeen && catDayOk) state.pendingEvent = null;
   if (!state.pendingEvent && !state.cat && !state.catEventSeen && catDayOk && Math.random() < catChance) {
     state.pendingEvent = 'cat';
     state.lastEventDay = state.day;
@@ -6934,6 +6967,9 @@ function tickTime(dt) {
     // 데모(1.6.x 자동모드 신고 수정): 샌드박스 전엔 자동모드가 잠겨 있으므로 안내도 억제 —
     //   Day 10 팝업이 "열렸다"고 약속하고 refreshAutoplayLock이 도로 꺼버리던 거짓 해금 해소. 안내는 크레딧 직후 발화.
     if ((isZen() || state.day >= 10) && (!DEMO_ED || state.demoPhase === 'sandbox') && !state.autoNoticeShown) { state.autoNoticeShown = true; state.pendingAutoNotice = true; }
+    // 1.7.0 데모 15일 컷: 겨울 3일차(Day 15) 아침 — 한파 한복판에서 크레딧 (디렉터: "겨울이 하드해질 때 끝").
+    //   시뮬 순수성 가드(_simRunning): 밸런스 시뮬이 크레딧 단계로 오염되지 않게.
+    if (DEMO_ED && !_simRunning && state.demoPhase === 'pre-credits' && state.day >= 15) state.demoPhase = 'credits';
     processDay();
     reportQueued = true;
     rolledOver = true;

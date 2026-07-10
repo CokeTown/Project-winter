@@ -112,7 +112,9 @@ export const BAL = {
 
   /* ── 계절 (SEASONS / seasonOf) ── */
   seasons: {
-    daysPerSeason: 12,   // SEASON_DAYS: 한 계절 길이 (게임일)
+    // 1.7.0 데모 15일 컷(디렉터): 데모는 계절 4일 — 초봄 시작 → 첫눈 Day 13 → 겨울 3일차(Day 15) 크레딧.
+    //   달력만 접고 밸런스(게임분 기준)는 불변. __DEMO__는 vite define 상수(import 아님 — 의존성 0 원칙 유지).
+    daysPerSeason: (typeof __DEMO__ !== 'undefined' && __DEMO__) ? 4 : 12, // SEASON_DAYS: 한 계절 길이 (게임일)
 
     /* 가을 비축 경고 (겨울 대비) */
     prepWarnDaysBefore: 3, // 겨울 시작 N일 전부터 경고 카드
