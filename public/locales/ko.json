@@ -404,6 +404,8 @@
   "craft.make": "제작",
   "craft.fullOnly": "정식판에서 만들 수 있다",
   "demo.moreFurn": "미확인 가구 {n}종 — 정식판에서 발견된다",
+  "craft.catGoods": "가구·물품",
+  "craft.catOutfit": "복장",
   "demo.moreRecords": "잠긴 기록 {n}건 — 정식판에서 발견된다",
   "craft.installed": "✓ 설치됨",
   "craft.install": "설치",

@@ -404,6 +404,8 @@
   "craft.make": "Craft",
   "craft.fullOnly": "Craftable in the full game",
   "demo.moreFurn": "{n} undiscovered furnishings — found in the full game",
+  "craft.catGoods": "Furnishings & Goods",
+  "craft.catOutfit": "Outfits",
   "demo.moreRecords": "{n} records still locked — found in the full game",
   "craft.installed": "✓ Installed",
   "craft.install": "Install",

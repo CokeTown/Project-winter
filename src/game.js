@@ -4149,7 +4149,7 @@ const demoCraftOk = c => c.out.furn ? DEMO_CRAFT_FURN.has(c.out.furn)
   : !c.cost.salt && !c.cost.book; // 자원 제작(붕대·양초·건축재)은 유지 — 소금·책 코스트는 데모 미획득 자원이라 비노출
 function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
-  const rows = CRAFTS.map((c, i) => {
+  const rowArr = CRAFTS.map((c, i) => {
     if (DEMO_ED && !demoCraftOk(c) && !c.bp) {
       // #149 ??? 실루엣: 크레딧 후 샌드박스에서만, 가구 한정 — 이름·효과·코스트 전부 숨김("조회 불가" 원칙 유지).
       //   존재만 암시해 "본편에 더 있다"를 손끝으로 느끼게 한다 (구매 전환 장치).
@@ -4179,7 +4179,14 @@ function openCraftModal() {
           ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('craft.owned')}</span>`
           : `<button class="pixel-btn" data-craft="${i}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('craft.make')}</button>`}
       </div>`;
-  }).join('');
+  });
+  // 복장 분리 (디렉터 2026-07-10): 옷 제작이 가구와 한 목록에 섞여 있던 것을 섹션으로 구분.
+  //   data-craft 인덱스는 원본 CRAFTS 기준이라 클릭 배선 무변 — 표시만 재배열.
+  const goodsRows = CRAFTS.map((c, i) => c.out.outfit ? '' : rowArr[i]).join('');
+  const outfitRows = CRAFTS.map((c, i) => c.out.outfit ? rowArr[i] : '').join('');
+  const secHead = (emoji, key) => `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${emoji} ${t(key)}</div>`;
+  const rows = secHead('🪑', 'craft.catGoods') + goodsRows
+    + (outfitRows.trim() ? secHead('🧥', 'craft.catOutfit') + outfitRows : '');
   // 현재 거처에 설치 가능한 개조
   const sh = SHELTERS[state.current];
   const modRows = Object.entries(SHELTER_MODS)
