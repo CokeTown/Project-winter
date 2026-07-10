@@ -1690,6 +1690,96 @@
       "fit": "cover",
       "dest": "assets-src/art/out/icons/ev_harsh_barter.png",
       "prompt": "A half-empty peddler cart under a bridge in winter holding a few cans and a single fuel canister, two wary figures keeping their distance in ashen snow. Cozy pixel art illustration, cinematic isometric-leaning angle, ashen desaturated palette, thin cold light, worn threadbare mood, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_collapsed_entrance",
+      "purpose": "이벤트 일러스트: 무너진 입구 (#165 탐험 리스크)",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_collapsed_entrance.png",
+      "prompt": "A collapsed brick wall in a ruined city street revealing a dark doorway gap, dust still settling in the air, a faint golden glint of something inside the darkness, rubble and bent rebar in the foreground, late afternoon overcast light. Warm lantern glow against cold ruins. Cozy pixel art illustration, cinematic isometric-leaning angle, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_invitation_choice",
+      "purpose": "이벤트 일러스트: 탁자 위의 초대장 (#170 REV3)",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_invitation_choice.png",
+      "prompt": "A single cream-colored sheet of paper lying flat on a rough wooden table in a dim shelter interior, pale morning light from a small window falling across it, a cast-iron stove glowing softly nearby with a kettle on top, quiet domestic stillness. Cozy pixel art illustration, cinematic isometric-leaning angle, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_invitation_due",
+      "purpose": "이벤트 일러스트: 사흘째 아침 (#170 REV3)",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_invitation_due.png",
+      "prompt": "An open wooden drawer in a small dresser holding one folded sheet of paper, pale dawn light entering a quiet shelter room, a heavy winter coat hanging by the door, long soft shadows, contemplative mood. Cozy pixel art illustration, cinematic isometric-leaning angle, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_doctor_call",
+      "purpose": "이벤트 일러스트: 밤의 교신 (#170 REV3, 무기록 원칙 — 라디오만)",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_doctor_call.png",
+      "prompt": "An old shortwave radio glowing with a small green dial light on a wooden crate beside a bed in a dark shelter at midnight, the dial light illuminating dust motes, a tin mug and an open notebook with a pencil beside it, deep night blues with one warm point of light. Cozy pixel art illustration, cinematic isometric-leaning angle, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_rebuilding",
+      "purpose": "이벤트 일러스트: 아홉 번째 봄 (#170 REV3 재건 도입)",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_rebuilding.png",
+      "prompt": "A shelter door standing open onto a bright early spring morning, patches of thawing snow on the ground, a distant ruined city skyline dotted with many small warm window lights, a flock of birds crossing a pale clearing sky, hopeful quiet. Cozy pixel art illustration, cinematic isometric-leaning angle, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_ending_choice",
+      "purpose": "이벤트 일러스트: 문 두드리는 소리 (겨울 9 노크)",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_ending_choice.png",
+      "prompt": "Three figures in heavy winter parkas standing patiently outside a shelter door on a spring night, seen from inside the warm doorway so their faces are not visible, their cold lantern light mixing with the home's warm glow on the threshold, thawing snow around their boots. Cozy pixel art illustration, cinematic isometric-leaning angle, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_early_rescue",
+      "purpose": "이벤트 일러스트: 예정에 없던 교신 (조기 구조 무전)",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_early_rescue.png",
+      "prompt": "A workbench radio crackling to life in a lamplit shelter corner in the evening, warm amber interior glow, a hand-drawn map and a stub of pencil beside the radio, a chair pushed back as if someone just stood up. Cozy pixel art illustration, cinematic isometric-leaning angle, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_dye_merchant",
+      "purpose": "이벤트 일러스트: 염료 상인 (도료 교환 채널)",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_dye_merchant.png",
+      "prompt": "A wooden handcart loaded with three dented paint cans in bright mismatched colors standing in a narrow slum alley at dusk, a small string of lights hanging from the cart frame, colorful paint drips down the cart side, the rest of the alley in muted grays. Cozy pixel art illustration, cinematic isometric-leaning angle, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
+    },
+    {
+      "id": "ev_doctor_radio_regular",
+      "purpose": "이벤트 일러스트: 정기 교신 (무전 기지)",
+      "w": 640,
+      "h": 360,
+      "genSize": "1536x1024",
+      "fit": "cover",
+      "dest": "assets-src/art/out/icons/ev_doctor_radio_regular.png",
+      "prompt": "A tall makeshift radio antenna lashed together from scrap poles on a rooftop under an early night sky, guy wires taut, a cable running down into a small lit shelter window below, stars beginning to show through thin clouds. Cozy pixel art illustration, cinematic isometric-leaning angle, soft dithering, muted post-apocalyptic palette, painterly pixel scene, no text, no UI, no frame."
     }
   ]
 }
