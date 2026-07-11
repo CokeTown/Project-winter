@@ -5,7 +5,7 @@ const { boot, evalJs, call, check, near, report, app } = require('./harness.cjs'
 
 const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
-const SHELTER_HASH = 338379354; // 2026-07-09 재핀: 펜트하우스 확대(11x7.5)+발코니 배치 칸(balcony 필드) (직전: 펜트하우스 편입)
+const SHELTER_HASH = -2124743439; // 2026-07-11 재핀: 예인선→요트 리네임(name/nameEn/emoji/desc) — 주거용 요트 리워크 (직전: 펜트하우스 확대)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
 const MIG_HASH = -71013442; // 2026-07-09 재핀: 시그니처 도면 blueprints 편입 (직전: 내구성 가방)
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.

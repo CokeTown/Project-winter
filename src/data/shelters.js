@@ -130,9 +130,9 @@ export const SHELTER_META = {
     limits: '🌧️ 옥상 빗물받이 — 비/눈 오는 날 깨끗한 물 +2 (자급 가능)', limitsEn: '🌧️ Rooftop rain catch — clean water +2 on rainy/snowy days (self-sufficient)',
   },
   tugboat: {
-    name: '예인선', nameEn: 'Tugboat', emoji: '🚤', unlockAt: 230, viewH: 16, ceilY: 2.3,
-    desc: '부두에 매인 작은 예인선. 발밑이 늘 흔들리지만, 물 위에서는 낚싯줄이 마르지 않는다.',
-    descEn: 'A small tugboat moored at the pier. The deck always sways, but on the water the line never runs dry.',
+    name: '요트', nameEn: 'Yacht', emoji: '🛥️', unlockAt: 230, viewH: 16, ceilY: 2.3,
+    desc: '부두에 매인 낡은 요트. 살롱은 좁아도 온기가 돌고, 물 위에서는 낚싯줄이 마르지 않는다.',
+    descEn: 'An old yacht moored at the pier. The saloon is snug but warm, and on the water the line never runs dry.',
     room: { w: 6.4, d: 4.2, h: 2.2 },
     baseComfort: 6,
     mood: { fog: 0x15222c, fogNear: 18, fogFar: 52, skyH: 0x1c2e3e, skyZ: 0x0a1018, hemiSky: 0x7a92ae, hemiGround: 0x36393c, hemiInt: 0.66, moonC: 0xa6bed6, moonInt: 0.78, stars: 0.85 },

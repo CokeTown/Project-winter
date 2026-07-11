@@ -1116,54 +1116,98 @@ export function makeShelterBuilders(ctx) {
         const ROOM = getROOM();
         let blockers = [];
         const { w, d, h } = ROOM;
-        const hullC = 0x384a55, deckC = 0x6a5a44;
-        const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.28, d + 0.6), wallPhong({ color: deckC }));
-        floor.position.y = -0.14; floor.receiveShadow = true;
-        tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 예인선 갑판 바닥재 대상
-        // 갑판 널
-        for (let i = 0; i < 6; i++) B(roomGroup, w + 0.6, 0.02, 0.05, 0x54452f, 0, 0.015, -d / 2 + 0.5 + i * 0.7);
-        // 선체 (물속으로 이어지는 통통한 예인선 몸통)
-        B(roomGroup, w + 1.2, 2.2, d + 1.2, hullC, 0, -1.2, 0);
-        B(roomGroup, w + 1.4, 0.4, d + 1.4, 0x1f2a30, 0, -2.4, 0);
-        // 뱃머리 방현재(타이어) + 빨간 흘수선 띠
-        B(roomGroup, w + 1.25, 0.18, d + 1.25, 0x8a4535, 0, -0.35, 0);
-        for (const fz of [-d / 2, 0, d / 2]) {
-          const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.1, 6, 10), lamb(0x1c1a18));
-          tyre.rotation.y = Math.PI / 2; tyre.position.set(w / 2 + 0.62, -0.2, fz); roomGroup.add(tyre);
-        }
-        // 조타실 — 벽 한 장이 아니라 부피 있는 선실(디렉터 신고 2026-07-11: "판지 같다").
-        //   앞벽(현창·문) + 측벽 + 후벽 + 지붕을 한 그룹에 담아 기존과 동일하게 컬링(뒤에서 보면 통째 페이드).
-        const wheelhouse = new THREE.Group();
-        const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 2.2, 0.28), tagDecoWall(wallPhong({ color: 0xc4c0b4 }))); // (B-①) 조타실 벽 = 벽지 대상
-        wall.position.y = 1.1; wall.castShadow = wall.receiveShadow = true;
-        wheelhouse.add(wall);
-        for (let i = 0; i < 3; i++) {
-          const port = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.1, 12), lamb(0x7f858c));
-          port.rotation.x = Math.PI / 2; port.position.set(-2 + i * 2, 1.4, 0.16); wheelhouse.add(port);
-          const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.12, 12), lamb(0x27343f));
-          glass.rotation.x = Math.PI / 2; glass.position.set(-2 + i * 2, 1.4, 0.17); wheelhouse.add(glass);
-        }
+        // ── 주거용 모터 요트(리브어보드) — 부두에 계류. 선실=거주 살롱(방), 갑판/선체=외부 ──
+        //   (디렉터 2026-07-11: "갑판 위 집"이 아니라 실제 주거 가능한 요트 — 부두 연결·내부·외부 존재)
+        const topsideC = 0xe6e1d4, bootC = 0x24384f, antifoulC = 0x6a2c26, deckC = 0x8a6a44,
+          capRailC = 0x5a4630, cabinC = 0xece8dc, glassC = 0x223440, steelC = 0xb8b4aa;
+        // 선체 아웃라인(평면도): 선미(-x) 평평, 선수(+x) 뾰족. 한 아웃라인을 층별로 압출해 선체를 쌓는다.
+        const HB = (d + 1.0) / 2, xS = -(w + 1.4) / 2, xSh = (w + 1.4) / 2 - 0.5, xBow = (w + 1.4) / 2 + 1.2;
+        const hullShape = (inset) => {
+          const s = new THREE.Shape(); const b = HB - inset, xs = xS + inset, xb = xBow - inset;
+          s.moveTo(xs, -b); s.lineTo(xSh, -b);
+          s.quadraticCurveTo(xb, -b * 0.5, xb, 0);
+          s.quadraticCurveTo(xb, b * 0.5, xSh, b);
+          s.lineTo(xs, b); s.closePath(); return s;
+        };
+        const hullLayer = (inset, ht, topY, mat, cast) => {
+          const g = new THREE.ExtrudeGeometry(hullShape(inset), { depth: ht, bevelEnabled: false });
+          g.rotateX(Math.PI / 2); // 압출축(+z)을 -y로: 상단 topY, 아래로 ht
+          const m = new THREE.Mesh(g, mat); m.position.y = topY;
+          m.receiveShadow = true; if (cast) m.castShadow = true; roomGroup.add(m); return m;
+        };
+        // 선체 적층: 갑판(티크) → 토프사이드(크림) → 부트스트라이프 → 선저(방오) → 킬
+        hullLayer(0, 0.16, 0.0, wallPhong({ color: deckC }), true);
+        hullLayer(0, 0.62, -0.04, lamb(topsideC), true);
+        hullLayer(-0.04, 0.12, -0.62, lamb(bootC));
+        hullLayer(0.3, 0.78, -0.74, lamb(antifoulC));
+        hullLayer(0.64, 0.5, -1.46, lamb(0x3a1e1a));
+        // 갑판 티크 널(세로 줄눈)
+        for (let i = 1; i < 12; i++) B(roomGroup, 0.025, 0.02, d + 0.5, 0x6f5636, xS + i * ((xBow - xS) / 13), 0.09, 0);
+
+        // ── 선실(살롱) = 방. 갑판보다 안쪽 inset(사이드 데크 확보), 요트 살롱 창 4면 ──
+        const cw = w - 0.5, cd = d - 0.5;
+        const mkCabin = (len) => {
+          const g = new THREE.Group();
+          B(g, len, h, 0.16, cabinC, 0, h / 2, 0).castShadow = true;
+          B(g, len + 0.14, 0.14, 0.26, capRailC, 0, h - 0.03, 0);        // 상단 원목 트림
+          B(g, len * 0.84, 0.72, 0.05, glassC, 0, h * 0.6, 0.085);       // 긴 살롱 창(어두운 유리)
+          B(g, len * 0.86, 0.05, 0.09, capRailC, 0, h * 0.6 + 0.4, 0.09); // 창 상틀
+          B(g, len * 0.86, 0.05, 0.09, capRailC, 0, h * 0.6 - 0.4, 0.09); // 창 하틀
+          return g;
+        };
+        makeWalls([
+          { group: mkCabin(cw), pos: [0, 0, -cd / 2 - 0.08], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+          { group: mkCabin(cw), pos: [0, 0, cd / 2 + 0.08], rotY: Math.PI, normal: new THREE.Vector3(0, 0, 1) },
+          { group: mkCabin(cd), pos: [-cw / 2 - 0.08, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+          { group: mkCabin(cd), pos: [cw / 2 + 0.08, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
+        ]);
+        // 실내 바닥(살롱 마루) — 데코 대상, 갑판 위 살짝(자글거림 방지)
+        const sole = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.06, d - 0.3), wallPhong({ color: 0x9a7a4e }));
+        sole.position.y = 0.06; sole.receiveShadow = true; tagDecoFloor(sole); roomGroup.add(sole);
+
+        // ── 선실 지붕(플라이브리지) — 컬링 천장 + 레이더 아치/돔 ──
         {
-          const cabC = 0xb4b0a4;
-          for (const sx of [-1, 1]) B(wheelhouse, 0.24, 2.2, 1.34, cabC, sx * (w / 2 - 0.12), 1.1, -0.75).castShadow = true; // 측벽
-          B(wheelhouse, w, 2.2, 0.24, 0xa8a498, 0, 1.1, -1.4).castShadow = true;                                             // 후벽
-          const cRoof = B(wheelhouse, w + 0.5, 0.18, 1.95, 0x8a8578, 0, 2.29, -0.68); cRoof.castShadow = true;               // 지붕(처마)
-          B(wheelhouse, 0.8, 1.6, 0.08, 0x4a4238, 0.95, 0.85, 0.19);                                                         // 승무원 문
-          B(wheelhouse, 0.1, 0.1, 0.1, 0xd8c890, 0.63, 0.9, 0.24);                                                            // 문손잡이
+          const roofG = new THREE.Group();
+          B(roofG, cw + 0.5, 0.16, cd + 0.5, 0xdedacc, 0, h + 0.03, 0).castShadow = true;
+          for (const sx of [-1, 1]) Cyl(roofG, 0.045, 0.045, 0.72, 0x4a4a52, sx * (cw / 2 - 0.5), h + 0.42, -cd / 2 + 0.35, 6);
+          B(roofG, cw - 0.9, 0.08, 0.12, 0x4a4a52, 0, h + 0.78, -cd / 2 + 0.35);
+          const dome = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), lamb(0xd8d4c8));
+          dome.position.set(0, h + 0.82, -cd / 2 + 0.35); roofG.add(dome);
+          tagCeiling(roofG, h + 0.02); roomGroup.add(roofG);
         }
-        makeWalls([{ group: wheelhouse, pos: [0, 0, -d / 2 - 0.26], rotY: 0, normal: new THREE.Vector3(0, 0, -1) }]);
-        // 굴뚝 + 타륜 소품
-        const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.4, 1.8, 10), lamb(0x2a2622));
-        stack.position.set(-1.2, 3.0, -d / 2 - 0.9); stack.castShadow = true; roomGroup.add(stack);
-        B(stack, 0.5, 0.16, 0.5, 0xa84a3f, 0, 0.9, 0);
-        const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.05, 6, 14), lamb(0x6a4f33));
-        wheel.position.set(1.6, 1.0, -d / 2 - 0.1); wheel.rotation.x = 0.5; roomGroup.add(wheel);
-        // 구명튜브
-        const buoy = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.09, 6, 12), lamb(0xc45540));
-        buoy.position.set(-w / 2 + 0.3, 1.2, -d / 2 - 0.05); roomGroup.add(buoy);
-        // ── 대형 프로젝트 현장: 방파제 오두막 (site='breakwaterHut') — 뱃전 밖(부두 방향)에 단계별 표현 ──
-        buildBreakwaterSite(roomGroup, w / 2 + 2.4, -2.2, d / 2 - 0.5); // oy=-2.2: 돌축대가 수면(sea y≈-2.4)에서 솟도록 접지. oy=0이면 물 위 2.2 부유(코드 감사 2026-07-11).
-        blockers = [{ x: 1.6, z: -d / 2 - 0.1, w: 0.8, d: 0.8 }];
+
+        // ── 선수 갑판(+x): 펄핏 레일 + 앵커 롤러 + 클리트 + 해치 ──
+        const fx = cw / 2 + 0.5;
+        for (const az of [-1.1, 1.1]) Cyl(roomGroup, 0.035, 0.035, 0.46, steelC, fx + 0.2, 0.33, az, 6);
+        Cyl(roomGroup, 0.035, 0.035, 0.46, steelC, xBow - 0.5, 0.33, 0, 6);
+        for (const az of [-1.1, 1.1]) B(roomGroup, (xBow - 0.5) - (fx + 0.2), 0.035, 0.035, steelC, ((fx + 0.2) + (xBow - 0.5)) / 2, 0.54, az * 0.55); // 펄핏 상단(대략 수렴)
+        B(roomGroup, 0.5, 0.13, 0.32, steelC, xBow - 0.32, 0.11, 0);                 // 앵커 롤러
+        B(roomGroup, 0.55, 0.11, 0.55, 0x8a8578, fx - 0.1, 0.1, 0);                  // 전방 해치
+        for (const cz of [-0.9, 0.9]) B(roomGroup, 0.16, 0.12, 0.32, steelC, fx - 0.1, 0.12, cz); // 클리트
+
+        // ── 선미(-x): 스윔 플랫폼 + 조타 휠 + 콕핏 벤치 ──
+        B(roomGroup, 0.7, 0.1, d - 0.5, deckC, xS - 0.33, -0.26, 0).receiveShadow = true; // 스윔 플랫폼
+        const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.045, 6, 14), lamb(0x2a2824));
+        wheel.position.set(-cw / 2 - 0.28, 1.0, 0.7); wheel.rotation.y = Math.PI / 2; roomGroup.add(wheel);
+        B(roomGroup, 0.14, 1.0, 0.14, 0x2a2824, -cw / 2 - 0.28, 0.5, 0.7);                 // 헬름 스탠드
+
+        // ── 양현 사이드 데크 railing (스탠션 + 라이프라인 2줄) ──
+        for (const sz of [-1, 1]) {
+          const zr = sz * (HB - 0.12), x0 = xS + 0.4, x1 = xSh + 0.2, nS = 6;
+          for (let i = 0; i <= nS; i++) Cyl(roomGroup, 0.022, 0.022, 0.44, steelC, x0 + i * ((x1 - x0) / nS), 0.32, zr, 5);
+          for (const ly of [0.5, 0.34]) B(roomGroup, x1 - x0, 0.028, 0.028, steelC, (x0 + x1) / 2, ly, zr);
+        }
+
+        // ── 계류 소품: 구명튜브(부두측) + 펜더 3개(-z 부두측 현측) ──
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.075, 6, 12), lamb(0xd8452f));
+        ring.position.set(-cw / 2 + 0.5, 1.05, -cd / 2 - 0.11); ring.rotation.x = Math.PI / 2; roomGroup.add(ring);
+        for (const fpx of [-1.3, 0.2, 1.6]) {
+          const fen = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.5, 8), lamb(0x2a2824));
+          fen.position.set(fpx, -0.24, -(HB - 0.02)); roomGroup.add(fen);
+        }
+        // ── 대형 프로젝트 현장: 방파제 오두막 (site='breakwaterHut') — 선수 너머(+x) 방파제 방향 ──
+        buildBreakwaterSite(roomGroup, xBow + 1.4, -2.2, 0); // oy=-2.2: 돌축대가 수면(sea y≈-2.4)에서 솟도록 접지(코드 감사 2026-07-11).
+        blockers = [{ x: -cw / 2 - 0.28, z: 0.7, w: 0.5, d: 0.6 }]; // 조타 휠 자리
         setBlockers(blockers);
       },
       buildEnv() {
@@ -1183,6 +1227,23 @@ export function makeShelterBuilders(ctx) {
         for (let i = 0; i < 5; i++) { const bol = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.7, 8), lamb(0x2a2824)); bol.position.set(-4.5 + i * 2.2, 0.35, -2.6); quay.add(bol); }
         quay.position.set(-ROOM.w / 2 - 7, 0, 0); envRoot.add(quay);
         ogZone(-ROOM.w / 2 - 7, 0, 10.5, 5, 0.2, 3); // #71: 바다 셸터 — 안벽 상판 물때 이끼 소량(건물 잠식 대신)
+        // ── 계류 부두(핑거 도크) + 갱웨이 — 요트 좌현(-z)에 붙는다. "부두와 연결된 주거용 배"(디렉터 2026-07-11) ──
+        const HBd = (ROOM.d + 1.0) / 2;
+        const dock = new THREE.Group();
+        B(dock, 10, 0.4, 1.7, 0x5a5148, 0, -0.1, 0).receiveShadow = true;   // 상판
+        B(dock, 10, 1.3, 0.26, 0x40382e, 0, -0.75, -0.72);                  // 물쪽 측판
+        for (let i = 0; i < 5; i++) Cyl(dock, 0.13, 0.15, 0.62, 0x2a2824, -4 + i * 2, 0.2, -0.6, 8); // 볼라드
+        for (let i = 0; i < 6; i++) B(dock, 0.16, 1.1, 0.16, 0x352f27, -4.5 + i * 1.8, -0.75, 0.76); // 지지 말뚝
+        dock.position.set(0.6, 0, -(HBd + 1.9)); envRoot.add(dock);
+        // 갱웨이(패서렐) — 좌현 데크 → 도크 (약간 경사)
+        const gang = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.07, 2.0), lamb(0x6a5a3e));
+        gang.position.set(0.3, 0.05, -(HBd + 0.9)); gang.rotation.x = 0.05; gang.castShadow = true; envRoot.add(gang);
+        for (const gx of [-0.12, 0.72]) B(envRoot, 0.035, 0.3, 2.0, 0x8a8578, 0.3 + gx, 0.25, -(HBd + 0.9)); // 갱웨이 손잡이
+        // 계류 로프 2줄(현측 → 도크) — 얇은 경사 봉
+        for (const [cx, ry] of [[-1.0, 0.24], [1.5, -0.24]]) {
+          const rope = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 1.9), lamb(0x2a2824));
+          rope.position.set(cx, 0.08, -(HBd + 0.9)); rope.rotation.y = ry; envRoot.add(rope);
+        }
         // 크레인 실루엣 + 컨테이너 스택 (야적장 방향)
         const crane = new THREE.Group();
         Cyl(crane, 0.2, 0.2, 8, 0x6a5a30, 0, 4, 0, 6);
@@ -1218,8 +1279,10 @@ export function makeShelterBuilders(ctx) {
         //   갈라지는 것 — 미세 자기조도로 바닥을 양자화 심연 위로 올려 밴드를 익사시킨다(무드 영향 최소).
         floor.material.emissive = new THREE.Color(0x0b0c0e);
         floor.position.y = -0.15; floor.receiveShadow = true; tagDecoFloor(floor); roomGroup.add(floor); // (B-①) 관제탑 바닥재 대상
-        // 지지 기둥(탑 몸통) — 방 아래로 길게
-        B(roomGroup, w * 0.7, 16, d * 0.7, 0x4a4640, 0, -8, 0);
+        // 지지 기둥(탑 몸통) — 방 아래로 길게.
+        //   center -8.35: 몸통 top(-0.35)을 바닥 밑면(-0.3) 아래로 내려 동일평면 z-fighting 해소.
+        //   -8이면 몸통 top(0)이 바닥 top(0)과 겹쳐 중앙 w*0.7 정사각형이 자글거림(디렉터 신고 2026-07-11).
+        B(roomGroup, w * 0.7, 16, d * 0.7, 0x4a4640, 0, -8.35, 0);
         B(roomGroup, w + 1.2, 0.4, d + 1.2, 0x2a2824, 0, -0.4, 0);
         // 유리 전망 벽 4면 (프레임 + 어두운 유리) — 컬링 대상
         const mkGlassWall = (len) => {
