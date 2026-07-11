@@ -48,7 +48,13 @@
 
 ## 4. 완수 조건
 
-- [ ] 워크트리 trailer-v2 생성, 신규 컷 스토리보드 등재
-- [ ] 풋티지 전 컷 1080p 캡처(코어 5비트 + 세계 + 지역 4 + 계절 4 + 서사 3 + 마감)
-- [ ] final.mp4 1:20~1:50, 훅 8초 안에 코어 5비트 전부 노출
-- [ ] 디렉터 시사 → OST 비트 싱크 조정 → STORE-SUBMIT §6 교체
+- [x] 워크트리 trailer-v2 생성, 신규 컷 스토리보드 등재
+- [x] 풋티지 전 컷 1080p 캡처 — 22컷 확보(코어 5비트 + 세계 2 + 살림 4 + 지역·계절 5 + 서사 3 + 마감 롱테이크 + 카드 3), 전 컷 프레임 육안 검수 통과
+- [x] draft1 조립: **1:30.0**, 1080p30, 훅 9.4초에 코어 5비트 전부 노출, Orchestra2 전장 + 페이드아웃. 위치: 워크트리 edit/trailer-v2-draft1.mp4 (80MB, 리포 미포함)
+- [ ] 디렉터 시사 → OST 비트 싱크 조정(클라이맥스 120s를 확장 몽타주에 정렬하는 스플라이스는 2차) → STORE-SUBMIT §6 교체
+
+### 촬영 실측 노트 (2026-07-11)
+- 방식: 오프스크린 paint 스트림 → ffmpeg rawvideo 파이프(컷별 mp4). 실효 15~25fps → 조립 시 컷별 setpts 리타이밍으로 실시간 속도 복원 후 30fps 재샘플.
+- 골든 모드(freezeForGolden)는 고양이·야생동물을 숨기므로 트레일러 촬영에 사용 금지.
+- 오버레이 허용 목록: #modal-back, #journal-screen(메모 페이지), #radio-bubble(id, 클래스 없음), .jackpot-toast. 고양이 재배치는 c.g.position.set(x, c.baseY, z) (c.x/c.z 필드는 없음).
+- 스크립트: 세션 scratchpad record-trailer.cjs / assemble-trailer.cjs (동부 아트 관례대로 scratchpad 보존).
