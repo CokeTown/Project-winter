@@ -282,4 +282,36 @@ PAGE-COPY §4 그대로 (KO/EN). Next Fest 소개 단문은 §5.
 - [ ] 신규 로고 스팀 규격 변환(#151) → §6 교체
 - [ ] 스크린샷 미감 v2(#156) → §6 교체
 - [ ] 트레일러 정본 촬영(디렉터)+편집 → §6 교체
+- [ ] 개발 로드맵 이미지 캡처(artifact `store-roadmap-v1`) → §11, About This Game 하단 배치
 - [ ] Publish 제출 → 검토 2~3일 → **Coming Soon 공개 = 위시리스트 시작**
+
+## 11. 개발 로드맵 (About This Game 하단 — 텍스트 + 이미지)
+
+> 이미지: artifact `store-roadmap-v1`(겨울 밤→붉은 여명 3단계 그래픽)을 캡처해 배치. 아래는 이미지 실패 대비/보조 텍스트.
+> Valve EA 규정 준수: 과약속 금지 — 하단 면책 필수. DLC 유료 확장 없음(2.0 무료).
+
+### KO
+
+**◆ 지금 플레이 — 겨울은 이미 시작됐다**
+12곳 넘는 은신처(옥탑방·벙커·요트·스키 로지·지하철 역사·등대…) · 사계절 생존(꽃샘추위~겨울 한파) · 뒤지고 만들고 꾸미기 · 살아 있는 죽은 도시(야생동물·덩굴·길고양이) · 무전 기지 「응답하는 불빛」 · 4난이도 + 배경화면 모드.
+
+**◐ 정식 출시까지 — 다듬는 겨울**
+일본어 지원 · Steam 클라우드 세이브 · Steam Deck 최적화 · 밸런스·편의 다듬기(전 모드 오디트) · 커뮤니티 피드백 반영.
+
+**◇ 정식 이후 — 2.0 「응답」 (무료 업데이트)**
+동부 영토(겨울 셋을 넘기면 열린다) · 신규 지역 8곳 + 은신처 4곳 · 도시의 시그니처=복장(가구 아님) · 「응답」 서사(내 신호에 답한 먼 창문들) · 단계별(관문→도시→응답).
+
+*로드맵은 방향입니다. 순서와 규모는 플레이어 피드백에 따라 달라질 수 있습니다.*
+
+### EN
+
+**◆ Available Now — Winter Has Already Begun**
+12+ shelters (rooftop flat, bunker, yacht, ski lodge, subway station, lighthouse…) · four-season survival (thaw frosts to deep-winter cold snaps) · scavenge, craft, and decorate · a living dead city (returning wildlife, creeping ivy, a stray cat) · the radio station and its "answering lights" · four difficulties + wallpaper mode.
+
+**◐ Toward 1.0 — A Winter of Polish**
+Japanese language · Steam Cloud saves · Steam Deck optimization · balance & QoL tuning (all-mode audit) · community feedback.
+
+**◇ After Launch — 2.0 "The Answer" (Free Update)**
+The eastern territory (opens after three winters) · 8 new regions + 4 new shelters · a city's signature is *clothing*, not furniture · the "Answer" storyline — the distant windows that replied to your signal · staged rollout (gate → city → answer).
+
+*This roadmap is a direction. Order and scope may shift with player feedback.*
