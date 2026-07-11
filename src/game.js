@@ -3223,6 +3223,7 @@ function resolveExpedition() {
         notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
         special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'legendary' });
         jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
+        queueDiscovery(bpId, 0, 3, LName(DEFS[bpId])); // #150 희귀템 발견 컷 — 시그니처 도면=지역 독점 가구, 첫 발견 확정(고유)
       }
     }
     // #164 떠오른 자리 회수 (성공 = 온전한 보상)
@@ -5483,6 +5484,89 @@ function playVignette(build, durMs, onDone) {
     if (t >= 1) { setTimeout(finish, 1100); return; } // 마지막 프레임을 잠시 머금고 닫는다
     requestAnimationFrame(loop);
   })();
+}
+/* ── #150 희귀템 발견 컷: 인엔진 디오라마 비네트 ──
+   시그니처 도면(지역 독점 가구)을 손에 넣는 순간, 그 가구를 '실제 복셀 메시'로 페데스탈 위에 올려
+   따뜻한 스팟 + 반짝임 + 느린 카메라 푸시로 보여준다 — 도파민 루프(REWARD-LOOP ②)의 정점 연출.
+   트리거는 큐: resolveExpedition 흐름 중엔 쌓기만 하고(queueDiscovery), 모달 닫힌 안전한 순간에 재생(drain). */
+let discoveryQueue = [];
+function queueDiscovery(defId, colorIdx, tier, name) {
+  if (!DEFS[defId] || typeof DEFS[defId].build !== 'function') return;
+  discoveryQueue.push({ defId, colorIdx: colorIdx || 0, tier: tier || 3, name: name || LName(DEFS[defId]) });
+}
+function drainDiscoveryQueue() {
+  if (!discoveryQueue.length || vignetteActive || paused || titleVisible || state.exp) return;
+  const mb = document.getElementById('modal-back'); if (mb && mb.classList.contains('show')) return; // 결산/보고 모달 닫힌 뒤 재생
+  const d = discoveryQueue.shift();
+  showDiscoveryVignette(d.defId, d.colorIdx, d.tier, d.name);
+}
+function buildDiscoveryScene(defId, colorIdx, tier) {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 200);
+  // 어두운 배경(따뜻한 하단) + 얕은 포그
+  const bgcv = document.createElement('canvas'); bgcv.width = 8; bgcv.height = 256;
+  const bgg = bgcv.getContext('2d'); const bgr = bgg.createLinearGradient(0, 0, 0, 256);
+  bgr.addColorStop(0, '#080706'); bgr.addColorStop(0.62, '#130d08'); bgr.addColorStop(1, '#20140b');
+  bgg.fillStyle = bgr; bgg.fillRect(0, 0, 8, 256);
+  const bgTex = new THREE.CanvasTexture(bgcv); bgTex.colorSpace = THREE.SRGBColorSpace; scene.background = bgTex;
+  scene.fog = new THREE.Fog(0x0a0806, 7, 24);
+  // 조명: 따뜻한 키(위-앞) + 차가운 림 + 약한 앰비언트
+  scene.add(new THREE.HemisphereLight(0x3a3122, 0x0a0806, 0.55));
+  const key = new THREE.PointLight(0xffd7a0, 26, 16, 1.8); key.position.set(1.6, 3.4, 2.8); scene.add(key);
+  const rim = new THREE.DirectionalLight(0x8ea6c8, 0.55); rim.position.set(-3.5, 2.2, -3); scene.add(rim);
+  // 돌 페데스탈
+  const pmat = new THREE.MeshStandardMaterial({ color: 0x4a443c, roughness: 0.96, metalness: 0 });
+  const ped = new THREE.Group();
+  const ptop = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.28, 0.28, 28), pmat); ptop.position.y = 0; ped.add(ptop);
+  ped.add(new THREE.Mesh(new THREE.CylinderGeometry(0.92, 1.06, 1.7, 28), pmat)).position.y = -0.99;
+  scene.add(ped);
+  // 아이템: 실제 복셀 가구 메시 (def.build 재사용). 바운딩박스로 스케일·발치 접지.
+  const holder = new THREE.Group(); scene.add(holder);
+  const def = DEFS[defId];
+  try {
+    const item = def.build(def.colors ? def.colors[colorIdx] : 0, colorIdx || 0, null, tier || 3);
+    holder.add(item);
+    const bb = new THREE.Box3().setFromObject(item); const sz = new THREE.Vector3(); bb.getSize(sz); const ctr = new THREE.Vector3(); bb.getCenter(ctr);
+    const sc = 1.75 / (Math.max(sz.x, sz.y, sz.z) || 1);
+    item.scale.setScalar(sc);
+    item.position.set(-ctr.x * sc, -bb.min.y * sc + 0.16, -ctr.z * sc);
+  } catch (e) { /* 빌드 실패 시 페데스탈만 */ }
+  // 바닥 따뜻한 광 웅덩이
+  const poolCv = document.createElement('canvas'); poolCv.width = poolCv.height = 128;
+  const pg = poolCv.getContext('2d'); const prg = pg.createRadialGradient(64, 64, 4, 64, 64, 64);
+  prg.addColorStop(0, 'rgba(255,192,112,0.55)'); prg.addColorStop(1, 'rgba(255,192,112,0)');
+  pg.fillStyle = prg; pg.fillRect(0, 0, 128, 128);
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(poolCv), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  pool.rotation.x = -Math.PI / 2; pool.position.y = 0.16; scene.add(pool);
+  // 반짝임(상승 먼지)
+  const spN = 70, spPos = new Float32Array(spN * 3);
+  for (let i = 0; i < spN; i++) { const a = Math.random() * 6.283, r = 0.3 + Math.random() * 1.7; spPos[i * 3] = Math.cos(a) * r; spPos[i * 3 + 1] = Math.random() * 2.6; spPos[i * 3 + 2] = Math.sin(a) * r; }
+  const spGeo = new THREE.BufferGeometry(); spGeo.setAttribute('position', new THREE.BufferAttribute(spPos, 3));
+  const sparks = new THREE.Points(spGeo, new THREE.PointsMaterial({ color: 0xffdca0, size: 0.055, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  scene.add(sparks);
+  const update = (t) => {
+    const ang = 0.55 + t * 0.5 + Math.sin(t * Math.PI) * 0.1;   // 느린 오빗
+    const dist = 6.4 - t * 1.5, cy = 2.3 - t * 0.55;             // 푸시인 + 하강
+    camera.position.set(Math.sin(ang) * dist, cy, Math.cos(ang) * dist); camera.lookAt(0, 1.0, 0);
+    holder.rotation.y = 0.3 + t * 1.1;                           // 아이템 회전
+    const pa = sparks.geometry.attributes.position;
+    for (let i = 0; i < spN; i++) { let y = pa.getY(i) + 0.005; if (y > 2.6) y = 0; pa.setY(i, y); }
+    pa.needsUpdate = true;
+    sparks.material.opacity = 0.5 + 0.4 * Math.sin(t * 9);
+    key.intensity = 26 + Math.sin(t * 7) * 3;                    // 은은한 촛불 깜빡임
+  };
+  update(0);
+  return { scene, camera, update };
+}
+function showDiscoveryVignette(defId, colorIdx, tier, name) {
+  const cap = document.createElement('div');
+  cap.style.cssText = 'position:fixed;left:0;right:0;bottom:12%;z-index:402;text-align:center;pointer-events:none;opacity:0;transition:opacity .9s;font-family:DungGeunMo,monospace';
+  cap.innerHTML = '<div style="font-size:calc(13px*var(--uiz,1));letter-spacing:3px;color:#c9b795">' + t('discovery.rareHeader') +
+    '</div><div style="font-size:calc(26px*var(--uiz,1));color:#f2e6c8;text-shadow:0 0 22px rgba(255,190,110,.5);margin-top:6px">' + name + '</div>';
+  document.body.appendChild(cap);
+  setTimeout(() => { cap.style.opacity = '1'; }, 550);
+  try { playSfx('sting', { vol: 0.5 }); } catch (e) {}
+  playVignette(() => buildDiscoveryScene(defId, colorIdx, tier), 5200, () => { cap.style.opacity = '0'; setTimeout(() => cap.remove(), 800); });
 }
 // 「콘크리트 정글의 해」 — 펜트하우스 발코니 조망 비네트. 아침(<12시)=해돋이, 이후=해넘이.
 //   전 구간을 골든아워→어스름으로 압축(밋밋한 '낮' 없음). 실루엣은 역광으로 어둡게, 지평선만 타오른다.
@@ -9629,7 +9713,7 @@ function renderFrame() {
     p.position.y = 0.03 * Math.sin(t * 0.4 + p.userData.phase);
     p.position.x = 0.02 * Math.sin(t * 0.23 + p.userData.phase * 1.7);
   }
-  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); syncBgm(); syncSfxAmbience(); }
+  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); syncBgm(); syncSfxAmbience(); drainDiscoveryQueue(); }
   renderer.setRenderTarget(rt);
   renderer.render(scene, camera);
   renderer.setRenderTarget(null);
@@ -9957,6 +10041,7 @@ window.__shelter = {
   select, deselect, positionSelPanel, // 편집 미니 카드 A안 (접지 프로브용)
   clampToRoom, // 발코니 배치 칸 (접지 프로브용)
   playJungleSunVignette, pickBalconyView, vignetteState: () => vignetteActive, // 비네트 러너 (접지 프로브용)
+  showDiscoveryVignette, queueDiscovery, drainDiscoveryQueue, discoveryQueueLen: () => discoveryQueue.length, // #150 희귀템 발견 컷 (QA)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
   //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).
   setYaw: (rad) => { camState.yaw = camState.targetYaw = rad; },
