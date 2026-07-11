@@ -20,25 +20,28 @@
   - **Main_Theme_Orchestra2**(3:58): 조용한 인트로(-26LUFS)→20~55s 고원→60s 브레이크→**120~135s 클라이맥스(-13.2)**→140~160s 조용한 브릿지→220s부터 완전 페이드. 딥과 피크가 교대해 **섹션 전환 싱크 포인트가 많고**, 곡에 이미 페이드 엔딩이 있어 엔드카드까지 자연 소멸.
   - Main_Theme1(4:00): 0초부터 평탄한 중간 에너지, 120~150s 긴 침잠, 후반(200s) 클라이맥스. 친밀하지만 기복이 적어 컷 싱크 포인트 부족 — **상점 페이지/타이틀 BGM 2차 용도 후보**로 보존.
   - 컷 맵(Orchestra2 기준): 훅 0:00~0:08 ← 곡 0~10s 빌드업(어둠 속 난로 점화와 상승 동기화) / 세계·살림 ← 곡 20~60s 고원+브레이크 / 확장 ← 곡 70~135s(클라이맥스 120s를 트레일러 1:00 부근에) / 서사 ← 곡 140~160s 브릿지 / 마감 ← 곡 220~238s 페이드.
-  - 최종 선곡은 디렉터 확정 사안 — 위는 구조 근거의 권고.
+  - **선곡 확정(디렉터 2026-07-11): Orchestra2.** 정본 파일 `docs/steam/trailer/music/Main_Theme_Orchestra2.mp3`. Theme1은 상점/타이틀 BGM 후보로 보류.
 - 자막/텍스트 카드: 최소화. 쓰면 게임 폰트(DungGeunMo), 엠대시 금지, 카피는 PAGE-COPY 리트머스 통과분만.
 
 ## 2. 기술 파이프라인
 
 1. **워크트리**: `trailer-v2` 브랜치를 별도 워크트리로(본선 오염 방지). 트레일러 에디션(스토리보드 구동)을 베이스로 신규 컷 추가.
-2. **촬영**: 오프스크린 하네스로 프레임 시퀀스 캡처(1080p/30fps PNG) → ffmpeg로 클립 조립. 씬 세팅은 캡슐 촬영 스크립트(capture-hero3.cjs) 문법 재사용.
+2. **촬영**: 오프스크린 프레임 시퀀스 캡처(1080p PNG) → ffmpeg 조립. 씬 세팅은 캡슐 촬영 스크립트(capture-hero3.cjs) 문법 재사용.
+   ⚠️ 스모크 실측(2026-07-11): capturePage는 1080p에서 실효 5.5fps — 실시간 녹화 불가. 본촬영은 **프레임 스텝 방식**: 게임 시계를 프레임당 1/30초씩 결정론적으로 전진(state.gameMin 직접 제어)시키며 한 장씩 캡처. 필요 시 offscreen 'paint' 이벤트 스트림으로 전환 검토.
 3. **편집(video-use)**: helpers의 ffmpeg 체인 사용 — 컷 조립, 웜 시네마틱 그레이딩(grade.py), 30ms 오디오 페이드, 셀프 평가 루프. 전사(ElevenLabs)는 무대사 트레일러라 **불요**(키 없이 진행 가능).
 4. **산출**: `edit/final.mp4` 1080p+ → STORE-SUBMIT §6 Trailer 슬롯 교체.
 
-## 3. 환경 준비물 (착수 게이트 — 설치 승인 후 진행)
+## 3. 환경 준비물 — 전부 해제 (2026-07-11)
 
-| 필요물 | 상태 | 조달 |
-|---|---|---|
-| ffmpeg | ❌ 없음 | winget 또는 gyan.dev 정적 빌드 (다운로드 승인 필요) |
-| Python | ❌ 없음(MS Store 스텁) | uv 단독 바이너리로 조달(파이썬 자동 설치) — 또는 helpers를 안 쓰고 ffmpeg 직접 호출로 대체 |
-| ElevenLabs 키 | 불요 | 무대사 트레일러(전사 기능 미사용) |
-| video-use 리포 | ✅ 클론됨 | scratchpad/video-use (depth 1) |
-| OST 선곡 | 대기 | 디렉터 |
+| 필요물 | 상태 |
+|---|---|
+| ffmpeg | ✅ 8.1.2 설치(winget, 디렉터 승인). 경로: LOCALAPPDATA WinGet Packages Gyan.FFmpeg bin |
+| Python | 불요 확정 — 무대사라 video-use helpers 의존 없음, ffmpeg 직접 호출로 대체 |
+| ElevenLabs 키 | 불요(전사 미사용) |
+| video-use 리포 | ✅ 클론(scratchpad) — 편집 문법(컷 계획→ffmpeg 체인→자기평가) 차용 |
+| OST | ✅ **Orchestra2 확정(디렉터)** — docs/steam/trailer/music/Main_Theme_Orchestra2.mp3 |
+| 워크트리 | ✅ G:\nine-winters-trailer-v2 (branch trailer-v2, trailer-edition 기반) |
+| 파이프라인 | ✅ 스모크 통과: 씬 세팅→60프레임→ffmpeg 조립(OST 합성, 2.000s mp4) |
 
 > 대안 경로: Python 조달이 번거로우면 video-use의 편집 문법(컷 계획→ffmpeg 체인→자기평가)만 차용해
 > ffmpeg 직접 호출로 구현해도 결과 동일 — 우리는 대사 컷·자막이 없어 helpers 의존이 얕다.
