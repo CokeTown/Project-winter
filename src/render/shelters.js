@@ -1162,7 +1162,7 @@ export function makeShelterBuilders(ctx) {
         const buoy = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.09, 6, 12), lamb(0xc45540));
         buoy.position.set(-w / 2 + 0.3, 1.2, -d / 2 - 0.05); roomGroup.add(buoy);
         // ── 대형 프로젝트 현장: 방파제 오두막 (site='breakwaterHut') — 뱃전 밖(부두 방향)에 단계별 표현 ──
-        buildBreakwaterSite(roomGroup, w / 2 + 2.4, 0, d / 2 - 0.5);
+        buildBreakwaterSite(roomGroup, w / 2 + 2.4, -2.2, d / 2 - 0.5); // oy=-2.2: 돌축대가 수면(sea y≈-2.4)에서 솟도록 접지. oy=0이면 물 위 2.2 부유(코드 감사 2026-07-11).
         blockers = [{ x: 1.6, z: -d / 2 - 0.1, w: 0.8, d: 0.8 }];
         setBlockers(blockers);
       },
@@ -1246,7 +1246,7 @@ export function makeShelterBuilders(ctx) {
           new THREE.MeshLambertMaterial({ color: 0xd9b06a, emissive: 0x8a6a20, emissiveIntensity: 0.7 }));
         beacon.position.set(0, h + 0.4, 0); roomGroup.add(beacon);
         // ── 대형 프로젝트 현장: 방파제 오두막 — 탑에서 내려다보이도록 방 밖 아래쪽에 배치 ──
-        buildBreakwaterSite(roomGroup, -w / 2 - 3.0, -2.0, d / 2 + 1.0);
+        buildBreakwaterSite(roomGroup, -w / 2 - 3.0, -15.5, d / 2 + 1.0); // oy=-15.5: 항구 수면 y≈-15.7 접지. oy=-2.0이면 항구 위 13.5 부유(코드 감사 2026-07-11).
         blockers = [{ x: 0, z: -d / 2 + 0.6, w: 2.4, d: 0.9 }];
         setBlockers(blockers);
       },
