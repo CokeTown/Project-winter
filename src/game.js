@@ -445,7 +445,9 @@ function updateWindowSkies() {
   const dark = weather.type === 'rain' || weather.type === 'storm' ? 0.35
     : weather.type === 'snow' ? 0.7 : weather.type === 'ash' ? 0.55 : 1;
   // #161 계절 팔레트: 창밖 하늘도 계절을 따른다 — 봄 청록기/여름 맑은 하늘색/가을 노란기/겨울 창백.
-  const seasonSky = { spring: 0xd2e6e2, summer: 0xd8ecf4, autumn: 0xe6d9c2, winter: 0xdde4ec }[seasonOf().id] || 0xcfe0ee;
+  //   눈/폭풍이면 캘린더 무관 겨울 하늘 — 눈은 계절과 상관없이 겨울 정서(데모 첫눈 climax 정합, 2026-07-11).
+  const _skySeason = (weather.type === 'snow' || weather.type === 'storm') ? 'winter' : seasonOf().id;
+  const seasonSky = { spring: 0xd2e6e2, summer: 0xd8ecf4, autumn: 0xe6d9c2, winter: 0xdde4ec }[_skySeason] || 0xcfe0ee;
   _tc.a.setHex(seasonSky); // 맑은 낮 하늘 (계절 변주)
   for (const m of winSkyMats) {
     _tc.b.setHex(m.userData.baseHex);
@@ -502,7 +504,9 @@ function applyTimeLighting() {
   // #161 계절 팔레트: 계절이 대기의 색으로 읽히게 — 지역 틴트(#54)와 같은 문법, 그보다 옅게.
   //   봄=풋내 나는 초록기 / 여름=쨍한 백금색 / 가을=금빛 마른 잎 / 겨울=차가운 청회색.
   //   지평선(cHorizon)에도 같은 톤을 얹어 하늘부터 계절이 다르다 — 낮에만(dayness 가중), 급변 없음(lerp).
-  const _st = { spring: 0x9db48a, summer: 0xd9d2b8, autumn: 0xc9a06a, winter: 0x8fa3b8 }[seasonOf().id];
+  //   눈/폭풍이면 캘린더 무관 겨울 틴트 — 눈은 계절과 상관없이 겨울 정서(데모 첫눈 climax 정합, 2026-07-11).
+  const _stKey = (weather.type === 'snow' || weather.type === 'storm') ? 'winter' : seasonOf().id;
+  const _st = { spring: 0x9db48a, summer: 0xd9d2b8, autumn: 0xc9a06a, winter: 0x8fa3b8 }[_stKey];
   if (_st && dayness > 0.01) {
     scene.fog.color.lerp(_tc.b.setHex(_st), 0.12 * dayness);
     hemi.color.lerp(_tc.b, 0.08 * dayness);
