@@ -1421,6 +1421,9 @@ export function makeShelterBuilders(ctx) {
           back.add(pic);
         }
         back.position.set(0, 0, -d / 2 - 0.13);
+        // 뒷벽도 반달(곡면 상단)이라 파사드와 동일하게 눈 캡 제외 — 없으면 bb 상단(돔 정점 y≈4.27)에
+        //   폭 8.4짜리 '가로 흰 바'가 부유한다(디렉터 재신고 2026-07-11, #94 때 파사드만 태깅되고 뒷벽 누락).
+        back.userData.noWeatherCap = true;
         const wallDefs = [{ group: back, pos: [0, 0, -d / 2 - 0.13], rotY: 0, normal: new THREE.Vector3(0, 0, -1) }];
         back.position.set(...wallDefs[0].pos);
 

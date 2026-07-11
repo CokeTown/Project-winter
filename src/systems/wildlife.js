@@ -81,7 +81,7 @@ export function makeWildlifeSystem(ctx) {
     const head = new THREE.Group();
     head.position.set(0, tall ? 5 * PX * s : 1.2 * PX * s, tall ? 1.5 * PX * s : 2 * PX * s);
     neck.add(head);
-    B(head, 3.2 * PX * s, 3 * PX * s, tall ? 4.5 : 4 * PX * s, fur, 0, 0, 0);
+    B(head, 3.2 * PX * s, 3 * PX * s, (tall ? 4.5 : 4) * PX * s, fur, 0, 0, 0); // 연산자 우선순위 버그 수정(2026-07-11): tall일 때 머리 깊이가 리터럴 4.5로 튀어 사슴 머리가 4.5짜리 막대로 렌더됨(디렉터 "사슴 대가리" 신고). 괄호로 (tall?4.5:4)*PX*s.
     B(head, 1.2 * PX * s, 1 * PX * s, 1.6 * PX * s, nose, 0, -0.6 * PX * s, 2.4 * PX * s); // 주둥이
     for (const ex of [-1.1, 1.1]) // 눈
       B(head, 0.7 * PX * s, 0.7 * PX * s, 0.4 * PX * s, eye, ex * PX * s, 0.4 * PX * s, 1.7 * PX * s);
