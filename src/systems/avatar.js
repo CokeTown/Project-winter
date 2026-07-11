@@ -337,31 +337,35 @@ export function makeAvatarSystem(ctx) {
         else if (av.mode === 'gowarm') startWarm();
       } else {
         const step = 0.62 * dt;
-        let nx = g.position.x + dx / dist * Math.min(step, dist);
-        let nz = g.position.z + dz / dist * Math.min(step, dist);
-        const b = hitBlock(nx, nz, 0.26);
-        if (b) { // 사각 슬라이드: 침투 얕은 축 고정
-          const px = b.w / 2 + 0.26 - Math.abs(nx - b.x), pz = b.d / 2 + 0.26 - Math.abs(nz - b.z);
-          if (px < pz) nx = b.x + Math.sign(nx - b.x || 1) * (b.w / 2 + 0.26);
-          else nz = b.z + Math.sign(nz - b.z || 1) * (b.d / 2 + 0.26);
-          // 비비적 상한(디렉터: "침대에 비빈다"): 큰 가구를 따라 긴 슬라이드가 이어지면
-          //   문지르는 그림이 된다 — 0.9초 넘게 쓸면 경로를 다시 뽑는다(돌아가는 척이라도).
-          av.slideT = (av.slideT || 0) + dt;
-          if (av.slideT > 0.9) { av.slideT = 0; if (av.mode === 'walk') setTarget(freeSpot()); else return pickIdle(); }
-          // 슬라이드 결과가 또 다른 가구 안이면 제자리 — 1.2초 넘게 막히면 목표 재추첨 (이웃 침투/정체 교정)
-          if (hitBlock(nx, nz, 0.24)) {
-            nx = g.position.x; nz = g.position.z;
-            av.blockedT += dt;
-            if (av.blockedT > 1.2) { av.blockedT = 0; if (av.mode === 'walk') av.tgt = freeSpot(); else pickIdle(); }
+        const room = getRoom();
+        const oldX = g.position.x, oldZ = g.position.z;
+        const inB = (x, z) => Math.abs(x) < room.w / 2 - 0.3 && Math.abs(z) < room.d / 2 - 0.3;
+        let nx = oldX + dx / dist * Math.min(step, dist);
+        let nz = oldZ + dz / dist * Math.min(step, dist);
+        if (hitBlock(nx, nz, 0.26) || !inB(nx, nz)) {
+          // 회피 조향(디렉터 "붕쯔붕쯔" 교정 2026-07-11): 면 슬라이드(=비비기) 대신 목표 방향에서
+          //   좌우로 각을 틀어 빈 방향으로 '돌아간다'. 직전 성공 쪽(avoidSide) 우선 — 매 프레임 좌↔우가
+          //   뒤집혀 제자리 진동하던 것 방지. 슬라이드 문지름 자체가 사라진다.
+          const base = Math.atan2(dx, dz), side = av.avoidSide || 1;
+          let ok = false;
+          for (const o of [0.6 * side, -0.6 * side, 1.0 * side, -1.0 * side, 1.5 * side, -1.5 * side, 2.2 * side, -2.2 * side]) {
+            const a = base + o, tx = oldX + Math.sin(a) * step, tz = oldZ + Math.cos(a) * step;
+            if (!hitBlock(tx, tz, 0.26) && inB(tx, tz)) { nx = tx; nz = tz; av.avoidSide = o > 0 ? 1 : -1; ok = true; break; }
+          }
+          if (!ok) { // 사방 막힘 — 제자리. 짧게(0.45s)만 참았다가 경로/목표 재계산(오래 끼어 있지 않게)
+            nx = oldX; nz = oldZ; av.blockedT += dt;
+            if (av.blockedT > 0.45) { av.blockedT = 0; av.way = routeTo(av.tgt); if (!av.way) { if (av.mode === 'walk') av.tgt = farSpot(); else pickIdle(); } }
           } else av.blockedT = 0;
-        } else { av.blockedT = 0; av.slideT = 0; }
-        g.position.x = nx; g.position.z = nz;
-        const want = Math.atan2(dx, dz);
+        } else av.blockedT = 0;
+        const moved = Math.hypot(nx - oldX, nz - oldZ);
+        g.position.x = nx; g.position.z = nz; av.moved = moved;
+        // 회전: 실제 이동 방향을 본다(돌아갈 땐 도는 쪽으로 몸을 튼다). 안 움직이면 목표 방향 유지.
+        const hx = moved > 1e-4 ? nx - oldX : dx, hz = moved > 1e-4 ? nz - oldZ : dz;
+        const want = Math.atan2(hx, hz);
         let dr = want - g.rotation.y; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
         g.rotation.y += dr * Math.min(1, dt * 6);
-        av.gait += dt * 7;
-        // 그림자 실시간화 — 이동 중엔 매 프레임 shadowDirty(디렉터: 게임 Hz 그대로. 정적 씬이라 이동체가 직접 신고).
-        shadowDirty();
+        // 그림자 실시간화 — 실제 이동한 프레임만 shadowDirty(제자리 프레임은 갱신 불필요).
+        if (moved > 1e-4) { av.gait += dt * 7; shadowDirty(); }
       }
     } else if (av.mode === 'sit' || av.mode === 'warm') {
       av.timer -= dt;
@@ -377,7 +381,8 @@ export function makeAvatarSystem(ctx) {
     }
 
     // 포즈
-    const moving = approaching && av.mode !== 'sit';
+    //   실제 전진할 때만 걷기 애니메이션 — 막혀서 제자리인데 다리가 흔들리면 '제자리걸음=비비기'로 보인다(붕쯔붕쯔).
+    const moving = approaching && av.mode !== 'sit' && (av.moved || 0) > 0.002;
     const sw = moving ? Math.sin(av.gait) * 0.5 : 0;
     if (av.mode === 'sit') {
       // 앉기: 다리 앞으로, 몸 살짝 뒤로 — 좌판 높이는 SEAT_Y (고양이 퍼치 계보)
