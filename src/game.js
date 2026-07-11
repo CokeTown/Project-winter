@@ -5808,193 +5808,225 @@ function pickBalconyView(e) {
   return true;
 }
 
-// 「불타는 해협」 — 아포칼립스 금문교 노을 비네트 (#146, 디렉터 레퍼런스: 붉은 픽셀아트·TLOU 감성).
-//   부서진 다리가 해협에 걸려 있고 하늘 전체가 진홍으로 탄다. 부러진 상판이 물에 잠기고
-//   끊긴 케이블이 늘어진다. 달이 무리를 두르고 떠오르며 유성이 한 획 긋는다. 물엔 노을과 불씨가 흔들린다.
+// 「불타는 해협」 — 아포칼립스 금문교 노을 (#146, 디렉터 레퍼런스 대조 리워크).
+//   평면 측면 실루엣 폐기 → 3/4 후퇴 원근(다리 축을 따라 내려다봄) + 초목의 잠식 + 따뜻한 앰버 팔레트
+//   + 전경 서사(부서진 차·접근 고가·침몰선·도심 실루엣). 박스/스프라이트/캔버스 관용구만(셰이더/에셋 없음).
 function buildGoldenGateScene() {
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.1, 900);
-  camera.position.set(0, 11, 54); camera.lookAt(0, 15, -60);
+  const camera = new THREE.PerspectiveCamera(54, innerWidth / innerHeight, 0.1, 1200);
+  camera.position.set(-8, 12, 40); camera.lookAt(10, 16, -150); // 3/4 다리축 조망(비대칭)
   const srand = seededRand(7761);
   const skyCv = document.createElement('canvas'); skyCv.width = 2; skyCv.height = 1024;
   const skyTex = new THREE.CanvasTexture(skyCv); skyTex.colorSpace = THREE.SRGBColorSpace;
   scene.background = skyTex;
-  scene.fog = new THREE.Fog(0x3a0f14, 90, 520);
+  scene.fog = new THREE.Fog(0x6b4a2e, 60, 440); // 따뜻한 먼지 안개 — 원경 타워/스카이라인을 녹인다
   const _tcB = new THREE.Color();
   const lerpC = (h1, h2, k, tgt) => tgt.setHex(h1).lerp(_tcB.setHex(h2), k);
-  const _tc1 = new THREE.Color(); const _tc2 = new THREE.Color(); const _tc3 = new THREE.Color(); const _tc4 = new THREE.Color();
-  // 지는 해 — 해협 저편으로 잠기는 진홍의 쇳덩이 + 3겹 코로나
-  const sunMat = new THREE.MeshBasicMaterial({ color: 0xffd08a, fog: false });
-  const sun = new THREE.Mesh(new THREE.CircleGeometry(13, 48), sunMat);
-  sun.position.set(-8, 3, -300); scene.add(sun);
+  const _ux = new THREE.Vector3(1, 0, 0), _dir = new THREE.Vector3();
+  // 3D 임의 방향 박스(상판·케이블·행어를 실좌표로 잇는다 → 원근이 크기 감소를 공짜로 처리)
+  const link = (mat, a, b, w, h) => {
+    const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2]; const len = Math.hypot(dx, dy, dz) || 0.01;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(len, h, w), mat);
+    m.position.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2);
+    m.quaternion.setFromUnitVectors(_ux, _dir.set(dx / len, dy / len, dz / len));
+    scene.add(m); return m;
+  };
+  // ── 재질(해가 우측 → +x/윗면이 광면) ──
+  const steelMat = new THREE.MeshBasicMaterial({ color: 0x241a12 });   // 원경 타워(안개에 탐)
+  const steelLit = new THREE.MeshBasicMaterial({ color: 0x3a2416 });   // 근경 타워 광면(kn 애니)
+  const cableMat = new THREE.MeshBasicMaterial({ color: 0x1c130c });
+  const vegSil = new THREE.MeshBasicMaterial({ color: 0x243218 });     // 역광 실루엣 초목(대다수) — 강철보다 초록·밝게(잎으로 읽히게)
+  const vegRim = new THREE.MeshBasicMaterial({ color: 0x50501f });     // 해받는 상단 초목(희소)
+  const concShad = new THREE.MeshBasicMaterial({ color: 0x1a140c });
+  const concLit = new THREE.MeshBasicMaterial({ color: 0x2a1c12 });
+  const propDark = new THREE.MeshBasicMaterial({ color: 0x1c150e });   // 전경 앵커가 순검정으로 뭉개지지 않게 살짝 들어올림
+  const propRust = new THREE.MeshBasicMaterial({ color: 0x3a2214 });
+  const cityMat = new THREE.MeshBasicMaterial({ color: 0x281620, transparent: true, opacity: 0.82 });
+  const hillMat = new THREE.MeshBasicMaterial({ color: 0x241a14 });
+  // ── 해: 낮게 잠기는 우측 골드 쇳덩이 + 3겹 코로나 ──
+  const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff2d8, fog: false });
+  const sun = new THREE.Mesh(new THREE.CircleGeometry(11, 48), sunMat);
+  sun.position.set(80, 4, -330); scene.add(sun);
   const gcv = document.createElement('canvas'); gcv.width = gcv.height = 256;
   const gg = gcv.getContext('2d'); const rgS = gg.createRadialGradient(128, 128, 6, 128, 128, 127);
-  rgS.addColorStop(0, 'rgba(255,150,60,0.95)'); rgS.addColorStop(0.4, 'rgba(240,60,30,0.5)'); rgS.addColorStop(1, 'rgba(200,32,20,0)');
+  rgS.addColorStop(0, 'rgba(255,244,214,0.95)'); rgS.addColorStop(0.35, 'rgba(255,168,70,0.55)'); rgS.addColorStop(0.7, 'rgba(240,120,40,0.18)'); rgS.addColorStop(1, 'rgba(200,90,30,0)');
   gg.fillStyle = rgS; gg.fillRect(0, 0, 256, 256);
   const glowTex = new THREE.CanvasTexture(gcv);
   const mkGlow = (sc) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })); sp.scale.set(sc, sc, 1); scene.add(sp); return sp; };
-  const glowCore = mkGlow(100), glowMid = mkGlow(230), glowWide = mkGlow(420);
-  // 떠오르는 달 + 달무리(halo ring) — 어스름에 짙어진다
-  const moonMat = new THREE.MeshBasicMaterial({ color: 0xdfe6f2, transparent: true, opacity: 0, fog: false });
-  const moon = new THREE.Mesh(new THREE.CircleGeometry(6, 40), moonMat); moon.position.set(70, 20, -300); scene.add(moon);
-  const hcv2 = document.createElement('canvas'); hcv2.width = hcv2.height = 128;
-  const hg2 = hcv2.getContext('2d'); const hrg = hg2.createRadialGradient(64, 64, 20, 64, 64, 64);
-  hrg.addColorStop(0, 'rgba(200,214,240,0)'); hrg.addColorStop(0.72, 'rgba(200,214,240,0)'); hrg.addColorStop(0.82, 'rgba(190,206,236,0.5)'); hrg.addColorStop(0.9, 'rgba(180,198,232,0.18)'); hrg.addColorStop(1, 'rgba(180,198,232,0)');
-  hg2.fillStyle = hrg; hg2.fillRect(0, 0, 128, 128);
-  const haloMat = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(hcv2), transparent: true, opacity: 0, depthWrite: false, fog: false });
-  const halo = new THREE.Sprite(haloMat); halo.scale.set(46, 46, 1); halo.position.copy(moon.position); scene.add(halo);
-  // 마린 헤드랜드 — 다리 뒤 원경 언덕 실루엣
-  const hillMat = new THREE.MeshBasicMaterial({ color: 0x2a0e16 });
-  const hillShape = new THREE.Shape(); hillShape.moveTo(-260, -20);
-  for (let x = -260; x <= 260; x += 26) { const hy = 14 + Math.sin(x * 0.017) * 12 + Math.sin(x * 0.05 + 1) * 6 + srand() * 4; hillShape.lineTo(x, hy); }
-  hillShape.lineTo(260, -20); hillShape.lineTo(-260, -20);
-  const hills = new THREE.Mesh(new THREE.ShapeGeometry(hillShape), hillMat); hills.position.set(0, 0, -258); scene.add(hills);
-  // ── 금문교: 국제주황이 역광에 검붉게 탄 실루엣. 두 탑 + 주케이블(현수선) + 상판 + 행어. 중앙 경간은 붕괴. ──
-  const brZ = -66, deckY = 9, towerTopY = 34, tX = [-36, 36];
-  const steelMat = new THREE.MeshBasicMaterial({ color: 0x2a0d10 });     // 역광 검붉은 강철
-  const steelLit = new THREE.MeshBasicMaterial({ color: 0x71222a });     // 해를 받는 면(살짝 밝게)
-  const mkTower = (x) => {                                               // 금문교 탑: 두 다리 + 아르데코 가로보 + 상부 첨탑
+  const glowCore = mkGlow(110), glowMid = mkGlow(250), glowWide = mkGlow(460);
+  // 뜨거운 백열 코어(값 상한) — 해 원반 위에 근백색 가산 디스크
+  const coreCv = document.createElement('canvas'); coreCv.width = coreCv.height = 128;
+  const cg2 = coreCv.getContext('2d'); const crg = cg2.createRadialGradient(64, 64, 4, 64, 64, 64);
+  crg.addColorStop(0, 'rgba(255,250,232,0.98)'); crg.addColorStop(0.5, 'rgba(255,232,180,0.5)'); crg.addColorStop(1, 'rgba(255,210,140,0)');
+  cg2.fillStyle = crg; cg2.fillRect(0, 0, 128, 128);
+  const hotCore = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(coreCv), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false })); hotCore.scale.set(34, 34, 1); scene.add(hotCore);
+  // 신의 광선(수평 팬) — 두꺼운 먼지 대기
+  for (const [gy, gz, gsc] of [[6, -150, 200], [3, -210, 260]]) { const gr = new THREE.Mesh(new THREE.PlaneGeometry(gsc, gsc * 0.5), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); gr.position.set(70, gy, gz); scene.add(gr); }
+  // ── 지형: 마린 헤드랜드(원경) + 도심 스카이라인 밴드(해 밑, 무명 블록 — 콘텐츠 게이트) ──
+  const hillShape = new THREE.Shape(); hillShape.moveTo(-300, -30);
+  for (let x = -300; x <= 300; x += 26) { const hy = 12 + Math.sin(x * 0.017) * 12 + Math.sin(x * 0.05 + 1) * 6 + srand() * 4; hillShape.lineTo(x, hy); }
+  hillShape.lineTo(300, -30); hillShape.lineTo(-300, -30);
+  const hills = new THREE.Mesh(new THREE.ShapeGeometry(hillShape), hillMat); hills.position.set(20, 0, -300); scene.add(hills);
+  for (let i = 0; i < 22; i++) { const bx = -14 + srand() * 96; const bh = 6 + srand() * 11 + (srand() < 0.18 ? 7 : 0); const bd = new THREE.Mesh(new THREE.BoxGeometry(5 + srand() * 4, bh, 4), cityMat); bd.position.set(bx, -1 + bh / 2, -262); scene.add(bd); }
+  // ── 금문교: 두 탑을 서로 다른 깊이에 → 원근이 far 탑을 작게 만든다(수동 축소 금지) ──
+  const NT = [-20, 0, -55], FT = [46, 0, -210], TT = 34;
+  const mkTower = (tx, tz, lit) => {
     const g = new THREE.Group();
-    for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(2.4, towerTopY + 2, 2.4), x < 0 ? steelLit : steelMat); leg.position.set(s * 4.2, (towerTopY) / 2, 0); g.add(leg); }
-    for (const by of [deckY - 1, deckY + 7, 20, 27, towerTopY - 1]) { const br = new THREE.Mesh(new THREE.BoxGeometry(11, 1.5, 2.2), x < 0 ? steelLit : steelMat); br.position.set(0, by, 0); g.add(br); } // 포탈 가로보(사이 빈 공간=아치)
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(11.6, 2.4, 2.6), steelMat); cap.position.set(0, towerTopY + 1.4, 0); g.add(cap);
-    g.position.set(x, 0, brZ); return g;
+    for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(2.6, TT + 2, 2.6), (s > 0 && lit) ? steelLit : steelMat); leg.position.set(s * 4.2, TT / 2, 0); g.add(leg); }
+    for (const by of [9, 16, 23, 29, TT - 1]) { const br = new THREE.Mesh(new THREE.BoxGeometry(11, 1.6, 2.4), steelMat); br.position.set(0, by, 0); g.add(br); }
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(11.8, 2.6, 2.8), steelMat); cap.position.set(0, TT + 1.4, 0); g.add(cap);
+    g.position.set(tx, 0, tz); return g;
   };
-  scene.add(mkTower(tX[0])); scene.add(mkTower(tX[1]));
-  // 주케이블(현수선) — 좌 앵커→탑1 정상→중앙 새그→탑2 정상→우 앵커. 붕괴 구간에서 우측 케이블은 끊겨 늘어진다.
-  const catY = (x) => { // 두 탑 사이는 현수선, 바깥은 앵커로 하강
-    if (x < tX[0]) return towerTopY + 1 - (tX[0] - x) * 0.62;
-    if (x > tX[1]) return towerTopY + 1 - (x - tX[1]) * 0.62;
-    const u = (x - tX[0]) / (tX[1] - tX[0]);                            // 0..1
-    return towerTopY + 1 - Math.sin(u * Math.PI) * 20;                  // 중앙 새그
-  };
-  const cableMat = new THREE.MeshBasicMaterial({ color: 0x24090d });
-  const mkCableSpan = (x0, x1, broken) => {                             // 케이블을 짧은 각진 세그먼트로 근사
-    const N = Math.max(2, Math.round((x1 - x0) / 3));
-    for (let i = 0; i < N; i++) {
-      const xa = x0 + (i / N) * (x1 - x0), xb = x0 + ((i + 1) / N) * (x1 - x0);
-      let ya = catY(xa), yb = catY(xb);
-      if (broken && xb > 4) { yb = Math.max(1.4, ya - (xb - 4) * (xb - 4) * 0.05); }   // 끊긴 뒤 자유낙하로 처짐
-      const len = Math.hypot(xb - xa, yb - ya);
-      const seg = new THREE.Mesh(new THREE.BoxGeometry(len, 0.5, 0.5), cableMat);
-      seg.position.set((xa + xb) / 2, (ya + yb) / 2, brZ); seg.rotation.z = Math.atan2(yb - ya, xb - xa); scene.add(seg);
-      if (broken && xb > 4 && i === N - 1) { const fray = new THREE.Mesh(new THREE.BoxGeometry(0.4, 5, 0.4), cableMat); fray.position.set(xb, yb - 2.4, brZ); fray.rotation.z = 0.4; scene.add(fray); }
-    }
-  };
-  mkCableSpan(-92, tX[0], false); mkCableSpan(tX[0], 4, false); mkCableSpan(4, tX[1], true); mkCableSpan(tX[1], 92, false);
-  // 상판 + 행어. 중앙(x∈[-6,20])은 붕괴 — 좌측은 성한 상판, 그 우측 끝은 물로 처져 잠긴다.
-  const mkDeck = (x0, x1, y0, y1) => { const len = Math.hypot(x1 - x0, y1 - y0); const d = new THREE.Mesh(new THREE.BoxGeometry(len, 1.4, 5.4), steelMat); d.position.set((x0 + x1) / 2, (y0 + y1) / 2, brZ); d.rotation.z = Math.atan2(y1 - y0, x1 - x0); scene.add(d); };
-  mkDeck(-92, -6, deckY, deckY);                                       // 성한 좌측 경간
-  mkDeck(-6, 12, deckY, 1.2);                                          // 꺾여 물로 처지는 붕괴 상판
-  const sunkEnd = new THREE.Mesh(new THREE.BoxGeometry(9, 1.4, 5.4), steelMat); sunkEnd.position.set(15, -0.6, brZ); sunkEnd.rotation.z = -0.5; scene.add(sunkEnd); // 물에 반쯤 잠긴 끝단
-  mkDeck(24, 92, deckY, deckY);                                        // 성한 우측 경간
-  for (let x = -88; x <= 92; x += 5) {                                 // 행어(수직 현) — 붕괴 구간은 건너뜀
-    if (x > -6 && x < 24) continue;
-    const cy = catY(x), h = cy - deckY; if (h < 1) continue;
-    const hg3 = new THREE.Mesh(new THREE.BoxGeometry(0.22, h, 0.22), cableMat); hg3.position.set(x, deckY + h / 2, brZ); scene.add(hg3);
+  const _ntg = mkTower(NT[0], NT[2], true); _ntg.scale.set(1.16, 1.16, 1.16); scene.add(_ntg); // 근탑을 모뉴먼트로 — 하늘을 지배
+  scene.add(mkTower(FT[0], FT[2], false));
+  const NTtop = [NT[0], TT + 1, NT[2]], FTtop = [FT[0], TT + 1, FT[2]];
+  const dW = 5.4, dH = 1.4;
+  // 접근 경간(성함): 근앵커 → 근탑
+  const appWP = [[-96, 9, 10], [-58, 9, -22], NT[0] && [-20, 9, -55]]; appWP[2] = [-20, 9, -55];
+  for (let i = 0; i < appWP.length - 1; i++) link(steelMat, appWP[i], appWP[i + 1], dW, dH);
+  // 주경간(붕괴): 근탑 → 처짐 → 물로 꺾여 잠김
+  const sagA = [-20, 9, -55], sagB = [-6, 4.5, -74], sagC = [4, 1.6, -90];
+  link(steelMat, sagA, sagB, dW, dH); link(steelMat, sagB, sagC, dW * 0.9, dH);
+  // 원경 경간(성함): 재개 → 원탑 → 원앵커
+  const farWP = [[30, 9, -176], FT[0] && [46, 9, -210], [76, 9, -250], [108, 9, -298]]; farWP[1] = [46, 9, -210];
+  for (let i = 0; i < farWP.length - 1; i++) link(steelMat, farWP[i], farWP[i + 1], dW, dH);
+  // 주케이블 + 행어 (같은 폴리라인)
+  const cApp = [[-96, 13, 10], [-58, 27, -22], NTtop];
+  for (let i = 0; i < cApp.length - 1; i++) link(cableMat, cApp[i], cApp[i + 1], 0.5, 0.5);
+  const cSag = [NTtop, [-6, 20, -74], [3, 9, -90]];
+  for (let i = 0; i < cSag.length - 1; i++) link(cableMat, cSag[i], cSag[i + 1], 0.5, 0.5);
+  link(cableMat, [3, 9, -90], [5, 3, -93], 0.4, 0.4); // 끊긴 자락
+  const cFar = [[108, 13, -298], [76, 25, -250], FTtop, [30, 18, -176], [23, 10, -168]];
+  for (let i = 0; i < cFar.length - 1; i++) link(cableMat, cFar[i], cFar[i + 1], 0.5, 0.5);
+  // 행어(성한 경간만)
+  const hangOn = (a, b, cyA, cyB, n) => { for (let i = 1; i < n; i++) { const s = i / n; const x = a[0] + (b[0] - a[0]) * s, z = a[2] + (b[2] - a[2]) * s, cy = cyA + (cyB - cyA) * s; if (cy - 9 > 1) link(cableMat, [x, 9, z], [x, cy, z], 0.2, 0.2); } };
+  hangOn([-96, 9, 10], NT, 13, 35, 8); hangOn([46, 9, -210], [108, 9, -298], 35, 13, 7);
+  // ── 초목 관용구 ──
+  const swayG = [];
+  const mkVine = (x, yTop, z, len, mat, amp) => { const g = new THREE.Group(); g.position.set(x, yTop, z); const seg = new THREE.Mesh(new THREE.BoxGeometry(0.16 + srand() * 0.18, len, 0.16), mat); seg.position.y = -len / 2; g.add(seg); scene.add(g); swayG.push({ g, seed: srand() * 6.28, amp: amp * (0.6 + srand() * 0.8) }); return g; };
+  const mkCanopy = (x, y, z, r, mat) => { for (let b = 0, n = 3 + Math.floor(srand() * 3); b < n; b++) { const cw = r * (0.6 + srand() * 0.7); const c = new THREE.Mesh(new THREE.BoxGeometry(cw, cw * 0.7, cw * 0.8), mat); c.position.set(x + (srand() - 0.5) * r * 1.3, y + (srand() - 0.4) * r * 0.7, z + (srand() - 0.5) * r * 0.6); c.rotation.z = (srand() - 0.5) * 0.4; scene.add(c); } };
+  const mkIvy = (cx, cyTop, cyBot, halfW, z, dens, allowRim) => { const rows = Math.max(2, Math.floor((cyTop - cyBot) / 1.1)); for (let r = 0; r < rows; r++) { const yy = cyBot + (r / rows) * (cyTop - cyBot); const patches = Math.max(1, Math.floor(dens * (2 + srand() * 3))); for (let p = 0; p < patches; p++) { const mat = (allowRim && yy > cyTop - 6 && srand() < 0.5) ? vegRim : vegSil; const iv = new THREE.Mesh(new THREE.BoxGeometry(0.6 + srand() * 1.6, 0.7 + srand() * 1.4, 0.3), mat); iv.position.set(cx + (srand() - 0.5) * halfW * 2, yy + (srand() - 0.5), z + 0.35 * (z < NT[2] ? 1 : -1)); scene.add(iv); } } };
+  // 히어로: 붕괴 경간 케이블에서 늘어진 넝쿨 커튼(처짐부에서 가장 길다)
+  const sagPts = [];
+  for (let i = 0; i < cSag.length - 1; i++) { for (let s = 0; s < 1; s += 0.1) { const a = cSag[i], b = cSag[i + 1]; sagPts.push([a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s, a[2] + (b[2] - a[2]) * s]); } }
+  for (const [px, py, pz] of sagPts) { const drop = 2 + srand() * 7 + Math.max(0, py - 6) * 0.35; const len = Math.min(drop, py - 0.4); if (len > 0.6) mkVine(px + (srand() - 0.5) * 1.3, py - 0.2, pz + (srand() - 0.5) * 1.3, len, srand() < 0.3 ? vegRim : vegSil, 0.05 + len * 0.004); }
+  for (let i = 0; i < 7; i++) mkVine(-14 + srand() * 18, 8.5, -58 - srand() * 6, 3 + srand() * 4, vegSil, 0.05); // 부서진 상판 립에서 늘어진 자락
+  // 근/원탑 담쟁이 + 상판 밑단 프린지
+  mkIvy(NT[0] - 4.2, 33, 2, 2.2, NT[2], 1.0, true); mkIvy(NT[0] + 4.2, 33, 2, 2.2, NT[2], 1.0, true);
+  mkIvy(FT[0] - 4.2, 32, 3, 2.0, FT[2], 0.8, false); mkIvy(FT[0] + 4.2, 32, 3, 2.0, FT[2], 0.8, false);
+  for (let s = 0; s < 1; s += 0.035) { const x = -96 + (NT[0] + 96) * s, z = 10 + (NT[2] - 10) * s; mkVine(x + (srand() - 0.5) * 2, 8.4, z + 2.7, 2 + srand() * 6, srand() < 0.25 ? vegRim : vegSil, 0.05); } // 접근 상판 앞면 넝쿨 커튼(하늘에 실루엣)
+  // 캐노피 군락: 상판 정원 / 탑 어깨 / 수변 덤불
+  for (let s = 0; s < 1; s += 0.13) { const x = -96 + (NT[0] + 96) * s, z = 10 + (NT[2] - 10) * s; if (srand() < 0.7) mkCanopy(x + (srand() - 0.5) * 3, 10.6, z, 1.6 + srand() * 1.4, srand() < 0.3 ? vegRim : vegSil); }
+  for (const by of [16, 24, 35]) mkCanopy(NT[0] + (srand() - 0.5) * 6, by, NT[2], 2 + srand(), srand() < 0.5 ? vegRim : vegSil);
+  for (let i = 0; i < 26; i++) { const tx = -42 + srand() * 96, tz = -8 - srand() * 176; mkCanopy(tx, 0.6 + srand() * 3, tz, 1.6 + srand() * 2.4, (srand() < 0.25 && tx < 0) ? vegRim : vegSil); }
+  for (let i = 0; i < 6; i++) mkCanopy(NT[0] + (srand() - 0.5) * 11, 1 + srand() * 3, NT[2] + (srand() - 0.5) * 9, 2 + srand() * 2, vegSil);
+  for (let i = 0; i < 5; i++) mkCanopy(FT[0] + (srand() - 0.5) * 11, 1 + srand() * 3, FT[2] + (srand() - 0.5) * 9, 1.6 + srand() * 1.6, vegSil);
+  // 전경 덤불 벽 — 하단을 잠식으로 채운다(앰버 하늘에 실루엣). 몇 포기는 키가 커 상판·난간 선을 끊는다.
+  for (let i = 0; i < 38; i++) { const bx = -74 + srand() * 158, bz = 4 + srand() * 28; mkCanopy(bx, 1.3 + srand() * 3.2, bz, 1.6 + srand() * 2.4, srand() < 0.14 ? vegRim : vegSil); }
+  for (let i = 0; i < 5; i++) { const bx = -64 + srand() * 138; mkCanopy(bx, 4.5 + srand() * 4, 8 + srand() * 14, 2 + srand() * 1.8, vegSil); }
+  // ── 전경: 젖은 습지 둑 + 웅덩이 반사 ──
+  const bank = new THREE.Mesh(new THREE.PlaneGeometry(320, 90), new THREE.MeshBasicMaterial({ color: 0x181109, fog: false })); bank.rotation.x = -Math.PI / 2; bank.position.set(-10, 0.25, 24); scene.add(bank);
+  for (let i = 0; i < 5; i++) { const pd = new THREE.Mesh(new THREE.PlaneGeometry(6 + srand() * 6, 3 + srand() * 3), new THREE.MeshBasicMaterial({ color: 0xff8a3e, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); pd.rotation.x = -Math.PI / 2; pd.position.set(-60 + srand() * 100, 0.3, 14 + srand() * 24); scene.add(pd); }
+  // ── 접근 고가 콜로네이드(좌측 프레임) — 3/4 후퇴의 최대 동인 ──
+  for (let i = 0; i < 6; i++) {
+    const u = i / 5, vx = -58 - u * 40, vz = -68 + u * 74, VH = 22 + u * 13;
+    for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(3.2, VH, 3.2), s > 0 ? concLit : concShad); leg.position.set(vx + s * 3.5, VH / 2, vz); scene.add(leg); }
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(11, 2.4, 6.5), concShad); cap.position.set(vx, VH + 1, vz); scene.add(cap);
+    if (i < 5) { const u2 = (i + 1) / 5, vx2 = -58 - u2 * 40, vz2 = -68 + u2 * 74, VH2 = 22 + u2 * 13; link(concShad, [vx, VH + 2, vz], [vx2, VH2 + 2, vz2], 7, 2.2); }
+    const sheet = new THREE.Mesh(new THREE.BoxGeometry(2.4, VH * 0.55, 0.4), vegSil); sheet.position.set(vx, VH * 0.55 / 2 + 2, vz + 2.4); scene.add(sheet);
+    for (let h = 0; h < 5; h++) mkVine(vx + (srand() - 0.5) * 8, VH + 1.5, vz, 3 + srand() * 5, vegSil, 0.05);
+    mkCanopy(vx, 1.5, vz, 2 + srand() * 1.5, vegSil);
   }
-  // 부러진 상판에서 늘어진 행어 잔해 몇 가닥
-  for (let i = 0; i < 4; i++) { const dh = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3 + srand() * 3, 0.2), cableMat); dh.position.set(-2 + srand() * 12, 4 + srand() * 3, brZ + 0.2); dh.rotation.z = (srand() - 0.5) * 0.8; scene.add(dh); }
-  // ── 물: 해협. 노을·해·달을 반사하고 잔물결이 흔들린다. ──
-  const wcv = document.createElement('canvas'); wcv.width = 256; wcv.height = 256;
-  const wg = wcv.getContext('2d');
+  // ── 부서진 차(전경 좌하단 앵커) ──
+  const car = new THREE.Group();
+  const cB = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); car.add(m); return m; };
+  cB(9.2, 1.7, 4.2, propDark, 0, 1.35, 0); cB(3.4, 0.9, 4.0, propRust, 3.1, 2.0, 0); cB(3.0, 0.9, 4.0, propRust, -3.2, 1.95, 0); cB(4.4, 1.9, 3.8, propDark, -0.2, 2.7, 0); cB(2.4, 1.0, 4.1, propDark, 4.6, 1.0, 0); cB(2.4, 1.0, 4.1, propDark, -4.6, 1.0, 0);
+  const wsh = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.6), new THREE.MeshBasicMaterial({ color: 0xff9a4e, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); wsh.position.set(1.7, 2.9, 2.0); car.add(wsh);
+  car.position.set(-34, 1.0, 20); car.rotation.set(0, 0.55, 0.05); scene.add(car);
+  for (let i = 0; i < 4; i++) { const v = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.2 + srand() * 1.4, 2.2), vegSil); v.position.set(-34 + (srand() - 0.5) * 8, 2.4 + srand() * 1.4, 20 + (srand() - 0.5) * 3); scene.add(v); }
+  // ── 도로 표지(무명 — 콘텐츠 게이트) + 접지 W빔 가드레일 ──
+  const sPost = new THREE.Mesh(new THREE.BoxGeometry(0.4, 12, 0.4), propDark); sPost.position.set(-50, 5.5, 30); sPost.rotation.z = 0.5; scene.add(sPost);
+  const sPanel = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 0.35), propRust); sPanel.position.set(-52.5, 10.5, 30); sPanel.rotation.z = 0.5; scene.add(sPanel);
+  for (let i = 0; i < 2; i++) mkVine(-52 + srand() * 3, 9.5, 30.3, 2 + srand() * 3, vegSil, 0.06);
+  const rail = new THREE.Group();
+  rail.add(new THREE.Mesh(new THREE.BoxGeometry(30, 1.1, 0.5), propDark)); const rcap = new THREE.Mesh(new THREE.BoxGeometry(30, 0.35, 0.55), propRust); rcap.position.y = 0.5; rail.add(rcap);
+  for (let i = 0; i < 7; i++) { const post = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.2, 0.5), propDark); post.position.set(-13 + i * 4.2, -1.4, 0); rail.add(post); }
+  rail.position.set(42, 2.4, 30); rail.rotation.y = -0.42; scene.add(rail);
+  const brk = new THREE.Mesh(new THREE.BoxGeometry(0.5, 4.4, 0.5), propDark); brk.position.set(30, 2.4, 30); brk.rotation.z = 0.5; scene.add(brk);
+  for (let i = 0; i < 6; i++) mkCanopy(30 + srand() * 26, 1.2, 30, 1.4 + srand() * 1.2, vegSil);
+  // ── 침몰선(우측, 원탑 옆·해 앞이라 검게) ──
+  const ship = new THREE.Group();
+  const sB = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); ship.add(m); return m; };
+  sB(24, 6, 7, propDark, 0, 0.6, 0); sB(9, 5, 5.5, propDark, 12, 1, 0); sB(6, 4, 5, propDark, -4, 4, 0); sB(4, 3, 4, propDark, -4, 7, 0); sB(2, 4, 2, propRust, -2, 7, 0);
+  const mast = new THREE.Mesh(new THREE.BoxGeometry(0.3, 9, 0.3), propDark); mast.position.set(2, 5, 0); mast.rotation.z = 0.3; ship.add(mast);
+  ship.position.set(95, 0, -185); ship.rotation.set(0, -0.5, 0.32); scene.add(ship);
+  // ── 잔해 뗏목 + 붕괴 콘크리트 파편 ──
+  for (let i = 0; i < 9; i++) { const rx = -30 + srand() * 120, rz = -30 - srand() * 115; const raft = new THREE.Mesh(new THREE.BoxGeometry(3 + srand() * 4, 0.5, 2 + srand() * 2), propDark); raft.position.set(rx, 0.3, rz); raft.rotation.y = srand() * 3; scene.add(raft); const veg = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.8, 1.5), vegSil); veg.position.set(rx, 0.6, rz); scene.add(veg); }
+  for (let i = 0; i < 5; i++) { const ch = new THREE.Mesh(new THREE.BoxGeometry(2 + srand() * 3, 1.5 + srand() * 2, 2 + srand() * 2), concShad); ch.position.set(-8 + srand() * 24, 0.6, -76 - srand() * 24); ch.rotation.set(srand(), srand() * 3, srand() * 0.4); scene.add(ch); }
+  // ── 물: 단일 골드 반사 기둥(냉색 없음) ──
+  const wcv = document.createElement('canvas'); wcv.width = 256; wcv.height = 256; const wg = wcv.getContext('2d');
   const waterTex = new THREE.CanvasTexture(wcv); waterTex.colorSpace = THREE.SRGBColorSpace;
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(700, 340), new THREE.MeshBasicMaterial({ map: waterTex, fog: false }));
-  water.rotation.x = -Math.PI / 2; water.position.set(0, 0, -120); scene.add(water);
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(900, 520), new THREE.MeshBasicMaterial({ map: waterTex, fog: false })); water.rotation.x = -Math.PI / 2; water.position.set(20, 0, -160); scene.add(water);
+  // 해 아래 녹은 금빛 반사 기둥(하늘 광휘를 전경 값역과 잇는다)
+  const refCv = document.createElement('canvas'); refCv.width = 16; refCv.height = 128; const rfg = refCv.getContext('2d');
+  const rfgr = rfg.createLinearGradient(0, 0, 0, 128); rfgr.addColorStop(0, 'rgba(255,207,122,0.55)'); rfgr.addColorStop(0.6, 'rgba(210,110,44,0.2)'); rfgr.addColorStop(1, 'rgba(122,48,16,0)');
+  rfg.fillStyle = rfgr; rfg.fillRect(0, 0, 16, 128);
+  const refStreak = new THREE.Mesh(new THREE.PlaneGeometry(22, 190), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(refCv), transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); refStreak.rotation.x = -Math.PI / 2; refStreak.position.set(66, 0.32, -150); scene.add(refStreak);
   const drawWater = (kn, t) => {
-    wg.fillStyle = '#14060a'; wg.fillRect(0, 0, 256, 256);
-    // 원경(위)일수록 하늘색, 근경(아래)일수록 어둡게
+    wg.fillStyle = '#160f0a'; wg.fillRect(0, 0, 256, 256);
     const wgr = wg.createLinearGradient(0, 0, 0, 256);
-    wgr.addColorStop(0, 'rgba(120,36,26,' + (0.5 + 0.3 * kn) + ')'); wgr.addColorStop(0.5, 'rgba(58,18,20,0.5)'); wgr.addColorStop(1, 'rgba(10,6,10,0.9)');
+    wgr.addColorStop(0, 'rgba(70,46,28,' + (0.5 + 0.3 * kn) + ')'); wgr.addColorStop(0.5, 'rgba(40,28,18,0.5)'); wgr.addColorStop(1, 'rgba(14,10,8,0.9)');
     wg.fillStyle = wgr; wg.fillRect(0, 0, 256, 256);
-    // 해 반사 기둥(좌) + 달 반사(우) — 가로 잔물결 밴드로 부순다
-    for (let i = 0; i < 46; i++) {
-      const ry = 6 + i * 5.2, rw = 1.6 + Math.sin(i * 0.7 + t * 5) * 1.1;
-      wg.globalAlpha = 0.5 * (1 - i / 46);
-      wg.fillStyle = 'rgba(255,150,66,' + (0.6 * kn) + ')'; wg.fillRect(96 + Math.sin(i * 0.9 + t * 6) * 5, ry, 30 + rw * 6, 2.2);
-      wg.globalAlpha = 0.4 * (1 - i / 46) * Math.max(0, 1 - kn * 1.6);
-      wg.fillStyle = 'rgba(196,210,240,0.7)'; wg.fillRect(196 + Math.sin(i * 1.1 + t * 4) * 4, ry, 14, 1.6);
-    }
+    for (let i = 0; i < 46; i++) { const ry = 6 + i * 5.2, rw = 1.6 + Math.sin(i * 0.7 + t * 5) * 1.1; wg.globalAlpha = 0.55 * (1 - i / 46); wg.fillStyle = 'rgba(255,184,74,' + (0.7 * kn) + ')'; wg.fillRect(150 + Math.sin(i * 0.9 + t * 6) * 6, ry, 34 + rw * 7, 2.4); }
     wg.globalAlpha = 1; waterTex.needsUpdate = true;
   };
-  // 유성 — 한 획. t∈[0.42,0.6]에 하늘을 가로지른다.
-  const meteorMat = new THREE.MeshBasicMaterial({ color: 0xfff0d0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
-  const meteor = new THREE.Mesh(new THREE.PlaneGeometry(26, 0.5), meteorMat); meteor.position.set(0, 60, -250); meteor.rotation.z = -0.5; scene.add(meteor);
-  const mhead = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xfff4de, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); mhead.scale.set(10, 10, 1); scene.add(mhead);
-  // 재/불씨 — 죽은 도시의 바람을 타고
-  const emN = 60, emArr = new Float32Array(emN * 3), emSeed = [];
-  for (let i = 0; i < emN; i++) { emArr[i * 3] = -110 + srand() * 220; emArr[i * 3 + 1] = 2 + srand() * 46; emArr[i * 3 + 2] = -80 + srand() * 40; emSeed.push(srand() * 6.28); }
+  // ── 재/불씨(따뜻한 금빛 재) ──
+  const emN = 44, emArr = new Float32Array(emN * 3), emSeed = [];
+  for (let i = 0; i < emN; i++) { emArr[i * 3] = -110 + srand() * 220; emArr[i * 3 + 1] = 1 + srand() * 26; emArr[i * 3 + 2] = -80 + srand() * 60; emSeed.push(srand() * 6.28); } // 하단 온기대에만 (하늘의 별처럼 읽히지 않게)
   const emGeo = new THREE.BufferGeometry(); emGeo.setAttribute('position', new THREE.BufferAttribute(emArr, 3));
-  const emMat = new THREE.PointsMaterial({ color: 0xffb060, size: 2.4, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, sizeAttenuation: false });
+  const emMat = new THREE.PointsMaterial({ color: 0xffc070, size: 2.4, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, sizeAttenuation: false });
   scene.add(new THREE.Points(emGeo, emMat));
-  // 노을 구름 띠
-  const ccv = document.createElement('canvas'); ccv.width = 256; ccv.height = 64; const cg = ccv.getContext('2d');
-  for (const [sx, sy, sw2, sh, a] of [[10, 24, 236, 16, 0.5], [50, 12, 150, 12, 0.35], [70, 40, 150, 14, 0.4]]) {
-    const lg = cg.createRadialGradient(sx + sw2 / 2, sy + sh / 2, 2, sx + sw2 / 2, sy + sh / 2, sw2 / 2);
-    lg.addColorStop(0, 'rgba(255,255,255,' + a + ')'); lg.addColorStop(1, 'rgba(255,255,255,0)');
-    cg.save(); cg.translate(sx + sw2 / 2, sy + sh / 2); cg.scale(1, sh / sw2); cg.translate(-(sx + sw2 / 2), -(sy + sh / 2));
-    cg.fillStyle = lg; cg.beginPath(); cg.arc(sx + sw2 / 2, sy + sh / 2, sw2 / 2, 0, 6.283); cg.fill(); cg.restore();
-  }
-  const cloudTex = new THREE.CanvasTexture(ccv); cloudTex.colorSpace = THREE.SRGBColorSpace;
-  const cloudMat = new THREE.SpriteMaterial({ map: cloudTex, color: 0xc84a2c, transparent: true, opacity: 0.72, depthWrite: false, fog: false });
-  for (const [cx5, cy5, csc] of [[-64, 52, 150], [58, 66, 170], [0, 44, 100]]) { const cl2 = new THREE.Sprite(cloudMat); cl2.position.set(cx5, cy5, -252); cl2.scale.set(csc, csc * 0.2, 1); scene.add(cl2); }
-  // 층간 안개(붉은 매질)
-  const zcv = document.createElement('canvas'); zcv.width = 32; zcv.height = 64;
-  const zg = zcv.getContext('2d'); const zgr = zg.createLinearGradient(0, 0, 0, 64);
-  zgr.addColorStop(0, 'rgba(255,255,255,0)'); zgr.addColorStop(0.5, 'rgba(255,255,255,0.85)'); zgr.addColorStop(1, 'rgba(255,255,255,0)');
-  zg.fillStyle = zgr; zg.fillRect(0, 0, 32, 64);
-  const hazeTex = new THREE.CanvasTexture(zcv); const hazeMats = [];
-  for (const [hy, hz, hh, ho] of [[8, -220, 28, 0.5], [6, -150, 20, 0.42], [4, -92, 14, 0.32]]) {
-    const hm2 = new THREE.MeshBasicMaterial({ map: hazeTex, transparent: true, opacity: ho, depthWrite: false, fog: false, color: 0xb85030 });
-    const hp = new THREE.Mesh(new THREE.PlaneGeometry(560, hh), hm2); hp.position.set(0, hy, hz); scene.add(hp); hazeMats.push(hm2);
-  }
-  // 최전경: 부서진 난간(내가 선 자리) + 잡초 실루엣
-  const railMat = new THREE.MeshBasicMaterial({ color: 0x08060a });
-  const rail = new THREE.Mesh(new THREE.BoxGeometry(240, 1.0, 2.2), railMat); rail.position.set(-4, 6.6, 30); rail.rotation.z = 0.015; scene.add(rail);
-  for (let i = 0; i < 6; i++) { const post = new THREE.Mesh(new THREE.BoxGeometry(0.9, 3.4, 2.0), railMat); post.position.set(-70 + i * 30 + srand() * 8, 5.0, 30); scene.add(post); }
-  const brk = new THREE.Mesh(new THREE.BoxGeometry(1.0, 4.4, 2.0), railMat); brk.position.set(38, 5.6, 30); brk.rotation.z = 0.5; scene.add(brk); // 꺾여 부러진 기둥
-  for (let i = 0; i < 10; i++) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.5 + srand() * 1.4, 1.4 + srand() * 2.2, 1.6), railMat); w.position.set(-84 + srand() * 168, 7.2 + w.geometry.parameters.height / 2 - 0.4, 30); w.rotation.z = (srand() - 0.5) * 0.3; scene.add(w); }
-  // 황혼 별
-  const stGeo = new THREE.BufferGeometry(); const stPos = [];
-  for (let i = 0; i < 260; i++) stPos.push(-300 + srand() * 600, 32 + srand() * 170, -270);
-  stGeo.setAttribute('position', new THREE.Float32BufferAttribute(stPos, 3));
-  const stMat = new THREE.PointsMaterial({ color: 0xcdd8ff, size: 1.3, transparent: true, opacity: 0, fog: false, sizeAttenuation: false });
-  scene.add(new THREE.Points(stGeo, stMat));
+  // ── 구름: 상단 갈색 폭풍 덩어리(비가산) + 해 근처 금빛 가산 ──
+  const scv = document.createElement('canvas'); scv.width = 256; scv.height = 96; const scg = scv.getContext('2d');
+  for (const [sx, sy, sw2, sh, a] of [[10, 30, 236, 26, 0.6], [50, 14, 150, 18, 0.45], [80, 52, 160, 20, 0.5]]) { const lg = scg.createRadialGradient(sx + sw2 / 2, sy + sh / 2, 2, sx + sw2 / 2, sy + sh / 2, sw2 / 2); lg.addColorStop(0, 'rgba(255,255,255,' + a + ')'); lg.addColorStop(1, 'rgba(255,255,255,0)'); scg.save(); scg.translate(sx + sw2 / 2, sy + sh / 2); scg.scale(1, sh / sw2); scg.translate(-(sx + sw2 / 2), -(sy + sh / 2)); scg.fillStyle = lg; scg.beginPath(); scg.arc(sx + sw2 / 2, sy + sh / 2, sw2 / 2, 0, 6.283); scg.fill(); scg.restore(); }
+  const stormTex = new THREE.CanvasTexture(scv); stormTex.colorSpace = THREE.SRGBColorSpace;
+  const stormMat = new THREE.SpriteMaterial({ map: stormTex, color: 0x3a2c1e, transparent: true, opacity: 0.85, depthWrite: false, fog: false });
+  for (const [cx5, cy5, csc] of [[-40, 74, 220], [60, 88, 240], [10, 66, 180]]) { const cl = new THREE.Sprite(stormMat); cl.position.set(cx5, cy5, -256); cl.scale.set(csc, csc * 0.22, 1); scene.add(cl); }
+  const goldCloudMat = new THREE.SpriteMaterial({ map: stormTex, color: 0xff9a4c, transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+  for (const [cx5, cy5, csc] of [[62, 34, 150], [46, 48, 130], [78, 40, 120]]) { const cl = new THREE.Sprite(goldCloudMat); cl.position.set(cx5, cy5, -250); cl.scale.set(csc, csc * 0.2, 1); scene.add(cl); }
+  // ── 층간 안개 밴드(깊이 이음새마다, 따뜻한색) ──
+  const zcv = document.createElement('canvas'); zcv.width = 32; zcv.height = 64; const zg = zcv.getContext('2d'); const zgr = zg.createLinearGradient(0, 0, 0, 64);
+  zgr.addColorStop(0, 'rgba(255,255,255,0)'); zgr.addColorStop(0.5, 'rgba(255,255,255,0.85)'); zgr.addColorStop(1, 'rgba(255,255,255,0)'); zg.fillStyle = zgr; zg.fillRect(0, 0, 32, 64);
+  const hazeTex = new THREE.CanvasTexture(zcv); const hazeMats = []; const hazeSpec = [[0x6a3a1e, 0xff9a4e], [0x52281a, 0xe07a34], [0x3a1c14, 0xc86028]];
+  const hazeZ = [[8, -70, 20], [7, -140, 26], [6, -250, 34]];
+  for (let i = 0; i < 3; i++) { const hm = new THREE.MeshBasicMaterial({ map: hazeTex, transparent: true, opacity: [0.5, 0.44, 0.34][i], depthWrite: false, fog: false, color: hazeSpec[i][1] }); const hp = new THREE.Mesh(new THREE.PlaneGeometry(700, hazeZ[i][2]), hm); hp.position.set(70, hazeZ[i][0], hazeZ[i][1]); scene.add(hp); hazeMats.push(hm); }
+  // ── 하늘 램프(6스톱, 따뜻한 앰버 — 절대 보라로 가지 않는다) ──
+  const SKY = [[0x140e09, 0x1e150e, 0.0], [0x241a12, 0x4a3524, 0.22], [0x4a3218, 0x9a5a26, 0.46], [0x6b3f1e, 0xd67f2a, 0.66], [0x844a20, 0xf0a038, 0.83], [0x9a5a28, 0xffe6a0, 1.0]]; // 상단=묵직한 역광 폭풍 천장(어둡고 따뜻하게)
+  const skyC = SKY.map(() => new THREE.Color());
 
   const update = (t) => {
-    const kn = 1 - t * 0.62;                        // 1=만개한 노을 → 0.38=짙은 어스름 (내내 극적으로 유지)
-    camera.position.z = 54 - 5 * t; camera.position.y = 11 + 1.5 * t;
-    camera.up.set(Math.sin(t * 0.14) * 0.05, 1, 0);  // 미세 카메라 틸트(롤)
-    camera.lookAt(0, 15 + 2 * t, -60);
+    const kn = 1 - t * 0.62; // 1=만개한 노을 → 0.38 짙은 어스름
+    camera.position.set(-8 + 3 * t, 12, 40 - 8 * t); camera.up.set(Math.sin(t * 0.14) * 0.04, 1, 0); camera.lookAt(10 + 4 * t, 16 - 1.5 * t, -150);
     const g2 = skyCv.getContext('2d'); const gr2 = g2.createLinearGradient(0, 0, 0, 1024);
-    lerpC(0x12060f, 0x8e1a18, kn, _tc1); lerpC(0x420f1c, 0xd6341f, kn, _tc2); lerpC(0x7a1e1e, 0xf5602a, kn, _tc4); lerpC(0x8a2a18, 0xffb43e, Math.min(1, kn * 1.2), _tc3);
-    gr2.addColorStop(0, '#' + _tc1.getHexString()); gr2.addColorStop(0.46, '#' + _tc2.getHexString()); gr2.addColorStop(0.76, '#' + _tc4.getHexString()); gr2.addColorStop(1, '#' + _tc3.getHexString());
+    for (let i = 0; i < SKY.length; i++) { lerpC(SKY[i][0], SKY[i][1], kn, skyC[i]); gr2.addColorStop(SKY[i][2], '#' + skyC[i].getHexString()); }
     g2.fillStyle = gr2; g2.fillRect(0, 0, 2, 1024); skyTex.needsUpdate = true;
-    const sunY = 5 - 12 * t;                          // 해가 해협으로 잠긴다
-    sun.position.y = sunY; lerpC(0xff4a14, 0xffcf5a, kn, sunMat.color);
-    glowCore.position.set(-8, sunY, -299); glowMid.position.set(-8, sunY, -299); glowWide.position.set(-8, sunY, -299);
-    glowCore.material.opacity = 0.85 + 0.1 * Math.sin(t * 44);
-    glowMid.material.opacity = 0.5 + 0.4 * (1 - kn); glowWide.material.opacity = 0.24 + 0.24 * (1 - kn);
-    // 달·달무리 — 어스름에 떠오르며 짙어진다
-    const moonR = Math.max(0, (0.55 - kn) / 0.55);
-    moon.position.y = 18 + 14 * t; halo.position.copy(moon.position);
-    moonMat.opacity = 0.9 * moonR; haloMat.opacity = 0.75 * moonR;
-    // 유성 한 획
-    const mp = (t - 0.42) / 0.18;
-    if (mp >= 0 && mp <= 1) { const mx = 80 - mp * 150, my = 70 - mp * 34; meteor.position.set(mx, my, -250); mhead.position.set(mx - 12, my - 2.6, -250); const mo = Math.sin(mp * Math.PI); meteorMat.opacity = mo * 0.9; mhead.material.opacity = mo; }
-    else { meteorMat.opacity = 0; mhead.material.opacity = 0; }
-    lerpC(0x2a0a10, 0xb04a2c, kn, scene.fog.color);
-    lerpC(0x1a0810, 0x5a1e22, kn, steelLit.color);   // 해를 받는 탑 면
-    lerpC(0x24070c, 0x40161a, kn, hillMat.color);
-    lerpC(0x180a10, 0x2a0e14, kn, hillMat.color);     // (원경 언덕은 거의 검붉게 유지)
-    lerpC(0x6a1a1e, 0xf06834, kn, hazeMats[0].color);
-    lerpC(0x521620, 0xd44e28, kn, hazeMats[1].color);
-    lerpC(0x3a1018, 0xa83e22, kn, hazeMats[2].color);
-    lerpC(0x7a2216, 0xff9a4e, kn, cloudMat.color);
-    for (let i = 0; i < emN; i++) { emArr[i * 3 + 1] += 0.05; emArr[i * 3] += Math.sin(t * 6 + emSeed[i]) * 0.06; if (emArr[i * 3 + 1] > 52) emArr[i * 3 + 1] = 2; }
-    emGeo.attributes.position.needsUpdate = true;
-    emMat.opacity = 0.28 + 0.14 * Math.sin(t * 26) * Math.sin(t * 7 + 1);
-    stMat.opacity = moonR * 0.85;
+    const sunY = 4 - 8 * t; sun.position.y = sunY; lerpC(0xff9a3c, 0xfff2d8, kn, sunMat.color);
+    glowCore.position.set(80, sunY, -329); glowMid.position.set(80, sunY, -329); glowWide.position.set(80, sunY, -329);
+    hotCore.position.set(80, sunY, -328); hotCore.material.opacity = 0.7 + 0.25 * kn;
+    glowCore.material.opacity = 0.85 + 0.1 * Math.sin(t * 40); glowMid.material.opacity = 0.5 + 0.4 * (1 - kn); glowWide.material.opacity = 0.24 + 0.24 * (1 - kn);
+    lerpC(0x2a1c12, 0x8a5a30, kn, scene.fog.color);
+    lerpC(0x1a0f08, 0x6a4426, kn, steelLit.color);
+    lerpC(0x121a0a, 0x2c3a18, kn, vegSil.color);   // 초록이되 깊게 — 네온 아닌 역광 실루엣 톤
+    lerpC(0x242610, 0x565626, kn, vegRim.color);
+    lerpC(0x140b08, 0x5a2c18, kn, propRust.color);
+    lerpC(0x1a1009, 0x4a2e1e, kn, concLit.color);
+    lerpC(0x1c0d14, 0x3a2028, kn, cityMat.color);
+    lerpC(0x180f0a, 0x2a1e16, kn, hillMat.color);
+    for (let i = 0; i < 3; i++) lerpC(hazeSpec[i][0], hazeSpec[i][1], kn, hazeMats[i].color);
+    lerpC(0x241a12, 0xff9a4c, kn, goldCloudMat.color);
+    for (let i = 0; i < emN; i++) { emArr[i * 3 + 1] += 0.05; emArr[i * 3] += Math.sin(t * 6 + emSeed[i]) * 0.06; if (emArr[i * 3 + 1] > 28) emArr[i * 3 + 1] = 1; }
+    emGeo.attributes.position.needsUpdate = true; emMat.opacity = 0.28 + 0.14 * Math.sin(t * 26) * Math.sin(t * 7 + 1);
+    for (const v of swayG) v.g.rotation.z = Math.sin(t * 1.3 + v.seed) * v.amp; // 살아 있는 초목의 흔들림
     drawWater(kn, t);
   };
   update(0);
