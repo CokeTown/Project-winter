@@ -20,6 +20,20 @@ export function makeShelterBuilders(ctx) {
     wlBlock, ogGround, ogAttach, ogRock, ogZone, BP,
     buildCarWreck, buildPowerPole, buildRuinCity, buildRooftopSlate, buildRailSegments,
   } = ctx;
+  // ── 공용 잎 클러스터 스프라이트 (동부 셸터 엘리베이션: 골든게이트/펜트하우스 기준의 부드러운 잎.
+  //   박스 식물 → 울퉁불퉁 역광 올리브 실루엣. 한 번만 생성 캐시. 조명 있는 실내라 완전 검정보다 살짝 밝게) ──
+  const _leafCv = document.createElement('canvas'); _leafCv.width = _leafCv.height = 64;
+  { const g = _leafCv.getContext('2d'); const tr = seededRand(9931);
+    for (let b = 0; b < 15; b++) { const cx = 13 + tr() * 38, cy = 13 + tr() * 38, rr = 6 + tr() * 10, gv = 90 + (tr() * 60 | 0); g.fillStyle = 'rgba(' + (gv * 0.72 | 0) + ',' + (gv * 0.92 | 0) + ',' + (gv * 0.5 | 0) + ',0.97)'; g.beginPath(); g.arc(cx, cy, rr, 0, 6.283); g.fill(); }
+    for (let i = 0; i < 42; i++) { g.fillStyle = 'rgba(16,26,12,0.6)'; g.fillRect(6 + tr() * 52 | 0, 6 + tr() * 52 | 0, 1 + (tr() * 3 | 0), 1 + (tr() * 6 | 0)); }
+    for (let i = 0; i < 20; i++) { g.fillStyle = 'rgba(160,178,110,0.42)'; g.fillRect(8 + tr() * 48 | 0, 8 + tr() * 20 | 0, 1, 1); }
+    g.globalCompositeOperation = 'destination-out'; for (let i = 0; i < 11; i++) { g.beginPath(); g.arc(4 + tr() * 56, 4 + tr() * 56, 3 + tr() * 5, 0, 6.283); g.fill(); } g.globalCompositeOperation = 'source-over';
+  }
+  const _leafTex = new THREE.CanvasTexture(_leafCv); _leafTex.colorSpace = THREE.SRGBColorSpace;
+  const _leafSilMat = new THREE.SpriteMaterial({ map: _leafTex, color: 0x2c3c20, transparent: true, depthWrite: false });   // 그늘측 잎(어두운 올리브)
+  const _leafRimMat = new THREE.SpriteMaterial({ map: _leafTex, color: 0x62703a, transparent: true, depthWrite: false });   // 광측 잎(밝은 올리브)
+  // 잎 덩이 클러스터: 3~5장 겹침·미러·지터. rim=true면 절반은 광측 톤. rnd=seededRand.
+  const leafCluster = (parent, x, y, z, r, rnd, rim) => { const n = 3 + Math.floor(rnd() * 3); for (let i = 0; i < n; i++) { const sp = new THREE.Sprite((rim && rnd() < 0.5) ? _leafRimMat : _leafSilMat); const s = r * (0.7 + rnd() * 0.8); sp.scale.set(s * (rnd() < 0.5 ? -1 : 1), s * (0.72 + rnd() * 0.4), 1); sp.position.set(x + (rnd() - 0.5) * r * 1.2, y + r * 0.28 + (rnd() - 0.5) * r * 0.6, z + (rnd() - 0.5) * r * 1.2); parent.add(sp); } };
   return {
     container: {
       buildRoom() {
@@ -2511,38 +2525,57 @@ export function makeShelterBuilders(ctx) {
         const panel = B(roomGroup, 2.6, 0.9, 0.1, 0x11150f, 2.7, h - 1.25, d / 2 + 0.09); panel.rotation.z = -0.14; brd.push(panel);
         for (let i = 0; i < 6; i++) { const row = B(roomGroup, 0.7, 0.09, 0.04, 0x6a7a4c, 1.9 + (i % 3) * 0.85, h - 1.05 - Math.floor(i / 3) * 0.3, d / 2 + 0.15); row.rotation.z = -0.14; brd.push(row); }
         attachToWall(0, 0, 1, ...brd);
-        // 무너진 천장: 슬래브 2장 + 구멍(중앙 우측) — patched면 판자 덮개
+        const TX = 2.6, TZ = 1.2;
+        // 대배럴 볼트 천장(대합실의 정체성) — 아치 프로파일로 코퍼링 리브. 나무 위는 뚫려 신광이 든다.
         {
           const roofG = new THREE.Group();
-          const slab = (sw, sx) => { const s2 = new THREE.Mesh(new THREE.BoxGeometry(sw, 0.22, d + 0.4), wallPhong({ map: concreteTex })); s2.material.color.setHex(0x8a8478); s2.position.set(sx, h + 0.1, 0); roofG.add(s2); };
-          slab(w * 0.52, -w * 0.24); slab(w * 0.2, w * 0.4);
-          for (let i = 0; i < 5; i++) { const j = new THREE.Mesh(new THREE.BoxGeometry(0.5 + rand() * 0.7, 0.2, 0.6 + rand() * 0.8), lamb(0x77706a)); j.position.set(w * 0.08 + rand() * 1.6, h + 0.08, -d / 2 + 0.6 + rand() * (d - 1.2)); j.rotation.y = rand(); roofG.add(j); }
-          if (patched) {
-            const cover = new THREE.Mesh(new THREE.BoxGeometry(w * 0.24, 0.1, d + 0.2), lamb(0x6a5238)); cover.position.set(w * 0.14, h + 0.06, 0); roofG.add(cover);
-            for (let i = 0; i < 4; i++) { const pl = new THREE.Mesh(new THREE.BoxGeometry(w * 0.23, 0.04, 0.5), lamb(0x5a4530)); pl.position.set(w * 0.14, h + 0.13, -d / 2 + 0.8 + i * 1.6); roofG.add(pl); }
+          const springY = h, crownY = h + 1.3, halfW = w / 2;
+          const R = (halfW * halfW + (crownY - springY) * (crownY - springY)) / (2 * (crownY - springY)); const cyc = crownY - R;
+          const arcY = (x) => cyc + Math.sqrt(Math.max(0, R * R - x * x));
+          const nR = 11, nS = 9;
+          for (let ri = 0; ri < nR; ri++) {
+            const zc = -d / 2 + 0.4 + ri * (d - 0.8) / (nR - 1);
+            for (let si = 0; si < nS; si++) {
+              const xs = -halfW + 0.4 + si * (w - 0.8) / (nS - 1);
+              if (!patched && xs > 1.2 && xs < 4.0 && zc > TZ - 1.8 && zc < TZ + 1.8) continue; // 나무 위 구멍
+              const seg = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.24, 0.42), wallPhong({ map: concreteTex }));
+              seg.material.color.setHex(ri % 2 ? 0x8a8478 : 0x817b70);
+              seg.position.set(xs, arcY(xs), zc); seg.rotation.z = -Math.asin(Math.max(-1, Math.min(1, xs / R))); roofG.add(seg);
+            }
           }
-          tagCeiling(roofG, h + 0.02); roomGroup.add(roofG);
+          for (const sx of [-halfW + 0.6, 0, halfW - 0.6]) { const beam = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.2, d), lamb(0x9a9184)); beam.position.set(sx, arcY(sx) - 0.12, 0); beam.rotation.z = -Math.asin(Math.max(-1, Math.min(1, sx / R))); roofG.add(beam); } // 종방향 보(코퍼링)
+          if (!patched) for (let i = 0; i < 6; i++) { const j = new THREE.Mesh(new THREE.BoxGeometry(0.5 + rand() * 0.8, 0.3 + rand() * 0.5, 0.5 + rand() * 0.7), lamb(0x77706a)); j.position.set(TX + (rand() - 0.5) * 2.6, crownY + 0.3 + rand() * 1.0, TZ + (rand() - 0.5) * 2.6); j.rotation.set(rand(), rand() * 3, (rand() - 0.5) * 0.5); roofG.add(j); } // 구멍 둘레 부서진 콘크리트
+          if (patched) { const cover = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.12, 3.8), lamb(0x6a5238)); cover.position.set(TX, crownY - 0.1, TZ); roofG.add(cover); for (let i = 0; i < 4; i++) { const pl = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.05, 0.6), lamb(0x5a4530)); pl.position.set(TX, crownY, TZ - 1.4 + i * 0.95); roofG.add(pl); } }
+          tagCeiling(roofG, crownY - 0.2); roomGroup.add(roofG);
         }
-        // 신광 + 빛 웅덩이 + 나무 (patched면 신광·웅덩이 꺼짐 — 나무는 이미 자란 생명이라 남는다)
-        const TX = 2.6, TZ = 1.2;
+        // 신광: 지붕 구멍에서 바닥 웅덩이로 내리꽂는 볼륨 빛(beamTex 십자면) + 먼지 티끌 + 부드러운 빛웅덩이
         if (!patched) {
-          for (const [sx2, sw2, lean] of [[TX - 0.4, 1.6, -0.16], [TX + 0.6, 0.9, -0.22]]) {
-            const shaft = new THREE.Mesh(new THREE.BoxGeometry(sw2, h + 0.6, 2.6), new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending, depthWrite: false }));
-            shaft.position.set(sx2, h / 2, TZ - 0.3); shaft.rotation.z = lean; roomGroup.add(shaft);
-          }
-          for (let i = 0; i < 3; i++) {
-            const pool = new THREE.Mesh(new THREE.BoxGeometry(2.4 - i * 0.7, 0.012, 1.8 - i * 0.5), new THREE.MeshBasicMaterial({ color: 0xffcf8a, transparent: true, opacity: 0.1 + i * 0.05, blending: THREE.AdditiveBlending }));
-            pool.position.set(TX + 0.2 - i * 0.2, 0.02 + i * 0.008, TZ); roomGroup.add(pool);
-          }
+          const mkBeam = (bw, op) => { for (const ry of [0, Math.PI / 2]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(bw, h + 1.6), new THREE.MeshBasicMaterial({ map: beamTex, color: 0xffe0b0, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); m.position.set(TX + 0.2, (h + 0.8) / 2, TZ - 0.2); m.rotation.set(0, ry, -0.13); roomGroup.add(m); } };
+          mkBeam(2.2, 0.17); mkBeam(3.4, 0.07);
+          const moteMat = new THREE.SpriteMaterial({ map: floorGlowTex, color: 0xffe8c0, transparent: true, opacity: 0.34, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+          for (let i = 0; i < 14; i++) { const mote = new THREE.Sprite(moteMat); mote.scale.set(0.07, 0.07, 1); mote.position.set(TX + (rand() - 0.5) * 1.8, 0.4 + rand() * (h + 0.4), TZ + (rand() - 0.5) * 1.6); roomGroup.add(mote); }
+          const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.7), new THREE.MeshBasicMaterial({ map: floorGlowTex, color: 0xffcf8a, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); pool.rotation.x = -Math.PI / 2; pool.position.set(TX + 0.2, 0.02, TZ); roomGroup.add(pool);
+          const core = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.4), new THREE.MeshBasicMaterial({ map: floorGlowTex, color: 0xfff0d0, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); core.rotation.x = -Math.PI / 2; core.position.set(TX + 0.2, 0.03, TZ); roomGroup.add(core);
         }
         Cyl(roomGroup, 0.14, 0.18, 1.6, 0x2a1c10, TX, 0.8, TZ, 7);
         const br2 = B(roomGroup, 0.09, 0.9, 0.09, 0x2a1c10, TX + 0.35, 1.75, TZ + 0.1); br2.rotation.z = 0.5;
-        for (let i = 0; i < 8; i++) {
-          const ly = 1.7 + rand() * 1.2;
-          B(roomGroup, 0.5 + rand() * 0.6, 0.32 + rand() * 0.3, 0.5 + rand() * 0.5, ly > 2.4 && !patched ? 0x6a8a3c : (rand() < 0.5 ? 0x2e4420 : 0x3c5626), TX + (rand() - 0.5) * 1.6, ly, TZ + (rand() - 0.5) * 1.2);
-        }
-        for (let i = 0; i < 6; i++) B(roomGroup, 0.22 + rand() * 0.2, 0.18 + rand() * 0.2, 0.22, rand() < 0.4 ? 0x6a8a3c : 0x35492a, TX + (rand() - 0.5) * 2.4, 0.1, TZ + (rand() - 0.5) * 2.0);
+        // 캐노피 = 잎 클러스터 스프라이트(큐브 아님). 신광 향한 상단은 광측 rim, 나머지는 역광 실루엣.
+        for (let i = 0; i < 12; i++) { const rim = !patched && rand() < 0.5; leafCluster(roomGroup, TX + (rand() - 0.5) * 1.7, 2.05 + rand() * 1.0, TZ + (rand() - 0.5) * 1.3, 0.85 + rand() * 0.7, rand, rim); }
+        for (let i = 0; i < 7; i++) leafCluster(roomGroup, TX + (rand() - 0.5) * 2.3, 0.2, TZ + (rand() - 0.5) * 1.9, 0.4 + rand() * 0.3, rand, false); // 밑동 기어 자라는 관목
         for (let i = 0; i < 5; i++) { const j2 = B(roomGroup, 0.5 + rand() * 0.7, 0.25 + rand() * 0.35, 0.5 + rand() * 0.6, rand() < 0.5 ? 0x8a8478 : 0x6e6a60, TX + 0.6 + (rand() - 0.5) * 1.8, 0.15 + rand() * 0.25, TZ - 0.8 + (rand() - 0.5) * 1.2); j2.rotation.y = rand(); }
+        // 「한 구석이 나의 집」 — 매표소 옆 온기 둥지(차가운 신광과 대비되는 앰버 존)
+        const hx = -3.6, hz = 2.0;
+        B(roomGroup, 2.4, 0.12, 1.8, 0x3a2c20, hx, 0.06, hz);                  // 팔레트 침상
+        B(roomGroup, 2.0, 0.18, 1.4, 0x2e2620, hx, 0.2, hz); B(roomGroup, 1.9, 0.14, 1.25, 0xcdb890, hx, 0.32, hz); // 매트리스+침구
+        B(roomGroup, 1.4, 0.1, 0.5, 0x8a4a35, hx - 0.1, 0.42, hz + 0.5); B(roomGroup, 0.7, 0.1, 0.45, 0xefe6d2, hx - 0.6, 0.42, hz - 0.5); // 담요+베개
+        B(roomGroup, 0.5, 0.5, 0.5, 0x55432e, hx + 1.5, 0.25, hz - 0.6);       // 크레이트 협탁
+        B(roomGroup, 0.16, 0.28, 0.16, 0x2a2018, hx + 1.5, 0.64, hz - 0.6);
+        const lanCore = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.17, 0.1), new THREE.MeshLambertMaterial({ color: 0xffcf8a, emissive: 0xdd8a30, emissiveIntensity: 1.15 })); lanCore.position.set(hx + 1.5, 0.64, hz - 0.6); roomGroup.add(lanCore); // 랜턴
+        Cyl(roomGroup, 0.22, 0.24, 0.42, 0x2e2620, hx + 1.6, 0.21, hz + 0.8, 8); // 캠프 스토브
+        const coal = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.06, 0.32), new THREE.MeshLambertMaterial({ color: 0xff6a2c, emissive: 0xd83a12, emissiveIntensity: 1.3 })); coal.position.set(hx + 1.6, 0.44, hz + 0.8); roomGroup.add(coal); // 잉걸
+        const warmL = new THREE.PointLight(0xffb060, 0.55, 4.2, 1.9); warmL.position.set(hx + 0.6, 1.1, hz); roomGroup.add(warmL); // 유일한 실제 온광
+        Cyl(roomGroup, 0.06, 0.06, 0.09, 0xd8cfb8, hx + 1.4, 0.54, hz - 0.4, 7); B(roomGroup, 0.3, 0.22, 0.24, 0x7a3b2e, hx + 1.4, 0.62, hz - 0.35); // 머그+책무더기
+        for (let i = 0; i < 6; i++) { const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 5), new THREE.MeshLambertMaterial({ color: 0xffe6b0, emissive: 0xffbf66, emissiveIntensity: 1.0 })); bulb.position.set(-4.6 + i * 1.5, h - 0.5 - Math.sin(i) * 0.12, hz - 1.0); roomGroup.add(bulb); } // 스트링 라이트
         setBlockers([]);
       },
       buildEnv() {
