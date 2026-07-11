@@ -2216,9 +2216,9 @@ export function makeShelterBuilders(ctx) {
         wallMat.userData.shared = true;
         const mk = (len, opts) => stdWall(len, h, wallMat, opts);
         makeWalls([
-          { group: mk(w, { window: { winW: 1.5, winH: 0.9, winY: 1.35, winX: -1.5 }, frameColor: 0x555149, skyColor: 0x6a3a34 }), pos: [0, 0, -d / 2 - 0.11], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
+          { group: mk(w, { window: { winW: 1.5, winH: 0.9, winY: 1.35, winX: -1.5 }, frameColor: 0x6a4032, skyColor: 0x9a4630 }), pos: [0, 0, -d / 2 - 0.11], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
           { group: mk(w), pos: [0, 0, d / 2 + 0.11], rotY: Math.PI, normal: new THREE.Vector3(0, 0, 1) },
-          { group: mk(d, { window: { winW: 1.1, winH: 0.7, winY: 1.4, winX: 0.8 }, frameColor: 0x555149, skyColor: 0x6a3a34 }), pos: [-w / 2 - 0.11, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
+          { group: mk(d, { window: { winW: 1.1, winH: 0.7, winY: 1.4, winX: 0.8 }, frameColor: 0x6a4032, skyColor: 0x9a4630 }), pos: [-w / 2 - 0.11, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
           { group: mk(d), pos: [w / 2 + 0.11, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
         ]);
         // 심사 카운터 (+x 벽면): 긴 데스크 + 파티션 3칸 — customsSeal 개조 시 유리 대신 판자 봉쇄
@@ -2240,12 +2240,27 @@ export function makeShelterBuilders(ctx) {
         }
         // 수하물 컨베이어 (+z 뒷벽): 벨트 + 스캐너 아치 + 방치된 여행가방 2
         const beltZ = d / 2 - 0.62;
-        B(roomGroup, 4.6, 0.55, 1.0, 0x3c3a36, -0.9, 0.28, beltZ);
-        B(roomGroup, 4.6, 0.05, 0.84, 0x24221f, -0.9, 0.58, beltZ);
+        B(roomGroup, 4.6, 0.55, 1.0, 0x3c3a36, -0.9, 0.28, beltZ);          // 벨트 프레임
+        for (let i = 0; i < 14; i++) B(roomGroup, 0.3, 0.05, 0.84, i % 2 ? 0x2a2825 : 0x201e1b, -3.1 + i * 0.32, 0.585, beltZ); // 분절 슬랫(움직이는 벨트로 읽힘)
+        for (const rx of [-3.25, 1.45]) { const rl = Cyl(roomGroup, 0.28, 0.28, 0.9, 0x18160f, rx, 0.3, beltZ, 10); rl.rotation.z = Math.PI / 2; } // 롤러
         B(roomGroup, 0.5, 1.5, 1.3, 0x77706a, 0.6, 0.75, beltZ);           // 스캐너 게이트 몸통
         B(roomGroup, 0.5, 0.5, 0.9, 0x1e1c1a, 0.6, 0.85, beltZ);           // 스캐너 터널 구멍
-        B(roomGroup, 0.8, 0.5, 0.4, 0x6a4436, -2.2, 0.83, beltZ, );        // 가방 1 (가죽)
-        B(roomGroup, 0.62, 0.42, 0.34, 0x2e4456, -0.2, 0.79, beltZ);       // 가방 2 (하드케이스)
+        const scanGlow = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.46, 0.86), new THREE.MeshLambertMaterial({ color: 0x2a1a10, emissive: 0xff7a2c, emissiveIntensity: 0.8 })); scanGlow.position.set(0.6, 0.85, beltZ); roomGroup.add(scanGlow); // 아직 도는 스캔 광
+        const scanL = new THREE.PointLight(0xff8030, 0.4, 2.4, 2); scanL.position.set(0.6, 0.9, beltZ); roomGroup.add(scanL);
+        // 통과 못 한 짐들 — 검사가 멎은 순간 그대로 (서사의 심장)
+        B(roomGroup, 0.8, 0.5, 0.4, 0x6a4436, -2.4, 0.85, beltZ);          // 가죽 트렁크
+        B(roomGroup, 0.62, 0.42, 0.34, 0x2e4456, -1.4, 0.81, beltZ);       // 하드케이스
+        B(roomGroup, 0.7, 0.32, 0.34, 0x4a5240, -0.55, 0.76, beltZ - 0.1); // 더플백
+        const kid = B(roomGroup, 0.5, 0.34, 0.32, 0xb0503a, -0.9, 0.78, beltZ + 0.25); kid.rotation.z = 0.5; // 아이 캐리어(옆으로)
+        B(roomGroup, 0.5, 0.36, 0.34, 0x5a3a2a, 0.55, 0.85, beltZ);        // 스캐너 안에 걸린 케이스
+        // 터진 케이스 + 쏟아진 소지품 — 반쯤 열린 뚜껑·접힌 옷·곰인형·신발·사진 (인간의 흔적)
+        B(roomGroup, 0.6, 0.36, 0.4, 0x7a4a3a, -3.0, 0.83, beltZ);
+        const lid = B(roomGroup, 0.6, 0.06, 0.4, 0x8a5a44, -3.0, 1.05, beltZ - 0.2); lid.rotation.x = -0.8;
+        B(roomGroup, 0.3, 0.08, 0.24, 0xcfc4b0, -3.15, 0.66, beltZ + 0.3); B(roomGroup, 0.26, 0.07, 0.2, 0x7a4a3a, -2.7, 0.65, beltZ + 0.35); // 접힌 옷
+        B(roomGroup, 0.14, 0.2, 0.12, 0x8a6a4a, -3.3, 0.68, beltZ - 0.35);  // 곰인형
+        B(roomGroup, 0.22, 0.08, 0.12, 0x3a2c20, -2.6, 0.63, beltZ + 0.1);  // 신발
+        for (let i = 0; i < 3; i++) { const ph = B(roomGroup, 0.1, 0.008, 0.13, 0xcfc7b4, -3.2 + rand() * 0.9, 0.62, beltZ + 0.15 + rand() * 0.3); ph.rotation.y = rand() * 3; } // 사진
+        for (const tx of [-2.4, -1.4, -0.55]) B(roomGroup, 0.06, 0.09, 0.008, 0xd8d2be, tx + 0.3, 0.72, beltZ + 0.3); // 짐 태그
         // 압수품 선반 (-x 벽): 2단 + 잡동 상자들 — customsClear 개조로 철거 가능(벽이 비면 배치 자유)
         if (!mods.includes('customsClear')) {
           for (const sy of [0.9, 1.6]) B(roomGroup, 0.5, 0.05, 3.4, 0x6a635a, -w / 2 + 0.36, sy, 0.6);
@@ -2263,10 +2278,17 @@ export function makeShelterBuilders(ctx) {
         // 쓰러진 차단봉 + 흩어진 서류
         const pole = B(roomGroup, 1.5, 0.08, 0.08, 0xa8433f, -2.4, 0.06, -1.6); pole.rotation.y = 0.5;
         for (let i = 0; i < 6; i++) { const p2 = B(roomGroup, 0.26, 0.012, 0.34, 0xd6d2c6, -3 + rand() * 4.5, 0.02, -2 + rand() * 3); p2.rotation.y = rand() * 3; }
-        // 실내 식생 (TLOU): 창가·모서리 덩굴 + 바닥 틈 풀
-        const vin = (x, y, z, s2) => B(roomGroup, s2, 0.5 + rand() * 0.5, s2, rand() < 0.5 ? 0x2a3d24 : 0x35492a, x, y, z);
-        for (let i = 0; i < 5; i++) vin(-w / 2 + 0.3 + rand() * 0.4, 0.25 + i * 0.45, -d / 2 + 0.5 + rand() * 0.5, 0.5 - i * 0.06); // 모서리 담쟁이 기둥
-        for (let i = 0; i < 6; i++) vin(-w / 3 + rand() * w * 0.6, 0.14, -d / 2 + 0.45 + rand() * 0.7, 0.24 + rand() * 0.18);       // 앞창 아래 풀
+        // 실내 식생 (TLOU) — 잎 클러스터 스프라이트(박스 폐기)
+        for (let i = 0; i < 5; i++) leafCluster(roomGroup, -w / 2 + 0.4 + rand() * 0.3, 0.4 + i * 0.5, -d / 2 + 0.55 + rand() * 0.5, 0.42 - i * 0.05, rand, false); // 모서리 담쟁이
+        for (let i = 0; i < 6; i++) leafCluster(roomGroup, -w / 3 + rand() * w * 0.6, 0.22, -d / 2 + 0.5 + rand() * 0.7, 0.3 + rand() * 0.16, rand, false); // 앞창 아래 풀
+        // 생존자의 온기 코너 — 차가운 청사에 하나의 앰버 심장(-z 좌측)
+        const dx = -2.6, dz = -1.9;
+        B(roomGroup, 1.9, 0.12, 0.85, 0x3a2c22, dx, 0.06, dz); B(roomGroup, 1.7, 0.14, 0.72, 0x5a4636, dx, 0.19, dz); // 침상+매트
+        B(roomGroup, 1.5, 0.1, 0.5, 0x8a4a35, dx - 0.1, 0.3, dz + 0.2); B(roomGroup, 0.6, 0.1, 0.4, 0xefe6d2, dx - 0.5, 0.3, dz - 0.2); // 담요+베개
+        Cyl(roomGroup, 0.22, 0.24, 0.5, 0x2a2622, dx + 1.2, 0.25, dz, 8); // 스토브
+        const fire = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 6), new THREE.MeshLambertMaterial({ color: 0xff6a26, emissive: 0xd83a12, emissiveIntensity: 1.3 })); fire.position.set(dx + 1.2, 0.42, dz); roomGroup.add(fire);
+        const denL = new THREE.PointLight(0xffb060, 0.5, 4.0, 1.9); denL.position.set(dx + 0.4, 1.0, dz); roomGroup.add(denL);
+        for (const cz of [-0.4, -0.1, -0.25]) { const cs = 0.9 + Math.abs(cz); Cyl(roomGroup, 0.035, 0.04, 0.11 * cs, 0xf2e3c2, deskX - 0.5, 1.05, cz, 7); const fl = new THREE.Mesh(new THREE.SphereGeometry(0.034, 6, 5), new THREE.MeshLambertMaterial({ color: 0xffd9a0, emissive: 0xff9a3c, emissiveIntensity: 1.4 })); fl.position.set(deskX - 0.5, 1.14, cz); roomGroup.add(fl); } // 심사 데스크 위 양초(카운터=생존자의 식탁)
         setBlockers([]);
       },
       buildEnv() {
@@ -2400,7 +2422,26 @@ export function makeShelterBuilders(ctx) {
         // 케이블 드럼 스툴 + 실내 식생 소량
         const drum = Cyl(roomGroup, 0.4, 0.4, 0.35, 0x6e5a40, 1.8, 0.18, -1.3, 10);
         Cyl(roomGroup, 0.46, 0.46, 0.05, 0x5a4832, 1.8, 0.38, -1.3, 10);
-        for (let i = 0; i < 4; i++) B(roomGroup, 0.28 + rand() * 0.16, 0.3 + rand() * 0.3, 0.28, rand() < 0.5 ? 0x2a3d24 : 0x35492a, -w / 2 + 0.4 + rand() * 0.5, 0.15, d / 2 - 0.5 - rand() * 0.4);
+        // 실내 식생 → 잎 클러스터 스프라이트(석조 화분)
+        Cyl(roomGroup, 0.28, 0.22, 0.32, 0x4a443c, -w / 2 + 0.5, 0.16, d / 2 - 0.6, 8);
+        for (let i = 0; i < 4; i++) leafCluster(roomGroup, -w / 2 + 0.5 + (rand() - 0.5) * 0.3, 0.45 + i * 0.15, d / 2 - 0.6 + (rand() - 0.5) * 0.3, 0.34 - i * 0.03, rand, false);
+        // ── 별의 관측석(퍼크의 물리 앵커): -z 별 창 향한 안락의자 + 망원경 + 온기 화로 ──
+        const oX = -1.3;
+        B(roomGroup, 0.9, 0.12, 0.8, 0x5a4636, oX, 0.42, -1.6); B(roomGroup, 0.9, 0.7, 0.14, 0x5a4636, oX, 0.85, -1.95); // 좌석+등받이
+        for (const ax of [oX - 0.45, oX + 0.45]) B(roomGroup, 0.14, 0.5, 0.8, 0x4a3a30, ax, 0.55, -1.6); // 팔걸이
+        B(roomGroup, 0.7, 0.18, 0.6, 0x8a5040, oX, 0.55, -1.5); B(roomGroup, 0.8, 0.06, 1.0, 0x6a4a5a, oX + 0.1, 0.5, -1.3); // 쿠션+담요
+        for (const [dx, dz] of [[-0.14, 0], [0.14, 0.08], [0, -0.14]]) { const leg = Cyl(roomGroup, 0.02, 0.02, 1.2, 0x4a4038, -0.3 + dx, 0.6, -2.15 + dz, 6); leg.rotation.z = dx * 2; leg.rotation.x = dz * 2; } // 망원경 삼각대
+        const tube = Cyl(roomGroup, 0.07, 0.09, 0.9, 0xb8925a, -0.3, 1.28, -2.05, 10); tube.rotation.x = -0.9; // 황동 경통(창밖 위로)
+        Cyl(roomGroup, 0.05, 0.05, 0.1, 0xb8925a, -0.3, 0.95, -1.78, 8); Cyl(roomGroup, 0.09, 0.09, 0.05, 0x8a6a3a, -0.3, 1.6, -2.28, 10); // 접안·듀캡
+        Cyl(roomGroup, 0.32, 0.24, 0.28, 0x3a332c, 0.9, 0.24, -1.5, 10); // 화로(협곡 찬바람에 맞선 유일한 온광)
+        const ember = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 6), new THREE.MeshLambertMaterial({ color: 0xff6a2c, emissive: 0xd83a12, emissiveIntensity: 0.95 })); ember.position.set(0.9, 0.4, -1.5); roomGroup.add(ember);
+        const brazL = new THREE.PointLight(0xffa050, 0.5, 3.8, 1.9); brazL.position.set(0.6, 0.9, -1.4); roomGroup.add(brazL);
+        B(roomGroup, 0.05, 0.05, 0.25, 0x3a332c, -1.9, 2.1, -d / 2 + 0.2); // 창가 오일 랜턴 브래킷
+        const lanC = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshLambertMaterial({ color: 0xffcf82, emissive: 0xffb45a, emissiveIntensity: 1.0 })); lanC.position.set(-1.9, 1.9, -d / 2 + 0.25); roomGroup.add(lanC);
+        // 성도 보드 (-x 벽 부착, 무명 별점만 — 콘텐츠 게이트)
+        const chart = [B(roomGroup, 0.012, 0.7, 0.9, 0xcfc5aa, -w / 2 + 0.06, 1.7, 0.4)];
+        for (let i = 0; i < 22; i++) chart.push(B(roomGroup, 0.008, 0.03, 0.03, 0xe8e2d0, -w / 2 + 0.08, 1.42 + rand() * 0.56, 0.05 + rand() * 0.7));
+        attachToWall(-1, 0, 0, ...chart);
         setBlockers([]);
       },
       buildEnv() {
@@ -2410,6 +2451,10 @@ export function makeShelterBuilders(ctx) {
         const yard = B(envRoot, 26, 0.35, 20, 0x5c564e, 2, GY - 0.18, 3); yard.receiveShadow = true;
         B(envRoot, 300, 0.1, 200, 0x141020, 0, -7.5, -60);                        // 협곡 강면 (어두운 남보라)
         for (let i = 0; i < 12; i++) B(envRoot, 2.5 + rand() * 6, 0.04, 0.5, 0x241a34, -60 + rand() * 120, -7.42, -30 - rand() * 50); // 잔물결
+        // 큰 달이 협곡 강에 산다 — 달빛 반사 기둥(「별의 집」 페이오프)
+        const mrefCv = document.createElement('canvas'); mrefCv.width = 8; mrefCv.height = 128; const mgc = mrefCv.getContext('2d');
+        const mgr = mgc.createLinearGradient(0, 0, 0, 128); mgr.addColorStop(0, 'rgba(216,226,248,0.55)'); mgr.addColorStop(1, 'rgba(120,140,190,0)'); mgc.fillStyle = mgr; mgc.fillRect(0, 0, 8, 128);
+        const mref = new THREE.Mesh(new THREE.PlaneGeometry(6, 120), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(mrefCv), transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); mref.rotation.x = -Math.PI / 2; mref.position.set(-8, -7.42, -45); envRoot.add(mref);
         // 절벽 단면 (마당 남쪽 아래로)
         for (let i = 0; i < 7; i++) {
           const cw2 = 4 + rand() * 5, ch2 = 3 + rand() * 4;
