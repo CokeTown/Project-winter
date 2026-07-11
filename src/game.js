@@ -5969,6 +5969,8 @@ function buildGoldenGateScene() {
   for (let s = 0; s < 1; s += 0.13) { const x = -96 + (NT[0] + 96) * s, z = 10 + (NT[2] - 10) * s; if (srand() < 0.7) mkCanopy(x + (srand() - 0.5) * 3, 10.6, z, 1.6 + srand() * 1.4, srand() < 0.3 ? vegRim : vegSil); }
   for (const by of [16, 24, 35]) mkCanopy(NT[0] + (srand() - 0.5) * 6, by, NT[2], 2 + srand(), srand() < 0.5 ? vegRim : vegSil);
   for (let i = 0; i < 26; i++) { const tx = -42 + srand() * 96, tz = -8 - srand() * 176; mkCanopy(tx, 0.6 + srand() * 3, tz, 1.6 + srand() * 2.4, (srand() < 0.25 && tx < 0) ? vegRim : vegSil); }
+  // 중경 잎: 성한 케이블 선을 따라 잠식(레퍼런스처럼 초록이 다리 전체 깊이로 스레딩)
+  for (const cbl of [cApp, cFar]) for (let i = 0; i < cbl.length - 1; i++) for (let s = 0.15; s < 1; s += 0.3) { if (srand() < 0.45) continue; const a = cbl[i], b = cbl[i + 1]; mkCanopy(a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s - 0.3, a[2] + (b[2] - a[2]) * s, 0.8 + srand() * 0.9, vegSil); }
   for (let i = 0; i < 6; i++) mkCanopy(NT[0] + (srand() - 0.5) * 11, 1 + srand() * 3, NT[2] + (srand() - 0.5) * 9, 2 + srand() * 2, vegSil);
   for (let i = 0; i < 5; i++) mkCanopy(FT[0] + (srand() - 0.5) * 11, 1 + srand() * 3, FT[2] + (srand() - 0.5) * 9, 1.6 + srand() * 1.6, vegSil);
   // 전경 덤불 벽 — 하단을 잠식으로 채운다(앰버 하늘에 실루엣). 몇 포기는 키가 커 상판·난간 선을 끊는다.
@@ -6007,9 +6009,13 @@ function buildGoldenGateScene() {
   // ── 침몰선(우측, 원탑 옆·해 앞이라 검게) ──
   const ship = new THREE.Group();
   const sB = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); ship.add(m); return m; };
-  sB(24, 6, 7, propDark, 0, 0.6, 0); sB(9, 5, 5.5, propDark, 12, 1, 0); sB(6, 4, 5, propDark, -4, 4, 0); sB(4, 3, 4, propDark, -4, 7, 0); sB(2, 4, 2, propRust, -2, 7, 0);
-  const mast = new THREE.Mesh(new THREE.BoxGeometry(0.3, 9, 0.3), propDark); mast.position.set(2, 5, 0); mast.rotation.z = 0.3; ship.add(mast);
-  ship.position.set(95, 0, -185); ship.rotation.set(0, -0.5, 0.32); scene.add(ship);
+  sB(24, 6, 7, propDark, 0, 0.6, 0); const bow = sB(8, 5, 5.5, propDark, 13, 1.4, 0); bow.rotation.z = 0.12; // 들린 뱃머리
+  sB(6, 4, 5, propDark, -4, 4, 0); sB(4, 3, 4, propDark, -4.4, 6.8, 0); sB(2.2, 3.6, 2.2, propRust, -1.5, 6.6, 0); // 상부구조 + 기운 굴뚝
+  const m1 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 6, 0.32), propDark); m1.position.set(2, 4, 0); m1.rotation.z = 0.5; ship.add(m1); // 꺾인 마스트(하)
+  const m2 = new THREE.Mesh(new THREE.BoxGeometry(0.26, 4.5, 0.26), propDark); m2.position.set(5.5, 5.6, 0); m2.rotation.z = 1.15; ship.add(m2); // 부러져 늘어진 상단
+  const crane = new THREE.Mesh(new THREE.BoxGeometry(0.3, 7, 0.3), propRust); crane.position.set(-6, 5, 1); crane.rotation.z = -0.7; ship.add(crane); // 기운 데릭
+  ship.position.set(95, 0, -185); ship.rotation.set(0, -0.5, 0.42); scene.add(ship); // 더 기운 리스트
+  for (let i = 0; i < 4; i++) mkCanopy(90 + srand() * 12, 2 + srand() * 3, -184 + (srand() - 0.5) * 8, 1.2 + srand(), vegSil); // 갑판 잠식(월드좌표)
   // ── 잔해 뗏목 + 붕괴 콘크리트 파편 ──
   for (let i = 0; i < 9; i++) { const rx = -30 + srand() * 120, rz = -30 - srand() * 115; const raft = new THREE.Mesh(new THREE.BoxGeometry(3 + srand() * 4, 0.5, 2 + srand() * 2), propDark); raft.position.set(rx, 0.3, rz); raft.rotation.y = srand() * 3; scene.add(raft); const veg = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.8, 1.5), vegSil); veg.position.set(rx, 0.6, rz); scene.add(veg); }
   for (let i = 0; i < 5; i++) { const ch = new THREE.Mesh(new THREE.BoxGeometry(2 + srand() * 3, 1.5 + srand() * 2, 2 + srand() * 2), concShad); ch.position.set(-8 + srand() * 24, 0.6, -76 - srand() * 24); ch.rotation.set(srand(), srand() * 3, srand() * 0.4); scene.add(ch); }
