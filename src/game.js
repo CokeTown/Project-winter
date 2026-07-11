@@ -5831,16 +5831,50 @@ function buildGoldenGateScene() {
     m.quaternion.setFromUnitVectors(_ux, _dir.set(dx / len, dy / len, dz / len));
     scene.add(m); return m;
   };
-  // ── 재질(해가 우측 → +x/윗면이 광면) ──
-  const steelMat = new THREE.MeshBasicMaterial({ color: 0x241a12 });   // 원경 타워(안개에 탐)
-  const steelLit = new THREE.MeshBasicMaterial({ color: 0x3a2416 });   // 근경 타워 광면(kn 애니)
+  // ── 절차 텍스처 (역광 실루엣: 명암보다 결·얼룩·균열·이끼로 디테일. material color가 map을 곱함.
+  //   trand=텍스처 전용 시드 — srand() 시퀀스를 소비하지 않아 지오메트리 난수는 불변) ──
+  const trand = seededRand(9911);
+  const pxT = (w2, h2, draw, rep) => { const c = document.createElement('canvas'); c.width = w2; c.height = h2; draw(c.getContext('2d')); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; if (rep) t.repeat.set(rep[0], rep[1]); return t; };
+  const grain = (g, w2, h2, n, a) => { for (let i = 0; i < n; i++) { const v = 150 + ((i * 37) % 80); g.fillStyle = 'rgba(' + v + ',' + (v - 8) + ',' + (v - 18) + ',' + a + ')'; g.fillRect((i * 29) % w2, (i * 71) % h2, 1, 1); } };
+  const cracks = (g, w2, h2, n, seg) => { for (let i = 0; i < n; i++) { g.strokeStyle = 'rgba(48,42,36,0.42)'; g.lineWidth = 1; g.beginPath(); let cx = (i * 407) % w2, cy = 0; g.moveTo(cx, cy); for (let s = 0; s < seg; s++) { cx += (trand() - 0.5) * 20; cy += h2 / seg; g.lineTo(cx, cy); } g.stroke(); } };
+  // 콘크리트/타워: 밝은 베이스 + 세로 물얼룩 + 균열 + 하단 이끼
+  const concreteTex = pxT(96, 160, g => {
+    g.fillStyle = '#b8b0a4'; g.fillRect(0, 0, 96, 160); grain(g, 96, 160, 1500, 0.5);
+    for (let i = 0; i < 9; i++) { g.fillStyle = 'rgba(66,58,48,0.15)'; g.fillRect((i * 911) % 96, (i * 53) % 30, 2 + ((i * 7) % 3), 132); }
+    cracks(g, 96, 160, 5, 6);
+    const mg = g.createLinearGradient(0, 116, 0, 160); mg.addColorStop(0, 'rgba(58,78,38,0)'); mg.addColorStop(1, 'rgba(48,72,34,0.5)'); g.fillStyle = mg; g.fillRect(0, 116, 96, 44);
+  });
+  // 강철/상판: 페인트 + 세로 녹줄 + 리벳
+  const steelTex = pxT(128, 64, g => {
+    g.fillStyle = '#a89a86'; g.fillRect(0, 0, 128, 64);
+    for (let i = 0; i < 22; i++) { g.fillStyle = 'rgba(150,88,42,0.28)'; g.fillRect((i * 311) % 128, 0, 1 + ((i * 5) % 3), 64); }
+    grain(g, 128, 64, 900, 0.4);
+    for (let rx = 6; rx < 128; rx += 16) for (let ry = 8; ry < 64; ry += 22) { g.fillStyle = 'rgba(58,48,38,0.5)'; g.fillRect(rx, ry, 2, 2); }
+  });
+  // 콘크리트 소(균열)
+  const concTex = pxT(96, 96, g => { g.fillStyle = '#aca498'; g.fillRect(0, 0, 96, 96); grain(g, 96, 96, 850, 0.5); cracks(g, 96, 96, 4, 5); });
+  // 녹 (차/가드레일)
+  const rustTex = pxT(64, 64, g => { g.fillStyle = '#b09070'; g.fillRect(0, 0, 64, 64); for (let i = 0; i < 640; i++) { const r = 110 + ((i * 29) % 80); g.fillStyle = 'rgba(' + r + ',' + (r * 0.6 | 0) + ',' + (r * 0.35 | 0) + ',0.5)'; g.fillRect((i * 17) % 64, (i * 53) % 64, 1 + ((i * 3) % 2), 1 + ((i * 5) % 2)); } });
+  // 잎 클러스터 스프라이트 — 불투명 잎덩이(불규칙 원 union → 울퉁불퉁 실루엣) + 내부 결 + 광점.
+  //   빛나는 오브가 아니라 '역광 잎 덩어리'로 읽히게: 코어 불투명, 가장자리만 살짝 소프트, 톤 낮춤.
+  const leafTex = pxT(64, 64, g => {
+    for (let b = 0; b < 15; b++) { const cx = 13 + trand() * 38, cy = 13 + trand() * 38, rr = 7 + trand() * 10; const gr = 86 + (trand() * 60 | 0); g.fillStyle = 'rgba(' + (gr * 0.52 | 0) + ',' + gr + ',' + (gr * 0.38 | 0) + ',0.97)'; g.beginPath(); g.arc(cx, cy, rr, 0, 6.283); g.fill(); }
+    for (let i = 0; i < 40; i++) { g.fillStyle = 'rgba(18,30,12,0.55)'; g.fillRect(6 + trand() * 52 | 0, 6 + trand() * 52 | 0, 1 + (trand() * 3 | 0), 1 + (trand() * 5 | 0)); } // 어두운 잎 갈라짐
+    for (let i = 0; i < 26; i++) { g.fillStyle = 'rgba(184,206,132,0.5)'; g.fillRect(8 + trand() * 48 | 0, 8 + trand() * 26 | 0, 1, 1); } // 상단 광엣지 잎점
+  });
+  // ── 재질(해가 우측 → +x/윗면이 광면). color를 map 밝기만큼 올려 실루엣 톤 유지 ──
+  const steelMat = new THREE.MeshBasicMaterial({ color: 0x33251a, map: concreteTex });   // 원경 타워
+  const steelLit = new THREE.MeshBasicMaterial({ color: 0x52381f, map: concreteTex });   // 근경 타워 광면(kn 애니)
+  const deckMat = new THREE.MeshBasicMaterial({ color: 0x33261a, map: steelTex });       // 상판/행어
   const cableMat = new THREE.MeshBasicMaterial({ color: 0x1c130c });
-  const vegSil = new THREE.MeshBasicMaterial({ color: 0x243218 });     // 역광 실루엣 초목(대다수) — 강철보다 초록·밝게(잎으로 읽히게)
-  const vegRim = new THREE.MeshBasicMaterial({ color: 0x50501f });     // 해받는 상단 초목(희소)
-  const concShad = new THREE.MeshBasicMaterial({ color: 0x1a140c });
-  const concLit = new THREE.MeshBasicMaterial({ color: 0x2a1c12 });
-  const propDark = new THREE.MeshBasicMaterial({ color: 0x1c150e });   // 전경 앵커가 순검정으로 뭉개지지 않게 살짝 들어올림
-  const propRust = new THREE.MeshBasicMaterial({ color: 0x3a2214 });
+  const vegSil = new THREE.MeshBasicMaterial({ color: 0x243218 });     // 넝쿨 가닥(박스)
+  const vegRim = new THREE.MeshBasicMaterial({ color: 0x50501f });
+  const leafSil = new THREE.SpriteMaterial({ map: leafTex, color: 0x2e3c1c, transparent: true, depthWrite: false });   // 잎 클러스터(kn 애니)
+  const leafRim = new THREE.SpriteMaterial({ map: leafTex, color: 0x58582c, transparent: true, depthWrite: false });
+  const concShad = new THREE.MeshBasicMaterial({ color: 0x281d12, map: concTex });
+  const concLit = new THREE.MeshBasicMaterial({ color: 0x3e2c1a, map: concTex });
+  const propDark = new THREE.MeshBasicMaterial({ color: 0x281d14, map: rustTex });
+  const propRust = new THREE.MeshBasicMaterial({ color: 0x52301a, map: rustTex });
   const cityMat = new THREE.MeshBasicMaterial({ color: 0x281620, transparent: true, opacity: 0.82 });
   const hillMat = new THREE.MeshBasicMaterial({ color: 0x241a14 });
   // ── 해: 낮게 잠기는 우측 골드 쇳덩이 + 3겹 코로나 ──
@@ -5871,25 +5905,33 @@ function buildGoldenGateScene() {
   // ── 금문교: 두 탑을 서로 다른 깊이에 → 원근이 far 탑을 작게 만든다(수동 축소 금지) ──
   const NT = [-20, 0, -55], FT = [46, 0, -210], TT = 34;
   const mkTower = (tx, tz, lit) => {
-    const g = new THREE.Group();
+    const g = new THREE.Group(); const bodyMat = lit ? steelLit : steelMat;
     for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(2.6, TT + 2, 2.6), (s > 0 && lit) ? steelLit : steelMat); leg.position.set(s * 4.2, TT / 2, 0); g.add(leg); }
-    for (const by of [9, 16, 23, 29, TT - 1]) { const br = new THREE.Mesh(new THREE.BoxGeometry(11, 1.6, 2.4), steelMat); br.position.set(0, by, 0); g.add(br); }
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(11.8, 2.6, 2.8), steelMat); cap.position.set(0, TT + 1.4, 0); g.add(cap);
+    for (const by of [9, 16, 23, 29, TT - 1]) { const br = new THREE.Mesh(new THREE.BoxGeometry(11, 1.6, 2.4), bodyMat); br.position.set(0, by, 0); g.add(br); }
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(11.8, 2.6, 2.8), bodyMat); cap.position.set(0, TT + 1.4, 0); g.add(cap);
+    // 디테일: 다리 전면 창문 열(리세스) + 부러진 철근 상투 + 무너진 관(왕관)
+    for (const s of [-1, 1]) for (let wy = 6; wy < TT - 2; wy += 3.0) { const wn = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.9, 0.12), cableMat); wn.position.set(s * 4.2, wy, 1.34); g.add(wn); }
+    for (let j = 0; j < 3; j++) { const ch = new THREE.Mesh(new THREE.BoxGeometry(3.2 - j * 0.8, 0.9 + srand() * 0.8, 2.6), bodyMat); ch.position.set((srand() - 0.5) * 6, TT + 3 + j * 0.85, (srand() - 0.5)); ch.rotation.z = (srand() - 0.5) * 0.22; g.add(ch); }
+    for (let j = 0; j < 5; j++) { const rb = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.6 + srand() * 2.4, 0.14), cableMat); rb.position.set((srand() - 0.5) * 10, TT + 3 + srand() * 1.2, (srand() - 0.5) * 2); rb.rotation.z = (srand() - 0.5) * 0.9; rb.rotation.x = (srand() - 0.5) * 0.5; g.add(rb); }
     g.position.set(tx, 0, tz); return g;
   };
   const _ntg = mkTower(NT[0], NT[2], true); _ntg.scale.set(1.16, 1.16, 1.16); scene.add(_ntg); // 근탑을 모뉴먼트로 — 하늘을 지배
   scene.add(mkTower(FT[0], FT[2], false));
   const NTtop = [NT[0], TT + 1, NT[2]], FTtop = [FT[0], TT + 1, FT[2]];
   const dW = 5.4, dH = 1.4;
-  // 접근 경간(성함): 근앵커 → 근탑
+  // 접근 경간(성함): 근앵커 → 근탑 (녹강 상판 텍스처)
   const appWP = [[-96, 9, 10], [-58, 9, -22], NT[0] && [-20, 9, -55]]; appWP[2] = [-20, 9, -55];
-  for (let i = 0; i < appWP.length - 1; i++) link(steelMat, appWP[i], appWP[i + 1], dW, dH);
-  // 주경간(붕괴): 근탑 → 처짐 → 물로 꺾여 잠김
+  for (let i = 0; i < appWP.length - 1; i++) link(deckMat, appWP[i], appWP[i + 1], dW, dH);
+  // 접근 상판 난간(디테일) + 신축 이음새
+  for (let s = 0.06; s < 1; s += 0.12) { const x = -96 + (NT[0] + 96) * s, z = 10 + (NT[2] - 10) * s; link(cableMat, [x, 9.7, z + 2.5], [x, 10.5, z + 2.5], 0.12, 0.12); }
+  link(cableMat, [-96, 10.5, 12.5], [-20, 10.5, -52.5], 0.14, 0.14); // 상판 앞 난간 상단봉
+  // 주경간(붕괴): 근탑 → 처짐 → 물로 꺾여 잠김 + 파단부 철근
   const sagA = [-20, 9, -55], sagB = [-6, 4.5, -74], sagC = [4, 1.6, -90];
-  link(steelMat, sagA, sagB, dW, dH); link(steelMat, sagB, sagC, dW * 0.9, dH);
+  link(deckMat, sagA, sagB, dW, dH); link(deckMat, sagB, sagC, dW * 0.9, dH);
+  for (let j = 0; j < 6; j++) { const rb = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2 + srand() * 2.6, 0.14), cableMat); rb.position.set(3 + srand() * 5, 1.2 + srand() * 2.5, -88 - srand() * 6); rb.rotation.z = (srand() - 0.5) * 1.4; scene.add(rb); } // 부러진 상판 철근
   // 원경 경간(성함): 재개 → 원탑 → 원앵커
   const farWP = [[30, 9, -176], FT[0] && [46, 9, -210], [76, 9, -250], [108, 9, -298]]; farWP[1] = [46, 9, -210];
-  for (let i = 0; i < farWP.length - 1; i++) link(steelMat, farWP[i], farWP[i + 1], dW, dH);
+  for (let i = 0; i < farWP.length - 1; i++) link(deckMat, farWP[i], farWP[i + 1], dW, dH);
   // 주케이블 + 행어 (같은 폴리라인)
   const cApp = [[-96, 13, 10], [-58, 27, -22], NTtop];
   for (let i = 0; i < cApp.length - 1; i++) link(cableMat, cApp[i], cApp[i + 1], 0.5, 0.5);
@@ -5904,8 +5946,9 @@ function buildGoldenGateScene() {
   // ── 초목 관용구 ──
   const swayG = [];
   const mkVine = (x, yTop, z, len, mat, amp) => { const g = new THREE.Group(); g.position.set(x, yTop, z); const seg = new THREE.Mesh(new THREE.BoxGeometry(0.16 + srand() * 0.18, len, 0.16), mat); seg.position.y = -len / 2; g.add(seg); scene.add(g); swayG.push({ g, seed: srand() * 6.28, amp: amp * (0.6 + srand() * 0.8) }); return g; };
-  const mkCanopy = (x, y, z, r, mat) => { for (let b = 0, n = 3 + Math.floor(srand() * 3); b < n; b++) { const cw = r * (0.6 + srand() * 0.7); const c = new THREE.Mesh(new THREE.BoxGeometry(cw, cw * 0.7, cw * 0.8), mat); c.position.set(x + (srand() - 0.5) * r * 1.3, y + (srand() - 0.4) * r * 0.7, z + (srand() - 0.5) * r * 0.6); c.rotation.z = (srand() - 0.5) * 0.4; scene.add(c); } };
-  const mkIvy = (cx, cyTop, cyBot, halfW, z, dens, allowRim) => { const rows = Math.max(2, Math.floor((cyTop - cyBot) / 1.1)); for (let r = 0; r < rows; r++) { const yy = cyBot + (r / rows) * (cyTop - cyBot); const patches = Math.max(1, Math.floor(dens * (2 + srand() * 3))); for (let p = 0; p < patches; p++) { const mat = (allowRim && yy > cyTop - 6 && srand() < 0.5) ? vegRim : vegSil; const iv = new THREE.Mesh(new THREE.BoxGeometry(0.6 + srand() * 1.6, 0.7 + srand() * 1.4, 0.3), mat); iv.position.set(cx + (srand() - 0.5) * halfW * 2, yy + (srand() - 0.5), z + 0.35 * (z < NT[2] ? 1 : -1)); scene.add(iv); } } };
+  // 캐노피/담쟁이 = 부드러운 잎 클러스터 스프라이트(큐브 아님). mat===vegRim → 광엣지 톤.
+  const mkCanopy = (x, y, z, r, mat) => { const rim = (mat === vegRim); const n = 1 + (srand() < 0.6 ? 1 : 0); for (let b = 0; b < n; b++) { const sp = new THREE.Sprite(rim ? leafRim : leafSil); const sc = r * (1.7 + srand() * 1.0); sp.scale.set(sc, sc * (0.78 + srand() * 0.28), 1); sp.position.set(x + (srand() - 0.5) * r * 0.9, y + r * 0.45 + (srand() - 0.5) * r * 0.5, z + (srand() - 0.5) * r * 0.7); scene.add(sp); } };
+  const mkIvy = (cx, cyTop, cyBot, halfW, z, dens, allowRim) => { const rows = Math.max(2, Math.floor((cyTop - cyBot) / 1.1)); for (let r = 0; r < rows; r++) { const yy = cyBot + (r / rows) * (cyTop - cyBot); const patches = Math.max(1, Math.floor(dens * (2 + srand() * 3))); for (let p = 0; p < patches; p++) { const rim = (allowRim && yy > cyTop - 6 && srand() < 0.5); const sp = new THREE.Sprite(rim ? leafRim : leafSil); const sc = 1.4 + srand() * 1.5; sp.scale.set(sc, sc, 1); sp.position.set(cx + (srand() - 0.5) * halfW * 2, yy + (srand() - 0.5), z + 0.35 * (z < NT[2] ? 1 : -1)); scene.add(sp); } } };
   // 히어로: 붕괴 경간 케이블에서 늘어진 넝쿨 커튼(처짐부에서 가장 길다)
   const sagPts = [];
   for (let i = 0; i < cSag.length - 1; i++) { for (let s = 0; s < 1; s += 0.1) { const a = cSag[i], b = cSag[i + 1]; sagPts.push([a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s, a[2] + (b[2] - a[2]) * s]); } }
@@ -5963,6 +6006,10 @@ function buildGoldenGateScene() {
   // ── 잔해 뗏목 + 붕괴 콘크리트 파편 ──
   for (let i = 0; i < 9; i++) { const rx = -30 + srand() * 120, rz = -30 - srand() * 115; const raft = new THREE.Mesh(new THREE.BoxGeometry(3 + srand() * 4, 0.5, 2 + srand() * 2), propDark); raft.position.set(rx, 0.3, rz); raft.rotation.y = srand() * 3; scene.add(raft); const veg = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.8, 1.5), vegSil); veg.position.set(rx, 0.6, rz); scene.add(veg); }
   for (let i = 0; i < 5; i++) { const ch = new THREE.Mesh(new THREE.BoxGeometry(2 + srand() * 3, 1.5 + srand() * 2, 2 + srand() * 2), concShad); ch.position.set(-8 + srand() * 24, 0.6, -76 - srand() * 24); ch.rotation.set(srand(), srand() * 3, srand() * 0.4); scene.add(ch); }
+  // 잔돌·파편 스캐터 — 탑 발치·전경의 딱딱한 직선 실루엣을 부순다(작은 불규칙 박스)
+  for (const [bx, bz, br, n] of [[NT[0], NT[2], 9, 10], [-30, 20, 20, 12], [42, 30, 16, 8], [-58, -30, 14, 7]]) {
+    for (let i = 0; i < n; i++) { const rk = new THREE.Mesh(new THREE.BoxGeometry(0.5 + srand() * 1.4, 0.4 + srand() * 1.0, 0.5 + srand() * 1.2), srand() < 0.5 ? concShad : propDark); rk.position.set(bx + (srand() - 0.5) * br, 0.3 + srand() * 0.6, bz + (srand() - 0.5) * br * 0.7); rk.rotation.set(srand() * 0.5, srand() * 3, srand() * 0.4); scene.add(rk); }
+  }
   // ── 물: 단일 골드 반사 기둥(냉색 없음) ──
   const wcv = document.createElement('canvas'); wcv.width = 256; wcv.height = 256; const wg = wcv.getContext('2d');
   const waterTex = new THREE.CanvasTexture(wcv); waterTex.colorSpace = THREE.SRGBColorSpace;
@@ -6018,6 +6065,8 @@ function buildGoldenGateScene() {
     lerpC(0x1a0f08, 0x6a4426, kn, steelLit.color);
     lerpC(0x121a0a, 0x2c3a18, kn, vegSil.color);   // 초록이되 깊게 — 네온 아닌 역광 실루엣 톤
     lerpC(0x242610, 0x565626, kn, vegRim.color);
+    lerpC(0x141c0c, 0x33441d, kn, leafSil.color);  // 잎 스프라이트(약간 밝게 → 잎 판독)
+    lerpC(0x2a2c14, 0x64642c, kn, leafRim.color);
     lerpC(0x140b08, 0x5a2c18, kn, propRust.color);
     lerpC(0x1a1009, 0x4a2e1e, kn, concLit.color);
     lerpC(0x1c0d14, 0x3a2028, kn, cityMat.color);
