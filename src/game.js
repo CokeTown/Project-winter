@@ -8115,16 +8115,10 @@ function tickTime(dt) {
     reportQueued = true;
     rolledOver = true;
   }
-  // #74 데모 게이트(디렉터 2026-07 볼륨 축소): 첫 겨울이 '닥칠 때'(Day 37 = seasonOf 'winter' 진입) 그 자리에서 종료.
-  //   종전엔 겨울을 넘긴 봄(winters≥1, Day49)에 끝나 코어를 전부 경험시켰다 → "감질맛" 없음. 겨울 도착=클라이맥스 직전으로 앞당김.
-  // 아침 보고 대신 종료 화면 — demoEnded가 세이브에 박혀 이후 입장에도 종료 화면·시간 동결이 유지된다.
-  if (DEMO_ED && rolledOver && !state.demoEnded && seasonOf(state.day) === 'winter') {
-    state.demoEnded = true;
-    reportQueued = false;
-    doSaveNow();
-    showDemoEnd();
-    return;
-  }
+  // #175 데모 정본 단일화(프리즈+가드, 디렉터 2026-07-12): 데모-엔드 로직은 데모 정본 브랜치
+  //   demo-vertical-slice(Day-15 「보름의 겨울」, demoPhase 스테이트머신)에 있다. 트렁크(gd-2.0)는 데모를 빌드하지 않는다.
+  //   구 Day-37 게이트(seasonOf 반환 객체를 계절 문자열과 직접 비교)는 항상 false였던 죽은 코드 → 제거.
+  //   데모 빌드는 tools/build-demo.ps1 가드가 정본 브랜치에서만 허용한다(리뷰 rank-1 봉인).
   // 자정을 자연 경과(취침이 아님)로 넘긴 경우의 처리.
   // v1.2.0: 자정 강제 취침 폐지. 셸터 안에서 깨어 있으면 시간이 계속 흐르고(01시부터 회복 페널티 누적),
   // 05시에 쓰러지듯 자동 취침한다(아래 별도 트리거). 탐험/오프라인 경로만 여기서 아침으로 점프.
