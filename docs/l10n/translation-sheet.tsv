@@ -1,4 +1,4 @@
-﻿id	context	tone	vars	chars_ko	ko	en	ja	zh_cn
+id	context	tone	vars	chars_ko	ko	en	ja	zh_cn
 doc.title	일반 UI	문어체(기록)		12	Nine Winters	Nine Winters		
 title.continue	타이틀 화면	라벨(명사구)		6	▶ 이어하기	▶ Continue		
 title.new	타이틀 화면	라벨(명사구)		6	✚ 새 게임	✚ New Game		
@@ -252,7 +252,7 @@ title.continueInfo	타이틀 화면	라벨(명사구)	{slot} {day} {sicon} {semo
 slot.hardBadge.title	세이브 슬롯 UI	시스템·다나까		5	생존 모드	Survival mode		
 mode.pick.title	난이도 모드 선택 카드	시스템·다나까		11	어떤 겨울을 살아갈까	Choose Your Winter		
 mode.normal	난이도 모드 선택 카드	시스템·다나까		6	🕯️ 코지	🕯️ Cozy		
-mode.normal.tag	난이도 모드 선택 카드	시스템·다나까		14	폐허에도 온기는 남아 있다	Warmth still lingers in the ruins		
+mode.normal.tag	난이도 모드 선택 카드	시스템·다나까		14	먼지 속 불씨	Embers in dust		
 mode.normal.desc	난이도 모드 선택 카드	시스템·다나까		43	기본 밸런스. 느긋하게 셸터를 가꾸며 살아가는 겨울 — 서두르지 않아도 된다.	The standard balance. Tend your shelter at your own pace — no one is rushing you.		
 mode.hard	난이도 모드 선택 카드	시스템·다나까		5	🔥 생존	🔥 Survival		
 mode.hard.tag	난이도 모드 선택 카드	시스템·다나까		18	폐허는 아무것도 거저 주지 않는다	The ruins give nothing for free		

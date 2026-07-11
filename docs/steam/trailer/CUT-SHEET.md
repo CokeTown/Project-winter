@@ -37,7 +37,7 @@
 | 0:38–0:49 | `04_coldsnap` (0–11s) | 한파, 창유리 성에, 폭설 | **회색은 아름답고, 그만큼 춥다.** / *The grey is beautiful, and just as cold.* |
 | 0:49–0:56 | `02_radio` (0–7s) | 라디오 무전 송출 | **무전을 보낸다. 누군가 듣기를.** / *A signal goes out. May someone hear.* |
 | **보강 필요** | 종이 지도에 생존자 불빛이 하나씩 켜진다(1.4 송출 연출) | 브리프 3막 정점·주제 회수 — 미확보 | — |
-| 0:56–0:58 | 암전 | | **폐허에도 온기는 남아 있다** / *Warmth still lingers in the ruins* |
+| 0:56–0:58 | 암전 | | **먼지 속 불씨** / *Embers in dust* |
 | 0:58– | 로고 → Wishlist | Nine Winters 로고 + Wishlist Now | — |
 | 마지막 30프레임 | `01_cat` 꼬리(수미상관) | 난로 앞 고양이 | — |
 
