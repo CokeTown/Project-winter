@@ -80,25 +80,34 @@
 - **Pre-Generated AI content: YES / Live-Generated: NO**
 - 공개 문구 (설문 서술란):
 
-**EN**: "Some 2D assets (UI icons, marketing capsule art) were created with generative AI tools and then curated and edited by the developer. Portions of the game code were written with AI-assisted development tools under direct developer supervision. The game contains no live/runtime AI generation."
+**EN**: "Some 2D assets (UI icons, event illustrations) were created with generative AI tools and then curated and edited by the developer. Portions of the game code were written with AI-assisted development tools under direct developer supervision. All store capsule art and screenshots are actual in-game renders. The game contains no live/runtime AI generation."
 
-**KO**: "일부 2D 에셋(UI 아이콘, 마케팅 캡슐 아트)은 생성형 AI 도구로 제작 후 개발자가 선별·수정했습니다. 게임 코드 일부는 개발자의 직접 감독 아래 AI 보조 개발 도구로 작성되었습니다. 게임 내 실시간 AI 생성은 없습니다."
+**KO**: "일부 2D 에셋(UI 아이콘, 이벤트 삽화)은 생성형 AI 도구로 제작 후 개발자가 선별·수정했습니다. 게임 코드 일부는 개발자의 직접 감독 아래 AI 보조 개발 도구로 작성되었습니다. 상점의 캡슐 아트와 스크린샷은 전부 실제 인게임 렌더입니다. 게임 내 실시간 AI 생성은 없습니다."
+
+> 갱신(2026-07-11): 캡슐이 인게임 렌더로 교체되며 "마케팅 캡슐 아트" 항목을 AI 목록에서 제거,
+> 대신 "상점 비주얼 = 실제 인게임"을 명시 문장으로 추가. A5 방어가 더 단단해진다.
 
 ---
 
-## 6. Graphical Assets 파일 매핑 (전부 규격 실측 일치)
+## 6. Graphical Assets 파일 매핑 (인게임 복셀 정본, 2026-07-11 교체)
 
-| Steamworks 슬롯 | 파일 | 규격 |
+> **정본 = `assets-src/art/out/capsules-ingame/`** (디렉터 확정: AI 생성 캡슐 전면 폐기, 실제 인게임 씬으로).
+> 씬: 옥탑방·노을(17시)·눈·붉은 카펫 바닥·크림 침대(T3)·베이지 러그+머스터드 방석 중앙·방석 위 고양이·
+> 벽 난로(점화)·스탠드·책장·시계·라디오·화분. 타이틀 = 게임 폰트(DungGeunMo) + 태그라인.
+> 촬영 스크립트: scratchpad `capture-hero3.cjs` (4K 마스터 → 규격별 크롭+합성, 재촬영 재현 가능).
+
+| Steamworks 슬롯 | 파일 (capsules-ingame/) | 규격 |
 |---|---|---|
-| Header capsule | `capsules/header_capsule.png` | 460×215 ✅ |
-| Small capsule | `capsules/steam_small_capsule.png` | 231×87 ✅ |
-| Main capsule | `capsules/steam_main_capsule.png` | 616×353 ✅ |
-| Vertical capsule | `capsules/vertical_capsule.png` | 374×448 ✅ |
-| Library capsule | `capsules/library_capsule.png` | 600×900 ✅ |
-| Library hero | `capsules/library_hero.png` | 3840×1240 ✅ |
-| Library logo | `capsules/steam_logo.png` (신규 정식 로고 v2 교체 예정: #151) | 1280×720 ✅ |
-| Screenshots (순서대로) | `shots/final/01~08` (미감 v2 교체 예정: #156) | 1920×1080 ✅ |
-| Trailer | `trailer/draft.mp4`(54s 무음 가편) 업로드 → 정본(트레일러 에디션 v3.1 촬영본) 편집 완료 시 교체 | 1080p+ |
+| Header capsule | `steam_header.png` | 460×215 ✅ |
+| Small capsule | `steam_small_capsule.png` | 231×87 ✅ |
+| Main capsule | `steam_main_capsule.png` | 616×353 ✅ |
+| Vertical capsule | `steam_vertical.png` | 374×448 ✅ |
+| Library capsule | `steam_library.png` | 600×900 ✅ |
+| Library hero | `steam_hero.png` (텍스트 없음, 로고 별도 레이어) | 3840×1240 ✅ |
+| Library logo | `steam_logo.png` (게임 폰트 타이포, #151 GPT 로고 폐기) | 1280×720 ✅ |
+| Screenshots (순서대로) | `shots/final/01~08` (미감 v2 교체 예정: #156, 인게임 원칙 동일) | 1920×1080 ✅ |
+| Trailer | `trailer/draft.mp4`(54s 무음 가편) → **트레일러 v2(#172, video-use 파이프라인)** 완성 시 교체 | 1080p+ |
+| 마스터 원본 | `master_4k.png`(3840×2160) · `master_vertical.png`(1350×2025) | 재크롭용 |
 
 ---
 
