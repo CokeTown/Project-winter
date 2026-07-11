@@ -1131,7 +1131,8 @@ export function makeShelterBuilders(ctx) {
           const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.1, 6, 10), lamb(0x1c1a18));
           tyre.rotation.y = Math.PI / 2; tyre.position.set(w / 2 + 0.62, -0.2, fz); roomGroup.add(tyre);
         }
-        // 조타실 (뒤쪽 벽 — 컬링 대상) + 둥근 창
+        // 조타실 — 벽 한 장이 아니라 부피 있는 선실(디렉터 신고 2026-07-11: "판지 같다").
+        //   앞벽(현창·문) + 측벽 + 후벽 + 지붕을 한 그룹에 담아 기존과 동일하게 컬링(뒤에서 보면 통째 페이드).
         const wheelhouse = new THREE.Group();
         const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 2.2, 0.28), tagDecoWall(wallPhong({ color: 0xc4c0b4 }))); // (B-①) 조타실 벽 = 벽지 대상
         wall.position.y = 1.1; wall.castShadow = wall.receiveShadow = true;
@@ -1141,6 +1142,14 @@ export function makeShelterBuilders(ctx) {
           port.rotation.x = Math.PI / 2; port.position.set(-2 + i * 2, 1.4, 0.16); wheelhouse.add(port);
           const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.12, 12), lamb(0x27343f));
           glass.rotation.x = Math.PI / 2; glass.position.set(-2 + i * 2, 1.4, 0.17); wheelhouse.add(glass);
+        }
+        {
+          const cabC = 0xb4b0a4;
+          for (const sx of [-1, 1]) B(wheelhouse, 0.24, 2.2, 1.34, cabC, sx * (w / 2 - 0.12), 1.1, -0.75).castShadow = true; // 측벽
+          B(wheelhouse, w, 2.2, 0.24, 0xa8a498, 0, 1.1, -1.4).castShadow = true;                                             // 후벽
+          const cRoof = B(wheelhouse, w + 0.5, 0.18, 1.95, 0x8a8578, 0, 2.29, -0.68); cRoof.castShadow = true;               // 지붕(처마)
+          B(wheelhouse, 0.8, 1.6, 0.08, 0x4a4238, 0.95, 0.85, 0.19);                                                         // 승무원 문
+          B(wheelhouse, 0.1, 0.1, 0.1, 0xd8c890, 0.63, 0.9, 0.24);                                                            // 문손잡이
         }
         makeWalls([{ group: wheelhouse, pos: [0, 0, -d / 2 - 0.26], rotY: 0, normal: new THREE.Vector3(0, 0, -1) }]);
         // 굴뚝 + 타륜 소품
@@ -1316,8 +1325,9 @@ export function makeShelterBuilders(ctx) {
           blockers = [{ x: -w / 2 + 0.5, z: -d / 4, w: 0.9, d: 1.5 }];
         }
         // ── 대형 프로젝트 현장: 관측소(방 밖 뒤편 언덕) + 케이블카(방 밖 앞쪽 절벽 방향) ──
-        buildObservatorySite(roomGroup, 0, 0, -d / 2 - 3.2);
-        buildCablecarSite(roomGroup, w / 2 + 3.4, 0, d / 2 + 1.0);
+        //   oy=-0.88: 방 밖 설원 지면(GY -0.9) 접지. roomGroup 기준 y0으로 붙이면 0.9 부유(디렉터 신고 2026-07-11).
+        buildObservatorySite(roomGroup, 0, -0.88, -d / 2 - 3.2);
+        buildCablecarSite(roomGroup, w / 2 + 3.4, -0.88, d / 2 + 1.0);
         setBlockers(blockers);
       },
       buildEnv() {
@@ -1432,10 +1442,14 @@ export function makeShelterBuilders(ctx) {
           const rand = seededRand(seed);
           for (let i = 0; i < SEG; i++) {
             const th = thetaFrom + (i + 0.5) * (Math.PI / 2) / SEG;
+            // 정점 대역(|th-π/2|<0.38)은 항상 온전: 정점 낱장이 빠지거나 짧아지면 이웃 없는 조각이
+            //   하늘 배경에 '떠 있는 판자'로 읽힌다(디렉터 신고 2026-07-11). 균열은 측면 대역으로 한정.
+            //   rand() 소비 횟수는 기존과 동일하게 유지(같은 시드 → 측면 조각 배치 불변).
+            const crown = Math.abs(th - Math.PI / 2) < 0.38;
             // 갈라진 외피: 일부 조각은 짧거나 없음 (천장 수리하면/solid면 메워진다)
-            if (!solid && !roofFixed && rand() < 0.1 && th > 0.5 && th < Math.PI - 0.5) continue;
+            if (!solid && !roofFixed && rand() < 0.1 && !crown && th > 0.5 && th < Math.PI - 0.5) continue;
             let dep = depBase;
-            if (!solid && !roofFixed && rand() < 0.34) dep *= 0.5 + rand() * 0.32; // 수리/solid하면 짧은(뚫린) 조각 없음
+            if (!solid && !roofFixed && rand() < 0.34) { const shortF = 0.5 + rand() * 0.32; if (!crown) dep *= shortF; } // 수리/solid하면 짧은(뚫린) 조각 없음
             const arcLen = R * (Math.PI / 2) / SEG + 0.1;
             const col = rand() < 0.16 ? 0x5d594f : shellCols[Math.floor(rand() * shellCols.length)];
             const m = new THREE.Mesh(new THREE.BoxGeometry(arcLen, T, dep), lamb(col));

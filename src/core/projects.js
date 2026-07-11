@@ -40,11 +40,12 @@ export function projectDone(id) {
   const p = PROJECTS[id]; if (!p) return false;
   return projectRec(id).stage >= p.stages.length;
 }
-// 현재 현장 오브젝트 단계 (SHELTER 3D 표현이 읽는다). 완공=doneSiteStage, 진행중=현 stage.siteStage, 미착수=0.
+// 현재 현장 오브젝트 단계 (SHELTER 3D 표현이 읽는다). 완공=doneSiteStage, 미착수=0,
+//   진행중='마지막으로 완료한 단계'의 siteStage. 현 단계 선반영은 금지 — 신규 게임부터
+//   지주/기초벽이 그려지는 결함이었다(디렉터 신고 2026-07-11: 로지 현장 상자·막대).
 export function projectSiteStage(id) {
   const p = PROJECTS[id]; if (!p) return 0;
   const rec = projectRec(id);
   if (rec.stage >= p.stages.length) return p.doneSiteStage;
-  const st = p.stages[rec.stage];
-  return st ? st.siteStage : 0;
+  return rec.stage > 0 ? (p.stages[rec.stage - 1].siteStage || 0) : 0;
 }
