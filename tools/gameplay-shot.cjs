@@ -54,11 +54,20 @@ async function main() {
   const ev = e => win.webContents.executeJavaScript(e, true);
   if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
 
+  // 언어를 nw-opts(localStorage)에 영어로 저장 → 이후 리로드가 처음부터 완전 영어로 부팅
+  //   (setLang 중간 주입은 패널 제목·캐시된 퀘스트를 못 바꿔 한글 잔존 → 부팅 시점 적용이 정답)
+  await win.loadFile(path.join(DIST, 'index.html'));
+  await sleep(1500);
+  const langSet = await ev(`(()=>{try{const o=JSON.parse(localStorage.getItem('nw-opts')||'{}');o.lang='en';localStorage.setItem('nw-opts',JSON.stringify(o));return o.lang;}catch(e){return 'ERR '+e;}})()`);
+  console.log('nw-opts.lang =', langSet);
+
   for (const sc of SHOTS) {
     if (only && sc.id !== only) continue;
     // 0) 샷마다 페이지 리로드 — 클린 상태(배치모드·모달 누수 방지)
     await win.loadFile(path.join(DIST, 'index.html'));
     for (let i = 0; i < 90; i++) { if (await ev(`!!(window.__shelter&&window.__shelter.loadShelter)`).catch(() => false)) break; await sleep(400); }
+    // 0.5) 언어 영어 (스토어 메인 언어) — 정적 UI 라벨까지 갱신
+    await ev(`(()=>{const S=window.__shelter;S.setLang&&S.setLang('en');S.applyStaticI18n&&S.applyStaticI18n();return 1;})()`);
     // 1) 셸터 로드 + 정지 + 상태 세팅
     await ev(`(()=>{const S=window.__shelter;const c=document.getElementById('modal-close');if(c)c.click();
       S.simReset&&S.simReset(); S.hideTitle&&S.hideTitle();
