@@ -36,6 +36,9 @@ const SHOTS = [
   { id: '04_lodge_hearth', shelter: 'lodge', hour: 17, weather: 'snow', cat: true, ...CAM, layout: cozyLiving },
   { id: '05_bunker_warm', shelter: 'bunker', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
   { id: '07_greenhouse_glass', shelter: 'greenhouse', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
+  { id: '06_tugboat_cabin', shelter: 'tugboat', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
+  { id: '08_subway_home', shelter: 'subway', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
+  { id: '09_lighthouse_lamp', shelter: 'lighthouse', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
 ];
 
 function bgra2rgba(b) { const o = Buffer.alloc(b.length); for (let i = 0; i < b.length; i += 4) { o[i] = b[i + 2]; o[i + 1] = b[i + 1]; o[i + 2] = b[i]; o[i + 3] = 255; } return o; }
