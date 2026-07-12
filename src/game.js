@@ -1934,6 +1934,7 @@ function slotMeta(n) {
   };
 }
 let saveTimer = null;
+let saveFailWarned = false; // 저장 실패 토스트 세션 1회 가드 (doSaveNow)
 function doSaveNow() {
   if (QA_ED) state.qaUsed = true; // #89: QA 에디션 세이브는 전부 오염 각인 — 정식 빌드로 옮겨 심어도 업적·통계 무효
   // P1-A: 게임을 시작한 적 없는 첫 실행에서 타이틀 조작(언어/설정)이
@@ -1946,7 +1947,9 @@ function doSaveNow() {
   state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0 }));
   state.savedAt = Date.now();
   // REQ-STEAM-01: 세이브 경로를 클라우드 어댑터 경유 (현재 localStorage 위임 — 동작 불변, Steam Cloud 미러 지점).
-  Platform.cloud.save(slotKey(currentSlot), JSON.stringify({ state, opts }));
+  // 슬롯 저장 실패(quota 초과 등)는 조용히 삼키지 않는다 — 세션당 1회 고지 (스팸 방지, 진행은 계속).
+  const okSave = Platform.cloud.save(slotKey(currentSlot), JSON.stringify({ state, opts }));
+  if (!okSave && !saveFailWarned) { saveFailWarned = true; toast(t('save.failed')); }
   Platform.cloud.save(LASTSLOT_KEY, String(currentSlot));
   Platform.cloud.save('nw-opts', JSON.stringify(opts)); // 전역 옵션 동기화 (언어/음량 승계용)
   checkAchievements();               // 업적 체크 (모든 변화는 저장을 거친다)

@@ -94,7 +94,8 @@ export const Platform = {
     // 클라우드 세이브: 현재 localStorage 위임(웹/PC 공통). Steam Cloud는 파일 동기화라
     // 브릿지가 붙어도 localStorage가 truth로 유지되고 브릿지는 미러링만 한다(등록 시 구현).
     save(k, v) {
-      try { localStorage.setItem(k, v); } catch (e) { /* file:// 등 저장 불가 무시 */ }
+      // 실패(quota 초과·file:// 등)를 조용히 삼키지 않고 false 반환 — 호출부가 유저 고지 여부를 결정한다.
+      try { localStorage.setItem(k, v); return true; } catch (e) { return false; }
     },
     load(k) {
       try { return localStorage.getItem(k); } catch (e) { return null; }
