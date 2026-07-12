@@ -15,24 +15,27 @@ const only = process.argv[2] || null;
 // 가구 레이아웃은 getROOM()의 실제 {w,d}에 상대 배치(셸터별 방 크기 다름). f(w,d)→[{d,x,z,r,tier,c}]
 // 데코 세트: 아늑한 거실 — 침대·러그·소파·탁자·책장·화분·랜턴·난로(온기)·방석(고양이 자리).
 const cozyLiving = (w, d) => {
-  const X = w / 2, Z = d / 2; // 방은 원점 중심, x∈[-X,X] z∈[-Z,Z]. 뒷벽 z=-Z, 열린 앞면 z=+Z(카메라측).
-  // 겹침 0 배치: 뒷줄(침대·책장·소파) / 앞줄(러그+찻상+방석) / 코너(난로·화분·램프). 촬영 시 overlap 검출로 검증.
-  return [
-    { d: 'bed', x: -X + 0.95, z: -Z + 1.2, r: 0, tier: 3, c: 0 },       // 뒷벽 좌
-    { d: 'bookshelf', x: 0, z: -Z + 0.25, r: 0, tier: 3, c: 0 },        // 뒷벽 중
-    { d: 'sofa', x: X - 1.1, z: -Z + 0.6, r: 0, tier: 3, c: 0 },        // 뒷벽 우
-    { d: 'rug', x: 0, z: 0.5, r: 0, tier: 3, c: 0 },                    // 중앙 앞 (noCollide)
-    { d: 'teatable', x: 0, z: 0.5, r: 0, tier: 3, c: 0 },               // 러그 위
-    { d: 'cushion', x: -1.0, z: 0.5, r: 0, tier: 3, c: 0 },             // 러그 좌 = 고양이 자리
-    { d: 'stove', x: X - 0.65, z: Z - 0.65, r: 0, tier: 3, c: 0 },      // 앞우 코너 (온기광)
-    { d: 'plant', x: -X + 0.5, z: Z - 0.5, r: 0, tier: 3, c: 0 },       // 앞좌 코너
-    { d: 'lamp', x: X - 0.4, z: 0, r: 0, tier: 3, c: 0 },               // 우측 중
-  ];
+  // 방 원점 중심 x∈[-X,X] z∈[-Z,Z], 뒷벽 z=-Z, 열린 앞면 z=+Z(카메라측).
+  // 고정 크기 코지 클러스터(방 크기와 무관하게 밀도 일정) — 뒷좌 코너 앵커 + 카메라 팬으로 프레이밍.
+  const X = w / 2, Z = d / 2;
+  const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const cx = Math.min(-X + 2.5, -0.3), cz = Math.min(-Z + 2.0, -0.3); // 클러스터 중심(뒷좌 편향)
+  const P = (x, z) => ({ x: cl(cx + x, -X + 0.4, X - 0.4), z: cl(cz + z, -Z + 0.4, Z - 0.4) });
+  const it = (dd, x, z, r) => ({ d: dd, ...P(x, z), r: r || 0, tier: 3, c: 0 });
+  return { pan: { x: cx, z: cz }, items: [
+    it('bed', -1.4, -0.9), it('bookshelf', 0.1, -1.6), it('sofa', 1.5, -0.6), // 뒷줄
+    it('rug', 0, 1.0), it('teatable', 0, 1.0), it('cushion', -1.1, 1.0),       // 앞줄(러그+찻상+방석=고양이)
+    it('stove', 1.9, -1.5), it('plant', -1.8, 1.3), it('lamp', 1.7, 0.7),      // 난로(뒷우)·화분(앞좌)·램프
+  ] };
 };
 
+const CAM = { yaw: 0.62, pitch: 0.44, zoom: 1.55 };
 const SHOTS = [
-  { id: '01_rooftop_cozy_cat', shelter: 'rooftop', hour: 17, weather: 'clear', cat: true,
-    yaw: 0.62, pitch: 0.44, zoom: 1.55, layout: cozyLiving },
+  { id: '01_rooftop_cozy_cat', shelter: 'rooftop', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
+  { id: '03_cabin_cozy', shelter: 'cabin', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
+  { id: '04_lodge_hearth', shelter: 'lodge', hour: 17, weather: 'snow', cat: true, ...CAM, layout: cozyLiving },
+  { id: '05_bunker_warm', shelter: 'bunker', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
+  { id: '07_greenhouse_glass', shelter: 'greenhouse', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
 ];
 
 function bgra2rgba(b) { const o = Buffer.alloc(b.length); for (let i = 0; i < b.length; i += 4) { o[i] = b[i + 2]; o[i + 1] = b[i + 1]; o[i + 2] = b[i]; o[i + 3] = 255; } return o; }
@@ -65,11 +68,12 @@ async function main() {
     const placed = await ev(`(()=>{try{const S=window.__shelter;
       const R=(S.SHELTERS&&S.SHELTERS[${JSON.stringify(sc.shelter)}]&&S.SHELTERS[${JSON.stringify(sc.shelter)}].room)||{w:5.6,d:4.4};
       const w=R.w,d=R.d;
-      const items=(${sc.layout.toString()})(w,d);
+      const L=(${sc.layout.toString()})(w,d); const items=L.items||L;
       let n=0; for(const it of items){ try{ S.addItem(it.d, it.c||0, it.x, it.z, it.r||0, true, 0, it.tier||3); n++; }catch(e){} }
       ${sc.cat ? 'try{S.spawnCat&&S.spawnCat();}catch(e){}' : ''}
+      if(L.pan&&S.setPan)S.setPan(L.pan.x,L.pan.z);
       S.setYaw&&S.setYaw(${sc.yaw}); S.setPitch&&S.setPitch(${sc.pitch}); S.setZoom&&S.setZoom(${sc.zoom});
-      return {placed:n, room:{w,d}, itemCount:items.length};
+      return {placed:n, room:{w,d}, itemCount:items.length, pan:L.pan};
     }catch(e){return {error:String(e&&e.stack||e)};}})()`);
     console.log('  placed:', JSON.stringify(placed));
     // 겹침 검출(디렉터 피드백 2026-07-12): addItem은 충돌을 안 거른다 → 배치 후 fp AABB 쌍별 검사.
