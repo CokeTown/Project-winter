@@ -14,6 +14,8 @@ for(const s of cfg){
   const src=s.master==="v"?MV:M;
   const scene=cropRect(src,s.sx,s.sy,s.sw,s.sh);
   const art=boxDown(scene,s.aw,s.ah);
+  // 씬 디밍(로고 가독성/우세용): dim<1이면 RGB를 곱해 어둡게. 워드마크는 이후 풀밝기로 합성.
+  if(s.dim!=null&&s.dim<1){for(let i=0;i<art.data.length;i+=4){art.data[i]=art.data[i]*s.dim|0;art.data[i+1]=art.data[i+1]*s.dim|0;art.data[i+2]=art.data[i+2]*s.dim|0;}}
   const wmH=Math.round(W.height*(s.wmW/W.width));
   const wm=boxDown(W,s.wmW,wmH);
   const wx=Math.round((s.aw-s.wmW)*s.wmX), wy=Math.round((s.ah-wmH)*s.wmY);
