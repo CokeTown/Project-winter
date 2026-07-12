@@ -63,6 +63,10 @@ export function pickAutoRegion() {
     let scarceHits = 0;
     for (const [rid] of REGIONS[id].lootRes) if (scarce.has(rid)) scarceHits++; // 부족 자원 종 수
     let w = eff * (1 + scarceHits * A.scarceWeightPerRes);
+    // #177 레버5: 활성 위시리스트(미수집 시그니처 도면 보유) 지역 넛지 — 정보판 트래커가 "여기서만"이라
+    //   가리킨 곳으로 자동 탐험도 향한다(pull 실현). 전부 수집하면 조건이 풀려 자동 소멸.
+    const sigs = BAL.blueprint.regionItems[id];
+    if (sigs && sigs.some(bp => !(state.blueprints || {})[bp])) w *= A.wishlistWeight;
     if (id === state.lastAutoRegion) w *= A.revisitDecay; // 직전 방문 감쇠
     if (w > bestW) { bestW = w; bestId = id; }
   }
