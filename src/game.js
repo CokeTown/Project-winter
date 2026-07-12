@@ -1599,6 +1599,39 @@ bindPlatform({
   getLang: () => opts.lang || 'ko',
 });
 
+// ── Steam Cloud 파일 미러 (REQ-STEAM-01 A안, electron 전용) ───────────────────
+//   진행 세이브(슬롯·lastslot·opts·stats·keys)를 파일로도 미러링해 Steam Auto-Cloud가 동기화.
+//   localStorage가 truth로 남고, 부팅 시 파일이 '더 새로울 때만' 하이드레이트 → 데이터 유실 0.
+//   window.nineCloud는 electron preload에서만 붙는다(웹/오프스크린 하네스=미러 없음, 무변화).
+//   반드시 loadSave()/currentSlot 계산(아래)보다 먼저 실행돼야 한다.
+(function initCloudMirror() {
+  const NC = (typeof window !== 'undefined') && window.nineCloud;
+  if (!NC || !NC.available) return;
+  // 동기화 대상 = 진행 키만 (기기 종속 nw-display/nw-widget/shelter-ui는 제외).
+  const isCloudKey = k => /project-shelter/.test(k) || k === 'nw-opts' || k === 'nw-stats' || k === 'nw-keys';
+  const savedAtOf = s => { try { return JSON.parse(s)?.state?.savedAt || 0; } catch (e) { return 0; } };
+  // 1) 하이드레이트: 파일(Auto-Cloud 다운로드분)이 로컬보다 새로우면 반영. 절대 로컬 최신본을 덮지 않음.
+  try {
+    const snap = NC.snapshot || {};
+    for (const k of Object.keys(snap)) {
+      if (!isCloudKey(k)) continue;
+      const fileVal = snap[k], localVal = localStorage.getItem(k);
+      if (localVal == null) { localStorage.setItem(k, fileVal); continue; }     // 로컬에 없으면 파일 채택(새 기기 복원)
+      if (/project-shelter-slot/.test(k) && savedAtOf(fileVal) > savedAtOf(localVal)) {
+        localStorage.setItem(k, fileVal);                                        // 슬롯: 더 새로운 세이브만 채택
+      }
+      // opts/stats/lastslot/keys: 로컬 존재 시 로컬 유지(기기 연속성 우선)
+    }
+  } catch (e) { /* 하이드레이트 실패해도 로컬 세이브는 안전 */ }
+  // 2) 미러: 이후 모든 진행 세이브 write/remove를 파일로 동시 반영(Platform.cloud + 직접 setItem 전부 포착).
+  try {
+    const _set = localStorage.setItem.bind(localStorage);
+    const _rm = localStorage.removeItem.bind(localStorage);
+    localStorage.setItem = function (k, v) { _set(k, v); if (isCloudKey(k)) NC.write(k, v); };
+    localStorage.removeItem = function (k) { _rm(k); if (isCloudKey(k)) NC.remove(k); };
+  } catch (e) { /* 래핑 실패 시 로컬만 동작(무변화) */ }
+})();
+
 /* ============================================================
    난이도 모드 (v0.9.2) — 하드: 전리품 -30% · 게이지 소모 +50%
 ============================================================ */

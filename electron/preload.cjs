@@ -15,6 +15,18 @@ contextBridge.exposeInMainWorld('nineWidget', {
   setDisplay: (cfg) => ipcRenderer.send('display:set', cfg),
 });
 
+// ── Steam Cloud 파일 미러 브릿지 (Auto-Cloud, REQ-STEAM-01 A안) ──────────────
+//   부팅 시 steamcloud/ 파일을 동기로 읽어 스냅샷으로 노출(하이드레이션 플래시 방지) +
+//   렌더러의 세이브 write/remove를 파일로 미러링. 렌더러는 localStorage를 truth로 유지.
+let cloudSnapshot = {};
+try { cloudSnapshot = ipcRenderer.sendSync('cloud:read-all') || {}; } catch (e) { cloudSnapshot = {}; }
+contextBridge.exposeInMainWorld('nineCloud', {
+  available: true,
+  snapshot: cloudSnapshot, // { key: value } — 부팅 시점 파일 내용(Auto-Cloud 다운로드 반영분)
+  write: (k, v) => { try { ipcRenderer.invoke('cloud:write', k, v); } catch (e) { /* */ } },
+  remove: (k) => { try { ipcRenderer.invoke('cloud:remove', k); } catch (e) { /* */ } },
+});
+
 // ── 번역 loose 파일(런타임 오버라이드) ──────────────────────────────────
 // 설치 폴더의 locales/{ko,en}.json 을 유저가 편집하면 재빌드 없이 번역이 바뀐다.
 // 패키징 시 extraResources 로 asar 밖(resources/locales)에 배치 → 여기서 fs 동기 읽기 →

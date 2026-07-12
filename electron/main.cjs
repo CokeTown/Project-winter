@@ -1,7 +1,37 @@
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('node:path');
+const fs = require('node:fs');
 
 let mainWin = null;
+
+// ── Steam Cloud 파일 미러 (REQ-STEAM-01 A안: Auto-Cloud) ─────────────────────
+//   진행 세이브(localStorage)를 userData/steamcloud/ 아래 키별 파일로도 저장한다.
+//   Steam Auto-Cloud가 이 폴더를 앱 시작/종료 시 동기화(경로: WinAppDataRoaming/<productName>/steamcloud/*.json).
+//   원자적 쓰기(tmp→rename)로 부분 파일 손상을 막는다. localStorage는 여전히 truth, 이건 미러.
+const CLOUD_DIR = path.join(app.getPath('userData'), 'steamcloud');
+function cloudEnsure() { try { fs.mkdirSync(CLOUD_DIR, { recursive: true }); } catch (e) { /* */ } }
+function cloudFile(key) { return path.join(CLOUD_DIR, encodeURIComponent(String(key)) + '.json'); }
+function cloudReadAll() {
+  cloudEnsure();
+  const out = {};
+  try {
+    for (const f of fs.readdirSync(CLOUD_DIR)) {
+      if (!f.endsWith('.json')) continue;
+      try { out[decodeURIComponent(f.slice(0, -5))] = fs.readFileSync(path.join(CLOUD_DIR, f), 'utf8'); } catch (e) { /* 개별 파일 손상 무시 */ }
+    }
+  } catch (e) { /* 폴더 없음 등 */ }
+  return out;
+}
+// 부팅 하이드레이션용 동기 읽기 (preload가 sendSync로 호출).
+ipcMain.on('cloud:read-all', (evt) => { try { evt.returnValue = cloudReadAll(); } catch (e) { evt.returnValue = {}; } });
+// 원자적 쓰기: tmp에 쓴 뒤 rename (부분 쓰기 방지).
+ipcMain.handle('cloud:write', (evt, key, val) => {
+  cloudEnsure();
+  const dest = cloudFile(key), tmp = dest + '.tmp';
+  try { fs.writeFileSync(tmp, String(val), 'utf8'); fs.renameSync(tmp, dest); return true; }
+  catch (e) { try { fs.unlinkSync(tmp); } catch (_) { /* */ } return false; }
+});
+ipcMain.handle('cloud:remove', (evt, key) => { try { fs.unlinkSync(cloudFile(key)); } catch (e) { /* 이미 없음 */ } return true; });
 
 // 미니 모드 진입 전 창 bounds를 저장해뒀다가 해제 시 복원한다.
 let savedBounds = null;
