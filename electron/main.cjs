@@ -2,6 +2,10 @@ const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 
+// userData 폴더명을 productName으로 고정 — app.getName()이 dev('nine-winters')/packaged 간 갈리는 걸 막아
+// Steam Auto-Cloud 경로(%APPDATA%/Nine Winters/steamcloud)를 결정론적으로 만든다. getPath 호출 전에 세팅.
+app.setName('Nine Winters');
+
 let mainWin = null;
 
 // ── Steam Cloud 파일 미러 (REQ-STEAM-01 A안: Auto-Cloud) ─────────────────────
