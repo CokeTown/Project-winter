@@ -16,16 +16,17 @@ const only = process.argv[2] || null;
 // 데코 세트: 아늑한 거실 — 침대·러그·소파·탁자·책장·화분·랜턴·난로(온기)·방석(고양이 자리).
 const cozyLiving = (w, d) => {
   const X = w / 2, Z = d / 2; // 방은 원점 중심, x∈[-X,X] z∈[-Z,Z]. 뒷벽 z=-Z, 열린 앞면 z=+Z(카메라측).
+  // 겹침 0 배치: 뒷줄(침대·책장·소파) / 앞줄(러그+찻상+방석) / 코너(난로·화분·램프). 촬영 시 overlap 검출로 검증.
   return [
-    { d: 'bed', x: -X + 1.0, z: -Z + 1.25, r: 0, tier: 3, c: 0 },
-    { d: 'rug', x: 0.2, z: 0.1, r: 0, tier: 3, c: 0 },
-    { d: 'stove', x: X - 0.7, z: -Z + 0.6, r: 0, tier: 3, c: 0 },
-    { d: 'sofa', x: 0.4, z: -Z + 0.7, r: 0, tier: 3, c: 0 },
-    { d: 'teatable', x: 0.2, z: 0.1, r: 0, tier: 3, c: 0 },
-    { d: 'bookshelf', x: -X + 0.5, z: 0.6, r: Math.PI / 2, tier: 3, c: 0 },
-    { d: 'plant', x: X - 0.5, z: Z - 0.6, r: 0, tier: 3, c: 0 },
-    { d: 'lamp', x: X - 0.5, z: -Z + 0.5, r: 0, tier: 3, c: 0 },
-    { d: 'cushion', x: -0.6, z: 0.5, r: 0, tier: 3, c: 0 }, // 고양이 자리
+    { d: 'bed', x: -X + 0.95, z: -Z + 1.2, r: 0, tier: 3, c: 0 },       // 뒷벽 좌
+    { d: 'bookshelf', x: 0, z: -Z + 0.25, r: 0, tier: 3, c: 0 },        // 뒷벽 중
+    { d: 'sofa', x: X - 1.1, z: -Z + 0.6, r: 0, tier: 3, c: 0 },        // 뒷벽 우
+    { d: 'rug', x: 0, z: 0.5, r: 0, tier: 3, c: 0 },                    // 중앙 앞 (noCollide)
+    { d: 'teatable', x: 0, z: 0.5, r: 0, tier: 3, c: 0 },               // 러그 위
+    { d: 'cushion', x: -1.0, z: 0.5, r: 0, tier: 3, c: 0 },             // 러그 좌 = 고양이 자리
+    { d: 'stove', x: X - 0.65, z: Z - 0.65, r: 0, tier: 3, c: 0 },      // 앞우 코너 (온기광)
+    { d: 'plant', x: -X + 0.5, z: Z - 0.5, r: 0, tier: 3, c: 0 },       // 앞좌 코너
+    { d: 'lamp', x: X - 0.4, z: 0, r: 0, tier: 3, c: 0 },               // 우측 중
   ];
 };
 
@@ -71,6 +72,19 @@ async function main() {
       return {placed:n, room:{w,d}, itemCount:items.length};
     }catch(e){return {error:String(e&&e.stack||e)};}})()`);
     console.log('  placed:', JSON.stringify(placed));
+    // 겹침 검출(디렉터 피드백 2026-07-12): addItem은 충돌을 안 거른다 → 배치 후 fp AABB 쌍별 검사.
+    //   회전 90/270도면 w,d 교환. rug 등 noCollide 제외. 겹침 있으면 로그로 경고(레이아웃 수정 신호).
+    const overlaps = await ev(`(()=>{const S=window.__shelter;const its=S.items||[];
+      const box=(it)=>{const def=S.DEFS[it.defId]||{};const fp=def.fp||{w:0.5,d:0.5};const rot=it.rot||0;
+        const swap=Math.abs(Math.sin(rot))>0.5;const hw=(swap?fp.d:fp.w)/2,hd=(swap?fp.w:fp.d)/2;
+        return {nc:!!def.noCollide,x0:it.x-hw,x1:it.x+hw,z0:it.z-hd,z1:it.z+hd,id:it.defId,y:it.y||0};};
+      const bs=its.map(box);const out=[];
+      for(let i=0;i<bs.length;i++)for(let j=i+1;j<bs.length;j++){const a=bs[i],b=bs[j];
+        if(a.nc||b.nc)continue; if(Math.abs(a.y-b.y)>0.3)continue; // 표면 스택(다른 높이) 제외
+        const ox=Math.min(a.x1,b.x1)-Math.max(a.x0,b.x0),oz=Math.min(a.z1,b.z1)-Math.max(a.z0,b.z0);
+        if(ox>0.03&&oz>0.03)out.push(a.id+'×'+b.id+'('+ox.toFixed(2)+'×'+oz.toFixed(2)+')');}
+      return out;})()`);
+    console.log('  overlaps:', overlaps.length ? '⚠ ' + overlaps.join(', ') : 'NONE ✓');
     // 3) UI 전부 숨김(캔버스 #c/#fx만 남김) — 스토어 샷은 깨끗해야 한다.
     await ev(`(()=>{let css=document.getElementById('shotcss');if(!css){css=document.createElement('style');css.id='shotcss';document.head.appendChild(css);}
       css.textContent='body > *:not(#c):not(#fx){display:none!important}';return 1;})()`); // 캔버스만 남기고 UI 전부 숨김
