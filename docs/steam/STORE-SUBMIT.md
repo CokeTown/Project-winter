@@ -38,26 +38,30 @@
 
 > 세상은 이미 끝났고, 되돌릴 수 없다. 그래도 난롯불은 지필 수 있고, 고양이는 곁에 눕는다. **Nine Winters**는 폐허 속 셸터 하나를 손질하며 아홉 번의 겨울을 나는 코지 생존 게임이다. 창밖으로 잿빛 도시가 얼어붙는 동안, 안에서는 수프를 데우고 벽지를 고쳐 붙이고 라디오를 켠다. 회복은 사건이 아니라 습관이다. 살아남는 게 아니라, 살아보는 이야기.
 
-**EN**:
+**EN** (정본 2026-07-12 — 응답 불빛 포지셔닝·탈-AI 리라이트, 281자. **스토어 메인 언어 = 영어**):
 
-> The world already ended, yet the stove still lights and the cat curls up beside you. **Nine Winters** is a cozy survival game about tending one shelter through nine winters. As the grey city freezes outside, you warm the soup, mend a wall, turn on the radio. Recovery is a habit, not an event. Not surviving. Dwelling.
+> You're the last lit window in a dead winter city. Climb to the radio, signal into the dark, and far across the ruins other windows flicker on in answer. A cozy survival game about keeping one shelter warm, letting the cat in, and outlasting nine winters, each colder than the last.
+
+태그라인: **"The last warm window in a dead winter city — you signal into the dark, and distant lights answer."**
+*(위 KO 짧은 설명은 구 「Embers in dust」 포지셔닝 — 영어 정본에 맞춰 재번역 필요. 스토어는 영어 우선.)*
 
 ---
 
 ## 3. About This Game: GIF 배치 설계 (AAA 스타일)
 
-본문 카피는 PAGE-COPY §2(ko/en) 그대로 쓰되, **단락 사이에 GIF를 끼워** 스크롤마다 게임이 움직이게 한다. Steam 본문 이미지 권장 616px 폭, `docs/steam/gifs/`(#154 제작 중, 각 3MB 이하):
+본문 카피 = **PAGE-COPY §2 EN 정본(2026-07-12 리라이트, 응답 불빛 포지셔닝)**. **단락 사이에 GIF를 끼워** 스크롤마다 게임이 움직이게. Steam 본문 이미지 권장 616px 폭, `docs/steam/gifs/`(각 3MB 이하):
 
-| 위치 | GIF | 보여주는 것 | 카피 앵커 |
+| 위치 | GIF | 보여주는 것 | 카피 앵커 (신 정본) |
 |---|---|---|---|
-| 도입부 직후 | `gif_candle.gif`: 어둠에서 촛불 하나가 방을 밝힘 | 첫인상: 톤 | "당신의 셸터에는 아직 불이 켜져 있다" 아래 |
-| "손질과 꾸미기" 항목 위 | `gif_decorate.gif`: 가구 스톱모션 배치+색 변경 | 코어 루프 ① 꾸미기 | 불릿 리스트 시작 전 |
-| "아홉 번의 겨울" 항목 아래 | `gif_seasons.gif`: 해 뜨고 지고, 맑음→비→눈 | 계절/날씨 시스템 | 계절 불릿 바로 아래 |
-| "난로 앞의 고양이" 항목 아래 | `gif_cat.gif`: 고양이 클로즈업 전환 | 감정 훅 | 고양이 불릿 바로 아래 |
-| "이 폐허에서 할 수 있는 것" 끝 | `gif_loot.gif`: 정산 개봉+희귀 골드/핑크 배지 | 도파민 루프 | 불릿 리스트 끝 |
-| 마무리 문단 위 | `gif_widget.gif`: 바탕화면 위젯 모드 | 차별화 피처 | "사망 연출은 없다" 문단 위 |
+| **도입 라디오 문단 직후** | **`gif_signal.gif` (신규 제작 필요)**: 밤 옥탑에서 라디오 송출 → 먼 창 하나가 깜빡 켜짐 | **시그니처 훅(응답 불빛)** | "…awake in the same dark" 아래 |
+| "Make a home worth staying in" 위 | `gif_decorate.gif`: 가구 스톱모션 배치+색 변경 | 코어 ① 꾸미기 | 불릿 리스트 시작 전 |
+| "Outlast nine winters" 아래 | `gif_seasons.gif`: 해 뜨고 지고, 맑음→비→눈 | 계절/날씨 | 겨울 불릿 아래 |
+| "Let the cat in" 아래 | `gif_cat.gif`: 고양이 클로즈업 전환 | 감정 훅 | 고양이 불릿 아래 |
+| "Scavenge without the grind" 아래 | `gif_loot.gif`: 정산 개봉+희귀 골드/핑크 배지 | 도파민 | 스캐빈지 불릿 아래 |
+| "Keep it glowing on your desktop" 아래 | `gif_widget.gif`: 바탕화면 위젯 모드 | 차별화 피처 | 위젯 불릿 아래 |
 
-레이아웃 규칙: GIF는 연속 2개 금지(카피→GIF→카피 리듬), 각 GIF 아래 한 줄 캡션 없이(본문이 캡션 역할). EN 페이지도 동일 배치.
+레이아웃 규칙: GIF 연속 2개 금지(카피→GIF→카피 리듬), 캡션 없이(본문이 캡션 역할). 스토어 메인 언어=영어.
+**GIF 상태:** 기존 5종(decorate·seasons·cat·loot·widget)은 재앵커만. **`gif_signal`(응답 불빛)은 신규 제작 필요** — 신 포지셔닝이 이 훅으로 시작하므로 최상단 GIF로 권장(구 gif_candle 대체). 컴포저 프레임 캡처 → GIF 조립.
 
 ---
 

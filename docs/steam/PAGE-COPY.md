@@ -12,8 +12,11 @@
 세상은 이미 끝났고, 되돌릴 수 없다. 그래도 난롯불은 지필 수 있고, 고양이는 곁에 눕는다. <b>Nine Winters</b>는 폐허 속 셸터 하나를 손질하며 아홉 번의 겨울을 나는 코지 생존 게임이다. 창밖으로 잿빛 도시가 얼어붙는 동안, 안에서는 수프를 데우고 벽지를 고쳐 붙이고 라디오를 켠다. 회복은 사건이 아니라 습관이다. 살아남는 게 아니라, 살아보는 이야기.
 </p>
 
-### EN
-The world already ended, yet the stove still lights and the cat curls up beside you. **Nine Winters** is a cozy survival game about tending one shelter through nine winters. As the grey city freezes outside, you warm the soup, mend a wall, turn on the radio. Recovery is a habit, not an event. Not surviving. Dwelling.
+### EN (정본 2026-07-12 리라이트 — 응답 불빛 포지셔닝, 탈-AI. 281자)
+You're the last lit window in a dead winter city. Climb to the radio, signal into the dark, and far across the ruins other windows flicker on in answer. A cozy survival game about keeping one shelter warm, letting the cat in, and outlasting nine winters, each colder than the last.
+
+> 태그라인: **"The last warm window in a dead winter city — you signal into the dark, and distant lights answer."**
+> *(KO 카피는 이 영어 정본에 맞춰 재번역 필요 — 위 KO 블록은 구 「Embers in dust」 포지셔닝, 폐기 대상.)*
 
 ---
 
@@ -48,22 +51,23 @@ The world already ended, yet the stove still lights and the cat curls up beside 
 
 ### EN
 
-Snow does not stop. The city has frozen grey, and no one is left on the streets. In the middle of that ruin, your shelter still has its lights on.
+There's a radio at the top of your shelter. Late at night you climb to it and push a signal out over a frozen, emptied-out city. Sometimes nothing comes back. Then, far across the dead skyline, a window you've never reached flickers on. Someone heard you. You'll never meet them, but for a moment you're both awake in the same dark.
 
-**Nine Winters** does not sell salvation. The world already ended. It offers the smallest unit of recovery instead: a warmed can of soup, a re-hung slate, a cat curled by the stove, one crackling channel on the radio. The day's small mending accumulates into warmth, and that warmth becomes the only thing in these ruins that stays.
+You're the one who stayed, after the plague and the fires and the long winter that swallowed the city. **Nine Winters** is a cozy survival game about keeping one small home warm through nine years of it. You settle into a single hideout, heat the soup, patch a cracked window, hang new wallpaper, and let the snow pile up outside while the place slowly becomes yours. Some mornings a cat wanders in from the cold and decides to stay.
 
-The smuggler drifts on. So does the far light, and the stranger who left a parcel at your door. What stays is only what you kindle yourself. Failing does not kill you; a slightly less whole day simply passes. In a world that never rushes you, you cross nine winters at your own pace.
+**What you'll do**
 
-**What the ruins hold**
+- **Make a home worth staying in.** Over a dozen places to hole up, from a penthouse to a bunker, a beached yacht, a ski lodge, a subway platform, a lighthouse. Fill it with furniture, wallpaper, and flooring until an empty concrete box turns into somewhere you're glad to wake up.
+- **Signal into the dark.** Get the old radio running and broadcast across the ruins. When a far-off window lights up in reply, that's a survivor you'll never reach, letting you know they made it through another night.
+- **Outlast nine winters.** Four seasons turn, and each winter bites harder than the one before. You stockpile through the warm months, seal the doors against the deep cold, and watch frost climb the inside of the glass while the ninth winter waits at the end.
+- **Let the cat in.** Pet it and it closes its eyes by the stove, good company for a long winter. (A dog can lend a hand with the heavier work.)
+- **Scavenge without the grind.** Send crews out to the frozen districts nearby and sort through what they haul back. It's an idle game at heart, ticking along while you're away.
+- **Set your own weather.** Play Cozy for a gentle time, Survival and Whiteout when you want the cold to have teeth, Hardcore when you want every winter to count. Weather a full run and a Wallpaper mode opens up: pure decorating, no gauges, no pressure.
+- **Keep it glowing on your desktop.** Pin your finished home to your desktop as a live widget and let the snow fall in the corner of your screen while you work.
 
-- **Nine winters.** Seasons drift, and the time you endure gets counted. Summer's rot, winter's lockdown, the frost creeping across the glass. The tension of preparing and the relief of surviving return with each season.
-- **Tending and decorating.** Wallpaper, flooring, and themes make the shelter your own home. An empty container fills in, piece by piece, and the change is kept in your notebook as "that winter."
-- **A cat by the stove.** Pet it, and it closes its eyes. The cat is comfort, the dog is work. Animals are the one thing that stays rather than drifts.
-- **Four horizons.** A frozen harbor, the lines beneath your feet, a highland where auroras rise, and the forbidden zone. Four free expansions after launch widen the world your shelter can reach.
-- **Five ways to dwell.** Easygoing Normal, testing Hard, unforgiving Hardcore, the endless Endless, and the Wallpaper mode that opens only to those who have weathered the pressure. Each asks about warmth in a different way.
-- **A desktop widget.** Leave your finished home glowing on the desktop. While the snow falls and the firelight flickers, your warmth stays in one corner of the screen.
+Nobody is rushing you and nothing is trying to kill you. Just a long winter, a warm room, a cat asleep by the stove, and a light on the far horizon that might be someone a lot like you.
 
-There is no death scene. No hand pushing you forward. What is here is only an invitation: that even after the world ends, life is something you can keep tending.
+A free story update, Nine Winters: Response, is already in the works. Come build a warm room at the end of the world, and see who answers.
 
 ---
 
