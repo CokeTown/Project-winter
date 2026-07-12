@@ -39,6 +39,10 @@ const SHOTS = [
   { id: '06_tugboat_cabin', shelter: 'tugboat', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
   { id: '08_subway_home', shelter: 'subway', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
   { id: '09_lighthouse_lamp', shelter: 'lighthouse', hour: 17, weather: 'clear', cat: true, ...CAM, layout: cozyLiving },
+  // 응답 불빛 컷: 밤 옥탑(따뜻한 실내) + 어두운 도시 + 먼 곳 발광 창 1개(clamp 없는 extra 배치).
+  { id: '02_answering_light', shelter: 'rooftop', hour: 22, weather: 'clear', cat: false,
+    yaw: 0.62, pitch: 0.52, zoom: 0.92, pan: { x: 1.5, z: -3 }, layout: cozyLiving,
+    extra: [{ d: 'lantern', x: 10, z: -7, y: 4.5 }] }, // 응답 불빛: 어둠 속 먼 창 하나
 ];
 
 function bgra2rgba(b) { const o = Buffer.alloc(b.length); for (let i = 0; i < b.length; i += 4) { o[i] = b[i + 2]; o[i + 1] = b[i + 1]; o[i + 2] = b[i]; o[i + 3] = 255; } return o; }
@@ -73,8 +77,9 @@ async function main() {
       const w=R.w,d=R.d;
       const L=(${sc.layout.toString()})(w,d); const items=L.items||L;
       let n=0; for(const it of items){ try{ S.addItem(it.d, it.c||0, it.x, it.z, it.r||0, true, 0, it.tier||3); n++; }catch(e){} }
+      ${sc.extra ? `for(const e of (${JSON.stringify(sc.extra)})){ try{ S.addItem(e.d, e.c||0, e.x, e.z, e.r||0, true, e.y||0, e.tier||3); n++; }catch(err){} }` : ''}
       ${sc.cat ? 'try{S.spawnCat&&S.spawnCat();}catch(e){}' : ''}
-      if(L.pan&&S.setPan)S.setPan(L.pan.x,L.pan.z);
+      const PAN=${sc.pan ? JSON.stringify(sc.pan) : '(L.pan||null)'}; if(PAN&&S.setPan)S.setPan(PAN.x,PAN.z);
       S.setYaw&&S.setYaw(${sc.yaw}); S.setPitch&&S.setPitch(${sc.pitch}); S.setZoom&&S.setZoom(${sc.zoom});
       return {placed:n, room:{w,d}, itemCount:items.length, pan:L.pan};
     }catch(e){return {error:String(e&&e.stack||e)};}})()`);
