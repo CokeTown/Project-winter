@@ -84,12 +84,14 @@
 - **Pre-Generated AI content: YES / Live-Generated: NO**
 - 공개 문구 (설문 서술란):
 
-**EN**: "Some 2D assets (UI icons, event illustrations) were created with generative AI tools and then curated and edited by the developer. Portions of the game code were written with AI-assisted development tools under direct developer supervision. All store capsule art and screenshots are actual in-game renders. The game contains no live/runtime AI generation."
+**EN**: "Some 2D assets (a number of UI icons and event illustrations) were drafted with generative AI tools and then curated and edited by the solo developer. AI-assisted development tools helped write portions of the game code under direct developer supervision, and machine translation was used as a first-draft aid for localization, with all text reviewed and edited by a human. All store capsule art and screenshots are actual in-game renders, not AI images. The game generates no content with AI at runtime — everything in the build is fixed and human-reviewed."
 
-**KO**: "일부 2D 에셋(UI 아이콘, 이벤트 삽화)은 생성형 AI 도구로 제작 후 개발자가 선별·수정했습니다. 게임 코드 일부는 개발자의 직접 감독 아래 AI 보조 개발 도구로 작성되었습니다. 상점의 캡슐 아트와 스크린샷은 전부 실제 인게임 렌더입니다. 게임 내 실시간 AI 생성은 없습니다."
+**KO**: "일부 2D 에셋(UI 아이콘, 이벤트 삽화 다수)은 생성형 AI 도구로 초안을 만든 뒤 1인 개발자가 선별·수정했습니다. 게임 코드 일부는 개발자의 직접 감독 아래 AI 보조 개발 도구로 작성했고, 현지화는 기계 번역을 초벌로 활용한 뒤 모든 문장을 사람이 검수·수정했습니다. 상점의 캡슐 아트와 스크린샷은 전부 실제 인게임 렌더이며 AI 이미지가 아닙니다. 게임 내 실시간 AI 생성은 없으며, 빌드의 모든 콘텐츠는 고정·사람 검수를 거쳤습니다."
 
 > 갱신(2026-07-11): 캡슐이 인게임 렌더로 교체되며 "마케팅 캡슐 아트" 항목을 AI 목록에서 제거,
 > 대신 "상점 비주얼 = 실제 인게임"을 명시 문장으로 추가. A5 방어가 더 단단해진다.
+> 갱신(2026-07-12): 스팀 AI 설문이 "현지화"를 명시 콘텐츠로 물어 **번역(기계번역 초벌+사람 검수)** 항목 추가.
+>   실시간 생성=아니요·외부 AI 서비스=아니요(런타임 AI 0). 사전 생성 유형=2D 아트(아이콘·삽화)·코드 보조·번역 초벌. OST·SFX·복셀 모델·내러티브·캡슐=AI 아님.
 
 ---
 
