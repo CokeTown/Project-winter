@@ -22,6 +22,24 @@ for (const k of koKeys) {
   if (!EN_HANGUL_OK.has(k) && HANGUL.test(String(en[k] ?? ''))) bad.push(`${k}: en 미번역(한글 잔존) "${String(en[k]).slice(0, 30)}"`);
 }
 for (const k of enKeys) if (!(k in ko)) bad.push(`${k}: ko 누락`);
+// ── 서사 POV 가드 (#176/#139): 서술문의 2인칭(당신/you)은 1인칭(나·내 / I·my)으로 통일 ──
+//   고립 테제는 친밀한 1인칭 내면에 산다. 훅(인트로)·페이오프(엔딩)에서 "당신/your home" 같은
+//   외부 서술자 프레임이 그 감정을 평평하게 만든다 → 서사 표면은 1인칭, 2인칭은 NPC 인용 대사("...") 안에서만.
+//   범위: 인트로·엔딩·winter.ninth·ev.cat/dog/ending·모드 태그·수첩. (ev.doctor/ev.doctorReg 2.0 라디오-닥터
+//   계열의 선택지 "You listen"류는 이번 스코프 밖 — 별도 패스에서 처리, 여기 집합에 넣지 않음.)
+const NARRATIVE_KEYS = new Set([
+  'intro.0', 'intro.1', 'intro.2', 'intro.firstShelter',
+  'ending.line0', 'ending.line1', 'ending.line2', 'ending.line2cat', 'ending.line3', 'ending.line4', 'ending.catTag', 'ending.back', 'ending.note', 'ending.epilogue',
+  'winter.ninth.title', 'winter.ninth.body',
+  'ev.cat.text', 'ev.cat.r1', 'ev.dog.r0',
+  'ev.ending.title', 'ev.ending.text', 'ev.ending.c0', 'ev.ending.c1', 'ev.ending.r0', 'ev.ending.r1', 'ev.ending.textSignal',
+  'mode.zen.tag', 'jnl.help.p5.body', 'quest.clean.done',
+]);
+const stripQuotes = s => String(s ?? '').replace(/"[^"]*"/g, '');   // 인용부호("...") 안 NPC 대사 제거 → 서술만 남겨 검사
+for (const k of NARRATIVE_KEYS) {
+  if (k in ko && /당신/.test(stripQuotes(ko[k]))) bad.push(`${k}: 서술문에 2인칭 '당신' 잔존 → 나/내로 (POV #176)`);
+  if (k in en && /\byou(rs|rself|r)?\b/i.test(stripQuotes(en[k]))) bad.push(`${k}: 서술문에 2인칭 'you/your' 잔존 → I/my로 (POV #176)`);
+}
 // ── src ↔ public 동기화 게이트 (2026-07-08 검거) ──
 //   번들·이 게이트는 src/locales를, 런타임 fetch/preload 오버라이드는 dist/locales(=public 복사본)를 읽는다.
 //   둘이 어긋나면: public에만 넣은 신규 키는 게이트 무검증, src에만 넣은 윤문은 런타임에서 구본에 덮여 무효
