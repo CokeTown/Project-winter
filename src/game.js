@@ -3476,7 +3476,7 @@ function eventCtx() {
 // eventMatches/eventWeight/eventThreePeatBlocked/pushEvHistory → core/encounter.js 이관 (Tier3, 순수 술어)
 // 후보 풀에서 가중 추첨해 pendingEvent 예약. 성공 시 뽑힌 id, 없으면 null.
 // #74 데모: 인카운터 종류 축소 — 코지 세트만(방문자·동물·잔잔한 세계관 결). 거친/유틸·위치잠금은 정식판에서.
-const DEMO_EVENTS = new Set(['wanderer', 'trader', 'dog', 'seeds', 'old_calendar', 'caravan_pass', 'distant_light', 'cat_gift']);
+const DEMO_EVENTS = new Set(['wanderer', 'trader', 'dog', 'seeds', 'old_calendar', 'caravan_pass', 'distant_light', 'cat_gift', 'demo_far_light', 'demo_procession', 'demo_radio_light']);
 function drawEvent(ctx = eventCtx()) {
   if (isWallpaper()) return null; // 🖼️ 배경화면: 인카운터/이벤트 off
   const cands = Object.keys(EVENTS).filter(id =>
@@ -6239,7 +6239,7 @@ function openSlotModal(mode) {
 // 모달 빌더 → ui/modals.js (Tier4 Phase1-⑤). t/BAL/DEFAULT_STATE/opts는 모듈이 import, game.js 클로저만 주입.
 const { openModeModal, openWardrobeModal, openKnowledgeModal } = makeModals({ openModal, toast, wallpaperUnlocked, zenUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS,
   getPaused: () => paused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud });
-const INTRO_IDS = ['intro.0', 'intro.1', 'intro.2'];
+const INTRO_IDS = ['intro.0']; // #4 데모 개막 압축(리뷰 레버4): 3장 텍스트벽→1인칭 1장(원클릭 시작). intro.1/2는 구본(#176 POV 스윕 때 정리).
 function showIntro() {
   let i = 0;
   const scr = $('intro-screen'), txt = $('intro-text');
@@ -6893,6 +6893,14 @@ function processDay() {
     state.catMusicDay = state.day; // 당첨된 날은 하루 종일 Cat OST
     state.catEventSeen = true; // 거절해도 다시는 뜨지 않음
     notes.push(t('day.catHint'));
+  }
+  // 데모 고립→응답 비트(리뷰 레버1·6, 디렉터 2026-07-12): 15일 안에 시그니처(응답하는 불빛)를 반드시 한 번.
+  //   셸터/라디오 게이트로 데모에서 안 뜨던 주제 조우를 확정 스크립트로 승격 — pendingEvent 강제 예약(when 무시).
+  //   Day7 먼 불빛 → Day11 지나가는 사람들 → Day14 라디오→응답(첫눈 Day13 직후 클라이맥스). 고양이(Day9)와 무충돌.
+  if (DEMO_ED && !state.pendingEvent) {
+    if (state.day === 7 && !state.demoFarLightSeen) { state.demoFarLightSeen = true; state.pendingEvent = 'demo_far_light'; state.lastEventDay = state.day; }
+    else if (state.day === 11 && !state.demoProcessionSeen) { state.demoProcessionSeen = true; state.pendingEvent = 'demo_procession'; state.lastEventDay = state.day; }
+    else if (state.day === 14 && !state.demoRadioLightSeen) { state.demoRadioLightSeen = true; state.pendingEvent = 'demo_radio_light'; state.lastEventDay = state.day; }
   }
   // 특수 인카운터 ②: 구조 — Day 10000 초과, 하루 5%
   if (!DEMO_ED && !state.pendingEvent && state.day > 10000 && !state.endingSeen && Math.random() < 0.05) { // #90: 엔딩은 본편 전용

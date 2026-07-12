@@ -206,6 +206,33 @@ export function makeEvents(ctx) {
         { labelId: 'ev.radioghost.c1', run() { return t('ev.radioghost.r1'); } },
       ],
     },
+    // 데모 고립→응답 비트(리뷰 레버1·6, 디렉터 2026-07-12). 셸터/라디오 게이트에 막혀 데모에서 안 뜨던
+    //   주제 조우들을 "확정 스크립트"로 승격 — processDay가 특정 데모일에 pendingEvent로 강제 예약(when 무시).
+    //   서사 척추: "따뜻한 고독, 응답하는 불빛". Day7 먼 불빛 → Day11 지나가는 사람들 → Day14 라디오→응답.
+    demo_far_light: {
+      icon: '🌃', titleId: 'ev.demofarlight.title', textId: 'ev.demofarlight.text',
+      choices: [
+        { labelId: 'ev.demofarlight.c0', run() { addMoodBuff(2, 2); recordDistantLight(); return t('ev.demofarlight.r0'); } },
+      ],
+    },
+    demo_procession: {
+      icon: '🕯️', titleId: 'ev.demoprocession.title', textId: 'ev.demoprocession.text',
+      choices: [
+        { labelId: 'ev.demoprocession.c0', run() { addMoodBuff(1, 2); return t('ev.demoprocession.r0'); } },
+      ],
+    },
+    demo_radio_light: { // 시그니처: 부서진 라디오 → 한 번 송출 → 창 하나가 응답한다(첫 survivorLight).
+      icon: '📻', titleId: 'ev.demoradiolight.title', textId: 'ev.demoradiolight.text',
+      choices: [
+        { labelId: 'ev.demoradiolight.c0', run() {
+          state.survivorLights = Math.max(state.survivorLights || 0, 1); // 첫 응답 불빛(온기는 남는다)
+          recordDistantLight();
+          addMoodBuff(3, 3);
+          return t('ev.demoradiolight.r0');
+        } },
+        { labelId: 'ev.demoradiolight.c1', run() { return t('ev.demoradiolight.r1'); } },
+      ],
+    },
     // 9. 무조건부 저확률: 벽에서 발견한 과거 달력. 메모 1 드랍.
     old_calendar: {
       icon: '📅', titleId: 'ev.oldcalendar.title', textId: 'ev.oldcalendar.text',
