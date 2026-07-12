@@ -95,23 +95,26 @@
 
 ## 6. Graphical Assets 파일 매핑 (인게임 복셀 정본, 2026-07-11 교체)
 
-> **정본 = `assets-src/art/out/capsules-ingame/`** (디렉터 확정: AI 생성 캡슐 전면 폐기, 실제 인게임 씬으로).
-> 씬: 옥탑방·노을(17시)·눈·붉은 카펫 바닥·크림 침대(T3)·베이지 러그+머스터드 방석 중앙·방석 위 고양이·
-> 벽 난로(점화)·스탠드·책장·시계·라디오·화분. 타이틀 = 게임 폰트(DungGeunMo) + 태그라인.
-> 촬영 스크립트: scratchpad `capture-hero3.cjs` (4K 마스터 → 규격별 크롭+합성, 재촬영 재현 가능).
+> **업로드 정본(스팀 신규 2× 규격, 2026-07-12) = `docs/steam/capsules-upload/`** — 스토어 4종 + 페이지 배경.
+>   스팀이 캡슐 규격을 2배로 갱신(460×215→920×430 등)해 구 파일은 "크기 미달"로 업로드 거부됨 → 픽셀아트라
+>   art-res→2× 니어레스트 재생성(픽셀 퍼펙트, 승인된 룩 보존). 페이지 배경만 4K 마스터 스무스 다운스케일.
+>   **타이틀 = 워드마크만(이름 전용). 서브타이틀 'Embers in dust'는 포지셔닝 피벗으로 폐기(디렉터 2026-07-12).**
+> **소스/마스터 = `assets-src/art/out/capsules-ingame/`** (씬: 옥탑방·노을·눈·붉은 카펫·크림 침대(T3)·베이지 러그·
+>   방석 위 고양이·벽 난로·스탠드·책장·시계·라디오·화분. `master_4k.png`(3840×2160)·`master_vertical.png`(1350×2025)에서
+>   규격별 크롭 + `steam2/final_logo_wordmark.png` 합성. 재생성기: scratchpad `capsules-out/compose.cjs`).
 
-| Steamworks 슬롯 | 파일 (capsules-ingame/) | 규격 |
+| Steamworks 슬롯 | 파일 (`capsules-upload/`) | 규격 (스팀 신규 2×) |
 |---|---|---|
-| Header capsule | `steam_header.png` | 460×215 ✅ |
-| Small capsule | `steam_small_capsule.png` | 231×87 ✅ |
-| Main capsule | `steam_main_capsule.png` | 616×353 ✅ |
-| Vertical capsule | `steam_vertical.png` | 374×448 ✅ |
-| Library capsule | `steam_library.png` | 600×900 ✅ |
-| Library hero | `steam_hero.png` (텍스트 없음, 로고 별도 레이어) | 3840×1240 ✅ |
-| Library logo | `steam_logo.png` (게임 폰트 타이포, #151 GPT 로고 폐기) | 1280×720 ✅ |
-| Screenshots (순서대로) | `shots/final/01~08` (미감 v2 교체 예정: #156, 인게임 원칙 동일) | 1920×1080 ✅ |
-| Trailer | `trailer/draft.mp4`(54s 무음 가편) → **트레일러 v2(#172, video-use 파이프라인)** 완성 시 교체 | 1080p+ |
-| 마스터 원본 | `master_4k.png`(3840×2160) · `master_vertical.png`(1350×2025) | 재크롭용 |
+| Header capsule | `header_920x430.png` | 920×430 ✅ |
+| Small capsule | `small_462x174.png` | 462×174 ✅ |
+| Main capsule | `main_1232x706.png` | 1232×706 ✅ |
+| Vertical capsule | `vertical_748x896.png` | 748×896 ✅ |
+| Page background | `page_background_1438x810.png` (텍스트 없음) | 1438×810 ✅ |
+| Library capsule | `capsules-ingame/steam_library.png` | 600×900 (라이브러리 규격 별도 검증 要) |
+| Library hero | `capsules-ingame/steam_hero.png` (텍스트 없음) | 3840×1240 |
+| Library logo | `capsules-ingame/steam_logo.png` (엠블럼 투명) | 1280×720 |
+| Screenshots (순서대로) | `shots/final/01~08` (미감 v2 교체 예정: #156) | 1920×1080 |
+| Trailer | `trailer/draft.mp4` → **트레일러 v2(#172)** 완성 시 교체 | 1080p+ |
 
 ---
 
