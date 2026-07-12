@@ -2843,10 +2843,21 @@ function showMapInfo(rid) {
 
   const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
   const mTier = masteryTier(rid); // 2.0 지역 숙련 — 정보줄에 지리 지식 표기
+  // #177 보급원 트래커 (게임 리뷰 레버5 "pull 가시화"): 이 지역이 뭘 빚졌나(미수집 시그니처) + 숙련 다음 티어까지.
+  //   방문한 지역만 표시(위 !visits 게이트) → 미도달·게이트 지역 시그니처 누출 없음(#90 "조회 불가" 원칙 준수).
+  let track = '';
+  const sigs = BAL.blueprint.regionItems[rid];
+  if (sigs) {
+    const unowned = sigs.filter(id => !(state.blueprints || {})[id]);
+    track = unowned.length
+      ? `<br>${t('map.drops', { items: unowned.map(id => LName(DEFS[id])).join(', ') })}`
+      : `<br><span style="color:var(--good)">${t('map.sigDone')}</span>`;
+  }
+  const mNext = mTier < BAL.mastery.tiers.length ? ` · ${t('map.masteryNext', { n: mTier + 1, m: BAL.mastery.tiers[mTier] - visits })}` : '';
   $('map-info').innerHTML = `
     ${t('map.regionLine', { emoji: regionIcon(rid), pct: Math.round(p.eff * 100), name: LName(r), desc: LDesc(r) })}<br>
     ${t('map.riskLine', { risk: LRisk(r), dur, mult: regionDistMult(rid).toFixed(2), wicon: wxIcon(weather.type), wname: LName(WEATHERS[weather.type]), forecast: fc })}
-    · ${t('map.visits', { n: visits })}${mTier > 0 ? ` · <span style="color:var(--accent)">${t('map.mastery', { n: mTier })}</span>` : ''}`;
+    · ${t('map.visits', { n: visits })}${mTier > 0 ? ` · <span style="color:var(--accent)">${t('map.mastery', { n: mTier })}</span>` : ''}${mNext}${track}`;
 }
 
 // 탐험 소요 시간(초): 거리 + 염좌 +30% + 이동형 거점(버스) -25%
@@ -10280,7 +10291,7 @@ window.__shelter = {
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
-  seasonOf, SEASONS, openMapModal, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
+  seasonOf, SEASONS, openMapModal, showMapInfo, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
   // Phase D (#12 · #35 · #36) QA 훅
   MEMOS, WILLS, BROADCASTS, MEMOS_BY_REGION, eventCtx, eventMatches, drawEvent, eventWeight,
   dropMemo, dropBroadcast, tryDropMemoOnExpedition, tryRadioBroadcast, doctorFragmentsComplete,
