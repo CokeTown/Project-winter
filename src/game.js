@@ -2608,6 +2608,7 @@ function openMapModal() {
     if (!regionUnlocked(rid)) continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
     const el = document.createElement('div');
     el.className = 'map-pin region';
+    el.dataset.rid = rid; // 식별자 노출(테스트·자동화·트레일러 캡처가 지역별로 마커를 짚게)
     // #85 수용 규칙(#87 임시 가드의 정식화): 렌더에서 안전영역 자동 클램프 — 신규 지역 좌표 실수를 원천 차단
     el.style.left = Math.min(MAP_SAFE.x1, Math.max(MAP_SAFE.x0, p.x)) + '%';
     el.style.top = Math.min(MAP_SAFE.y1, Math.max(MAP_SAFE.y0, p.y)) + '%';
@@ -2656,6 +2657,7 @@ function openMapModal() {
     const isCurrent = sid === state.current;
     const el = document.createElement('div');
     el.className = 'map-shelter' + (furnished ? ' furnished' : '') + (isCurrent ? ' current' : '');
+    el.dataset.sid = sid; // 식별자 노출(테스트·자동화·트레일러 캡처가 셸터별로 마커를 짚게)
     el.style.left = Math.min(MAP_SAFE.x1, Math.max(MAP_SAFE.x0, sp.x)) + '%';
     el.style.top = Math.min(MAP_SAFE.y1, Math.max(MAP_SAFE.y0, sp.y)) + '%';
     el.title = LName(SHELTERS[sid]) + (isCurrent ? ` · ${t('map.home')}` : '');

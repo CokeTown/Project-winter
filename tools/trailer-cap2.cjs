@@ -17,6 +17,10 @@ const SPEC = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const OUTROOT = process.argv[3];
 const FILTER = process.argv[4] ? process.argv[4].split(',') : null;
 const DIST = path.resolve(__dirname, '..', 'dist');
+// CAP_URL 지정 시 dist file:// 대신 그 URL(예: 개발 서버 http://localhost:8420)에서 로드.
+//   dist file:// 는 PWA SW 재등록/재빌드 시 부팅이 불안정(간헐 실패) — dev 서버 로드가 안정적.
+const CAP_URL = process.env.CAP_URL || null;
+const loadApp = w => CAP_URL ? w.loadURL(CAP_URL) : w.loadFile(path.join(DIST, 'index.html'));
 const W = 1920, HGT = 1080, FPS = SPEC.fps || 30;
 const lerp = (a, b, t) => a + (b - a) * t;
 const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
@@ -85,7 +89,7 @@ async function main() {
   const ev = e => win.webContents.executeJavaScript(e, true);
 
   // 프리부트: nw-opts.lang=en (부팅부터 완전 영어 — 패널 제목·퀘스트 포함)
-  await win.loadFile(path.join(DIST, 'index.html'));
+  await loadApp(win);
   await sleep(1200);
   await ev(`(()=>{try{const o=JSON.parse(localStorage.getItem('nw-opts')||'{}');o.lang='en';localStorage.setItem('nw-opts',JSON.stringify(o));}catch(e){}return 1;})()`);
 
@@ -109,7 +113,7 @@ async function main() {
     const step = async (nf) => FX
       ? ev(`(()=>{window.__shelter.stepGolden(${nf},1/${FPS});return 1;})()`)
       : (vtOn ? vtAdvance(nf * 1000 / FPS) : sleep(Math.round(nf * 1000 / FPS)));
-    await win.loadFile(path.join(DIST, 'index.html'));
+    await loadApp(win);
     let ready = false;
     for (let i = 0; i < 120; i++) { if (await ev(`!!(window.__shelter&&window.__shelter.loadShelter)`).catch(() => false)) { ready = true; break; } await sleep(400); }
     if (!ready) { console.log('SKIP ' + sc.id + ' (부팅 실패)'); continue; }
@@ -359,19 +363,34 @@ async function main() {
         const c = sc.cam, e2 = ease(t);
         await ev(`(()=>{const S=window.__shelter;S.setYaw(${lerp(c.yaw0, c.yaw1, e2)});S.setPitch(${lerp(c.pit0, c.pit1, e2)});S.setZoom(${lerp(c.z0, c.z1, e2)});S.setPan(${lerp(c.px0, c.px1, e2)},${c.pz});return 1;})()`);
       }
-      // unlockmap: 비트마다 successes 문턱 하나를 넘겨 지도 재구성 — 셸터 점·지역 마커가 실제 해금
-      //   로직(regionUnlocked·#110 셸터 마커)으로 하나씩 그려진다 (디렉터: "점이 아니라 내가 해금하는 걸").
-      if (sc.kind === 'unlockmap' && sc.unlockFrames) {
+      // v21 unlockmap: base 코어 로케이션만 비트마다 하나씩 등장(이름표+골드 펄스). 지하철·1.1~1.4·생존자불빛은 영구 숨김.
+      //   디렉터: "지하철·1.1~1.4 지우고 하나 하나 장소가 나타나는 느낌으로 — 슥슥 지나가면 뭐가 뭔가 싶다".
+      //   reveal 순서는 스펙 주입([{type:'region'|'shelter', id|ids}]). 마커 식별은 game.js data-rid/data-sid.
+      if (sc.kind === 'unlockmap' && sc.reveal && sc.unlockFrames) {
+        if (f === 0) { // 최초: 전 base 마커가 DOM에 존재하도록 열고 → 전부 숨김 + 확장/생존자불빛 정리 + 지도맵랩 rect 로깅
+          const r = await ev(`(()=>{const S=window.__shelter;S.state.successes=290;S.openMapModal&&S.openMapModal();
+            const w=document.getElementById('map-wrap');if(!w)return null;
+            w.querySelectorAll('.map-pin.region,.map-shelter').forEach(e=>{e.style.visibility='hidden';e.style.transition='none';});
+            w.querySelectorAll('.map-light').forEach(e=>e.remove());
+            const info=document.getElementById('map-info');if(info)info.textContent='';
+            const b=w.getBoundingClientRect();return {x:Math.round(b.left),y:Math.round(b.top),w:Math.round(b.width),h:Math.round(b.height)};})()`);
+          if (r) { console.log('  map-wrap rect:', JSON.stringify(r)); fs.writeFileSync(path.join(OUTROOT, sc.id + '_maprect.json'), JSON.stringify(r)); }
+        }
         const idx = sc.unlockFrames.indexOf(f);
-        // 신규 마커 골드 펄스 (디렉터 v13: "뭐가 열리는 건지 흐리다") — 위치 diff로 새 지역·셸터를 짚어준다
-        if (idx >= 0) await ev(`(()=>{const S=window.__shelter;S.state.successes=${sc.successLadder[idx]};S.openMapModal&&S.openMapModal();
-          const w=document.getElementById('map-wrap');if(!w)return 0;
-          const els=[...w.querySelectorAll('.map-pin.region,.map-shelter')];
-          const prev=window.__nwPrev||[];const cur=els.map(e=>e.style.left+'|'+e.style.top);window.__nwPrev=cur;
-          els.forEach(e=>{const k=e.style.left+'|'+e.style.top;if(prev.includes(k))return;
-            e.style.outline='3px solid #E8B87A';e.style.outlineOffset='3px';e.style.zIndex='99';e.style.borderRadius='10px';
-            if(e.animate)e.animate([{transform:'scale(2.4)',opacity:0.2},{transform:'scale(1)',opacity:1}],{duration:480,easing:'ease-out'});});
-          return cur.length;})()`);
+        if (idx >= 0 && sc.reveal[idx]) {
+          const st = sc.reveal[idx];
+          const ids = JSON.stringify(st.ids || [st.id]);
+          const attr = st.type === 'region' ? 'rid' : 'sid';
+          const isRegion = st.type === 'region';
+          await ev(`(()=>{const w=document.getElementById('map-wrap');if(!w)return 0;
+            w.querySelectorAll('.map-pin,.map-shelter').forEach(e=>{e.style.outline='';}); // 직전 강조 정리(최신 것만 글로우)
+            const ids=${ids};const els=ids.map(id=>w.querySelector('[data-${attr}="'+id+'"]')).filter(Boolean);
+            els.forEach(e=>{e.style.visibility='visible';
+              e.style.outline='3px solid #E8B87A';e.style.outlineOffset='3px';e.style.zIndex='99';e.style.borderRadius='10px';
+              if(e.animate)e.animate([{transform:'scale(2.2)',opacity:0.15},{transform:'scale(1)',opacity:1}],{duration:420,easing:'ease-out'});});
+            ${isRegion ? `const nm=els[0]&&els[0].querySelector('.pin-name');const info=document.getElementById('map-info');if(info&&nm)info.textContent=nm.textContent;` : ''}
+            return els.length;})()`);
+        }
       }
       // signal: 비트 프레임 누적 개수만큼 불빛 점등 (비트마다 창문 하나가 응답)
       if (sc.kind === 'signal' && sc.lightFrames) {
