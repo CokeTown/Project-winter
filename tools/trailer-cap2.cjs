@@ -199,19 +199,25 @@ async function main() {
       const CAM_YAW = sc.closeCamYaw != null ? sc.closeCamYaw : 0.6;
       await ev(`window.__shelter.setYaw&&window.__shelter.setYaw(${CAM_YAW})`);
       await step(24); // camState.yaw 러프 수렴
-      await ev(`(()=>{const S=window.__shelter;const c=S.cat&&S.cat();if(!c)return 0;
-        // +π: 실측 — facing=camYaw-off는 뒤통수(rotY 유지 확인). 오빗 yaw는 시선 기준이라 얼굴은 반대편.
-        // faceOffset: 0=완전 정면 (디렉터 v14: 3/4도 '등'으로 읽힘 — 정면 고정), 기본 0.14=미세 3/4.
-        c.g.rotation.y=${CAM_YAW}+Math.PI-${sc.faceOffset != null ? sc.faceOffset : 0.14};return c.g.rotation.y;})()`);
-      await step(10);
       // useGameCloseup: 인게임 클릭 확대 카메라(#58 enterCatCloseup) 그대로 — 디렉터: "그게 매력인데"
       if (sc.useGameCloseup) {
-        console.log('  rotY pre-enter:', await ev(`(()=>{const c=window.__shelter.cat&&window.__shelter.cat();return c?c.g.rotation.y.toFixed(3):'none';})()`));
         await ev(`window.__shelter.enterCatCloseup&&window.__shelter.enterCatCloseup()`);
-        await step(45); // 전용 캠 글라이드 안착 (정속)
-        console.log('  rotY settled:', await ev(`(()=>{const c=window.__shelter.cat&&window.__shelter.cat();return c?c.g.rotation.y.toFixed(3):'none';})()`),
-          'camYaw:', await ev(`window.__shelter.camYawState?JSON.stringify(window.__shelter.camYawState()):(window.__shelter.catCamState?JSON.stringify(window.__shelter.catCamState().targetYaw||''):'?')`));
-        console.log('  catCam:', await ev(`JSON.stringify(window.__shelter.catCamState&&window.__shelter.catCamState())`));
+        await step(60); // 전용 캠 글라이드 안착 (정속)
+        // ── 등돌림 근본 수리 (디렉터 재신고 3회) ──────────────────────────────
+        //   근본 원인: computeCatCloseupYaw(game.js)가 카메라를 현재 yaw ±45°로 클램프한다.
+        //   → 추측 rotation.y(=0.6+π-off≈3.6)를 어떻게 넣어도 카메라는 yaw≈1.39에 앉아 고양이 뒤를 본다.
+        //   해법: 카메라가 안착한 뒤 그 '실제 카메라 방위'를 읽어 고양이를 그쪽으로 돌린다(추측 폐기).
+        //   heading=atan2(dx,dz) → forward=(sin,cos). faceCamOffset로 미세 3/4(정면 스테어링 완화).
+        await ev(`(()=>{const S=window.__shelter;const c=S.cat&&S.cat();if(!c)return 0;
+          const cp=new S.THREE.Vector3();c.g.getWorldPosition(cp);
+          const camp=new S.THREE.Vector3();S.camera.getWorldPosition(camp);
+          c.g.rotation.y=Math.atan2(camp.x-cp.x,camp.z-cp.z)+${sc.faceCamOffset != null ? sc.faceCamOffset : 0.2};
+          return c.g.rotation.y.toFixed(3);})()`);
+        console.log('  faceCam rotY:', await ev(`(()=>{const c=window.__shelter.cat&&window.__shelter.cat();return c?c.g.rotation.y.toFixed(3):'none';})()`));
+      } else {
+        // 폴백(수동 팔로우)만 옛 추측 회전 사용
+        await ev(`(()=>{const S=window.__shelter;const c=S.cat&&S.cat();if(c)c.g.rotation.y=${CAM_YAW}+Math.PI-${sc.faceOffset != null ? sc.faceOffset : 0.14};return 1;})()`);
+        await step(10);
       }
     } else if (sc.kind === 'map' || sc.kind === 'signal' || sc.kind === 'unlockmap') {
       await ev(`window.__shelter.openMapModal&&window.__shelter.openMapModal()`); await sleep(500);
@@ -306,7 +312,14 @@ async function main() {
         if (!sc.useGameCloseup) { // 수동 팔로우 (폴백)
           const yaw = 0.5 + 0.32 * ease(t), zoom = lerp(2.0, 2.5, t);
           await ev(`(()=>{const S=window.__shelter;const c=S.cat&&S.cat();if(c){const v=new S.THREE.Vector3();c.g.getWorldPosition(v);S.setPan(v.x,v.z);}S.setZoom(${zoom});S.setPitch(0.34);S.setYaw(${yaw});return 1;})()`);
-        } // useGameCloseup: 전용 캠이 카메라를 소유 — 수동 개입 금지
+        } else {
+          // useGameCloseup: 전용 캠이 카메라 소유 — 매 프레임 고양이를 실제 카메라 방위로 재고정
+          //   (sit 재롤·미세 드리프트 무력화). 카메라 안착 후라 값은 상수 → 흔들림 0.
+          await ev(`(()=>{const S=window.__shelter;const c=S.cat&&S.cat();if(!c)return 0;
+            const cp=new S.THREE.Vector3();c.g.getWorldPosition(cp);
+            const camp=new S.THREE.Vector3();S.camera.getWorldPosition(camp);
+            c.g.rotation.y=Math.atan2(camp.x-cp.x,camp.z-cp.z)+${sc.faceCamOffset != null ? sc.faceCamOffset : 0.2};return 1;})()`);
+        }
         if (f === Math.floor(sc.frames * 0.32)) await ev(`window.__shelter.petCat&&window.__shelter.petCat()`);
       } else if (sc.kind === 'ignite') {
         // 불꽃 프레임: 난로 점등. 카메라: 불꽃+12f까지 난로 타이트 홀드 → 방 전경으로 이즈아웃.
