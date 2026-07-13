@@ -169,6 +169,8 @@ async function main() {
           +'<span id="fc-pulse" style="position:absolute;left:-8px;top:-10px;width:40px;height:40px;border:3px solid #E8B87A;border-radius:50%;opacity:0;"></span>';
         document.body.appendChild(d);return 1;})()`);
     }
+    // v15 라이브: 실제 배치모드 진입 (그리드+전용 툴바 — 디렉터: "인게임 배치모드 눌러서 그리드 보이게")
+    if (sc.editModeOn) await ev(`window.__shelter.toggleEditMode&&window.__shelter.toggleEditMode(true)`);
     await step(21);
 
     if (sc.kind === 'catcloseup') {
@@ -264,6 +266,10 @@ async function main() {
             ${sf.weather ? `S.setWeather(${JSON.stringify(sf.weather)});` : ''}
             ${sf.hour != null ? `S.setHour(${sf.hour});` : ''}return S.state.day;})()`);
         }
+      }
+      // v15 랜덤 인카운터 재현 (디렉터: "랜덤 인카운터도 한개 나오게") — 실제 이벤트 카드 UI
+      if (sc.eventFrame != null && f === sc.eventFrame) {
+        await ev(`window.__shelter.showEvent&&window.__shelter.showEvent(${JSON.stringify(sc.eventId || 'trader')})`);
       }
       // distantLight 점등 (V2 컷12): 어둠 저편 창 하나가 켜진다 — 응답의 첫 신호
       if (sc.distantLight && f === sc.distantLight.onFrame) {

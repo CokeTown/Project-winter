@@ -3114,9 +3114,9 @@ async function departExpedition(regionId, prep, opts2 = {}) {
     durMin: Math.round(expDuration(r) * GAME_MIN_PER_SEC * BAL.exp.timeScale), bag: bagOk };
   closeModal();
   scheduleSave();
+  $('exp-panel').classList.add('show'); // 진행 상황 표시 — 스택 재배치가 show 상태를 봐야 하므로 렌더보다 먼저
   renderExpPanel();
   renderResBar();
-  $('exp-panel').classList.add('show'); // 진행 상황 표시
   toast(t('exp.start', { emoji: r.emoji, name: LName(r), pct: Math.round(p.eff * 100) }));
   questProgress('depart');
   playSfx('door');
@@ -7065,6 +7065,17 @@ function autoStackPanels() {
       exp.style.right = 'auto'; exp.style.bottom = 'auto'; exp.style.transform = 'none';
     }
   }
+  // 퀘스트 카드(To Do): 탐험 패널이 떠 있으면 그 아래로 — 겹쳐서 진행바가 가려지는 충돌 해소 (디렉터 신고).
+  //   탐험 패널이 없으면 인라인 배치를 걷어 CSS 기본 위치로 복원.
+  const qc = $('quest-card');
+  if (qc && qc.classList.contains('show') && innerWidth >= 760) {
+    const exp = $('exp-panel');
+    if (exp && exp.classList.contains('show')) {
+      const er = preRect(exp);
+      qc.style.top = Math.round(er.bottom + 10) + 'px';
+      qc.style.left = Math.round(er.left) + 'px';
+    } else { qc.style.top = ''; qc.style.left = ''; }
+  }
 }
 
 /* ============================================================
@@ -8323,6 +8334,7 @@ function renderExpPanel() {
         <div class="bar-wrap"><div class="bar" id="exp-bar"></div></div>
         <div class="eta" id="exp-eta"></div>
       </div>`;
+    autoStackPanels(); // 진행 분기는 early return — 내용 반영 후 To Do 재스택이 여기서도 돌아야 한다
     return;
   }
   // 부상 카드 (치료 or 자연 회복 대기)
@@ -8346,6 +8358,7 @@ function renderExpPanel() {
   if (mb) mb.addEventListener('click', openMapModal);
   const tb = $('btn-treat');
   if (tb) tb.addEventListener('click', treatInjury);
+  autoStackPanels(); // 내용 반영 후 실제 높이 기준으로 To Do 카드 재스택 (겹침 해소)
 }
 function tickExpeditionUI() {
   // 부팅 플로우 원칙: 타이틀 화면에선 어떤 게임 팝업/결과도 뜨면 안 된다.
@@ -10379,6 +10392,7 @@ window.__shelter = {
   // 생존 수첩 연출
   openJournalPages, openHelpModal, showTutorialPage, tipOnce, paperSfx, makePaperTexture,
   findSupport, itemsOn, weatherFx,
+  toggleEditMode, showEvent, // QA/트레일러: 배치모드 그리드·인카운터 카드 재현 (디렉터 v15 라이브 오더)
   bgmInfo: () => ({ key: bgmCtxKey, track: bgmTrack, paused: bgm.paused, vol: bgm.volume }),
   setSnow: v => { snowCover = v; },
   envFx: () => ({ snowCover, wetness }),

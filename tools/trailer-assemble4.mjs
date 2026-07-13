@@ -19,10 +19,26 @@ console.log('[1] 엔드카드…');
 const EC = spec.endcard, ecDir = path.join(WORK, 'endcard');
 fs.mkdirSync(ecDir);
 fs.writeFileSync(path.join(WORK, 'wl.txt'), 'Wishlist on Steam · Winter 2026'); // B2: 구매처+시기 (부탁은 여전히 1개)
+if (EC.transitionFrom) {
+  // v15 아련 트랜지션 (디렉터): 밤 와이드(죽은 도시 속 따뜻한 창)의 마지막 프레임이 어두워지며
+  //   그 위로 Nine Winters 로고가 스며든다 — 하드컷 대신 크로스 디졸브. 대비(죽은 바깥/따뜻한 안)가 생명.
+  const srcDir = [ROOT3, ROOT2, ROOT1].map(r => path.join(r, EC.transitionFrom)).find(d => fs.existsSync(d));
+  const frames = fs.readdirSync(srcDir).filter(f => f.endsWith('.png')).sort();
+  const lastF = path.join(srcDir, frames[frames.length - 1]);
+  const D = EC.n / FPS, dk0 = (D * 0.18).toFixed(3), dkD = (D * 0.55).toFixed(3); // 어두워짐 램프
+  const wlT = (D * 0.55).toFixed(3);                                              // 위시리스트 등장 시점
+  run(`${FF} -loop 1 -t ${D.toFixed(3)} -framerate ${FPS} -i "${p(lastF)}" -loop 1 -t ${D.toFixed(3)} -framerate ${FPS} -i "${p(LOGO)}" ` +
+      `-filter_complex "[0]fade=t=out:st=${dk0}:d=${dkD}:color=0x0d0d12[bg];` +
+      `[1]scale=1180:-1,format=rgba,fade=t=in:st=${(D * 0.12).toFixed(3)}:d=${(D * 0.5).toFixed(3)}:alpha=1[lg];` +
+      `[bg][lg]overlay=(W-w)/2:(H-h)/2-56,` +
+      `drawtext=textfile=wl.txt:fontfile=font.ttf:fontsize=46:fontcolor=0xE8B87A:x=(w-text_w)/2:y=h/2+238:alpha='if(lt(t,${wlT}),0,min(1,(t-${wlT})/0.6))'[v]" ` +
+      `-map "[v]" -frames:v ${EC.n} "${p(path.join(ecDir, 'e%04d.png'))}"`);
+} else {
 run(`${FF} -f lavfi -i color=c=0x0d0d12:s=1920x1080:r=${FPS}:d=${(EC.n / FPS).toFixed(3)} -loop 1 -i "${p(LOGO)}" ` +
     `-filter_complex "[1]scale=1180:-1[lg];[0][lg]overlay=(W-w)/2:(H-h)/2-56[b];` +
     `[b]drawtext=textfile=wl.txt:fontfile=font.ttf:fontsize=46:fontcolor=0xE8B87A:x=(w-text_w)/2:y=H/2+238,` +
     `fade=t=in:st=0:d=${EC.fadeIn}[v]" -map "[v]" -frames:v ${EC.n} "${p(path.join(ecDir, 'e%04d.png'))}"`);
+}
 
 // 2) 프레임 시퀀스 (3단 폴백)
 console.log('[2] 프레임 링크…');
