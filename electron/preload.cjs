@@ -27,6 +27,15 @@ contextBridge.exposeInMainWorld('nineCloud', {
   remove: (k) => { try { ipcRenderer.invoke('cloud:remove', k); } catch (e) { /* */ } },
 });
 
+// ── Steamworks 브릿지 (#34 언어 · #117 DLC) — 부팅 동기 하이드레이션 ─────────
+let steamInfo = { available: false, lang: null };
+try { steamInfo = ipcRenderer.sendSync('steam:info') || steamInfo; } catch (e) { /* 비Steam 실행 */ }
+contextBridge.exposeInMainWorld('nineSteam', {
+  available: steamInfo.available,
+  lang: steamInfo.lang, // Steam API 언어 코드 ('koreana'·'english'·…) — 렌더러가 ko/en으로 매핑
+  isDlcInstalled: (id) => { try { return !!ipcRenderer.sendSync('steam:dlc', id); } catch (e) { return false; } },
+});
+
 // ── 번역 loose 파일(런타임 오버라이드) ──────────────────────────────────
 // 설치 폴더의 locales/{ko,en}.json 을 유저가 편집하면 재빌드 없이 번역이 바뀐다.
 // 패키징 시 extraResources 로 asar 밖(resources/locales)에 배치 → 여기서 fs 동기 읽기 →

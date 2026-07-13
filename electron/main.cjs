@@ -28,6 +28,23 @@ function cloudReadAll() {
 }
 // 부팅 하이드레이션용 동기 읽기 (preload가 sendSync로 호출).
 ipcMain.on('cloud:read-all', (evt) => { try { evt.returnValue = cloudReadAll(); } catch (e) { evt.returnValue = {}; } });
+
+// ── Steamworks (#34 언어 연동 · #117 DLC 게이트) ─────────────────────────────
+// Steam 클라이언트 밖(웹/포터블/개발/캡처 하네스)에선 init이 던진다 — null 폴백으로 전 기능 무해.
+// 앱ID: init() 무인자 = Steam 런처 실행 컨텍스트 또는 steam_appid.txt(개발)가 공급.
+let steamClient = null;
+try { steamClient = require('steamworks.js').init(); } catch (e) { steamClient = null; }
+ipcMain.on('steam:info', (evt) => {
+  try {
+    evt.returnValue = steamClient
+      ? { available: true, lang: steamClient.apps.currentGameLanguage() }
+      : { available: false, lang: null };
+  } catch (e) { evt.returnValue = { available: false, lang: null }; }
+});
+ipcMain.on('steam:dlc', (evt, appId) => {
+  try { evt.returnValue = steamClient ? steamClient.apps.isDlcInstalled(Number(appId)) : false; }
+  catch (e) { evt.returnValue = false; }
+});
 // 원자적 쓰기: tmp에 쓴 뒤 rename (부분 쓰기 방지).
 ipcMain.handle('cloud:write', (evt, key, val) => {
   cloudEnsure();

@@ -9632,7 +9632,14 @@ if (!loadSave()) {
     }
   } catch (e) { /* 손상된 nw-opts 무시 */ }
 }
-setLang(opts.lang || 'ko');   // 세이브된 언어 적용 (기본 ko)
+// #34 Steam 언어 연동: 유저가 언어를 고른 적 없으면(첫 실행) Steam 클라이언트 언어 → OS 언어 순으로 추정.
+//   명시 선택(opts.lang)이 항상 우선이고, 자동값은 저장하지 않는다 — 이후 Steam 언어를 바꾸면 따라간다.
+const autoLang = (() => {
+  const sl = (window.nineSteam && window.nineSteam.lang) || '';
+  if (sl) return sl === 'koreana' ? 'ko' : 'en';
+  return ((navigator.language || '').toLowerCase().startsWith('ko')) ? 'ko' : 'en';
+})();
+setLang(opts.lang || autoLang);   // 세이브된 언어 > Steam/OS 추정
 applyLocaleOverrides();       // 설치본 locales/*.json 유저 편집분 병합 (Electron 동기 — 렌더 전, 플래시 없음)
 applyStaticI18n();            // index.html 정적 텍스트 치환
 // 카메라 열 버튼: 브라우저 네이티브 툴팁(title) 대신 게임 스타일 좌측 라벨(::before, data-label).

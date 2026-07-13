@@ -31,6 +31,7 @@
     "@capacitor/android": "^8.4.1",
     "@capacitor/cli": "^8.4.1",
     "@capacitor/core": "^8.4.1",
+    "steamworks.js": "^0.4.0",
     "three": "^0.160.0"
   },
   "devDependencies": {
@@ -47,7 +48,8 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "package.json"
+      "package.json",
+      "node_modules/steamworks.js/**"
     ],
     "extraResources": [
       {
@@ -69,6 +71,9 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "asarUnpack": [
+      "node_modules/steamworks.js/**"
+    ]
   }
 }
