@@ -18,7 +18,7 @@ const p = s => s.replace(/\\/g, '/');
 console.log('[1] 엔드카드…');
 const EC = spec.endcard, ecDir = path.join(WORK, 'endcard');
 fs.mkdirSync(ecDir);
-fs.writeFileSync(path.join(WORK, 'wl.txt'), 'Wishlist on Steam · Winter 2026'); // B2: 구매처+시기 (부탁은 여전히 1개)
+fs.writeFileSync(path.join(WORK, 'wl.txt'), 'Wishlist on Steam'); // CTA 1개(위시리스트). 날짜 금지(COMMS-KIT §4 — 달력 착시 방지)
 if (EC.transitionFrom) {
   // v15 아련 트랜지션 (디렉터): 밤 와이드(죽은 도시 속 따뜻한 창)의 마지막 프레임이 어두워지며
   //   그 위로 Nine Winters 로고가 스며든다 — 하드컷 대신 크로스 디졸브. 대비(죽은 바깥/따뜻한 안)가 생명.
