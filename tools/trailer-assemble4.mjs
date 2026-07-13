@@ -32,13 +32,14 @@ if (EC.transitionFrom) {
     `alpha='min(1,max(0,(t-${(D * 0.08).toFixed(3)})/0.5))',`) : ''; // v17 태그라인 — 로고보다 먼저 스며든다
   run(`${FF} -loop 1 -t ${D.toFixed(3)} -framerate ${FPS} -i "${p(lastF)}" -loop 1 -t ${D.toFixed(3)} -framerate ${FPS} -i "${p(LOGO)}" ` +
       `-filter_complex "[0]fade=t=out:st=${dk0}:d=${dkD}:color=0x0d0d12[bg];` +
-      `[1]scale=1180:-1,format=rgba,fade=t=in:st=${(D * 0.12).toFixed(3)}:d=${(D * 0.5).toFixed(3)}:alpha=1[lg];` +
+      // v20: 픽셀 로고는 하드 스케일(정수배 1120=논리160×7)+neighbor. 기본 바이리니어는 픽셀을 뭉갬(실금·흐림 재발).
+      `[1]scale=1120:-1:flags=neighbor,format=rgba,fade=t=in:st=${(D * 0.12).toFixed(3)}:d=${(D * 0.5).toFixed(3)}:alpha=1[lg];` +
       `[bg][lg]overlay=(W-w)/2:(H-h)/2-56,${tag}` +
       `drawtext=textfile=wl.txt:fontfile=font.ttf:fontsize=46:fontcolor=0xE8B87A:x=(w-text_w)/2:y=h/2+238:alpha='if(lt(t,${wlT}),0,min(1,(t-${wlT})/0.6))'[v]" ` +
       `-map "[v]" -frames:v ${EC.n} "${p(path.join(ecDir, 'e%04d.png'))}"`);
 } else {
 run(`${FF} -f lavfi -i color=c=0x0d0d12:s=1920x1080:r=${FPS}:d=${(EC.n / FPS).toFixed(3)} -loop 1 -i "${p(LOGO)}" ` +
-    `-filter_complex "[1]scale=1180:-1[lg];[0][lg]overlay=(W-w)/2:(H-h)/2-56[b];` +
+    `-filter_complex "[1]scale=1120:-1:flags=neighbor[lg];[0][lg]overlay=(W-w)/2:(H-h)/2-56[b];` +
     `[b]drawtext=textfile=wl.txt:fontfile=font.ttf:fontsize=46:fontcolor=0xE8B87A:x=(w-text_w)/2:y=H/2+238,` +
     `fade=t=in:st=0:d=${EC.fadeIn}[v]" -map "[v]" -frames:v ${EC.n} "${p(path.join(ecDir, 'e%04d.png'))}"`);
 }
