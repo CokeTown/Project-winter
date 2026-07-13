@@ -27,10 +27,13 @@ if (EC.transitionFrom) {
   const lastF = path.join(srcDir, frames[frames.length - 1]);
   const D = EC.n / FPS, dk0 = (D * 0.18).toFixed(3), dkD = (D * 0.55).toFixed(3); // 어두워짐 램프
   const wlT = (D * 0.55).toFixed(3);                                              // 위시리스트 등장 시점
+  const tag = EC.tagline ? (fs.writeFileSync(path.join(WORK, 'tag.txt'), EC.tagline),
+    `drawtext=textfile=tag.txt:fontfile=font.ttf:fontsize=64:fontcolor=0xf0e6cf:x=(w-text_w)/2:y=h/2-330:` +
+    `alpha='min(1,max(0,(t-${(D * 0.08).toFixed(3)})/0.5))',`) : ''; // v17 태그라인 — 로고보다 먼저 스며든다
   run(`${FF} -loop 1 -t ${D.toFixed(3)} -framerate ${FPS} -i "${p(lastF)}" -loop 1 -t ${D.toFixed(3)} -framerate ${FPS} -i "${p(LOGO)}" ` +
       `-filter_complex "[0]fade=t=out:st=${dk0}:d=${dkD}:color=0x0d0d12[bg];` +
       `[1]scale=1180:-1,format=rgba,fade=t=in:st=${(D * 0.12).toFixed(3)}:d=${(D * 0.5).toFixed(3)}:alpha=1[lg];` +
-      `[bg][lg]overlay=(W-w)/2:(H-h)/2-56,` +
+      `[bg][lg]overlay=(W-w)/2:(H-h)/2-56,${tag}` +
       `drawtext=textfile=wl.txt:fontfile=font.ttf:fontsize=46:fontcolor=0xE8B87A:x=(w-text_w)/2:y=h/2+238:alpha='if(lt(t,${wlT}),0,min(1,(t-${wlT})/0.6))'[v]" ` +
       `-map "[v]" -frames:v ${EC.n} "${p(path.join(ecDir, 'e%04d.png'))}"`);
 } else {
@@ -107,7 +110,8 @@ const fo = (T - vf.out).toFixed(3);
 const ovls = spec.overlays || [];
 ovls.forEach((o, i) => fs.writeFileSync(path.join(WORK, 'ovl' + i + '.txt'), o.text));
 const ovlChain = ovls.map((o, i) =>
-  `drawtext=textfile=ovl${i}.txt:fontfile=font.ttf:fontsize=58:fontcolor=0xE8B87A:borderw=3:bordercolor=0x14141a@0.75:x=112:y=h-176:` +
+  // v17: 위치 분기 — 시네마틱 컷(pos:'bottom')=하단 중앙(아련), UI 컷=상단 중앙(HUD 회피)
+  `drawtext=textfile=ovl${i}.txt:fontfile=font.ttf:fontsize=${o.size || 58}:fontcolor=0xE8B87A:box=1:boxcolor=0x0d0d12@0.55:boxborderw=18:x=(w-text_w)/2:y=${o.pos === 'bottom' ? 'h-190' : '64'}:` +
   `alpha='if(lt(t,${o.from}+0.3),(t-${o.from})/0.3,if(gt(t,${o.to}-0.3),(${o.to}-t)/0.3,1))':enable='between(t,${o.from},${o.to})'`
 ).join(',');
 run(`${FF} -framerate ${FPS} -start_number 0 -i "${p(path.join(SEQ, 'f%05d.png'))}" ` +

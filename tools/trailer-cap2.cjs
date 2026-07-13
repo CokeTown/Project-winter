@@ -74,8 +74,14 @@ async function main() {
   app.commandLine.appendSwitch('no-sandbox'); app.disableHardwareAcceleration();
   app.setPath('userData', path.join(os.tmpdir(), 'nw-trailer2-' + process.pid));
   await app.whenReady();
-  const win = new BrowserWindow({ show: false, width: W, height: HGT, webPreferences: { offscreen: true, backgroundThrottling: false } });
-  win.webContents.setFrameRate(30);
+  const makeWin = () => {
+    // 기본 세션 유지 — 커스텀 파티션은 file:// 로드가 ERR_FAILED(실측 배치3). 재생성만으로 vt 정지 해소 충분(배치1 실증).
+    const w = new BrowserWindow({ show: false, width: W, height: HGT,
+      webPreferences: { offscreen: true, backgroundThrottling: false } });
+    w.webContents.setFrameRate(Math.min(60, FPS));
+    return w;
+  };
+  let win = makeWin();
   const ev = e => win.webContents.executeJavaScript(e, true);
 
   // 프리부트: nw-opts.lang=en (부팅부터 완전 영어 — 패널 제목·퀘스트 포함)
@@ -91,9 +97,18 @@ async function main() {
     //   비-UI 클립은 freezeForGolden(keepEntities)+stepGolden(1/30)으로 프레임당 정확히 1/30s만 진행.
     //   UI 클립(모달 연출은 DOM 타이머 = 실시간)만 기존 실시간 루프 유지.
     const FX = !['map', 'signal', 'loot', 'expstory', 'unlockmap'].includes(sc.kind);
+    // v16 60fps: FX는 stepGolden(1/FPS), UI는 CDP 가상 시간 — DOM 타이머/CSS 애니가 프레임당 정확히
+    //   1000/FPS ms만 전진해 "벽시계 건너뜀 = 프레임 드랍" (디렉터 신고)이 근본 제거된다.
+    let vtOn = false;
+    const vtAdvance = (ms) => new Promise((res, rej) => {
+      const dbg = win.webContents.debugger;
+      const onMsg = (e, method) => { if (method === 'Emulation.virtualTimeBudgetExpired') { dbg.removeListener('message', onMsg); res(); } };
+      dbg.on('message', onMsg);
+      dbg.sendCommand('Emulation.setVirtualTimePolicy', { policy: 'advance', budget: ms }).catch(rej);
+    });
     const step = async (nf) => FX
-      ? ev(`(()=>{window.__shelter.stepGolden(${nf},1/30);return 1;})()`)
-      : sleep(Math.round(nf * 1000 / FPS));
+      ? ev(`(()=>{window.__shelter.stepGolden(${nf},1/${FPS});return 1;})()`)
+      : (vtOn ? vtAdvance(nf * 1000 / FPS) : sleep(Math.round(nf * 1000 / FPS)));
     await win.loadFile(path.join(DIST, 'index.html'));
     let ready = false;
     for (let i = 0; i < 120; i++) { if (await ev(`!!(window.__shelter&&window.__shelter.loadShelter)`).catch(() => false)) { ready = true; break; } await sleep(400); }
@@ -234,6 +249,10 @@ async function main() {
             return ${JSON.stringify(sc.popList)}.map(o=>({d:o.d,x:Math.max(-X,Math.min(X,o.x)),z:Math.max(-Z,Math.min(Z,o.z)),r:o.r||0,tier:o.tier||3}));})()`)
         : await ev(`(()=>{const S=window.__shelter;const R=(S.SHELTERS[${JSON.stringify(sc.shelter)}]&&S.SHELTERS[${JSON.stringify(sc.shelter)}].room)||{w:5.6,d:4.4};return (${cozyLiving.toString()})(R.w,R.d);})()`))
       : null;
+    // UI 클립: 셋업(실시간 모달 대기)이 끝난 지금부터 가상 시간으로 전환 — 캡처 루프만 결정적 전진
+    if (!FX) {
+      try { win.webContents.debugger.attach('1.3'); vtOn = true; } catch (e) { console.log('  vt attach 실패(실시간 폴백):', String(e).slice(0, 80)); }
+    }
     let decoAdded = 0, curClickF = -99;
     for (let f = 0; f < sc.frames; f++) {
       const t = sc.frames > 1 ? f / (sc.frames - 1) : 0;
@@ -386,12 +405,14 @@ async function main() {
             return 1;})()`);
         }
       }
-      await step(1); // 정속: 프레임당 정확히 1/30s (FX) / 실시간 대기 (UI)
+      await step(1); // 정속: 프레임당 정확히 1/FPS (FX=stepGolden, UI=가상 시간)
       const buf = bgra2rgba((await win.webContents.capturePage()).toBitmap());
       const png = new PNG({ width: W, height: HGT }); buf.copy(png.data);
       fs.writeFileSync(path.join(outDir, 'f' + String(f).padStart(4, '0') + '.png'), PNG.sync.write(png));
     }
     console.log('CLIP_DONE ' + sc.id + ' frames=' + sc.frames);
+    // 가상 시간 클립 뒤엔 윈도우 재생성 — 멈춘 가상 시계가 다음 클립 로드를 얼려 배치 전체가 행됨(실측 c6_event 0f)
+    if (vtOn) { try { win.destroy(); } catch (e) { /* */ } win = makeWin(); }
   }
   console.log('ALL_DONE');
   app.quit(); process.exit(0);
