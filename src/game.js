@@ -2632,11 +2632,14 @@ function openMapModal() {
       : cLv < 0 ? `<span class="pin-rate lack" title="${t('map.cond.leanTip')}">${t('map.cond.lean')}</span>` : '';
     if (spotHere) el.title += ' — ' + t('spot.' + state.fieldSpot.id);
     if (!visits && !blocked) el.classList.add('sketch');
+    // 지역명 상시 라벨 (디렉터: 아이콘만으론 주거지/슬럼 구분 불가 — 미방문 스케치 상태에서도 이름은 읽히게).
+    //   핀의 자식이라 클릭·호버가 핀 핸들러로 버블 — 이름 자체가 터치 타깃을 겸한다.
+    const nameTag = `<span class="pin-name">${LName(r)}</span>`;
     el.innerHTML = blocked
-      ? `${regionIcon(rid, 'px-lg')}<span class="pin-rate lack">❄️</span>${spotTag}`
+      ? `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate lack">❄️</span>${spotTag}`
       : !visits
-        ? `${regionIcon(rid, 'px-lg')}<span class="pin-rate sketch-q">?</span>${spotTag}`
-        : `${regionIcon(rid, 'px-lg')}<span class="pin-rate ${cls}">${rate}%</span>${dots}${spotTag}${condTag}`;
+        ? `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate sketch-q">?</span>${spotTag}`
+        : `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate ${cls}">${rate}%</span>${dots}${spotTag}${condTag}`;
     // 첫 귀환 후 처음 여는 지도: 잉크가 배어드는 연출 1회
     state.mapInked = state.mapInked || {};
     if (visits > 0 && !state.mapInked[rid]) { el.classList.add('inked-now'); state.mapInked[rid] = 1; scheduleSave(); }
@@ -9998,10 +10001,14 @@ addEventListener('pointermove', () => { if (padState.active) showPadCursor(false
 //   그러면 골든 캡처 = 순수 정적 지오메트리+조명+날씨FX(=리팩토링 대상 코드)만 남아 로드 간 결정론적.
 let _golden = false; const _goldenT = 5.0; let _goldenHid = false;
 let _goldenDt = 0, _goldenAcc = 0; // 동역학 게이트: 스테핑 중에만 dt>0, t는 _goldenAcc로 결정론적 누적
-function freezeForGolden(seed = 12345) {
+// 트레일러 캡처(#172): 골든의 고정 dt 스테핑을 엔티티 살린 채 쓴다 — 오프스크린 캡처는 프레임당 실시간
+// ~0.2s가 흘러 애니메이션이 수 배속으로 보이므로, keepEntities 스테핑이 정속(1/30s/frame)의 유일한 경로.
+let _goldenKeep = false;
+function freezeForGolden(seed = 12345, keepEntities = false) {
   let s = seed >>> 0;
   Math.random = function () { s = (s + 0x6D2B79F5) | 0; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
   windLevel = 1; _golden = true; _goldenHid = false; _goldenDt = 0; _goldenAcc = 0;
+  _goldenKeep = !!keepEntities; // 트레일러 캡처: 고정 dt 스테핑 + 엔티티(고양이/아바타) 유지 — 정속 애니메이션 캡처
 }
 // 동역학 게이트: renderFrame을 동기 루프로 frames번 호출(rAF 개입 없음=결정론) → 눈 누적·젖음/성에 페이드가
 //   고정 dt로 확정 진행. 캡처 전 호출해 dt구동 날씨 상태를 박제한다. 루프 후 dt=0 복귀(rAF 프레임은 정지 유지).
@@ -10022,7 +10029,7 @@ function renderFrame() {
   updateWallCulling(dt);
   updateEnvironment(t, dt);
   updateWeather(dt, t);
-  if (_golden) {
+  if (_golden && !_goldenKeep) {
     // 배회 엔티티 동결·숨김 (한 번 despawn/숨김 → 업데이트 스킵으로 재배회 없음)
     if (!_goldenHid) { try { despawnCat(); } catch (e) {} _goldenHid = true; }
     const wg = wildlifeSys.getGroup && wildlifeSys.getGroup(); if (wg) wg.visible = false;

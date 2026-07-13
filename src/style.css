@@ -468,8 +468,18 @@
   }
   .map-pin .pin-rate.ok { color: var(--good); }
   .map-pin .pin-rate.lack { color: var(--bad); }
+  /* 지역명 상시 라벨 (디렉터 오더) — 종이 위 가독을 위해 rate 칩과 동일한 다크 칩. keep-all 조판 규약 */
+  .map-pin .pin-name {
+    font-size: 12px; font-weight: bold; line-height: 1.15; white-space: nowrap;
+    color: #f0e6cf; padding: 2px 7px; border-radius: 8px;
+    background: rgba(14, 12, 9, 0.78); border: 1px solid rgba(0,0,0,0.35);
+    word-break: keep-all;
+  }
+  @media (max-width: 640px) { .map-pin .pin-name { font-size: 13px; } }
   /* #85 그려지는 발견 — 안 가본 곳은 연필 스케치(소문), 다녀오면 잉크(아는 길) */
   .map-pin.sketch { opacity: 0.48; filter: grayscale(0.85) contrast(0.85); }
+  /* 스케치 상태에서도 이름은 구분 가능해야 한다 (오더 취지) — 라벨만 대비 보강 */
+  .map-pin.sketch .pin-name { background: rgba(14, 12, 9, 0.92); color: #efe6d2; }
   .map-pin .pin-rate.sketch-q { color: var(--text-dim); }
   .map-pin .pin-visits {
     font-size: 12px; line-height: 0.6; letter-spacing: 2px; color: #5c4a32;
