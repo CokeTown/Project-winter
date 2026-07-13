@@ -78,9 +78,13 @@ console.log(`[3a] 오디오 (음악 + 이벤트 ${spec.sfxEvents.length}개)…`
 const T = n / FPS;
 const mu = spec.music || { fadeIn: 1.2, fadeOutDur: 2.6, vol: 0.85 };
 const mT = +(mu.trimTo || T); // trimTo: 음악을 엔드카드에서 끝내고 버튼 컷은 정적 속에 (GMTK Step5)
-const afo = (mT - mu.fadeOutDur).toFixed(3);
+// v18 startAt: 오프닝 확장(+2.55s)으로 그루브 드랍이 몽타주보다 앞서므로 음악을 지연시켜 재정렬.
+//   adelay로 앞에 정적 삽입 → 스트림=화면 시각. fade-in은 음악 진입점, fade-out은 (지연+음악끝-길이).
+const st0 = +(mu.startAt || 0);
+const delayStr = st0 > 0 ? `,adelay=${Math.round(st0 * 1000)}|${Math.round(st0 * 1000)}` : '';
+const afo = (st0 + mT - mu.fadeOutDur).toFixed(3);
 const inputs = [`-i "${p(BGM)}"`];
-const chains = [`[0:a]atrim=0:${mT.toFixed(3)},apad=whole_dur=${T.toFixed(3)},afade=t=in:st=0:d=${mu.fadeIn},afade=t=out:st=${afo}:d=${mu.fadeOutDur},volume=${mu.vol}[m]`];
+const chains = [`[0:a]atrim=0:${mT.toFixed(3)}${delayStr},apad=whole_dur=${T.toFixed(3)},afade=t=in:st=${st0.toFixed(3)}:d=${mu.fadeIn},afade=t=out:st=${afo}:d=${mu.fadeOutDur},volume=${mu.vol}[m]`];
 const mixIns = ['[m]'];
 spec.sfxEvents.forEach((e, i) => {
   const idx = i + 1;
