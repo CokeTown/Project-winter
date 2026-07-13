@@ -8957,6 +8957,7 @@ const TUTORIAL_PAGES = {
   3: [{ titleId: 'jnl.tut3.title', bodyId: 'jnl.tut3.body' }],
 };
 function showTutorialPage(day) {
+  if (!tutorialEligible()) return; // 노말 전용 (디렉터 오더)
   const pages = TUTORIAL_PAGES[day];
   if (!pages) return;
   state.tutDay = day; // 표시 즉시 기록 — 닫기 전에 리로드해도 같은 페이지가 중복되지 않게
@@ -8982,7 +8983,10 @@ const QUESTS = [
   { id: 'craft',  icon: '🔨', img: 'icon_act_craft', textId: 'quest.craft.text',  loreId: 'quest.craft.lore',  doneId: 'quest.craft.done',  reward: { parts: 1 } },
   { id: 'clean',  icon: '🧹', img: 'icon_act_clean', textId: 'quest.clean.text',  loreId: 'quest.clean.lore',  doneId: 'quest.clean.done',  reward: { water: 1 } },
 ];
-function questActive() { return state.questIdx >= 0 && state.questIdx < QUESTS.length; }
+// 튜토리얼류(온보딩 퀘스트·수첩 페이지·쪽지 팁)는 노말에서만 (디렉터: "하드·하드코어는 이미 할 줄 알잖아").
+//   무한(zen)·배경화면도 언락/관전 모드라 동일 제외 — 신규 유저 진입점은 노말뿐.
+function tutorialEligible() { return state.mode === 'normal'; }
+function questActive() { return tutorialEligible() && state.questIdx >= 0 && state.questIdx < QUESTS.length; }
 function renderQuestCard() {
   const card = $('quest-card');
   if (!card) return;
@@ -9061,6 +9065,7 @@ function drainTipQueue() {
   showTipNote(tipQueue.shift());
 }
 function tipOnce(id) {
+  if (!tutorialEligible()) return; // 튜토리얼 쪽지도 노말 전용 (디렉터 오더)
   if (_simRunning) return; // F1(헤르메틱): 시뮬 중엔 종이 팁 렌더 금지. showTipNote→applyPaperBg가 절차적 종이 텍스처를
   //   Math.random으로 생성(첫 호출 캐시=첫-run 래치)해 시드 시퀀스를 ~9600 소비·desync시켰다. 팁은 순수 시각.
   if (state.tipsSeen[id]) return;
