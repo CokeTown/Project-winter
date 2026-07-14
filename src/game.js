@@ -228,10 +228,13 @@ scene.add(moon);
 
 // 라이팅 무드(디렉터 2026-07): 실내는 더 코지하게 — 온기색 더 앰버로(0xffd9a0→0xffce84)·세기 25→29.
 //   실외 을씨년(DAY_PHASES 회색화)과 대비를 키워 "따뜻한 안 vs 죽은 밖"을 강화한다.
-const ceilLight = new THREE.PointLight(0xffce84, 29, 16, 1.6);
+// 디렉터 2026-07-15: 실내 천장 광원 = "형광등처럼 내리쬐던" 밝은 다운라이트. 밝기 대폭 하향(29→11, ≈62%)
+//   + 렌더 루프에서 불안정 점멸(임시/노후 전구 톤). 온기는 화기(난로·촛불·랜턴)가 담당하도록 짝을 맞춘다.
+const ceilLight = new THREE.PointLight(0xffce84, 11, 16, 1.6);
 ceilLight.castShadow = true;
 ceilLight.shadow.mapSize.set(512, 512);
 scene.add(ceilLight);
+let ceilBaseInt = 11; // 렌더 루프 점멸이 곱하는 기준값(셸터 로드 시 갱신)
 
 // 절차적 표면 텍스처(makeCanvasTex + 바닥/벽/금속/합판/벽돌/타일/콘크리트 7종) → render/textures.js 이관 (Tier4)
 
@@ -2421,9 +2424,10 @@ function loadShelter(id) {
   applyMood(sh.mood);
   ensureWeather();
   ceilLight.position.set(0, sh.ceilY, 0);
-  // §9.6 「침묵」: 발견 후의 지하철은 버려진 역 — 코지 실내 키 라이트(29)를 잔불 수준으로.
-  //   남는 지배광 = 붉은 비상등 점광. 그 외 셸터/일반 지하철은 기존 세기 그대로(골든 보존).
-  ceilLight.intensity = (state.current === 'subway' && state.subwayHidden) ? 3 : 29;
+  // §9.6 「침묵」: 발견 후의 지하철은 버려진 역 — 실내 키 라이트를 잔불 수준으로. 남는 지배광=붉은 비상등.
+  //   2026-07-15 하향: 일반 실내 11(구 29). 렌더 루프가 이 기준값(ceilBaseInt)에 점멸을 곱한다.
+  ceilBaseInt = (state.current === 'subway' && state.subwayHidden) ? 2 : 11;
+  ceilLight.intensity = ceilBaseInt;
 
   // 그리드 재생성
   scene.remove(gridObj);
@@ -10465,6 +10469,11 @@ function renderFrame() {
   tickDropSpots(t); // #182 B0 동물 드랍 지면 반짝임 펄스
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   positionSelPanel(); // 편집 미니 카드 재투영 — 카메라 팬/줌/드래그를 따라간다 (A안)
+  // 디렉터 2026-07-15: 천장 광원 불안정 점멸(형광등/노후 전구 느낌). 대부분 은은, 드물게 딥. reduceMotion 시 고정.
+  if (opts.ceil) {
+    if (opts.reduceMotion) ceilLight.intensity = ceilBaseInt;
+    else ceilLight.intensity = ceilBaseInt * Math.max(0.5, 0.9 + 0.08 * Math.sin(t * 12.1) * Math.sin(t * 3.3) + (Math.sin(t * 0.47) > 0.99 ? -0.3 : 0));
+  }
   for (const it of items) {
     if (it.lightObj && it.on !== false && DEFS[it.defId].light?.flicker) {
       // flickSlow(촛불): 저속 일렁임 + 깊은 딥 — "호롱호롱". 일반 flicker(랜턴 등): 기존 잰 흔들림.

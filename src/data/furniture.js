@@ -276,7 +276,7 @@ const DEFS = {
     colorNamesEn: ['Wood', 'White', 'Black', 'Lavender'],
     colors: [0x8a6a48, 0xd4cfc2, 0x46484a, 0x9a8aa8],
     // 디렉터 2026-07-10: 촛불은 은은하게 — 세기 3→1.6, 반경 4→3.2. flickSlow=호롱호롱(저속 일렁임, 렌더 루프 전용 파형).
-    light: { color: 0xffa050, intensity: 1.6, dist: 3.2, y: 0.75, flicker: true, flickSlow: true, fuel: 'candle', comfort: 6 },
+    light: { color: 0xff9438, intensity: 2.4, dist: 3.2, y: 0.75, flicker: true, flickSlow: true, fuel: 'candle', comfort: 6 }, // 촛불 강화(1.6→2.4, 더 따뜻)
     build(c) {
       const g = new THREE.Group();
       Cyl(g, 0.2, 0.22, 0.05, c, 0, 0.42, 0, 10);
@@ -357,7 +357,7 @@ const DEFS = {
     colorNames: ['무쇠', '벽돌레드', '크림', '올리브'],
     colorNamesEn: ['Cast Iron', 'Brick Red', 'Cream', 'Olive'],
     colors: [0x3a3d42, 0x8a5138, 0xcfc8ba, 0x6a7047],
-    light: { color: 0xff8c3a, intensity: 9, dist: 8, y: 0.7, flicker: true, fuel: 'fuel', comfort: 12 },
+    light: { color: 0xff7e2a, intensity: 14, dist: 8, y: 0.7, flicker: true, fuel: 'fuel', comfort: 12 }, // 디렉터 2026-07-15: 화기=주광원. 더 따뜻(색)·강하게(9→14) — 천장 형광등 하향과 짝
     tiered: true, // #157: T1 돌+깡통 화덕 → T2 녹슨 주물 → T3 현행. 화창 발광·광원 y는 공통(라이트 정합).
     build(c, ci, sk, tier) {
       if (tier === 1) {
@@ -499,7 +499,7 @@ const DEFS = {
     colorNames: ['황동', '무쇠', '레드', '민트'],
     colorNamesEn: ['Brass', 'Cast Iron', 'Red', 'Mint'],
     colors: [0xb08a3a, 0x4a4d52, 0xa8433f, 0x93b5a5],
-    light: { color: 0xffc060, intensity: 5, dist: 6, y: 1.15, flicker: true, fuel: 'candle', comfort: 7 },
+    light: { color: 0xffb44e, intensity: 7.5, dist: 6, y: 1.15, flicker: true, fuel: 'candle', comfort: 7 }, // 화기 강화(5→7.5, 더 따뜻)
     tiered: true, // #157: T1 나뭇가지+유리병 → T2 녹슨 랜턴(뿌연 유리) → T3 현행. 광원 y 공통.
     build(c, ci, sk, tier) {
       if (tier === 1) {
