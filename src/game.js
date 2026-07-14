@@ -1938,7 +1938,8 @@ function recordNormalDay(day) {
 }
 // 겨울 N번 넘김 판정: 1년 = SEASON_DAYS×4 — N년째 봄(=N×48+1일) 도달이 곧 겨울 N번 통과.
 const wintersPassedOf = (day) => Math.floor(((day || 0) - 1) / (SEASON_DAYS * 4));
-function wallpaperUnlocked() { return wintersPassedOf(readStats().normalBestDay) >= BAL.modes.wallpaperWinters; }
+// 꾸미기/배경화면 해금(피드백 완화): "봄 지나면" — 코지(노말) 최고 생존일이 첫 봄을 넘겨 여름 진입(day≥13).
+function wallpaperUnlocked() { return (readStats().normalBestDay || 0) >= BAL.modes.wallpaperUnlockDay; }
 // 무한 해금 (#158): 어느 모드로든 겨울 1번 — 구버전 스탯(bestDay 부재)은 normalBestDay 폴백.
 function zenUnlocked() { const s = readStats(); return wintersPassedOf(Math.max(s.bestDay || 0, s.normalBestDay || 0)) >= BAL.modes.zenWinters; }
 let currentSlot = parseInt(localStorage.getItem(LASTSLOT_KEY) || '1', 10) || 1;
