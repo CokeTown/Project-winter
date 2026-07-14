@@ -4065,12 +4065,44 @@ function collectDrop(d) {
 }
 function disposeDropSpots() { for (const d of dropSpots) { scene.remove(d.g); disposeDeep(d.g); } dropSpots = []; }
 
+// #182 B2 동물 인카운터 → 인엔진 매니페스트. 사람(A) ENCOUNTER_VISITOR와 평행:
+//   해당 인카운터가 뜰 조건이 되면 그 종을 실제로 스폰해 로밍시키고, 집 밖 땅에 드랍 반짝임을 띄운다.
+//   반짝임 터치 → collectDrop → openEventCard(기존 카드). 지면 없는 셸터(옥탑·요트 등)는 카드 폴백.
+//   cat/catgift/catdream은 고양이 시스템(별도)이라 매핑 제외 — 기존 경로 유지.
+const ENCOUNTER_WILDLIFE = {   // 키 = events.js의 실제 EVENTS 키(i18n 슬러그와 다름 — 언더스코어)
+  dog:              { species: 'dog' },        // 폐허의 떠돌이 개
+  greenhouse_birds: { species: 'sparrow' },    // 씨앗 도둑(온실)
+  frozen_sparrow:   { species: 'sparrow' },    // 문가의 언 참새(겨울)
+  bee_swarm:        { species: 'bee' },         // 창틀의 벌(여름)
+  cicada_evening:   { species: 'cicada' },      // 매미(여름 저녁)
+  firefly_field:    { species: 'firefly' },     // 반딧불(여름밤)
+  mosquito_net:     { species: 'mosquito' },    // 창틈 모기(여름밤)
+  spider_web:       { species: 'spiderweb' },   // 아침 거미줄(가을) — 정적 프롭
+  geese_south:      { species: 'goose', sky: true },     // 남행 기러기(가을) — 조망(드랍 없음)
+  returning_birds:  { species: 'sparrow', sky: true },   // 돌아오는 새들(봄) — 조망(드랍 없음)
+};
+function canPresentWildlife(id) {
+  return ENCOUNTER_WILDLIFE[id] && !state.exp && !!ROOM
+    && !document.body.classList.contains('title-mode') && shelterHasGround(state.current);
+}
+function presentWildlife(id) {
+  const m = ENCOUNTER_WILDLIFE[id];
+  if (!m) { openEventCard(id); return; }
+  // 종 엔티티 스폰(실제 로밍) — 실패해도 카드/드랍은 뜬다.
+  try { wildlifeSys && wildlifeSys._spawnSpecies && wildlifeSys._spawnSpecies(m.species); } catch (e) {}
+  // 조망(하늘 나는 새 등): 떨군 게 없으니 지면 드랍 없이 카드 직결. 그 외: 지면 반짝임 → 터치 → 카드.
+  if (m.sky) { openEventCard(id); return; }
+  if (!spawnGroundDrop(id)) openEventCard(id);
+}
+
 function showEvent(id) {
   const ev = EVENTS[id];
   if (!ev) return;
   playEventSting(id);
   // 걸어오는 등장인물(arrive foot/door/boat)은 인엔진 연출로 분기. 그 외는 즉시 카드.
   if (ev.arrive && ENCOUNTER_VISITOR[id] && canPresentVisitor()) { presentVisitor(id); return; }
+  // #182 B2 동물 인카운터 — 종 스폰 + 지면 드랍 반짝임(터치 유도). 지면 없으면 아래 카드로 폴백.
+  if (canPresentWildlife(id)) { presentWildlife(id); return; }
   openEventCard(id);
 }
 // #181 교환 방문자 콤팩트 카드 — 밸런스 테이블 오퍼(want를 내면 give를 받음) + 거절. 대사는 라디오 버블.
