@@ -142,8 +142,11 @@ export function makeWildlifeSystem(ctx) {
     g.add(body);
     B(body, 2.8 * PX * s, 3 * PX * s, 6.5 * PX * s, bodyC, 0, 0, 1 * PX * s);           // 몸통
     // 목+머리 (그룹 — 두리번/쪼기)
-    const head = new THREE.Group(); head.position.set(0, 1.4 * PX * s, 3.4 * PX * s); body.add(head);
-    B(head, 2.4 * PX * s, 2.4 * PX * s, 2.6 * PX * s, bodyC, 0, 0, 0);
+    const head = new THREE.Group();
+    if (sp.goose) { head.position.set(0, 3.6 * PX * s, 2.4 * PX * s); B(body, 1.5 * PX * s, 3.6 * PX * s, 1.5 * PX * s, P.neck ?? bodyC, 0, 2.0 * PX * s, 2.2 * PX * s); } // 기러기 긴 목
+    else head.position.set(0, 1.4 * PX * s, 3.4 * PX * s);
+    body.add(head);
+    B(head, 2.4 * PX * s, 2.4 * PX * s, 2.6 * PX * s, sp.goose ? (P.neck ?? bodyC) : bodyC, 0, 0, 0);
     B(head, 1.4 * PX * s, 0.8 * PX * s, 2 * PX * s, beak, 0, -0.3 * PX * s, 1.8 * PX * s); // 부리
     for (const ex of [-0.8, 0.8])
       B(head, 0.5 * PX * s, 0.5 * PX * s, 0.4 * PX * s, eye, ex * PX * s, 0.5 * PX * s, 1 * PX * s);
@@ -167,7 +170,96 @@ export function makeWildlifeSystem(ctx) {
     return { g, parts: { body, head }, wings, legs };
   }
 
-  function buildMesh(sp) { return sp.kind === 'bird' ? buildBird(sp) : buildQuad(sp); }
+  // #182 B1 곤충 — 부유·점멸 소형 엔티티(반딧불·벌·매미·모기). 접지 안 함(hover). glow 있으면 발광 스프라이트.
+  let _insectGlow = null;
+  function insectGlowTex() {
+    if (_insectGlow) return _insectGlow;
+    _insectGlow = makeCanvasTex((g2, w) => {
+      g2.clearRect(0, 0, w, w); const c = w / 2;
+      const gr = g2.createRadialGradient(c, c, 0, c, c, c);
+      gr.addColorStop(0, 'rgba(255,255,235,1)'); gr.addColorStop(0.4, 'rgba(214,255,150,0.5)'); gr.addColorStop(1, 'rgba(190,255,130,0)');
+      g2.fillStyle = gr; g2.fillRect(0, 0, w, w);
+    }, 32, 32);
+    return _insectGlow;
+  }
+  function buildInsect(sp) {
+    const P = sp.palette, s = sp.sizeH / 0.06;
+    const g = new THREE.Group();
+    const bodyC = P.body ?? 0x2a2820;
+    B(g, 1.3 * PX * s, 1.0 * PX * s, 2.8 * PX * s, bodyC, 0, 0, 0);
+    B(g, 1.0 * PX * s, 0.9 * PX * s, 1.0 * PX * s, P.head ?? bodyC, 0, 0.1 * PX * s, 1.7 * PX * s);
+    const wings = {};
+    for (const [key, sx] of [['wl', -1], ['wr', 1]]) {
+      const w = new THREE.Group(); w.position.set(sx * 0.5 * PX * s, 0.5 * PX * s, -0.2 * PX * s); g.add(w);
+      B(w, 2.2 * PX * s, 0.1 * PX * s, 1.6 * PX * s, P.wing ?? 0xd8e0e0, sx * 1.1 * PX * s, 0, 0);
+      wings[key] = w;
+    }
+    let glow = null;
+    if (sp.glow) {
+      glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: insectGlowTex(), color: sp.glow, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.6, depthWrite: false }));
+      glow.scale.set(0.3, 0.3, 1); glow.position.set(0, 0, -1.3 * PX * s); g.add(glow);
+    }
+    g.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
+    return { g, parts: { body: g }, wings, glow };
+  }
+
+  // #182 B1 거미줄 — 정적 프롭. 방사형 실 + 동심 나선 + 이슬 + 작은 거미를 캔버스에 그려 단일 평면에 매핑.
+  //   가는 실선은 픽셀 저해상 다운샘플에서 사라지기 쉬워 선폭을 넉넉히(픽셀 스타일과 정합). unlit(밤에도 은빛).
+  let _webTex = null;
+  function webTex() {
+    if (_webTex) return _webTex;
+    _webTex = makeCanvasTex((g2, w) => {
+      g2.clearRect(0, 0, w, w);
+      const c = w / 2, R = w * 0.45, N = 9;
+      g2.lineCap = 'round';
+      // 방사 스포크
+      g2.strokeStyle = 'rgba(214,220,228,0.82)'; g2.lineWidth = Math.max(2, w / 70);
+      for (let i = 0; i < N; i++) {
+        const a = i / N * Math.PI * 2;
+        g2.beginPath(); g2.moveTo(c, c); g2.lineTo(c + Math.cos(a) * R, c + Math.sin(a) * R); g2.stroke();
+      }
+      // 동심 나선(고리) — 실이 살짝 처지게(sag) 불규칙
+      g2.strokeStyle = 'rgba(204,212,222,0.6)'; g2.lineWidth = Math.max(1, w / 110);
+      for (let r = 1; r <= 5; r++) {
+        const rr = R * (r / 5.4);
+        g2.beginPath();
+        for (let i = 0; i <= N; i++) {
+          const a = i / N * Math.PI * 2, sag = 1 - 0.1 * Math.sin(a * 2 + r * 0.7);
+          const x = c + Math.cos(a) * rr * sag, y = c + Math.sin(a) * rr * sag;
+          if (i === 0) g2.moveTo(x, y); else g2.lineTo(x, y);
+        }
+        g2.stroke();
+      }
+      // 이슬 방울(작은 발광 점)
+      for (const [rx, ry, rad] of [[0.34, 0.6, 0.03], [0.62, 0.34, 0.026], [0.44, 0.72, 0.022], [0.7, 0.62, 0.02], [0.3, 0.34, 0.018]]) {
+        const g3 = g2.createRadialGradient(rx * w, ry * w, 0, rx * w, ry * w, rad * w * 1.7);
+        g3.addColorStop(0, 'rgba(232,246,255,0.96)'); g3.addColorStop(1, 'rgba(196,222,255,0)');
+        g2.fillStyle = g3; g2.beginPath(); g2.arc(rx * w, ry * w, rad * w * 1.7, 0, 7); g2.fill();
+      }
+      // 작은 거미(중심에서 살짝 벗어난 자리) — 몸통·머리·다리
+      const sx = c * 1.04, sy = c * 1.08;
+      g2.fillStyle = 'rgba(30,26,22,0.96)';
+      g2.beginPath(); g2.ellipse(sx, sy, w * 0.032, w * 0.042, 0, 0, 7); g2.fill();
+      g2.beginPath(); g2.arc(sx, sy - w * 0.05, w * 0.02, 0, 7); g2.fill();
+      g2.strokeStyle = 'rgba(30,26,22,0.9)'; g2.lineWidth = Math.max(1, w / 130);
+      for (const dx of [-1, 1]) for (const dy of [-0.55, 0.15, 0.85]) {
+        g2.beginPath(); g2.moveTo(sx, sy - w * 0.01); g2.lineTo(sx + dx * w * 0.07, sy + dy * w * 0.06); g2.stroke();
+      }
+    }, 160, 160);
+    return _webTex;
+  }
+  function buildWeb(sp) {
+    const g = new THREE.Group();
+    const s = sp.sizeH * 2.2;
+    const plane = new THREE.Mesh(
+      new THREE.PlaneGeometry(s, s),
+      new THREE.MeshBasicMaterial({ map: webTex(), transparent: true, opacity: 0.92, depthWrite: false, side: THREE.DoubleSide }));
+    g.add(plane);
+    g.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
+    return { g, parts: { body: g }, plane };
+  }
+
+  function buildMesh(sp) { return sp.kind === 'bird' ? buildBird(sp) : sp.kind === 'insect' ? buildInsect(sp) : sp.kind === 'web' ? buildWeb(sp) : buildQuad(sp); }
 
   /* ── #95 장애물 회피 (디렉터: "동물이 오브젝트를 통과하면 짜침") ──
      buildEnv가 등록한 소품 원기둥 + 방 풋프린트를 막는다. 목표 선정은 재추첨, 이동은 푸시아웃 스티어링.
@@ -248,8 +340,10 @@ export function makeWildlifeSystem(ctx) {
       stay: (W.stayMinSec + Math.random() * (W.stayMaxSec - W.stayMinSec)),
       leaving: false, sig: 0, // sig = 종별 고유행동 서브스테이트
     };
-    // 새 착지: 위에서 내려온다 / 지상: 화면 밖에서 걸어 들어옴
-    if (birdLanding || sp.kind === 'bird') { a.g.position.y = groundY + 1.6 + idx * 0.2; a.mode = 'landing'; }
+    // 곤충: 접지 안 하고 부유 / 거미줄: 창틀 높이에 정적 부착 / 새 착지: 위에서 내려온다 / 지상: 화면 밖에서 걸어 들어옴
+    if (sp.kind === 'insect') { a.g.position.set(s.x, groundY + 0.9, s.z); a.mode = 'hover'; a.center = { x: s.x, z: s.z }; a.glow = built.glow; }
+    else if (sp.kind === 'web') { const by = groundY + 1.3; a.g.position.set(s.x, by, s.z); a.g.rotation.set(0, Math.atan2(-s.x, -s.z), 0); a.mode = 'web'; a.baseY = by; a.plane = built.plane; }
+    else if (birdLanding || sp.kind === 'bird') { a.g.position.y = groundY + 1.6 + idx * 0.2; a.mode = 'landing'; }
     else { const e = exitSpot(s.x, s.z); a.g.position.set(e.x, groundY, e.z); a.tgt = { x: s.x, z: s.z }; a.mode = 'walk'; }
     animals.push(a);
     shadowDirty();
@@ -396,6 +490,8 @@ export function makeWildlifeSystem(ctx) {
     else if (name === 'fox') { a.mode = 'stare'; a.sigT = 0; }      // 멈춰 이쪽 응시 2초
     else if (name === 'rabbit') { a.mode = 'flee'; a.zig = 1; }     // 지그재그
     else if (name === 'rat') { a.mode = 'flee'; a.wallRun = true; } // 벽 따라 질주
+    else if (a.sp.kind === 'insect') { a.mode = 'hover'; }         // 곤충: hover 유지 — leaving 플래그로 상승·이탈(지상 flee 금지)
+    else if (a.sp.kind === 'web') { a.mode = 'web'; }              // 거미줄: 위치 유지하며 페이드아웃(지상 flee 금지)
     else { a.mode = 'flee'; }
     a._exit = exitSpot(a.g.position.x, a.g.position.z);
     a._trailFrom = { x: a.g.position.x, z: a.g.position.z };
@@ -404,6 +500,40 @@ export function makeWildlifeSystem(ctx) {
   // ── 개체 스텝: 이동 + 종별 포즈 + 고유행동 ──
   function stepAnimal(a, t, dt) {
     const g = a.g, sp = a.sp, name = sp.nameEn;
+
+    // ── 곤충 부유(hover) — 접지 안 함, 중심 주변 드리프트+상하 부유, 반딧불은 점멸, 날개 파닥 ──
+    //   수명은 공용 a.stay(20~60s, 메인 루프)가 관장. 만료/접근 시 startLeaving이 leaving 플래그를 세우고,
+    //   여기서 중심을 퇴장점으로 끌며 서서히 상승 → 화면 밖으로 소멸(지상 flee 금지 — 곤충은 날아 떠난다).
+    if (a.mode === 'hover') {
+      a.hoverT = (a.hoverT || 0) + dt;
+      const c = a.center;
+      if (a.leaving && a._exit) {
+        c.x += (a._exit.x - c.x) * Math.min(1, dt * 0.5);
+        c.z += (a._exit.z - c.z) * Math.min(1, dt * 0.5);
+        a._riseY = (a._riseY || 0) + dt * 0.6;
+        if (a._riseY > 2.6 || Math.hypot(c.x - a._exit.x, c.z - a._exit.z) < 1.2) return void despawnOne(a);
+      }
+      g.position.x = c.x + Math.sin(a.hoverT * 0.7 + a.phase) * 0.55 + Math.sin(a.hoverT * 2.1) * 0.14;
+      g.position.z = c.z + Math.cos(a.hoverT * 0.6 + a.phase) * 0.55 + Math.cos(a.hoverT * 1.9) * 0.14;
+      g.position.y = a.groundY + 0.85 + (a._riseY || 0) + Math.sin(a.hoverT * 1.3 + a.phase) * 0.32;
+      g.rotation.y = Math.atan2(g.position.x - a._px, g.position.z - a._pz) || g.rotation.y; // 진행 방향
+      a._px = g.position.x; a._pz = g.position.z;
+      if (a.glow) a.glow.material.opacity = 0.12 + 0.88 * Math.pow(0.5 + 0.5 * Math.sin(a.hoverT * 2.0 + a.phase), 3); // 반딧불 점멸
+      if (a.wings) for (const k in a.wings) a.wings[k].rotation.z = (k === 'wl' ? 1 : -1) * (0.4 + 0.4 * Math.sin(t * 45));
+      return;
+    }
+
+    // ── 거미줄(정적 프롭) — 바람에 미세 흔들림, 퇴장 시 페이드아웃(위치 유지) ──
+    if (a.mode === 'web') {
+      a.webT = (a.webT || 0) + dt;
+      g.rotation.z = Math.sin(a.webT * 0.8 + a.phase) * 0.04;
+      g.position.y = a.baseY + Math.sin(a.webT * 0.6) * 0.015;
+      if (a.leaving && a.plane) {
+        a.plane.material.opacity = Math.max(0, a.plane.material.opacity - dt * 0.8);
+        if (a.plane.material.opacity <= 0.02) return void despawnOne(a);
+      }
+      return;
+    }
 
     // ── 착지(새) ──
     if (a.mode === 'landing') {

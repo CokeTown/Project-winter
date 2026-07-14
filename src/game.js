@@ -10825,6 +10825,7 @@ window.__shelter = {
   wlObstacleList: () => wlObstacles.slice(), // #95 QA: 등록 장애물 덤프 (프로브 침범 판정용)
   wildlifeWalkTo: (i, x, z) => wildlifeSys._walkTo(i, x, z), // #95 QA: 강제 횡단 (회피 실증)
   debugWildlife: (id) => wildlifeSys._spawnSpecies(id), // #182 B1: 특정 야생동물 종 강제 소환(검증)
+  wildlifeDebug: () => wildlifeSys._debug(), // #182 B1 QA: 로밍 개체 위치/모드 덤프 (프레이밍·B2 게이트 검증용)
   swayCount: () => swayProps.length,
   // #71 도심 잠식 QA 훅: 연차/패치·수풀 수/추가 드로우콜 추정(병합 메시 수)
   overgrowthState: () => ({ ...ogState }),
