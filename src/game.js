@@ -5681,7 +5681,7 @@ function recordTabHtml() {
 }
 function journalTabBar(active) {
   const tab = (id, label) => `<button class="pixel-btn ${active === id ? 'primary' : ''}" data-jtab="${id}" style="flex:1">${label}</button>`;
-  return `<div style="display:flex;gap:6px;margin-bottom:10px">${tab('journal', t('journal.title'))}${tab('record', t('record.tabTitle'))}</div>`;
+  return `<div style="display:flex;gap:6px;margin-bottom:10px">${tab('journal', t('journal.title'))}${tab('ach', t('journal.achTab'))}${tab('record', t('record.tabTitle'))}</div>`;
 }
 function openJournalModal(tab = 'journal') {
   const se = seasonOf();
@@ -5712,10 +5712,17 @@ function openJournalModal(tab = 'journal') {
     </div>
     ${comfortBreakdownHtml()}
     <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount(), total: colTotal })}</span><br>${colHtml}</div>
-    <div class="report-sec"><span class="r-title">${t('deco.themeBadgeTitle', { n: activeThemeSets().length, total: THEME_SETS.length })}</span><br>${themeBadges}</div>
-    <div class="report-sec"><span class="r-title">${t('journal.achTitle', { n: Object.values(state.achs || {}).filter(Boolean).length, total: ACHS.length })}</span></div>
+    <div class="report-sec"><span class="r-title">${t('deco.themeBadgeTitle', { n: activeThemeSets().length, total: THEME_SETS.length })}</span><br>${themeBadges}</div>`;
+  // #8(피드백) 업적 전용 탭 — 총 개수·달성률 + 진행 바 + 전체 목록(달성/미달성/암호). 일지 하단에 묻혀 안 보이던 것 승격.
+  const achDone = Object.values(state.achs || {}).filter(Boolean).length, achTotal = ACHS.length;
+  const achPct = achTotal ? Math.round(achDone / achTotal * 100) : 0;
+  const achBody = `
+    <div class="report-sec"><span class="r-title">${t('journal.achTitle', { n: achDone, total: achTotal })} · ${achPct}%</span>
+      <div style="height:8px;background:#22252d;border-radius:4px;margin-top:7px;overflow:hidden;border:1px solid #333"><div style="height:100%;width:${achPct}%;background:var(--accent);transition:width .3s"></div></div>
+    </div>
     ${achsHtml}`;
-  openModal(t('journal.title'), journalTabBar(tab) + (tab === 'record' ? recordTabHtml() : journalBody));
+  const jContent = tab === 'record' ? recordTabHtml() : tab === 'ach' ? achBody : journalBody;
+  openModal(t('journal.title'), journalTabBar(tab) + jContent);
   const body = $('modal-body');
   body.querySelectorAll('button[data-jtab]').forEach(b => b.addEventListener('click', () => openJournalModal(b.dataset.jtab)));
   body.querySelectorAll('[data-memo]').forEach(el => el.addEventListener('click', () => showMemoPage(el.dataset.memo, el.dataset.will === '1')));

@@ -440,6 +440,7 @@
   "journal.statsLine": "Day {day} {sicon} · {exp} expeditions ({succ} succeeded) · {craft} crafts · {stay} days settled",
   "journal.colTitle": "Collection — furniture colors placed {n}/{total}",
   "journal.achTitle": "Achievements {n}/{total}",
+  "journal.achTab": "🏆 Achievements",
   "deco.header": "🎨 Decorate — Wallpaper & Flooring",
   "deco.intro": "Change the walls and floor of this shelter. Remembered per shelter.",
   "deco.wall": "Wallpaper",

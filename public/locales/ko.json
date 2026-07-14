@@ -440,6 +440,7 @@
   "journal.statsLine": "Day {day} {sicon} · 탐험 {exp}회 (성공 {succ}) · 제작 {craft}회 · 연속 거주 {stay}일",
   "journal.colTitle": "도감 — 배치해 본 가구 색상 {n}/{total}",
   "journal.achTitle": "업적 {n}/{total}",
+  "journal.achTab": "🏆 업적",
   "deco.header": "🎨 꾸미기 — 벽지 · 바닥재",
   "deco.intro": "지금 머무는 거처의 벽과 바닥을 바꾼다. 거처마다 따로 기억된다.",
   "deco.wall": "벽지",
