@@ -1151,7 +1151,9 @@ export function makeShelterBuilders(ctx) {
         };
         // 선체 적층: 갑판(티크) → 토프사이드(크림) → 부트스트라이프 → 선저(방오) → 킬
         hullLayer(0, 0.16, 0.0, wallPhong({ color: deckC }), true);
-        hullLayer(0, 0.62, -0.04, lamb(topsideC), true);
+        // 토프사이드는 갑판보다 살짝 안쪽 inset — 갑판(inset0)과 측면이 동일 평면이 되어 가장자리에서 z-fighting(지글거림)
+        //   나던 것 해소(디렉터 신고 2026-07-15). 갑판이 살짝 오버행 = 토레일 느낌으로 자연스러움.
+        hullLayer(0.045, 0.62, -0.05, lamb(topsideC), true);
         hullLayer(-0.04, 0.12, -0.62, lamb(bootC));
         hullLayer(0.3, 0.78, -0.74, lamb(antifoulC));
         hullLayer(0.64, 0.5, -1.46, lamb(0x3a1e1a));

@@ -448,6 +448,7 @@ export function makeAvatarSystem(ctx) {
     respawn, despawn, update, wakeOnBed, blocksPlacement, refreshOutfit,
     getGroup: () => group,
     exists: () => !!av,
+    pos: () => av ? { x: av.g.position.x, z: av.g.position.z } : null, // #181 방문자가 아바타를 바라보게 (월드=group 무변환)
     _debug: () => av ? { mode: av.mode, x: +av.g.position.x.toFixed(2), z: +av.g.position.z.toFixed(2), y: +av.g.position.y.toFixed(2), vis: av.g.visible, use: av.use ? (av.use.defId || 'rect') : null, outfit: getOutfit ? getOutfit() : 'default' } : null,
     _forceNext: () => pickNext(), // QA: 행동 추첨 강제
     _walkTo: (x, z) => { if (av) { unseat(); av.g.rotation.x = 0; av.g.position.y = 0; av.mode = 'walk'; av.use = null; setTarget({ x, z }); } }, // QA: 강제 횡단 (라우팅 실증)

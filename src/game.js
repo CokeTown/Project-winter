@@ -9,7 +9,7 @@ import { PROJECTS } from './data/projects.js';
 // 콘텐츠 데이터 분리 Phase 1 (순수 테이블 추출) — 로직은 game.js에 그대로.
 import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS, OUTFITS } from './data/items.js';
 import { DISTRICTS, REGIONS } from './data/world.js';
-import { SHELTER_META } from './data/shelters.js'; // 셸터 데이터 필드(분리 Phase 1) — build 함수는 아래 SHELTERS에서 병합
+import { SHELTER_META, SHELTER_ACCESS } from './data/shelters.js'; // 셸터 데이터 필드(분리 Phase 1) — build 함수는 아래 SHELTERS에서 병합. SHELTER_ACCESS: #182 드랍 지면 판정
 import { makeShelterBuilders } from './render/shelters.js'; // Tier4 렌더 추출 Phase1-①: 셸터 build 함수(ctx 주입)
 import { tagDecoWall } from './render/props.js'; // 순수 프롭 빌더(deco 태그) — game.js 직접 사용분
 import { makeCulling } from './render/culling.js'; // Tier4 렌더 추출 Phase1-②: 벽/천장 컬링
@@ -2393,6 +2393,7 @@ function loadShelter(id) {
   ogResetRegistry(); // #71: 잠식 대상 등록부 리셋 — buildEnv가 채우고 buildOvergrowth가 소비
   bunkerStairsObj = null; // #55: 계단 히트 대상 재수집
   subwayHiddenObj = null; // §9.6: 히든 지점 히트 대상 재수집
+  if (typeof disposeDropSpots === 'function') disposeDropSpots(); // #182 B0: 지면 드랍 반짝임 정리(셸터 전환)
   weatherFx.caps = []; wetApplied = -1;
   wetFxBuilt = false; wetGlintAnchors.length = 0; weatherFx.puddles = []; weatherFx.glints = []; // #96 젖은 도시 리셋 (메시는 envRoot dispose가 해체)
   winSkyMats.length = 0; // 창문 하늘판 재수집
@@ -3864,9 +3865,9 @@ function presentVisitor(id) {
   built.g.position.set(edge.x, gy, edge.z);
   built.g.rotation.y = Math.atan2(stop.x - edge.x, stop.z - edge.z); // 집(스톱) 쪽을 향해
   scene.add(built.g);
-  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffdca0, blending: THREE.AdditiveBlending, transparent: true, opacity: 0, depthWrite: false }));
-  glow.scale.set(1.7, 1.7, 1); glow.position.set(0, 1.0, 0); built.g.add(glow);
-  visitor = { ...built, mode: 'enter', tgt: stop, edge, gait: 0, evId: id, glow, glowBase: 0.55, groundY: gy, spoke: false, autoT: performance.now() + 45000 };
+  // #181 디렉터 피드백: "사람에게 빛나는 걸 저렇게 하면" — 몸을 감싸던 앰버 발광 스프라이트 제거.
+  //   주목 유도는 카메라 자동 팬(방문자를 화면 중앙으로)이 담당한다. (필요 시 발치 바닥 표식으로 대체)
+  visitor = { ...built, mode: 'enter', tgt: stop, edge, gait: 0, evId: id, glow: null, glowBase: 0, groundY: gy, spoke: false, autoT: performance.now() + 45000 };
   // #181 밸런스 테이블에서 대사·교환 랜덤 픽 (고정 → 다양)
   const vt = VISITOR_TABLE[id];
   if (vt) {
@@ -3906,8 +3907,12 @@ function tickVisitor(t, dt) {
     if (visitorStep(v, dt)) { v.mode = 'idle'; renderer.shadowMap.needsUpdate = true; }
   } else if (v.mode === 'idle') {
     visitorStep(v, dt);
-    // 도착하면 카메라(플레이어)를 바라보게 서서히 회전 — 대사를 건네는 자세
-    const faceYaw = Math.atan2(Math.cos(camState.yaw), Math.sin(camState.yaw));
+    // #181 디렉터: 대사는 '화면(카메라)'이 아니라 인게임 아바타(플레이어)를 바라보며 건넨다 — 4벽 응시 금지.
+    //   아바타가 있으면 그 위치를, 없으면 집(스톱 진입 방향) 쪽을 향한다.
+    const ap = (avatarSys.exists && avatarSys.exists() && avatarSys.pos) ? avatarSys.pos() : null;
+    const faceYaw = ap
+      ? Math.atan2(ap.x - v.g.position.x, ap.z - v.g.position.z)
+      : Math.atan2(v.tgt.x - v.edge.x, v.tgt.z - v.edge.z);
     let dr = faceYaw - v.g.rotation.y; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
     v.g.rotation.y += dr * Math.min(1, dt * 4);
     if (v.parts && v.parts.body && !opts.reduceMotion) v.parts.body.scale.y = 1 + Math.sin(t * 1.6) * 0.012; // 미세 숨쉬기(조각상 방지)
@@ -3966,7 +3971,7 @@ function showVisitorBubble(id) {
   el.style.display = 'block';
   radioBubble = { el, item: { group: visitor.g }, yOff: 1.9, ttl: 0, fading: false, sfxTimers: [], typeTimer: null };
   positionRadioBubble();
-  if (playSfx) { playSfx('radio_static', { vol: 0.5, jitter: 0 }); setTimeout(() => playSfx('radio_static', { vol: 0.32, jitter: 0.1 }), 220); } // #181 말 걸 때 무전 잡음 강조(2겹)
+  // #181 디렉터(2026-07-15): 대사 시 라디오 지지직음 제거 — 거슬린다는 피드백. 무음으로 건넨다.
   el.querySelector('.rb-title').textContent = `📻 ${t(ev.titleId)}`;
   const bodyEl = el.querySelector('.rb-body');
   let ci = 0;
@@ -3980,6 +3985,85 @@ function showVisitorBubble(id) {
 }
 // 방문자 연출 가능 조건: 실내 셸터 뷰(탐험 중·타이틀 아님).
 function canPresentVisitor() { return !state.exp && !!ROOM && !document.body.classList.contains('title-mode'); }
+
+// ============================================================
+// #182 B0 「동물 드랍」 지면 반짝임 — 동물이 무언가 떨구면 집 밖 땅에 작게 반짝이는 표식이 뜨고,
+//   터치/클릭하면 기존 이벤트 카드로 상호작용. 지면 직접 셸터만(옥탑·지하철·요트·등대 제외 — 주변 '땅' 없음).
+//   B0=재사용 코어(스폰·픽·수거·라이프사이클). 어떤 동물이 무엇을 떨구는지는 B2에서 배선.
+// ============================================================
+let dropSpots = [];       // 활성 지면 드랍 { g, spr, hit, evId, yBase }
+let _sparkleTex = null;
+function sparkleTexOnce() {
+  if (_sparkleTex) return _sparkleTex;
+  // 디렉터 레퍼런스: 부드러운 4가닥 별빛 플레어(길게 뻗다 사라지는 소프트 레이) + 밝은 코어.
+  //   하드 라인 십자 대신, 컨텍스트 비등방 스케일로 소프트 방사 빔을 그린다(렌즈 스타 느낌).
+  _sparkleTex = makeCanvasTex((g2, w) => {
+    g2.clearRect(0, 0, w, w); const c = w / 2;
+    const beam = (rot, len, thick, alpha) => {
+      g2.save(); g2.translate(c, c); g2.rotate(rot); g2.scale(thick, len);
+      const gr = g2.createRadialGradient(0, 0, 0, 0, 0, c);
+      gr.addColorStop(0, `rgba(255,255,255,${alpha})`);
+      gr.addColorStop(0.4, `rgba(255,251,238,${alpha * 0.22})`);
+      gr.addColorStop(1, 'rgba(255,251,238,0)');
+      g2.fillStyle = gr; g2.beginPath(); g2.arc(0, 0, c, 0, Math.PI * 2); g2.fill();
+      g2.restore();
+    };
+    beam(0, 1.0, 0.085, 0.95);            // 세로 긴 레이
+    beam(Math.PI / 2, 1.0, 0.085, 0.95);  // 가로 긴 레이
+    beam(Math.PI / 4, 0.6, 0.05, 0.5);    // 대각 짧은 레이 ×2 (8각 별빛)
+    beam(-Math.PI / 4, 0.6, 0.05, 0.5);
+    const core = g2.createRadialGradient(c, c, 0, c, c, c * 0.3); // 밝은 소프트 코어
+    core.addColorStop(0, 'rgba(255,255,255,1)'); core.addColorStop(0.5, 'rgba(255,253,244,0.7)');
+    core.addColorStop(1, 'rgba(255,253,244,0)');
+    g2.fillStyle = core; g2.fillRect(0, 0, w, w);
+  }, 128, 128);
+  return _sparkleTex;
+}
+// 지면 직접 셸터 판정 — SHELTER_ACCESS에 'foot'(도보 접근=주변 땅 존재) 있는 곳만.
+function shelterHasGround(id) { const acc = SHELTER_ACCESS[id] || SHELTER_ACCESS._default; return acc.includes('foot'); }
+function dropSpotPos() {
+  // 카메라 쪽(앞) 방 밖 지면 — camState.yaw ± 스프레드로 화면 안, groundY 접지.
+  const rr = Math.max(ROOM.w, ROOM.d) * 0.5;
+  const ang = camState.yaw + (Math.random() - 0.5) * 1.4;
+  const d = rr + 1.4 + Math.random() * 1.4;
+  return { x: Math.cos(ang) * d, z: Math.sin(ang) * d, y: visitorGroundY() };
+}
+function spawnGroundDrop(evId, opts = {}) {
+  if (!ROOM || !EVENTS[evId] || !shelterHasGround(state.current)) return false; // 지면 셸터·유효 이벤트만
+  const p = opts.pos || dropSpotPos();
+  const g = new THREE.Group(); g.position.set(p.x, p.y, p.z);
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkleTexOnce(), color: 0xfff6e0, blending: THREE.AdditiveBlending, transparent: true, opacity: 0, depthWrite: false }));
+  spr.scale.set(0.95, 0.95, 1); spr.position.set(0, 0.45, 0); g.add(spr);
+  const hit = new THREE.Sprite(new THREE.SpriteMaterial({ opacity: 0, transparent: true, depthWrite: false })); // 넉넉한 터치 히트박스
+  hit.scale.set(1.3, 1.3, 1); hit.position.set(0, 0.45, 0); g.add(hit);
+  scene.add(g);
+  dropSpots.push({ g, spr, hit, evId, yBase: 0.4 });
+  if (playSfx) playSfx('place', { vol: 0.28, jitter: 0.2 });
+  return true;
+}
+function tickDropSpots(t) {
+  for (const d of dropSpots) {
+    const k = 0.5 + 0.5 * Math.sin(t * 3.4);
+    d.spr.material.opacity = 0.55 + 0.45 * k;
+    d.spr.scale.setScalar(0.85 + 0.22 * k);
+    d.spr.material.rotation = t * 0.4;
+    d.spr.position.y = d.yBase + Math.sin(t * 1.7) * 0.05; // 살짝 부유
+  }
+}
+function pickDrop(e) {
+  if (!dropSpots.length) return null;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  for (const d of dropSpots) if (raycaster.intersectObject(d.hit, true).length) return d;
+  return null;
+}
+function collectDrop(d) {
+  scene.remove(d.g); disposeDeep(d.g);
+  dropSpots = dropSpots.filter(x => x !== d);
+  if (playSfx) playSfx('place', { vol: 0.4 });
+  openEventCard(d.evId); // 기존 카드 흐름으로 상호작용
+}
+function disposeDropSpots() { for (const d of dropSpots) { scene.remove(d.g); disposeDeep(d.g); } dropSpots = []; }
 
 function showEvent(id) {
   const ev = EVENTS[id];
@@ -6620,6 +6704,8 @@ canvas.addEventListener('pointerdown', e => {
   if (!editMode && pickStairs(e)) return; // #55 배치 모드가 아닐 때만 계단 상호작용 (배치 중 오작동 방지)
   if (pickCat(e)) { if (!editMode) enterCatCloseup(); return; } // 쓰다듬기 + (비배치) 클로즈업 진입 — 히트 소비
   if (!editMode && pickVisitor(e)) { onVisitorClicked(); return; } // #181 방문자 탭 = 대사+선택지 카드 (배치 중 제외)
+  if (!editMode) { const _drop = pickDrop(e); if (_drop) { collectDrop(_drop); return; } } // #182 B0 동물 드랍 반짝임 탭 = 수거+카드
+
   if (!editMode && pickAvatar(e)) { openWardrobeModal(); return; } // #86④ 아바타 탭 = 옷장 (배치 중 제외)
   const hit = pickItem(e);
   if (hit) {
@@ -10306,6 +10392,7 @@ function renderFrame() {
   }
   updateCraftFx(dt); // ④ 제작 손맛 아이콘/반짝임 연출
   tickVisitor(t, dt); // #181 방문자 걸어옴/글로우/퇴장 + 카메라 추적
+  tickDropSpots(t); // #182 B0 동물 드랍 지면 반짝임 펄스
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   positionSelPanel(); // 편집 미니 카드 재투영 — 카메라 팬/줌/드래그를 따라간다 (A안)
   for (const it of items) {
@@ -10719,6 +10806,11 @@ window.__shelter = {
   visitorState: () => visitor ? { mode: visitor.mode, x: +visitor.g.position.x.toFixed(2), z: +visitor.g.position.z.toFixed(2), camActive: visitorCam.active, spoke: visitor.spoke } : null,
   visitorClick: () => onVisitorClicked(),
   visitorDismiss: () => dismissVisitor(),
+  // #182 B0 동물 드랍 지면 반짝임 훅 (스폰/상태/수거 시뮬)
+  spawnGroundDrop, shelterHasGround,
+  debugDrop: (evId, ang) => spawnGroundDrop(evId || 'dog', ang != null ? { pos: (() => { const rr = Math.max(ROOM.w, ROOM.d) * 0.5, d = rr + 2.0; return { x: Math.cos(ang) * d, z: Math.sin(ang) * d, y: visitorGroundY() }; })() } : {}),
+  dropState: () => dropSpots.map(d => ({ evId: d.evId, x: +d.g.position.x.toFixed(2), z: +d.g.position.z.toFixed(2) })),
+  dropCollect: () => { if (dropSpots.length) { collectDrop(dropSpots[0]); return true; } return false; },
   avatarForceNext: () => avatarSys._forceNext(),          // #86② QA: 행동 추첨 강제 (상호작용 검증)
   avatarBlocks: (x, z) => avatarSys.blocksPlacement(x, z, { w: 1, d: 1 }), // #86③ QA: 설치 가드 판정
   openWardrobeModal, OUTFITS, // #86④ QA: 옷장
@@ -10732,6 +10824,7 @@ window.__shelter = {
   modPropBBoxes: () => { const out = {}; roomGroup.traverse(o => { if (o.userData && o.userData.modProp) { const b = new THREE.Box3().setFromObject(o); out[o.userData.modProp] = { minX: +b.min.x.toFixed(2), maxX: +b.max.x.toFixed(2), minZ: +b.min.z.toFixed(2), maxZ: +b.max.z.toFixed(2) }; } }); return out; },
   wlObstacleList: () => wlObstacles.slice(), // #95 QA: 등록 장애물 덤프 (프로브 침범 판정용)
   wildlifeWalkTo: (i, x, z) => wildlifeSys._walkTo(i, x, z), // #95 QA: 강제 횡단 (회피 실증)
+  debugWildlife: (id) => wildlifeSys._spawnSpecies(id), // #182 B1: 특정 야생동물 종 강제 소환(검증)
   swayCount: () => swayProps.length,
   // #71 도심 잠식 QA 훅: 연차/패치·수풀 수/추가 드로우콜 추정(병합 메시 수)
   overgrowthState: () => ({ ...ogState }),

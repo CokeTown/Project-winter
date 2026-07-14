@@ -51,13 +51,20 @@ export const WILDLIFE_SPECIES = {
     palette: { fur: 0x4a4038, belly: 0x5a5048, ear: 0x6a4a48, nose: 0xc08078, eye: 0x140f0a, tailTip: 0x6a4a48 },
     nameKo: '쥐', nameEn: 'rat',
   },
+  // #182 B1 개 — 폐허의 떠돌이 개. dog 플래그로 buildQuad가 늘어진 귀·긴 주둥이·치켜든 꼬리로 실루엣 분화.
+  //   shy 낮음(사람에게 다가온다) — 카논 "따뜻하게". 드랍(뼈다귀 등)은 B2에서 spawnGroundDrop 연결.
+  dog: {
+    kind: 'quad', sizeH: 0.34, gait: 0.72, shy: 1.1, dog: true,
+    palette: { fur: 0x8a6a44, belly: 0xc4a67e, ear: 0x6a4e34, nose: 0x1a1410, eye: 0x140f0a, tailTip: 0x9a7a54 },
+    nameKo: '개', nameEn: 'dog',
+  },
   // 산양(goat)은 디렉터 판단으로 제외(지리 정합 — 2026-07). 고원/초지는 사슴이 대신한다.
 };
 
 // 구역(district)별 등장 종. districtOf(shelterId) 결과 키. 셸터별 override 는 SHELTER_WILDLIFE.
 export const DISTRICT_WILDLIFE = {
-  outskirts: ['rabbit', 'crow'],
-  city:      ['strayCat', 'crow'],
+  outskirts: ['rabbit', 'crow', 'dog'],
+  city:      ['strayCat', 'crow', 'dog'],
   meadow:    ['rabbit', 'deer'],
   forest:    ['deer', 'fox'],
   coast:     ['seagull', 'crow'],

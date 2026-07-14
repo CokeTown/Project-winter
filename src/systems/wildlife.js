@@ -83,16 +83,18 @@ export function makeWildlifeSystem(ctx) {
     neck.add(head);
     B(head, 3.2 * PX * s, 3 * PX * s, (tall ? 4.5 : 4) * PX * s, fur, 0, 0, 0); // 연산자 우선순위 버그 수정(2026-07-11): tall일 때 머리 깊이가 리터럴 4.5로 튀어 사슴 머리가 4.5짜리 막대로 렌더됨(디렉터 "사슴 대가리" 신고). 괄호로 (tall?4.5:4)*PX*s.
     B(head, 1.2 * PX * s, 1 * PX * s, 1.6 * PX * s, nose, 0, -0.6 * PX * s, 2.4 * PX * s); // 주둥이
+    if (sp.dog) { B(head, 1.7 * PX * s, 1.4 * PX * s, 2.6 * PX * s, fur, 0, -0.5 * PX * s, 2.6 * PX * s); B(head, 1.0 * PX * s, 0.8 * PX * s, 0.8 * PX * s, nose, 0, -0.35 * PX * s, 4.0 * PX * s); } // 개=긴 주둥이+코끝
     for (const ex of [-1.1, 1.1]) // 눈
       B(head, 0.7 * PX * s, 0.7 * PX * s, 0.4 * PX * s, eye, ex * PX * s, 0.4 * PX * s, 1.7 * PX * s);
     // 귀 (그룹 — 미세 파닥임). 토끼=김쭉, 여우=삼각 뾰족
-    const earH = sp.nameEn === 'rabbit' ? 5 : sp.nameEn === 'fox' ? 2.6 : 1.8;
+    const earH = sp.dog ? 3.2 : sp.nameEn === 'rabbit' ? 5 : sp.nameEn === 'fox' ? 2.6 : 1.8;
     const earGroups = [];
     for (const [side, ex] of [['L', -1.2], ['R', 1.2]]) {
       const e = new THREE.Group(); e.position.set(ex * PX * s, 1.8 * PX * s, -0.4 * PX * s); head.add(e);
       B(e, 0.9 * PX * s, earH * PX * s, 0.7 * PX * s, ear, 0, earH / 2 * PX * s, 0);
       // v1.5.1: 귀 안쪽 분홍(레퍼런스) — earIn 보유 종만, 귀 앞면에 얇게.
       if (P.earIn) B(e, 0.55 * PX * s, earH * 0.55 * PX * s, 0.16 * PX * s, P.earIn, 0, earH * 0.42 * PX * s, 0.38 * PX * s);
+      if (sp.dog) e.rotation.set(0.3, 0, side === 'L' ? 1.5 : -1.5); // 늘어진 귀(옆으로 처짐)
       earGroups.push(e);
     }
     // 뿔 (사슴 가지뿔 / 산양 뒤로 굽은 뿔)
@@ -110,8 +112,8 @@ export function makeWildlifeSystem(ctx) {
     if (sp.nameEn === 'rabbit') {
       B(tail, 1.8 * PX * s, 1.8 * PX * s, 1.8 * PX * s, belly, 0, 0.6 * PX * s, -0.6 * PX * s);
     } else {
-      const tl = sp.nameEn === 'fox' ? 8 : sp.nameEn === 'rat' ? 9 : tall ? 3 : 4;
-      tail.rotation.x = sp.nameEn === 'fox' ? -0.3 : 0.2; // 여우 꼬리는 살짝 치켜
+      const tl = sp.dog ? 6 : sp.nameEn === 'fox' ? 8 : sp.nameEn === 'rat' ? 9 : tall ? 3 : 4;
+      tail.rotation.x = sp.dog ? -0.7 : sp.nameEn === 'fox' ? -0.3 : 0.2; // 개=치켜든 꼬리 / 여우=살짝 치켜
       B(tail, 1.5 * PX * s, 1.5 * PX * s, tl * PX * s, fur, 0, 0.3 * PX * s, -(tl / 2) * PX * s);
       B(tail, 1.55 * PX * s, 1.55 * PX * s, 1.6 * PX * s, tailTip, 0, 0.3 * PX * s, -tl * PX * s + 0.6 * PX * s);
     }
@@ -623,6 +625,7 @@ export function makeWildlifeSystem(ctx) {
     count: () => animals.length,
     // 재현/검증용 (코디네이터): 강제 등장/발자국/퇴장 트리거
     _forceSpawn: (opening) => spawnEncounter(!!opening),
+    _spawnSpecies: (id) => spawnOne(id, roamSpot()), // #182 B1: 특정 종 강제 소환(검증/디버그)
     _forceNightPrints: () => leaveNightPrints(),
     _forceLeaveAll: () => { for (const a of animals.slice()) startLeaving(a, false); },
     _debug: () => ({ n: animals.length, prints: prints.length, next: Math.round(nextSpawnMin - (getGameMin() || 0)),
