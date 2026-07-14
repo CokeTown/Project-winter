@@ -3891,6 +3891,8 @@ function tickVisitor(t, dt) {
   if (!visitor) return;
   const v = visitor;
   if (v.mode === 'enter') {
+    v._stepT = (v._stepT || 0) + dt;
+    if (v._stepT > 0.42) { v._stepT = 0; if (playSfx) playSfx('steps_snow', { vol: 0.2, jitter: 0.15 }); } // #181 걸어오는 발소리 (도착하면 멎어 정적)
     if (visitorStep(v, dt)) { v.mode = 'idle'; renderer.shadowMap.needsUpdate = true; }
   } else if (v.mode === 'idle') {
     visitorStep(v, dt);
@@ -3953,7 +3955,7 @@ function showVisitorBubble(id) {
   const text = visitorVoice(ev); // 방문자의 실제 대사(따옴표 우선)
   radioBubble = { el, item: { group: visitor.g }, yOff: 1.9, ttl: 0, fading: false, sfxTimers: [], typeTimer: null };
   positionRadioBubble();
-  if (playSfx) playSfx('radio_static', { vol: 0.32, jitter: 0 });
+  if (playSfx) { playSfx('radio_static', { vol: 0.5, jitter: 0 }); setTimeout(() => playSfx('radio_static', { vol: 0.32, jitter: 0.1 }), 220); } // #181 말 걸 때 무전 잡음 강조(2겹)
   el.querySelector('.rb-title').textContent = `📻 ${t(ev.titleId)}`;
   const bodyEl = el.querySelector('.rb-body');
   let ci = 0;

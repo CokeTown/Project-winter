@@ -295,7 +295,7 @@ export const BAL = {
   },
   // #181 방문자 클로즈업: 등장인물이 화면 끝에서 걸어오면 카메라가 그쪽으로 팬+줌(자동 복귀).
   //   yaw는 안 돌리고 center 이동+줌만(급회전 금지). zoom 1.45 = view height ~6.2u (1.58m 인물 프레이밍).
-  visitorCam: { zoom: 1.45, glideLerp: 0.1, centerY: 0.85 },
+  visitorCam: { zoom: 1.85, glideLerp: 0.1, centerY: 0.8 }, // #181 타이트 프레이밍(디렉터) — 인물 크게
 
   /* ── 쾌적함 4요소 분해 (Living Shelter #29) ──
      comfortDetail()의 기존 컴포넌트를 4개 축으로 "재분류"만 한다.
