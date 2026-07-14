@@ -25,6 +25,7 @@ import { makeCatSystem } from './systems/cat.js';
 import { makeWildlifeSystem } from './systems/wildlife.js';
 import { makeAvatarSystem } from './systems/avatar.js';
 import { buildVisitor, VISITOR_IDS, ENCOUNTER_VISITOR } from './systems/visitor.js';
+import { VISITOR_TABLE, VISITOR_UI } from './data/visitors.js'; // #181 방문자 교환·대사 밸런스 테이블
 import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wildlife.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
@@ -3850,6 +3851,8 @@ function visitorSpots() {
     stop: { x: Math.cos(yaw) * (rr + 1.9), z: Math.sin(yaw) * (rr + 1.9) },
   };
 }
+const vLang = o => (o ? (lang === 'en' ? o.en : o.ko) : ''); // 방문자 표 인라인 ko/en 선택
+function scaleWant(want) { const m = encCostMul(); const out = {}; for (const [r, n] of Object.entries(want)) out[r] = Math.max(1, Math.round(n * m)); return out; } // 난이도 비용 배수
 function presentVisitor(id) {
   const preset = ENCOUNTER_VISITOR[id];
   if (!preset) { openEventCard(id); return; }
@@ -3863,6 +3866,12 @@ function presentVisitor(id) {
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffdca0, blending: THREE.AdditiveBlending, transparent: true, opacity: 0, depthWrite: false }));
   glow.scale.set(1.7, 1.7, 1); glow.position.set(0, 1.0, 0); built.g.add(glow);
   visitor = { ...built, mode: 'enter', tgt: stop, edge, gait: 0, evId: id, glow, glowBase: 0.55, groundY: gy, spoke: false, autoT: performance.now() + 45000 };
+  // #181 밸런스 테이블에서 대사·교환 랜덤 픽 (고정 → 다양)
+  const vt = VISITOR_TABLE[id];
+  if (vt) {
+    visitor.voiceObj = (vt.voices && vt.voices.length) ? vt.voices[Math.floor(Math.random() * vt.voices.length)] : null;
+    visitor.offer = (!vt.beg && vt.offers && vt.offers.length) ? vt.offers[Math.floor(Math.random() * vt.offers.length)] : null;
+  }
   visitorObj = built.g;
   renderer.shadowMap.needsUpdate = true;
   enterVisitorCloseup(stop.x, stop.z, gy);
@@ -3941,18 +3950,19 @@ function visitorVoice(ev) {
   const raw = (ev.textFn ? ev.textFn() : t(ev.textId)) || '';
   const flat = raw.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   const quotes = flat.match(/"[^"]{2,}"|[“][^”]{2,}[”]|[「][^」]{2,}[」]/g);
-  return quotes && quotes.length ? quotes.join(' ') : flat;
+  return quotes && quotes.length ? quotes.join(' ') : null; // 따옴표 없으면 null → 버블 스킵(무언)
 }
 // 방문자 대사 = 라디오 버블 재활용(앰버 틴트, 방문자 머리 위 앵커). 좀보이드식 타이핑 자막.
 function showVisitorBubble(id) {
   const ev = EVENTS[id];
   if (!ev || !visitor) return;
+  const text = visitor.voiceObj ? vLang(visitor.voiceObj) : visitorVoice(ev); // 밸런스 테이블 대사 우선, 없으면 따옴표
+  if (!text) return; // 무언(쓰러진 낯선이 등) — 버블 없음
   clearRadioBubble();
   const el = ensureRadioBubbleEl();
   el.className = 'rb-visitor';
   el.innerHTML = `<div class="rb-title"></div><div class="rb-body"></div>`;
   el.style.display = 'block';
-  const text = visitorVoice(ev); // 방문자의 실제 대사(따옴표 우선)
   radioBubble = { el, item: { group: visitor.g }, yOff: 1.9, ttl: 0, fading: false, sfxTimers: [], typeTimer: null };
   positionRadioBubble();
   if (playSfx) { playSfx('radio_static', { vol: 0.5, jitter: 0 }); setTimeout(() => playSfx('radio_static', { vol: 0.32, jitter: 0.1 }), 220); } // #181 말 걸 때 무전 잡음 강조(2겹)
@@ -3978,11 +3988,50 @@ function showEvent(id) {
   if (ev.arrive && ENCOUNTER_VISITOR[id] && canPresentVisitor()) { presentVisitor(id); return; }
   openEventCard(id);
 }
+// #181 교환 방문자 콤팩트 카드 — 밸런스 테이블 오퍼(want를 내면 give를 받음) + 거절. 대사는 라디오 버블.
+function openVisitorTradeCard(id, ev, evTitle) {
+  state.activeEvent = id;
+  const o = visitor.offer;
+  const want = o.scale ? scaleWant(o.want) : o.want;
+  const ok = eventCostOk(want);
+  const body = `<div style="display:flex;flex-direction:column;gap:6px">
+    <button class="pixel-btn" data-vtrade="1" ${ok ? '' : 'disabled'}>${costLabel(want)} → ${costLabel(o.give)}${ok ? '' : ' ' + t('ev.noResource')}</button>
+    <button class="pixel-btn" data-vtrade="0">${vLang(VISITOR_UI.decline)}</button>
+    <button class="pixel-btn" id="event-minimize" data-i18n="event.minimize">${t('event.minimize')}</button>
+  </div>`;
+  openModal(`${ev.icon} ${evTitle}`, body, 'visitor');
+  $('modal-body').querySelectorAll('button[data-vtrade]').forEach(b => b.addEventListener('click', () => {
+    let result;
+    if (b.dataset.vtrade === '1') {
+      if (!eventCostConsume(want)) { toast(t('toast.needResource')); return; }
+      for (const [r, n] of Object.entries(o.give)) resAdd(r, n);
+      const bad = o.risk === 'infection' && Math.random() < 0.5;
+      if (bad) applyInjury('infection', false);
+      result = vLang(bad ? VISITOR_UI.tradeBad : VISITOR_UI.tradeOk);
+    } else {
+      result = vLang(VISITOR_UI.decline);
+    }
+    state.dayLog.notes.push(t('event.metNote', { icon: ev.icon, title: evTitle }));
+    state.activeEvent = null; state.minimizedEvent = null;
+    hideEventChip();
+    dismissVisitor(); // 퇴장 + 카메라 복귀
+    openModal(`${ev.icon} ${evTitle}`, `<div style="line-height:2">${result}</div>`);
+    scheduleSave(); renderResBar(); updateHud();
+  }));
+  const minBtn = document.getElementById('event-minimize');
+  if (minBtn) minBtn.addEventListener('click', () => {
+    state.minimizedEvent = id; state.activeEvent = null;
+    dismissVisitor(); closeModal(); showEventChip(id); scheduleSave();
+  });
+  tipOnce('tip.event');
+}
 function openEventCard(id, opts = {}) {
   const ev = EVENTS[id];
   if (!ev) return;
   state.activeEvent = id; // 현재 떠 있는 이벤트 (내리기 대상)
   const evTitle = t(ev.titleId);
+  // #181 교환 방문자 — 밸런스 테이블 오퍼(want↔give)를 콤팩트 카드로. 거지/무언은 아래 기존 경로.
+  if (opts.compact && visitor && visitor.offer && visitor.evId === id) { openVisitorTradeCard(id, ev, evTitle); return; }
   const choicesHtml = ev.choices.map((c, i) => {
     const cost = typeof c.cost === 'function' ? c.cost() : c.cost; // 계절 가변 비용(밀수꾼) 지원
     const ok = !cost || eventCostOk(cost);
