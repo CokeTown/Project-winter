@@ -45,6 +45,11 @@ ipcMain.on('steam:dlc', (evt, appId) => {
   try { evt.returnValue = steamClient ? steamClient.apps.isDlcInstalled(Number(appId)) : false; }
   catch (e) { evt.returnValue = false; }
 });
+// #117 업적 해금 중계 — 렌더러 nineSteam.unlock → 여기 → steamworks.js. 비Steam(웹/개발/캡처)이면 null 폴백으로 무해.
+ipcMain.handle('steam:achieve', (evt, achId) => {
+  try { if (!steamClient) return false; steamClient.achievement.activate(String(achId)); return true; }
+  catch (e) { return false; }
+});
 // 원자적 쓰기: tmp에 쓴 뒤 rename (부분 쓰기 방지).
 ipcMain.handle('cloud:write', (evt, key, val) => {
   cloudEnsure();

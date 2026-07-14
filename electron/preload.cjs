@@ -34,6 +34,8 @@ contextBridge.exposeInMainWorld('nineSteam', {
   available: steamInfo.available,
   lang: steamInfo.lang, // Steam API 언어 코드 ('koreana'·'english'·…) — 렌더러가 ko/en으로 매핑
   isDlcInstalled: (id) => { try { return !!ipcRenderer.sendSync('steam:dlc', id); } catch (e) { return false; } },
+  // #117 업적 중계 — platform.js Platform.achievements.unlock 이 STEAM_ACH_MAP 을 거쳐 여기로. 비Steam이면 무해.
+  unlock: (achId) => { try { ipcRenderer.invoke('steam:achieve', achId); return true; } catch (e) { return false; } },
 });
 
 // ── 번역 loose 파일(런타임 오버라이드) ──────────────────────────────────
