@@ -24,6 +24,7 @@ import { makeDecoTex } from './data/decotex.js';
 import { makeCatSystem } from './systems/cat.js';
 import { makeWildlifeSystem } from './systems/wildlife.js';
 import { makeAvatarSystem } from './systems/avatar.js';
+import { buildVisitor, VISITOR_IDS, ENCOUNTER_VISITOR } from './systems/visitor.js';
 import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wildlife.js';
 import { lang, setLang, t, LN, LD, LF, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
@@ -147,6 +148,8 @@ const catCam = {
   saved: null,                          // 복원용 { yaw, elev, zoom }
   targetYaw: 0,                         // ⑶ 진입 시 1회 확정하는 목표 yaw(짧은 호 ≤45° 클램프). 매 프레임 재계산 안 함.
 };
+// #181 방문자 클로즈업 상태 — 등장인물로 center 글라이드 + 줌. cur=보간 중심, center=목표(방문자 pos).
+const visitorCam = { active: false, returning: false, center: new THREE.Vector3(), cur: new THREE.Vector3(), saved: null, zoomTarget: 0.6 };
 // ⑶ 클로즈업 진입 회전 최소화: 고양이 facing으로 스냅하지 않고, "현재 카메라 yaw 기준 최소 회전"을 쓴다.
 //   후보 = facing+yawOffset 및 facing-yawOffset(좌우 3/4 중 가까운 쪽). 현재 yaw와의 각차를 짧은 호로 접고,
 //   ±45°(π/4)로 클램프 → 줌·센터링 위주로 얼굴을 잡되 화면이 홱 돌지 않게 한다.
@@ -183,9 +186,26 @@ function exitCatCloseup() {
     catCam.saved = null;
   }
 }
+// #181 방문자 클로즈업 진입/복귀 — catCam과 상호배타(한 번에 하나만). center를 방문자로 글라이드+줌인.
+function enterVisitorCloseup(x, z, y) {
+  if (catCam.active) exitCatCloseup();
+  if (!visitorCam.active) {
+    visitorCam.saved = { zoom: camState.zoom, tpx: camState.targetPanX, tpz: camState.targetPanZ };
+    visitorCam.cur.set(camCenter.x + camPanApplied.x, (y || 0) + BAL.visitorCam.centerY, camCenter.z + camPanApplied.z); // 현재 보던 중심에서 출발(점프 방지)
+  }
+  visitorCam.center.set(x, (y || 0) + BAL.visitorCam.centerY, z);
+  visitorCam.zoomTarget = BAL.visitorCam.zoom;
+  visitorCam.active = true; visitorCam.returning = false;
+}
+function exitVisitorCloseup() {
+  if (!visitorCam.active) return;
+  visitorCam.returning = true;                                   // center를 집으로, 줌을 원래대로 글라이드
+  visitorCam.zoomTarget = visitorCam.saved ? visitorCam.saved.zoom : 0.6;
+  if (visitorCam.saved) setPanTarget(visitorCam.saved.tpx, visitorCam.saved.tpz);
+}
 // 카메라 업데이트/팬/줌 → render/camera.js (Tier4 Phase1-③). 카메라 객체는 game.js 잔류, 함수만 이동.
 const { updateCamera, fitZoomForShelter, panMax, setPanTarget, panByScreenDelta } = makeCamera({
-  camera, camState, camCenter, camPanApplied, BAL, opts, getCat, catCam, state,
+  camera, camState, camCenter, camPanApplied, BAL, opts, getCat, catCam, visitorCam, state,
   getROOM: () => ROOM, getSHELTERS: () => SHELTERS,
 });
 
@@ -3812,25 +3832,173 @@ function eventCostConsume(cost) {
   for (const [id, n] of Object.entries(cost)) { if (id === 'food') consumeAnyFood(n); else resConsume(id, n); }
   return true;
 }
+// ============================================================
+//  #181 방문자 인엔진 연출 — 등장인물이 화면 끝에서 걸어와, 카메라가 팬,
+//  클릭하면 라디오 자막으로 대사, 선택지 카드(삽화 0), 끝나면 걸어 나가고 카메라 복귀.
+//  thief(흔적)·caravan(먼 조망)은 ENCOUNTER_VISITOR에 없어 그냥 카드로 폴백.
+// ============================================================
+let visitor = null;     // { g, parts, legs, arms, mode:'enter'|'idle'|'leave', tgt, edge, gait, evId, glow, glowBase, groundY, spoke, autoT }
+let visitorObj = null;  // 픽 대상(= visitor.g); leave 진입 시 null (더 이상 클릭 불가)
+
+function visitorGroundY() { const s = SHELTER_WILDLIFE[state.current]; return (s && typeof s.groundY === 'number') ? s.groundY : 0; }
+function visitorSpots() {
+  // 카메라 쪽(앞) 근처 지면 — 옥탑 슬래브·지상 모두 발 디딜 곳(가장자리 허공 방지). 집은 뒤에 둔다.
+  const yaw = camState.yaw;
+  const rr = Math.max(ROOM.w, ROOM.d) * 0.5;
+  return {
+    edge: { x: Math.cos(yaw) * (rr + 3.8), z: Math.sin(yaw) * (rr + 3.8) },
+    stop: { x: Math.cos(yaw) * (rr + 1.9), z: Math.sin(yaw) * (rr + 1.9) },
+  };
+}
+function presentVisitor(id) {
+  const preset = ENCOUNTER_VISITOR[id];
+  if (!preset) { openEventCard(id); return; }
+  disposeVisitor();
+  const built = buildVisitor(preset);
+  const gy = visitorGroundY();
+  const { edge, stop } = visitorSpots();
+  built.g.position.set(edge.x, gy, edge.z);
+  built.g.rotation.y = Math.atan2(stop.x - edge.x, stop.z - edge.z); // 집(스톱) 쪽을 향해
+  scene.add(built.g);
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffdca0, blending: THREE.AdditiveBlending, transparent: true, opacity: 0, depthWrite: false }));
+  glow.scale.set(1.7, 1.7, 1); glow.position.set(0, 1.0, 0); built.g.add(glow);
+  visitor = { ...built, mode: 'enter', tgt: stop, edge, gait: 0, evId: id, glow, glowBase: 0.55, groundY: gy, spoke: false, autoT: performance.now() + 45000 };
+  visitorObj = built.g;
+  renderer.shadowMap.needsUpdate = true;
+  enterVisitorCloseup(stop.x, stop.z, gy);
+  if (playSfx) playSfx('steps_snow', { vol: 0.32, jitter: 0.1 });
+}
+function visitorStep(v, dt) {
+  const g = v.g, tgt = v.mode === 'leave' ? v.edge : v.tgt;
+  const dx = tgt.x - g.position.x, dz = tgt.z - g.position.z;
+  const dist = Math.hypot(dx, dz), moving = dist > 0.08;
+  if (moving) {
+    const step = Math.min(0.85 * dt, dist);
+    g.position.x += dx / dist * step; g.position.z += dz / dist * step;
+    const want = Math.atan2(dx, dz);
+    let dr = want - g.rotation.y; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
+    g.rotation.y += dr * Math.min(1, dt * 6);
+    v.gait += dt * 7;
+  }
+  const sw = moving ? Math.sin(v.gait) * 0.5 : 0, k = Math.min(1, dt * 10);
+  if (v.legs.l) v.legs.l.rotation.x += (sw - v.legs.l.rotation.x) * k;
+  if (v.legs.r) v.legs.r.rotation.x += (-sw - v.legs.r.rotation.x) * k;
+  if (v.arms.l) v.arms.l.rotation.x += (-sw * 0.6 - v.arms.l.rotation.x) * k;
+  if (v.arms.r) v.arms.r.rotation.x += (sw * 0.6 - v.arms.r.rotation.x) * k;
+  return !moving;
+}
+function tickVisitor(t, dt) {
+  if (!visitor) return;
+  const v = visitor;
+  if (v.mode === 'enter') {
+    if (visitorStep(v, dt)) { v.mode = 'idle'; renderer.shadowMap.needsUpdate = true; }
+  } else if (v.mode === 'idle') {
+    visitorStep(v, dt);
+    // 도착하면 카메라(플레이어)를 바라보게 서서히 회전 — 대사를 건네는 자세
+    const faceYaw = Math.atan2(Math.cos(camState.yaw), Math.sin(camState.yaw));
+    let dr = faceYaw - v.g.rotation.y; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
+    v.g.rotation.y += dr * Math.min(1, dt * 4);
+    if (v.parts && v.parts.body && !opts.reduceMotion) v.parts.body.scale.y = 1 + Math.sin(t * 1.6) * 0.012; // 미세 숨쉬기(조각상 방지)
+    if (v.glow) v.glow.material.opacity = opts.reduceMotion ? v.glowBase * 0.7 : v.glowBase * (0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 3)));
+    if (v.autoT && performance.now() > v.autoT) { v.autoT = 0; onVisitorClicked(); } // 45s 무시 → 자동 카드
+  } else if (v.mode === 'leave') {
+    if (v.glow) v.glow.material.opacity = Math.max(0, v.glow.material.opacity - dt * 2);
+    if (visitorStep(v, dt)) { disposeVisitor(); return; }
+  }
+  if (visitorCam.active) visitorCam.center.set(v.g.position.x, v.groundY + BAL.visitorCam.centerY, v.g.position.z);
+  v._shT = (v._shT || 0) + dt; if (v._shT > 0.12) { v._shT = 0; renderer.shadowMap.needsUpdate = true; }
+}
+function pickVisitor(e) {
+  if (!visitorObj) return false;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  return raycaster.intersectObject(visitorObj, true).length > 0;
+}
+function onVisitorClicked() {
+  if (!visitor || visitor.mode === 'leave') return;
+  visitor.autoT = 0;
+  const id = visitor.evId;
+  if (!visitor.spoke) { visitor.spoke = true; showVisitorBubble(id); } // 라디오 자막으로 대사
+  openEventCard(id, { noImg: true, compact: true }); // 콤팩트 카드(선택지만) — 대사는 버블
+}
+function dismissVisitor(silent) {
+  if (!visitor) return;
+  if (silent) { disposeVisitor(); return; }
+  visitor.mode = 'leave'; visitorObj = null;                 // 걸어 나가고 카메라 복귀
+  exitVisitorCloseup();
+}
+function disposeVisitor() {
+  if (visitor) { scene.remove(visitor.g); disposeDeep(visitor.g); }
+  visitor = null; visitorObj = null;
+  if (visitorCam.active) exitVisitorCloseup();
+  renderer.shadowMap.needsUpdate = true;
+}
+// 방문자의 실제 대사 추출: 따옴표(" " 「」 " ")로 감싼 발화가 있으면 그것만(라디오로 나오는 "목소리"),
+// 없으면(몸짓형 방문자) 서술 전문을 캡션으로. HTML/개행 정리.
+function visitorVoice(ev) {
+  const raw = (ev.textFn ? ev.textFn() : t(ev.textId)) || '';
+  const flat = raw.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const quotes = flat.match(/"[^"]{2,}"|[“][^”]{2,}[”]|[「][^」]{2,}[」]/g);
+  return quotes && quotes.length ? quotes.join(' ') : flat;
+}
+// 방문자 대사 = 라디오 버블 재활용(앰버 틴트, 방문자 머리 위 앵커). 좀보이드식 타이핑 자막.
+function showVisitorBubble(id) {
+  const ev = EVENTS[id];
+  if (!ev || !visitor) return;
+  clearRadioBubble();
+  const el = ensureRadioBubbleEl();
+  el.className = 'rb-visitor';
+  el.innerHTML = `<div class="rb-title"></div><div class="rb-body"></div>`;
+  el.style.display = 'block';
+  const text = visitorVoice(ev); // 방문자의 실제 대사(따옴표 우선)
+  radioBubble = { el, item: { group: visitor.g }, yOff: 1.9, ttl: 0, fading: false, sfxTimers: [], typeTimer: null };
+  positionRadioBubble();
+  if (playSfx) playSfx('radio_static', { vol: 0.32, jitter: 0 });
+  el.querySelector('.rb-title').textContent = `📻 ${t(ev.titleId)}`;
+  const bodyEl = el.querySelector('.rb-body');
+  let ci = 0;
+  const type = () => {
+    if (!radioBubble) return;
+    bodyEl.textContent = text.slice(0, ci); ci++;
+    if (ci <= text.length) radioBubble.typeTimer = setTimeout(type, 32);
+    else radioBubble.ttl = performance.now() + 5000;
+  };
+  type();
+}
+// 방문자 연출 가능 조건: 실내 셸터 뷰(탐험 중·타이틀 아님).
+function canPresentVisitor() { return !state.exp && !!ROOM && !document.body.classList.contains('title-mode'); }
+
 function showEvent(id) {
   const ev = EVENTS[id];
   if (!ev) return;
   playEventSting(id);
+  // 걸어오는 등장인물(arrive foot/door/boat)은 인엔진 연출로 분기. 그 외는 즉시 카드.
+  if (ev.arrive && ENCOUNTER_VISITOR[id] && canPresentVisitor()) { presentVisitor(id); return; }
+  openEventCard(id);
+}
+function openEventCard(id, opts = {}) {
+  const ev = EVENTS[id];
+  if (!ev) return;
   state.activeEvent = id; // 현재 떠 있는 이벤트 (내리기 대상)
   const evTitle = t(ev.titleId);
-  // 이벤트 일러스트 전면 적용 (22종 배포 완료) — 미보유 id(ending 등)는 onerror가 조용히 제거
-  const illust = `<img class="ev-illust" src="img/events/ev_${id}.png" alt="" draggable="false" onerror="this.remove()">`;
-  const body = `${illust}
+  const choicesHtml = ev.choices.map((c, i) => {
+    const cost = typeof c.cost === 'function' ? c.cost() : c.cost; // 계절 가변 비용(밀수꾼) 지원
+    const ok = !cost || eventCostOk(cost);
+    return `<button class="pixel-btn" data-ch="${i}" ${ok ? '' : 'disabled'}>${t(c.labelId)}${cost && !ok ? t('ev.noResource') : ''}</button>`;
+  }).join('') + `<button class="pixel-btn" id="event-minimize" data-i18n="event.minimize">${t('event.minimize')}</button>`;
+  let body, kind = null;
+  if (opts.compact) {
+    // #181 방문자 콤팩트 카드: 서술 없이 선택지만(대사는 라디오 버블이 담당). 하단 소형 패널.
+    body = `<div style="display:flex;flex-direction:column;gap:6px">${choicesHtml}</div>`;
+    kind = 'visitor';
+  } else {
+    // 그 외: 기존 일러스트(미보유 id는 onerror 제거) + 서술 + 선택지.
+    const illust = opts.noImg ? '' : `<img class="ev-illust" src="img/events/ev_${id}.png" alt="" draggable="false" onerror="this.remove()">`;
+    body = `${illust}
     <div class="modal-body" style="line-height:2">${ev.textFn ? ev.textFn() : t(ev.textId)}</div>
-    <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
-      ${ev.choices.map((c, i) => {
-        const cost = typeof c.cost === 'function' ? c.cost() : c.cost; // 계절 가변 비용(밀수꾼) 지원
-        const ok = !cost || eventCostOk(cost);
-        return `<button class="pixel-btn" data-ch="${i}" ${ok ? '' : 'disabled'}>${t(c.labelId)}${cost && !ok ? t('ev.noResource') : ''}</button>`;
-      }).join('')}
-      <button class="pixel-btn" id="event-minimize" data-i18n="event.minimize">${t('event.minimize')}</button>
-    </div>`;
-  openModal(`${ev.icon} ${evTitle}`, body);
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">${choicesHtml}</div>`;
+  }
+  openModal(`${ev.icon} ${evTitle}`, body, kind);
   $('modal-body').querySelectorAll('button[data-ch]').forEach(b =>
     b.addEventListener('click', () => {
       const c = ev.choices[+b.dataset.ch];
@@ -3841,6 +4009,7 @@ function showEvent(id) {
       state.activeEvent = null;
       state.minimizedEvent = null; // 선택 완료 → 내려둔 상태도 해제
       hideEventChip();
+      dismissVisitor(); // #181 선택 완료 → 방문자 퇴장 + 카메라 복귀
       openModal(`${ev.icon} ${evTitle}`, `<div style="line-height:2">${result}</div>`);
       scheduleSave();
       renderResBar();
@@ -3851,6 +4020,7 @@ function showEvent(id) {
   if (minBtn) minBtn.addEventListener('click', () => {
     state.minimizedEvent = id;
     state.activeEvent = null;
+    dismissVisitor(); // #181 내리면 방문자도 떠난다 (칩으로 카드만 복원)
     closeModal();
     showEventChip(id);
     scheduleSave();
@@ -3874,7 +4044,7 @@ function showEventChip(id) {
   chip.onclick = () => {
     hideEventChip();
     state.minimizedEvent = null;
-    showEvent(id);
+    openEventCard(id, { noImg: !!ENCOUNTER_VISITOR[id] }); // #181 칩 복원은 카드만(방문자 재스폰 안 함)
   };
 }
 function hideEventChip() {
@@ -6395,6 +6565,7 @@ canvas.addEventListener('pointerdown', e => {
   if (placing) { moveGhost(placing, e); finishPlacing(); return; }
   if (!editMode && pickStairs(e)) return; // #55 배치 모드가 아닐 때만 계단 상호작용 (배치 중 오작동 방지)
   if (pickCat(e)) { if (!editMode) enterCatCloseup(); return; } // 쓰다듬기 + (비배치) 클로즈업 진입 — 히트 소비
+  if (!editMode && pickVisitor(e)) { onVisitorClicked(); return; } // #181 방문자 탭 = 대사+선택지 카드 (배치 중 제외)
   if (!editMode && pickAvatar(e)) { openWardrobeModal(); return; } // #86④ 아바타 탭 = 옷장 (배치 중 제외)
   const hit = pickItem(e);
   if (hit) {
@@ -8529,6 +8700,7 @@ function openModal(title, html, kind = null) {
   modalKind = kind;
   $('modal-title').innerHTML = title;
   $('modal-body').innerHTML = html;
+  $('modal-back').classList.toggle('ev-visitor', kind === 'visitor'); // #181 방문자 콤팩트 카드(하단·약한 딤)
   $('modal-back').classList.add('show');
 }
 function closeModal() {
@@ -8924,7 +9096,7 @@ function positionRadioBubble() {
   const el = radioBubble.el;
   const p = new THREE.Vector3();
   radioBubble.item.group.getWorldPosition(p);
-  p.y += 0.9; // 라디오 머리 위
+  p.y += radioBubble.yOff ?? 0.9; // 라디오/방문자 머리 위 (#181 방문자는 더 높게)
   p.project(camera);
   // NDC → 시각 px (picking 과 동일 매핑: (ndc*0.5+0.5)*innerWidth)
   let x = (p.x * 0.5 + 0.5) * innerWidth;
@@ -10079,6 +10251,7 @@ function renderFrame() {
     avatarSys.update(t, dt);   // #86: 주인공 아바타 실내 생활
   }
   updateCraftFx(dt); // ④ 제작 손맛 아이콘/반짝임 연출
+  tickVisitor(t, dt); // #181 방문자 걸어옴/글로우/퇴장 + 카메라 추적
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   positionSelPanel(); // 편집 미니 카드 재투영 — 카메라 팬/줌/드래그를 따라간다 (A안)
   for (const it of items) {
@@ -10466,6 +10639,32 @@ window.__shelter = {
   wildlifeRespawn: (id) => wildlifeSys.respawn(id || state.current),
   avatarState: () => avatarSys._debug(), // #86 QA 훅
   avatarRespawn: () => avatarSys.respawn(),
+  avatarDespawn: () => avatarSys.despawn(), // #181 접지 캡처: 방문자 시트에서 아바타 제거
+  // #181 방문자 복셀 접지 훅: 프리셋을 씬에 직접 스폰(연출 시스템 이전 룩 검증용)
+  debugVisitor: (presetId, x = 0, z = 0, rotY = 0) => {
+    if (!window.__dbgVisitors) window.__dbgVisitors = [];
+    const built = buildVisitor(presetId);
+    built.g.position.set(x, 0, z); built.g.rotation.y = rotY;
+    scene.add(built.g); window.__dbgVisitors.push(built.g);
+    renderer.shadowMap.needsUpdate = true;
+    return presetId;
+  },
+  debugVisitorRow: (ids, gapX = 0.85, z = 0, rotY = Math.PI) => {
+    const list = ids || VISITOR_IDS;
+    const n = list.length, x0 = -(n - 1) * gapX / 2;
+    list.forEach((id, i) => window.__shelter.debugVisitor(id, x0 + i * gapX, z, rotY));
+    return list;
+  },
+  debugVisitorClear: () => {
+    (window.__dbgVisitors || []).forEach(g => { scene.remove(g); disposeDeep(g); });
+    window.__dbgVisitors = []; renderer.shadowMap.needsUpdate = true;
+  },
+  VISITOR_IDS,
+  // #181 방문자 연출 QA 훅: 인카운터 트리거 / 상태 조회 / 클릭 시뮬 / 강제 퇴장
+  debugEvent: (id) => showEvent(id),
+  visitorState: () => visitor ? { mode: visitor.mode, x: +visitor.g.position.x.toFixed(2), z: +visitor.g.position.z.toFixed(2), camActive: visitorCam.active, spoke: visitor.spoke } : null,
+  visitorClick: () => onVisitorClicked(),
+  visitorDismiss: () => dismissVisitor(),
   avatarForceNext: () => avatarSys._forceNext(),          // #86② QA: 행동 추첨 강제 (상호작용 검증)
   avatarBlocks: (x, z) => avatarSys.blocksPlacement(x, z, { w: 1, d: 1 }), // #86③ QA: 설치 가드 판정
   openWardrobeModal, OUTFITS, // #86④ QA: 옷장

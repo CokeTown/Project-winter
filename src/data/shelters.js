@@ -239,3 +239,32 @@ export const SHELTER_META = {
     limits: '🌬️ 고층 강풍 — 겨울 바람이 유리를 두드린다', limitsEn: '🌬️ High-rise wind — winter rattles the glass',
   },
 };
+
+/* ── 셸터 접근성 (디렉터 2026-07-14 — 등장인물 인카운터 고도화) ──
+   등장인물(방문자)이 실제로 보이게 되면서, 어떤 셸터에는 특정 도착 방식이 불가능해진다.
+   도착 방식(events.js encounter.arrive)별로 셸터가 허용하는 집합:
+     foot  = 수레 끄는 행상 등 지상 도보 도착 → 지상 셸터만 (옥탑/지하철/등대/배/펜트 등 불가)
+     door  = 홀로 온 사람이 계단/입구로 문 앞까지 → 지상 + 계단 오를 수 있는 곳
+     boat  = 배로 접안 → 물가 셸터만
+     view  = 멀리 지나가는 걸 조망(다가오지 않음) → 시야 트인 곳
+     trace = 밤사이 흔적(발자국) → 지상 접근 가능한 곳
+   미등록 셸터는 _default(지상 취급)로 폴백 → 신규 지상 셸터 안전. */
+export const SHELTER_ACCESS = {
+  _default:     ['foot', 'door', 'view', 'trace'],
+  container:    ['foot', 'door', 'view', 'trace'],   // 황무지 노지
+  bunker:       ['foot', 'door', 'trace'],           // 지상 돔+문 (밀폐 — 조망 없음)
+  rooftop:      ['door', 'view'],                    // 빌딩 옥상 — 계단으로 사람만·조망 최고, 수레 불가
+  cabin:        ['foot', 'door', 'view', 'trace'],   // 숲 가장자리 지상
+  bus:          ['foot', 'door', 'view', 'trace'],   // 고속도로 지상
+  subway:       ['door'],                            // 지하 승강장 — 드물게 내려온 사람만
+  greenhouse:   ['foot', 'door', 'view', 'trace'],   // 지상 유리 온실
+  ship:         ['boat', 'view'],                    // 좌초 여객선 — 배로만
+  lighthouse:   ['boat', 'view'],                    // 절벽 등대 — 접안·조망
+  tugboat:      ['boat', 'foot', 'view'],            // 부두 정박 요트 — 부두로 도보도 가능
+  controltower: ['view'],                            // 관제탑 꼭대기 — 조망만
+  lodge:        ['foot', 'door', 'view', 'trace'],   // 고원 리조트 지상
+  customs:      ['foot', 'door', 'view', 'trace'],   // 국경 청사 지상
+  bridgehouse:  ['foot', 'door', 'view', 'trace'],   // 다리목 석조 관리소 지상
+  terminal:     ['foot', 'door', 'trace'],           // 역 대합실(실내 홀 — 조망 제한)
+  penthouse:    ['view'],                            // 마천루 최상층 — 조망만
+};

@@ -29,6 +29,7 @@ export function makeEvents(ctx) {
   const EVENTS = {
     wanderer: {
       icon: '🚶', titleId: 'ev.wanderer.title', textId: 'ev.wanderer.text',
+      arrive: 'door', // #181 홀로 온 거지 — 계단으로 문 앞까지 (수레 아님)
       choices: [
         { labelId: 'ev.wanderer.c0', cost: { food: 2 }, run() { state.buff = { exp: 0.10, labelId: 'buff.wanderer' }; return t('ev.wanderer.r0'); } },
         { labelId: 'ev.wanderer.c1', run() { return t('ev.wanderer.r1'); } },
@@ -36,6 +37,7 @@ export function makeEvents(ctx) {
     },
     trader: {
       icon: '🎒', titleId: 'ev.trader.title', textId: 'ev.trader.text',
+      arrive: 'foot', // #181 수레 끄는 행상 — 지상 셸터만
       choices: [
         { labelId: 'ev.trader.c0', cost: { battery: 2 }, run() { resAdd('bandage', 1); resAdd('antiseptic', 1); return t('ev.trader.r0'); } },
         { labelId: 'ev.trader.c1', run() { return t('ev.trader.r1'); } },
@@ -51,6 +53,7 @@ export function makeEvents(ctx) {
     // 1.1 밀수꾼 행상인 — 항구 한정, 지나가는 존재(캐논: 타인은 흐른다). 계절 가격 극단(겨울 연료 프리미엄).
     smuggler: {
       icon: '🚢', titleId: 'ev.smuggler.title', textId: 'ev.smuggler.text',
+      arrive: 'boat', // #181 배로 접안 — 물가 셸터만
       when: { districts: ['harbor'], dayOnly: true },
       choices: [
         // 겨울이면 연료 프리미엄(배터리 3), 평시엔 배터리 1 — 계절로 대가가 갈린다. 모드 배수(costMul)로 야박도 가산.
@@ -82,6 +85,7 @@ export function makeEvents(ctx) {
     },
     thief: {
       icon: '👣', titleId: 'ev.thief.title', textId: 'ev.thief.text',
+      arrive: 'trace', // #181 밤사이 흔적(발자국) — 지상 접근 가능한 곳만
       choices: [
         { labelId: 'ev.thief.c0', run() {
           const lit = items.some(it => DEFS[it.defId].light && it.on !== false);
@@ -118,6 +122,7 @@ export function makeEvents(ctx) {
     // 1. 겨울+한파: 문 밖에 쓰러진 낯선 이. 데워 보내기 / 못 본 척.
     coldsnap_stranger: {
       icon: '🧊', titleId: 'ev.coldstranger.title', textId: 'ev.coldstranger.text',
+      arrive: 'door', // #181 문 밖에 쓰러진 사람 — 계단 오를 수 있는 곳
       when: { seasons: ['winter'] }, cond: () => coldSnapActive(),
       choices: [
         { labelId: 'ev.coldstranger.c0', cost: { fuel: 2 }, run() { addMoodBuff(3, 3); state.dayLog.notes.push(t('ev.coldstranger.note0')); return t('ev.coldstranger.r0'); } },
@@ -127,6 +132,7 @@ export function makeEvents(ctx) {
     // 2. 여름: 상한 것 반값에 떠넘기려는 행상. 간파 / 속아 삼(식중독).
     spoil_merchant: {
       icon: '🥴', titleId: 'ev.spoilmerchant.title', textId: 'ev.spoilmerchant.text',
+      arrive: 'foot', // #181 수레 끄는 상인 — 지상 셸터만
       when: { seasons: ['summer'] },
       choices: [
         { labelId: 'ev.spoilmerchant.c0', run() { state.dayLog.notes.push(t('ev.spoilmerchant.note0')); return t('ev.spoilmerchant.r0'); } },
@@ -244,6 +250,7 @@ export function makeEvents(ctx) {
     // 12. 봄/가을+낮: 멀리 지나가는 행렬. 관측만(만나지 않는다). 쌍안경 있으면 상세 노트.
     caravan_pass: {
       icon: '🛻', titleId: 'ev.caravanpass.title', textId: 'ev.caravanpass.text',
+      arrive: 'view', // #181 멀리 지나가는 행렬 — 시야 트인 곳만 (다가오지 않음)
       when: { seasons: ['spring', 'autumn'], dayOnly: true },
       choices: [
         { labelId: 'ev.caravanpass.c0', run() {
@@ -560,6 +567,7 @@ export function makeEvents(ctx) {
     },
     desperate_knock: {
       icon: '🚪', titleId: 'ev.desperateknock.title', textId: 'ev.desperateknock.text',
+      arrive: 'door', // #181 문 너머의 목소리 — 계단 오를 수 있는 곳
       when: { modes: ['hard', 'hardcore'], minWinters: 2, night: true },
       choices: [
         { labelId: 'ev.desperateknock.c0', cost: { canned: 1 }, run() { addMoodBuff(2, 3); state.dayLog.notes.push(t('ev.desperateknock.note0')); return t('ev.desperateknock.r0'); } },
@@ -579,6 +587,7 @@ export function makeEvents(ctx) {
     },
     harsh_barter: {
       icon: '🛒', titleId: 'ev.harshbarter.title', textId: 'ev.harshbarter.text',
+      arrive: 'foot', // #181 다리 밑 행상 — 지상 셸터만
       when: { modes: ['hard', 'hardcore'], minWinters: 2, seasons: ['winter'], dayOnly: true },
       choices: [
         { labelId: 'ev.harshbarter.c0', cost: { canned: 3 }, run() { resAdd('fuel', 1); return t('ev.harshbarter.r0'); } },

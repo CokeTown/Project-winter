@@ -293,6 +293,9 @@ export const BAL = {
     glideLerp: 0.16,     // 진입/추적 카메라 보간 계수 (급회전 금지 — 지연 추적)
     yawOffset: 0.9,      // 고양이 정면 대비 카메라 yaw 오프셋(rad) — 3/4 측면각
   },
+  // #181 방문자 클로즈업: 등장인물이 화면 끝에서 걸어오면 카메라가 그쪽으로 팬+줌(자동 복귀).
+  //   yaw는 안 돌리고 center 이동+줌만(급회전 금지). zoom 1.45 = view height ~6.2u (1.58m 인물 프레이밍).
+  visitorCam: { zoom: 1.45, glideLerp: 0.1, centerY: 0.85 },
 
   /* ── 쾌적함 4요소 분해 (Living Shelter #29) ──
      comfortDetail()의 기존 컴포넌트를 4개 축으로 "재분류"만 한다.

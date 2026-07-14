@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 
 export function makeCamera(ctx) {
-  const { camera, camState, camCenter, camPanApplied, BAL, opts, getCat, catCam, state, getROOM, getSHELTERS } = ctx;
+  const { camera, camState, camCenter, camPanApplied, BAL, opts, getCat, catCam, visitorCam, state, getROOM, getSHELTERS } = ctx;
   const _panLook = new THREE.Vector3();
 
   // 팬 클램프 반경: 방 크기 비례(마당·원경 부착물이 살짝 보이는 정도) — 벡터 길이 원형 클램프.
@@ -49,6 +49,18 @@ export function makeCamera(ctx) {
       dist = camState.dist + (C.dist - camState.dist) * C.glideLerp; camState.dist = dist;
       elev = camState.elev + (THREE.MathUtils.degToRad(C.elevDeg) - camState.elev) * C.glideLerp; camState.elev = elev;
       camState.zoom += (C.zoom - camState.zoom) * C.glideLerp;
+    } else if (visitorCam && visitorCam.active) {
+      // #181 방문자 클로즈업: yaw 고정, center를 방문자(복귀 중엔 집)로 글라이드 + 줌만 보간.
+      const L = BAL.visitorCam.glideLerp;
+      const tgt = visitorCam.returning ? camCenter : visitorCam.center;
+      visitorCam.cur.x += (tgt.x - visitorCam.cur.x) * L;
+      visitorCam.cur.y += (tgt.y - visitorCam.cur.y) * L;
+      visitorCam.cur.z += (tgt.z - visitorCam.cur.z) * L;
+      center = visitorCam.cur;
+      camState.zoom += (visitorCam.zoomTarget - camState.zoom) * L;
+      if (visitorCam.returning && Math.abs(camState.zoom - visitorCam.zoomTarget) < 0.02 && visitorCam.cur.distanceTo(camCenter) < 0.06) {
+        visitorCam.active = false; visitorCam.returning = false; visitorCam.saved = null; // 복귀 완료 → 일반 카메라
+      }
     } else if (camState.dist !== 24) {
       // 복원: 클로즈업에서 빠져나오면 기본 거리/앙각으로 서서히 되돌린다
       camState.dist += (24 - camState.dist) * 0.16; dist = camState.dist;
@@ -61,8 +73,8 @@ export function makeCamera(ctx) {
       camState.panX += (camState.targetPanX - camState.panX) * 0.15;
       camState.panZ += (camState.targetPanZ - camState.panZ) * 0.15;
     }
-    camPanApplied.x = catCam.active ? 0 : camState.panX;
-    camPanApplied.z = catCam.active ? 0 : camState.panZ;
+    camPanApplied.x = (catCam.active || (visitorCam && visitorCam.active)) ? 0 : camState.panX;
+    camPanApplied.z = (catCam.active || (visitorCam && visitorCam.active)) ? 0 : camState.panZ;
     const yaw = camState.yaw;
     // 카메라 타겟 = camCenter + (panX, 0, panZ) — camCenter 자체는 불변(컬링 기준점 유지, 의도된 동작).
     camera.position.set(
