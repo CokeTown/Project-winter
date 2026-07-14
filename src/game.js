@@ -3852,7 +3852,8 @@ function visitorSpots() {
   };
 }
 const vLang = o => (o ? (lang === 'en' ? o.en : o.ko) : ''); // 방문자 표 인라인 ko/en 선택
-function scaleWant(want) { const m = encCostMul(); const out = {}; for (const [r, n] of Object.entries(want)) out[r] = Math.max(1, Math.round(n * m)); return out; } // 난이도 비용 배수
+function scaleWant(want) { const m = encCostMul(); const out = {}; for (const [r, n] of Object.entries(want)) out[r] = Math.max(1, Math.round(n * m)); return out; } // 난이도 비용 배수(지불↑)
+function scaleGive(give) { const m = encBarterMul(); const out = {}; for (const [r, n] of Object.entries(give)) out[r] = Math.max(1, Math.round(n * m)); return out; } // 난이도 교환 배수(수령↓) — 암시장과 동일
 function presentVisitor(id) {
   const preset = ENCOUNTER_VISITOR[id];
   if (!preset) { openEventCard(id); return; }
@@ -3992,10 +3993,12 @@ function showEvent(id) {
 function openVisitorTradeCard(id, ev, evTitle) {
   state.activeEvent = id;
   const o = visitor.offer;
-  const want = o.scale ? scaleWant(o.want) : o.want;
+  const baseWant = (o.winterWant && seasonOf().id === 'winter') ? o.winterWant : o.want; // 겨울 연료 프리미엄
+  const want = o.scale ? scaleWant(baseWant) : baseWant;
+  const give = o.scale ? scaleGive(o.give) : o.give; // 하드/하드코어는 수령도 야박 (barterMul)
   const ok = eventCostOk(want);
   const body = `<div style="display:flex;flex-direction:column;gap:6px">
-    <button class="pixel-btn" data-vtrade="1" ${ok ? '' : 'disabled'}>${costLabel(want)} → ${costLabel(o.give)}${ok ? '' : ' ' + t('ev.noResource')}</button>
+    <button class="pixel-btn" data-vtrade="1" ${ok ? '' : 'disabled'}>${costLabel(want)} → ${costLabel(give)}${ok ? '' : ' ' + t('ev.noResource')}</button>
     <button class="pixel-btn" data-vtrade="0">${vLang(VISITOR_UI.decline)}</button>
     <button class="pixel-btn" id="event-minimize" data-i18n="event.minimize">${t('event.minimize')}</button>
   </div>`;
@@ -4004,7 +4007,7 @@ function openVisitorTradeCard(id, ev, evTitle) {
     let result;
     if (b.dataset.vtrade === '1') {
       if (!eventCostConsume(want)) { toast(t('toast.needResource')); return; }
-      for (const [r, n] of Object.entries(o.give)) resAdd(r, n);
+      for (const [r, n] of Object.entries(give)) resAdd(r, n);
       const bad = o.risk === 'infection' && Math.random() < 0.5;
       if (bad) applyInjury('infection', false);
       result = vLang(bad ? VISITOR_UI.tradeBad : VISITOR_UI.tradeOk);
