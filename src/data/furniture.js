@@ -181,6 +181,74 @@ const DEFS = {
       return g;
     }
   },
+  // 「생존의 흔적」 밀도 프롭(2026-07-15, 디렉터 B안): 빈 방 → 생존자 소굴. 벽·구석을 보급 디테일로 채운다.
+  supplyshelf: {
+    name: '보급 선반', nameEn: 'Supply Shelf', emoji: '🥫', fp: { w: 1.0, d: 0.36 },
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
+    build(c, colorIdx = 0) {
+      const g = new THREE.Group();
+      B(g, 0.05, 1.16, 0.3, c, -0.47, 0.58, 0); B(g, 0.05, 1.16, 0.3, c, 0.47, 0.58, 0); // 기둥
+      B(g, 0.98, 0.04, 0.3, shade(c, 0.9), 0, 0.06, 0); B(g, 0.98, 0.04, 0.3, shade(c, 0.9), 0, 0.6, 0); B(g, 0.98, 0.04, 0.3, shade(c, 0.9), 0, 1.14, 0);
+      B(g, 0.98, 1.12, 0.04, shade(c, 0.72), 0, 0.6, -0.15); // 뒷판
+      const cans = [0xb84a3a, 0xa8b0b8, 0xc07a3a, 0x8a9a6a], jars = [0xc89a4a, 0x7a9a5a, 0xb5764a, 0x9a7ab0];
+      const rand = seededRand(31 + colorIdx * 17);
+      for (const [yB, kind] of [[0.1, 'can'], [0.64, 'jar']]) {
+        let x = -0.4;
+        while (x < 0.36) {
+          const w = 0.085 + rand() * 0.04, h = kind === 'can' ? 0.15 + rand() * 0.06 : 0.17 + rand() * 0.09;
+          if (rand() > 0.1) {
+            const col = (kind === 'can' ? cans : jars)[Math.floor(rand() * 4)];
+            B(g, w, h, 0.18, col, x + w / 2, yB + h / 2, 0);
+            if (kind === 'jar') B(g, w * 0.72, 0.03, 0.14, shade(col, 1.35), x + w / 2, yB + h + 0.01, 0); // 뚜껑
+            else B(g, w * 0.94, 0.025, 0.185, shade(col, 1.4), x + w / 2, yB + h * 0.62, 0); // 라벨 띠
+          }
+          x += w + 0.028;
+        }
+      }
+      return g;
+    }
+  },
+  cratestack: {
+    name: '보급 상자', nameEn: 'Supply Crates', emoji: '📦', fp: { w: 0.85, d: 0.7 },
+    colorNames: ['파인', '올리브', '러스트', '애쉬'], colorNamesEn: ['Pine', 'Olive', 'Rust', 'Ash'],
+    colors: [0x8a6a44, 0x6a6a44, 0x8a5038, 0x5a5650],
+    build(c) {
+      const g = new THREE.Group();
+      const crate = (x, y, z, s, col) => {
+        B(g, s, s * 0.82, s, col, x, y, z);
+        B(g, s * 1.03, 0.04, s * 1.03, shade(col, 1.22), x, y + s * 0.41, z);      // 상단 테두리
+        B(g, s * 0.92, 0.035, 0.03, shade(col, 0.68), x, y + s * 0.18, z + s / 2 - 0.015); // 앞 널판
+        B(g, s * 0.92, 0.035, 0.03, shade(col, 0.68), x, y - s * 0.12, z + s / 2 - 0.015);
+        B(g, 0.035, s * 0.8, 0.035, shade(col, 0.62), x - s / 2 + 0.02, y, z + s / 2 - 0.02); // 모서리 각목
+        B(g, 0.035, s * 0.8, 0.035, shade(col, 0.62), x + s / 2 - 0.02, y, z + s / 2 - 0.02);
+      };
+      crate(-0.1, 0.24, 0.05, 0.5, c);              // 하단 큰 상자
+      crate(0.22, 0.2, -0.16, 0.4, shade(c, 0.85)); // 옆 상자
+      crate(-0.12, 0.63, 0.06, 0.4, shade(c, 1.12)); // 위 상자(열림)
+      B(g, 0.1, 0.14, 0.1, 0xb84a3a, -0.22, 0.74, 0.05); B(g, 0.09, 0.13, 0.09, 0xa8b0b8, -0.08, 0.74, 0.11); B(g, 0.09, 0.17, 0.09, 0xc89a4a, -0.02, 0.75, -0.02); // 열린 상자 안 보급품
+      return g;
+    }
+  },
+  fuelpile: {
+    name: '장작 더미', nameEn: 'Firewood Pile', emoji: '🪵', fp: { w: 0.86, d: 0.5 },
+    colorNames: ['참나무', '자작', '소나무', '유목'], colorNamesEn: ['Oak', 'Birch', 'Pine', 'Driftwood'],
+    colors: [0x7a5636, 0xa89474, 0x8a6a44, 0x6a5a4a],
+    build(c, colorIdx = 0) {
+      const g = new THREE.Group();
+      const rand = seededRand(41 + colorIdx * 7);
+      for (let row = 0; row < 3; row++) { // 통나무 3단(앞면 나이테)
+        const n = 4 - row, y = 0.1 + row * 0.17;
+        for (let i = 0; i < n; i++) {
+          const x = -(n - 1) * 0.085 + i * 0.17 + (rand() - 0.5) * 0.02, lc = shade(c, 0.82 + rand() * 0.32);
+          B(g, 0.155, 0.16, 0.42, lc, x, y, 0);
+          B(g, 0.11, 0.11, 0.02, shade(lc, 1.28), x, y, 0.21);   // 앞면 단면
+          B(g, 0.045, 0.045, 0.016, shade(lc, 0.68), x, y, 0.222); // 나이테 중심
+        }
+      }
+      B(g, 0.16, 0.2, 0.14, 0xb03828, 0.36, 0.1, 0.17); B(g, 0.045, 0.06, 0.045, 0x2a2420, 0.36, 0.21, 0.17); // 빨간 연료 캔
+      return g;
+    }
+  },
   rug: {
     name: '러그', nameEn: 'Rug', emoji: '🧶', fp: { w: 2.2, d: 1.5 }, noCollide: true,
     colorNames: ['레드', '블루', '그린', '베이지'],
