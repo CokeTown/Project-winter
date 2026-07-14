@@ -133,6 +133,12 @@ const camCenter = new THREE.Vector3(0, 0.9, 0);
 //   벽/천장/근경소품 마스크가 팬과 무관하게 유지되도록 하는 보정값(아래 updateWallCulling/tickEnv).
 const camPanApplied = { x: 0, z: 0 };
 
+// ── 시네마틱 원근 카메라 (스토리 트레일러 전용 — 게임은 텍스트/UI 기반이라 연출 컷을 직접 렌더한다).
+//   실제 씬(옥탑·라디오·눈·스카이라인)을 오쏘가 아닌 원근으로 날며 진짜 시네마 무빙(푸시인·달리·룩앳)을 낸다.
+//   프로덕션 무해: _cine=false면 렌더 경로는 기존 오쏘와 100% 동일(플래그가 꺼진 채 부팅). __shelter.cine* 로만 켠다.
+const cineCam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.05, 400);
+let _cine = false;
+
 // ④ 고양이 클로즈업 카메라 — 비배치 모드에서 고양이 탭 시 얼굴로 글라이드. 드래그/ESC/빈곳 탭으로 복원.
 //   활성 중엔 카메라 타겟을 고양이(눈높이 살짝 위)로 옮기고 거리/줌/앙각을 클로즈업 프로필로 보간(지연 추적).
 const catCam = {
@@ -9197,7 +9203,7 @@ function makeRT() {
   if (rt) rt.dispose();
   const w = Math.max(2, Math.floor(innerWidth / opts.pixel));
   const h = Math.max(2, Math.floor(innerHeight / opts.pixel));
-  rt = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: true });
+  rt = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: true, samples: opts.aa ? 4 : 0 });
   postMat.uniforms.tex.value = rt.texture;
   postMat.uniforms.uRes.value.set(w, h);
 }
@@ -9206,14 +9212,14 @@ const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 const postMat = new THREE.ShaderMaterial({
   uniforms: {
     tex: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
-    uLevels: { value: 8.0 }, uQuant: { value: 1.0 }, uDither: { value: 1.0 },
+    uLevels: { value: 8.0 }, uQuant: { value: 1.0 }, uDither: { value: 1.0 }, uDitherAmt: { value: 1.0 },
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
   fragmentShader: `
     precision highp float;
     varying vec2 vUv;
     uniform sampler2D tex; uniform vec2 uRes;
-    uniform float uLevels, uQuant, uDither;
+    uniform float uLevels, uQuant, uDither, uDitherAmt;
     float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
     float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
     void main(){
@@ -9221,7 +9227,7 @@ const postMat = new THREE.ShaderMaterial({
       col = pow(col, vec3(1.0 / 2.2));
       if (uQuant > 0.5) {
         vec2 pc = floor(vUv * uRes);
-        float d = uDither > 0.5 ? (bayer4(pc) - 0.5) * 0.55 / uLevels : 0.0;
+        float d = uDither > 0.5 ? (bayer4(pc) - 0.5) * 0.55 * uDitherAmt / uLevels : 0.0;
         col = clamp(col + d, 0.0, 1.0);
         col = floor(col * uLevels + 0.5) / uLevels;
       }
@@ -9284,6 +9290,8 @@ function toggleEditMode(force) {
 function applyOpts() {
   $('opt-pixel').value = opts.pixel; $('opt-quant').checked = opts.quant;
   $('opt-dither').checked = opts.dither; $('opt-ceil').checked = opts.ceil;
+  { const eda = $('opt-ditheramt'); if (eda) eda.value = String(opts.ditherAmt != null ? opts.ditherAmt : 1); }
+  { const eaa = $('opt-aa'); if (eaa) eaa.checked = opts.aa !== false; }
   $('opt-autoeat').checked = opts.autoEat !== false;
   $('opt-autoplay').checked = !!opts.autoPlay;
   refreshAutoplayLock();
@@ -9299,6 +9307,7 @@ function applyOpts() {
   const bgidleRow = $('bgidle-row'); if (bgidleRow) bgidleRow.style.display = isMobileEnv ? 'none' : '';
   postMat.uniforms.uQuant.value = opts.quant ? 1 : 0;
   postMat.uniforms.uDither.value = opts.dither ? 1 : 0;
+  postMat.uniforms.uDitherAmt.value = (opts.ditherAmt != null ? opts.ditherAmt : 1);
   ceilLight.visible = opts.ceil;
   shadowDirty();
   makeRT();
@@ -9316,6 +9325,8 @@ function applyAccessibility() {
 $('opt-pixel').addEventListener('input', e => { opts.pixel = +e.target.value; applyOpts(); scheduleSave(); });
 $('opt-quant').addEventListener('change', e => { opts.quant = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-dither').addEventListener('change', e => { opts.dither = e.target.checked; applyOpts(); scheduleSave(); });
+{ const eda = $('opt-ditheramt'); if (eda) eda.addEventListener('change', e => { opts.ditherAmt = +e.target.value || 1; applyOpts(); scheduleSave(); }); }
+{ const eaa = $('opt-aa'); if (eaa) eaa.addEventListener('change', e => { opts.aa = e.target.checked; applyOpts(); scheduleSave(); }); }
 $('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; scheduleSave(); });
 $('opt-autoplay').addEventListener('change', e => { opts.autoPlay = e.target.checked; syncAutoBtn(); scheduleSave(); });
@@ -10052,7 +10063,7 @@ function renderFrame() {
   if (!titleVisible && !paused && !endingActive) tickTime(dt); // 타이틀·일시정지·엔딩 중엔 시간 정지
   else if (state.exp) state.exp.end += dt * 1000; // 탐험 실시간 타이머도 함께 멈춘다
   applyTimeLighting();
-  updateCamera();
+  if (!_cine) updateCamera(); // 시네마틱 중엔 오쏘 갱신 스킵 — camera.position은 cineSet이 동기화(컬링 기준 유지)
   updateWallCulling(dt);
   updateEnvironment(t, dt);
   updateWeather(dt, t);
@@ -10088,7 +10099,7 @@ function renderFrame() {
   }
   if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); syncBgm(); syncSfxAmbience(); drainDiscoveryQueue(); }
   renderer.setRenderTarget(rt);
-  renderer.render(scene, camera);
+  renderer.render(scene, _cine ? cineCam : camera);
   renderer.setRenderTarget(null);
   renderer.render(postScene, postCam);
   updateScreenFx(dt, t);
@@ -10416,12 +10427,28 @@ window.__shelter = {
   clampToRoom, // 발코니 배치 칸 (접지 프로브용)
   playJungleSunVignette, pickBalconyView, vignetteState: () => vignetteActive, // 비네트 러너 (접지 프로브용)
   playGoldenGateVignette, // #146 「불타는 해협」 금문교 노을 비네트 (QA·지역 결선 전 트리거)
+  buildGoldenGateScene, // 트레일러 하네스 전용: {scene,camera,update(t)} 결정론 렌더 (오프스크린 프레임캡처)
   showDiscoveryVignette, queueDiscovery, drainDiscoveryQueue, discoveryQueueLen: () => discoveryQueue.length, // #150 희귀템 발견 컷 (QA)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
   //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).
   setYaw: (rad) => { camState.yaw = camState.targetYaw = rad; },
   setPitch: (rad) => { camState.elev = THREE.MathUtils.clamp(rad, 0.05, Math.PI / 2 - 0.05); },
   setZoom: (z) => { camState.zoom = THREE.MathUtils.clamp(z, 0.2, 3.2); },
+  // ── 시네마틱 원근 카메라 훅 (스토리 트레일러 하네스 전용) ──
+  //   cineOn: 시네마틱 모드 진입(이후 렌더는 원근 cineCam). cineOff: 오쏘 복귀.
+  //   cineSet: 카메라를 (px,py,pz)에 두고 (lx,ly,lz)를 바라보게. fov 지정 가능. camera.position도 동기화해 벽 컬링이 원근 시점을 따른다.
+  cineOn: (fov) => { _cine = true; if (fov) cineCam.fov = fov; cineCam.aspect = innerWidth / innerHeight; cineCam.updateProjectionMatrix(); },
+  cineOff: () => { _cine = false; },
+  cineSet: (px, py, pz, lx, ly, lz, fov) => {
+    cineCam.position.set(px, py, pz);
+    cineCam.up.set(0, 1, 0);
+    cineCam.lookAt(lx, ly, lz);
+    if (fov) { cineCam.fov = fov; }
+    cineCam.aspect = innerWidth / innerHeight; cineCam.updateProjectionMatrix();
+    camera.position.set(px, py, pz); // 벽/천장 컬링 기준점 동기화(updateWallCulling은 camera.position을 읽는다)
+  },
+  cineCam,
+  applyOpts, // 트레일러 하네스: opts.pixel/ditherAmt/aa 등 변경 후 즉시 반영(uniform+makeRT 재빌드)
   freezeForGolden, // Phase0 골든 게이트: Math.random 시드 고정 + 렌더 시간 동결(결정론). 이 훅 뒤 loadShelter.
   stepGolden, // 동역학 게이트: 고정 dt로 renderFrame N회 동기 스테핑 → 눈 누적·젖음 페이드 결정론 진행 후 캡처.
   // #70 클램프 팬 QA 훅: setYaw 문법대로 target+현재값 동시 세팅(보간 대기 없이 즉시 반영). 원형 클램프 통과.
