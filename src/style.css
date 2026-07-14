@@ -571,8 +571,9 @@
     position: absolute; inset: 0; z-index: 35;
     display: flex; align-items: center; justify-content: center;
     background: radial-gradient(ellipse at 50% 62%, rgba(10,12,17,0.25) 0%, rgba(8,9,13,0.82) 78%);
+    pointer-events: none; /* #7 피드백: 배경은 통과 → 집 화면 드래그로 시점 회전. 메뉴만 클릭 수신(아래) */
   }
-  #title-inner { text-align: center; zoom: var(--uiz); }
+  #title-inner { text-align: center; zoom: var(--uiz); pointer-events: auto; }
   #title-logo { margin-bottom: 14px; }
   /* 정식 픽셀 워드마크 이미지(픽셀 규격 준수판). image-rendering:pixelated 로 하드 엣지 유지. */
   #title-logo img {

@@ -6747,6 +6747,11 @@ canvas.addEventListener('pointerdown', e => {
     pinch = { dist: Math.hypot(a.x - b.x, a.y - b.y), zoom: camState.zoom, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
     return;
   }
+  if (titleVisible) { // #7 피드백: 타이틀(집 배경)에서 드래그 = 시점 회전만. 가구/고양이 픽·편집 유도 없음.
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    orbitDrag = { x: e.clientX, y: e.clientY, moved: false, pan: false, dead: 7 };
+    return;
+  }
   if (e.button === 2) { orbiting = true; lastOrbX = e.clientX; lastOrbY = e.clientY; return; } // 디렉터(2026-07): 우클릭 드래그 = 팬(화면 이동)
   if (e.button !== 0 && e.pointerType === 'mouse') return;
   if (placing) { moveGhost(placing, e); finishPlacing(); return; }
