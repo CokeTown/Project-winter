@@ -181,6 +181,7 @@
       <div class="settings-pane" data-pane="gameplay">
         <label data-i18n-title="opt.autoeat.title" title="배고픔/갈증이 40 아래로 내려가면 자동으로 먹고 마십니다"><span data-i18n="opt.autoeat">자동 섭취</span> <input type="checkbox" id="opt-autoeat" checked></label>
         <label id="autoplay-row" data-i18n-title="opt.autoplay.title" title="Day 10부터 사용 가능. 매 정시마다 생존 루틴을 대신 처리합니다"><span data-i18n="opt.autoplay">자동 진행</span> <input type="checkbox" id="opt-autoplay"></label>
+        <label data-i18n-title="opt.confirmActions.title" title="먹기·마시기·청소 전에 확인창을 띄웁니다"><span data-i18n="opt.confirmActions">즉시 행동 확인</span> <input type="checkbox" id="opt-confirmactions"></label>
         <label id="lang-row"><span data-i18n="opt.lang">언어 / Language</span> <select id="opt-lang"><option value="ko">한국어</option><option value="en">English</option></select></label>
       </div>
       <!-- ④ 컨트롤 -->
@@ -225,6 +226,7 @@
 <div id="confirm-back" style="display:none">
   <div class="panel" id="confirm-panel">
     <div id="confirm-msg"></div>
+    <label id="confirm-dontask" style="display:none;align-items:center;gap:6px;justify-content:center;margin:9px 0 2px;font-size:0.9em;opacity:0.85;cursor:pointer"><input type="checkbox" id="confirm-dontask-cb"><span data-i18n="confirm.dontAsk">다음부터 묻지 않기</span></label>
     <div class="close-row">
       <button class="pixel-btn primary" id="confirm-yes"></button>
       <button class="pixel-btn" id="confirm-no"></button>

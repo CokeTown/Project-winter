@@ -1678,10 +1678,11 @@ function hardLoot(n) {
    생존 게이지 (기획서: 배고픔/갈증 — cozy 방향, 사망 대신 탈진)
 ============================================================ */
 // decayGauges → core/gauges.js (import). 배고픔/갈증 시간당 감소(계절·하드·한파·여름 배수 + autoEat).
-function eatFood() {
+async function eatFood() {
   if (paused) { toast(t('pause.blocked')); return; }
   if (!hasAnyFood(1)) { toast(t('eat.noFood')); return; }
   if (state.hunger > BAL.gauges.eatFullGate) { toast(t('eat.full')); return; }
+  if (!(await confirmAct('confirm.eat'))) return;
   const usedFresh = (state.res.food || 0) > 0;
   consumeAnyFood(1);
   state.hunger = Math.min(100, state.hunger + BAL.gauges.eatRestore);
@@ -1689,10 +1690,11 @@ function eatFood() {
   questProgress('eat');
   renderResBar(); updateHud(); scheduleSave();
 }
-function drinkWater() {
+async function drinkWater() {
   if (paused) { toast(t('pause.blocked')); return; }
   if ((state.res.water || 0) < 1) { toast(t('drink.noWater')); return; }
   if (state.thirst > BAL.gauges.drinkFullGate) { toast(t('drink.full')); return; }
+  if (!(await confirmAct('confirm.drink'))) return;
   resConsume('water', 1);
   state.thirst = Math.min(100, state.thirst + BAL.gauges.drinkRestore);
   toast(t('drink.done'));
@@ -6976,9 +6978,10 @@ function resetSettingsTabToDefault() {
     const ei = $('opt-bgidle'); if (ei) ei.checked = opts.bgIdle !== false;
     setSfxVol(opts.sfxVol); syncBgm();
   } else if (active === 'gameplay') {
-    opts.autoEat = D.autoEat; opts.lang = D.lang;
+    opts.autoEat = D.autoEat; opts.lang = D.lang; opts.confirmActions = D.confirmActions;
     // 자동 진행은 Day10 해금 상태를 존중 — 기본(off)만 복원
     opts.autoPlay = D.autoPlay; syncAutoBtn();
+    { const cc = $('opt-confirmactions'); if (cc) cc.checked = !!opts.confirmActions; } // #2
     applyOpts();
   }
   scheduleSave();
@@ -7740,12 +7743,13 @@ function renderResBar() {
   lastResSnapshot = { ...state.res };
   updateMoveBadge();
 }
-function cleanShelter() {
+async function cleanShelter(auto = false) {
   if (paused) { toast(t('pause.blocked')); return; }
   const c = state.cleanBy[state.current] ?? 70;
-  if (c >= 100) { toast(t('clean.already')); return; }
-  if (state.energy < 10) { toast(t('clean.tooTired')); return; }
-  if (!resConsume('water', 1)) { toast(t('clean.needWater')); return; }
+  if (c >= 100) { if (!auto) toast(t('clean.already')); return; }
+  if (state.energy < 10) { if (!auto) toast(t('clean.tooTired')); return; }
+  if (!auto && !(await confirmAct('confirm.clean'))) return;
+  if (!resConsume('water', 1)) { if (!auto) toast(t('clean.needWater')); return; }
   state.energy = Math.max(0, state.energy - 5);
   if (state.energy < 20) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
   state.cleanBy[state.current] = Math.min(100, c + 20);
@@ -8503,7 +8507,7 @@ function runAutoPlay() {
     state.dayLog.notes.push(t('auto.treat', { name }));
   }
   if ((state.cleanBy[state.current] ?? 70) < 50 && (state.res.water || 0) > 1) {
-    cleanShelter();
+    cleanShelter(true); // 자동 진행: 확인창 스킵
     state.dayLog.notes.push(t('auto.clean'));
   }
   if (!state.exp && (state.expToday || 0) < BAL.auto.maxExpPerDay && state.energy >= BAL.auto.minEnergy && !isExhausted()) {
@@ -8908,7 +8912,8 @@ $('modal-back').addEventListener('click', e => { if (e.target === $('modal-back'
 // 버튼은 "확인/취소"가 아니라 행동 동사("출발한다/그만둔다")로 — 실수 방지 + 게임 문법.
 // 하네스용: window.__autoConfirm이 정의돼 있으면 그 값으로 즉시 응답.
 let confirmResolve = null;
-function gameConfirm(msg, yesLabel, noLabel) {
+let confirmDontAskKey = null; // 피드백 #2: 활성 확인창의 "다음부터 묻지 않기" 대상 opts 키(없으면 체크박스 숨김)
+function gameConfirm(msg, yesLabel, noLabel, dontAskKey) {
   if (window.__autoConfirm !== undefined) return Promise.resolve(!!window.__autoConfirm);
   return new Promise(resolve => {
     if (confirmResolve) confirmResolve(false); // 겹침 방지: 이전 창은 취소로 정리
@@ -8916,6 +8921,9 @@ function gameConfirm(msg, yesLabel, noLabel) {
     $('confirm-msg').textContent = msg;
     $('confirm-yes').textContent = yesLabel || t('confirm.yes');
     $('confirm-no').textContent = noLabel || t('confirm.no');
+    confirmDontAskKey = dontAskKey || null;
+    const da = $('confirm-dontask'), cb = $('confirm-dontask-cb');
+    if (da && cb) { cb.checked = false; da.style.display = dontAskKey ? 'flex' : 'none'; }
     const back = $('confirm-back');
     back.style.display = '';
     back.classList.add('show');
@@ -8925,9 +8933,17 @@ function settleConfirm(v) {
   const back = $('confirm-back');
   back.classList.remove('show');
   back.style.display = 'none';
+  // #2: "다음부터 묻지 않기" 체크 + 예 → 해당 설정 off + UI·저장 반영
+  if (v && confirmDontAskKey) {
+    const cb = $('confirm-dontask-cb');
+    if (cb && cb.checked) { opts[confirmDontAskKey] = false; const el = $('opt-' + confirmDontAskKey.toLowerCase()); if (el) el.checked = false; scheduleSave(); }
+  }
+  confirmDontAskKey = null;
   const r = confirmResolve; confirmResolve = null;
   if (r) r(v);
 }
+// #2 즉시 행동 확인 게이트 — opts.confirmActions on일 때만 확인창(다음부터 묻지 않기 포함).
+async function confirmAct(msgKey) { return !opts.confirmActions || await gameConfirm(t(msgKey), t('confirm.yes'), t('confirm.no'), 'confirmActions'); }
 $('confirm-yes').addEventListener('click', () => settleConfirm(true));
 $('confirm-no').addEventListener('click', () => settleConfirm(false));
 $('confirm-back').addEventListener('click', e => { if (e.target === $('confirm-back')) settleConfirm(false); });
@@ -9653,6 +9669,7 @@ function applyOpts() {
   { const eaa = $('opt-aa'); if (eaa) eaa.checked = opts.aa !== false; }
   $('opt-autoeat').checked = opts.autoEat !== false;
   $('opt-autoplay').checked = !!opts.autoPlay;
+  { const cc = $('opt-confirmactions'); if (cc) cc.checked = !!opts.confirmActions; } // #2
   refreshAutoplayLock();
   $('opt-lang').value = opts.lang || 'ko';
   $('opt-fps').value = String(opts.fpsCap || 60);
@@ -9689,6 +9706,7 @@ $('opt-dither').addEventListener('change', e => { opts.dither = e.target.checked
 $('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; applyOpts(); scheduleSave(); });
 $('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; scheduleSave(); });
 $('opt-autoplay').addEventListener('change', e => { opts.autoPlay = e.target.checked; syncAutoBtn(); scheduleSave(); });
+{ const cc = $('opt-confirmactions'); if (cc) cc.addEventListener('change', e => { opts.confirmActions = e.target.checked; scheduleSave(); }); } // #2
 $('opt-fps').addEventListener('change', e => { opts.fpsCap = +e.target.value || 60; scheduleSave(); });
 $('opt-lowspec').addEventListener('change', e => { opts.lowSpec = e.target.checked; applyLowSpec(); scheduleSave(); });
 // 접근성 (REQ-ACC-01)

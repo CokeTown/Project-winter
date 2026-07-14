@@ -138,7 +138,9 @@ export const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: 
   // 렌더 품질: aa=MSAA 안티에일리어싱(도트 유지·엣지 매끄럽게) / ditherAmt=디더 도트 강도(0~1)
   aa: true, ditherAmt: 1,
   // 접근성 (REQ-ACC-01): 폰트 3단(1/1.12/1.25) · 색약 팔레트 · 흔들림/깜빡임 감소
-  fontScale: 1, colorblind: false, reduceMotion: false };
+  fontScale: 1, colorblind: false, reduceMotion: false,
+  // 피드백 #2: 즉시 행동(먹기·마시기·청소) 확인창 — 기본 off(코지 무마찰 유지). 확인창 안에서 "다음부터 묻지 않기"로 끔.
+  confirmActions: false };
 // #52: 설정 창 [기본값] 버튼용 — 선언부 값의 스냅샷 (탭별 부분 복원)
 export const OPTS_DEFAULT = { ...opts };
 
