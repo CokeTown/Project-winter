@@ -118,6 +118,8 @@ export const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
 
 // ── 런타임 설정(세이브와 별개, opts 키로 별도 저장) ──
 export const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, autoPlay: false, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko', fpsCap: 60, lowSpec: false, bgIdle: true,
+  // 렌더 품질: aa=MSAA 안티에일리어싱(도트 유지·엣지 매끄럽게) / ditherAmt=디더 도트 강도(0~1)
+  aa: true, ditherAmt: 1,
   // 접근성 (REQ-ACC-01): 폰트 3단(1/1.12/1.25) · 색약 팔레트 · 흔들림/깜빡임 감소
   fontScale: 1, colorblind: false, reduceMotion: false };
 // #52: 설정 창 [기본값] 버튼용 — 선언부 값의 스냅샷 (탭별 부분 복원)

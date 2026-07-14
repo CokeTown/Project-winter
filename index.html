@@ -135,6 +135,12 @@
         <label><span data-i18n="opt.pixel">픽셀 크기</span> <input type="range" id="opt-pixel" min="1" max="6" step="1" value="3"></label>
         <label><span data-i18n="opt.quant">색상 양자화</span> <input type="checkbox" id="opt-quant" checked></label>
         <label><span data-i18n="opt.dither">디더링</span> <input type="checkbox" id="opt-dither" checked></label>
+        <label data-i18n-title="opt.ditheramt.title" title="디더 점무늬의 세기입니다. 낮추면 카메라를 움직일 때 화면이 덜 지글거립니다."><span data-i18n="opt.ditheramt">디더 강도</span> <select id="opt-ditheramt">
+          <option value="1" data-i18n="opt.ditheramt.full">진하게</option>
+          <option value="0.6" data-i18n="opt.ditheramt.mid">보통</option>
+          <option value="0.3" data-i18n="opt.ditheramt.soft">은은하게</option>
+        </select></label>
+        <label data-i18n-title="opt.aa.title" title="도트 느낌은 유지하면서 계단 현상(들쭉날쭉한 가장자리)만 매끄럽게 다듬습니다."><span data-i18n="opt.aa">안티에일리어싱</span> <input type="checkbox" id="opt-aa" checked></label>
         <label><span data-i18n="opt.ceil">실내 조명</span> <input type="checkbox" id="opt-ceil" checked></label>
         <label><span data-i18n="opt.lowspec">저사양 모드</span> <input type="checkbox" id="opt-lowspec"></label>
         <label><span data-i18n="opt.fps">FPS 제한</span> <select id="opt-fps"><option value="60">60</option><option value="30">30</option></select></label>
