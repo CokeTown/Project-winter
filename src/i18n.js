@@ -10,6 +10,7 @@
 
 import koStr from './locales/ko.json' with { type: 'json' };
 import enStr from './locales/en.json' with { type: 'json' };
+import jaStr from './locales/ja.json' with { type: 'json' };
 
 export let lang = 'ko';
 
@@ -23,16 +24,23 @@ const BUILD_STAMP = (typeof __BUILD_STAMP__ !== 'undefined') ? __BUILD_STAMP__ :
 const DEMO_TAG = (typeof __DEMO__ !== 'undefined' && __DEMO__) ? ' · DEMO' : '';
 
 export function setLang(l) {
-  lang = (l === 'en') ? 'en' : 'ko';
+  lang = (l === 'en' || l === 'ja') ? l : 'ko';
   return lang;
 }
 export function isEn() { return lang === 'en'; }
+
+// 현재 언어로 문자열 선택 — ja는 미번역 키를 en으로 폴백(부분 번역 드롭에도 안전), 최종 폴백은 ko(원문).
+function pick(table) {
+  if (lang === 'ja' && table.ja != null) return table.ja;
+  if (lang !== 'ko' && table.en != null) return table.en;
+  return table.ko;
+}
 
 // #34 Steam 언어 연동: Steam API 언어 코드 → 게임 로케일.
 //   지원 로케일만 명시 매핑, 그 밖의 언어는 en 폴백(스토어 노출 언어 정책과 일치).
 //   빈 값(비Steam 실행)은 null — 호출부(부팅 autoLang)가 OS 언어 추정으로 넘어간다.
 //   ja 로케일 합류 시 여기에 japanese: 'ja' 한 줄이 전부다.
-const STEAM_LANG_MAP = { koreana: 'ko', english: 'en' };
+const STEAM_LANG_MAP = { koreana: 'ko', english: 'en', japanese: 'ja' };
 export function steamLangToGame(sl) {
   if (!sl) return null;
   return STEAM_LANG_MAP[sl] || 'en';
@@ -53,10 +61,10 @@ export function LF(obj, field) {
   if (!obj) return '';
   if (obj._lk) {
     const table = STR[obj._lk + '.' + field];
-    if (table != null) return (lang === 'en' && table.en != null) ? table.en : table.ko;
+    if (table != null) return pick(table);
   }
-  if (lang === 'en') {
-    const en = obj[field + 'En'];
+  if (lang !== 'ko') {
+    const en = obj[field + 'En'];   // ja도 JSON 미비 시 병기 필드(En)로 폴백
     if (en != null) return en;
   }
   return obj[field] ?? '';
@@ -67,13 +75,12 @@ export function LC(obj, field, i) {
   if (obj._lk) {
     const table = STR[obj._lk + '.' + field];
     if (table != null) {
-      const s = (lang === 'en' && table.en != null) ? table.en : table.ko;
-      const part = String(s).split('|')[i];
+      const part = String(pick(table)).split('|')[i];
       if (part != null) return part;
     }
   }
   const enArr = obj[field + 'En'];
-  if (lang === 'en' && Array.isArray(enArr) && enArr[i] != null) return enArr[i];
+  if (lang !== 'ko' && Array.isArray(enArr) && enArr[i] != null) return enArr[i];
   return obj[field]?.[i] ?? '';
 }
 export const LN = (obj) => LF(obj, 'name');     // name / nameEn
@@ -84,8 +91,7 @@ export const LL = (obj) => LF(obj, 'label');    // label / labelEn
 export function t(id, vars) {
   const table = STR[id];
   if (table == null) return id; // 누락 시 id를 그대로 노출 (개발 중 잔여물 탐지에 유용)
-  const s = (lang === 'en' && table.en != null) ? table.en : table.ko;
-  return fill(s, vars);
+  return fill(pick(table), vars);
 }
 
 // index.html: data-i18n="id" → textContent, data-i18n-title="id" → title, data-i18n-html="id" → innerHTML
@@ -114,13 +120,13 @@ export function applyStaticI18n(root = document) {
 // t()·{key} 치환 구조는 그대로 — 값이 안 바뀌면 골든/모달이 무회귀 통과(무손실 증명).
 // title.ver만 예외: 버전문은 로드타임 계산(APP_VER·DEMO_TAG·BUILD_STAMP)이라 JS에 잔류.
 export const STR = {};
-for (const k in koStr) STR[k] = { ko: koStr[k], en: (enStr[k] != null ? enStr[k] : koStr[k]) };
+for (const k in koStr) STR[k] = { ko: koStr[k], en: (enStr[k] != null ? enStr[k] : koStr[k]), ja: jaStr[k] };
 
 // ── 런타임 로케일 오버라이드 (유저가 설치본 locales/*.json 편집 → 재빌드 없이 번역 변경) ──
 //   Electron: preload(nineLocale)가 fs로 미리 읽어 동기 노출 → 부팅 시 STR 위에 병합(플래시 없음).
 //   웹: fetch('locales/*.json') 비동기 베스트에포트. 파일 없거나 깨지면 내장 기본값 유지(안전).
 // 반환: 실제로 값이 바뀐 게 있으면 true (없으면 재렌더 생략 — loose==base일 때 불필요한 재렌더/깜빡임·골든 교란 방지)
-function mergeOverride(koObj, enObj) {
+function mergeOverride(koObj, enObj, jaObj) {
   let changed = false;
   if (koObj) for (const k in koObj) {
     if (!STR[k]) { STR[k] = { ko: koObj[k], en: koObj[k] }; changed = true; }
@@ -130,21 +136,26 @@ function mergeOverride(koObj, enObj) {
     if (!STR[k]) { STR[k] = { ko: enObj[k], en: enObj[k] }; changed = true; }
     else if (STR[k].en !== enObj[k]) { STR[k].en = enObj[k]; changed = true; }
   }
+  if (jaObj) for (const k in jaObj) {
+    if (!STR[k]) { STR[k] = { ko: jaObj[k], en: jaObj[k], ja: jaObj[k] }; changed = true; }
+    else if (STR[k].ja !== jaObj[k]) { STR[k].ja = jaObj[k]; changed = true; }
+  }
   return changed;
 }
 export function applyLocaleOverrides() {
   const nl = (typeof window !== 'undefined') ? window.nineLocale : null;
-  if (nl && (nl.ko || nl.en)) return mergeOverride(nl.ko, nl.en);
+  if (nl && (nl.ko || nl.en || nl.ja)) return mergeOverride(nl.ko, nl.en, nl.ja);
   return false;
 }
 export async function loadLocaleOverridesWeb() {
   if (typeof fetch === 'undefined') return false;
   try {
-    const [ko, en] = await Promise.all([
+    const [ko, en, ja] = await Promise.all([
       fetch('locales/ko.json').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('locales/en.json').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('locales/ja.json').then(r => r.ok ? r.json() : null).catch(() => null),
     ]);
-    if (ko || en) return mergeOverride(ko, en);
+    if (ko || en || ja) return mergeOverride(ko, en, ja);
   } catch (e) { /* */ }
   return false;
 }

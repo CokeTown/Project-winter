@@ -439,6 +439,22 @@ const KNOWLEDGE_HASH = -451536973;
       sl.ko === 'ko' && sl.en === 'en' && sl.other === 'en' && sl.none === null && sl.nul === null,
       JSON.stringify(sl));
 
+    // ── 3c) #191 ja 로케일: setLang 왕복 + ja 해석(≠ko·무한글) + japanese 매핑 ──
+    const jaj = await call(`
+      const set = S.setLang('ja');
+      const a = S.t('exp.note.book');
+      S.setLang('ko');
+      const k = S.t('exp.note.book');
+      return JSON.stringify({
+        set, diff: a !== k, hangul: /[가-힣]/.test(a || ''),
+        map: S.steamLangToGame('japanese'), back: S.t('exp.note.book') === k,
+      });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const jr = JSON.parse(jaj);
+    check('#191 ja 로케일 (setLang 왕복·ja 해석·japanese 매핑)',
+      jr.set === 'ja' && jr.diff === true && jr.hangul === false && jr.map === 'ja' && jr.back === true,
+      JSON.stringify(jr));
+
     // ── 엔딩 3분기 + 이관의 진실 (GD-2.0 §5·§9.5) — 스위트 끝 배치(엔딩 시퀀스 DOM 오염 회피) ──
     const e3 = await call(`
       // 1) 9겨울 트리거 (#170 REV3): winters 8→9 processDay → passWinter가 재건(rebuildPending) 예약 →

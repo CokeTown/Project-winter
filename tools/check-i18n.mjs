@@ -40,19 +40,32 @@ for (const k of NARRATIVE_KEYS) {
   if (k in ko && /당신/.test(stripQuotes(ko[k]))) bad.push(`${k}: 서술문에 2인칭 '당신' 잔존 → 나/내로 (POV #176)`);
   if (k in en && /\byou(rs|rself|r)?\b/i.test(stripQuotes(en[k]))) bad.push(`${k}: 서술문에 2인칭 'you/your' 잔존 → I/my로 (POV #176)`);
 }
+// ── ja 로케일 게이트 (#191) ──
+//   패리티(ko 기준 전 키) + 플레이스홀더 시그니처 + 한글 잔존 금지 + {josa} 금지(ko 전용 —
+//   ja 문장에 남으면 fill()이 한국어 조사를 꽂는다). 예외 화이트리스트는 en과 동일(opt.lang 병기).
+const ja = read('ja.json');
+const jaKeys = new Set(Object.keys(ja));
+for (const k of koKeys) {
+  if (!jaKeys.has(k)) { bad.push(`${k}: ja 누락`); continue; }
+  if (sig(ko[k]) !== sig(ja[k])) bad.push(`${k}: 플레이스홀더 불일치 ko[${sig(ko[k])}] ja[${sig(ja[k])}]`);
+  if (/\{josa\}/.test(String(ja[k]))) bad.push(`${k}: ja에 {josa} 잔존 (ko 전용 — 조사 직접 표기)`);
+  if (!EN_HANGUL_OK.has(k) && HANGUL.test(String(ja[k] ?? ''))) bad.push(`${k}: ja 미번역(한글 잔존) "${String(ja[k]).slice(0, 30)}"`);
+}
+for (const k of jaKeys) if (!(k in ko)) bad.push(`${k}: ko에 없는 ja 고아 키`);
+
 // ── src ↔ public 동기화 게이트 (2026-07-08 검거) ──
 //   번들·이 게이트는 src/locales를, 런타임 fetch/preload 오버라이드는 dist/locales(=public 복사본)를 읽는다.
 //   둘이 어긋나면: public에만 넣은 신규 키는 게이트 무검증, src에만 넣은 윤문은 런타임에서 구본에 덮여 무효
 //   (재윤문 155키가 실제 화면에 안 보이던 라이브 결함의 근인). 커밋 시점엔 두 벌이 반드시 동일해야 한다.
-for (const f of ['ko.json', 'en.json']) {
+for (const f of ['ko.json', 'en.json', 'ja.json']) {
   const pub = JSON.parse(fs.readFileSync(new URL(`../public/locales/${f}`, import.meta.url), 'utf8'));
-  const srcObj = f === 'ko.json' ? ko : en;
+  const srcObj = f === 'ko.json' ? ko : (f === 'en.json' ? en : ja);
   for (const k of Object.keys(srcObj)) {
     if (!(k in pub)) bad.push(`${f}: public에 ${k} 누락 (src↔public 드리프트)`);
     else if (String(srcObj[k]) !== String(pub[k])) bad.push(`${f}: ${k} 값 드리프트 (src≠public)`);
   }
   for (const k of Object.keys(pub)) if (!(k in srcObj)) bad.push(`${f}: src에 ${k} 누락 (public에만 존재 — 게이트 무검증 키)`);
 }
-console.log(`i18n 항목 ${koKeys.length}개 검사 (ko.json/en.json + src↔public 동기화)`);
+console.log(`i18n 항목 ${koKeys.length}개 검사 (ko/en/ja + src↔public 동기화)`);
 if (bad.length) { console.error('위반:\n' + bad.join('\n')); process.exit(1); }
 console.log('무결 ✓');

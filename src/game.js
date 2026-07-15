@@ -7629,6 +7629,7 @@ function showTitle() {
   const cur = opts.lang || 'ko';
   $('lang-ko')?.classList.toggle('primary', cur === 'ko');
   $('lang-en')?.classList.toggle('primary', cur === 'en');
+  $('lang-ja')?.classList.toggle('primary', cur === 'ja');
   if (typeof syncBgm === 'function') syncBgm(); // Main_theme
 }
 function hideTitle() {
@@ -9939,7 +9940,7 @@ $('opt-bgidle').addEventListener('change', e => {
 });
 // 언어 전환: 저장 후 재로딩 (라이브 리렌더 대신 단순하게) — veil로 암전 후 전환
 $('opt-lang').addEventListener('change', async e => {
-  const next = e.target.value === 'en' ? 'en' : 'ko';
+  const next = (e.target.value === 'en' || e.target.value === 'ja') ? e.target.value : 'ko';
   if (next === (opts.lang || 'ko')) return;
   if (!(await gameConfirm(t('lang.confirm'), t('confirm.change'), t('confirm.cancel')))) { e.target.value = opts.lang || 'ko'; return; }
   opts.lang = next;
@@ -10243,7 +10244,8 @@ if (!loadSave()) {
 const autoLang = (() => {
   const m = steamLangToGame(window.nineSteam && window.nineSteam.lang);
   if (m) return m;
-  return ((navigator.language || '').toLowerCase().startsWith('ko')) ? 'ko' : 'en';
+  const os = (navigator.language || '').toLowerCase();
+  return os.startsWith('ko') ? 'ko' : (os.startsWith('ja') ? 'ja' : 'en');
 })();
 setLang(opts.lang || autoLang);   // 세이브된 언어 > Steam/OS 추정
 applyLocaleOverrides();       // 설치본 locales/*.json 유저 편집분 병합 (Electron 동기 — 렌더 전, 플래시 없음)
@@ -10367,6 +10369,7 @@ function pickTitleLang(next) {
 }
 $('lang-ko').addEventListener('click', () => pickTitleLang('ko'));
 $('lang-en').addEventListener('click', () => pickTitleLang('en'));
+$('lang-ja')?.addEventListener('click', () => pickTitleLang('ja'));
 $('t-new').addEventListener('click', () => openSlotModal('new'));
 $('t-load').addEventListener('click', () => openSlotModal('load'));
 $('t-help').addEventListener('click', openHelpModal);
