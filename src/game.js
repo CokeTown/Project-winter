@@ -6089,7 +6089,9 @@ function buildDiscoveryScene(defId, colorIdx, tier) {
   const holder = new THREE.Group(); scene.add(holder);
   const def = DEFS[defId];
   try {
-    const item = def.build(def.colors ? def.colors[colorIdx] : 0, colorIdx || 0, null, tier || 3);
+    // #192 클로즈업 등급: 컷 전용 하이디테일 빌더(def.closeup, 폴리 4~5k 허용)가 있으면 우선.
+    //   배치본과 실루엣·팔레트 동일이 규약(디렉터 오더 2026-07-16) — 없으면 배치본 그대로.
+    const item = (def.closeup || def.build)(def.colors ? def.colors[colorIdx] : 0, colorIdx || 0, null, tier || 3);
     holder.add(item);
     const bb = new THREE.Box3().setFromObject(item); const sz = new THREE.Vector3(); bb.getSize(sz); const ctr = new THREE.Vector3(); bb.getCenter(ctr);
     const sc = 1.75 / (Math.max(sz.x, sz.y, sz.z) || 1);
