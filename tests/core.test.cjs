@@ -624,6 +624,32 @@ const KNOWLEDGE_HASH = -451536973;
       check('도면/8종 정의 무결 (지역별 2~3·색 4종)', bpj.n === 8 && bpj.defsOk && bpj.perRegion, JSON.stringify(bpj));
       check('도면/제작 게이트 (미보유=비노출 → 보유만 노출)', bpj.hidden === true && bpj.shown === true, `hidden ${bpj.hidden} shown ${bpj.shown}`);
     }
+    // #190 커먼 도면 (「생존의 흔적」 밀도 프롭 5종): 정의 무결 + 레시피 bp 링크 + 게이트 + 시그니처 풀 비오염
+    const cbp = await call(`
+      S.simReset();
+      const ids = S.BAL.blueprint.commonItems || [];
+      const defsOk = ids.length === 5 && ids.every(id => S.DEFS[id] && S.DEFS[id].colors.length === 4);
+      const sigIds = Object.values(S.BAL.blueprint.regionItems).flat();
+      const noOverlap = ids.every(id => !sigIds.includes(id));
+      const crafts = S.CRAFTS || [];
+      const bpLinked = ids.every(id => crafts.some(c => c.out && c.out.furn === id && c.bp === id));
+      S.state.blueprints = {};
+      S.openCraftModal();
+      const h0 = document.getElementById('modal-body').innerHTML;
+      const hidden = ids.every(id => !h0.includes(S.DEFS[id].name));
+      S.state.blueprints = { fuelpile: 1 };
+      S.openCraftModal();
+      const h1 = document.getElementById('modal-body').innerHTML;
+      const shown = h1.includes(S.DEFS.fuelpile.name) && !h1.includes(S.DEFS.noticeboard.name);
+      document.getElementById('modal-back').style.display = 'none';
+      return JSON.stringify({ n: ids.length, defsOk, noOverlap, bpLinked, hidden, shown, chance: S.BAL.blueprint.commonDropChance });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const cbpj = JSON.parse(cbp);
+    if (cbpj.error) check('커먼 도면 (예외 없이)', false, cbpj.error);
+    else {
+      check('커먼 도면/5종 정의+bp 링크+비중복 (#190)', cbpj.defsOk && cbpj.noOverlap && cbpj.bpLinked && cbpj.chance > 0 && cbpj.chance < 0.2, JSON.stringify(cbpj));
+      check('커먼 도면/제작 게이트 (미보유=비노출 → 보유만 노출)', cbpj.hidden === true && cbpj.shown === true, `hidden ${cbpj.hidden} shown ${cbpj.shown}`);
+    }
     // 복귀 서프라이즈 (DDD-5): 게이트(240분+·35%)·고양이 분기·손실 없음 — RNG 고정으로 결정론
     const og = await call(`
       S.simReset();

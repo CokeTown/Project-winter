@@ -3313,6 +3313,18 @@ function resolveExpedition() {
         queueDiscovery(bpId, 0, 3, LName(DEFS[bpId])); // #150 희귀템 발견 컷 — 시그니처 도면=지역 독점 가구, 첫 발견 확정(고유)
       }
     }
+    // #190 커먼 도면 (「생존의 흔적」 밀도 프롭 5종): 전 지역 저확률 파밍 — 디렉터 오더(기본 배치 대신).
+    //   시그니처(전설·발견컷·지역 독점)와 별개 채널: rare 층, 컷 없음, 시그니처 풀 비희석.
+    {
+      const cPool = (BAL.blueprint.commonItems || []).filter(id => !(state.blueprints || {})[id]);
+      if (cPool.length && Math.random() < (BAL.blueprint.commonDropChance || 0)) {
+        const bpId = cPool[Math.floor(Math.random() * cPool.length)];
+        state.blueprints = state.blueprints || {};
+        state.blueprints[bpId] = 1;
+        notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
+        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'rare' });
+      }
+    }
     // #164 떠오른 자리 회수 (성공 = 온전한 보상)
     resolveFieldSpot(exp, 1, notes, special);
     // 염료 상인 (디렉터 2026-07-08): 슬럼 한정 5% — 만나는 건 운, 사는 건 선택(통조림 교환, 모드별 값).
@@ -10253,7 +10265,7 @@ function openQaPanel() {
       // 도료 검수용 — 전 계열 +3 (스와치 게이트·소모·도감 확인)
       case 'paints': for (const f of Object.keys(PAINT_ALL)) state.paints[f] = (state.paints[f] || 0) + 3; status('도료 12계열 + 네온 안료 +3통'); break;
       // 시그니처 도면 검수용 — 전 도면 해금 (제작 목록 노출 확인)
-      case 'bps': { state.blueprints = state.blueprints || {}; for (const ids of Object.values(BAL.blueprint.regionItems)) for (const id of ids) state.blueprints[id] = 1; status('시그니처 도면 8종 전부 해금'); break; }
+      case 'bps': { state.blueprints = state.blueprints || {}; for (const ids of Object.values(BAL.blueprint.regionItems)) for (const id of ids) state.blueprints[id] = 1; for (const id of (BAL.blueprint.commonItems || [])) state.blueprints[id] = 1; status('도면 전부 해금 (시그니처 8 + 커먼 5)'); break; }
     }
     updateHud(); renderResBar(); if (!state.exp) renderExpPanel(); scheduleSave();
   }));
@@ -10760,7 +10772,8 @@ window.__shelter = {
   repairGun, // 총 정비(§9.3) — 코어 테스트용
   endingLeaning, tryDoctorRadio, // 엔딩 3분기(§9.5) — 코어 테스트용
 
-  items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather, BAL,
+  items, DEFS, SHELTERS, REGIONS, RESOURCES, INJURIES, PREPS, DISTRICTS, districtOf, moveCostFor, state, opts, camState, weather, BAL, CRAFTS, // CRAFTS: #190 커먼 도면 코어 테스트용
+
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,

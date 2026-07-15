@@ -395,6 +395,10 @@ export const BAL = {
     },
     // 도면 선택 가중 (디렉터 2026-07-09): 기본 1. 그래피티는 더 희귀하게(다른 슬럼 시그니처 대비 1/3).
     weights: { graffiti: 0.35 },
+    // #190 「생존의 흔적」 커먼 도면 (디렉터 2026-07-15): 밀도 프롭 5종은 기본 배치에 심지 않고
+    //   낮은 확률 파밍으로. 시그니처와 별도 채널 — 전 지역, rare 층(발견컷 없음), 시그니처 풀 비희석.
+    commonItems: ['supplyshelf', 'cratestack', 'fuelpile', 'noticeboard', 'jugcluster'],
+    commonDropChance: 0.08,
   },
 
   paint: {
