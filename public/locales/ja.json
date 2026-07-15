@@ -2114,5 +2114,6 @@
   "quest.depart3.done": "三度通うと、この街が見え始める。",
   "demo.hardPerk": "🔓 デモ・チャレンジモード: 探索地域に商業地区が追加で開く。",
   "demo.autoLocked": "自動進行は製品版のもの — この十五日は、この手で。",
-  "demo.regionLocked": "ここはまだ閉ざされている — サバイバルモードのもの。"
+  "demo.regionLocked": "ここはまだ閉ざされている — サバイバルモードのもの。",
+  "intro.skip": "スキップ ▸▸"
 }

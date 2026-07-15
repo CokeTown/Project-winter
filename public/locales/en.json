@@ -2114,5 +2114,6 @@
   "craft.resTag": " · resource",
   "craft.candleHint": "Candles are fuel, not furniture to place — candle stools, lanterns and candelabras burn them.",
   "inv.getByCraft": "Craft it at the workbench",
-  "place.noStockCraft": "No {name} in stock. Craft one at the workbench."
+  "place.noStockCraft": "No {name} in stock. Craft one at the workbench.",
+  "intro.skip": "Skip ▸▸"
 }

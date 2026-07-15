@@ -2399,6 +2399,10 @@ function setGhostVisual(item, mode) {
   item.group.traverse(o => {
     if (!o.isMesh) return;
     const m = o.material;
+    // #197(1.9.1 캔들 배치 크래시): 바닥 라이트 풀(#189 P4, MeshBasic — emissive 없음)이 광원 가구 그룹에
+    //   합류하면서 무가드 emissive.setHex가 배치 고스트 첫 프레임에 터졌다. emissive 없는 재질은 틴트 대상이
+    //   아니며, 풀의 상시 투명도(0.13)를 원복 분기가 불투명으로 파괴하는 것도 함께 방지.
+    if (!m.emissive) return;
     if (mode) {
       m.transparent = true; m.opacity = 0.75;
       if (!o.userData.glow) {
@@ -2407,8 +2411,8 @@ function setGhostVisual(item, mode) {
       }
     } else {
       m.transparent = false; m.opacity = 1;
-      m.emissive.setHex(o.userData.origEmissive);
-      m.emissiveIntensity = o.userData.origEmissiveI;
+      m.emissive.setHex(o.userData.origEmissive ?? 0);
+      m.emissiveIntensity = o.userData.origEmissiveI ?? 1;
     }
   });
 }
@@ -7827,7 +7831,9 @@ function openSlotModal(mode) {
 // 모달 빌더 → ui/modals.js (Tier4 Phase1-⑤). t/BAL/DEFAULT_STATE/opts는 모듈이 import, game.js 클로저만 주입.
 const { openModeModal, openWardrobeModal, openKnowledgeModal } = makeModals({ openModal, toast, wallpaperUnlocked, zenUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS,
   getPaused: () => paused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud });
-const INTRO_IDS = ['intro.0']; // #4 데모 개막 압축(리뷰 레버4): 3장 텍스트벽→1인칭 1장(원클릭 시작). intro.1/2는 구본(#176 POV 스윕 때 정리).
+// 디렉터 원복(2026-07-17): 레버4 원클릭 압축이 개막 서사를 통째로 생략 — 3장 복원.
+//   마찰 우려(레버4의 원취지)는 우상단 「건너뛰기」가 상쇄한다: 읽을 사람은 읽고, 급한 사람은 건넌다.
+const INTRO_IDS = ['intro.0', 'intro.1', 'intro.2'];
 function showIntro() {
   let i = 0;
   const scr = $('intro-screen'), txt = $('intro-text');
@@ -7837,27 +7843,34 @@ function showIntro() {
     txt.innerHTML = t(INTRO_IDS[i]).replace(/\n/g, '<br>');
     $('intro-next').textContent = i === INTRO_IDS.length - 1 ? t('intro.start') : t('intro.next');
   };
-  $('intro-next').addEventListener('click', () => {
-    i++;
-    if (i >= INTRO_IDS.length) {
-      scr.style.display = 'none';
-      gameStarted = true;
-      toast(t('intro.firstShelter'));
-      // 신규 게임: 인트로 종료 직후 수첩 1페이지 (Day 1 튜토리얼 — '물부터')
-      // #74 데모(디렉터): 퀘스트 시작 전에 기초 조작 + 하단 바 기능을 먼저 가르친다 —
-      //   가이드 2페이지를 Day 1 수첩 앞에 끼워 한 권으로(종이 연출 2연속 방지). 입력 방식별 분기.
-      if (state.tutDay < 1) {
-        if (DEMO_ED) {
-          state.tutDay = 1; scheduleSave();
-          openJournalPages([
-            { titleId: 'guide.p1.title', bodyId: isPcInput ? 'guide.p1.pc' : 'guide.p1.mobile' },
-            { titleId: 'guide.p2.title', bodyId: 'guide.p2.body' },
-            ...TUTORIAL_PAGES[1],
-          ]);
-        } else showTutorialPage(1);
-      }
-    } else render();
-  });
+  const finish = () => {
+    scr.style.display = 'none';
+    gameStarted = true;
+    toast(t('intro.firstShelter'));
+    // 신규 게임: 인트로 종료 직후 수첩 1페이지 (Day 1 튜토리얼 — '물부터')
+    // #74 데모(디렉터): 퀘스트 시작 전에 기초 조작 + 하단 바 기능을 먼저 가르친다 —
+    //   가이드 2페이지를 Day 1 수첩 앞에 끼워 한 권으로(종이 연출 2연속 방지). 입력 방식별 분기.
+    if (state.tutDay < 1) {
+      if (DEMO_ED) {
+        state.tutDay = 1; scheduleSave();
+        openJournalPages([
+          { titleId: 'guide.p1.title', bodyId: isPcInput ? 'guide.p1.pc' : 'guide.p1.mobile' },
+          { titleId: 'guide.p2.title', bodyId: 'guide.p2.body' },
+          ...TUTORIAL_PAGES[1],
+        ]);
+      } else showTutorialPage(1);
+    }
+  };
+  // onclick 대입(addEventListener 금지) — 같은 세션 재시작 시 리스너 중복으로 탭당 2장씩 넘던 결함 방지
+  $('intro-next').onclick = () => { i++; (i >= INTRO_IDS.length) ? finish() : render(); };
+  if (!$('intro-skip')) {  // 건너뛰기 — 은은한 서브 버튼(1회 생성), 서사는 기본·스킵은 선택
+    const sk = document.createElement('button');
+    sk.id = 'intro-skip'; sk.className = 'pixel-btn';
+    sk.style.cssText = 'position:absolute;top:14px;right:14px;opacity:0.5;font-size:11px;padding:4px 10px';
+    scr.appendChild(sk);
+  }
+  $('intro-skip').textContent = t('intro.skip');
+  $('intro-skip').onclick = finish;
   render();
 }
 
