@@ -6,7 +6,14 @@
 $ErrorActionPreference = 'Stop'
 $env:Path = "$env:LOCALAPPDATA\node-portable;$env:Path"
 # Portable JDK21 (AGP needs JVM 17+; system has only JRE8). Same convention as build-qa.ps1.
-$env:JAVA_HOME = "$env:LOCALAPPDATA\jdk21"
+# LOCALAPPDATA differs by execution context (MSIX-virtualized vs real) - probe both.
+$jdkCandidates = @(
+  "$env:LOCALAPPDATA\jdk21",
+  "C:\Users\mhdmj\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\jdk21"
+)
+$jdk = $jdkCandidates | Where-Object { Test-Path "$_\bin\java.exe" } | Select-Object -First 1
+if (-not $jdk) { throw "JDK21 not found in: $($jdkCandidates -join '; ')" }
+$env:JAVA_HOME = $jdk
 $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 # Worktree lacks gitignored android/local.properties (sdk.dir) - mirror it from the main tree.
