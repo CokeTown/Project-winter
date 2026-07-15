@@ -543,6 +543,8 @@
   "day.gardenBoxFrozen": "🌱 텃밭 상자가 얼어 거둘 게 없다.",
   "day.gardenBox": "🌱 텃밭 상자에서 거뒀다. (+1)",
   "day.solar": "🔆 태양광 패널이 배터리를 채웠다. (+1)",
+  "day.lightingOut": "💡 전등이 나갔다 — 배터리가 없다. 방이 다시 어두워졌다.",
+  "day.lightingBack": "💡 전등이 다시 들어왔다.",
   "day.surplusSold": "📕 남아도는 식량을 암시장에 넘기고 책 {b}권을 받았다. (식량 -{n})",
   "day.veryDirty": "🧹 집이 말이 아니다. 쓸고 닦아야겠다.",
   "day.upkeepPaid": "🏠 거처 유지비를 냈다 ({emoji}{name} -{n})",

@@ -229,15 +229,30 @@ moon.shadow.camera.top = 16; moon.shadow.camera.bottom = -16;
 moon.shadow.camera.far = 60;
 scene.add(moon);
 
-// 라이팅 무드(디렉터 2026-07): 실내는 더 코지하게 — 온기색 더 앰버로(0xffd9a0→0xffce84)·세기 25→29.
-//   실외 을씨년(DAY_PHASES 회색화)과 대비를 키워 "따뜻한 안 vs 죽은 밖"을 강화한다.
-// 디렉터 2026-07-15: 실내 천장 광원 = "형광등처럼 내리쬐던" 밝은 다운라이트. 밝기 대폭 하향(29→11, ≈62%)
-//   + 렌더 루프에서 불안정 점멸(임시/노후 전구 톤). 온기는 화기(난로·촛불·랜턴)가 담당하도록 짝을 맞춘다.
-const ceilLight = new THREE.PointLight(0xffce84, 11, 16, 1.6);
+// Lighting Update P1 (#189 §1, 디렉터 2026-07-15 스펙 착지): 기본 상태 = 어둠.
+//   ceilLight는 이제 「무광원 폴백」— 광원(가구 광원·화기·조명 설비)이 하나도 없을 때만 켜지는
+//   죽은 형광등(밝기 10·냉백·점멸). 빛은 거저 주어지지 않고 양초/화기/설비로 쟁취한다.
+//   (전신: 2026-07-15 하향 29→11 + 점멸, 커밋 73dd597 — 그 값을 조건부 폴백으로 재정의)
+const ceilLight = new THREE.PointLight(0xcfe0e8, 10, 16, 1.6);
 ceilLight.castShadow = true;
 ceilLight.shadow.mapSize.set(512, 512);
 scene.add(ceilLight);
-let ceilBaseInt = 11; // 렌더 루프 점멸이 곱하는 기준값(셸터 로드 시 갱신)
+let ceilBaseInt = 10; // 렌더 루프 점멸이 곱하는 기준값(매 프레임 updateLightingRig가 갱신)
+// #189 §2 조명 설비(개조) 전등 — 따뜻하고 안정적인 전기 조명. 점멸 없음(화기와의 대비축).
+const facilityLight = new THREE.PointLight(0xffd9a0, 0, 20, 1.7);
+scene.add(facilityLight);
+let lightingFixture = null; // 천장 펜던트 소품(설치 시 loadShelter가 재생성)
+// 실내에 살아 있는 광원이 하나라도 있는가 — 가구 광원(난로·랜턴·양초·스탠드…) 또는 급전 중인 조명 설비.
+function interiorLightActive() {
+  if (items.some(it => DEFS[it.defId].light && it.on !== false)) return true;
+  return lightingFacilityOn();
+}
+function lightingFacilityOn() { return hasMod('lighting') && !state.lightingOut; }
+// 폴백/설비 광원 동기화 — 렌더 루프·로드 시 호출(전원 토글·연료 소진·설치를 전부 자동 반영).
+function updateLightingRig() {
+  ceilBaseInt = (state.current === 'subway' && state.subwayHidden) ? 2 : (interiorLightActive() ? 0 : 10);
+  facilityLight.intensity = lightingFacilityOn() ? 16 : 0;
+}
 
 // 절차적 표면 텍스처(makeCanvasTex + 바닥/벽/금속/합판/벽돌/타일/콘크리트 7종) → render/textures.js 이관 (Tier4)
 
@@ -2421,10 +2436,28 @@ function loadShelter(id) {
   applyMood(sh.mood);
   ensureWeather();
   ceilLight.position.set(0, sh.ceilY, 0);
-  // §9.6 「침묵」: 발견 후의 지하철은 버려진 역 — 실내 키 라이트를 잔불 수준으로. 남는 지배광=붉은 비상등.
-  //   2026-07-15 하향: 일반 실내 11(구 29). 렌더 루프가 이 기준값(ceilBaseInt)에 점멸을 곱한다.
-  ceilBaseInt = (state.current === 'subway' && state.subwayHidden) ? 2 : 11;
+  // #189 P1: 폴백/설비 광원 동기화 — 광원 있으면 폴백 소등, 조명 설비는 급전 시 점등.
+  //   (§9.6 「침묵」 지하철 잔불(2)은 updateLightingRig 안에서 유지)
+  facilityLight.position.set(0, sh.ceilY - 0.12, 0);
+  facilityLight.distance = Math.max(ROOM.w, ROOM.d) + 6;
+  updateLightingRig();
   ceilLight.intensity = ceilBaseInt;
+  // 조명 설비 펜던트 소품 — 설치 셸터에서만. 재로드마다 재생성(이주·증축·철거 대응).
+  if (lightingFixture) { scene.remove(lightingFixture); disposeDeep(lightingFixture); lightingFixture = null; }
+  if (hasMod('lighting')) {
+    const g = new THREE.Group();
+    const cordH = 0.34;
+    Cyl(g, 0.014, 0.014, cordH, 0x2b2d31, 0, -cordH / 2, 0, 5);            // 전선
+    Cyl(g, 0.16, 0.09, 0.12, 0x3a3d42, 0, -cordH - 0.05, 0, 10);           // 금속 갓
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8),
+      new THREE.MeshLambertMaterial({ color: 0xffe6c0, emissive: 0xffc070, emissiveIntensity: 1.1 }));
+    bulb.position.set(0, -cordH - 0.13, 0); bulb.userData.glow = true;
+    g.add(bulb);
+    g.userData.bulb = bulb;
+    g.position.set(0, sh.ceilY, 0);
+    scene.add(g);
+    lightingFixture = g;
+  }
 
   // 그리드 재생성
   scene.remove(gridObj);
@@ -4261,6 +4294,9 @@ const SHELTER_MODS = {
   insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '🧤', cost: { cloth: 3, material: 2 }, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
   shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '🪜', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
   solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '🔆', cost: { parts: 4, battery: 1 },  desc: '이틀에 한 번 배터리 +1', descEn: 'Battery +1 every other day', not: ['subway'] },
+  // #189 P1 조명 설비 — 어둠(무비용·우울) ↔ 화기(연료·온기·흔들림) ↔ 전기조명(전력·안정) 밸런스 축의 세 번째 기둥.
+  //   rebuild: 설치 즉시 loadShelter 재실행 → 천장 펜던트 소품+전등 점등. 전력은 processDay가 매일 배터리 1 소비.
+  lighting:   { name: '조명 설비',   nameEn: 'Electric Lighting', emoji: '💡', cost: { parts: 3, battery: 1 }, desc: '천장에 전등을 매단다 — 방이 밝아진다 (배터리 1/일, 발전기 가동 중엔 무료)', descEn: 'Hang an electric light from the ceiling — the room brightens (battery 1/day, free while the generator runs)', rebuild: true },
   roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '🛠️', cost: { material: 4 },      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
   extension:  { name: '증축',        nameEn: 'Extension',    emoji: '🧱', cost: { material: 6, parts: 2 },  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
   // 1.3 온천 (lodge 전용) — 고원 발견물을 개조로 개방. cozy의 정점: 쾌적 온기 대형 + 취침 에너지 회복 보너스.
@@ -8165,6 +8201,17 @@ function processDay() {
       notes.push(t('day.fuelOut', { fuel: LName(RESOURCES[fuelId]), name: LName(def) }));
     }
   }
+  // #189 P1: 조명 설비 전력 — 전등은 배터리를 먹는다(발전기 가동 시 무료). 끊기면 소등 → 폴백 어둠.
+  //   재급전은 다음 날 자동 재시도(수동 조작 불요) — 복구/단전 전이 시에만 노트 1줄.
+  if (hasMod('lighting')) {
+    if (consumeFuel('battery', 1)) {
+      if (state.lightingOut) notes.push(t('day.lightingBack'));
+      state.lightingOut = false;
+    } else if (!state.lightingOut) {
+      state.lightingOut = true;
+      notes.push(t('day.lightingOut'));
+    }
+  }
   // 3) 생산: 정수기 / 자동 급수기 / 거처 특성 (온실 텃밭, 여객선 낚시)
   // 수도관 동파(frozen_pipe) 방치 시 정수기 계열이 며칠 멎는다.
   const pipeFrozen = state.day <= (state.pipeFrozenUntil || 0);
@@ -10527,11 +10574,14 @@ function renderFrame() {
   tickDropSpots(t); // #182 B0 동물 드랍 지면 반짝임 펄스
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   positionSelPanel(); // 편집 미니 카드 재투영 — 카메라 팬/줌/드래그를 따라간다 (A안)
-  // 디렉터 2026-07-15: 천장 광원 불안정 점멸(형광등/노후 전구 느낌). 대부분 은은, 드물게 딥. reduceMotion 시 고정.
+  // #189 P1: 광원 레지스트리 동기화(전원 토글·연료 소진·설치 자동 반영) + 폴백 형광등 점멸.
+  //   폴백(광원 0)일 때만 점멸이 보인다 — 조명 설비 전등은 안정(전기 vs 화기 대비축).
+  updateLightingRig();
   if (opts.ceil) {
     if (opts.reduceMotion) ceilLight.intensity = ceilBaseInt;
     else ceilLight.intensity = ceilBaseInt * Math.max(0.5, 0.9 + 0.08 * Math.sin(t * 12.1) * Math.sin(t * 3.3) + (Math.sin(t * 0.47) > 0.99 ? -0.3 : 0));
   }
+  if (lightingFixture?.userData.bulb) lightingFixture.userData.bulb.material.emissiveIntensity = lightingFacilityOn() ? 1.1 : 0; // 소등 시 전구도 꺼짐
   for (const it of items) {
     if (it.lightObj && it.on !== false && DEFS[it.defId].light?.flicker) {
       // flickSlow(촛불): 저속 일렁임 + 깊은 딥 — "호롱호롱". 일반 flicker(랜턴 등): 기존 잰 흔들림.
@@ -10863,6 +10913,7 @@ window.__shelter = {
   renderFrame: () => renderFrame(),
   qaScene: () => scene, // 그라운드 프로브용 씬 루트 (부유·긴 메시 전수 감사). 카메라는 씬 밖이라 traverse 불가 — 이 훅으로 접근.
   qaRenderInfo: () => renderer.info, // #73 장주행 메모리 감사: geometries/textures/programs 카운트 (GPU 자원 누수 프로브)
+  qaLightState: () => { updateLightingRig(); return { fallback: ceilBaseInt, hasLight: interiorLightActive(), facility: lightingFacilityOn() }; }, // #189 P1 프로브
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },

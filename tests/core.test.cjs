@@ -706,6 +706,47 @@ const KNOWLEDGE_HASH = -451536973;
         JSON.stringify({ furn: [tj.loFurn, tj.hiFurn], light: [tj.loLight, tj.hiLight] }));
     }
 
+    // #189 Lighting P1 — 어둠 기본값(폴백 10/냉백), 광원 레지스트리, 조명 설비 전력(배터리/일·발전기 무료)
+    const lp = await call(`
+      const or = Math.random; Math.random = () => 0.99;   // 이벤트/드랍 롤 봉인 — 자원 델타 결정론
+      S.simReset(); S.loadShelter('container');
+      S.state.day = 5;                                    // processDay는 day 증가 후 호출되는 함수 — day-1 계절 조회가 유효해야 함
+      const out = {};
+      out.empty = S.qaLightState();                                        // 광원 0 → 폴백 10
+      S.addItem('lantern', 0, 1, 0, 0, true, 0, 3);
+      out.lantern = S.qaLightState();                                      // 랜턴 → 폴백 소등
+      S.state.res.candle = 0; S.processDay();                              // 연료 소진 → 자동 꺼짐
+      out.fuelOut = S.qaLightState();
+      S.state.mods = { container: ['lighting'] }; S.state.lightingOut = false;
+      S.state.res.battery = 3;
+      out.mod = S.qaLightState();                                          // 설비 급전 → 점등
+      const b0 = S.state.res.battery; S.processDay();
+      out.drain = b0 - (S.state.res.battery || 0);                         // 1/일 소비
+      S.state.res.battery = 0; S.processDay();
+      out.blackout = S.qaLightState();                                     // 단전 → 소등+폴백
+      out.outNote = (S.state.dayLog.notes || []).some(n => n.includes('전등이 나갔다'));
+      S.addItem('generator', 0, -1.5, 0, 0, true, 0, 0);
+      S.state.res.fuel = 3; S.state.res.battery = 1; S.state.lightingOut = false;
+      const b1 = S.state.res.battery; S.processDay();
+      out.freePower = (S.state.res.battery || 0) === b1;                   // 발전기 가동 → 배터리 무료
+      out.backOn = S.qaLightState();
+      Math.random = or;
+      return JSON.stringify(out);
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const lj = JSON.parse(lp);
+    if (lj.error) check('#189 P1 (예외 없이)', false, lj.error);
+    else {
+      check('#189 P1 폴백 게이트 (광원 0=10 → 랜턴=0 → 연료 소진=10)',
+        lj.empty.fallback === 10 && !lj.empty.hasLight && lj.lantern.fallback === 0 && lj.lantern.hasLight && lj.fuelOut.fallback === 10 && !lj.fuelOut.hasLight,
+        JSON.stringify({ e: lj.empty, l: lj.lantern, f: lj.fuelOut }));
+      check('#189 P1 조명 설비 (점등·배터리 1/일·단전 소등+노트)',
+        lj.mod.facility === true && lj.mod.fallback === 0 && lj.drain === 1 && lj.blackout.facility === false && lj.blackout.fallback === 10 && lj.outNote === true,
+        JSON.stringify({ mod: lj.mod, drain: lj.drain, bo: lj.blackout, note: lj.outNote }));
+      check('#189 P1 발전기 무료 급전 (배터리 불변·재점등)',
+        lj.freePower === true && lj.backOn.facility === true,
+        JSON.stringify({ free: lj.freePower, on: lj.backOn }));
+    }
+
     const green = report();
     app.exit(green ? 0 : 1);
   } catch (err) {
