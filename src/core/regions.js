@@ -74,6 +74,10 @@ export function pickAutoRegion() {
     //   가리킨 곳으로 자동 탐험도 향한다(pull 실현). 전부 수집하면 조건이 풀려 자동 소멸.
     const sigs = BAL.blueprint.regionItems[id];
     if (sigs && sigs.some(bp => !(state.blueprints || {})[bp])) w *= A.wishlistWeight;
+    // #195: #164 컨디션(풍/마름)·떠오른 자리 — 지도 배지와 자동 선택 가중의 비대칭 봉합(#177 레버5만 배선돼 있던 것)
+    const cLv = (state.regionCond && state.regionCond.lv && state.regionCond.lv[id]) || 0;
+    if (cLv > 0) w *= A.condRichWeight; else if (cLv < 0) w *= A.condLeanWeight;
+    if (state.fieldSpot && state.fieldSpot.region === id) w *= A.spotWeight;
     if (id === state.lastAutoRegion) w *= A.revisitDecay; // 직전 방문 감쇠
     if (w > bestW) { bestW = w; bestId = id; }
   }

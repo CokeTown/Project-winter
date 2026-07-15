@@ -251,7 +251,8 @@ scene.add(facilityLight);
 let lightingFixture = null; // 천장 펜던트 소품(설치 시 loadShelter가 재생성)
 // 실내에 살아 있는 광원이 하나라도 있는가 — 가구 광원(난로·랜턴·양초·스탠드…) 또는 급전 중인 조명 설비.
 function interiorLightActive() {
-  if (items.some(it => DEFS[it.defId].light && it.on !== false)) return true;
+  // #195: selfLit(네온 — build() 내장 PointLight)도 실광원 — 네온만 켜진 방 위에서 죽은 형광등이 점멸하던 이음매
+  if (items.some(it => (DEFS[it.defId].light || DEFS[it.defId].selfLit) && it.on !== false)) return true;
   return lightingFacilityOn();
 }
 function lightingFacilityOn() { return hasMod('lighting') && !state.lightingOut; }
@@ -2597,6 +2598,7 @@ async function moveToShelter(id) {
   }
   state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
   state.stayDays = 0; // 새 집은 아직 낯설다
+  state.lightingOut = false; // #195: 전 셸터의 단전 이력을 끌고 오지 않는다 — 도착 셸터 기준으로 다음 결산이 재판정
   loadShelter(id);
   scheduleSave();
   renderResBar();
@@ -2737,7 +2739,8 @@ function openMapModal() {
     el.style.left = Math.min(MAP_SAFE.x1, Math.max(MAP_SAFE.x0, p.x)) + '%';
     el.style.top = Math.min(MAP_SAFE.y1, Math.max(MAP_SAFE.y0, p.y)) + '%';
     el.title = LName(r);
-    const blocked = blizzardBlocks(rid); // 1.2: 폭설 봉쇄된 지상 지역 (개통 구간은 예외)
+    const avBlocked = avalancheBlocks(rid); // #195: 눈사태 봉쇄도 지도에 — 클릭해야 거부당하며 알게 되던 이음매
+    const blocked = blizzardBlocks(rid) || avBlocked; // 1.2: 폭설 봉쇄된 지상 지역 (개통 구간은 예외)
     if (blocked) el.classList.add('blocked');
     // #85 그려지는 발견: 안 가본 곳은 연필 스케치(수치 없음 — 소문), 다녀오면 잉크(성공률+발자취 점).
     const visits = (state.regionVisits || {})[rid] || 0;
@@ -2761,14 +2764,26 @@ function openMapModal() {
     //   핀의 자식이라 클릭·호버가 핀 핸들러로 버블 — 이름 자체가 터치 타깃을 겸한다.
     const nameTag = `<span class="pin-name">${LName(r)}</span>`;
     el.innerHTML = blocked
-      ? `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate lack">❄️</span>${spotTag}`
+      ? `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate lack">${avBlocked ? '🏔️' : '❄️'}</span>${spotTag}`
       : !visits
         ? `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate sketch-q">?</span>${spotTag}`
         : `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate ${cls}">${rate}%</span>${dots}${spotTag}${condTag}`;
     // 첫 귀환 후 처음 여는 지도: 잉크가 배어드는 연출 1회
     state.mapInked = state.mapInked || {};
     if (visits > 0 && !state.mapInked[rid]) { el.classList.add('inked-now'); state.mapInked[rid] = 1; scheduleSave(); }
-    el.addEventListener('click', () => { closeModal(); startExpedition(rid); }); // 준비 모달 경로 그대로 (봉쇄/에너지/탈진/횟수 검사 포함)
+    el.addEventListener('click', (ev) => { // 준비 모달 경로 그대로 (봉쇄/에너지/탈진/횟수 검사 포함)
+      // 디렉터 신고(2026-07-17 모바일): 주거를 탭해도 공업이 눌린다 — 인접 핀의 라벨·배지 박스가 겹치면
+      //   DOM 스택 순서가 탭을 가로챈다. 탭 좌표에서 최근접 핀(아이콘부 중심)을 골라 시각적 의도를 우선.
+      let best = rid, bestD = Infinity;
+      if (ev.clientX || ev.clientY) {
+        for (const pe of wrap.querySelectorAll('.map-pin.region')) {
+          const rb = pe.getBoundingClientRect();
+          const d = Math.hypot(ev.clientX - (rb.left + rb.width / 2), ev.clientY - (rb.top + rb.height * 0.35));
+          if (d < bestD) { bestD = d; best = pe.dataset.rid; }
+        }
+      }
+      closeModal(); startExpedition(best);
+    });
     // 호버/선택 시 하단 정보 줄에 위험·소요·날씨 표기
     el.addEventListener('mouseenter', () => showMapInfo(rid));
     wrap.appendChild(el);
@@ -3018,6 +3033,9 @@ function showMapInfo(rid) {
       ? `<br>${t('map.drops', { items: unowned.map(id => LName(DEFS[id])).join(', ') })}`
       : `<br><span style="color:var(--good)">${t('map.sigDone')}</span>`;
   }
+  // #195: 젤 필터북 pull 가시화 — 미보유 시 상업·도심 정보줄에 1줄. 지역 pull로 설계된 기능(#189 P3)인데
+  //   지도·도감 어디에도 없어 우연히 맞기 전까지 존재를 알 수 없던 사각.
+  if (!state.lightGels && BAL.lighting.gelBookRegions.includes(rid)) track += `<br>${t('map.dropsGel')}`;
   const mNext = mTier < BAL.mastery.tiers.length ? ` · ${t('map.masteryNext', { n: mTier + 1, m: BAL.mastery.tiers[mTier] - visits })}` : '';
   $('map-info').innerHTML = `
     ${t('map.regionLine', { emoji: regionIcon(rid), pct: Math.round(p.eff * 100), name: LName(r), desc: LDesc(r) })}<br>
@@ -5389,6 +5407,7 @@ function openCraftModal() {
       if (!state.mods) state.mods = {};
       if (!state.mods[state.current]) state.mods[state.current] = [];
       state.mods[state.current].push(id);
+      if (id === 'lighting') state.lightingOut = false; // #195: lightingOut은 전역 플래그 — 타 셸터 단전 이력이 새 설비의 첫 점등을 막지 않게 리셋
       toast(t('craft.modDone', { emoji: m.emoji, name: LName(m) }));
       state.dayLog.notes.push(t('craft.modNote', { name: LName(m) }));
       if (id === 'extension' || m.rebuild) {
@@ -5880,13 +5899,17 @@ function openJournalModal(tab = 'journal') {
   }).join('');
   const commonRows = commonIds.map(id => bpOwned[id] ? bpRow(id, true, '') : bpVeilRow(t('col.bpCommonSrc'))).join('');
   const soloRows = soloIds.map(id => bpOwned[id] ? bpRow(id, true, '') : bpVeilRow(t('col.bpLegendSrc'))).join('');
+  // #195: 젤 필터북 — 도면은 아니지만 같은 전설 채널의 1회 한정 유품(#189 P3). 미보유 잠금 행으로 pull 가시화.
+  const gelRow = state.lightGels
+    ? `<div class="prep-row" style="cursor:default"><span style="font-size:16px">📔</span><span>${t('col.gelBook')}</span><span class="p-cost">✓</span></div>`
+    : bpVeilRow(t('col.bpGelSrc'));
   const colBody = `
     <div class="report-sec"><span class="r-title">${t('col.bpTitle', { n: bpGot, total: bpTotal })}</span>
       ${sigBlocks}
       <div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${t('col.bpCommonTitle')}</div>
       ${commonRows}
       <div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${t('col.bpLegendTitle')}</div>
-      ${soloRows}
+      ${soloRows}${gelRow}
       <div style="margin-top:6px;font-size:10px;color:var(--text-dim)">${t('col.veilHint')}</div>
     </div>
     <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount(), total: colTotal })}</span><br>${colHtml}</div>
@@ -7726,7 +7749,7 @@ function openSlotModal(mode) {
         ${m && m.qaUsed ? `<span class="sl-qa" title="QA 치트 사용됨" style="position:absolute;top:4px;left:4px;font-size:9px;background:#6b5a40;color:#1a1408;padding:1px 4px;border-radius:3px;font-weight:bold">QA</span>` : ''}
         <span class="sl-no">${n}</span>
         <div class="sl-body">${m
-          ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}${m.winters >= 1 ? ` <span class="sl-winters">❄️${m.winters}${m.mode === 'zen' ? '' : '/9'}</span>` : ''}${ended ? ` <span class="sl-ended">${t('slot.endedTag')}</span>` : ''}<br><span class="sl-meta">${t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
+          ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}${m.winters >= 1 ? ` <span class="sl-winters">❄️${m.winters}${m.mode === 'zen' ? '' : '/9'}</span>` : ''}${ended ? ` <span class="sl-ended">${t('slot.endedTag')}</span>` : ''}<br><span class="sl-meta">${m.mode === 'wallpaper' ? t('slot.metaWp', { saved: m.saved }) : t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
           : t('slot.empty')}</div>
         ${m ? `<button class="sl-del" data-del="${n}" title="${t('slot.del.title')}">🗑</button>` : ''}
       </div>`);
@@ -7912,7 +7935,8 @@ function updateHud() {
     ` · <span style="color:var(--accent)" data-tip="${comfortTip}">😊${cd.score} ${'★'.repeat(lv)}</span>` +
     ` · <span data-tip="${t('hud.cleanTip')}">🧹${Math.round(cd.clean)}</span>` +
     ` · <span data-tip="${t('hud.expTip', { n: state.expToday, max: EXP_PER_DAY })}">🎒${state.expToday}/${EXP_PER_DAY}</span>` +
-    ` · <span data-tip="${t('hud.succTip')}">🏆${state.successes}</span>` +
+    // #195: 배경화면 모드는 successes가 셸터 해금용 치환값(탐험 봉인) — 가짜 '탐험 성공 N회' 노출 차단
+    (isWallpaper() ? '' : ` · <span data-tip="${t('hud.succTip')}">🏆${state.successes}</span>`) +
     // Nine Winters(#11): 넘긴 겨울 배지 — 1겨울부터 노출. 9 초과는 약속을 넘어선 시간 → accent
     ((state.winters || 0) >= 1
       ? ` · <span class="hud-winters${state.winters > 9 ? ' beyond' : ''}" data-tip="${t('winter.badge.tip', { n: state.winters })}">❄️${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}</span>`
@@ -8308,6 +8332,7 @@ function processDay() {
   const consumeFuel = (fuelId, n = 1) => (fuelId === 'battery' && freePower) ? true : resConsume(fuelId, n);
   // 2) 켜진 조명·가전의 일일 연료 소비 (부족 시 자동 꺼짐)
   // v0.9.1: 캔들 스툴(candle 가구)만 이틀에 1개 소비로 완화 — 그 외(랜턴 등)는 매일 그대로
+  const batteryOut = []; // #195: 배터리 소진 아침, 같은 사실이 가구 수만큼 반복되던 노트를 1줄로 집약
   for (const it of items) {
     const def = DEFS[it.defId];
     const fuelId = def.light?.fuel || (def.appliance?.effect !== 'power' ? def.appliance?.fuel : null);
@@ -8317,9 +8342,12 @@ function processDay() {
     if (frontDiscipline() === 'sleepless' && state.day % 2 === 0 && (it.defId === 'stove' || def.appliance?.effect === 'heat')) continue;
     if (!consumeFuel(fuelId, 1)) {
       setItemPower(it, false);
+      if (fuelId === 'battery') { batteryOut.push(LName(def)); continue; }
       notes.push(t('day.fuelOut', { fuel: LName(RESOURCES[fuelId]), name: LName(def) }));
     }
   }
+  if (batteryOut.length === 1) notes.push(t('day.fuelOut', { fuel: LName(RESOURCES.battery), name: batteryOut[0] }));
+  else if (batteryOut.length > 1) notes.push(t('day.powerOutGroup', { names: batteryOut.join(' · ') }));
   // #189 P1: 조명 설비 전력 — 전등은 배터리를 먹는다(발전기 가동 시 무료). 끊기면 소등 → 폴백 어둠.
   //   재급전은 다음 날 자동 재시도(수동 조작 불요) — 복구/단전 전이 시에만 노트 1줄.
   if (hasMod('lighting')) {
@@ -8577,7 +8605,9 @@ function processDay() {
     }
     // 스폰: 스팟 없을 때만, 해금 지역 한정, 숙련 티어 가중(단골 동네일수록 눈에 띈다).
     if (!state.fieldSpot && dayRand(1) < BAL.fieldSpots.spawnChance) {
-      const cands = Object.entries(FIELD_SPOTS).filter(([, s]) => regionUnlocked(s.region) && !isForbiddenRegion(s.region));
+      // #195: 봉쇄(눈사태·폭설) 지역 제외 — 수명 2일 < 봉쇄 3일이라 봉쇄 중 스폰은 닿을 수 없는 미끼가 된다
+      const cands = Object.entries(FIELD_SPOTS).filter(([, s]) => regionUnlocked(s.region) && !isForbiddenRegion(s.region)
+        && !avalancheBlocks(s.region) && !blizzardBlocks(s.region));
       if (cands.length) {
         const ws = cands.map(([, s]) => 1 + masteryTier(s.region) * BAL.fieldSpots.masteryWeight);
         let roll = dayRand(2) * ws.reduce((a, b) => a + b, 0), pick = cands[cands.length - 1];
@@ -8639,6 +8669,8 @@ function showDayReport() {
   if (warns.includes('bandage')) tips.push(t('report.tip.bandage'));
   if (warns.includes('water')) tips.push(t('report.tip.water'));
   if (warns.includes('battery') && SHELTERS[state.current].upkeep?.res === 'battery') tips.push(t('report.tip.battery'));
+  // #195: 양초 고갈은 경고 목록에 있는데 해법 팁만 누락(붕대·물·배터리는 있음) — 양초 연료 가구 보유 시 수급 경로 안내
+  if (warns.includes('candle') && items.some(it => DEFS[it.defId].light?.fuel === 'candle')) tips.push(t('report.tip.candle'));
   if (state.injury) tips.push(t('injury.tip', { name: LName(INJURIES[state.injury.type]), cost: costLabel(INJURIES[state.injury.type].cure) }));
   if ((state.cleanBy[state.current] ?? 70) < 50) tips.push(t('report.tip.clean'));
   const forecast = hasForecast()
@@ -9145,13 +9177,20 @@ function showSelPanel(item) {
   const fuel = def.light?.fuel || def.appliance?.fuel;
   if (fuel) {
     const have = state.res[fuel] || 0;
+    // #195: 태양광/발전기 급전 중엔 배터리 잔량 0이어도 소등되지 않는다(processDay 면제) — 카드가
+    //   '잔량 없음!' 경고를 띄우면서 불은 계속 켜지는 모순 방지. 발전기는 켜져 있고 연료가 있어야 급전.
+    const freePowered = fuel === 'battery' && (hasMod('solar')
+      || (items.some(i2 => DEFS[i2.defId].appliance?.effect === 'power' && i2.on !== false) && (state.res.fuel || 0) > 0));
+    // 캔들 스툴은 격일 소비(processDay와 동일 규칙) — '1일 1개' 고정 카피가 실제와 달랐다
+    const every2 = item.defId === 'candle';
+    const status = freePowered ? t('power.freeTag') : have === 0 ? t('power.empty') : t('power.lasts', { n: every2 ? have * 2 : have });
     const div = document.createElement('div');
     div.id = 'sel-power';
     div.style.cssText = 'font-size:9px;color:var(--text-dim);margin-bottom:6px;line-height:1.5';
     div.innerHTML = `
       <button class="pixel-btn" id="btn-power" style="width:100%;margin-bottom:4px">${item.on !== false ? t('power.on') : t('power.off')}</button>
       ${def.appliance ? `<span style="color:var(--good)">${LLabel(def.appliance)}</span><br>` : ''}
-      ${t('power.fuelLine', { emoji: RESOURCES[fuel].emoji, name: LName(RESOURCES[fuel]), have, status: have === 0 ? t('power.empty') : t('power.lasts', { n: have }) })}`;
+      ${t(every2 ? 'power.fuelLineEvery2' : 'power.fuelLine', { emoji: RESOURCES[fuel].emoji, name: LName(RESOURCES[fuel]), have, status })}`;
     $('sel-swatches').after(div);
     $('btn-power').addEventListener('click', () => {
       setItemPower(item, item.on === false, { silent: false });
@@ -11089,6 +11128,7 @@ window.__shelter = {
   qaRenderInfo: () => renderer.info, // #73 장주행 메모리 감사: geometries/textures/programs 카운트 (GPU 자원 누수 프로브)
   qaLightState: () => { updateLightingRig(); return { fallback: ceilBaseInt, hasLight: interiorLightActive(), facility: lightingFacilityOn() }; }, // #189 P1 프로브
   qaItems: () => items, applyGel, // #189 P3 QA: 배치 아이템 직접 접근 + 젤 적용(색 검증)
+  loadShelter, // #195 QA: 레이아웃 왕복 게이트 — loadSave는 상태만 싣고 씬 복원은 부팅 절차 몫이라 직접 구동
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },

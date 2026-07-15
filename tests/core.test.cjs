@@ -415,6 +415,44 @@ const KNOWLEDGE_HASH = -451536973;
       check('마이그레이션 전 필드 해시 불변(save 추출 안전망)', s.migHash === MIG_HASH, `hash ${s.migHash}`);
     }
 
+    // ── 2b) #195 레이아웃 아이템 왕복 (감사 P2: MIG 게이트가 톱레벨만 봐 y·s·t·ge가 그물 밖이던 사각) ──
+    //   저장 스키마(d/c/x/z/r/o/y/s/t/ge) → loadSave 복원 → 인메모리 아이템 필드 → flushSave 재직렬화까지
+    //   전 구간 보존을 검증. #193의 y 결손 4사이트가 이 테스트 부재로 통과했었다.
+    const rt = await call(`
+      S.simReset();
+      // 현행 상태 스냅샷 위에 레이아웃만 심는다 — 구세이브 마이그레이션 간섭 없이 순수 왕복만 검증
+      const rtState = JSON.parse(JSON.stringify(S.state));
+      rtState.current = 'container'; rtState.lightGels = 1;
+      rtState.layouts = { container: [
+        { d: 'dresser', c: 0, x: 0.3, z: 0.3, r: 0, o: 1, y: 0,   s: 2, t: 1, ge: 0 },
+        { d: 'candle',  c: 0, x: 0.3, z: 0.3, r: 0, o: 0, y: 1.1, s: 0, t: 2, ge: 0 },
+        { d: 'lamp',    c: 0, x: -0.8, z: -0.8, r: 1, o: 1, y: 0, s: 0, t: 3, ge: 3 },
+      ] };
+      rtState.day = 77; // 진단 마커 — 슬롯이 실제로 읽혔는지
+      localStorage.setItem(S.slotKey(1), JSON.stringify({ state: rtState, savedAt: Date.now() }));
+      S.loadSave();
+      S.loadShelter(S.state.current); // loadSave는 상태만 — 씬 복원(레이아웃→아이템) 경로를 직접 구동
+      const its = S.qaItems().map(i => ({ d: i.defId, on: i.on !== false, y: +(i.y || 0).toFixed(2),
+        t: i.tier || 0, s: i.sketch || 0, ge: i.gel || 0, sup: !!i.support, r: i.rot || 0 }));
+      S.flushSave();
+      const back = (JSON.parse(localStorage.getItem(S.slotKey(1))).state.layouts || {}).container;
+      return JSON.stringify({ its, back, dbg: { day: S.state.day, cur: S.state.current, lk: Object.keys(S.state.layouts || {}) } });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const rtj = JSON.parse(rt);
+    if (rtj.error || !rtj.its) {
+      check('#195 레이아웃 왕복 (예외 없이 로드)', false, rtj.error || 'no items');
+    } else {
+      const im = Object.fromEntries(rtj.its.map(i => [i.d, i]));
+      const bm = Object.fromEntries((rtj.back || []).map(i => [i.d, i]));
+      check('#195 왕복/복원 3종 전부 살아있음', rtj.its.length === 3, `items ${rtj.its.length} dbg ${JSON.stringify(rtj.dbg)} its ${JSON.stringify(rtj.its)}`);
+      check('#195 왕복/드레서 티어·스케치 복원(t1·s2)', im.dresser && im.dresser.t === 1 && im.dresser.s === 2, JSON.stringify(im.dresser));
+      check('#195 왕복/캔들 스태킹·전원 복원(y>0·support·off·t2)', im.candle && im.candle.y > 0 && im.candle.sup && !im.candle.on && im.candle.t === 2, JSON.stringify(im.candle));
+      check('#195 왕복/램프 젤·회전 복원(ge3·r1)', im.lamp && im.lamp.ge === 3 && im.lamp.r === 1, JSON.stringify(im.lamp));
+      check('#195 왕복/재직렬화 스키마 보존(y·s·t·ge·o)', bm.dresser && bm.dresser.t === 1 && bm.dresser.s === 2
+        && bm.candle && bm.candle.y > 0 && bm.candle.o === 0 && bm.candle.t === 2
+        && bm.lamp && bm.lamp.ge === 3 && bm.lamp.r === 1, JSON.stringify({ d: bm.dresser, c: bm.candle, l: bm.lamp }));
+    }
+
     // ── 3) i18n ko/en 패리티 (런타임 확인 — check-i18n의 런타임 짝) ──
     const i18n = await call(`
       const KO = S.__i18nKeys ? S.__i18nKeys() : null;

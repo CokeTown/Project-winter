@@ -76,7 +76,9 @@ export function comfortDetail() {
   // 단열 지식(§9): 얇은 셸터 악천후 쾌적 페널티 무효 (insulation 개조와 동급).
   //   customsSeal(세관 창구 봉쇄)·terminalPatch(대합실 지붕 틈 막기)도 동급 — "shelter는 응당 안전해야".
   if (sh.cold && (wt === 'rain' || wt === 'snow' || wt === 'storm') && !hasMod('insulation') && !hasMod('insulationPlus') && !hasMod('customsSeal') && !hasMod('terminalPatch') && !knowInsulates()) limitMod -= sh.cold;
-  if (sh.needsLight && light <= 0) limitMod -= sh.needsLight;
+  // #195: selfLit(네온 — 실광원 내장)은 어둠 페널티만 면제, 쾌적 가산은 0 유지(시그니처=파워 아님 코지 안전선)
+  const anySelfLit = items.some(it => DEFS[it.defId].selfLit && it.on !== false);
+  if (sh.needsLight && light <= 0 && !anySelfLit) limitMod -= sh.needsLight;
   // 한파: 방어 안 된 만큼 쾌적함 페널티 (완전 방어 시 0)
   if (coldSnapNetSeverity() > 0) limitMod -= BAL.seasons.coldSnapComfortPen;
   // 2.0 대한파 자기 규율(§9.4-③): 배급 반(-3)·비상식량 개봉(-4)의 살림 그늘 — 프론트 기간만
