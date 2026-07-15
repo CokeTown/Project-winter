@@ -27,7 +27,9 @@ import { makeAvatarSystem } from './systems/avatar.js';
 import { buildVisitor, VISITOR_IDS, ENCOUNTER_VISITOR } from './systems/visitor.js';
 import { VISITOR_TABLE, VISITOR_UI } from './data/visitors.js'; // #181 방문자 교환·대사 밸런스 테이블
 import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wildlife.js';
-import { lang, setLang, t, LN, LD, LF, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
+import { lang, setLang, t, LN, LD, LF, LC, STR, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
+import { stampDataL10n } from './data/l10n-registry.js'; // #114 Phase 2: 데이터 표 _lk 스탬프(비열거) — LF/LC가 로케일 JSON 우선 조회
+stampDataL10n();
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
 import { Platform, bindPlatform } from './lib/platform.js';
 import { state, DEFAULT_STATE, opts, OPTS_DEFAULT, items } from './core/state.js'; // 모놀리스 분해 Phase 1: 공유 가변 상태
@@ -58,7 +60,7 @@ const LLabel = (o) => LF(o, 'label');    // perk.label / upkeep.label / applianc
 const LBonus = (o) => LF(o, 'bonusLabel'); // DISTRICTS.bonusLabel
 const LHint = (o) => LF(o, 'hint');      // CRAFTS.hint
 const LLimits = (o) => LF(o, 'limits');  // SHELTERS.limits
-const LColor = (o, i) => (lang === 'en' && o.colorNamesEn ? o.colorNamesEn[i] : o.colorNames[i]);
+const LColor = (o, i) => LC(o, 'colorNames', i); // #114: 외부화 키(data.*.colorNames, 파이프 결합) 우선 — 폴백 동일
 // buff 라벨: 이벤트 버프는 labelId(신규) 또는 label(구세이브 잔재)
 const buffLabel = (b) => b ? (b.labelId ? t(b.labelId) : (b.label || '')) : '';
 
@@ -10832,6 +10834,7 @@ window.__shelter = {
   dropMemo, dropBroadcast, tryDropMemoOnExpedition, tryRadioBroadcast, doctorFragmentsComplete,
   collectMemo, memosCollected, broadcastsCollected, recordDistantLight, addMoodBuff,
   showMemoPage, showBroadcastModal, openJournalModal, bunkerComfortBonus, rebuildBunkerGeometry,
+  STR, // #114 QA: 로케일 테이블 직접 조회(외부화 키 검증용)
   // 1.1 대형 프로젝트 (ARC-02) QA 훅
   PROJECTS, projectAvailable, projectRec, projectDone, projectSiteStage, investProject,
   // 1.1 항구 QA 훅

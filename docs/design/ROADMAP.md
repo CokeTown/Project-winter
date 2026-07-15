@@ -48,7 +48,7 @@
 |---|---|
 | game.js 모듈화 (#73) | ◑ Tier3 완료(core/season·encounter·regions·expedition, ui/modals, render/culling). 잔여: `render/shelters` 추출(최대·최위험, STRATEGY §8 Phase1) |
 | 장주행 메모리 / 포팅 대비 (#73) | ◑ 진행 |
-| i18n Phase 2: 데이터 테이블 병기 문자열 → JSON (#114) | ⬜ pending (Phase 1 UI 1024키는 완료) |
+| i18n Phase 2: 데이터 테이블 병기 문자열 → JSON (#114) | ✅ 2026-07-15 — data.* 542키, l10n-registry+제너레이터 (Phase 1 UI 1024키 포함 총 2012키) |
 
 ## F. 품질 / 폴리시 잔여
 

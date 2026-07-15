@@ -40,6 +40,11 @@
 5. Steam AI 공개 문구에 번역 AI 사용 명시(기존 문구에 포함됨 — STORE-SUBMIT.md).
 
 ## 5. 남은 것
-- 데이터 테이블 병기 문자열(#114: nameEn/descEn 구조)은 이 시트 밖 — Phase 2 외부화 후 합류.
+- ✅ 데이터 테이블 병기 문자열(#114 Phase 2, 2026-07-15): `data.*` 542키로 로케일 JSON 합류.
+  - 파이프라인: 데이터 표의 *En 병기 필드 → `node tools/export-data-i18n.mjs` → `src/locales/*.json`(+public cp)
+  - 근원 = `src/data/l10n-registry.js`(표 등록·자동 발견). 신규 *En 필드는 제너레이터 재실행으로 합류.
+  - 런타임: 부팅 시 `stampDataL10n()`이 비열거 `_lk`를 스탬프 → i18n `LF/LC`가 JSON 우선, 병기 필드는 폴백.
+  - 배열 병기(colorNames)는 파이프(`|`) 결합 단일 키 — 번역 시 파이프 개수 유지.
+  - 스코프 밖: game.js 잔류 표(WEATHERS·ACHS — #73 분리 후 합류) · decotex.js(런타임 클로저 생성).
 - 인카운터·대사 전량(#141 추출본)은 문맥 컬럼이 특히 중요 — 화자/상황 주석을 그 파일에서 가져온다.
 - 우선순위: 데모(넥스트 페스트) → ja → zh_cn (DPM 사례: 일/중/한 페이지 번역 권장).
