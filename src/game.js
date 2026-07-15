@@ -8,7 +8,8 @@ import { BAL } from './data/balance.js';
 import { PROJECTS } from './data/projects.js';
 // 콘텐츠 데이터 분리 Phase 1 (순수 테이블 추출) — 로직은 game.js에 그대로.
 import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS, OUTFITS } from './data/items.js';
-import { DISTRICTS, REGIONS } from './data/world.js';
+import { DISTRICTS, REGIONS, WEATHERS } from './data/world.js';
+import { ACH_DEFS } from './data/achs.js'; // #73 Tier4: 업적 정의(판정 chk는 아래 ACH_CHECKS 병합)
 import { SHELTER_META, SHELTER_ACCESS } from './data/shelters.js'; // 셸터 데이터 필드(분리 Phase 1) — build 함수는 아래 SHELTERS에서 병합. SHELTER_ACCESS: #182 드랍 지면 판정
 import { makeShelterBuilders } from './render/shelters.js'; // Tier4 렌더 추출 Phase1-①: 셸터 build 함수(ctx 주입)
 import { tagDecoWall } from './render/props.js'; // 순수 프롭 빌더(deco 태그) — game.js 직접 사용분
@@ -601,13 +602,7 @@ function beginWinterSnapshot() {
 /* ============================================================
    동적 날씨 (기획서: 날씨가 게임플레이에 직접 영향)
 ============================================================ */
-const WEATHERS = {
-  clear: { name: '맑음', nameEn: 'Clear', icon: '🌤️', penalty: 0 },
-  snow:  { name: '눈',   nameEn: 'Snow', icon: '🌨️', penalty: 0.15, count: 850, color: 0xdde8f0, size: 3, fall: 1.6, sway: 0.7 },
-  rain:  { name: '비',   nameEn: 'Rain', icon: '🌧️', penalty: 0.10, count: 1100, color: 0x8fa8c8, size: 2, fall: 10, sway: 0.12 },
-  ash:   { name: '재',   nameEn: 'Ash', icon: '🌫️', penalty: 0.05, count: 380, color: 0x9a938a, size: 2.5, fall: 0.45, sway: 1.3 },
-  storm: { name: '폭우', nameEn: 'Downpour', icon: '⛈️', penalty: 0.2, count: 2200, color: 0x7e97b8, size: 2, fall: 14, sway: 0.2 },
-};
+// WEATHERS → data/world.js 이관 (#73 Tier4 — 순수 데이터, #114 l10n 합류). 파티클 생성·weather 상태는 렌더 결합이라 잔류.
 const weather = { type: 'clear', nextChange: 0, pts: null, seedY: [], seedS: [] };
 setComfortWeather(() => weather.type); // core/comfort에 현재 날씨 타입 주입 (weather는 렌더 결합이라 game.js 잔류)
 setExpeditionWeather(() => WEATHERS[weather.type].penalty || 0); // core/expedition에 날씨 페널티 주입 (rateParts용)
@@ -5585,29 +5580,30 @@ function markCollection(defId, colorIdx) {
 function collectionCount() {
   return Object.values(state.collection || {}).reduce((a, arr) => a + arr.filter(Boolean).length, 0);
 }
-const ACHS = [
-  { id: 'first',     icon: '👣', name: '첫 발걸음',        nameEn: 'First Steps',        desc: '첫 탐험 성공',                descEn: 'First successful expedition',        chk: () => state.stats.success >= 1 },
-  { id: 'exp10',     icon: '🎒', name: '베테랑 스캐빈저',  nameEn: 'Veteran Scavenger',  desc: '탐험 성공 10회',              descEn: '10 successful expeditions',          chk: () => state.stats.success >= 10 },
-  { id: 'exp30',     icon: '🗺️', name: '폐허의 주인',      nameEn: 'Lord of the Ruins',  desc: '탐험 성공 30회',              descEn: '30 successful expeditions',          chk: () => state.stats.success >= 30 },
-  { id: 'craft5',    icon: '🔨', name: '손재주',           nameEn: 'Handy',              desc: '제작 5회',                    descEn: 'Craft 5 times',                      chk: () => (state.stats.craft || 0) >= 5 },
-  { id: 'craft20',   icon: '⚙️', name: '폐허의 장인',      nameEn: 'Ruins Artisan',      desc: '제작 20회',                   descEn: 'Craft 20 times',                     chk: () => (state.stats.craft || 0) >= 20 },
-  { id: 'comfort90', icon: '🏡', name: '완벽한 안식처',    nameEn: 'Perfect Refuge',     desc: '쾌적함 90 달성',              descEn: 'Reach comfort 90',                   chk: () => comfortDetail().score >= 90 },
-  { id: 'settled8',  icon: '🕯️', name: '정든 집',          nameEn: 'Settled Home',       desc: '한 거처에 8일 연속 거주',     descEn: 'Live 8 days straight in one shelter', chk: () => (state.stayDays || 0) >= 8 },
-  { id: 'renov3',    icon: '🏠', name: '개척자',           nameEn: 'Pioneer',            desc: '거처 3곳 정비',               descEn: 'Refit 3 shelters',                   chk: () => Object.values(state.renovated || {}).filter(Boolean).length >= 3 },
-  { id: 'renovAll',  icon: '🌍', name: '모든 곳이 집',     nameEn: 'Everywhere Is Home', desc: '거처 9곳 전부 정비',          descEn: 'Refit all 9 shelters',               chk: () => Object.values(state.renovated || {}).filter(Boolean).length >= 9 },
-  { id: 'mods3',     icon: '🔧', name: '개조 기술자',      nameEn: 'Modder',             desc: '거처 개조 3개 설치',          descEn: 'Install 3 shelter mods',             chk: () => Object.values(state.mods || {}).flat().length >= 3 },
-  { id: 'winter',    icon: '❄️', name: '첫 겨울을 넘다',   nameEn: 'Past the First Winter', desc: 'Day 48 도달 (사계절 생존)', descEn: 'Reach Day 48 (survive all seasons)', chk: () => state.day >= 48 },
-  { id: 'nine_winters', icon: '❄️', name: '아홉 번째 겨울', nameEn: 'Nine Winters', desc: '아홉 번의 겨울을 넘기다', descEn: 'Weather nine winters', chk: () => (state.winters || 0) >= 9 },
-  { id: 'col21',     icon: '📖', name: '수집가',           nameEn: 'Collector',          desc: '도감 25% (가구 색상 21종)',   descEn: 'Collection 25% (21 furniture colors)', chk: () => collectionCount() >= 21 },
-  { id: 'col42',     icon: '🖼️', name: '큐레이터',         nameEn: 'Curator',            desc: '도감 50%',                    descEn: 'Collection 50%',                     chk: () => collectionCount() >= 42 },
-  { id: 'colAll',    icon: '🏛️', name: '폐허의 박물관장',  nameEn: 'Museum Keeper of the Ruins', desc: '도감 100% (84색상)',   descEn: 'Collection 100% (84 colors)',        chk: () => collectionCount() >= 84 },
-  { id: 'cat',       icon: '🐈', name: '고양이 집사',      nameEn: 'Cat Servant',        desc: '길고양이를 가족으로 맞이하다', descEn: 'Welcome a stray cat as family',      chk: () => !!state.cat },
-  // #170 REV3: Day 10000 폐지 — 스포일러 없는 문안으로 완화. chk는 탈출 성립(구세이브 endingSeen 호환).
-  { id: 'ending',    icon: '🚁', name: '폐허 너머로',      nameEn: 'Beyond the Ruins',   desc: '박사와 함께, 폐허 너머로',     descEn: 'With the doctor, beyond the ruins',  chk: () => !!state.endingSeen || state.endingType === 'escape' },
-  // 암호 업적 (디렉터 승인 2026-07-10, 메트로 2033 오마주 문법): 내용은 안 보이고 존재만 보인다 —
-  //   글로벌 달성률이 커뮤니티 고고학을 유도. quiet=무음 해금(침묵 시퀀스의 무기록 톤 보존), hidden=미해금 시 ???.
-  { id: 'silence',   icon: '▪️', name: '침묵',             nameEn: 'Silence',            desc: '…',                            descEn: '…',                                  quiet: true, hidden: true, chk: () => !!state.siloFired },
-];
+// #73 Tier4: 업적 정의 데이터 → data/achs.js 분리. 판정(chk)은 state·comfortDetail 등
+//   게임 스코프 결합이라 여기 잔류 — id로 병합(SHELTER_META+buildRoom 병합 선례, 동작 불변).
+const ACH_CHECKS = {
+  first: () => state.stats.success >= 1,
+  exp10: () => state.stats.success >= 10,
+  exp30: () => state.stats.success >= 30,
+  craft5: () => (state.stats.craft || 0) >= 5,
+  craft20: () => (state.stats.craft || 0) >= 20,
+  comfort90: () => comfortDetail().score >= 90,
+  settled8: () => (state.stayDays || 0) >= 8,
+  renov3: () => Object.values(state.renovated || {}).filter(Boolean).length >= 3,
+  renovAll: () => Object.values(state.renovated || {}).filter(Boolean).length >= 9,
+  mods3: () => Object.values(state.mods || {}).flat().length >= 3,
+  winter: () => state.day >= 48,
+  nine_winters: () => (state.winters || 0) >= 9,
+  col21: () => collectionCount() >= 21,
+  col42: () => collectionCount() >= 42,
+  colAll: () => collectionCount() >= 84,
+  cat: () => !!state.cat,
+  ending: () => !!state.endingSeen || state.endingType === 'escape', // #170 REV3: 구세이브 endingSeen 호환
+  silence: () => !!state.siloFired,
+};
+for (const a of ACH_DEFS) a.chk = ACH_CHECKS[a.id] || (() => false); // 정의 객체에 직접 병합 — _lk 스탬프(#114) 보존
+const ACHS = ACH_DEFS;
 function checkAchievements() {
   if (QA_ED) return; // #89 QA 에디션: 업적 전면 no-op (Steam 중계 지점 원천 차단)
   if (!state.achs) state.achs = {};
@@ -10866,6 +10862,7 @@ window.__shelter = {
   frostState: () => ({ frostLevel, netSev: coldSnapNetSeverity(), panes: winFrostMats.map(m => +m.material.opacity.toFixed(3)) }),
   renderFrame: () => renderFrame(),
   qaScene: () => scene, // 그라운드 프로브용 씬 루트 (부유·긴 메시 전수 감사). 카메라는 씬 밖이라 traverse 불가 — 이 훅으로 접근.
+  qaRenderInfo: () => renderer.info, // #73 장주행 메모리 감사: geometries/textures/programs 카운트 (GPU 자원 누수 프로브)
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },

@@ -12,6 +12,16 @@
    ============================================================ */
 import { DEFS } from './furniture.js';
 
+// ---- 날씨 정의 (#73 Tier4: game.js에서 원본 그대로 이동 — 순수 데이터) ----
+//   count/color/size/fall/sway = 파티클 렌더 파라미터(값만 — Points 생성은 game.js 잔류).
+export const WEATHERS = {
+  clear: { name: '맑음', nameEn: 'Clear', icon: '🌤️', penalty: 0 },
+  snow:  { name: '눈',   nameEn: 'Snow', icon: '🌨️', penalty: 0.15, count: 850, color: 0xdde8f0, size: 3, fall: 1.6, sway: 0.7 },
+  rain:  { name: '비',   nameEn: 'Rain', icon: '🌧️', penalty: 0.10, count: 1100, color: 0x8fa8c8, size: 2, fall: 10, sway: 0.12 },
+  ash:   { name: '재',   nameEn: 'Ash', icon: '🌫️', penalty: 0.05, count: 380, color: 0x9a938a, size: 2.5, fall: 0.45, sway: 1.3 },
+  storm: { name: '폭우', nameEn: 'Downpour', icon: '⛈️', penalty: 0.2, count: 2200, color: 0x7e97b8, size: 2, fall: 14, sway: 0.2 },
+};
+
 export const DISTRICTS = {
   outskirts: {
     name: '잿빛 외곽', nameEn: 'Ashen Outskirts', emoji: '🏜️', shelters: ['container', 'bus'],

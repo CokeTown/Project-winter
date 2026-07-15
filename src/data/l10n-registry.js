@@ -14,7 +14,8 @@
 import { DEFS } from './furniture.js';
 import { RESOURCES, INJURIES, PREPS, THEME_SETS, OUTFITS, CRAFTS } from './items.js';
 import { SHELTER_META } from './shelters.js';
-import { DISTRICTS, REGIONS } from './world.js';
+import { DISTRICTS, REGIONS, WEATHERS } from './world.js';
+import { ACH_DEFS } from './achs.js';
 import { KNOWLEDGE, KNOWLEDGE_BRANCHES } from './knowledge.js';
 import { PAINT_FAMILIES, RARE_PAINTS } from './paints.js';
 import { WILDLIFE_SPECIES } from './wildlife.js';
@@ -32,6 +33,8 @@ const TABLES = [
   ['shelter', SHELTER_META],
   ['district', DISTRICTS],
   ['region', REGIONS],
+  ['weather', WEATHERS], // #73 Tier4 이관분
+  ['ach', ACH_DEFS, (e) => e.id],
   ['know', KNOWLEDGE],
   ['knowbr', KNOWLEDGE_BRANCHES, (e) => e.id],
   ['paintfam', PAINT_FAMILIES],
