@@ -29,6 +29,9 @@
 |---|---|---|---|
 | Korean | ✅ | ✅ | 없음 |
 | English | ✅ | ✅ | 없음 |
+| Japanese | ✅ | ✅ | 없음 |
+
+> ja는 #191로 엔진 3언어 지원 + 2,068키 초벌 번역 완료(v1.9.0 트렁크 반영). 정본 번역은 디렉터 Gemini 워크플로(docs/l10n + import-l10n.mjs 게이트)로 교체 예정 — 스토어 체크 시점은 디렉터 판단(초벌 상태로 체크할지, 정본 역수입 후 체크할지).
 
 ---
 
@@ -115,7 +118,7 @@
 | Library capsule | `capsules-ingame/steam_library.png` | 600×900 (라이브러리 규격 별도 검증 要) |
 | Library hero | `capsules-ingame/steam_hero.png` (텍스트 없음) | 3840×1240 |
 | Library logo | `capsules-ingame/steam_logo.png` (엠블럼 투명) | 1280×720 |
-| Screenshots (순서대로) | `shots/final/01~08` (미감 v2 교체 예정: #156) | 1920×1080 |
+| Screenshots (순서대로) | `shots/v3/01~07` (#156 완료: 7셸터 골든아워 세트, 밀도 프롭+신규 라이팅 — 디렉터 검수 대기) | 1920×1080 |
 | Trailer | `trailer/draft.mp4` → **트레일러 v2(#172)** 완성 시 교체 | 1080p+ |
 
 ---
@@ -155,8 +158,8 @@ EN one-line (문서 참조용), Minimum: Windows 10 64-bit, Dual-core 2 GHz, 4 G
 
 | 항목 | 체크? | 근거 / 남은 일 |
 |---|---|---|
-| **Steam 도전 과제** | ✅ 켬 | 인게임 업적 18종(일반 17+히든 「침묵」) 완비 · 매핑표 `platform.js` STEAM_ACH_MAP. **출시 게이트**: ①Steamworks 콘솔에 API Name(ACH_*)으로 18종 등록(침묵=히든 플래그) ②electron preload 네이티브 브릿지(window.nineSteam.unlock) 구현·테스트. 현재는 로컬만 동작. |
-| **Steam Cloud** | ✅ 켬 | 세이브 슬롯 무한(#66) → 클라우드 세이브 가치 큼. **출시 게이트**: Steamworks Auto-Cloud 경로 등록(Electron userData 세이브 위치) + 왕복 테스트. 어댑터(`platform.js` cloud)는 준비됨. |
+| **Steam 도전 과제** | ✅ 켬 | 인게임 업적 18종(일반 17+히든 「침묵」) 완비 · 매핑표 `platform.js` STEAM_ACH_MAP. **네이티브 브릿지 구현 완료**: preload `window.nineSteam.unlock` → main `steamworks.js` 업적 중계(#117 배선, 비Steam이면 무해 폴백). **잔여 출시 게이트**: ①Steamworks 콘솔에 API Name(ACH_*)으로 18종 등록(침묵=히든 플래그) ②depot 업로드 후 실기 스모크(DEPOT.md 체크리스트). |
+| **Steam Cloud** | ✅ 켬 | 세이브 슬롯 무한(#66) → 클라우드 세이브 가치 큼. **#179 구현 완료**: userData/steamcloud 키별 파일 미러 + 부팅 스냅샷 하이드레이션 + qa-cloudsave A/B. **잔여 출시 게이트**: Steamworks 콘솔 Auto-Cloud 경로 등록 `WinAppDataRoaming/Nine Winters/steamcloud/*.json`(디렉터, DEPOT.md 참조) + depot 업로드 후 실기 왕복 스모크. |
 | 통계 | ☐ 끔 | Steam Stats API 미사용. 텔레메트리는 보류(#168). |
 | Steam 순위표 | ☐ 끔 | 경쟁 점수 없음(코지). |
 | 앱 내 구매 | ☐ 끔 | 서포터팩은 **상점 노출 DLC**라 DLC 설정으로 처리: 이 박스(상점 미표시 소액결제)는 해당 없음. |
@@ -172,7 +175,7 @@ EN one-line (문서 참조용), Minimum: Windows 10 64-bit, Dual-core 2 GHz, 4 G
 | 코멘터리 제공 | ☐ 끔 | 개발자 코멘터리 모드 없음. (AI 공방 서사(COMMS-KIT)와 맞물리는 향후 후보) |
 | Source SDK 포함 | ☐ 끔 | Valve Source 엔진 전용. |
 
-**요약**: 「Steam 도전 과제」·「Steam Cloud」 2개만 켠다. 단, 둘 다 **Steamworks 네이티브 브릿지가 아직 없어** 지금 체크 상태는 "출시 때 구현하겠다"는 약속이다, 스토어 페이지 심사 통과와 별개로, **정식 출시 빌드 전까지 브릿지 구현(#117 연장선)이 완료돼야** 초록불이 거짓이 안 된다. 데모/Next Fest 빌드만 올릴 거면 이 2개를 잠시 끄고 출시 시 켜는 선택지도 있다(디렉터 판단).
+**요약**: 「Steam 도전 과제」·「Steam Cloud」 2개만 켠다. 둘 다 **코드 측 브릿지는 구현 완료**(steamworks.js init + 업적 중계 #117 배선, Auto-Cloud 파일 미러 #179). 잔여는 **Steamworks 콘솔 설정(업적 18종 등록·Auto-Cloud 경로) + depot 업로드 후 실기 스모크 3종**(DEPOT.md #34·#179·#117)이다. 데모/Next Fest 빌드만 올릴 거면 이 2개를 잠시 끄고 출시 시 켜는 선택지도 있다(디렉터 판단).
 
 ### 컨트롤러 지원 마법사 (별도): **부분 지원(Partial)** 선택
 
@@ -287,10 +290,10 @@ PAGE-COPY §4 그대로 (KO/EN). Next Fest 소개 단문은 §5.
 
 ## 10. 남은 것 (이 문서 밖)
 
-- [ ] GIF 6종 제작(#154) → §3 배치
-- [ ] 신규 로고 스팀 규격 변환(#151) → §6 교체
-- [ ] 스크린샷 미감 v2(#156) → §6 교체
-- [ ] 트레일러 정본 촬영(디렉터)+편집 → §6 교체
+- [x] GIF 6종 제작(#154) → §3 배치 완료
+- [x] 신규 로고 스팀 규격 변환(#151) → §6 반영(캡슐 워드마크 합성, 커밋 9633b8f)
+- [x] 스크린샷 v3(#156) → `shots/v3/` 7장 완성(디렉터 검수 대기)
+- [ ] 트레일러 정본: 디렉터 직접 화면녹화로 전환(#172 — 영상 조립 중단, draft5=참고본) → §6 교체
 - [ ] 개발 로드맵 이미지 캡처(artifact `store-roadmap-v1`) → §11, About This Game 하단 배치
 - [ ] Publish 제출 → 검토 2~3일 → **Coming Soon 공개 = 위시리스트 시작**
 

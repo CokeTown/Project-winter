@@ -1,0 +1,427 @@
+{
+ "hud.comfortSettled": {
+  "ko": " + 정든 집 {n}",
+  "en": " + settled home {n}",
+  "ja": " + 馴染んだ家 {n}"
+ },
+ "hud.comfortCat": {
+  "ko": " + 고양이 {n}",
+  "en": " + cat {n}",
+  "ja": " + 猫 {n}"
+ },
+ "hud.comfortInjury": {
+  "ko": " + 상태 {n}",
+  "en": " + condition {n}",
+  "ja": " + 状態 {n}"
+ },
+ "hud.comfortLimit": {
+  "ko": " + 제약 {n}",
+  "en": " + penalty {n}",
+  "ja": " + 制約 {n}"
+ },
+ "hud.comfortBonus": {
+  "ko": " → 탐험 +{n}%",
+  "en": " → expedition +{n}%",
+  "ja": " → 探索 +{n}%"
+ },
+ "hud.cleanTip": {
+  "ko": "청결도 — 🧹 청소로 회복",
+  "en": "Cleanliness — restore with 🧹 cleaning",
+  "ja": "清潔度 — 🧹 掃除で回復"
+ },
+ "hud.expTip": {
+  "ko": "오늘 탐험 {n}/{max}회 (5회면 자동 취침)",
+  "en": "Expeditions today {n}/{max} (auto-sleep at 5)",
+  "ja": "今日の探索 {n}/{max}回 (5回で自動就寝)"
+ },
+ "hud.succTip": {
+  "ko": "탐험 성공 누적",
+  "en": "Total successful expeditions",
+  "ja": "探索成功の累計"
+ },
+ "gauge.exhausted": {
+  "ko": " 탈진!",
+  "en": " Exhausted!",
+  "ja": " 疲労困憊!"
+ },
+ "clock.dayLine": {
+  "ko": "DAY {day} · {sicon} {sname} {sd}/{total}",
+  "en": "DAY {day} · {sicon} {sname} {sd}/{total}",
+  "ja": "DAY {day} · {sicon} {sname} {sd}/{total}"
+ },
+ "season.arrived": {
+  "ko": "{icon} {name}이 왔다 — {desc}.",
+  "en": "{icon} {name} has arrived — {desc}.",
+  "ja": "{icon} {name}が来た — {desc}。"
+ },
+ "season.changed": {
+  "ko": "{icon} 계절이 바뀌었다: {name}",
+  "en": "{icon} The season has turned: {name}",
+  "ja": "{icon} 季節が変わった: {name}"
+ },
+ "settled.3": {
+  "ko": "🕯️ 이 집이 조금씩 손에 익는다. (정든 집 +3)",
+  "en": "🕯️ This home grows more comfortable. (settled +3)",
+  "ja": "🕯️ この家が少しずつ手に馴染んでくる。(馴染んだ家 +3)"
+ },
+ "settled.8": {
+  "ko": "🏡 이제 여기가 진짜 집 같다. (정든 집 +8, 최대)",
+  "en": "🏡 Now it truly feels like home. (settled +8, max)",
+  "ja": "🏡 もうここが本当の家みたいだ。(馴染んだ家 +8, 最大)"
+ },
+ "day.genRun": {
+  "ko": "⚡ 발전기를 돌렸다 — 오늘 배터리는 공짜다. (연료 -1)",
+  "en": "⚡ Generator running — battery use is free today. (fuel -1)",
+  "ja": "⚡ 発電機を回した — 今日のバッテリーはタダだ。(燃料 -1)"
+ },
+ "day.genStop": {
+  "ko": "⚠️ 연료가 떨어져 발전기가 멈췄다.",
+  "en": "⚠️ Out of fuel — the generator stopped.",
+  "ja": "⚠️ 燃料が切れて発電機が止まった。"
+ },
+ "day.fuelOut": {
+  "ko": "⚠️ {fuel}이 떨어져 {name}이(가) 꺼졌다.",
+  "en": "⚠️ Out of {fuel} — {name} turned off.",
+  "ja": "⚠️ {fuel}が切れて{name}が消えた。"
+ },
+ "day.purifier": {
+  "ko": "🚰 정수기가 물 한 통을 걸렀다. (+1)",
+  "en": "🚰 The purifier produced clean water. (+1)",
+  "ja": "🚰 浄水器が飲み水を一本ろ過した。(+1)"
+ },
+ "day.autopurifier": {
+  "ko": "⛲ 자동 급수기가 물을 끌어올렸다. (+{n})",
+  "en": "⛲ The auto water station drew up water. (+{n})",
+  "ja": "⛲ 自動給水機が水を汲み上げた。(+{n})"
+ },
+ "day.knowWater": {
+  "ko": "💧 이슬과 빗물을 받아 걸렀다. (+{n})",
+  "en": "💧 Gathered and filtered dew and rain. (+{n})",
+  "ja": "💧 露と雨水を集めてろ過した。(+{n})"
+ },
+ "day.knowGarden": {
+  "ko": "🌱 작은 텃밭에서 거뒀다. (+{n})",
+  "en": "🌱 Harvested from your small garden. (+{n})",
+  "ja": "🌱 小さな菜園から収穫した。(+{n})"
+ },
+ "day.gardenFrozen": {
+  "ko": "❄️ 겨울 — 텃밭이 얼어 거둘 게 없다.",
+  "en": "❄️ Winter — the garden is frozen; no harvest.",
+  "ja": "❄️ 冬 — 菜園が凍って収穫はない。"
+ },
+ "day.produce": {
+  "ko": "{note} ({emoji}+{n})",
+  "en": "{note} ({emoji}+{n})",
+  "ja": "{note} ({emoji}+{n})"
+ },
+ "day.foodSpoiled": {
+  "ko": "🍎 냉장고가 없어 신선식품이 상했다. (-1)",
+  "en": "🍎 Without a fridge, fresh food spoiled. (-1)",
+  "ja": "🍎 冷蔵庫がなくて生鮮食品が傷んだ。(-1)"
+ },
+ "day.foodSpoiledSummer": {
+  "ko": "🍎 여름 더위에 신선식품이 더 빨리 상했다.",
+  "en": "🍎 In the summer heat, fresh food spoiled faster.",
+  "ja": "🍎 夏の暑さで生鮮食品がより早く傷んだ。"
+ },
+ "day.foodFresh": {
+  "ko": "🧊 냉장고 덕에 음식이 성하다.",
+  "en": "🧊 Thanks to the fridge, food stayed fresh.",
+  "ja": "🧊 冷蔵庫のおかげで食べ物は無事だ。"
+ },
+ "day.seaDamp": {
+  "ko": "💧 바다 습기에 집이 눅눅해진다.",
+  "en": "💧 Sea damp leaves the shelter clammy.",
+  "ja": "💧 海の湿気で家がじめじめしてくる。"
+ },
+ "day.openWet": {
+  "ko": "{icon} 지붕 없는 거처가 비바람에 그대로 젖었다.",
+  "en": "{icon} The open-air shelter was soaked by the weather.",
+  "ja": "{icon} 屋根のないシェルターが雨風にそのまま濡れた。"
+ },
+ "day.roofRepair": {
+  "ko": "🔧 궂은 날 — 건축재 1로 지붕을 손봤다.",
+  "en": "🔧 Bad weather — repaired the roof with 1 material.",
+  "ja": "🔧 荒れ模様 — 建材1で屋根を直した。"
+ },
+ "day.roofLeak": {
+  "ko": "⚠️ 건축재가 없어 빗물이 샌다. (청결 -8)",
+  "en": "⚠️ No material — rainwater leaks in! (cleanliness -8)",
+  "ja": "⚠️ 建材がなくて雨漏りがする。(清潔 -8)"
+ },
+ "day.rooftopRain": {
+  "ko": "🌧️ 옥상 빗물받이에 물이 모였다. (+{n})",
+  "en": "🌧️ The rooftop catchment collected clean water. (+{n})",
+  "ja": "🌧️ 屋上の雨水受けに水がたまった。(+{n})"
+ },
+ "day.raincatch": {
+  "ko": "🪣 빗물받이에 물이 모였다. (+1)",
+  "en": "🪣 The rain barrel collected water. (+1)",
+  "ja": "🪣 雨水受けに水がたまった。(+1)"
+ },
+ "day.bigraincatch": {
+  "ko": "🛢️ 대형 빗물받이에 물이 그득 고였다. (+{n})",
+  "en": "🛢️ The large rain catch filled up with water. (+{n})",
+  "ja": "🛢️ 大型の雨水受けに水がなみなみとたまった。(+{n})"
+ },
+ "day.gardenBoxFrozen": {
+  "ko": "🌱 텃밭 상자가 얼어 거둘 게 없다.",
+  "en": "🌱 The garden box is frozen; no harvest.",
+  "ja": "🌱 菜園ボックスが凍って収穫はない。"
+ },
+ "day.gardenBox": {
+  "ko": "🌱 텃밭 상자에서 거뒀다. (+1)",
+  "en": "🌱 Harvested from the garden box. (+1)",
+  "ja": "🌱 菜園ボックスから収穫した。(+1)"
+ },
+ "day.solar": {
+  "ko": "🔆 태양광 패널이 배터리를 채웠다. (+1)",
+  "en": "🔆 The solar panel charged a battery. (+1)",
+  "ja": "🔆 ソーラーパネルがバッテリーを充電した。(+1)"
+ },
+ "day.lightingOut": {
+  "ko": "💡 전등이 나갔다 — 배터리가 없다. 방이 다시 어두워졌다.",
+  "en": "💡 The lights went out — no battery. The room is dark again.",
+  "ja": "💡 明かりが消えた — バッテリーがない。部屋がまた暗くなった。"
+ },
+ "day.lightingBack": {
+  "ko": "💡 전등이 다시 들어왔다.",
+  "en": "💡 The lights are back on.",
+  "ja": "💡 明かりがまた点いた。"
+ },
+ "day.solarPower": {
+  "ko": "🔆 태양광이 전기를 댔다 — 오늘 전력은 공짜다.",
+  "en": "🔆 Solar kept the power flowing — electricity is free today.",
+  "ja": "🔆 ソーラーが電気をまかなった — 今日の電力はタダだ。"
+ },
+ "gel.lootLabel": {
+  "ko": "조명 젤 필터북",
+  "en": "Lighting Gel Filter Book",
+  "ja": "照明ジェルフィルターブック"
+ },
+ "gel.foundNote": {
+  "ko": "무대 조명용 젤 필터북을 찾았다 — 빛에 색을 입힐 수 있다.",
+  "en": "Found a stage-lighting gel filter book — I can color my light now.",
+  "ja": "舞台照明用のジェルフィルターブックを見つけた — 光に色をつけられる。"
+ },
+ "gel.jackpot": {
+  "ko": "조명 젤 필터북! 빛의 색이 내 것이 됐다",
+  "en": "A lighting gel filter book! The color of light is mine now",
+  "ja": "照明ジェルフィルターブック!光の色が自分のものになった"
+ },
+ "gel.rowTitle": {
+  "ko": "빛 색 (젤 필터)",
+  "en": "Light color (gel filter)",
+  "ja": "光の色 (ジェルフィルター)"
+ },
+ "gel.original": {
+  "ko": "원래 빛 (무료)",
+  "en": "Original light (free)",
+  "ja": "元の光 (無料)"
+ },
+ "gel.applied": {
+  "ko": "🎭 {name} 필터를 끼웠다 — 빛이 물든다.",
+  "en": "🎭 Fitted a {name} filter — the light takes the color.",
+  "ja": "🎭 {name}フィルターを付けた — 光が染まる。"
+ },
+ "gel.reset": {
+  "ko": "필터를 벗겼다 — 원래 빛으로.",
+  "en": "Took the filter off — back to the original light.",
+  "ja": "フィルターを外した — 元の光へ。"
+ },
+ "day.surplusSold": {
+  "ko": "📕 남아도는 식량을 암시장에 넘기고 책 {b}권을 받았다. (식량 -{n})",
+  "en": "📕 Traded surplus food at the black market for {b} book(s). (food -{n})",
+  "ja": "📕 余った食料を闇市に流して本を{b}冊もらった。(食料 -{n})"
+ },
+ "day.veryDirty": {
+  "ko": "🧹 집이 말이 아니다. 쓸고 닦아야겠다.",
+  "en": "🧹 The shelter is very dirty. It needs cleaning.",
+  "ja": "🧹 家がひどいありさまだ。掃いて拭かないと。"
+ },
+ "day.upkeepPaid": {
+  "ko": "🏠 거처 유지비를 냈다 ({emoji}{name} -{n})",
+  "en": "🏠 Shelter upkeep paid ({emoji}{name} -{n})",
+  "ja": "🏠 シェルターの維持費を払った ({emoji}{name} -{n})"
+ },
+ "day.upkeepUnpaid": {
+  "ko": "⚠️ 유지비({label})를 못 냈다 — 거처 쾌적함 보너스가 꺼졌다.",
+  "en": "⚠️ Upkeep unpaid ({label}) — shelter comfort bonus is off.",
+  "ja": "⚠️ 維持費({label})を払えなかった — シェルターの快適さボーナスが切れた。"
+ },
+ "day.infectWorse": {
+  "ko": "🤒 상처를 방치했더니 감염 기운이 돈다.",
+  "en": "🤒 The neglected wound worsened into an infection risk.",
+  "ja": "🤒 傷を放っておいたら、感染の気配がする。"
+ },
+ "day.deepWorse": {
+  "ko": "🩸 상처를 돌보지 못해 더 깊어졌다.",
+  "en": "🩸 The wound went untended and cut deeper.",
+  "ja": "🩸 傷の手当てができず、さらに深くなった。"
+ },
+ "day.criticalWorse": {
+  "ko": "🚑 상처가 곪아 몸져누웠다. 이대로는 안 된다.",
+  "en": "🚑 The wound festered. You can barely stand.",
+  "ja": "🚑 傷が膿んで寝込んでしまった。このままではまずい。"
+ },
+ "day.catHint": {
+  "ko": "🐈 어디선가 가냘픈 울음소리가 들려온다...",
+  "en": "🐈 A faint mew drifts in from somewhere...",
+  "ja": "🐈 どこからか、か細い鳴き声が聞こえてくる…"
+ },
+ "day.catPrints": {
+  "ko": "🐾 문 앞 눈밭에 작은 발자국이 찍혀 있다. 밤새 무언가 다녀갔다.",
+  "en": "🐾 Small paw prints dot the snow by the door. Something passed through in the night.",
+  "ja": "🐾 ドアの前の雪に小さな足跡が残っている。夜のうちに何かが来ていったらしい。"
+ },
+ "day.cat0": {
+  "ko": "🐈 고양이가 창가에서 하루 종일 볕을 쬐었다.",
+  "en": "🐈 The cat basked by the window all day.",
+  "ja": "🐈 猫が窓辺で一日中ひなたぼっこをしていた。"
+ },
+ "day.cat1": {
+  "ko": "🐈 고양이가 문 앞에 쥐 한 마리를 놓아뒀다. 선물인 모양이다.",
+  "en": "🐈 The cat left a mouse at the door. A gift, it seems.",
+  "ja": "🐈 猫がドアの前にネズミを一匹置いていった。贈り物のつもりらしい。"
+ },
+ "day.cat2": {
+  "ko": "🐈 고양이가 침대 한가운데를 차지하고 잤다. 나는 구석에서.",
+  "en": "🐈 The cat claimed the middle of the bed. You slept in the corner.",
+  "ja": "🐈 猫がベッドの真ん中を陣取って眠った。私は隅っこで。"
+ },
+ "day.cat3": {
+  "ko": "🐈 고양이가 어디선가 실뭉치를 물어 와 밤새 굴리며 놀았다.",
+  "en": "🐈 The cat found a ball of yarn and batted it around all night.",
+  "ja": "🐈 猫がどこからか毛糸玉をくわえてきて、一晩中転がして遊んでいた。"
+ },
+ "day.catJoined": {
+  "ko": "🐈 고양이가 눌러앉았다. 이제 식구다.",
+  "en": "🐈 The cat has come to live with you.",
+  "ja": "🐈 猫が居着いた。もう家族だ。"
+ },
+ "day.catHungry": {
+  "ko": "🐈 고양이가 배를 곯는다... (먹이가 없어 쾌적 보너스가 멈췄다)",
+  "en": "🐈 The cat looks hungry... (no food — its comfort bonus has paused)",
+  "ja": "🐈 猫が腹を空かせている… (餌がなくて快適さボーナスが止まった)"
+ },
+ "report.title": {
+  "ko": "📋 Day {day} 결산",
+  "en": "📋 Day {day} Report",
+  "ja": "📋 Day {day} 収支"
+ },
+ "report.gain": {
+  "ko": "획득",
+  "en": "Gained",
+  "ja": "獲得"
+ },
+ "report.spend": {
+  "ko": "소비",
+  "en": "Spent",
+  "ja": "消費"
+ },
+ "report.notes": {
+  "ko": "기록",
+  "en": "Log",
+  "ja": "記録"
+ },
+ "report.warn": {
+  "ko": "⚠️ 바닥난 자원: {list}",
+  "en": "⚠️ Depleted: {list}",
+  "ja": "⚠️ 底をついた資源: {list}"
+ },
+ "report.forecast": {
+  "ko": "📻 예보: {text}",
+  "en": "📻 Forecast: {text}",
+  "ja": "📻 予報: {text}"
+ },
+ "report.noForecast": {
+  "ko": "내일 날씨는 모른다. (라디오가 있으면 예보가 들린다)",
+  "en": "Tomorrow’s weather is unknown. (Place a radio to hear forecasts.)",
+  "ja": "明日の天気は分からない。(ラジオがあれば予報が聞ける)"
+ },
+ "report.winterPrep": {
+  "ko": "❄️ 겨울까지 {n}일 — 연료 {fuel} · 보존식 {canned} 권장",
+  "en": "❄️ {n} days to winter — recommended fuel {fuel} · preserved food {canned}",
+  "ja": "❄️ 冬まで{n}日 — 燃料 {fuel} · 保存食 {canned} 推奨"
+ },
+ "brief.title": {
+  "ko": "오늘",
+  "en": "Today",
+  "ja": "今日"
+ },
+ "brief.coldNow": {
+  "ko": "🥶 한파가 몰아친다. 벽 틈으로 찬바람이 든다.",
+  "en": "🥶 A cold snap rages. Wind bites through the cracks.",
+  "ja": "🥶 寒波が吹き荒れている。壁の隙間から冷たい風が入り込む。"
+ },
+ "brief.coldDefended": {
+  "ko": "🔥 한파가 이어지지만, 난방이 버텨 주고 있다.",
+  "en": "🔥 The cold snap holds, but your heating is holding too.",
+  "ja": "🔥 寒波は続いているが、暖房が持ちこたえてくれている。"
+ },
+ "brief.coldSoon": {
+  "ko": "📻 한파가 {n}일 뒤 닥친다.",
+  "en": "📻 A cold snap hits in {n} days.",
+  "ja": "📻 寒波が{n}日後に襲ってくる。"
+ },
+ "brief.winter": {
+  "ko": "❄️ 겨울이다. 열량과 연료가 빠르게 준다.",
+  "en": "❄️ It is winter. Calories and fuel drain fast.",
+  "ja": "❄️ 冬だ。カロリーと燃料がみるみる減っていく。"
+ },
+ "brief.winterSoon": {
+  "ko": "🍂 겨울까지 {n}일 남았다.",
+  "en": "🍂 {n} days until winter.",
+  "ja": "🍂 冬まであと{n}日。"
+ },
+ "brief.advice.cold": {
+  "ko": "단열 개조와 난로/온풍기를 켜 한파를 막아라.",
+  "en": "Insulate and fire up the stove/heater against the cold.",
+  "ja": "断熱改修とストーブ/ファンヒーターで寒波を防ごう。"
+ },
+ "brief.advice.winterPrep": {
+  "ko": "연료와 보존식을 겨울 몫만큼 비축해 두어라.",
+  "en": "Stockpile fuel and preserved food for the winter.",
+  "ja": "燃料と保存食を冬の分だけ蓄えておこう。"
+ },
+ "brief.advice.shortage": {
+  "ko": "바닥난 자원을 채워라: {list}",
+  "en": "Restock what ran out: {list}",
+  "ja": "底をついた資源を補充しよう: {list}"
+ },
+ "brief.advice.calm": {
+  "ko": "오늘은 창밖이 고요하다. 집을 돌볼 여유가 있다.",
+  "en": "All quiet outside today. Time to tend the shelter.",
+  "ja": "今日は窓の外が静かだ。家の手入れをする余裕がある。"
+ },
+ "coldsnap.forecast": {
+  "ko": "📻 한파가 온다 — {n}일 뒤. 단열과 난방을 챙겨 두자.",
+  "en": "📻 A cold snap is coming — in {n} days. Ready your insulation and heating.",
+  "ja": "📻 寒波が来る — {n}日後。断熱と暖房を整えておこう。"
+ },
+ "coldsnap.hit": {
+  "ko": "❄️ 한파가 닥쳤다. 기온이 뚝 떨어졌다.",
+  "en": "❄️ A cold snap has hit. The temperature plunged.",
+  "ja": "❄️ 寒波が襲ってきた。気温が一気に下がった。"
+ },
+ "coldsnap.toast": {
+  "ko": "❄️ 한파 시작",
+  "en": "❄️ Cold snap begins",
+  "ja": "❄️ 寒波到来"
+ },
+ "coldsnap.exposed": {
+  "ko": "🥶 찬바람이 벽 틈으로 파고든다. 배가 빨리 꺼진다.",
+  "en": "🥶 The cold wind bites through the cracks. Hunger sets in fast.",
+  "ja": "🥶 冷たい風が壁の隙間から入り込んでくる。腹が減るのが早い。"
+ },
+ "coldsnap.defended": {
+  "ko": "🔥 난로 곁에서 한파를 버텼다.",
+  "en": "🔥 You weathered the cold snap by the stove.",
+  "ja": "🔥 ストーブのそばで寒波をしのいだ。"
+ },
+ "coldsnap.ended": {
+  "ko": "🌤️ 한파가 물러갔다.",
+  "en": "🌤️ The cold snap has passed.",
+  "ja": "🌤️ 寒波が去った。"
+ }
+}

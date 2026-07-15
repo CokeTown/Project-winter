@@ -1,0 +1,427 @@
+{
+ "sel.upgradeLack": {
+  "ko": "손질할 재료가 모자라다.",
+  "en": "Not enough materials to mend.",
+  "ja": "手入れする材料が足りない。"
+ },
+ "craft.installed": {
+  "ko": "✓ 설치됨",
+  "en": "✓ Installed",
+  "ja": "✓ 設置済み"
+ },
+ "craft.install": {
+  "ko": "설치",
+  "en": "Install",
+  "ja": "設置"
+ },
+ "craft.doneRes": {
+  "ko": "{emoji} {name} ×{n} 만들었다",
+  "en": "{emoji} {name} ×{n} crafted",
+  "ja": "{emoji} {name} ×{n} 作った"
+ },
+ "craft.doneFurn": {
+  "ko": "{emoji} {name} 완성 — 인벤토리에 넣어 뒀다",
+  "en": "{emoji} {name} crafted — added to inventory",
+  "ja": "{emoji} {name} 完成 — インベントリに入れておいた"
+ },
+ "craft.doneOutfit": {
+  "ko": "🧥 {name} 완성 — 바로 갈아입었다",
+  "en": "🧥 {name} finished — worn right away",
+  "ja": "🧥 {name} 完成 — さっそく着替えた"
+ },
+ "craft.owned": {
+  "ko": "✓ 옷장에 있음",
+  "en": "✓ In wardrobe",
+  "ja": "✓ クローゼットにあり"
+ },
+ "btn.wardrobe.title": {
+  "ko": "옷장 — 만든 옷을 갈아입는다",
+  "en": "Wardrobe — change into crafted clothes",
+  "ja": "クローゼット — 作った服に着替える"
+ },
+ "wardrobe.title": {
+  "ko": "옷장",
+  "en": "Wardrobe",
+  "ja": "クローゼット"
+ },
+ "wardrobe.hint": {
+  "ko": "옷은 제작대에서 천으로 짓는다. 화면 속 나를 눌러도 이 창이 열린다.",
+  "en": "Clothes are sewn from cloth at the bench. Tapping yourself in the scene opens this too.",
+  "ja": "服は作業台で布から縫う。画面の中の自分を押してもこのウィンドウが開く。"
+ },
+ "wardrobe.wear": {
+  "ko": "입기",
+  "en": "Wear",
+  "ja": "着る"
+ },
+ "wardrobe.wearing": {
+  "ko": "✓ 입는 중",
+  "en": "✓ Wearing",
+  "ja": "✓ 着用中"
+ },
+ "wardrobe.worn": {
+  "ko": "🧥 {name} — 갈아입었다",
+  "en": "🧥 Changed into {name}",
+  "ja": "🧥 {name} — 着替えた"
+ },
+ "wardrobe.locked": {
+  "ko": "아직 없다 — 제작대에서",
+  "en": "Not yet — see the bench",
+  "ja": "まだない — 作業台で"
+ },
+ "craft.noteRes": {
+  "ko": "🔨 제작: {name}",
+  "en": "🔨 Crafted: {name}",
+  "ja": "🔨 製作: {name}"
+ },
+ "craft.modDone": {
+  "ko": "{emoji} {name} 설치 완료!",
+  "en": "{emoji} {name} installed!",
+  "ja": "{emoji} {name} 設置完了！"
+ },
+ "craft.modNote": {
+  "ko": "🔧 거처 개조: {name} 설치",
+  "en": "🔧 Shelter mod: installed {name}",
+  "ja": "🔧 シェルター改修: {name} 設置"
+ },
+ "journal.title": {
+  "ko": "📖 생존 일지",
+  "en": "📖 Survival Journal",
+  "ja": "📖 サバイバル日誌"
+ },
+ "journal.statsTitle": {
+  "ko": "통계",
+  "en": "Statistics",
+  "ja": "統計"
+ },
+ "journal.statsLine": {
+  "ko": "Day {day} {sicon} · 탐험 {exp}회 (성공 {succ}) · 제작 {craft}회 · 연속 거주 {stay}일",
+  "en": "Day {day} {sicon} · {exp} expeditions ({succ} succeeded) · {craft} crafts · {stay} days settled",
+  "ja": "Day {day} {sicon} · 探索 {exp}回 (成功 {succ}) · 製作 {craft}回 · 連続居住 {stay}日"
+ },
+ "journal.colTitle": {
+  "ko": "도감 — 배치해 본 가구 색상 {n}/{total}",
+  "en": "Collection — furniture colors placed {n}/{total}",
+  "ja": "図鑑 — 置いてみた家具の色 {n}/{total}"
+ },
+ "journal.achTitle": {
+  "ko": "업적 {n}/{total}",
+  "en": "Achievements {n}/{total}",
+  "ja": "実績 {n}/{total}"
+ },
+ "journal.achTab": {
+  "ko": "🏆 업적",
+  "en": "🏆 Achievements",
+  "ja": "🏆 実績"
+ },
+ "journal.colTab": {
+  "ko": "📦 도감",
+  "en": "📦 Collections",
+  "ja": "📦 図鑑"
+ },
+ "col.bpTitle": {
+  "ko": "도면 수집 {n}/{total}",
+  "en": "Blueprints {n}/{total}",
+  "ja": "設計図収集 {n}/{total}"
+ },
+ "col.bpCommonTitle": {
+  "ko": "커먼 도면 — 탐험 중 발견",
+  "en": "Common — found while exploring",
+  "ja": "コモン設計図 — 探索中に発見"
+ },
+ "col.bpOnly": {
+  "ko": "{region}에서만",
+  "en": "Only in {region}",
+  "ja": "{region}でのみ"
+ },
+ "col.bpCommonSrc": {
+  "ko": "탐험 드랍",
+  "en": "Expedition drop",
+  "ja": "探索ドロップ"
+ },
+ "col.bpLegendTitle": {
+  "ko": "초희귀 — 어디서든, 아주 드물게",
+  "en": "Ultra-rare — anywhere, once in a long while",
+  "ja": "超レア — どこでも、ごく稀に"
+ },
+ "col.bpLegendSrc": {
+  "ko": "탐험 드랍 (초희귀)",
+  "en": "Expedition drop (ultra-rare)",
+  "ja": "探索ドロップ (超レア)"
+ },
+ "col.veilHint": {
+  "ko": "도면은 가 본 지역 것만 적어 둔다.",
+  "en": "I only note blueprints from regions I've been to.",
+  "ja": "設計図は行ったことのある地域の分だけ書き留めておく。"
+ },
+ "deco.header": {
+  "ko": "🎨 꾸미기 — 벽지 · 바닥재",
+  "en": "🎨 Decorate — Wallpaper & Flooring",
+  "ja": "🎨 模様替え — 壁紙 · 床材"
+ },
+ "deco.intro": {
+  "ko": "지금 머무는 거처의 벽과 바닥을 바꾼다. 거처마다 따로 기억된다.",
+  "en": "Change the walls and floor of this shelter. Remembered per shelter.",
+  "ja": "今いるシェルターの壁と床を変える。シェルターごとに別々に記憶される。"
+ },
+ "deco.wall": {
+  "ko": "벽지",
+  "en": "Wallpaper",
+  "ja": "壁紙"
+ },
+ "deco.floor": {
+  "ko": "바닥재",
+  "en": "Flooring",
+  "ja": "床材"
+ },
+ "deco.free": {
+  "ko": "무료",
+  "en": "Free",
+  "ja": "無料"
+ },
+ "deco.noWall": {
+  "ko": "유리 벽엔 벽지를 바를 곳이 없다. 바닥재는 얼마든지.",
+  "en": "Glass walls leave nowhere for wallpaper. The floor is fair game.",
+  "ja": "ガラスの壁には壁紙を貼る場所がない。床材ならいくらでも。"
+ },
+ "deco.applied": {
+  "ko": "🎨 {name} 적용",
+  "en": "🎨 Applied {name}",
+  "ja": "🎨 {name} 適用"
+ },
+ "deco.themeHeader": {
+  "ko": "🏅 테마 세트",
+  "en": "🏅 Theme Sets",
+  "ja": "🏅 テーマセット"
+ },
+ "deco.themeBonus": {
+  "ko": "분위기 +{n}",
+  "en": "Ambience +{n}",
+  "ja": "雰囲気 +{n}"
+ },
+ "deco.themeDone": {
+  "ko": "완성 ✓",
+  "en": "Complete ✓",
+  "ja": "完成 ✓"
+ },
+ "deco.themeTodo": {
+  "ko": "미완성",
+  "en": "Incomplete",
+  "ja": "未完成"
+ },
+ "deco.themeBadgeTitle": {
+  "ko": "테마 세트 {n}/{total}",
+  "en": "Theme Sets {n}/{total}",
+  "ja": "テーマセット {n}/{total}"
+ },
+ "comfort.log.theme": {
+  "ko": "테마 세트",
+  "en": "Theme set",
+  "ja": "テーマセット"
+ },
+ "comfort.breakdownTitle": {
+  "ko": "쾌적함 {score} — 무엇이 이 집을 살 만하게 하는가",
+  "en": "Comfort {score} — what makes this place livable",
+  "ja": "快適さ {score} — 何がこの家を住めるものにしているか"
+ },
+ "comfort.warmth": {
+  "ko": "온기",
+  "en": "Warmth",
+  "ja": "暖かさ"
+ },
+ "comfort.clean": {
+  "ko": "청결",
+  "en": "Cleanliness",
+  "ja": "清潔"
+ },
+ "comfort.security": {
+  "ko": "안정감",
+  "en": "Security",
+  "ja": "安心感"
+ },
+ "comfort.mood": {
+  "ko": "분위기",
+  "en": "Ambience",
+  "ja": "雰囲気"
+ },
+ "comfort.log.heater": {
+  "ko": "온풍기 가동",
+  "en": "Space heater running",
+  "ja": "温風ヒーター稼働"
+ },
+ "comfort.log.cat": {
+  "ko": "고양이의 온기",
+  "en": "A cat's warmth",
+  "ja": "猫の暖かさ"
+ },
+ "comfort.log.cold": {
+  "ko": "외풍이 스민다",
+  "en": "A cold draft seeps in",
+  "ja": "すきま風が染みる"
+ },
+ "comfort.log.coldsnap": {
+  "ko": "한파에 노출됨",
+  "en": "Exposed to the cold snap",
+  "ja": "寒波にさらされている"
+ },
+ "comfort.log.cleanState": {
+  "ko": "청소한 지 며칠 ({n})",
+  "en": "Days since cleaning ({n})",
+  "ja": "掃除からの日数 ({n})"
+ },
+ "comfort.log.base": {
+  "ko": "지붕이 있다는 것",
+  "en": "A roof over your head",
+  "ja": "屋根があるということ"
+ },
+ "comfort.log.shelter": {
+  "ko": "거처의 견고함",
+  "en": "The shelter holds",
+  "ja": "シェルターの頑丈さ"
+ },
+ "comfort.log.settled": {
+  "ko": "정든 집 {n}일",
+  "en": "Settled in {n} days",
+  "ja": "住み慣れた家 {n}日"
+ },
+ "comfort.log.injury": {
+  "ko": "몸이 성치 않다",
+  "en": "Body worn down",
+  "ja": "体が万全じゃない"
+ },
+ "comfort.log.furn": {
+  "ko": "가구가 채운 공간",
+  "en": "Furniture fills the room",
+  "ja": "家具で満たされた空間"
+ },
+ "comfort.log.dark": {
+  "ko": "어둠이 짙다",
+  "en": "Too dark in here",
+  "ja": "闇が濃い"
+ },
+ "comfort.log.knowledge": {
+  "ko": "쌓아온 살림의 지식",
+  "en": "Homemaking knowledge earned",
+  "ja": "積み上げてきた暮らしの知識"
+ },
+ "ach.unlocked": {
+  "ko": "🏆 업적 달성 — {icon} {name}",
+  "en": "🏆 Achievement unlocked — {icon} {name}",
+  "ja": "🏆 実績達成 — {icon} {name}"
+ },
+ "ach.note": {
+  "ko": "🏆 업적: {name}",
+  "en": "🏆 Achievement: {name}",
+  "ja": "🏆 実績: {name}"
+ },
+ "event.metNote": {
+  "ko": "{icon} {title} — 만남이 있었다.",
+  "en": "{icon} {title} — an encounter.",
+  "ja": "{icon} {title} — 出会いがあった。"
+ },
+ "event.stolen": {
+  "ko": "어두운 틈을 타 <b>{name} 1개</b>를 도둑맞았다.<br>밤에는 조명을 켜두는 게 좋겠다.",
+  "en": "Under cover of darkness, <b>1 {name}</b> was stolen.<br>Best to keep a light on at night.",
+  "ja": "闇に紛れて<b>{name} 1個</b>を盗まれた。<br>夜は明かりをつけておいたほうがよさそうだ。"
+ },
+ "event.minimize": {
+  "ko": "⌄ 잠시 내려두기",
+  "en": "⌄ Set aside",
+  "ja": "⌄ 一旦保留"
+ },
+ "event.chip.title": {
+  "ko": "내려둔 이벤트 — 클릭해서 다시 열기",
+  "en": "Set-aside event — click to reopen",
+  "ja": "保留中のイベント — クリックで再び開く"
+ },
+ "place.noStock": {
+  "ko": "{name}이(가) 없다 — 🎒 탐험에서 구해 오자",
+  "en": "No {name} in stock — 🎒 obtain it on an expedition",
+  "ja": "{name}がない — 🎒 探索で手に入れよう"
+ },
+ "place.maxItems": {
+  "ko": "{shelter}엔 가구를 {n}개까지만 놓는다",
+  "en": "The {shelter} holds at most {n} pieces of furniture",
+  "ja": "{shelter}には家具を{n}個までしか置けない"
+ },
+ "place.cantHere": {
+  "ko": "거긴 못 놓는다",
+  "en": "You can’t place it there",
+  "ja": "そこには置けない"
+ },
+ "inv.place": {
+  "ko": "{name} 놓기",
+  "en": "Place {name}",
+  "ja": "{name}を置く"
+ },
+ "inv.getByExp": {
+  "ko": "탐험에서 구한다",
+  "en": "Obtain it on an expedition",
+  "ja": "探索で手に入れる"
+ },
+ "reclaim.utilityOff": {
+  "ko": "{name} 회수 — {effect} 중단",
+  "en": "{name} reclaimed — {effect} stopped",
+  "ja": "{name} 回収 — {effect} 停止"
+ },
+ "reclaim.eff.fridge": {
+  "ko": "부패 방지",
+  "en": "spoilage prevention",
+  "ja": "腐敗防止"
+ },
+ "reclaim.eff.water": {
+  "ko": "물 생산",
+  "en": "water production",
+  "ja": "水の生産"
+ },
+ "reclaim.eff.power": {
+  "ko": "전력 공급",
+  "en": "power supply",
+  "ja": "電力供給"
+ },
+ "power.on": {
+  "ko": "🔆 켜짐 — 끄기",
+  "en": "🔆 On — turn off",
+  "ja": "🔆 オン — 消す"
+ },
+ "power.off": {
+  "ko": "🌑 꺼짐 — 켜기",
+  "en": "🌑 Off — turn on",
+  "ja": "🌑 オフ — つける"
+ },
+ "power.fuelLine": {
+  "ko": "{emoji} {name} {have}개 보유 · 켜두면 1일 1개 소비 {status}",
+  "en": "{emoji} {name} ×{have} · consumes 1/day while on {status}",
+  "ja": "{emoji} {name} {have}個所持 · オンの間は1日1個消費 {status}"
+ },
+ "power.empty": {
+  "ko": "<span style=\"color:var(--bad)\">(잔량 없음!)</span>",
+  "en": "<span style=\"color:var(--bad)\">(none left!)</span>",
+  "ja": "<span style=\"color:var(--bad)\">(残量なし！)</span>"
+ },
+ "power.lasts": {
+  "ko": "({n}일 유지 가능)",
+  "en": "(lasts {n} days)",
+  "ja": "({n}日もつ)"
+ },
+ "power.turnedOn": {
+  "ko": "{name}을(를) 켰다",
+  "en": "Turned on {name}",
+  "ja": "{name}をつけた"
+ },
+ "power.turnedOff": {
+  "ko": "{name}을(를) 껐다 — 쾌적함 보너스가 빠진다",
+  "en": "Turned off {name} — comfort bonus removed",
+  "ja": "{name}を消した — 快適さボーナスがなくなる"
+ },
+ "hud.shelterLine": {
+  "ko": "{demoji} {dname} · {semoji} {sname}",
+  "en": "{demoji} {dname} · {semoji} {sname}",
+  "ja": "{demoji} {dname} · {semoji} {sname}"
+ },
+ "hud.comfortTip": {
+  "ko": "쾌적함 {score}점 = 가구 {furn} + 조명 {light} + 청결 {clean} + 거처 {shelter}{settled}{cat}{injury}{limit}{bonus}",
+  "en": "Comfort {score} = furniture {furn} + light {light} + cleanliness {clean} + shelter {shelter}{settled}{cat}{injury}{limit}{bonus}",
+  "ja": "快適さ {score}点 = 家具 {furn} + 照明 {light} + 清潔 {clean} + シェルター {shelter}{settled}{cat}{injury}{limit}{bonus}"
+ }
+}

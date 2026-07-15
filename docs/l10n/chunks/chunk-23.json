@@ -1,0 +1,427 @@
+{
+ "data.memo.sub1.desc": {
+  "ko": "열차 운행이 전면 중단되었습니다. 승강장에서 대기하지 마시고 지상 대피소로 이동하십시오.\n같은 방송이 반복되다, 어느 순간 뚝 끊겼다.",
+  "en": "All train service has stopped. Do not wait on the platform — proceed to a surface shelter.\nThe same message looped, then cut off mid-sentence.",
+  "ja": "列車の運行は全面的に停止しました。ホームで待機せず、地上の避難所へ移動してください。\n同じ放送が繰り返され、ある瞬間、ぷつりと途切れた。"
+ },
+ "data.memo.sub1.name": {
+  "ko": "승강장 안내 방송문",
+  "en": "Platform Announcement",
+  "ja": "ホームの案内放送"
+ },
+ "data.memo.sub2.desc": {
+  "ko": "개찰구 셔터 앞에 분필로 그은 줄, 번호가 삼백을 넘는다.\n맨 끝 번호 옆에 작게. \"여기까지. 안은 다 찼다.\"",
+  "en": "Chalk numbers queued before the gate shutter, past three hundred.\nBy the last number, small: \"This far. Inside is full.\"",
+  "ja": "改札のシャッター前にチョークで引かれた行列、番号は三百を超えている。\n最後の番号の横に小さく。「ここまで。中はもう満杯だ。」"
+ },
+ "data.memo.sub2.name": {
+  "ko": "셔터 앞의 줄",
+  "en": "The Line at the Shutter",
+  "ja": "シャッター前の列"
+ },
+ "data.memo.sub3.desc": {
+  "ko": "선로 자갈 위에 빈 유모차 하나가 모로 넘어져 있다. 담요는 아직 개켜진 채다.\n왜 여기 두고 갔는지는, 아무도 적어두지 않았다.",
+  "en": "An empty pram lies on its side in the track gravel. The blanket is still folded.\nWhy it was left here, no one wrote down.",
+  "ja": "線路の砕石の上に、空のベビーカーが一台、横倒しになっている。毛布はまだ畳まれたままだ。\nなぜここに置いていったのかは、誰も書き残していない。"
+ },
+ "data.memo.sub3.name": {
+  "ko": "궤도 위의 유모차",
+  "en": "A Pram on the Tracks",
+  "ja": "線路の上のベビーカー"
+ },
+ "data.memo.sub4.desc": {
+  "ko": "벽에 붙은 시각표에 누군가 빨간 펜으로 한 줄만 크게 동그라미 쳤다. 막차 23:40.\n그 밑에. \"이걸 놓치면 걸어서 내려와라.\"",
+  "en": "On the wall timetable, one line is circled hard in red pen: last train, 23:40.\nBeneath it: \"Miss this and walk down.\"",
+  "ja": "壁に貼られた時刻表に、誰かが赤ペンで一行だけ、大きく丸をつけていた。終電 23:40。\nその下に。「これを逃したら、歩いて下りてこい。」"
+ },
+ "data.memo.sub4.name": {
+  "ko": "마지막 열차 시각표",
+  "en": "Last Train Timetable",
+  "ja": "最終列車の時刻表"
+ },
+ "data.memo.sub5.desc": {
+  "ko": "먼지 앉은 승강장 끝, 발자국이 어둠 속 터널로 줄지어 이어진다. 돌아 나온 자국은 없다.\n그들이 지하에서 무엇을 찾으려 했는지, 나는 이제 조금 알 것 같다.",
+  "en": "At the dusty platform’s end, footprints file into the dark of the tunnel. None come back.\nWhat they hoped to find underground — I think I’m beginning to understand.",
+  "ja": "埃の積もったホームの端、足跡が闇のトンネルへと列をなして続いている。引き返した跡はない。\n彼らが地下で何を探そうとしていたのか、今なら少し分かる気がする。"
+ },
+ "data.memo.sub5.name": {
+  "ko": "터널로 이어진 발자국",
+  "en": "Footprints into the Tunnel",
+  "ja": "トンネルへ続く足跡"
+ },
+ "data.outfit.charcoal.name": {
+  "ko": "차콜 코트",
+  "en": "Charcoal Coat",
+  "ja": "チャコールコート"
+ },
+ "data.outfit.cream.name": {
+  "ko": "크림 파카",
+  "en": "Cream Parka",
+  "ja": "クリームパーカ"
+ },
+ "data.outfit.default.name": {
+  "ko": "방한 코트",
+  "en": "Winter Coat",
+  "ja": "防寒コート"
+ },
+ "data.outfit.forest.name": {
+  "ko": "숲 파카",
+  "en": "Forest Parka",
+  "ja": "フォレストパーカ"
+ },
+ "data.outfit.navy.name": {
+  "ko": "네이비 코트",
+  "en": "Navy Coat",
+  "ja": "ネイビーコート"
+ },
+ "data.outfit.wine.name": {
+  "ko": "와인 코트",
+  "en": "Wine Coat",
+  "ja": "ワインコート"
+ },
+ "data.paintfam.ashgray.name": {
+  "ko": "재 그레이",
+  "en": "Ash Gray",
+  "ja": "アッシュグレー"
+ },
+ "data.paintfam.charcoal.name": {
+  "ko": "목탄",
+  "en": "Charcoal",
+  "ja": "木炭"
+ },
+ "data.paintfam.lavender.name": {
+  "ko": "라벤더",
+  "en": "Lavender",
+  "ja": "ラベンダー"
+ },
+ "data.paintfam.mustard.name": {
+  "ko": "머스터드",
+  "en": "Mustard",
+  "ja": "マスタード"
+ },
+ "data.paintfam.oakStain.name": {
+  "ko": "오크 스테인",
+  "en": "Oak Stain",
+  "ja": "オークステイン"
+ },
+ "data.paintfam.olive.name": {
+  "ko": "올리브",
+  "en": "Olive Drab",
+  "ja": "オリーブ"
+ },
+ "data.paintfam.redOxide.name": {
+  "ko": "방청 레드",
+  "en": "Red Oxide",
+  "ja": "防錆レッド"
+ },
+ "data.paintfam.sage.name": {
+  "ko": "세이지",
+  "en": "Sage",
+  "ja": "セージ"
+ },
+ "data.paintfam.slateBlue.name": {
+  "ko": "슬레이트 블루",
+  "en": "Slate Blue",
+  "ja": "スレートブルー"
+ },
+ "data.paintfam.terracotta.name": {
+  "ko": "테라코타",
+  "en": "Terracotta",
+  "ja": "テラコッタ"
+ },
+ "data.paintfam.walnutStain.name": {
+  "ko": "월넛 스테인",
+  "en": "Walnut Stain",
+  "ja": "ウォルナットステイン"
+ },
+ "data.paintfam.whitewash.name": {
+  "ko": "화이트워시",
+  "en": "Whitewash",
+  "ja": "ホワイトウォッシュ"
+ },
+ "data.paintrare.neonPigment.name": {
+  "ko": "네온 안료",
+  "en": "Neon Pigment",
+  "ja": "ネオン顔料"
+ },
+ "data.prep.bottle.eff": {
+  "ko": "탐험 갈증 소모 절반 · 부상 회복 -20%",
+  "en": "Halves thirst use on expeditions · injury recovery -20%",
+  "ja": "探索中の渇き消費半減 · 負傷回復 -20%"
+ },
+ "data.prep.bottle.name": {
+  "ko": "물병",
+  "en": "Water Bottle",
+  "ja": "水筒"
+ },
+ "data.prep.canned.eff": {
+  "ko": "공업/슬럼 성공률 +5%p",
+  "en": "Industrial/slum success +5%p",
+  "ja": "工業/スラム成功率 +5%p"
+ },
+ "data.prep.canned.name": {
+  "ko": "통조림",
+  "en": "Canned Food",
+  "ja": "缶詰"
+ },
+ "data.prep.firstaid.eff": {
+  "ko": "깊은 상처 → 가벼운 부상으로 완화",
+  "en": "Softens deep wounds into minor injuries",
+  "ja": "深い傷 → 軽い負傷に緩和"
+ },
+ "data.prep.firstaid.name": {
+  "ko": "응급키트",
+  "en": "First-Aid Kit",
+  "ja": "救急キット"
+ },
+ "data.prep.flashlight.eff": {
+  "ko": "상업/슬럼 성공률 +10%p",
+  "en": "Commercial/slum success +10%p",
+  "ja": "商業/スラム成功率 +10%p"
+ },
+ "data.prep.flashlight.name": {
+  "ko": "손전등",
+  "en": "Flashlight",
+  "ja": "懐中電灯"
+ },
+ "data.prep.gloves.eff": {
+  "ko": "부상 확률 -30%",
+  "en": "Injury chance -30%",
+  "ja": "負傷確率 -30%"
+ },
+ "data.prep.gloves.name": {
+  "ko": "장갑",
+  "en": "Gloves",
+  "ja": "手袋"
+ },
+ "data.prep.raincoat.eff": {
+  "ko": "날씨 페널티 -70%",
+  "en": "Weather penalty -70%",
+  "ja": "天候ペナルティ -70%"
+ },
+ "data.prep.raincoat.name": {
+  "ko": "우의",
+  "en": "Raincoat",
+  "ja": "レインコート"
+ },
+ "data.region.checkpoint.desc": {
+  "ko": "봉쇄선의 첫 관문 · 부품·건축재 (방호복 필수)",
+  "en": "The first gate of the cordon · parts, material (hazmat required)",
+  "ja": "封鎖線の最初の関門 · 部品・建材 (防護服必須)"
+ },
+ "data.region.checkpoint.name": {
+  "ko": "격리 검문소",
+  "en": "Quarantine Checkpoint",
+  "ja": "隔離検問所"
+ },
+ "data.region.checkpoint.risk": {
+  "ko": "보통 — 방호복 필수",
+  "en": "Medium — hazmat required",
+  "ja": "普通 — 防護服必須"
+ },
+ "data.region.citycore.desc": {
+  "ko": "수도의 심장 · 책 뭉치·의약 정점·희귀부품 (낙진이 걷힌 뒤에만)",
+  "en": "The capital’s heart · book caches, peak meds, rare parts (only after the fallout clears)",
+  "ja": "首都の心臓 · 本の束・医薬品の頂点・希少部品 (死の灰が晴れた後のみ)"
+ },
+ "data.region.citycore.name": {
+  "ko": "도심 중심지",
+  "en": "City Core",
+  "ja": "都心中枢"
+ },
+ "data.region.citycore.risk": {
+  "ko": "매우 높음 — 응급키트 권장",
+  "en": "Very high — first-aid kit advised",
+  "ja": "非常に高い — 救急キット推奨"
+ },
+ "data.region.commercial.desc": {
+  "ko": "배터리·의약품 · 상점 가구",
+  "en": "Batteries, medicine · store furniture",
+  "ja": "バッテリー・医薬品 · 店舗家具"
+ },
+ "data.region.commercial.name": {
+  "ko": "상업지구",
+  "en": "Commercial",
+  "ja": "商業地区"
+ },
+ "data.region.commercial.risk": {
+  "ko": "보통",
+  "en": "Medium",
+  "ja": "普通"
+ },
+ "data.region.fishMarket.desc": {
+  "ko": "신선식품 · 소금 산지 (겨울엔 결빙)",
+  "en": "Fresh food · salt source (frozen in winter)",
+  "ja": "生鮮食品 · 塩の産地 (冬は凍結)"
+ },
+ "data.region.fishMarket.name": {
+  "ko": "수산시장 폐허",
+  "en": "Fish Market Ruins",
+  "ja": "水産市場の廃墟"
+ },
+ "data.region.fishMarket.risk": {
+  "ko": "낮음",
+  "en": "Low",
+  "ja": "低い"
+ },
+ "data.region.harborYard.desc": {
+  "ko": "컨테이너 화물 · 오늘 바다가 준 것",
+  "en": "Container cargo · what the sea gave today",
+  "ja": "コンテナ貨物 · 今日海がくれたもの"
+ },
+ "data.region.harborYard.name": {
+  "ko": "항만 야적장",
+  "en": "Harbor Yard",
+  "ja": "港湾ヤード"
+ },
+ "data.region.harborYard.risk": {
+  "ko": "보통",
+  "en": "Medium",
+  "ja": "普通"
+ },
+ "data.region.industrial.desc": {
+  "ko": "부품·건축재·연료",
+  "en": "Parts, building material, fuel",
+  "ja": "部品・建材・燃料"
+ },
+ "data.region.industrial.name": {
+  "ko": "공업지대",
+  "en": "Industrial",
+  "ja": "工業地帯"
+ },
+ "data.region.industrial.risk": {
+  "ko": "높음 — 장갑 권장",
+  "en": "High — gloves advised",
+  "ja": "高い — 手袋推奨"
+ },
+ "data.region.lab.desc": {
+  "ko": "폭심지 연구소 폐허 · 희귀부품 최다 · 세상의 답이 있는 곳 (방호복 필수)",
+  "en": "Ruins of the ground-zero lab · richest in rare parts · where the world’s answer lies (hazmat required)",
+  "ja": "爆心地の研究所廃墟 · 希少部品が最多 · 世界の答えがある場所 (防護服必須)"
+ },
+ "data.region.lab.name": {
+  "ko": "지하 연구동",
+  "en": "Underground Lab",
+  "ja": "地下研究棟"
+ },
+ "data.region.lab.risk": {
+  "ko": "매우 높음 — 방호복 필수",
+  "en": "Very high — hazmat required",
+  "ja": "非常に高い — 防護服必須"
+ },
+ "data.region.residential.desc": {
+  "ko": "음식·물·천·양초 · 생활 가구",
+  "en": "Food, water, cloth, candles · household furniture",
+  "ja": "食料・水・布・ろうそく · 生活家具"
+ },
+ "data.region.residential.name": {
+  "ko": "주거지역",
+  "en": "Residential",
+  "ja": "住宅地区"
+ },
+ "data.region.residential.risk": {
+  "ko": "낮음",
+  "en": "Low",
+  "ja": "低い"
+ },
+ "data.region.resort.desc": {
+  "ko": "산정 호텔의 잔해 · 두둑한 물자 (겨울엔 눈사태 위험)",
+  "en": "Ruins of a summit hotel · rich supplies (avalanche risk in winter)",
+  "ja": "山頂ホテルの残骸 · 潤沢な物資 (冬は雪崩の危険)"
+ },
+ "data.region.resort.name": {
+  "ko": "리조트 폐허",
+  "en": "Resort Ruins",
+  "ja": "リゾート廃墟"
+ },
+ "data.region.resort.risk": {
+  "ko": "높음 — 응급키트 권장",
+  "en": "High — first-aid kit advised",
+  "ja": "高い — 救急キット推奨"
+ },
+ "data.region.slum.desc": {
+  "ko": "뭐든 나올 수 있다 · 희귀 가구",
+  "en": "Anything might turn up · rare furniture",
+  "ja": "何が出てもおかしくない · 希少家具"
+ },
+ "data.region.slum.name": {
+  "ko": "슬럼가",
+  "en": "Slums",
+  "ja": "スラム街"
+ },
+ "data.region.slum.risk": {
+  "ko": "매우 높음 — 응급키트 권장",
+  "en": "Very high — first-aid kit advised",
+  "ja": "非常に高い — 救急キット推奨"
+ },
+ "data.region.slumdeep.desc": {
+  "ko": "슬럼의 안쪽 · 아무도 못 턴 방들",
+  "en": "The inside of the slums · rooms no one has looted",
+  "ja": "スラムの奥 · 誰も漁れなかった部屋"
+ },
+ "data.region.slumdeep.name": {
+  "ko": "뒷골목 심부",
+  "en": "Back-Alley Depths",
+  "ja": "路地裏の深部"
+ },
+ "data.region.slumdeep.risk": {
+  "ko": "극도로 높음 — 무너짐이 잦다",
+  "en": "Extreme — collapses are frequent",
+  "ja": "極めて高い — 崩落が多い"
+ },
+ "data.res.antiseptic.name": {
+  "ko": "소독약",
+  "en": "Antiseptic",
+  "ja": "消毒薬"
+ },
+ "data.res.bandage.name": {
+  "ko": "붕대",
+  "en": "Bandage",
+  "ja": "包帯"
+ },
+ "data.res.battery.name": {
+  "ko": "배터리",
+  "en": "Battery",
+  "ja": "バッテリー"
+ },
+ "data.res.book.name": {
+  "ko": "책",
+  "en": "Book",
+  "ja": "本"
+ },
+ "data.res.candle.name": {
+  "ko": "양초",
+  "en": "Candle",
+  "ja": "ろうそく"
+ },
+ "data.res.canned.name": {
+  "ko": "통조림",
+  "en": "Canned Food",
+  "ja": "缶詰"
+ },
+ "data.res.cloth.name": {
+  "ko": "천",
+  "en": "Cloth",
+  "ja": "布"
+ },
+ "data.res.food.name": {
+  "ko": "신선식품",
+  "en": "Fresh Food",
+  "ja": "生鮮食品"
+ },
+ "data.res.fuel.name": {
+  "ko": "연료",
+  "en": "Fuel",
+  "ja": "燃料"
+ },
+ "data.res.material.name": {
+  "ko": "건축재",
+  "en": "Material",
+  "ja": "建材"
+ },
+ "data.res.painkiller.name": {
+  "ko": "진통제",
+  "en": "Painkiller",
+  "ja": "鎮痛剤"
+ }
+}

@@ -42,6 +42,11 @@
   }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #0e1014; }
   body { font-family: 'DungGeunMo', 'Malgun Gothic', sans-serif; color: var(--text); user-select: none; }
+  /* ja 조판: DungGeunMo(한글 픽셀 폰트)엔 가나/한자 글리프가 없어 시스템 일본어 폰트로 폴백.
+     keep-all은 한국어 어절 단위 줄바꿈 규칙 — 일본어(무공백)엔 줄바꿈 자체를 막아 오버플로를 만들므로
+     전역 해제하고 금칙처리(line-break: strict)를 적용한다. applyStaticI18n이 <html lang>을 스탬프. */
+  html[lang="ja"] body { font-family: 'DungGeunMo', 'Meiryo', 'Yu Gothic UI', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; }
+  html[lang="ja"] * { word-break: normal !important; line-break: strict; }
   #c { display: block; width: 100%; height: 100%; }
 
   .panel {

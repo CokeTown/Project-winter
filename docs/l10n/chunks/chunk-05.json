@@ -1,0 +1,427 @@
+{
+ "prep.bag": {
+  "ko": "가방 챙기기",
+  "en": "Pack a bag",
+  "ja": "バッグ持参"
+ },
+ "prep.bagEff": {
+  "ko": "실패해도 최소 회수",
+  "en": "Salvage even on failure",
+  "ja": "失敗しても最低限回収"
+ },
+ "prep.bagOwn": {
+  "ko": "가방 · 내구 {n}",
+  "en": "Bag · durability {n}",
+  "ja": "バッグ · 耐久 {n}"
+ },
+ "prep.bagCraft": {
+  "ko": "가방을 꿰맨다",
+  "en": "Sew a bag",
+  "ja": "バッグを縫う"
+ },
+ "prep.bagCrafted": {
+  "ko": "가방을 꿰맸다. 이제 빈손으로 돌아올 일은 없다. (내구 {n})",
+  "en": "Sewed a bag. No more coming home empty-handed. (durability {n})",
+  "ja": "バッグを縫った。もう手ぶらで帰ることはない。(耐久 {n})"
+ },
+ "prep.bagWear": {
+  "ko": "가방이 한 짐을 버텼다. (내구 {n})",
+  "en": "The bag held one more load. (durability {n})",
+  "ja": "バッグは今回の荷にも持ちこたえた。(耐久 {n})"
+ },
+ "prep.bagBroke": {
+  "ko": "가방 솔기가 완전히 터졌다. 다시 꿰매야 쓴다.",
+  "en": "The bag's seams finally gave out. It needs sewing again.",
+  "ja": "バッグの縫い目が完全に裂けた。また縫わないと使えない。"
+ },
+ "prep.needFor": {
+  "ko": "{name}을(를) 챙길 재료가 모자란다",
+  "en": "Not enough resources to prepare {name}",
+  "ja": "{name}を用意する材料が足りない"
+ },
+ "exp.start": {
+  "ko": "{emoji} {name} 탐험 시작 — 성공률 {pct}%",
+  "en": "{emoji} {name} expedition started — success {pct}%",
+  "ja": "{emoji} {name} 探索開始 — 成功率 {pct}%"
+ },
+ "exp.inProgress": {
+  "ko": "{emoji} {name} 탐험 중...",
+  "en": "{emoji} {name} — exploring...",
+  "ja": "{emoji} {name} 探索中..."
+ },
+ "exp.timeLeft": {
+  "ko": "돌아오기까지 {d}",
+  "en": "back in {d}",
+  "ja": "帰還まで {d}"
+ },
+ "exp.openMap": {
+  "ko": "🗺️ 탐험 지도 열기",
+  "en": "🗺️ Open expedition map",
+  "ja": "🗺️ 探索マップを開く"
+ },
+ "exp.successTitle": {
+  "ko": "✅ {name} 탐험 성공",
+  "en": "✅ {name} expedition succeeded!",
+  "ja": "✅ {name} 探索成功"
+ },
+ "exp.successBody": {
+  "ko": "쓸 만한 것들을 챙겨 왔다.",
+  "en": "You found some useful supplies.",
+  "ja": "使えそうな物を持ち帰った。"
+ },
+ "exp.partialTitle": {
+  "ko": "⚠️ {name} — 겨우 빠져나왔다",
+  "en": "⚠️ {name} — you barely made it out",
+  "ja": "⚠️ {name} — かろうじて抜け出した"
+ },
+ "exp.partialBody": {
+  "ko": "위험했지만 조금은 건졌다.",
+  "en": "It was risky, but you salvaged a little.",
+  "ja": "危なかったが、少しは拾えた。"
+ },
+ "exp.failTitle": {
+  "ko": "❌ {name} 탐험 실패",
+  "en": "❌ {name} expedition failed",
+  "ja": "❌ {name} 探索失敗"
+ },
+ "exp.failBody": {
+  "ko": "빈손이다.",
+  "en": "You came back empty-handed.",
+  "ja": "手ぶらだ。"
+ },
+ "exp.failBagBody": {
+  "ko": "허탕이었지만, 가방에 몇 가지는 주워 담아 왔다.",
+  "en": "A wash — but the bag caught a few useful things on the way back.",
+  "ja": "空振りだったが、バッグにいくつか拾って詰めてきた。"
+ },
+ "exp.note.bag": {
+  "ko": "🎒 가방 덕에 빈손은 면했다.",
+  "en": "🎒 Thanks to the bag, you didn’t come back empty.",
+  "ja": "🎒 バッグのおかげで手ぶらは免れた。"
+ },
+ "exp.failSalvageBody": {
+  "ko": "허탕에 가까웠지만, 뱃사람 근성으로 몇 가지는 건져 왔다.",
+  "en": "A failure, but with a sailor’s grit you brought a few things back.",
+  "ja": "空振り同然だったが、船乗りの根性でいくつかは引き揚げてきた。"
+ },
+ "exp.note.loot2": {
+  "ko": "📡 방송의 좌표가 정확했다 — 은닉처에서 두 배로 거뒀다.",
+  "en": "📡 The broadcast’s coordinates were true — you recovered double the supplies from the cache!",
+  "ja": "📡 放送の座標は正確だった — 隠し場所から倍の物資を回収した。"
+ },
+ "exp.note.furniture": {
+  "ko": "🛋️ 폐허에서 온전한 가구를 건졌다. 흔치 않은 운이다.",
+  "en": "🛋️ You found an intact piece of furniture in the ruins — a rare stroke of luck!",
+  "ja": "🛋️ 廃墟から無傷の家具を引き揚げた。めったにない幸運だ。"
+ },
+ "exp.note.book": {
+  "ko": "📕 물에 젖지 않은 책 한 권을 챙겼다 — 폐허에 남은 지식.",
+  "en": "📕 You salvaged a book that survived the damp — knowledge left in the ruins.",
+  "ja": "📕 水に濡れていない本を一冊持ち帰った — 廃墟に残された知識。"
+ },
+ "exp.note.rooftopSalvage": {
+  "ko": "📡 옥탑의 시야 덕에 가구를 건졌다.",
+  "en": "📡 Thanks to the rooftop’s vantage, you salvaged a piece of furniture.",
+  "ja": "📡 屋上の見晴らしのおかげで家具を引き揚げた。"
+ },
+ "exp.note.shipSalvage": {
+  "ko": "🎣 구명창고 덕에 실패한 날에도 얼마간 건졌다.",
+  "en": "🎣 Lifeboat locker trait — recovered some supplies even in failure.",
+  "ja": "🎣 救命倉庫のおかげで、失敗した日でもいくらか拾えた。"
+ },
+ "exp.note.dirty5": {
+  "ko": "🧹 흙투성이로 돌아왔다. (청결 -5)",
+  "en": "🧹 You came back covered in dirt and cleanliness dropped. (-5)",
+  "ja": "🧹 泥だらけで帰ってきた。(清潔 -5)"
+ },
+ "exp.note.firstaid": {
+  "ko": "⛑️ 응급키트가 깊은 상처를 막아 줬다.",
+  "en": "⛑️ The first-aid kit turned a deep wound into a minor injury.",
+  "ja": "⛑️ 応急キットが深手を防いでくれた。"
+ },
+ "exp.note.gloves": {
+  "ko": "🧤 장갑 덕에 손은 성하다.",
+  "en": "🧤 The gloves kept you from getting hurt.",
+  "ja": "🧤 手袋のおかげで手は無事だ。"
+ },
+ "exp.note.wet3": {
+  "ko": "{icon} 젖은 채로 돌아왔다. (청결 -3)",
+  "en": "{icon} You came back soaked and cleanliness dropped. (-3)",
+  "ja": "{icon} 濡れたまま帰ってきた。(清潔 -3)"
+ },
+ "exp.unlock": {
+  "ko": "<div style=\"margin-top:10px;color:var(--accent)\">🔓 새 거처 발견: <b>{emoji} {name}</b> — [🏠 이주] 메뉴에서 갈 수 있다</div>",
+  "en": "<div style=\"margin-top:10px;color:var(--accent)\">🔓 New shelter discovered: <b>{emoji} {name}</b> — relocate via the [🏠 Relocate] menu!</div>",
+  "ja": "<div style=\"margin-top:10px;color:var(--accent)\">🔓 新しいシェルターを発見: <b>{emoji} {name}</b> — [🏠 移住] メニューから行ける</div>"
+ },
+ "exp.usedPrep": {
+  "ko": "챙겨 간 것: {list}",
+  "en": "Prep used: {list}",
+  "ja": "持って行った物: {list}"
+ },
+ "exp.confirmRisky": {
+  "ko": "성공률 {p}%. 그래도 나설까?",
+  "en": "Success rate {p}%. Depart anyway?",
+  "ja": "成功率 {p}%。それでも行くか？"
+ },
+ "exp.cause.injured": {
+  "ko": "🩹 다친 몸이 내내 발목을 잡았다.",
+  "en": "🩹 The injury dragged at you the whole way.",
+  "ja": "🩹 怪我した体がずっと足かせになった。"
+ },
+ "exp.cause.coldsnap": {
+  "ko": "🥶 얼어붙은 손이 좀처럼 말을 듣지 않았다.",
+  "en": "🥶 Frozen fingers barely obeyed you.",
+  "ja": "🥶 かじかんだ手がなかなか言うことを聞かなかった。"
+ },
+ "exp.cause.flashlight": {
+  "ko": "🔦 손전등으로 어두운 구석까지 뒤질 수 있었다.",
+  "en": "🔦 The flashlight let you search every dark corner.",
+  "ja": "🔦 懐中電灯で暗い隅まで探せた。"
+ },
+ "exp.cause.raincoat": {
+  "ko": "{icon} 우의가 궂은 날씨를 대신 맞아 주었다.",
+  "en": "{icon} The raincoat took the worst of the weather for you.",
+  "ja": "{icon} 雨合羽が荒れた天気を代わりに受けてくれた。"
+ },
+ "exp.cause.bottle": {
+  "ko": "🥤 물병 덕분에 목이 타들어 가진 않았다.",
+  "en": "🥤 The water bottle kept your throat from burning dry.",
+  "ja": "🥤 水筒のおかげで喉が焼けつくことはなかった。"
+ },
+ "exp.cause.canned": {
+  "ko": "🥫 통조림으로 허기를 눌러 두고 버텼다.",
+  "en": "🥫 Canned rations held the hunger back.",
+  "ja": "🥫 缶詰で空腹を抑えて持ちこたえた。"
+ },
+ "injury.applied": {
+  "ko": "{icon} <b>{name}</b>을(를) 입었다 — 탐험 성공률 -{pen}%p, 나으려면 약 {h}시간(게임).",
+  "en": "{icon} You suffered <b>{name}</b> — expedition success -{pen}%p, ~{h}h (game) until natural recovery.",
+  "ja": "{icon} <b>{name}</b>を負った — 探索成功率 -{pen}%p、治るまで約{h}時間(ゲーム内)。"
+ },
+ "injury.needCure": {
+  "ko": "치료 재료가 모자란다 ({cost})",
+  "en": "Not enough treatment materials ({cost})",
+  "ja": "治療の材料が足りない ({cost})"
+ },
+ "injury.treated": {
+  "ko": "{icon} {name}을(를) 치료했다 ({cost} 사용)",
+  "en": "{icon} {name} treated ({cost} used)",
+  "ja": "{icon} {name}を治療した ({cost} 使用)"
+ },
+ "injury.treatedNote": {
+  "ko": "{name}을(를) 치료했다.",
+  "en": "{name} treated.",
+  "ja": "{name}を治療した。"
+ },
+ "injury.recovered": {
+  "ko": "{icon} {name}이(가) 다 나았다",
+  "en": "{icon} {name} healed on its own",
+  "ja": "{icon} {name}がすっかり治った"
+ },
+ "injury.card": {
+  "ko": "<span class=\"i-name\">{icon} {name}</span> — 탐험 성공률 -{pen}%p{time}<br>자연 회복까지 약 <span id=\"injury-eta\">{h}</span> (휴식)",
+  "en": "<span class=\"i-name\">{icon} {name}</span> — expedition success -{pen}%p{time}<br>~<span id=\"injury-eta\">{h}</span> until natural recovery (rest)",
+  "ja": "<span class=\"i-name\">{icon} {name}</span> — 探索成功率 -{pen}%p{time}<br>自然回復まで約 <span id=\"injury-eta\">{h}</span> (休息)"
+ },
+ "injury.card.time": {
+  "ko": ", 탐험 시간 +30%",
+  "en": ", expedition time +30%",
+  "ja": "、探索時間 +30%"
+ },
+ "injury.treat": {
+  "ko": "💊 치료 ({cost})",
+  "en": "💊 Treat ({cost})",
+  "ja": "💊 治療 ({cost})"
+ },
+ "injury.tip": {
+  "ko": "{name} 치료 재료: {cost}",
+  "en": "{name} treatment: {cost}",
+  "ja": "{name}の治療材料: {cost}"
+ },
+ "move.needSupplies": {
+  "ko": "이주 물자가 모자란다 — {cost}",
+  "en": "Not enough supplies to relocate — {cost}",
+  "ja": "移住の物資が足りない — {cost}"
+ },
+ "move.renovNote": {
+  "ko": "🔧 {name}{josa} 정비했다 ({cost})",
+  "en": "🔧 {name} refit complete ({cost})",
+  "ja": "🔧 {name}を整備した ({cost})"
+ },
+ "move.journeyNote": {
+  "ko": "🚶 {name}까지 3시간을 걸었다.",
+  "en": "🚶 Traveled to {name} — the journey took 3 hours.",
+  "ja": "🚶 {name}まで3時間歩いた。"
+ },
+ "move.done": {
+  "ko": "{emoji} {name}{josa} 이주했다{journey}",
+  "en": "Relocated to {emoji} {name}{journey}",
+  "ja": "{emoji} {name}に移住した{journey}"
+ },
+ "move.journeyTag": {
+  "ko": " (여정 3시간)",
+  "en": " (3h journey)",
+  "ja": " (旅程3時間)"
+ },
+ "move.confirmFurniture": {
+  "ko": "놓아둔 가구 {n}개는 이 거처에 남는다. 이주할까?",
+  "en": "Your {n} placed furnishings will stay behind. Move anyway?",
+  "ja": "置いてある家具{n}個はこのシェルターに残る。移住するか？"
+ },
+ "move.newShelter": {
+  "ko": "🏠 새 거처 발견 — 이주 지도를 확인하자",
+  "en": "🏠 New shelter found — check the relocation map",
+  "ja": "🏠 新しいシェルターを発見 — 移住マップを確認しよう"
+ },
+ "move.badge.title": {
+  "ko": "이주할 수 있는 거처가 생겼다",
+  "en": "A shelter is ready to relocate to",
+  "ja": "移住できるシェルターができた"
+ },
+ "edit.enterAsk": {
+  "ko": "{name} — 옮기거나 회수하려면 배치 모드가 필요하다.",
+  "en": "{name} — you need placement mode to move or reclaim it.",
+  "ja": "{name} — 移動や回収には配置モードが必要だ。"
+ },
+ "edit.enterYes": {
+  "ko": "🔧 배치 모드 켜기",
+  "en": "🔧 Enter placement mode",
+  "ja": "🔧 配置モード開始"
+ },
+ "edit.enterNo": {
+  "ko": "닫기",
+  "en": "Close",
+  "ja": "閉じる"
+ },
+ "edit.enterHint": {
+  "ko": "🔧 배치 모드에서 옮길 수 있다",
+  "en": "🔧 You can move it in placement mode",
+  "ja": "🔧 配置モードで動かせる"
+ },
+ "shelter.modalTitle": {
+  "ko": "🗺️ 구역과 거처",
+  "en": "🗺️ Districts & Shelters",
+  "ja": "🗺️ 地区とシェルター"
+ },
+ "shelter.intro": {
+  "ko": "같은 구역 안에서는 자유롭게 오간다. <b>다른 구역으로 넘어가려면 물자(🥫1+💧1)와 시간(3시간)</b>이 든다. 처음 들어가는 거처는 <b>정비 자원</b>부터 든다. 놓아둔 가구는 그 거처에 남고, 인벤토리는 어디서나 같다.",
+  "en": "You can move freely within a district, but <b>relocating to another district costs supplies (🥫1+💧1) and time (3h)</b>. Moving into a shelter for the first time requires <b>refit resources</b>. Placed furniture stays with each shelter; your inventory is shared.",
+  "ja": "同じ地区の中は自由に行き来できる。<b>別の地区へ移るには物資(🥫1+💧1)と時間(3時間)</b>がかかる。初めて入るシェルターはまず<b>整備資源</b>が要る。置いた家具はそのシェルターに残り、インベントリはどこでも共通だ。"
+ },
+ "shelter.districtHeader": {
+  "ko": "{emoji} <b>{name}</b>{here}<span style=\"font-size:10px\"> · {bonus}</span><br><span style=\"font-size:10px;color:var(--text-dim)\">{desc}</span>",
+  "en": "{emoji} <b>{name}</b>{here}<span style=\"font-size:10px\"> · {bonus}</span><br><span style=\"font-size:10px;color:var(--text-dim)\">{desc}</span>",
+  "ja": "{emoji} <b>{name}</b>{here}<span style=\"font-size:10px\"> · {bonus}</span><br><span style=\"font-size:10px;color:var(--text-dim)\">{desc}</span>"
+ },
+ "shelter.hereTag": {
+  "ko": " — 현재 구역",
+  "en": " — current district",
+  "ja": " — 現在の地区"
+ },
+ "shelter.unrefit": {
+  "ko": " <span style=\"color:var(--text-dim);font-size:10px\">(미정비)</span>",
+  "en": " <span style=\"color:var(--text-dim);font-size:10px\">(unrefit)</span>",
+  "ja": " <span style=\"color:var(--text-dim);font-size:10px\">(未整備)</span>"
+ },
+ "shelter.locked": {
+  "ko": "탐험 성공 {need}회면 열린다 (지금 {cur}회)",
+  "en": "Discovered after {need} successful expeditions (currently {cur})",
+  "ja": "探索成功 {need}回で開く (現在 {cur}回)"
+ },
+ "shelter.baseComfort": {
+  "ko": "기본 쾌적함 +{n} · 유지비: {upkeep}",
+  "en": "Base comfort +{n} · upkeep: {upkeep}",
+  "ja": "基本快適さ +{n} · 維持費: {upkeep}"
+ },
+ "shelter.moveCost": {
+  "ko": "이주 비용: {parts}",
+  "en": "Relocation cost: {parts}",
+  "ja": "移住費用: {parts}"
+ },
+ "shelter.refitPart": {
+  "ko": "🔧 정비 {cost}",
+  "en": "🔧 Refit {cost}",
+  "ja": "🔧 整備 {cost}"
+ },
+ "shelter.journeyPart": {
+  "ko": "🚶 여정 🥫1+💧1 · 3시간",
+  "en": "🚶 Journey 🥫1+💧1 · 3h",
+  "ja": "🚶 旅程 🥫1+💧1 · 3時間"
+ },
+ "shelter.moveRefit": {
+  "ko": "정비 후 이주",
+  "en": "Refit & move",
+  "ja": "整備して移住"
+ },
+ "shelter.move": {
+  "ko": "이주",
+  "en": "Move",
+  "ja": "移住"
+ },
+ "shelter.noCostNeed": {
+  "ko": "모자란 것: {cost}",
+  "en": "Not enough: {cost}",
+  "ja": "不足: {cost}"
+ },
+ "shelter.reqLabel": {
+  "ko": "필요 물자 (보유/필요)",
+  "en": "Required (have / need)",
+  "ja": "必要物資 (所持/必要)"
+ },
+ "upkeep.none": {
+  "ko": "없음",
+  "en": "none",
+  "ja": "なし"
+ },
+ "craft.title": {
+  "ko": "🔨 제작대",
+  "en": "🔨 Workbench",
+  "ja": "🔨 作業台"
+ },
+ "craft.intro": {
+  "ko": "탐험에서 모은 재료로 물자와 가구를 만든다.",
+  "en": "Craft supplies and furniture from materials gathered on expeditions.",
+  "ja": "探索で集めた材料で物資と家具を作る。"
+ },
+ "craft.modHeader": {
+  "ko": "🔧 거처 개조 — {emoji} {name}",
+  "en": "🔧 Shelter Modifications — {emoji} {name}",
+  "ja": "🔧 シェルター改修 — {emoji} {name}"
+ },
+ "craft.modIntro": {
+  "ko": "개조는 이 거처에 영구히 남는다.",
+  "en": "Modifications are permanently installed in this shelter.",
+  "ja": "改修はこのシェルターに永久に残る。"
+ },
+ "craft.noMods": {
+  "ko": "이 거처에 붙일 개조가 없다.",
+  "en": "No modifications available for this shelter.",
+  "ja": "このシェルターに施せる改修はない。"
+ },
+ "craft.make": {
+  "ko": "제작",
+  "en": "Craft",
+  "ja": "製作"
+ },
+ "craft.catGoods": {
+  "ko": "가구·물품",
+  "en": "Furnishings & Goods",
+  "ja": "家具・物品"
+ },
+ "craft.catOutfit": {
+  "ko": "복장",
+  "en": "Outfits",
+  "ja": "服装"
+ },
+ "sel.upgrade": {
+  "ko": "🔨 손질해서 개선 (T{n})",
+  "en": "🔨 Mend & Upgrade (T{n})",
+  "ja": "🔨 手入れして改良 (T{n})"
+ },
+ "sel.upgraded": {
+  "ko": "손질했다 — 한결 물건다워졌다.",
+  "en": "Mended — it looks more whole now.",
+  "ja": "手入れした — ずいぶんまともな品になった。"
+ }
+}

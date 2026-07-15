@@ -96,6 +96,9 @@ export const CAT_POSES = {
   hop:     { by: 0.13,  brx: -0.12, hrx: -0.1, legF: -0.85, legB: -0.85, t1: 0.35 },
 };
 export const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2 };
+// #193: 침대는 티어가 곧 높이(#157 — sofa/chair와 달리 좌면 높이가 티어 정체성)라 퍼치·착석 y도 티어를 따라야 한다.
+//   실측(furniture.js bed build): T1 바닥 매트리스 상면 0.16+베개·담요 ≈0.25 / T2 싱글 매트리스 상면 0.38+0.075≈0.46 / T3 현행 0.63
+export const BED_TOP_Y = { 1: 0.25, 2: 0.46, 3: 0.63 };
 
 // ---- #86④ 복장 (디렉터 UX 결정: 생성 시 X — 천을 구해 '만들어 입는' 제작 문법) ----
 //   pal = 아바타 복셀 팔레트 오버라이드(coat/coatHem/sleeve/beanie/scarf). default는 시작 복장.
@@ -129,7 +132,7 @@ export const CRAFTS = [
   { out: { furn: 'noticeboard' }, bp: 'noticeboard', cost: { material: 2, cloth: 1 }, hint: '지도·메모를 꽂은 상황판', hintEn: 'A board pinned with maps and notes' },
   { out: { furn: 'jugcluster' }, bp: 'jugcluster', cost: { material: 2 }, hint: '물·연료를 담은 통 무더기', hintEn: 'Clustered jugs of water and fuel' },
   { out: { furn: 'chair' }, cost: { material: 2 }, hint: '나무 의자', hintEn: 'Wooden chair' },
-  { out: { furn: 'candle' }, cost: { material: 1, candle: 1 }, hint: '캔들 스툴', hintEn: 'Candle stool' },
+  { out: { furn: 'candle' }, cost: { material: 1, candle: 1 }, hint: '캔들 스툴 (양초 격일)', hintEn: 'Candle stool (candle every 2 days)' },
   { out: { furn: 'teatable' }, cost: { material: 2, cloth: 1 }, hint: '낮은 찻상 — 따뜻한 한 잔', hintEn: 'A low tea table — a warm cup' },
   { out: { furn: 'rug' }, cost: { cloth: 3 }, hint: '천을 엮은 러그', hintEn: 'A woven-cloth rug' },
   { out: { furn: 'plant' }, cost: { water: 2, material: 1 }, hint: '화분에 심은 초록', hintEn: 'Greenery in a pot' },
@@ -139,9 +142,9 @@ export const CRAFTS = [
   { out: { furn: 'bed' }, cost: { cloth: 3, material: 2 }, hint: '천 + 프레임 → 침대', hintEn: 'Cloth + frame → bed' },
   { out: { furn: 'bookshelf' }, cost: { material: 4 }, hint: '책장', hintEn: 'Bookshelf' },
   { out: { furn: 'sofa' }, cost: { cloth: 4, material: 2 }, hint: '패브릭 소파', hintEn: 'Fabric sofa' },
-  { out: { furn: 'lamp' }, cost: { parts: 2, battery: 1 }, hint: '부품 조립 조명', hintEn: 'Part-built lamp' },
+  { out: { furn: 'lamp' }, cost: { parts: 2, battery: 1 }, hint: '부품 조립 조명 (배터리 1/일)', hintEn: 'Part-built lamp (battery 1/day)' },
   // #189 P4: 초희귀 도면 게이트 — 선명·안정·컬러(젤 틴트)의 LED. 화기 대비 표현 스펙트럼의 끝.
-  { out: { furn: 'ledbar' }, bp: 'ledbar', cost: { parts: 3, battery: 2 }, hint: 'LED 라이트 바 — 폐허의 마지막 신문물', hintEn: 'LED light bar — the ruins\' last piece of new tech' },
+  { out: { furn: 'ledbar' }, bp: 'ledbar', cost: { parts: 3, battery: 2 }, hint: 'LED 라이트 바 — 폐허의 마지막 신문물 (배터리 1/일)', hintEn: 'LED light bar — the ruins\' last piece of new tech (battery 1/day)' },
   { out: { furn: 'clock' }, cost: { parts: 2, material: 2 }, hint: '괘종시계 — 시간이 흐르는 소리', hintEn: 'Grandfather clock — the sound of passing time' },
   { out: { furn: 'radio' }, cost: { parts: 3, battery: 1 }, hint: '라디오 (날씨 예보)', hintEn: 'Radio (weather forecast)' },
   { out: { furn: 'stove' }, cost: { parts: 3, material: 3 }, hint: '장작 난로 — 최고의 온기 (연료 1/일)', hintEn: 'Wood stove — the best warmth (fuel 1/day)' },
@@ -155,7 +158,7 @@ export const CRAFTS = [
   { out: { res: 'canned', n: BAL.harbor.saltCureOut }, cost: { food: BAL.harbor.saltCureFood, salt: BAL.harbor.saltCureSalt }, hint: '소금으로 절인 보존식 — 여름 부패를 이긴다', hintEn: 'Salt-cured preserves — beats summer spoilage' },
   // #76 사치 가구 — 책(지식)을 재료로. 후반 잉여가 흘러든 책의 사용처(사치 건축 싱크). 응접실 세트.
   { out: { furn: 'globe' }, cost: { book: 3, material: 2 }, hint: '책으로 채운 지구본 — 가 보지 못한 곳들', hintEn: 'A globe filled by books — places never seen' },
-  { out: { furn: 'candelabra' }, cost: { book: 2, material: 1, candle: 2 }, hint: '가지 촛대 — 사치스러운 불빛', hintEn: 'A branched candelabra — an extravagant light' },
+  { out: { furn: 'candelabra' }, cost: { book: 2, material: 1, candle: 2 }, hint: '가지 촛대 — 사치스러운 불빛 (양초 1/일)', hintEn: 'A branched candelabra — an extravagant light (candle 1/day)' },
   { out: { furn: 'phonograph' }, cost: { book: 4, parts: 2, material: 1 }, hint: '축음기 — 폐허에 음악을', hintEn: 'A phonograph — music for the ruins' },
   // #86④ 의류 — 만들면 옷장(state.outfits)에 영구 추가, 착용은 옷장에서. 염색 재료로 개성(소금/연료=숯).
   { out: { outfit: 'navy' }, cost: { cloth: 3 }, hint: '옷장에 추가 — 짙은 밤바다색', hintEn: 'Added to wardrobe — deep sea navy' },

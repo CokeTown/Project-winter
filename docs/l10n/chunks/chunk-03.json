@@ -1,0 +1,427 @@
+{
+ "intro.2": {
+  "ko": "황무지 한가운데, 버려진 컨테이너 하나.\n오늘부터 여기가 내 집이다.\n\n폐허 속에서, 나만의 집을.",
+  "en": "In the middle of the wasteland, one abandoned container.\nFrom today, this is my home.\n\nA home of my own, amid the ruins.",
+  "ja": "荒野の真ん中に、打ち捨てられたコンテナがひとつ。\n今日からここが私の家だ。\n\n廃墟の中に、自分だけの家を。"
+ },
+ "intro.firstShelter": {
+  "ko": "📦 버려진 컨테이너 — 오늘부터 여기가 집이다",
+  "en": "📦 Abandoned Container — my first shelter",
+  "ja": "📦 打ち捨てられたコンテナ — 今日からここが家だ"
+ },
+ "ending.line0": {
+  "ko": "헬리콥터의 굉음이 잦아들고,<br>박사는 말없이 내 집을 한참 바라보았다.",
+  "en": "As the roar of the helicopter faded,<br>the scientist gazed silently at my home for a long while.",
+  "ja": "ヘリコプターの轟音が遠のき、<br>博士は何も言わず、長いこと私の家を見つめていた。"
+ },
+ "ending.line1": {
+  "ko": "\"{day}일... 정말 그 세월을<br>여기서 살아냈단 말입니까.\"",
+  "en": "\"{day} days... you truly lived out<br>all those years here?\"",
+  "ja": "「{day}日……本当にあの歳月を<br>ここで生き抜いたというのですか。」"
+ },
+ "ending.line2": {
+  "ko": "나는 마지막으로 집을 돌아보았다.<br>손때 묻은 가구들, 창가의 불빛, 벽의 흠집 하나까지.",
+  "en": "I looked back at my home one last time.<br>The well-worn furniture, the light by the window, every scratch on the wall.",
+  "ja": "最後に、家を振り返った。<br>使い込んだ家具、窓辺の明かり、壁の傷ひとつまで。"
+ },
+ "ending.line2cat": {
+  "ko": "<br><br>고양이가 당연하다는 듯 내 품에 뛰어올랐다.<br>함께 간다.",
+  "en": "<br><br>The cat leapt into my arms as if it were the most natural thing.<br>It comes with me.",
+  "ja": "<br><br>猫が当たり前のように腕の中に飛び込んできた。<br>一緒に行く。"
+ },
+ "ending.line3": {
+  "ko": "폐허는 점점 작아졌다.<br><br>그러나 저 집은 — 분명, 내 집이었다.",
+  "en": "The ruins grew smaller and smaller.<br><br>But that home — it was, without a doubt, mine.",
+  "ja": "廃墟は少しずつ小さくなっていった。<br><br>それでもあの家は — 確かに、私の家だった。"
+ },
+ "ending.line4": {
+  "ko": "🚁 <b>ENDING — 폐허 너머로</b><br><br><span style=\"font-size:12px;color:var(--text-dim)\">생존 {day}일 · 탐험 성공 {succ}회{cat}</span>",
+  "en": "🚁 <b>ENDING — Beyond the Ruins</b><br><br><span style=\"font-size:12px;color:var(--text-dim)\">Survived {day} days · {succ} successful expeditions{cat}</span>",
+  "ja": "🚁 <b>ENDING — 廃墟の向こうへ</b><br><br><span style=\"font-size:12px;color:var(--text-dim)\">生存 {day}日 · 探索成功 {succ}回{cat}</span>"
+ },
+ "ending.catTag": {
+  "ko": " · 고양이와 함께 🐈",
+  "en": " · together with the cat 🐈",
+  "ja": " · 猫と共に 🐈"
+ },
+ "ending.back": {
+  "ko": "🏠 폐허로 돌아간다 (계속하기)",
+  "en": "🏠 Return to the ruins (continue)",
+  "ja": "🏠 廃墟へ帰る (続ける)"
+ },
+ "ending.note": {
+  "ko": "🚁 구조선에 오를 수 있었지만, 결국 집으로 돌아왔다.",
+  "en": "🚁 I was rescued, yet in the end I returned home.",
+  "ja": "🚁 救助のヘリに乗ることもできたが、結局、家に帰ってきた。"
+ },
+ "ending.epilogue": {
+  "ko": "🏠 에필로그 — 나는 이 폐허의 집을 선택했다",
+  "en": "🏠 Epilogue — I chose this home among the ruins",
+  "ja": "🏠 エピローグ — 私はこの廃墟の家を選んだ"
+ },
+ "toast.needResource": {
+  "ko": "자원이 모자란다",
+  "en": "Not enough resources",
+  "ja": "資源が足りない"
+ },
+ "toast.needMaterial": {
+  "ko": "재료가 모자란다",
+  "en": "Not enough materials",
+  "ja": "材料が足りない"
+ },
+ "toast.exhausted": {
+  "ko": "탈진했다 — 먹고 마셔야 몸이 움직인다",
+  "en": "You are exhausted — eat and drink before you can move",
+  "ja": "疲れ果てた — 食べて飲まないと体が動かない"
+ },
+ "toast.tooTired": {
+  "ko": "⚡ 너무 지쳤다 — 🛌 자고 일어나자",
+  "en": "⚡ Too tired — 🛌 sleep to recover",
+  "ja": "⚡ 疲れすぎた — 🛌 ひと眠りしよう"
+ },
+ "toast.expLimit": {
+  "ko": "오늘만 벌써 {n}번째다 — 🛌 이제 쉬자",
+  "en": "You have already been out {n} times today — 🛌 you must rest",
+  "ja": "今日だけでもう{n}回目だ — 🛌 そろそろ休もう"
+ },
+ "exp.fatigue": {
+  "ko": "몸이 납덩이 같다 — 오늘은 일찍 눕자",
+  "en": "Dead tired — better turn in early tonight",
+  "ja": "体が鉛のように重い — 今日は早めに横になろう"
+ },
+ "toast.emptySlot": {
+  "ko": "빈 슬롯이다",
+  "en": "Empty slot",
+  "ja": "空きスロットだ"
+ },
+ "none": {
+  "ko": "없음",
+  "en": "None",
+  "ja": "なし"
+ },
+ "free": {
+  "ko": "무료",
+  "en": "free",
+  "ja": "無料"
+ },
+ "current": {
+  "ko": "(현재)",
+  "en": "(current)",
+  "ja": "(現在)"
+ },
+ "sleep.cantDuringExp": {
+  "ko": "탐험에서 돌아오기 전엔 잘 수 없다",
+  "en": "You can't sleep until you return from the expedition",
+  "ja": "探索から戻るまでは眠れない"
+ },
+ "sleep.noteBed": {
+  "ko": "😴 침대에서 푹 잤다. (에너지 {e})",
+  "en": "😴 Slept soundly in the bed. (energy {e})",
+  "ja": "😴 ベッドでぐっすり眠った。(エネルギー {e})"
+ },
+ "sleep.noteFloor": {
+  "ko": "😴 바닥에서 웅크리고 잤다. (에너지 {e})",
+  "en": "😴 Curled up and slept on the floor. (energy {e})",
+  "ja": "😴 床で丸くなって眠った。(エネルギー {e})"
+ },
+ "sleep.autoBed": {
+  "ko": "😴 지쳐 곯아떨어졌다... 침대에서 아침을 맞았다 (⚡{e})",
+  "en": "😴 Collapsed from exhaustion... woke in the bed to morning (⚡{e})",
+  "ja": "😴 疲れ果てて眠り込んだ……ベッドで朝を迎えた (⚡{e})"
+ },
+ "sleep.autoFloor": {
+  "ko": "😴 지쳐 곯아떨어졌다... 바닥에서 아침을 맞았다 (⚡{e})",
+  "en": "😴 Collapsed from exhaustion... woke on the floor to morning (⚡{e})",
+  "ja": "😴 疲れ果てて眠り込んだ……床で朝を迎えた (⚡{e})"
+ },
+ "sleep.wakeBed": {
+  "ko": "😴 침대에서 푹 잤다 — 아침이 밝았다 (⚡{e})",
+  "en": "😴 Slept soundly in the bed — morning has come (⚡{e})",
+  "ja": "😴 ベッドでぐっすり眠った — 夜が明けた (⚡{e})"
+ },
+ "sleep.wakeFloor": {
+  "ko": "😴 바닥에서 웅크리고 잤다 — 아침이 밝았다 (⚡{e})",
+  "en": "😴 Curled up on the floor — morning has come (⚡{e})",
+  "ja": "😴 床で丸くなって眠った — 夜が明けた (⚡{e})"
+ },
+ "day.napMorning": {
+  "ko": "😴 결국 졸음을 이기지 못했다 — 눈을 뜨니 아침이다 (⚡{e})",
+  "en": "😴 Sleep finally won — you wake and it's morning (⚡{e})",
+  "ja": "😴 結局、眠気には勝てなかった — 目を開けると朝だ (⚡{e})"
+ },
+ "day.expNight": {
+  "ko": "🌒 밤새 폐허를 뒤졌다 — 동틀 녘에야 돌아왔다",
+  "en": "🌒 You scavenged through the night — back only at first light",
+  "ja": "🌒 夜通し廃墟を漁った — 明け方になってようやく帰ってきた"
+ },
+ "sleep.noteCollapse": {
+  "ko": "😵 결국 쓰러지듯 잠들었다 — 눈을 뜨니 아침이다 (⚡{e})",
+  "en": "😵 Finally collapsed into sleep — waking, it's already morning (⚡{e})",
+  "ja": "😵 結局、倒れ込むように眠った — 目を開けると朝だ (⚡{e})"
+ },
+ "sleep.collapse": {
+  "ko": "😵 새벽까지 버티다 쓰러지듯 잠들었다 (⚡{e})",
+  "en": "😵 Held out till dawn, then collapsed into sleep (⚡{e})",
+  "ja": "😵 明け方まで粘って、倒れ込むように眠った (⚡{e})"
+ },
+ "sleep.confirm": {
+  "ko": "지금 자면 에너지 {cur} → {to}. 잘까?",
+  "en": "Sleeping now restores energy {cur} → {to}. Turn in?",
+  "ja": "今眠ればエネルギー {cur} → {to}。眠ろうか?"
+ },
+ "sleep.confirmYes": {
+  "ko": "잔다",
+  "en": "Sleep",
+  "ja": "寝る"
+ },
+ "eat.noFood": {
+  "ko": "먹을 게 없다 — 주거지역에 다녀와야겠다",
+  "en": "No food — explore the residential district",
+  "ja": "食べるものがない — 住宅地区に行ってこないと"
+ },
+ "eat.full": {
+  "ko": "아직 배부르다",
+  "en": "Still full",
+  "ja": "まだ満腹だ"
+ },
+ "eat.done": {
+  "ko": "🍎 먹었다 (+45)",
+  "en": "🍎 Had a meal (+45)",
+  "ja": "🍎 食べた (+45)"
+ },
+ "eat.doneCanned": {
+  "ko": "🥫 통조림을 땄다 (+45)",
+  "en": "🥫 Had a meal of canned food (+45)",
+  "ja": "🥫 缶詰を開けた (+45)"
+ },
+ "drink.noWater": {
+  "ko": "마실 물이 없다",
+  "en": "No clean water",
+  "ja": "飲み水がない"
+ },
+ "drink.full": {
+  "ko": "아직 목마르지 않다",
+  "en": "Not thirsty",
+  "ja": "まだ喉は渇いていない"
+ },
+ "drink.done": {
+  "ko": "💧 물을 마셨다 (+45)",
+  "en": "💧 Drank water (+45)",
+  "ja": "💧 水を飲んだ (+45)"
+ },
+ "pause.blocked": {
+  "ko": "일시정지 중이다",
+  "en": "Game is paused",
+  "ja": "一時停止中だ"
+ },
+ "opt.autoplay": {
+  "ko": "자동 진행",
+  "en": "Auto-play",
+  "ja": "自動進行"
+ },
+ "opt.confirmActions": {
+  "ko": "즉시 행동 확인",
+  "en": "Confirm actions",
+  "ja": "即時行動の確認"
+ },
+ "opt.confirmActions.title": {
+  "ko": "먹기·마시기·청소 전에 확인창을 띄운다",
+  "en": "Ask before eating, drinking, or cleaning",
+  "ja": "食べる・飲む・掃除の前に確認ウィンドウを出す"
+ },
+ "opt.autoplay.title": {
+  "ko": "Day 10부터 — 치료·청소·탐험을 알아서 처리한다",
+  "en": "Available from Day 10 — automatically handles treatment, cleaning, and expeditions",
+  "ja": "Day 10から — 治療・掃除・探索を自動でこなす"
+ },
+ "opt.autoplay.locked": {
+  "ko": "Day 10부터",
+  "en": "From Day 10",
+  "ja": "Day 10から"
+ },
+ "auto.treat": {
+  "ko": "🤖 [자동] {name}을(를) 치료했다",
+  "en": "🤖 [Auto] Treated {name}",
+  "ja": "🤖 [自動] {name}を治療した"
+ },
+ "auto.clean": {
+  "ko": "🤖 [자동] 집을 청소했다",
+  "en": "🤖 [Auto] Cleaned the shelter",
+  "ja": "🤖 [自動] 家を掃除した"
+ },
+ "auto.depart": {
+  "ko": "🤖 [자동] {emoji} {name}{josa} 탐험을 나섰다",
+  "en": "🤖 [Auto] Departed for {emoji} {name}",
+  "ja": "🤖 [自動] {emoji} {name}へ探索に出た"
+ },
+ "auto.locked": {
+  "ko": "Day 10부터 열린다",
+  "en": "Unlocks on Day 10",
+  "ja": "Day 10から解放される"
+ },
+ "auto.on": {
+  "ko": "🤖 자동 진행 켜짐",
+  "en": "🤖 Auto-play on",
+  "ja": "🤖 自動進行オン"
+ },
+ "auto.off": {
+  "ko": "🤖 자동 진행 꺼짐",
+  "en": "🤖 Auto-play off",
+  "ja": "🤖 自動進行オフ"
+ },
+ "btn.auto.title": {
+  "ko": "자동 진행 (Day 10+)",
+  "en": "Auto-play (Day 10+)",
+  "ja": "自動進行 (Day 10+)"
+ },
+ "btn.edit.title": {
+  "ko": "배치 모드 — 가구 이동/회수",
+  "en": "Arrange mode — move/reclaim furniture",
+  "ja": "配置モード — 家具の移動/回収"
+ },
+ "edit.on": {
+  "ko": "🔧 배치 모드 — 가구를 옮기고 회수할 수 있다",
+  "en": "🔧 Arrange mode — you can move and reclaim furniture",
+  "ja": "🔧 配置モード — 家具を動かして回収できる"
+ },
+ "edit.off": {
+  "ko": "배치 모드 해제",
+  "en": "Arrange mode off",
+  "ja": "配置モード解除"
+ },
+ "btn.uiToggle.title": {
+  "ko": "게임 UI 숨기기 / 보이기",
+  "en": "Hide / show game UI",
+  "ja": "ゲームUIの表示/非表示"
+ },
+ "ui.hidden": {
+  "ko": "👁 게임 UI 숨김 — 조작만 남김",
+  "en": "👁 Game UI hidden — controls only",
+  "ja": "👁 ゲームUI非表示 — 操作のみ表示"
+ },
+ "ui.shown": {
+  "ko": "게임 UI 표시",
+  "en": "Game UI shown",
+  "ja": "ゲームUI表示"
+ },
+ "panel.collapse": {
+  "ko": "접기/펼치기",
+  "en": "Collapse / expand",
+  "ja": "折りたたみ/展開"
+ },
+ "panel.hud": {
+  "ko": "거점",
+  "en": "Base",
+  "ja": "拠点"
+ },
+ "panel.exp": {
+  "ko": "탐험",
+  "en": "Expedition",
+  "ja": "探索"
+ },
+ "panel.render": {
+  "ko": "설정",
+  "en": "Settings",
+  "ja": "設定"
+ },
+ "panel.clock": {
+  "ko": "시계",
+  "en": "Clock",
+  "ja": "時計"
+ },
+ "panel.res": {
+  "ko": "자원",
+  "en": "Resources",
+  "ja": "資源"
+ },
+ "weather.changed": {
+  "ko": "날씨가 {name}{josa} 바뀌었다",
+  "en": "The weather turned to {name}",
+  "ja": "天気が{name}に変わった"
+ },
+ "rotate.noSpace": {
+  "ko": "돌릴 자리가 없다",
+  "en": "No room to rotate",
+  "ja": "回すスペースがない"
+ },
+ "drop.child": {
+  "ko": "{emoji} {name}이(가) 자리를 잃어 도로 거뒀다",
+  "en": "{emoji} {name} lost its spot and was reclaimed",
+  "ja": "{emoji} {name}が置き場を失い、回収した"
+ },
+ "clean.already": {
+  "ko": "이미 깨끗하다",
+  "en": "Already clean",
+  "ja": "もうきれいだ"
+ },
+ "clean.tooTired": {
+  "ko": "⚡ 청소할 힘도 안 남았다",
+  "en": "⚡ Too tired to clean",
+  "ja": "⚡ 掃除する力も残っていない"
+ },
+ "clean.needWater": {
+  "ko": "물이 있어야 닦는다 (💧1)",
+  "en": "You need clean water (💧1)",
+  "ja": "水がないと拭けない (💧1)"
+ },
+ "clean.done": {
+  "ko": "🧹 쓸고 닦았다 — 청결 {n} (💧-1)",
+  "en": "🧹 Cleaned — cleanliness {n} (💧water -1)",
+  "ja": "🧹 掃いて拭いた — 清潔 {n} (💧-1)"
+ },
+ "clean.note": {
+  "ko": "집을 쓸고 닦았다. (+20)",
+  "en": "Cleaned the shelter. (+20)",
+  "ja": "家を掃いて拭いた。(+20)"
+ },
+ "save.corrupt": {
+  "ko": "⚠️ 세이브가 깨져 어제 백업으로 되돌렸다",
+  "en": "⚠️ Save was corrupted — restored from yesterday’s backup",
+  "ja": "⚠️ セーブが壊れていたので昨日のバックアップに戻した"
+ },
+ "err.global": {
+  "ko": "⚠️ 오류가 났지만 세이브는 무사하다",
+  "en": "⚠️ An error occurred, but your save is safe",
+  "ja": "⚠️ エラーが起きたが、セーブは無事だ"
+ },
+ "save.exportNone": {
+  "ko": "내보낼 세이브가 없다",
+  "en": "No save to export",
+  "ja": "エクスポートするセーブがない"
+ },
+ "save.exported": {
+  "ko": "💾 세이브 파일을 내보냈다",
+  "en": "💾 Save file exported",
+  "ja": "💾 セーブファイルをエクスポートした"
+ },
+ "save.invalidFile": {
+  "ko": "세이브 파일이 아니다",
+  "en": "Not a valid save file",
+  "ja": "セーブファイルではない"
+ },
+ "save.overwrite": {
+  "ko": "슬롯 {n}(현재)의 세이브를 덮어쓸까?",
+  "en": "Overwrite the save in slot {n} (current)?",
+  "ja": "スロット{n}(現在)のセーブを上書きするか?"
+ },
+ "save.failed": {
+  "ko": "저장하지 못했다",
+  "en": "Failed to save",
+  "ja": "セーブできなかった"
+ },
+ "save.done": {
+  "ko": "💾 저장 완료 (슬롯 {n})",
+  "en": "💾 Saved (slot {n})",
+  "ja": "💾 セーブ完了 (スロット{n})"
+ },
+ "btn.saveNow": {
+  "ko": "💾 저장",
+  "en": "💾 Save",
+  "ja": "💾 セーブ"
+ },
+ "btn.saveNow.title": {
+  "ko": "지금 저장 — 타이틀에서 다시 불러온다",
+  "en": "Save now — this save can be loaded from the lobby",
+  "ja": "今すぐセーブ — タイトルからまた読み込める"
+ }
+}

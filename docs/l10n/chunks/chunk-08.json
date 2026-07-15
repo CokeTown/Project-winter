@@ -1,0 +1,427 @@
+{
+ "front.forecast": {
+  "ko": "📻 라디오가 같은 예보만 되풀이한다. 대한파까지 {n}일.",
+  "en": "📻 The radio keeps repeating the same forecast. The great cold is {n} days out.",
+  "ja": "📻 ラジオは同じ予報を繰り返している。大寒波まで{n}日。"
+ },
+ "front.hit": {
+  "ko": "🌨️ 대한파가 닥쳤다. 올겨울 가장 깊은 추위다.",
+  "en": "🌨️ The great cold has arrived. The deepest freeze of the winter.",
+  "ja": "🌨️ 大寒波が来た。この冬いちばん深い寒さだ。"
+ },
+ "front.toast": {
+  "ko": "🌨️ 대한파",
+  "en": "🌨️ The great cold",
+  "ja": "🌨️ 大寒波"
+ },
+ "front.exposed": {
+  "ko": "🥶 이 추위는 벽을 가리지 않는다. 배고픔이 빨리 도진다.",
+  "en": "🥶 This cold doesn't care about walls. Hunger sets in fast.",
+  "ja": "🥶 この寒さは壁をものともしない。空腹が早く襲ってくる。"
+ },
+ "front.defended": {
+  "ko": "🔥 난로가 대한파를 막아선다. 집 안은 아직 따뜻하다.",
+  "en": "🔥 The stove is holding the great cold at bay. It's still warm inside.",
+  "ja": "🔥 ストーブが大寒波を食い止めている。家の中はまだ暖かい。"
+ },
+ "front.ended": {
+  "ko": "🌤️ 대한파가 물러갔다. 올겨울 가장 깊은 추위를 넘겼다.",
+  "en": "🌤️ The great cold has passed. The deepest freeze of the winter is behind you.",
+  "ja": "🌤️ 大寒波が去った。この冬いちばん深い寒さを乗り越えた。"
+ },
+ "front.choice.title": {
+  "ko": "대한파",
+  "en": "The Great Cold",
+  "ja": "大寒波"
+ },
+ "front.choice.body": {
+  "ko": "라디오 말이 맞았다. 지금부터 며칠이 이번 겨울의 고비다.<br>어떻게 버틸지 정해야 한다. 한번 정하면 대한파가 끝날 때까지 그대로 간다.",
+  "en": "The radio was right. The next few days are the crux of this winter.<br>Decide how to get through them. Once decided, it holds until the cold breaks.",
+  "ja": "ラジオの言うとおりだった。これからの数日がこの冬の山場だ。<br>どう凌ぐか決めなければ。一度決めたら、大寒波が終わるまでそのままだ。"
+ },
+ "front.disc.ration": {
+  "ko": "배급을 반으로 줄인다",
+  "en": "Cut rations in half",
+  "ja": "配給を半分に減らす"
+ },
+ "front.disc.ration.desc": {
+  "ko": "덜 먹고 버틴다. 식량은 아껴지지만 살림이 옹색해진다. (배고픔이 천천히 꺼짐 · 쾌적 -3)",
+  "en": "Eat less, last longer. The stores stretch, but the house feels lean. (Hunger drains slower · Comfort -3)",
+  "ja": "食べる量を減らして凌ぐ。食料は節約できるが、暮らしは切り詰めたものになる。(空腹が減りにくくなる · 快適 -3)"
+ },
+ "front.disc.sleepless": {
+  "ko": "쪽잠으로 불침번을 선다",
+  "en": "Keep watch in catnaps",
+  "ja": "仮眠をとりながら不寝番に立つ"
+ },
+ "front.disc.sleepless.desc": {
+  "ko": "밤새 불씨를 지켜 연료를 아낀다. 대신 제대로 못 잔다. (난방 연료 격일 소비 · 취침 회복 -15)",
+  "en": "Tend the fire through the night to stretch the fuel. Sleep comes thin. (Heating fuel every other day · Sleep recovery -15)",
+  "ja": "夜通し火種を守って燃料を節約する。代わりにろくに眠れない。(暖房燃料の消費が隔日に · 就寝回復 -15)"
+ },
+ "front.disc.emergency": {
+  "ko": "비상식량을 개봉한다",
+  "en": "Open the emergency stash",
+  "ja": "非常食を開ける"
+ },
+ "front.disc.emergency.desc": {
+  "ko": "안 꺼내겠다고 묻어둔 통조림을 꺼낸다. 당장은 든든하다. (통조림 +{n} · 쾌적 -4)",
+  "en": "Dig out the canned food you swore you wouldn't touch. It helps, for now. (Canned +{n} · Comfort -4)",
+  "ja": "手をつけまいとしまい込んでいた缶詰を出す。当面は心強い。(缶詰 +{n} · 快適 -4)"
+ },
+ "front.disc.none": {
+  "ko": "그냥 버틴다",
+  "en": "Just endure it",
+  "ja": "ただ耐える"
+ },
+ "front.disc.none.desc": {
+  "ko": "따로 정하는 것 없이 하던 대로. 준비해 둔 게 있다면 그걸로 충분하다.",
+  "en": "No measures, nothing special — same as any other day. If you've prepared, that's enough.",
+  "ja": "特に決めごとはせず、いつもどおりに。備えがあるなら、それで十分だ。"
+ },
+ "front.disc.chose.ration": {
+  "ko": "🥫 배급을 반으로 줄인다 — 대한파가 끝날 때까지.",
+  "en": "🥫 Rations cut in half — until the cold breaks.",
+  "ja": "🥫 配給を半分に減らす — 大寒波が終わるまで。"
+ },
+ "front.disc.chose.sleepless": {
+  "ko": "🕯️ 오늘 밤부터 쪽잠이다. 불씨는 꺼뜨리지 않는다.",
+  "en": "🕯️ Catnaps from tonight on. The fire stays lit.",
+  "ja": "🕯️ 今夜から仮眠暮らしだ。火種は絶やさない。"
+ },
+ "front.disc.chose.emergency": {
+  "ko": "🥫 비상식량을 열었다. 찬장 바닥이 보인다.",
+  "en": "🥫 The emergency stash is open. You can see the bottom of the cupboard.",
+  "ja": "🥫 非常食を開けた。戸棚の底が見えている。"
+ },
+ "front.disc.chose.none": {
+  "ko": "❄️ 하던 대로 버틴다. 준비한 만큼이 전부다.",
+  "en": "❄️ No special measures. What you've prepared will have to do.",
+  "ja": "❄️ いつもどおりに凌ぐ。備えた分がすべてだ。"
+ },
+ "winter.passed": {
+  "ko": "❄️ {n}번째 겨울을 넘겼다.",
+  "en": "❄️ You made it through winter number {n}.",
+  "ja": "❄️ {n}度目の冬を乗り越えた。"
+ },
+ "winter.badge.tip": {
+  "ko": "넘긴 겨울 {n}번",
+  "en": "{n} winters weathered",
+  "ja": "乗り越えた冬 {n}回"
+ },
+ "title.continueWinters": {
+  "ko": " · ❄️{n}/9",
+  "en": " · ❄️{n}/9",
+  "ja": " · ❄️{n}/9"
+ },
+ "demo.end.title": {
+  "ko": "첫 번째 겨울이 왔다",
+  "en": "The First Winter Has Come",
+  "ja": "最初の冬が来た"
+ },
+ "demo.end.body": {
+  "ko": "{d}일. 첫 겨울이 시작됐다. 이 겨울을 넘길 수 있을까.<br>데모는 여기까지입니다.",
+  "en": "Day {d}. The first winter has begun. Will I make it through?<br>This is where the demo ends.",
+  "ja": "{d}日目。最初の冬が始まった。この冬を越えられるだろうか。<br>デモはここまでです。"
+ },
+ "demo.end.sub": {
+  "ko": "정식판에는 아홉 번의 겨울이 기다립니다 — 열두 곳의 거처, 지하 노선, 봉쇄 너머의 이야기. 위시리스트에 담아 두면 겨울이 올 때 알려 드립니다.",
+  "en": "Nine winters await in the full game — twelve shelters, the metro line, and what lies beyond the blockade. Wishlist it and we'll let you know when winter comes.",
+  "ja": "製品版では九度の冬が待っています — 十二のシェルター、地下路線、封鎖の向こうの物語。ウィッシュリストに追加しておけば、冬が来たらお知らせします。"
+ },
+ "demo.end.back": {
+  "ko": "타이틀로",
+  "en": "Back to Title",
+  "ja": "タイトルへ"
+ },
+ "demo.end.locked": {
+  "ko": "데모는 첫 번째 겨울까지 — 이 이야기는 정식판에서 이어집니다.",
+  "en": "The demo ends after the first winter — the story continues in the full game.",
+  "ja": "デモは最初の冬まで — この物語は製品版へ続きます。"
+ },
+ "winter.page.title": {
+  "ko": "{n}번째 겨울",
+  "en": "Winter №{n}",
+  "ja": "{n}度目の冬"
+ },
+ "winter.page.title.first": {
+  "ko": "첫 겨울",
+  "en": "The First Winter",
+  "ja": "最初の冬"
+ },
+ "winter.page.body": {
+  "ko": "거처에서 {days}일을 버텼다.<br>한파 {cold}번, 그중 {defended}일은 막아냈다.<br>탐험으로 {exp}번 무언가를 건졌다.<br>땔감 {fuel}개를 태웠다.<br>{cat}<br><br>{closing}",
+  "en": "Held out {days} days in the shelter.<br>{cold} cold snaps, {defended} of them held off.<br>Brought something back {exp} times.<br>Burned {fuel} fuel.<br>{cat}<br><br>{closing}",
+  "ja": "シェルターで{days}日を耐え抜いた。<br>寒波{cold}回、うち{defended}日は防ぎきった。<br>探索で{exp}回、何かを持ち帰った。<br>燃料を{fuel}個燃やした。<br>{cat}<br><br>{closing}"
+ },
+ "winter.page.body.noexp": {
+  "ko": "거처에서 {days}일을 버텼다.<br>한파 {cold}번, 그중 {defended}일은 막아냈다.<br>탐험은 나서지 못한 겨울이었다.<br>땔감 {fuel}개를 태웠다.<br>{cat}<br><br>{closing}",
+  "en": "Held out {days} days in the shelter.<br>{cold} cold snaps, {defended} of them held off.<br>It was a winter you never set out to explore.<br>Burned {fuel} fuel.<br>{cat}<br><br>{closing}",
+  "ja": "シェルターで{days}日を耐え抜いた。<br>寒波{cold}回、うち{defended}日は防ぎきった。<br>探索には出られなかった冬だった。<br>燃料を{fuel}個燃やした。<br>{cat}<br><br>{closing}"
+ },
+ "winter.memoir.catYes": {
+  "ko": "고양이가 곁에 있었다.",
+  "en": "The cat stayed close.",
+  "ja": "猫がそばにいた。"
+ },
+ "winter.memoir.catNo": {
+  "ko": "혼자였다.",
+  "en": "You were alone.",
+  "ja": "独りだった。"
+ },
+ "winter.memoir.1": {
+  "ko": "첫 겨울은 그저 견디는 것이었다.",
+  "en": "The first winter was just about lasting.",
+  "ja": "最初の冬は、ただ耐えるだけだった。"
+ },
+ "winter.memoir.2": {
+  "ko": "두 번째 겨울. 이번엔 준비가 있었다.",
+  "en": "A second winter. This time you were ready for it.",
+  "ja": "二度目の冬。今度は備えがあった。"
+ },
+ "winter.memoir.3": {
+  "ko": "세 번째. 추위가 언제 오는지 몸이 먼저 안다.",
+  "en": "The third. Your body knows the cold before it comes now.",
+  "ja": "三度目。寒さがいつ来るか、体が先に知っている。"
+ },
+ "winter.memoir.4": {
+  "ko": "네 번째 겨울. 버티는 게 아니라 사는 것에 가까워졌다.",
+  "en": "A fourth winter. Less enduring now, closer to living.",
+  "ja": "四度目の冬。耐えるというより、暮らすことに近づいた。"
+ },
+ "winter.memoir.5": {
+  "ko": "다섯 번째. 눈 내리는 소리가 더는 무섭지 않다.",
+  "en": "The fifth. The sound of falling snow no longer frightens you.",
+  "ja": "五度目。雪の降る音が、もう怖くない。"
+ },
+ "winter.memoir.6": {
+  "ko": "여섯 번째 겨울. 이 자리에 익숙해졌다.",
+  "en": "A sixth winter. This place has become familiar.",
+  "ja": "六度目の冬。この場所にも慣れた。"
+ },
+ "winter.memoir.7": {
+  "ko": "일곱 번째. 겨울도 이제 지나가는 계절일 뿐이다.",
+  "en": "The seventh. Winter is just a season that passes now.",
+  "ja": "七度目。冬ももう、過ぎていく季節のひとつでしかない。"
+ },
+ "winter.memoir.8": {
+  "ko": "여덟 번째 겨울. 여기는 버티는 곳이 아니라 집이다.",
+  "en": "An eighth winter. This isn't a place you endure — it's home.",
+  "ja": "八度目の冬。ここは耐える場所ではなく、家だ。"
+ },
+ "winter.memoir.9": {
+  "ko": "아홉 번째 겨울. 제목이 약속한 그 겨울이다.",
+  "en": "The ninth winter. The one the title promised.",
+  "ja": "九度目の冬。タイトルが約束したあの冬だ。"
+ },
+ "winter.memoir.beyond": {
+  "ko": "또 한 번의 겨울. 약속했던 아홉을 이미 넘었다.",
+  "en": "Another winter. You are already past the nine you were promised.",
+  "ja": "また一つの冬。約束の九つはもう越えた。"
+ },
+ "winter.memoir.hurt.once": {
+  "ko": "한 번 다쳤다 — {name}. 흉터가 하나 늘었다.",
+  "en": "Got hurt once — {name}. One more scar.",
+  "ja": "一度怪我をした — {name}。傷跡がひとつ増えた。"
+ },
+ "winter.memoir.hurt.many": {
+  "ko": "{n}번 다쳤다. 몸이 이번 겨울을 기억할 것이다.",
+  "en": "Got hurt {n} times. Your body will remember this winter.",
+  "ja": "{n}回怪我をした。体がこの冬を覚えているだろう。"
+ },
+ "winter.memoir.unhurt": {
+  "ko": "이번 겨울은 몸 성히 넘겼다.",
+  "en": "Made it through this winter unhurt.",
+  "ja": "この冬は無傷で乗り越えた。"
+ },
+ "winter.memoir.front": {
+  "ko": "제일 추운 며칠도 지나갔다.",
+  "en": "The coldest days passed, too.",
+  "ja": "いちばん寒い数日も過ぎていった。"
+ },
+ "winter.memoir.front.ration": {
+  "ko": "제일 추운 며칠은 배급을 반으로 줄이고 버텼다.",
+  "en": "You got through the coldest days on half rations.",
+  "ja": "いちばん寒い数日は、配給を半分に減らして凌いだ。"
+ },
+ "winter.memoir.front.sleepless": {
+  "ko": "제일 추운 며칠은 쪽잠으로 불씨를 지키며 버텼다.",
+  "en": "You kept the fire alive through the coldest days on catnaps.",
+  "ja": "いちばん寒い数日は、仮眠をつなぎながら火種を守って凌いだ。"
+ },
+ "winter.memoir.front.emergency": {
+  "ko": "제일 추운 며칠은 아껴둔 통조림까지 꺼내며 버텼다.",
+  "en": "The coldest days took even the canned food you'd been saving.",
+  "ja": "いちばん寒い数日は、取っておいた缶詰まで開けて凌いだ。"
+ },
+ "winter.ninth.title": {
+  "ko": "아홉 번째 겨울 — 그리고 나는 여전히 여기에 있다",
+  "en": "Nine Winters — And I Am Still Here",
+  "ja": "九度目の冬 — そして私はまだここにいる"
+ },
+ "winter.ninth.body": {
+  "ko": "아홉 번의 겨울을 넘겼다.<br><br>Day {day}까지 살아남았다.<br>탐험 {exp}번을 성공했고, {craft}번을 만들었다.<br>{cat}<br><br>이 게임의 제목은 이제 지나간 시간이 되었다.",
+  "en": "Nine winters, all weathered.<br><br>I survived to Day {day}.<br>Succeeded on {exp} expeditions, crafted {craft} things.<br>{cat}<br><br>The title of this game is now behind me.",
+  "ja": "九度の冬を乗り越えた。<br><br>Day {day}まで生き延びた。<br>探索を{exp}回成功させ、ものを{craft}回作った。<br>{cat}<br><br>このゲームのタイトルは、もう過ぎ去った時間になった。"
+ },
+ "ev.doctor.title": {
+  "ko": "지직거리는 무전",
+  "en": "A Crackling Transmission",
+  "ja": "ノイズ混じりの無線"
+ },
+ "ev.doctor.text": {
+  "ko": "한밤중, 라디오가 저 혼자 지직거린다. 잡음 사이로 사람의 목소리가 끊겼다 이어진다.<br><br>\"…들리는가. …9년을 버틴 신호를 봤다. 우리는 아직 관측하고 있다. — Dr. ___\"",
+  "en": "Deep in the night, the radio crackles on its own. Between the static, a human voice cuts in and out.<br><br>\"…do you read me. …we saw the signal that held nine years. We are still watching. — Dr. ___\"",
+  "ja": "真夜中、ラジオがひとりでにノイズを立てる。雑音の合間に、人の声が途切れては続く。<br><br>「…聞こえるか。…9年を耐えた信号を見た。我々はまだ観測している。 — Dr. ___」"
+ },
+ "ev.doctor.c0": {
+  "ko": "무전을 오래 들었다",
+  "en": "You listen for a long while",
+  "ja": "無線に長く耳を傾けた"
+ },
+ "ev.doctor.r0": {
+  "ko": "목소리는 다시 잡음에 묻혔다. 하지만 누군가 나를 보고 있었다.",
+  "en": "The voice sinks back into static. But someone had been watching me.",
+  "ja": "声は再び雑音に呑まれた。だが、誰かが私を見ていた。"
+ },
+ "report.tip.bandage": {
+  "ko": "붕대가 없다 — 주거지역에 가면 나온다.",
+  "en": "You have no bandages — find them in the residential district.",
+  "ja": "包帯がない — 住宅地区に行けば見つかる。"
+ },
+ "report.tip.water": {
+  "ko": "마실 물이 없다 — 청소에도 치료에도 물이 든다.",
+  "en": "You have no clean water — needed for cleaning and treatment.",
+  "ja": "飲み水がない — 掃除にも治療にも水が要る。"
+ },
+ "report.tip.battery": {
+  "ko": "벙커 전력용 배터리가 없다 — 상업지구에 있다.",
+  "en": "No batteries for shelter power — explore the commercial district.",
+  "ja": "バンカーの電力用バッテリーがない — 商業地区にある。"
+ },
+ "report.tip.clean": {
+  "ko": "집이 지저분하다 — 🧹 쓸고 닦으면 쾌적함이 돌아온다.",
+  "en": "Cleanliness is low — 🧹 clean to restore comfort.",
+  "ja": "家が散らかっている — 🧹 掃除すれば快適さが戻る。"
+ },
+ "help.title": {
+  "ko": "🎓 튜토리얼",
+  "en": "🎓 Tutorial",
+  "ja": "🎓 チュートリアル"
+ },
+ "help.exp.t": {
+  "ko": "탐험",
+  "en": "Expeditions",
+  "ja": "探索"
+ },
+ "help.exp.b": {
+  "ko": "지도에서 지역 선택 → 준비물을 챙기면 성공률이 오른다. 하루 5회, 다녀오면 시간이 흐른다.",
+  "en": "Pick a region on the map → gear up to raise success. 5/day; time passes when you return.",
+  "ja": "地図で地域を選択 → 持ち物を整えれば成功率が上がる。1日5回、戻ると時間が進む。"
+ },
+ "help.survive.t": {
+  "ko": "생존",
+  "en": "Survival",
+  "ja": "生存"
+ },
+ "help.survive.b": {
+  "ko": "게이지 클릭 = 먹기/마시기/취침. ⚡가 바닥나면 🛌 자야 한다. 침대가 있으면 푹 잔다.",
+  "en": "Click a gauge = eat/drink/sleep. Out of ⚡ means 🛌 sleep. A bed gives deeper rest.",
+  "ja": "ゲージをクリック = 食事/水分/就寝。⚡が尽きたら🛌眠るしかない。ベッドがあれば熟睡できる。"
+ },
+ "help.craft.t": {
+  "ko": "제작",
+  "en": "Crafting",
+  "ja": "製作"
+ },
+ "help.craft.b": {
+  "ko": "가구는 줍는 게 아니라 만드는 것. 재료(천·부품·건축재)는 탐험으로 모은다.",
+  "en": "Furniture is mainly crafted, not scavenged. Gather materials (cloth, parts, building material) on expeditions.",
+  "ja": "家具は拾うものではなく作るもの。素材(布·部品·建材)は探索で集める。"
+ },
+ "help.comfort.t": {
+  "ko": "쾌적함",
+  "en": "Comfort",
+  "ja": "快適さ"
+ },
+ "help.comfort.b": {
+  "ko": "가구·조명·청결·정든 집이 쾌적함을 쌓고, 탐험 성공률과 회복 속도를 끌어올린다.",
+  "en": "Furniture, light, cleanliness and a settled home build comfort, raising expedition success and recovery speed.",
+  "ja": "家具·照明·清潔さ·住み慣れた家が快適さを積み上げ、探索成功率と回復速度を引き上げる。"
+ },
+ "help.shelter.t": {
+  "ko": "거처",
+  "en": "Shelters",
+  "ja": "シェルター"
+ },
+ "help.shelter.b": {
+  "ko": "구역마다 특성·유지비·제약이 다르다. 개조(빗물받이·텃밭...)로 자급자족한다.",
+  "en": "Each district has its own traits, upkeep and limits. Modify (rain catch, garden...) for self-sufficiency.",
+  "ja": "地区ごとに特性·維持費·制約が違う。改修(雨水受け·菜園...)で自給自足する。"
+ },
+ "help.time.t": {
+  "ko": "세월",
+  "en": "Seasons",
+  "ja": "歳月"
+ },
+ "help.time.b": {
+  "ko": "날씨는 며칠 단위, 계절은 12일 주기. 겨울이 오기 전에 쌓아 두자. 저장은 자동.",
+  "en": "Weather shifts over days; seasons cycle every 12 days. Stockpile for winter. Saving is automatic.",
+  "ja": "天気は数日単位、季節は12日周期。冬が来る前に蓄えておこう。セーブは自動。"
+ },
+ "help.camera": {
+  "ko": "<b>카메라</b>: <kbd>드래그</kbd> 또는 <kbd>Q</kbd>/<kbd>E</kbd> 회전 · <kbd>우클릭 드래그</kbd> 화면 이동 · 휠 줌 (줌아웃하면 주변 폐허가 보인다)<br>진행 상황은 자동으로 저장된다.",
+  "en": "<b>Camera</b>: <kbd>drag</kbd> or <kbd>Q</kbd>/<kbd>E</kbd> to rotate · <kbd>right-click drag</kbd> to pan · wheel to zoom (zoom out to see the ruins around you)<br>Progress saves automatically.",
+  "ja": "<b>カメラ</b>: <kbd>ドラッグ</kbd>または<kbd>Q</kbd>/<kbd>E</kbd>で回転 · <kbd>右クリックドラッグ</kbd>で画面移動 · ホイールでズーム(ズームアウトすると周りの廃墟が見える)<br>進行状況は自動でセーブされる。"
+ },
+ "ev.wanderer.title": {
+  "ko": "떠돌이 생존자",
+  "en": "Wandering Survivor",
+  "ja": "流れ者の生存者"
+ },
+ "ev.wanderer.text": {
+  "ko": "누더기를 걸친 생존자가 거처 앞에 서 있다. 눈이 퀭하다.<br>\"...먹을 것 좀... 나눠줄 수 있소?\"",
+  "en": "A survivor in rags stands before your shelter, hollow-eyed.<br>\"...could you... spare a little food?\"",
+  "ja": "ぼろをまとった生存者がシェルターの前に立っている。目が落ちくぼんでいる。<br>\"…食べるものを…少し、分けてもらえんかね?\""
+ },
+ "ev.wanderer.c0": {
+  "ko": "🥫 음식 2개를 나눠준다",
+  "en": "🥫 Share 2 food",
+  "ja": "🥫 食料を2つ分け与える"
+ },
+ "ev.wanderer.c1": {
+  "ko": "조용히 고개를 젓는다",
+  "en": "Quietly shake your head",
+  "ja": "黙って首を横に振る"
+ },
+ "ev.wanderer.r0": {
+  "ko": "생존자가 고개를 숙이더니 지도에 뭔가를 그려 준다.<br>\"이 은혜는 잊지 않겠소. 저쪽 구역엔 아직 물자가 남아 있다오.\"<br><b>(다음 탐험 성공률 +10%p)</b>",
+  "en": "The survivor bows and marks something on your map.<br>\"I won’t forget this. That district still has supplies left.\"<br><b>(next expedition success +10%p)</b>",
+  "ja": "生存者は頭を下げ、地図に何かを描き込んでくれた。<br>\"この恩は忘れんよ。あっちの地区には、まだ物資が残っておる。\"<br><b>(次の探索成功率 +10%p)</b>"
+ },
+ "ev.wanderer.r1": {
+  "ko": "생존자는 말없이 어둠 속으로 사라졌다.",
+  "en": "The survivor vanished into the dark without a word.",
+  "ja": "生存者は何も言わず、闇の中へ消えていった。"
+ },
+ "buff.wanderer": {
+  "ko": "선행의 보답",
+  "en": "Reward for kindness",
+  "ja": "善意の恩返し"
+ },
+ "ev.trader.title": {
+  "ko": "행상인",
+  "en": "Traveling Merchant",
+  "ja": "行商人"
+ },
+ "ev.trader.text": {
+  "ko": "낡은 수레를 끈 행상인이 찾아왔다.<br>\"배터리 두 개면 약품 세트를 드리리다. 어떻소?\"",
+  "en": "A merchant with a battered cart comes calling.<br>\"Two batteries for a medicine set. What do you say?\"",
+  "ja": "古びた荷車を引いた行商人がやって来た。<br>\"バッテリー2つで薬のセットを差し上げよう。どうかね?\""
+ },
+ "ev.trader.c0": {
+  "ko": "🔋 배터리 2 ↔ 🩹 붕대 + 🧴 소독약",
+  "en": "🔋 Battery 2 ↔ 🩹 Bandage + 🧴 Antiseptic",
+  "ja": "🔋 バッテリー2 ↔ 🩹 包帯 + 🧴 消毒薬"
+ }
+}

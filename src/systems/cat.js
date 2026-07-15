@@ -26,9 +26,12 @@ export function makeCatSystem(ctx) {
     B, lamb, makeCanvasTex, disposeDeep,
     footprintOf, surfaceRectOf, itemsOn, shadowDirty,
     scene, items, DEFS, state,
-    CAT_POSES, CAT_PERCH_Y, PET_HAPPY_MS,
+    CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, PET_HAPPY_MS,
     getRoom, catCam, exitCatCloseup,
   } = ctx;
+  // #193: 침대는 티어가 곧 높이(#157) — CAT_PERCH_Y.bed(T3 실측 0.63) 고정 조회면 T1/T2 매트리스 위 공중부양.
+  //   침대만 BED_TOP_Y[tier] 실측으로 치환, 나머지 퍼치 가구는 티어 무관(좌면 높이 동일)이라 기존 표 그대로.
+  const perchYOf = i => i.defId === 'bed' ? ((BED_TOP_Y || {})[i.tier || 3] ?? CAT_PERCH_Y.bed) : CAT_PERCH_Y[i.defId];
   let catObj = null, _catSpawning = false;
   let catSupportDirty = false; // ⑥a: 가구 제거 직후 1틱 플래그 — 퍼치 고양이 지지면 재검사 트리거
   // 관절형 치즈 태비 (v1.9.1) — 몸통(호흡)·머리·귀·꼬리 2마디·다리 4개가 따로 움직인다
@@ -350,7 +353,7 @@ export function makeCatSystem(ctx) {
     for (const i of items) {
       if (i.support) continue; // 상판 위 소품은 지지면이 아니다
       const sr = surfaceRectOf(i);
-      const topY = sr ? sr.y : CAT_PERCH_Y[i.defId];
+      const topY = sr ? sr.y : perchYOf(i); // #193: 침대 티어 실높이 반영 (지지면 유효성도 같은 기준으로)
       if (topY == null) continue;
       if (Math.abs(topY - c.baseY) > 0.12) continue; // 높이 불일치 — 다른 층
       const rw = sr ? sr.w : footprintOf(i).w * 0.6;
@@ -388,11 +391,11 @@ export function makeCatSystem(ctx) {
   function catFreeSpotInner() {
     // 가구 위를 좋아한다 — 테이블/상자/서랍장 상판(surface), 침대/소파/러그/방석
     if (Math.random() < 0.45) {
-      const climbs = items.filter(i => !i.support && (DEFS[i.defId].surface || CAT_PERCH_Y[i.defId] != null));
+      const climbs = items.filter(i => !i.support && (DEFS[i.defId].surface || perchYOf(i) != null)); // #193: 퍼치 후보 판정도 티어 인지 조회로 통일
       if (climbs.length) {
         const f = climbs[Math.floor(Math.random() * climbs.length)];
         const sr = surfaceRectOf(f);
-        const topY = sr ? sr.y : CAT_PERCH_Y[f.defId];
+        const topY = sr ? sr.y : perchYOf(f); // #193: 올라앉을 y도 침대 티어 실높이
         const rw = sr ? sr.w : footprintOf(f).w * 0.6;
         const rd = sr ? sr.d : footprintOf(f).d * 0.5;
         for (let k = 0; k < 6; k++) {

@@ -1,0 +1,427 @@
+{
+ "hazmat.blocked": {
+  "ko": "방호복 없이는 봉쇄선을 넘을 수 없다.",
+  "en": "You can’t cross the cordon without a hazmat suit.",
+  "ja": "防護服なしでは封鎖線を越えられない。"
+ },
+ "hazmat.wornOut": {
+  "ko": "방호복이 다 닳았다. 수선해야 다시 들어갈 수 있다.",
+  "en": "The suit is worn out. Mend it before going back in.",
+  "ja": "防護服がすり切れた。修繕しないと、もう一度中へは入れない。"
+ },
+ "fallout.cleared": {
+  "ko": "낙진이 걷혔다. 봉쇄선을 맨몸으로 넘을 수 있고, 그 너머 도심 중심지가 지도에 열렸다.",
+  "en": "The fallout has settled. The cordon can be crossed bare-handed now, and the City Core beyond it has opened on the map.",
+  "ja": "死の灰が晴れた。封鎖線を生身で越えられるようになり、その先の都心中枢が地図に開かれた。"
+ },
+ "mastery.up": {
+  "ko": "{name}의 길이 손에 익었다 — 지리 지식 {stars}. 다음부터는 더 잘 보인다.",
+  "en": "The paths of {name} feel familiar now — geography {stars}. You’ll see more from here on.",
+  "ja": "{name}の道が足に馴染んだ — 地理知識 {stars}。次からはもっとよく見える。"
+ },
+ "map.mastery": {
+  "ko": "지리 지식 ★{n}",
+  "en": "Geography ★{n}",
+  "ja": "地理知識 ★{n}"
+ },
+ "map.drops": {
+  "ko": "여기서만: {items}",
+  "en": "Only here: {items}",
+  "ja": "ここだけ: {items}"
+ },
+ "map.sigDone": {
+  "ko": "이 지역 시그니처 모두 수집 ✓",
+  "en": "All signatures here collected ✓",
+  "ja": "この地域のシグネチャー全収集 ✓"
+ },
+ "map.masteryNext": {
+  "ko": "★{n}까지 {m}회",
+  "en": "★{n} in {m} more",
+  "ja": "★{n}まであと{m}回"
+ },
+ "fallout.barehandHurt": {
+  "ko": "맨몸으로 봉쇄선 안을 걸었다 — 잔류 방사능이 몸에 남았다.",
+  "en": "Walked inside the cordon with no suit — the residual radiation left its mark.",
+  "ja": "生身で封鎖線の内側を歩いた — 残留放射能が体に残った。"
+ },
+ "hazmat.wearNote": {
+  "ko": "🥽 방호복이 조금 닳았다 (내구 {dur}회 남음).",
+  "en": "🥽 The suit wore down a little (durability {dur} left).",
+  "ja": "🥽 防護服が少し傷んだ (耐久 残り{dur}回)。"
+ },
+ "gun.name": {
+  "ko": "낡은 총",
+  "en": "Old Gun",
+  "ja": "古びた銃"
+ },
+ "gun.durLine": {
+  "ko": "탄환 {dur}/{max}발 — 도심 중심지의 밤을 버티게 해준다",
+  "en": "{dur}/{max} rounds — keeps the city center's nights at bay",
+  "ja": "弾丸 {dur}/{max}発 — 都心中枢の夜を凌ぐ支えになる"
+ },
+ "gun.ready": {
+  "ko": "정비 완료",
+  "en": "Serviced",
+  "ja": "整備完了"
+ },
+ "gun.repairBtn": {
+  "ko": "정비",
+  "en": "Service",
+  "ja": "整備"
+ },
+ "gun.repaired": {
+  "ko": "🔫 총을 정비했다. 탄환 {dur}발.",
+  "en": "🔫 Gun serviced. {dur} rounds.",
+  "ja": "🔫 銃を整備した。弾丸 {dur}発。"
+ },
+ "gun.needFind": {
+  "ko": "정비할 총이 없다. 도심 중심지 어딘가에 있을 것이다.",
+  "en": "No gun to service. There should be one somewhere in the city center.",
+  "ja": "整備する銃がない。都心中枢のどこかにあるはずだ。"
+ },
+ "gun.alreadyFull": {
+  "ko": "이미 손볼 곳이 없다.",
+  "en": "Nothing left to fix.",
+  "ja": "もう手を入れるところがない。"
+ },
+ "radio.broadcastName": {
+  "ko": "무전 송출",
+  "en": "Broadcast",
+  "ja": "無線送信"
+ },
+ "radio.broadcastHint": {
+  "ko": "수집한 방송·기록을 하나씩 내보낸다 (에너지 {e} · 송출 {sent}/{total} · 불빛 {lit})",
+  "en": "Send out what you gathered, one at a time (energy {e} · sent {sent}/{total} · lights {lit})",
+  "ja": "集めた放送・記録を一つずつ送り出す (エネルギー {e} · 送信 {sent}/{total} · 灯り {lit})"
+ },
+ "radio.broadcastBtn": {
+  "ko": "송출",
+  "en": "Send",
+  "ja": "送信"
+ },
+ "radio.allSentBtn": {
+  "ko": "다 보냄",
+  "en": "All sent",
+  "ja": "送信済み"
+ },
+ "radio.needBase": {
+  "ko": "무전 기지를 먼저 세워야 한다.",
+  "en": "You need to raise the radio base first.",
+  "ja": "まず無線基地を建て直さなければならない。"
+ },
+ "radio.allSent": {
+  "ko": "모아둔 것은 이미 다 내보냈다.",
+  "en": "You’ve sent out all you had.",
+  "ja": "集めたものは、もうすべて送り出した。"
+ },
+ "radio.sentLit": {
+  "ko": "📡 신호를 실어 보냈다. 지도 저편에서 불빛이 하나 켜진다 — 이제 {n}개.",
+  "en": "📡 You sent the signal out. Far off on the map, one more light comes on — {n} now.",
+  "ja": "📡 信号を乗せて送った。地図の彼方で灯りがひとつ点る — これで{n}個。"
+ },
+ "radio.sentNoLit": {
+  "ko": "📡 신호를 실어 보냈다. 어둠 속으로 퍼져 나간다.",
+  "en": "📡 You sent the signal out. It spreads into the dark.",
+  "ja": "📡 信号を乗せて送った。闇の中へ広がっていく。"
+ },
+ "proj.radioBase.name": {
+  "ko": "무전 기지 복구",
+  "en": "Radio Base Recovery",
+  "ja": "無線基地の復旧"
+ },
+ "proj.radioBase.stage1": {
+  "ko": "쓰러진 안테나 마스트를 다시 세운다. 접시를 하늘로 돌려놓는다.",
+  "en": "I raise the fallen antenna mast again, turning the dish back to the sky.",
+  "ja": "倒れたアンテナマストを立て直す。パラボラを空へ向け直す。"
+ },
+ "proj.radioBase.stage2": {
+  "ko": "송신기 회로를 잇는다. 끊긴 배선을 하나씩 되살린다.",
+  "en": "I wire the transmitter back together, reviving the broken circuits one by one.",
+  "ja": "送信機の回路をつなぐ。切れた配線を一本ずつ蘇らせる。"
+ },
+ "proj.radioBase.stage3": {
+  "ko": "발전·축전 계통을 붙인다. 계기에 바늘이 처음으로 움찔한다.",
+  "en": "I hook up the power and battery lines. For the first time, a needle twitches on the gauge.",
+  "ja": "発電・蓄電系統を取り付ける。計器の針が初めてぴくりと動く。"
+ },
+ "proj.radioBase.workNote": {
+  "ko": "무전 기지 복구를 조금 진척시켰다.",
+  "en": "Made some progress recovering the radio base.",
+  "ja": "無線基地の復旧を少し進めた。"
+ },
+ "proj.radioBase.doneToast": {
+  "ko": "무전 기지가 살아났다. 이제 모아둔 방송과 기록을 저 위로 실어 보낼 수 있다.",
+  "en": "The radio base has come alive. Now I can send what I gathered up there.",
+  "ja": "無線基地が息を吹き返した。これで、集めた放送と記録をあの上へ送り出せる。"
+ },
+ "proj.radioBase.memoir": {
+  "ko": "{day}일째. 봉쇄선 너머의 무전 기지를 되살렸다. 안테나를 세우고, 송신기를 잇고, 전원을 붙이는 데 며칠이 걸렸다. 이제 이 폐허에서도 신호 하나를 내보낼 수 있다.",
+  "en": "Day {day}. I brought the radio base beyond the cordon back to life. Days of raising the antenna, wiring the transmitter, hooking up power. Even from this ruin, I can send out one signal now.",
+  "ja": "{day}日目。封鎖線の向こうの無線基地を蘇らせた。アンテナを立て、送信機をつなぎ、電源を入れるのに何日もかかった。これで、この廃墟からでも信号ひとつを送り出せる。"
+ },
+ "proj.clearPassage.revealNote": {
+  "ko": "🕯️ 정리한 통로 저편의 어둠이, 봉쇄선 아래로 이어지는 지하 길이었다. 이제 저 아래로 내려갈 수 있다.",
+  "en": "🕯️ The dark beyond the cleared passage was an underground way leading below the cordon. I can go down there now.",
+  "ja": "🕯️ 片付けた通路の先の闇は、封鎖線の下へと続く地下道だった。これで、あの下へ降りていける。"
+ },
+ "ev.doctorReg.title": {
+  "ko": "정기 교신",
+  "en": "A Regular Contact",
+  "ja": "定期交信"
+ },
+ "ev.doctorReg.text": {
+  "ko": "무전 기지가 궤도의 관측소와 이어졌다. 잡음 사이로 그 목소리가, 이번엔 정해진 시각에 또렷이 들어온다.<br><br>\"신호 잘 받았다. 네가 켠 불빛을 여기서 세고 있다. 아홉 해를 버틴 자리가 있다는 건, 우리가 내려갈 이유가 된다.\"",
+  "en": "The radio base has linked to the station in orbit. Through the static, the voice comes in clear now, at a set hour.<br><br>\"Signal received. I’m counting the lights you lit, from up here. That a place has lasted nine winters — that gives us a reason to come down.\"",
+  "ja": "無線基地が軌道の観測所とつながった。雑音の合間から、あの声が、今度は決まった時刻にはっきりと届く。<br><br>「信号は確かに受け取った。君がともした灯りを、ここから数えている。九度の冬を耐えた場所があるということは、私たちが降りていく理由になる。」"
+ },
+ "ev.doctorReg.textTruth": {
+  "ko": "\"…그 문서들을 다 읽었구나. 그럼 내가 누구였는지도 알겠지. 나는 그 겨울을 막지 못한 사람이고, 그래서 네 불빛을 끝까지 지켜보는 사람이다.\"",
+  "en": "\"…so you read all the files. Then you know who I was. I’m the one who couldn’t stop that winter — and so, the one who watches your light to the end.\"",
+  "ja": "「…あの文書を全部読んだんだな。なら、私が誰だったのかも分かるだろう。私はあの冬を止められなかった人間で、だから、君の灯りを最後まで見届ける人間だ。」"
+ },
+ "ev.doctorReg.c0": {
+  "ko": "오래 응답을 나눴다",
+  "en": "You trade word for a long while",
+  "ja": "長く応答を交わした"
+ },
+ "ev.doctorReg.r0": {
+  "ko": "교신은 잡음에 묻혔다. 하지만 이 신호는 이제 혼자 울리지 않는다.",
+  "en": "The contact sinks into static. But this signal no longer sounds alone.",
+  "ja": "交信は雑音に呑まれた。だがこの信号は、もう独りでは響かない。"
+ },
+ "ev.ending.textSignal": {
+  "ko": "무전병이 덧붙인다. \"당신 신호를 따라왔습니다. 지도에 불빛이 하나씩 켜지는 걸, 우리도 봤어요.\"",
+  "en": "The radio operator adds: \"We followed your signal. We saw them too — the lights coming on across the map, one by one.\"",
+  "ja": "通信兵が付け加える。「あなたの信号を辿って来たんです。地図に灯りがひとつずつ点っていくのを、私たちも見ていました。」"
+ },
+ "truth.title": {
+  "ko": "그날의 진실",
+  "en": "The Truth of That Day",
+  "ja": "あの日の真実"
+ },
+ "truth.tag": {
+  "ko": "흩어진 기록을 이어 붙인 정리",
+  "en": "Scattered records, pieced together",
+  "ja": "散らばった記録をつなぎ合わせた覚え書き"
+ },
+ "truth.p1": {
+  "ko": "처음엔 병이었다. 도시를 잠그고, 사람들을 안으로 몰았다. 봉쇄가 사람을 살리려던 것인지 가두려던 것인지는, 이제 그들 자신도 몰랐다.\n모형은 번번이 빗나갔다. 전파는 언제나 조금씩 빨랐다.",
+  "en": "First it was a sickness. They locked the cities, and drove people inward. Whether the cordon was to save people or to hold them in — by the end, even they no longer knew.\nThe models kept missing. The spread was always a little faster.",
+  "ja": "初めは病だった。都市を閉ざし、人々を内へ追い立てた。封鎖が人を生かすためだったのか、閉じ込めるためだったのか — しまいには、彼ら自身にも分からなくなっていた。\nモデルはことごとく外れた。感染の広がりは、いつも少しだけ速かった。"
+ },
+ "truth.p2": {
+  "ko": "멈출 방법은 하나뿐이라고 그들은 적었다. 가장 안쪽 원을 불로 지우기로. 대기에 남을 그을음이 몇 해의 겨울을 부를 걸 알면서도, 그들은 그것을 눌렀다.\n반대한 세 사람의 이름은 지워졌다. 그중 하나가 이 아래에 남았다.",
+  "en": "There was only one way to stop it, they wrote. Erase the innermost ring with fire. Knowing the soot it left would call down years of winter, they pressed it anyway.\nThe names of the three who dissented were struck out. One of them stayed down here.",
+  "ja": "止める方法はひとつしかない、と彼らは記した。最も内側の円を、火で消し去ることに。大気に残る煤が幾年もの冬を呼ぶと知りながら、彼らはそれを押した。\n反対した三人の名は消された。そのうちの一人が、この下に残った。"
+ },
+ "truth.p3": {
+  "ko": "그 사람은 내려가지 못하는 대신, 위에서 지켜보기로 했다. 궤도의 관측소로 지상의 신호를 세면서. 버티는 불빛이 하나라도 있는 한, 이건 실패가 아니라고.\n아홉 번의 겨울이면 대기가 가라앉는다고 그는 계산했다. 그리고 그때까지 켜져 있을 불빛 하나를, 이름도 없이 기다렸다.",
+  "en": "That one could not go down, so they chose to watch from above — counting ground signals from the orbital station. As long as one light held out, they wrote, this was not a failure.\nNine winters, and the air would settle, was the calculation. And they waited, nameless, for the one light that would still be burning by then.",
+  "ja": "その人は降りていけない代わりに、上から見守ることにした。軌道の観測所で、地上の信号を数えながら。持ちこたえる灯りがひとつでもある限り、これは失敗ではないのだと。\n九度の冬が過ぎれば大気は静まる、と彼は計算した。そして、その時までともり続けるはずの灯りひとつを、名も無いまま待った。"
+ },
+ "bgm.notFound": {
+  "ko": "BGM 파일이 없다 (BGM 폴더)",
+  "en": "BGM files not found (BGM folder)",
+  "ja": "BGMファイルが見つからない (BGMフォルダ)"
+ },
+ "journalpg.next": {
+  "ko": "다음 장 ▸",
+  "en": "Next page ▸",
+  "ja": "次のページ ▸"
+ },
+ "journalpg.close": {
+  "ko": "수첩 덮기",
+  "en": "Close notebook",
+  "ja": "手帳を閉じる"
+ },
+ "journalpg.indicator": {
+  "ko": "{cur} / {total}",
+  "en": "{cur} / {total}",
+  "ja": "{cur} / {total}"
+ },
+ "jnl.help.p1.title": {
+  "ko": "낡은 수첩",
+  "en": "A Worn Notebook",
+  "ja": "古びた手帳"
+ },
+ "jnl.help.p1.body": {
+  "ko": "누군가 이 컨테이너에 먼저 살았다. 침대 밑에서 손때 묻은 수첩을 발견했다.<br>첫 장에 급하게 휘갈긴 글씨.<br><br>🎒 <b>탐험</b> — 지도에서 지역을 골라 준비물을 챙기면 성공률이 오른다. 하루 5번까지, 다녀오면 시간이 흐른다.",
+  "en": "Someone lived in this container before you. You found a worn notebook under the bed.<br>The first page is scrawled in a hurry.<br><br>🎒 <b>Expeditions</b> — pick a region on the map and gear up to raise your odds. Up to 5 a day; time passes when you return.",
+  "ja": "誰かが先にこのコンテナに住んでいた。ベッドの下から、手垢のついた手帳を見つけた。<br>最初のページに、慌てて書き殴った文字。<br><br>🎒 <b>探索</b> — 地図で地域を選び、持ち物を揃えれば成功率が上がる。一日5回まで。行って戻れば時間が経つ。"
+ },
+ "jnl.help.p2.title": {
+  "ko": "두 번째 장",
+  "en": "The Second Page",
+  "ja": "二ページ目"
+ },
+ "jnl.help.p2.body": {
+  "ko": "글씨가 조금 차분해진다. 살아가는 법을 적어둔 모양이다.<br><br>🥫💧⚡ <b>생존</b> — 게이지를 클릭하면 먹고, 마시고, 잔다. 에너지가 바닥나면 반드시 🛌 자야 한다. 침대가 있으면 훨씬 푹 잔다.",
+  "en": "The handwriting settles a little — notes on how to get by.<br><br>🥫💧⚡ <b>Survival</b> — click a gauge to eat, drink, or sleep. Run out of energy and you must 🛌 sleep. A bed makes for far deeper rest.",
+  "ja": "文字が少し落ち着いてくる。暮らし方を書き留めていたらしい。<br><br>🥫💧⚡ <b>生存</b> — ゲージをクリックすると食べ、飲み、眠る。エネルギーが尽きたら、必ず🛌眠らなければならない。ベッドがあれば、ずっと深く眠れる。"
+ },
+ "jnl.help.p3.title": {
+  "ko": "얼룩진 페이지",
+  "en": "A Stained Page",
+  "ja": "染みのついたページ"
+ },
+ "jnl.help.p3.body": {
+  "ko": "얼룩이 진 페이지 — 손끝에 자재 부스러기가 묻어난다.<br><br>🔨 <b>제작</b> — 가구는 줍는 게 아니라 만드는 것. 천·부품·건축재를 모아 제작대에서 만든다.<br>😊 <b>쾌적함</b> — 가구·조명·청결·정든 집이 쾌적함을 쌓고, 탐험 성공률과 회복 속도를 끌어올린다.",
+  "en": "This page is stained — flecks of building material still cling to it.<br><br>🔨 <b>Crafting</b> — furniture is mostly built, not found. Gather cloth, parts and material, then craft it at the workbench.<br>😊 <b>Comfort</b> — furniture, light, cleanliness and a settled home build comfort, boosting expedition success and recovery.",
+  "ja": "染みの浮いたページ — 指先に資材のかけらが付いてくる。<br><br>🔨 <b>クラフト</b> — 家具は拾うものではなく、作るもの。布・部品・建材を集めて作業台で作る。<br>😊 <b>快適さ</b> — 家具・照明・清潔さ・住み慣れた家が快適さを積み上げ、探索成功率と回復速度を引き上げる。"
+ },
+ "jnl.help.p4.title": {
+  "ko": "접힌 모서리",
+  "en": "A Folded Corner",
+  "ja": "折られた角"
+ },
+ "jnl.help.p4.body": {
+  "ko": "모서리가 접혀 있다. 자주 들춰본 페이지인 듯.<br><br>🏠 <b>거처</b> — 구역마다 특성·유지비·제약이 다르다. 빗물받이·텃밭 같은 개조로 자급자족할 수 있다.<br>🌤️ <b>세월</b> — 날씨는 며칠 단위로, 계절은 12일 주기로 바뀐다. 겨울을 대비해 미리 쌓아두어라.",
+  "en": "A dog-eared corner — this page must have been read often.<br><br>🏠 <b>Shelters</b> — every district has its own traits, upkeep and limits. Mods like rain catches and garden boxes help you become self-sufficient.<br>🌤️ <b>Seasons</b> — weather shifts over a few days, and seasons turn every 12 days. Stock up before winter arrives.",
+  "ja": "角が折られている。よく開いていたページらしい。<br><br>🏠 <b>シェルター</b> — 区域ごとに特性・維持費・制約が違う。雨水受けや菜園といった改修で自給自足もできる。<br>🌤️ <b>歳月</b> — 天気は数日単位で、季節は12日周期で変わる。冬に備えて早めに蓄えておけ。"
+ },
+ "jnl.help.p5.title": {
+  "ko": "마지막 장",
+  "en": "The Last Page",
+  "ja": "最後のページ"
+ },
+ "jnl.help.p5.body": {
+  "ko": "마지막 장엔 딱 한 줄. 서두르다 만 듯, 그러나 또박또박.<br><br><b>카메라</b>: <kbd>드래그</kbd> 또는 <kbd>Q</kbd>/<kbd>E</kbd> 회전 · <kbd>우클릭 드래그</kbd> 화면 이동 · 휠 줌 (줌아웃하면 주변 폐허가 보인다)<br><br>진행 상황은 자동으로 저장된다. 그리고 이 수첩은, 이제 내 것이다.",
+  "en": "Only one line on the last page — written in haste, but carefully all the same.<br><br><b>Camera</b>: <kbd>drag</kbd> or <kbd>Q</kbd>/<kbd>E</kbd> to rotate · <kbd>right-click drag</kbd> to pan · wheel to zoom (zoom out to see the ruins around me)<br><br>Progress saves automatically. And this notebook — it's mine now.",
+  "ja": "最後のページには、たった一行。急いで書いたようで、それでも一字一字はっきりと。<br><br><b>カメラ</b>: <kbd>ドラッグ</kbd>または<kbd>Q</kbd>/<kbd>E</kbd>で回転 · <kbd>右クリックドラッグ</kbd>で画面移動 · ホイールでズーム (ズームアウトすると周囲の廃墟が見える)<br><br>進行状況は自動でセーブされる。そしてこの手帳は、もう私のものだ。"
+ },
+ "jnl.tut1.title": {
+  "ko": "Day 1 — 첫 장",
+  "en": "Day 1 — The First Page",
+  "ja": "Day 1 — 最初のページ"
+ },
+ "jnl.tut1.body": {
+  "ko": "수첩 맨 앞장에 다급하게 적힌 메모.<br><br>\"뭐부터 해야 할지 모르겠다면 — 갈증부터 해결해라. 배고픔보다 먼저 사람을 지치게 하는 건 갈증이다.\"<br><br>💧 게이지를 클릭하면 마신다. 인벤토리의 가구는 클릭해서 바닥에 배치할 수 있다 — 배치한 뒤 다시 클릭하면 회전·회수도 가능하다.",
+  "en": "A hurried note on the notebook's first page.<br><br>\"If you don't know where to start — deal with thirst first. It wears you down faster than hunger ever will.\"<br><br>💧 Click a gauge to drink. Furniture in your inventory can be clicked to place it on the floor — click a placed piece again to rotate or reclaim it.",
+  "ja": "手帳の一番前のページに、慌ただしく書かれたメモ。<br><br>「何から手をつければいいか分からないなら — まず渇きをどうにかしろ。空腹より先に人を参らせるのは渇きだ。」<br><br>💧ゲージをクリックすると飲む。インベントリの家具はクリックで床に配置できる — 配置した後もう一度クリックすれば、回転・回収もできる。"
+ },
+ "jnl.tut2.title": {
+  "ko": "Day 2 — 두 번째 메모",
+  "en": "Day 2 — A Second Note",
+  "ja": "Day 2 — 二つ目のメモ"
+ },
+ "jnl.tut2.body": {
+  "ko": "다음 장엔 지도가 손으로 그려져 있다.<br><br>\"곳간은 저절로 차지 않는다. 지도를 펴고 위험이 적은 지역부터 나가보아라. 준비물을 챙기면 훨씬 안전하다.\"<br><br>🎒 HUD의 배낭 아이콘으로 탐험 지도를 열 수 있다.",
+  "en": "The next page has a map sketched by hand.<br><br>\"The pantry doesn't fill itself. Open the map and start with the safer regions. Gearing up first makes it far safer.\"<br><br>🎒 Use the backpack icon on the HUD to open the expedition map.",
+  "ja": "次のページには、手描きの地図。<br><br>「食糧庫はひとりでに満ちたりしない。地図を開いて、危険の少ない地域から出てみろ。持ち物を揃えれば、ずっと安全だ。」<br><br>🎒 HUDのリュックのアイコンから探索地図を開ける。"
+ },
+ "jnl.tut3.title": {
+  "ko": "Day 3 — 세 번째 메모",
+  "en": "Day 3 — A Third Note",
+  "ja": "Day 3 — 三つ目のメモ"
+ },
+ "jnl.tut3.body": {
+  "ko": "페이지 끝에 짧게 덧붙여진 말.<br><br>\"주운 것만으로는 오래 못 버틴다 — 제작대에서 필요한 걸 직접 만들어라. 그리고 가끔은 청소도 해라, 지저분한 채로 오래 버틴 사람은 없었다.\"<br><br>🔨 제작대, 🧹 청소 버튼이 HUD에 있다.",
+  "en": "A short line added at the bottom of the page.<br><br>\"Scavenging alone won't carry you far — craft what you need at the workbench. And clean now and then; no one lasted long living in filth.\"<br><br>🔨 Workbench and 🧹 Clean buttons are on the HUD.",
+  "ja": "ページの端に、短く書き足された言葉。<br><br>「拾ったものだけでは長く持たない — 作業台で必要なものを自分で作れ。それから時々は掃除もしろ。汚れたままで長く生き延びた者はいなかった。」<br><br>🔨作業台と🧹掃除のボタンはHUDにある。"
+ },
+ "tip.rain": {
+  "ko": "\"빗물을 받아둘 걸 마련해라 — 하늘이 주는 건 공짜다.\" — 빗물받이를 만들면 비 오는 날 물을 모을 수 있다.",
+  "en": "\"Set something up to catch the rain — what the sky gives is free.\" — a rain catch collects water on rainy days.",
+  "ja": "「雨水を受けるものを用意しろ — 空がくれるものはタダだ。」 — 雨水受けを作れば、雨の日に水を集められる。"
+ },
+ "tip.snow": {
+  "ko": "\"눈이 내리면 거처가 더 시린 법이다. 단열재를 들여 봐라.\" — 궂은 날엔 쾌적함이 떨어지니 미리 막자.",
+  "en": "\"Snow makes a shelter colder than it looks. Consider getting some insulation.\" — comfort drops in bad weather, so plan ahead.",
+  "ja": "「雪が降ると、シェルターはいっそう冷えるものだ。断熱材を入れてみろ。」 — 荒れた日は快適さが下がる。先に手を打とう。"
+ },
+ "tip.injury": {
+  "ko": "\"다친 채로 버티지 마라. 방치하면 곪는다.\" — 부상은 탐험 패널에서 재료를 모아 치료할 수 있다.",
+  "en": "\"Don't just tough out an injury. Left alone, it festers.\" — treat injuries from the expedition panel once you have the materials.",
+  "ja": "「怪我をしたまま耐えるな。放っておけば膿む。」 — 負傷は探索パネルで材料を集めて治療できる。"
+ },
+ "tip.event": {
+  "ko": "\"가끔 낯선 이가 문을 두드린다. 매번 같은 답이 정답은 아니다.\" — 인카운터의 선택은 상황에 따라 다르게 두는 게 좋다.",
+  "en": "\"Now and then a stranger knocks. The same answer isn't always right.\" — weigh each encounter's choice on its own.",
+  "ja": "「時折、見知らぬ者が戸を叩く。毎回同じ答えが正解とは限らない。」 — エンカウンターの選択は、状況に応じて変えるのがいい。"
+ },
+ "tip.energy": {
+  "ko": "\"눈이 침침해질 때까지 버티지 마라. 그만 자라는 뜻이다.\" — 에너지가 낮으면 취침으로 회복해야 한다.",
+  "en": "\"Don't push on until your eyes blur. That's your body telling you to sleep.\" — rest with sleep once energy runs low.",
+  "ja": "「目が霞むまで粘るな。もう寝ろという合図だ。」 — エネルギーが低いときは、就寝で回復しなければならない。"
+ },
+ "tip.winter": {
+  "ko": "\"겨울이 왔다. 곳간을 미리 채워두지 않은 자에게는 길고 매서운 계절이다.\" — 겨울엔 허기가 더 빨리 지고 텃밭도 얼어붙는다.",
+  "en": "\"Winter's here. For those who didn't stock up, it's a long, bitter season.\" — hunger drains faster and gardens freeze in winter.",
+  "ja": "「冬が来た。食糧庫を満たしておかなかった者には、長く厳しい季節だ。」 — 冬は空腹が早く進み、菜園も凍りつく。"
+ },
+ "tip.stack": {
+  "ko": "\"상판이 있는 가구 위엔 작은 소품을 올려둘 수 있다.\" — 테이블 같은 가구 위에 다른 소품을 겹쳐 배치해보자.",
+  "en": "\"Furniture with a flat top can hold smaller things on it.\" — try placing small items on top of tables and the like.",
+  "ja": "「天板のある家具の上には、小物を載せておける。」 — テーブルなどの家具の上に、他の小物を重ねて配置してみよう。"
+ },
+ "tip.freshfood": {
+  "ko": "신선식품은 오래 못 간다. 냉장고가 없다면 — 오늘 먹는 게 남는 것이다.",
+  "en": "Fresh food doesn't keep. No fridge? Eating it today is how you save it.",
+  "ja": "生鮮食品は長くは持たない。冷蔵庫がないなら — 今日食べるのが得というものだ。"
+ },
+ "quest.head": {
+  "ko": "할 일",
+  "en": "To Do",
+  "ja": "やること"
+ },
+ "quest.drink.text": {
+  "ko": "💧 게이지를 클릭해 물을 마셔보자",
+  "en": "Click the 💧 gauge to drink water",
+  "ja": "💧ゲージをクリックして水を飲もう"
+ },
+ "quest.eat.text": {
+  "ko": "🥫 게이지를 클릭해 뭔가 먹어보자",
+  "en": "Click the 🥫 gauge to eat something",
+  "ja": "🥫ゲージをクリックして何か食べよう"
+ },
+ "quest.place.text": {
+  "ko": "🔧 배치 모드를 켜고 가구를 1개 놓아보자 (침대 추천)",
+  "en": "Turn on 🔧 edit mode and place 1 furnishing (bed recommended)",
+  "ja": "🔧配置モードをオンにして家具を1つ置こう (ベッド推奨)"
+ },
+ "quest.depart.text": {
+  "ko": "🎒 지도를 열어 첫 탐험을 나서보자",
+  "en": "Open the 🎒 map and set out on your first expedition",
+  "ja": "🎒地図を開いて初めての探索に出よう"
+ },
+ "quest.sleep.text": {
+  "ko": "🛌 취침으로 하루를 마무리하자",
+  "en": "End the day with 🛌 sleep",
+  "ja": "🛌就寝で一日を締めくくろう"
+ },
+ "quest.craft.text": {
+  "ko": "🔨 제작대에서 무엇이든 1개 만들어보자",
+  "en": "Craft anything once at the 🔨 workbench",
+  "ja": "🔨作業台で何でも1つ作ってみよう"
+ },
+ "quest.clean.text": {
+  "ko": "🧹 청소를 1회 해보자",
+  "en": "Clean the shelter 🧹 once",
+  "ja": "🧹掃除を1回してみよう"
+ },
+ "quest.progress": {
+  "ko": "{cur}/{total}",
+  "en": "{cur}/{total}",
+  "ja": "{cur}/{total}"
+ },
+ "quest.doneToast": {
+  "ko": "🎉 이제 스스로 살아남을 차례",
+  "en": "🎉 Now it's up to you to survive",
+  "ja": "🎉 ここからは自分で生き抜く番だ"
+ },
+ "quest.drink.lore": {
+  "ko": "수첩 첫 장 — '눈 뜨면 제일 먼저 물부터. 목이 마르면 판단력이 먼저 죽는다.'",
+  "en": "First page — 'Water first, always. Thirst kills your judgment before it kills you.'",
+  "ja": "手帳の最初のページ — 「目が覚めたら、何より先に水を。喉が渇くと、判断力が先に死ぬ。」"
+ },
+ "quest.drink.done": {
+  "ko": "몸이 조금 깨어난다. 수첩 주인의 말이 맞았다.",
+  "en": "Your body wakes a little. The notebook's owner was right.",
+  "ja": "体が少し目を覚ます。手帳の主の言うとおりだった。"
+ },
+ "quest.eat.lore": {
+  "ko": "'빈속으로는 반나절도 못 버틴다. 그리고 신선한 건 먼저 먹어라 — 냉장고가 없으면 내일이면 상한다.'",
+  "en": "'An empty stomach won't last half a day. And eat the fresh stuff first — without a fridge, it won't see tomorrow.'",
+  "ja": "「空きっ腹では半日も持たない。それと、新鮮なものから先に食べろ — 冷蔵庫がなければ明日には傷む。」"
+ }
+}

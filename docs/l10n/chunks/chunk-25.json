@@ -1,0 +1,142 @@
+{
+ "data.sketch.meteor.name": {
+  "ko": "유성우 스케치",
+  "en": "Meteor Shower Sketch",
+  "ja": "流星群のスケッチ"
+ },
+ "data.sketch.milkyway.desc": {
+  "ko": "도시가 살아 있을 땐 이런 하늘을 본 적이 없다. 폐허가 준 것 중에 이건 나쁘지 않다.\n먼지 너머로, 강처럼 흐르는 별.",
+  "en": "When the city still lived I never saw a sky like this. Of what the ruin gave, this one isn’t bad.\nBeyond the dust, stars flowing like a river.",
+  "ja": "街が生きていた頃、こんな空を見たことはなかった。廃墟がくれたものの中で、これは悪くない。\n塵の向こうに、川のように流れる星。"
+ },
+ "data.sketch.milkyway.name": {
+  "ko": "은하수 스케치",
+  "en": "Milky Way Sketch",
+  "ja": "天の川のスケッチ"
+ },
+ "data.sketch.moonhalo.desc": {
+  "ko": "달 둘레에 흐린 고리가 걸렸다. 내일 눈이 온다는 뜻이라고, 누가 그랬던 것 같다.\n예보는 이제 하늘밖에 없다.",
+  "en": "A faint ring hung round the moon. Someone once said it means snow tomorrow.\nThe sky is the only forecast left now.",
+  "ja": "月のまわりに淡い輪がかかっていた。明日は雪が降る印だと、誰かが言っていた気がする。\n予報はもう、空しかない。"
+ },
+ "data.sketch.moonhalo.name": {
+  "ko": "달무리 스케치",
+  "en": "Moon Halo Sketch",
+  "ja": "月暈のスケッチ"
+ },
+ "data.sketch.satellite.desc": {
+  "ko": "별들 사이로 한 점이 일정한 속도로 미끄러졌다. 깜빡이지도, 떨어지지도 않았다.\n저건 별이 아니다. 누군가 아직 저 위에서 돌고 있다.",
+  "en": "A single point slid between the stars at a steady pace. It did not blink, and it did not fall.\nThat is no star. Someone up there is still going round.",
+  "ja": "星々の間を、一つの点が一定の速さで滑っていった。瞬きもせず、落ちもしなかった。\nあれは星じゃない。誰かがまだ、あの上を回っている。"
+ },
+ "data.sketch.satellite.name": {
+  "ko": "궤도의 불빛 스케치",
+  "en": "Orbiting Light Sketch",
+  "ja": "軌道の光のスケッチ"
+ },
+ "data.theme.bedroom.name": {
+  "ko": "따뜻한 침실",
+  "en": "Warm Bedroom",
+  "ja": "暖かな寝室"
+ },
+ "data.theme.greencorner.name": {
+  "ko": "녹색 구석",
+  "en": "Green Corner",
+  "ja": "緑の片隅"
+ },
+ "data.theme.parlor.name": {
+  "ko": "응접실",
+  "en": "Parlor",
+  "ja": "応接間"
+ },
+ "data.theme.workshop.name": {
+  "ko": "작업 공간",
+  "en": "Work Space",
+  "ja": "仕事部屋"
+ },
+ "data.weather.ash.name": {
+  "ko": "재",
+  "en": "Ash",
+  "ja": "灰"
+ },
+ "data.weather.clear.name": {
+  "ko": "맑음",
+  "en": "Clear",
+  "ja": "晴れ"
+ },
+ "data.weather.rain.name": {
+  "ko": "비",
+  "en": "Rain",
+  "ja": "雨"
+ },
+ "data.weather.snow.name": {
+  "ko": "눈",
+  "en": "Snow",
+  "ja": "雪"
+ },
+ "data.weather.storm.name": {
+  "ko": "폭우",
+  "en": "Downpour",
+  "ja": "豪雨"
+ },
+ "data.will.will1.desc": {
+  "ko": "더는 기다릴 힘이 없다. 창밖에 봄이 오면 누군가 이 방을 쓰길.\n미워하지 마라. 나는 오래 버텼다.",
+  "en": "No strength left to wait. When spring comes to that window, may someone use this room.\nDon’t hate me. I held on a long time.",
+  "ja": "もう待つ力が残っていない。窓の外に春が来たら、誰かこの部屋を使ってほしい。\n恨まないでくれ。私は長く持ちこたえた。"
+ },
+ "data.will.will1.name": {
+  "ko": "창턱의 유서",
+  "en": "Note on the Sill",
+  "ja": "窓辺の遺書"
+ },
+ "data.will.will2.desc": {
+  "ko": "아들아, 연료는 다락에 숨겨뒀다. 봄까지만 아끼면 산다.\n나는 너 몫까지 먹지 않으려 한다. 부디 살아라.",
+  "en": "Son, the fuel is hid in the attic. Ration it to spring and you’ll live.\nI won’t eat your share. Please — live.",
+  "ja": "息子よ、燃料は屋根裏に隠してある。春まで節約すれば生き延びられる。\nお前の分まで食べるつもりはない。どうか生きてくれ。"
+ },
+ "data.will.will2.name": {
+  "ko": "아버지의 마지막 말",
+  "en": "Father’s Last Words",
+  "ja": "父の最後の言葉"
+ },
+ "data.will.will3.desc": {
+  "ko": "우린 함께 가기로 했다. 따로 남는 것보다 낫다고.\n이 집을 찾은 당신은, 부디 혼자가 아니길.",
+  "en": "We chose to go together. Better than being left apart.\nWhoever finds this house — may you not be alone.",
+  "ja": "私たちは一緒に逝くことにした。離ればなれで残るよりはいいと。\nこの家を見つけたあなたが、どうか独りではありませんように。"
+ },
+ "data.will.will3.name": {
+  "ko": "두 사람의 편지",
+  "en": "Letter for Two",
+  "ja": "二人の手紙"
+ },
+ "data.will.will4.desc": {
+  "ko": "마지막 환자까지 곁을 지켰다. 약은 진작 떨어졌고, 손을 잡아주는 것밖엔 없었다.\n이제 내 차례다. 두렵지 않다면 거짓말이다.",
+  "en": "I stayed to the last patient. The medicine ran out long ago; all I had left was a held hand.\nNow it’s my turn. I’d be lying if I said I wasn’t afraid.",
+  "ja": "最後の患者まで、そばを離れなかった。薬はとっくに尽きて、手を握ってやることしかできなかった。\n今度は私の番だ。怖くないと言えば嘘になる。"
+ },
+ "data.will.will4.name": {
+  "ko": "간호사의 수첩",
+  "en": "The Nurse’s Notebook",
+  "ja": "看護師の手帳"
+ },
+ "data.will.will5.desc": {
+  "ko": "문은 열어뒀다. 너는 나보다 오래 살아라.\n누구든 이 녀석을 보거든, 착한 개다. 겁이 많을 뿐이다.",
+  "en": "I left the door open. Outlive me.\nWhoever meets this one — he’s a good dog. Just easily frightened.",
+  "ja": "扉は開けておいた。お前は私より長生きしろ。\n誰かがこいつに会ったら――いい犬だ。ただ臆病なだけだ。"
+ },
+ "data.will.will5.name": {
+  "ko": "개에게 남긴 말",
+  "en": "A Word for the Dog",
+  "ja": "犬に残した言葉"
+ },
+ "data.will.will6.desc": {
+  "ko": "네 편지 잘 받았다. 나도 보고 싶었다고, 그 말을 꼭 하고 싶었다.\n부칠 곳이 이제 없구나.",
+  "en": "I got your letter. I wanted to say I missed you too — I needed to say it.\nThere’s nowhere left to send this now.",
+  "ja": "君の手紙は確かに受け取った。私も会いたかったと、その言葉をどうしても伝えたかった。\nもう、出す宛てがないのだな。"
+ },
+ "data.will.will6.name": {
+  "ko": "전하지 못한 답장",
+  "en": "The Reply Never Sent",
+  "ja": "出せなかった返事"
+ }
+}

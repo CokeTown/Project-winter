@@ -5,7 +5,7 @@ const { boot, evalJs, call, check, near, report, app } = require('./harness.cjs'
 
 const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
-const SHELTER_HASH = -2124743439; // 2026-07-11 재핀: 예인선→요트 리네임(name/nameEn/emoji/desc) — 주거용 요트 리워크 (직전: 펜트하우스 확대)
+const SHELTER_HASH = 2079726321; // 2026-07-17 재핀: #193 벙커 유지비 라벨 '조명' 삭제(환기 전용 — 어둠 기본값 정합) (직전: 요트 리네임)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
 const MIG_HASH = -71013442; // 2026-07-09 재핀: 시그니처 도면 blueprints 편입 (직전: 내구성 가방)
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
@@ -440,6 +440,35 @@ const KNOWLEDGE_HASH = -451536973;
     `).catch(err => JSON.stringify({ missing: ['(t 훅 없음)'], error: String(err) }));
     const p = JSON.parse(i18n);
     check('i18n 대표 키 해석됨', p.missing.length === 0, p.missing.length ? '누락 ' + p.missing.join(',') : '');
+
+    // ── 3b) #34 Steam 언어 매핑 (fd76bc3의 뒤늦은 게이트) ──
+    //   koreana→ko · english→en · 미지원(schinese 등)→en 폴백 · 빈 값(비Steam)→null(OS 추정으로).
+    const slj = await call(`
+      return JSON.stringify({
+        ko: S.steamLangToGame('koreana'), en: S.steamLangToGame('english'),
+        other: S.steamLangToGame('schinese'), none: S.steamLangToGame(''), nul: S.steamLangToGame(null),
+      });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const sl = JSON.parse(slj);
+    check('#34 Steam 언어 매핑 (ko·en·폴백·비Steam null)',
+      sl.ko === 'ko' && sl.en === 'en' && sl.other === 'en' && sl.none === null && sl.nul === null,
+      JSON.stringify(sl));
+
+    // ── 3c) #191 ja 로케일: setLang 왕복 + ja 해석(≠ko·무한글) + japanese 매핑 ──
+    const jaj = await call(`
+      const set = S.setLang('ja');
+      const a = S.t('exp.note.book');
+      S.setLang('ko');
+      const k = S.t('exp.note.book');
+      return JSON.stringify({
+        set, diff: a !== k, hangul: /[가-힣]/.test(a || ''),
+        map: S.steamLangToGame('japanese'), back: S.t('exp.note.book') === k,
+      });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const jr = JSON.parse(jaj);
+    check('#191 ja 로케일 (setLang 왕복·ja 해석·japanese 매핑)',
+      jr.set === 'ja' && jr.diff === true && jr.hangul === false && jr.map === 'ja' && jr.back === true,
+      JSON.stringify(jr));
 
     // ── 엔딩 3분기 + 이관의 진실 (GD-2.0 §5·§9.5) — 스위트 끝 배치(엔딩 시퀀스 DOM 오염 회피) ──
     const e3 = await call(`

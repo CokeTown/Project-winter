@@ -1,0 +1,5 @@
+{
+  "_comment": "Steamworks app/depot IDs. Fill demo IDs after creating the Demo app in Steamworks (Store page > demo). Depot ID is usually appId+1.",
+  "main": { "app": 4950160, "depot": 4950161 },
+  "demo": { "app": null, "depot": null }
+}

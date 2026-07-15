@@ -1,0 +1,427 @@
+{
+ "slot.new": {
+  "ko": "✚ 새 게임 — 슬롯 선택",
+  "en": "✚ New Game — choose a slot",
+  "ja": "✚ ニューゲーム — スロット選択"
+ },
+ "slot.load": {
+  "ko": "💾 불러오기",
+  "en": "💾 Load",
+  "ja": "💾 ロード"
+ },
+ "slot.empty": {
+  "ko": "빈 슬롯",
+  "en": "Empty slot",
+  "ja": "空きスロット"
+ },
+ "slot.del.title": {
+  "ko": "세이브 삭제",
+  "en": "Delete save",
+  "ja": "セーブ削除"
+ },
+ "slot.delConfirm": {
+  "ko": "슬롯 {n}의 세이브를 지울까? 되돌릴 수 없다.",
+  "en": "Delete the save in slot {n}? This cannot be undone.",
+  "ja": "スロット{n}のセーブを消す？元には戻せない。"
+ },
+ "slot.newConfirm": {
+  "ko": "슬롯 {n}의 기존 세이브를 덮어쓰고 새로 시작할까?",
+  "en": "Overwrite the existing save in slot {n} and start anew?",
+  "ja": "スロット{n}の既存セーブを上書きして、新しく始める？"
+ },
+ "slot.meta": {
+  "ko": "탐험 성공 {succ}회 · 저장 {saved}",
+  "en": "{succ} successful expeditions · saved {saved}",
+  "ja": "探索成功 {succ}回 · セーブ {saved}"
+ },
+ "title.continueInfo": {
+  "ko": "슬롯 {slot} · Day {day} {sicon} · {semoji} {sname}",
+  "en": "Slot {slot} · Day {day} {sicon} · {semoji} {sname}",
+  "ja": "スロット{slot} · Day {day} {sicon} · {semoji} {sname}"
+ },
+ "slot.hardBadge.title": {
+  "ko": "생존 모드",
+  "en": "Survival mode",
+  "ja": "サバイバルモード"
+ },
+ "mode.pick.title": {
+  "ko": "어떤 겨울을 살아갈까",
+  "en": "Choose Your Winter",
+  "ja": "どの冬を生きるか"
+ },
+ "mode.normal": {
+  "ko": "🕯️ 코지",
+  "en": "🕯️ Cozy",
+  "ja": "🕯️ コージー"
+ },
+ "mode.normal.tag": {
+  "ko": "먼지 속 불씨",
+  "en": "Embers in dust",
+  "ja": "塵の中の火種"
+ },
+ "mode.normal.desc": {
+  "ko": "기본 밸런스. 느긋하게 셸터를 가꾸며 살아가는 겨울 — 서두르지 않아도 된다.",
+  "en": "The standard balance. Tend your shelter at your own pace — no one is rushing you.",
+  "ja": "基本バランス。のんびりシェルターを整えて暮らす冬 — 急がなくてもいい。"
+ },
+ "mode.hard": {
+  "ko": "🔥 생존",
+  "en": "🔥 Survival",
+  "ja": "🔥 サバイバル"
+ },
+ "mode.hard.tag": {
+  "ko": "폐허는 아무것도 거저 주지 않는다",
+  "en": "The ruins give nothing for free",
+  "ja": "廃墟は何もただではくれない"
+ },
+ "mode.hard.desc": {
+  "ko": "탐험 전리품 −30% · 배고픔/갈증 소모 +50% · 한파가 더 잦다. 첫 겨울이 진짜 시험이 된다.",
+  "en": "Expedition loot −30% · hunger/thirst drain +50% · cold snaps strike more often. The first winter becomes a real test.",
+  "ja": "探索の戦利品 −30% · 空腹/渇きの消耗 +50% · 寒波がより頻繁に。最初の冬が本当の試練になる。"
+ },
+ "mode.zen": {
+  "ko": "♾️ 무한",
+  "en": "♾️ Endless",
+  "ja": "♾️ 無限"
+ },
+ "mode.zen.tag": {
+  "ko": "끝도, 재촉도 없다 — 폐허의 시간은 내 것이다",
+  "en": "No end, no rush — the ruins keep my hours",
+  "ja": "終わりも、催促もない — 廃墟の時間は私のものだ"
+ },
+ "mode.zen.desc": {
+  "ko": "코지 밸런스에 넉넉한 시작 물자. 자동 진행이 처음부터 열려 있다. 느긋한 방치에 최적.",
+  "en": "Cozy balance with a generous start. Auto-play unlocked from day one. Made for idling.",
+  "ja": "コージーのバランスに、余裕のある開始物資。自動進行が最初から開いている。のんびり放置に最適。"
+ },
+ "mode.back": {
+  "ko": "◂ 뒤로",
+  "en": "◂ Back",
+  "ja": "◂ 戻る"
+ },
+ "slot.zenBadge.title": {
+  "ko": "무한 모드",
+  "en": "Endless mode",
+  "ja": "無限モード"
+ },
+ "mode.hardcore": {
+  "ko": "❄️ 혹한",
+  "en": "❄️ Whiteout",
+  "ja": "❄️ ホワイトアウト"
+ },
+ "mode.hardcore.tag": {
+  "ko": "폐허는 두 번 묻지 않는다",
+  "en": "The ruins do not bury you twice",
+  "ja": "廃墟は二度は葬らない"
+ },
+ "mode.hardcore.desc": {
+  "ko": "생존 밸런스 그대로, 구제는 없다. 문 앞의 꾸러미도 헬기의 소리도 오지 않는다. 온기는 오직 손수 지핀 것뿐.",
+  "en": "Survival balance, and no rescue. No parcel at the door, no sound of a helicopter. The only warmth is what you kindle yourself.",
+  "ja": "サバイバルのバランスのまま、救済はない。扉の前の包みも、ヘリの音も来ない。暖かさは自分の手で焚いたものだけ。"
+ },
+ "mode.wallpaper": {
+  "ko": "🖼️ 배경화면",
+  "en": "🖼️ Wallpaper",
+  "ja": "🖼️ 壁紙"
+ },
+ "mode.wallpaper.tag": {
+  "ko": "살아남기 없이, 살아보기",
+  "en": "To dwell, without surviving",
+  "ja": "生き延びずに、暮らしてみる"
+ },
+ "mode.wallpaper.desc": {
+  "ko": "자원은 무한(∞), 셸터는 전부 열려 있다. 게이지도 겨울의 압박도 없이 배치와 꾸미기만 남는다. 계절과 날씨는 그저 흐른다 — 꾸민 집을 바탕화면에 켜두기 좋다.",
+  "en": "Resources endless (∞), every shelter open. No gauges, no winter pressure — only placing and decorating. Seasons and weather simply drift by; a home to leave glowing on your desktop.",
+  "ja": "資源は無限(∞)、シェルターは全て開いている。ゲージも冬の圧迫もなく、配置と飾り付けだけが残る。季節と天気はただ流れる — 飾った家をデスクトップに灯しておくのにいい。"
+ },
+ "mode.wallpaper.lock": {
+  "ko": "코지 모드로 첫 봄을 넘긴 사람의 것이다.",
+  "en": "It belongs to those who have outlasted the first spring in Cozy.",
+  "ja": "コージーモードで最初の春を越えた者のものだ。"
+ },
+ "mode.wallpaper.lockToast": {
+  "ko": "코지 모드로 첫 봄을 넘기면 열린다.",
+  "en": "Opens once you outlast the first spring in Cozy mode.",
+  "ja": "コージーモードで最初の春を越えれば開く。"
+ },
+ "slot.hardcoreBadge.title": {
+  "ko": "혹한 모드",
+  "en": "Whiteout mode",
+  "ja": "ホワイトアウトモード"
+ },
+ "slot.wallpaperBadge.title": {
+  "ko": "배경화면 모드",
+  "en": "Wallpaper mode",
+  "ja": "壁紙モード"
+ },
+ "slot.endedTag": {
+  "ko": "끝난 기록",
+  "en": "closed record",
+  "ja": "閉じた記録"
+ },
+ "wallpaper.noAction": {
+  "ko": "배경화면 모드에서는 탐험을 나서지 않는다.",
+  "en": "In Wallpaper mode, no one heads out to scavenge.",
+  "ja": "壁紙モードでは探索に出ない。"
+ },
+ "rescue.parcel.title": {
+  "ko": "문 앞의 꾸러미",
+  "en": "A Parcel at the Door",
+  "ja": "扉の前の包み"
+ },
+ "rescue.parcel.body": {
+  "ko": "아침, 문 앞에 낡은 상자가 놓여 있었다. 누가 두고 갔는지는 알 수 없다.\n안에는 며칠을 버틸 만한 것들. 쪽지도, 이름도 없다.\n\n끝내 만나지 못한 누군가가, 딱 한 번 이쪽의 온기를 대신 지펴 주었다.",
+  "en": "At dawn, a worn box sat by the door. No telling who left it.\nInside, enough to last a few days. No note, no name.\n\nSomeone you never met kindled this warmth, just once, in your place.",
+  "ja": "朝、扉の前に古びた箱が置かれていた。誰が置いていったのかは分からない。\n中には数日をしのげるだけのもの。メモも、名前もない。\n\nついに会えなかった誰かが、ただ一度だけ、こちらの暖かさを代わりに灯してくれた。"
+ },
+ "rescue.parcel.note": {
+  "ko": "🎁 문 앞에 누가 꾸러미를 두고 갔다.",
+  "en": "🎁 Someone left a parcel at the door.",
+  "ja": "🎁 扉の前に誰かが包みを置いていった。"
+ },
+ "rescue.heli.title": {
+  "ko": "먼 프로펠러 소리",
+  "en": "A Far-off Rotor",
+  "ja": "遠いプロペラの音"
+ },
+ "rescue.heli.body": {
+  "ko": "지붕 너머로 프로펠러 소리가 지나갔다. 곧 낙하산 하나가 눈밭에 내려앉는다.\n헬기는 멈추지 않았다. 다만 보급 상자 하나를 남기고 갔다.\n\n스치듯 지나간 온기가, 딱 한 번 이쪽을 붙들어 주었다.",
+  "en": "A rotor passed beyond the roof. Soon a single chute settles onto the snow.\nThe helicopter never stopped. It left one supply crate behind.\n\nA warmth that only grazed you held you up, just once.",
+  "ja": "屋根の向こうをプロペラの音が過ぎていった。やがてパラシュートがひとつ、雪原に舞い降りる。\nヘリは止まらなかった。ただ、補給箱をひとつ残していった。\n\nかすめるように過ぎた暖かさが、ただ一度だけ、こちらを支えてくれた。"
+ },
+ "rescue.heli.note": {
+  "ko": "🚁 헬기가 보급 상자를 떨어뜨리고 갔다.",
+  "en": "🚁 A helicopter dropped a supply crate.",
+  "ja": "🚁 ヘリが補給箱を落としていった。"
+ },
+ "ended.title": {
+  "ko": "마지막 페이지",
+  "en": "The Last Page",
+  "ja": "最後のページ"
+ },
+ "ended.page1": {
+  "ko": "여기까지 기록이 남아 있다.\n\n펜이 멈춘 자리에서, 하루가 조용히 닫혔다. 이 집이 품었던 온기는, 기록으로 남는다.",
+  "en": "The record reaches this far.\n\nWhere the pen stopped, a day quietly closed. The warmth this home once held stays on, as a record.",
+  "ja": "ここまで記録が残っている。\n\nペンが止まったところで、一日が静かに閉じた。この家が抱いていた暖かさは、記録として残る。"
+ },
+ "ended.summaryTitle": {
+  "ko": "그 겨울들의 기록",
+  "en": "A Record of Those Winters",
+  "ja": "あの冬たちの記録"
+ },
+ "ended.summary": {
+  "ko": "Day {day}까지 살았다.\n넘긴 겨울 ❄️ {winters}\n모은 기록 {collected}가지{cat}",
+  "en": "Lived until Day {day}.\nWinters passed ❄️ {winters}\nRecords gathered: {collected}{cat}",
+  "ja": "Day {day}まで生きた。\n越えた冬 ❄️ {winters}\n集めた記録 {collected}種{cat}"
+ },
+ "ended.summary.cat": {
+  "ko": "\n난롯가에 고양이 한 마리",
+  "en": "\nA cat by the hearth",
+  "ja": "\n暖炉のそばに猫が一匹"
+ },
+ "ended.toTitle": {
+  "ko": "기록은 슬롯에 남는다.",
+  "en": "The record remains in its slot.",
+  "ja": "記録はスロットに残る。"
+ },
+ "inv.collectAll": {
+  "ko": "전체 수거",
+  "en": "Collect All",
+  "ja": "一括回収"
+ },
+ "inv.collectAll.title": {
+  "ko": "놓인 가구 {n}개를 전부 거둔다.",
+  "en": "Gather all {n} placed pieces.",
+  "ja": "置かれた家具{n}個を全て回収する。"
+ },
+ "inv.collectAll.none": {
+  "ko": "거둘 가구가 없다.",
+  "en": "Nothing placed to gather.",
+  "ja": "回収する家具がない。"
+ },
+ "reclaimAll.confirm": {
+  "ko": "가구 {n}개를 전부 거둔다.",
+  "en": "Gather all {n} pieces.",
+  "ja": "家具{n}個を全て回収する。"
+ },
+ "reclaimAll.ok": {
+  "ko": "전부 거둔다",
+  "en": "Gather all",
+  "ja": "全て回収する"
+ },
+ "reclaimAll.cancel": {
+  "ko": "그만둔다",
+  "en": "Leave them",
+  "ja": "やめておく"
+ },
+ "reclaimAll.done": {
+  "ko": "📦 가구 {n}개를 인벤토리로 거뒀다.",
+  "en": "📦 Gathered {n} pieces into inventory.",
+  "ja": "📦 家具{n}個をインベントリに回収した。"
+ },
+ "reclaimAll.applianceOff": {
+  "ko": "가전 {n}대의 효과가 멈췄다.",
+  "en": "{n} appliances stopped running.",
+  "ja": "家電{n}台の効果が止まった。"
+ },
+ "shelter.leftover": {
+  "ko": "이 집에 놓인 가구 {n}개는 옮겨도 인벤토리에 남는다.",
+  "en": "The {n} pieces here stay in inventory when you move.",
+  "ja": "この家に置かれた家具{n}個は、引っ越してもインベントリに残る。"
+ },
+ "map.title": {
+  "ko": "🗺️ 탐험 지도",
+  "en": "🗺️ Expedition Map",
+  "ja": "🗺️ 探索マップ"
+ },
+ "map.pick": {
+  "ko": "",
+  "en": "",
+  "ja": ""
+ },
+ "map.sketchInfo": {
+  "ko": "아직 가 보지 않았다 — 소문뿐이다. 다녀오면 지도에 잉크로 남는다.",
+  "en": "Not yet visited — rumors only. Come back and it stays in ink.",
+  "ja": "まだ行っていない — 噂だけだ。行って帰れば、地図にインクで残る。"
+ },
+ "map.visits": {
+  "ko": "다녀옴 ×{n}",
+  "en": "Visited ×{n}",
+  "ja": "訪問 ×{n}"
+ },
+ "map.home": {
+  "ko": "내 거처",
+  "en": "Home",
+  "ja": "私のシェルター"
+ },
+ "map.go": {
+  "ko": "🎒 준비하고 출발",
+  "en": "🎒 Prepare and depart",
+  "ja": "🎒 準備して出発"
+ },
+ "map.riskLine": {
+  "ko": "위험 {risk} · 이동 포함 <b>{dur}</b> (거리 ×{mult}) · {wicon} {wname}{forecast}",
+  "en": "Risk {risk} · incl. travel <b>{dur}</b> (distance ×{mult}) · {wicon} {wname}{forecast}",
+  "ja": "危険 {risk} · 移動込み <b>{dur}</b> (距離 ×{mult}) · {wicon} {wname}{forecast}"
+ },
+ "dur.min": {
+  "ko": "{n}분",
+  "en": "{n} min",
+  "ja": "{n}分"
+ },
+ "dur.h": {
+  "ko": "{h}시간",
+  "en": "{h}h",
+  "ja": "{h}時間"
+ },
+ "dur.hm": {
+  "ko": "{h}시간 {m}분",
+  "en": "{h}h {m}m",
+  "ja": "{h}時間{m}分"
+ },
+ "map.regionLine": {
+  "ko": "{emoji} <b>{pct}%</b> {name} — {desc}",
+  "en": "{emoji} <b>{pct}%</b> {name} — {desc}",
+  "ja": "{emoji} <b>{pct}%</b> {name} — {desc}"
+ },
+ "forecast.prefix": {
+  "ko": " · 📻 {text}",
+  "en": " · 📻 {text}",
+  "ja": " · 📻 {text}"
+ },
+ "forecast.tomorrowSame": {
+  "ko": "내일도 {icon} {name}",
+  "en": "Tomorrow: still {icon} {name}",
+  "ja": "明日も {icon} {name}"
+ },
+ "forecast.tomorrowChange": {
+  "ko": "내일 날씨 변동 예상",
+  "en": "Weather expected to change tomorrow",
+  "ja": "明日、天候変化の見込み"
+ },
+ "prep.title": {
+  "ko": "{emoji} {name} 탐험 준비",
+  "en": "{emoji} {name} — Expedition Prep",
+  "ja": "{emoji} {name} 探索準備"
+ },
+ "prep.base": {
+  "ko": "기본 성공률 {pct}%",
+  "en": "Base success {pct}%",
+  "ja": "基本成功率 {pct}%"
+ },
+ "prep.shelter": {
+  "ko": "거처 +{pct}%",
+  "en": "Shelter +{pct}%",
+  "ja": "シェルター +{pct}%"
+ },
+ "prep.district": {
+  "ko": "위치 +{pct}%",
+  "en": "Location +{pct}%",
+  "ja": "立地 +{pct}%"
+ },
+ "prep.comfort": {
+  "ko": "쾌적함 +{pct}%",
+  "en": "Comfort +{pct}%",
+  "ja": "快適さ +{pct}%"
+ },
+ "prep.gear": {
+  "ko": "장비 +{pct}%",
+  "en": "Gear +{pct}%",
+  "ja": "装備 +{pct}%"
+ },
+ "prep.buff": {
+  "ko": "✨ {label} {sign}{pct}%",
+  "en": "✨ {label} {sign}{pct}%",
+  "ja": "✨ {label} {sign}{pct}%"
+ },
+ "prep.weatherPen": {
+  "ko": "날씨 -{pct}%",
+  "en": "Weather -{pct}%",
+  "ja": "天候 -{pct}%"
+ },
+ "prep.injuryPen": {
+  "ko": "부상 -{pct}%",
+  "en": "Injury -{pct}%",
+  "ja": "負傷 -{pct}%"
+ },
+ "prep.hungryPen": {
+  "ko": "허기 -{pct}%",
+  "en": "Hunger -{pct}%",
+  "ja": "空腹 -{pct}%"
+ },
+ "prep.event": {
+  "ko": "이벤트",
+  "en": "event",
+  "ja": "イベント"
+ },
+ "prep.rateLine": {
+  "ko": "{emoji} <b>{pct}%</b> · {lines}",
+  "en": "{emoji} <b>{pct}%</b> · {lines}",
+  "ja": "{emoji} <b>{pct}%</b> · {lines}"
+ },
+ "prep.riskLine": {
+  "ko": "위험도: {risk} · 소요 {dur}{sprain}{mobile} · {wicon} {wname}{forecast}",
+  "en": "Risk: {risk} · takes {dur}{sprain}{mobile} · {wicon} {wname}{forecast}",
+  "ja": "危険度: {risk} · 所要 {dur}{sprain}{mobile} · {wicon} {wname}{forecast}"
+ },
+ "prep.sprainTag": {
+  "ko": " <span style=\"color:var(--bad)\">(염좌 +30%)</span>",
+  "en": " <span style=\"color:var(--bad)\">(sprain +30%)</span>",
+  "ja": " <span style=\"color:var(--bad)\">(捻挫 +30%)</span>"
+ },
+ "prep.mobileTag": {
+  "ko": " <span style=\"color:var(--good)\">(이동형 -25%)</span>",
+  "en": " <span style=\"color:var(--good)\">(mobile -25%)</span>",
+  "ja": " <span style=\"color:var(--good)\">(移動型 -25%)</span>"
+ },
+ "prep.expectCost": {
+  "ko": "예상 소비: {cost}",
+  "en": "Expected use: {cost}",
+  "ja": "予想消費: {cost}"
+ },
+ "prep.depart": {
+  "ko": "🎒 출발 ({dur})",
+  "en": "🎒 Depart ({dur})",
+  "ja": "🎒 出発 ({dur})"
+ }
+}

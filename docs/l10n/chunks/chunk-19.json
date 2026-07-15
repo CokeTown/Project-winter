@@ -1,0 +1,427 @@
+{
+ "data.bcast.fc_summer.air": {
+  "ko": "…폭염 지속. 식수 아낄 것. 신선식 금방 상함. 통조림 아껴라. …이상.",
+  "en": "…heat holding. Ration water. Fresh spoils fast. Save the cans. …out.",
+  "ja": "…猛暑続く。飲み水は節約せよ。生ものはすぐ傷む。缶詰は温存。…以上。"
+ },
+ "data.bcast.fc_summer.desc": {
+  "ko": "…연일 무더위. 식수 관리 각별히. 신선한 것은 곧 상함. 통조림을 아끼라던 목소리가 지직거린다.",
+  "en": "…relentless heat, days on end. Guard your water. Fresh food spoils fast. A voice crackles: save the cans.",
+  "ja": "…連日の猛暑。飲み水の管理は入念に。生ものはすぐ傷む。缶詰を惜しめという声が、ジジッとかすれる。"
+ },
+ "data.bcast.fc_summer.name": {
+  "ko": "여름 기상 안내",
+  "en": "Summer Weather Notice",
+  "ja": "夏の気象案内"
+ },
+ "data.bcast.fc_winter.air": {
+  "ko": "…한파 주의보. 연료·단열 점검할 것. 반복한다. 한파 주의보—",
+  "en": "…cold-snap warning. Check fuel, insulation. Repeat. Cold-snap warning—",
+  "ja": "…寒波注意報。燃料・断熱を点検せよ。繰り返す。寒波注意報—"
+ },
+ "data.bcast.fc_winter.desc": {
+  "ko": "…한파 주의보. 연료와 단열을 점검하라. 이 방송이 언제 녹음됐는지는 아무도 모른다.",
+  "en": "…cold-snap warning. Check your fuel and insulation. No one knows when this was recorded.",
+  "ja": "…寒波注意報。燃料と断熱を点検せよ。この放送がいつ録音されたのか、誰も知らない。"
+ },
+ "data.bcast.fc_winter.name": {
+  "ko": "겨울 기상 안내",
+  "en": "Winter Weather Notice",
+  "ja": "冬の気象案内"
+ },
+ "data.bcast.gov_curfew.air": {
+  "ko": "…해당 구역 통행 제한. 지정 대피소로 이동. …반복한다. 통행 제한—",
+  "en": "…zone under curfew. Proceed to shelter. …repeat. Under curfew—",
+  "ja": "…当該区域は通行制限。指定避難所へ移動せよ。…繰り返す。通行制限—"
+ },
+ "data.bcast.gov_curfew.desc": {
+  "ko": "…해당 구역은 통행이 제한됩니다. 지정된 대피소로 이동하십시오. …구역은 통행이 제한됩니다. 이동하십시오. …제한됩니다…",
+  "en": "…this zone is under curfew. Proceed to a designated shelter. …zone is under curfew. Proceed. …under curfew…",
+  "ja": "…当該区域は通行が制限されています。指定された避難所へ移動してください。…区域は通行が制限されています。移動してください。…制限されています…"
+ },
+ "data.bcast.gov_curfew.name": {
+  "ko": "통행 제한 안내 (반복)",
+  "en": "Curfew Notice (looped)",
+  "ja": "通行制限案内（ループ）"
+ },
+ "data.bcast.gov_ration.air": {
+  "ko": "…배급표 지참. 1인 1일 1통. 질서 유지. …배급표 지참. 1인—",
+  "en": "…coupon required. One jug per person. Keep order. …coupon required—",
+  "ja": "…配給票を持参。1人1日1本。秩序維持。…配給票を持参。1人—"
+ },
+ "data.bcast.gov_ration.desc": {
+  "ko": "…배급표를 지참하십시오. 한 사람당 하루 한 통. 질서를 지켜주십시오. 같은 문장이 끝없이 되풀이된다.",
+  "en": "…bring your ration coupon. One jug per person a day. Please keep order. The same lines loop without end.",
+  "ja": "…配給票をご持参ください。1人につき1日1本。秩序をお守りください。同じ文が果てしなく繰り返される。"
+ },
+ "data.bcast.gov_ration.name": {
+  "ko": "배급 안내 (반복)",
+  "en": "Ration Notice (looped)",
+  "ja": "配給案内（ループ）"
+ },
+ "data.bcast.merchant_ad.air": {
+  "ko": "…장수요. 물건 바꿉니다. 겨울 전 연료 비쌈. 가을에 챙길 것. …끝.",
+  "en": "…trader here. I swap goods. Fuel runs dear come winter. Stock up. …out.",
+  "ja": "…こちら行商。物々交換します。冬前は燃料が高くつく。秋のうちに備えを。…以上。"
+ },
+ "data.bcast.merchant_ad.desc": {
+  "ko": "…돌아다니는 장수요. 있는 것과 없는 것을 바꿉니다. 겨울 전엔 연료가 비싸요. 가을에 챙겨두쇼.",
+  "en": "…a traveling trader here. I swap what I have for what I don’t. Fuel runs dear before winter. Stock up in autumn.",
+  "ja": "…流れの行商です。あるものとないものを交換します。冬前は燃料が高くなりますよ。秋のうちに備えときな。"
+ },
+ "data.bcast.merchant_ad.name": {
+  "ko": "행상 예고",
+  "en": "Peddler’s Notice",
+  "ja": "行商の予告"
+ },
+ "data.bcast.music_unknown.air": {
+  "ko": "…♪ …가사 없는 낡은 곡… ♪…",
+  "en": "…♪ …an old tune, no words… ♪…",
+  "ja": "…♪ …歌詞のない古い曲… ♪…"
+ },
+ "data.bcast.music_unknown.desc": {
+  "ko": "가사 없는 낡은 곡이 흐른다. 누가, 왜 아직도 이걸 송출하는지 알 수 없다. 그래도 잠시, 혼자가 아닌 것 같다.",
+  "en": "An old tune, no words, drifting through. Who plays it, and why, no one can say. Still — for a moment, you feel less alone.",
+  "ja": "歌詞のない古い曲が流れている。誰が、なぜ今もこれを流しているのかは分からない。それでも少しの間、一人じゃない気がする。"
+ },
+ "data.bcast.music_unknown.name": {
+  "ko": "정체불명의 음악",
+  "en": "Music from Nowhere",
+  "ja": "正体不明の音楽"
+ },
+ "data.bcast.survivor1.air": {
+  "ko": "…바닷가요. 밤마다 불 켭니다. 지나는 배 있으면— 혼자 아니라고. …응답 바람.",
+  "en": "…by the sea. Light burns each night. If you pass— you’re not alone. …do you copy.",
+  "ja": "…海辺です。毎晩、灯りをともします。通る船があれば— 一人じゃないと。…応答求む。"
+ },
+ "data.bcast.survivor1.desc": {
+  "ko": "\"바닷가에 있어요. 밤마다 불을 켜둡니다. 지나는 배가 있으면… 혼자가 아니라고 말해주고 싶어서.\"",
+  "en": "\"I’m by the sea. I keep a light burning each night. If a ship passes… I just want to say — you’re not alone.\"",
+  "ja": "「海辺にいます。毎晩、灯りをつけたままにしています。通りかかる船がいたら…一人じゃないと、伝えたくて。」"
+ },
+ "data.bcast.survivor1.name": {
+  "ko": "생존자 사연 · 등대",
+  "en": "Survivor’s Story · Lighthouse",
+  "ja": "生存者の便り · 灯台"
+ },
+ "data.bcast.survivor2.air": {
+  "ko": "…딸이 라디오를 좋아했어요. 계속 틀어둡니다. …듣고 있으면, 응답해줘.",
+  "en": "…my daughter loved the radio. I keep it on. …if you hear this, answer.",
+  "ja": "…娘がラジオを好きでした。ずっとつけています。…聞いているなら、応えてくれ。"
+ },
+ "data.bcast.survivor2.desc": {
+  "ko": "\"딸이 라디오를 좋아했어요. 그래서 계속 틀어둡니다. 언젠가 이 소릴 듣고 찾아올지도 모르니까요.\"",
+  "en": "\"My daughter loved the radio. So I keep it on. Maybe one day she hears it and finds her way back.\"",
+  "ja": "「娘がラジオを好きだったんです。だからずっとつけています。いつかこの音を聞いて、帰ってくるかもしれませんから。」"
+ },
+ "data.bcast.survivor2.name": {
+  "ko": "생존자 사연 · 아이",
+  "en": "Survivor’s Story · The Child",
+  "ja": "生存者の便り · 子ども"
+ },
+ "data.craft.autopurifier.hint": {
+  "ko": "매일 물 +2 (배터리 1/일)",
+  "en": "Water +2 daily (battery 1/day)",
+  "ja": "毎日 水+2（バッテリー1/日）"
+ },
+ "data.craft.barrelfire.hint": {
+  "ko": "슬럼의 밤 — 드럼통에 피운 불",
+  "en": "The slum's night — a fire in a drum",
+  "ja": "スラムの夜 — ドラム缶に灯した火"
+ },
+ "data.craft.bed.hint": {
+  "ko": "천 + 프레임 → 침대",
+  "en": "Cloth + frame → bed",
+  "ja": "布 + フレーム → ベッド"
+ },
+ "data.craft.bookshelf.hint": {
+  "ko": "책장",
+  "en": "Bookshelf",
+  "ja": "本棚"
+ },
+ "data.craft.bookstack.hint": {
+  "ko": "주워 모은 책 무더기",
+  "en": "A pile of gathered books",
+  "ja": "拾い集めた本の山"
+ },
+ "data.craft.candelabra.hint": {
+  "ko": "가지 촛대 — 사치스러운 불빛",
+  "en": "A branched candelabra — an extravagant light",
+  "ja": "枝付き燭台 — 贅沢な灯り"
+ },
+ "data.craft.candle.hint": {
+  "ko": "캔들 스툴",
+  "en": "Candle stool",
+  "ja": "キャンドルスツール"
+ },
+ "data.craft.chair.hint": {
+  "ko": "나무 의자",
+  "en": "Wooden chair",
+  "ja": "木の椅子"
+ },
+ "data.craft.charcoal.hint": {
+  "ko": "옷장에 추가 — 숯검정 물들임",
+  "en": "Added to wardrobe — charcoal-dyed",
+  "ja": "ワードローブに追加 — 炭黒染め"
+ },
+ "data.craft.clock.hint": {
+  "ko": "괘종시계 — 시간이 흐르는 소리",
+  "en": "Grandfather clock — the sound of passing time",
+  "ja": "柱時計 — 時が流れる音"
+ },
+ "data.craft.crate.hint": {
+  "ko": "수납 상자",
+  "en": "Storage crate",
+  "ja": "収納箱"
+ },
+ "data.craft.cratestack.hint": {
+  "ko": "쌓아 올린 보급 상자 더미",
+  "en": "A stack of scavenged supply crates",
+  "ja": "積み上げた補給箱の山"
+ },
+ "data.craft.cream.hint": {
+  "ko": "옷장에 추가 — 밝은 생지 그대로",
+  "en": "Added to wardrobe — undyed cream",
+  "ja": "ワードローブに追加 — 明るい生成りのまま"
+ },
+ "data.craft.cushion.hint": {
+  "ko": "푹신한 바닥 방석",
+  "en": "A soft floor cushion",
+  "ja": "ふかふかの座布団"
+ },
+ "data.craft.dresser.hint": {
+  "ko": "서랍장",
+  "en": "Dresser",
+  "ja": "チェスト"
+ },
+ "data.craft.forest.hint": {
+  "ko": "옷장에 추가 — 수풀 위장색",
+  "en": "Added to wardrobe — thicket camo",
+  "ja": "ワードローブに追加 — 茂みの迷彩色"
+ },
+ "data.craft.fridge.hint": {
+  "ko": "음식 부패 방지 (전력 필요)",
+  "en": "Prevents food spoilage (needs power)",
+  "ja": "食料の腐敗防止（電力必要）"
+ },
+ "data.craft.fuelpile.hint": {
+  "ko": "난롯가에 쌓아 둔 장작 더미",
+  "en": "A firewood pile stacked by the stove",
+  "ja": "ストーブのそばに積んだ薪の山"
+ },
+ "data.craft.generator.hint": {
+  "ko": "배터리 소비 무료화 (연료 필요)",
+  "en": "Free battery use (needs fuel)",
+  "ja": "バッテリー消費を無料化（燃料必要）"
+ },
+ "data.craft.globe.hint": {
+  "ko": "책으로 채운 지구본 — 가 보지 못한 곳들",
+  "en": "A globe filled by books — places never seen",
+  "ja": "本で満たした地球儀 — 行けなかった場所"
+ },
+ "data.craft.graffiti.hint": {
+  "ko": "뜯어온 벽의 목소리",
+  "en": "A wall torn loose, still shouting",
+  "ja": "剥がしてきた壁の声"
+ },
+ "data.craft.heater.hint": {
+  "ko": "한파 방어 + 겨울 쾌적 (연료 1/일)",
+  "en": "Cold-snap defense + winter comfort (fuel 1/day)",
+  "ja": "寒波防御 + 冬の快適さ（燃料1/日）"
+ },
+ "data.craft.jugcluster.hint": {
+  "ko": "물·연료를 담은 통 무더기",
+  "en": "Clustered jugs of water and fuel",
+  "ja": "水・燃料を詰めた容器の山"
+ },
+ "data.craft.lamp.hint": {
+  "ko": "부품 조립 조명",
+  "en": "Part-built lamp",
+  "ja": "部品で組んだランプ"
+ },
+ "data.craft.lantern.hint": {
+  "ko": "걸이형 랜턴 (양초 연료)",
+  "en": "Hanging lantern (candle fuel)",
+  "ja": "吊り下げランタン（ろうそく燃料）"
+ },
+ "data.craft.ledbar.hint": {
+  "ko": "LED 라이트 바 — 폐허의 마지막 신문물",
+  "en": "LED light bar — the ruins' last piece of new tech",
+  "ja": "LEDライトバー — 廃墟の最後の文明の利器"
+ },
+ "data.craft.navy.hint": {
+  "ko": "옷장에 추가 — 짙은 밤바다색",
+  "en": "Added to wardrobe — deep sea navy",
+  "ja": "ワードローブに追加 — 深い夜の海の色"
+ },
+ "data.craft.neonair.hint": {
+  "ko": "죽은 방송국의 불빛 — ON AIR",
+  "en": "A dead station's light — ON AIR",
+  "ja": "死んだ放送局の灯り — ON AIR"
+ },
+ "data.craft.neonvip.hint": {
+  "ko": "도심의 밤 한 조각 — VIP ZONE",
+  "en": "A shard of the city night — VIP ZONE",
+  "ja": "都会の夜のかけら — VIP ZONE"
+ },
+ "data.craft.noticeboard.hint": {
+  "ko": "지도·메모를 꽂은 상황판",
+  "en": "A board pinned with maps and notes",
+  "ja": "地図・メモを貼った状況ボード"
+ },
+ "data.craft.phonograph.hint": {
+  "ko": "축음기 — 폐허에 음악을",
+  "en": "A phonograph — music for the ruins",
+  "ja": "蓄音機 — 廃墟に音楽を"
+ },
+ "data.craft.plant.hint": {
+  "ko": "화분에 심은 초록",
+  "en": "Greenery in a pot",
+  "ja": "鉢に植えた緑"
+ },
+ "data.craft.purifier.hint": {
+  "ko": "매일 물 +1 (전력 필요)",
+  "en": "Water +1 daily (needs power)",
+  "ja": "毎日 水+1（電力必要）"
+ },
+ "data.craft.radio.hint": {
+  "ko": "라디오 (날씨 예보)",
+  "en": "Radio (weather forecast)",
+  "ja": "ラジオ（天気予報）"
+ },
+ "data.craft.res_bandage.hint": {
+  "ko": "기본 치료품",
+  "en": "Basic first aid",
+  "ja": "基本の救急用品"
+ },
+ "data.craft.res_candle.hint": {
+  "ko": "조명 연료",
+  "en": "Lighting fuel",
+  "ja": "照明用燃料"
+ },
+ "data.craft.res_canned.hint": {
+  "ko": "소금으로 절인 보존식 — 여름 부패를 이긴다",
+  "en": "Salt-cured preserves — beats summer spoilage",
+  "ja": "塩漬けの保存食 — 夏の腐敗に負けない"
+ },
+ "data.craft.res_material.hint": {
+  "ko": "수리·유지비용",
+  "en": "Repairs & upkeep",
+  "ja": "修理・維持コスト"
+ },
+ "data.craft.rug.hint": {
+  "ko": "천을 엮은 러그",
+  "en": "A woven-cloth rug",
+  "ja": "布を編んだラグ"
+ },
+ "data.craft.skipoles.hint": {
+  "ko": "스키 폴대 — 벽에 기대 두면 그림이 된다",
+  "en": "Ski poles — leaned on a wall, they become a picture",
+  "ja": "スキーポール — 壁に立てかければ絵になる"
+ },
+ "data.craft.skis.hint": {
+  "ko": "눈 좋던 시절의 한 쌍",
+  "en": "A pair from the good snow years",
+  "ja": "雪が良かった頃のひと組"
+ },
+ "data.craft.snowboard.hint": {
+  "ko": "슬로프가 사라진 보드",
+  "en": "A board that outlived its slopes",
+  "ja": "スロープを失ったボード"
+ },
+ "data.craft.sofa.hint": {
+  "ko": "패브릭 소파",
+  "en": "Fabric sofa",
+  "ja": "ファブリックソファ"
+ },
+ "data.craft.stove.hint": {
+  "ko": "장작 난로 — 최고의 온기 (연료 1/일)",
+  "en": "Wood stove — the best warmth (fuel 1/day)",
+  "ja": "薪ストーブ — 最高の暖かさ（燃料1/日）"
+ },
+ "data.craft.suit.hint": {
+  "ko": "폐허 이전의 출근길",
+  "en": "A commute from before the ruin",
+  "ja": "廃墟になる前の通勤路"
+ },
+ "data.craft.supplyshelf.hint": {
+  "ko": "통조림·병을 채운 보급 선반",
+  "en": "A supply shelf stocked with cans and jars",
+  "ja": "缶詰・瓶を詰めた補給棚"
+ },
+ "data.craft.table.hint": {
+  "ko": "식탁",
+  "en": "Dining table",
+  "ja": "食卓"
+ },
+ "data.craft.teatable.hint": {
+  "ko": "낮은 찻상 — 따뜻한 한 잔",
+  "en": "A low tea table — a warm cup",
+  "ja": "低いティーテーブル — 温かい一杯"
+ },
+ "data.craft.wine.hint": {
+  "ko": "옷장에 추가 — 소금 매염 와인빛",
+  "en": "Added to wardrobe — salt-mordant wine",
+  "ja": "ワードローブに追加 — 塩媒染のワイン色"
+ },
+ "data.def.autopurifier.appliance.label": {
+  "ko": "매일 깨끗한 물 +2 (배터리 1/일)",
+  "en": "Clean water +2 daily (battery 1/day)",
+  "ja": "毎日きれいな水+2（バッテリー1/日）"
+ },
+ "data.def.autopurifier.colorNames": {
+  "ko": "스틸|화이트|틸|네이비",
+  "en": "Steel|White|Teal|Navy",
+  "ja": "スチール|ホワイト|ティール|ネイビー"
+ },
+ "data.def.autopurifier.name": {
+  "ko": "자동 급수기",
+  "en": "Auto Water Station",
+  "ja": "自動給水器"
+ },
+ "data.def.barrelfire.colorNames": {
+  "ko": "방청 레드|올리브 드럼|재 그레이|슬레이트",
+  "en": "Red Oxide|Olive Drum|Ash Gray|Slate",
+  "ja": "防錆レッド|オリーブドラム|アッシュグレー|スレート"
+ },
+ "data.def.barrelfire.name": {
+  "ko": "드럼통 화로",
+  "en": "Barrel Fire",
+  "ja": "ドラム缶の焚き火"
+ },
+ "data.def.bed.colorNames": {
+  "ko": "와인레드|포레스트|네이비|크림",
+  "en": "Wine Red|Forest|Navy|Cream",
+  "ja": "ワインレッド|フォレスト|ネイビー|クリーム"
+ },
+ "data.def.bed.name": {
+  "ko": "침대",
+  "en": "Bed",
+  "ja": "ベッド"
+ },
+ "data.def.bookshelf.colorNames": {
+  "ko": "오크|월넛|화이트워시|블랙우드",
+  "en": "Oak|Walnut|Whitewash|Blackwood",
+  "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+ },
+ "data.def.bookshelf.name": {
+  "ko": "책장",
+  "en": "Bookshelf",
+  "ja": "本棚"
+ },
+ "data.def.bookstack.colorNames": {
+  "ko": "모험담|시집|도감|일기장",
+  "en": "Adventure|Poetry|Field Guide|Diary",
+  "ja": "冒険譚|詩集|図鑑|日記帳"
+ },
+ "data.def.bookstack.name": {
+  "ko": "책 더미",
+  "en": "Book Stack",
+  "ja": "本の山"
+ },
+ "data.def.candelabra.colorNames": {
+  "ko": "황동|실버|블랙|앤티크골드",
+  "en": "Brass|Silver|Black|Antique Gold",
+  "ja": "真鍮|シルバー|ブラック|アンティークゴールド"
+ }
+}

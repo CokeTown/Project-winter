@@ -409,6 +409,7 @@ export const BAL = {
     gelBookChance: 0.02,
     gelBookRegions: ['commercial', 'citycore'], // 극장/스튜디오 유품 — 상업지구·도심 한정(지역 pull)
     ledChance: 0.012, // #189 P4 LED 바 도면 — 전 지역 초희귀 별도 롤 (기대 ~83성공, 최후반 표현 목표)
+    facilityComfort: 10, // #193: 조명 설비(전등) 쾌적 기여 — 가구 광원(5~9)보다 강한 안정광. 지하철 needsLight 게이트 통과의 축.
   },
 
   paint: {

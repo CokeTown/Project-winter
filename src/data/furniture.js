@@ -1292,6 +1292,77 @@ const DEFS = {
         new THREE.MeshLambertMaterial({ color: 0xffd487, emissive: 0xffaa40, emissiveIntensity: 1.6 }));
       fl2.position.set(0.07, 0.72, 0.04); fl2.userData.glow = true; g.add(fl2);
       return g;
+    },
+    // #192 발견 컷 전용 클로즈업 등급 (폴리 예산 4~5k) — 실루엣·팔레트는 build와 동일 규약.
+    //   골 주름·리벳·녹/그을음·통풍 절개(내부 잉걸 발광)·수북한 잉걸·복셀 화염 다층·엠버.
+    closeup(c) {
+      const g = new THREE.Group();
+      const seg = 28;
+      const drum = Cyl(g, 0.3, 0.3, 0.62, c, 0, 0.31, 0, seg); drum.castShadow = true;
+      Cyl(g, 0.312, 0.312, 0.045, shade(c, 0.7), 0, 0.06, 0, seg);   // 하단 림
+      Cyl(g, 0.312, 0.312, 0.045, shade(c, 0.7), 0, 0.58, 0, seg);   // 상단 림
+      for (const ry of [0.17, 0.31, 0.45]) Cyl(g, 0.305, 0.305, 0.018, shade(c, 0.86), 0, ry, 0, seg); // 골 주름 3줄
+      for (const ry of [0.06, 0.58]) for (let i = 0; i < 14; i++) {   // 림 리벳
+        const a = (i / 14) * Math.PI * 2;
+        B(g, 0.018, 0.018, 0.018, shade(c, 0.5), Math.cos(a) * 0.312, ry, Math.sin(a) * 0.312);
+      }
+      // 녹 얼룩·그을음 패치 — 표면에 얇은 사각 패치(결정론 배치)
+      const RUST = [[0.8, 0.14, 0.05, 0.09], [2.1, 0.38, 0.07, 0.12], [3.4, 0.22, 0.06, 0.07], [4.6, 0.48, 0.05, 0.1], [5.5, 0.12, 0.08, 0.06]];
+      for (const [a, y, w, h] of RUST) {
+        const p = B(g, w, h, 0.006, shade(0x6a4a30, 0.9), Math.cos(a) * 0.301, y, Math.sin(a) * 0.301);
+        p.rotation.y = -a + Math.PI / 2;
+      }
+      const CHAR = [[1.5, 0.52, 0.1, 0.08], [2.8, 0.55, 0.13, 0.06], [4.9, 0.53, 0.09, 0.07]]; // 상단 화염 그을음
+      for (const [a, y, w, h] of CHAR) {
+        const p = B(g, w, h, 0.006, 0x241f1a, Math.cos(a) * 0.301, y, Math.sin(a) * 0.301);
+        p.rotation.y = -a + Math.PI / 2;
+      }
+      // 통풍 절개부 — 안쪽 잉걸빛이 새어나온다 (배치본의 검은 절개부 자리 그대로)
+      B(g, 0.16, 0.1, 0.02, 0x1c1a17, 0, 0.42, 0.297);
+      const ventGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.07),
+        new THREE.MeshLambertMaterial({ color: 0xffa040, emissive: 0xff6a18, emissiveIntensity: 1.3 }));
+      ventGlow.position.set(0, 0.42, 0.292); ventGlow.userData.glow = true; g.add(ventGlow);
+      for (let i = -1; i <= 1; i++) B(g, 0.016, 0.11, 0.02, shade(c, 0.55), i * 0.05, 0.42, 0.298); // 그릴 바 3개
+      // 내부: 검은 내벽 + 수북한 잉걸(발광 큐브 클러스터)
+      Cyl(g, 0.27, 0.27, 0.05, 0x141210, 0, 0.585, 0, seg);
+      const COALS = [[0, 0.62, 0, 0.09], [0.09, 0.615, 0.05, 0.07], [-0.08, 0.61, -0.04, 0.08], [0.03, 0.63, -0.09, 0.06], [-0.05, 0.625, 0.08, 0.05], [0.12, 0.61, -0.06, 0.05]];
+      for (const [x, y, z, s] of COALS) {
+        const coal = new THREE.Mesh(new THREE.BoxGeometry(s, s * 0.7, s),
+          new THREE.MeshLambertMaterial({ color: 0xff8838, emissive: 0xdd4a10, emissiveIntensity: 1.1 }));
+        coal.position.set(x, y, z); coal.rotation.y = x * 7; coal.userData.glow = true; g.add(coal);
+      }
+      // 장작 2개 — 육각 통나무 + 밝은 절단면 + 탄 끝
+      const mkLog = (x, y, z, rz, ry, len) => {
+        const log = Cyl(g, 0.036, 0.036, len, 0x5a4632, x, y, z, 7); log.rotation.z = rz; log.rotation.y = ry;
+        const cap = new THREE.Mesh(new THREE.CircleGeometry(0.034, 7), new THREE.MeshLambertMaterial({ color: 0x9a8060 }));
+        cap.position.set(0, len / 2 + 0.001, 0); cap.rotation.x = -Math.PI / 2; log.add(cap);
+        const burnt = Cyl(log, 0.037, 0.037, 0.09, 0x241d16, 0, -len / 2 + 0.045, 0, 7);
+        return log;
+      };
+      mkLog(0.12, 0.66, 0.05, 0.6, 0.2, 0.5);
+      mkLog(-0.1, 0.63, -0.03, -0.5, 1.9, 0.42);
+      // 복셀 화염 — 원뿔 대신 다층 스택 박스 (핫코어→외염 팔레트), 배치본 화염과 같은 자리·높이
+      const FLAME = [
+        [0.16, 0.10, 0.62, 0, 0, 0xff7a20, 1.3], [0.13, 0.09, 0.70, 0.02, 0.15, 0xffb050, 1.45],
+        [0.10, 0.09, 0.78, -0.02, 0.3, 0xffb050, 1.5], [0.075, 0.08, 0.85, 0.015, 0.5, 0xffd487, 1.6],
+        [0.05, 0.07, 0.91, -0.01, 0.2, 0xffe8b0, 1.7], [0.03, 0.05, 0.96, 0.01, 0.4, 0xfff4d8, 1.8],
+      ];
+      for (const [w, h, y, xo, ry, col, ei] of FLAME) {
+        const f = new THREE.Mesh(new THREE.BoxGeometry(w, h, w),
+          new THREE.MeshLambertMaterial({ color: col, emissive: col, emissiveIntensity: ei }));
+        f.position.set(xo, y, xo * 0.6); f.rotation.y = ry; f.userData.glow = true; g.add(f);
+      }
+      const tongue = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 0.05),  // 곁불 혀
+        new THREE.MeshLambertMaterial({ color: 0xffb050, emissive: 0xff8a28, emissiveIntensity: 1.5 }));
+      tongue.position.set(0.11, 0.68, 0.02); tongue.rotation.y = 0.5; tongue.userData.glow = true; g.add(tongue);
+      // 떠오르는 엠버 5립
+      const EMBER = [[0.06, 0.98, 0.03], [-0.05, 1.06, -0.02], [0.02, 1.14, 0.05], [-0.03, 1.2, 0.01], [0.05, 1.26, -0.04]];
+      for (const [x, y, z] of EMBER) {
+        const e = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.016, 0.016),
+          new THREE.MeshLambertMaterial({ color: 0xffc060, emissive: 0xff9030, emissiveIntensity: 2 }));
+        e.position.set(x, y, z); e.userData.glow = true; g.add(e);
+      }
+      return g;
     }
   },
   // 슬럼 ② 그래피티 패널 — 뜯어온 합판에 남은 스프레이 태그. 벽에 기대 세운다.

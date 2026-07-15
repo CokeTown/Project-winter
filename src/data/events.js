@@ -629,7 +629,7 @@ export function makeEvents(ctx) {
       special: true,
       icon: '🧱', titleId: 'ev.collapse.title',
       textFn: () => {
-        const rg = state.exp && state.exp.region;
+        const rg = state.riskEventRegion || (state.exp && state.exp.region); // #193: 귀환 후 표시 — 박제 지역 우선
         if (rg === 'slumdeep') return t('ev.collapse.text.slum'); // #167 심부: 슬럼 문안 공유 (같은 골목의 안쪽)
         return t(['slum', 'residential', 'industrial', 'harbor'].includes(rg) ? `ev.collapse.text.${rg}` : 'ev.collapse.text');
       },

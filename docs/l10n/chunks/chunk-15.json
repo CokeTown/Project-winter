@@ -1,0 +1,427 @@
+{
+ "quest.eat.done": {
+  "ko": "끔찍한 통조림 맛. 하지만 살아있다는 맛이기도 하다.",
+  "en": "The can tastes awful. It also tastes like being alive.",
+  "ja": "ひどい缶詰の味。だが、生きているという味でもある。"
+ },
+ "quest.place.lore": {
+  "ko": "'집이라 부르려면 뭐라도 놓아야지. 나는 침대부터 들였다. 잘 곳이 정해지면 마음도 정해진다.'",
+  "en": "'To call it home, put something in it. I started with a bed. Settle where you sleep, and the heart follows.'",
+  "ja": "「家と呼ぶなら、何か置くことだ。私はまずベッドを入れた。寝る場所が決まれば、心も決まる。」"
+ },
+ "quest.place.done": {
+  "ko": "방이 조금 덜 비어 보인다. 이상하게 든든하다.",
+  "en": "The room looks a little less empty. Strangely reassuring.",
+  "ja": "部屋が少し空っぽじゃなくなった。不思議と心強い。"
+ },
+ "quest.depart.lore": {
+  "ko": "'해가 높을 때 나가라. 가까운 주거지역부터. 욕심은 부상으로 돌아온다.'",
+  "en": "'Go out while the sun is high. Start with the houses nearby. Greed comes back as injuries.'",
+  "ja": "「日が高いうちに出ろ。近くの住宅地区から。欲は怪我になって返ってくる。」"
+ },
+ "quest.depart.done": {
+  "ko": "문을 나선다 — 하루의 절반은 바깥에 있다.",
+  "en": "Out the door. Half of every day lives outside.",
+  "ja": "ドアを出る — 一日の半分は外にある。"
+ },
+ "quest.sleep.lore": {
+  "ko": "'기운이 없을 땐 자야지. 별수 없다 — 몸이 장부고, 잠이 결산이다.'",
+  "en": "'When the strength is gone, sleep. No way around it — the body keeps the ledger, and sleep settles it.'",
+  "ja": "「力が出ないときは寝ることだ。仕方ない — 体が帳簿で、眠りが決算だ。」"
+ },
+ "quest.sleep.done": {
+  "ko": "눈꺼풀이 무겁다. 아침이 알아서 하루를 정리해줄 것이다.",
+  "en": "Your eyelids are heavy. Morning will sort the day out for you.",
+  "ja": "まぶたが重い。朝が勝手に一日を片付けてくれるだろう。"
+ },
+ "quest.craft.lore": {
+  "ko": "'주운 것은 재료일 뿐. 손을 움직여야 물건이 된다. 천 두 장이면 붕대 하나.'",
+  "en": "'What you scavenge is only material. Hands make it into things. Two cloth makes one bandage.'",
+  "ja": "「拾ったものは材料にすぎない。手を動かしてこそ物になる。布二枚で包帯一つ。」"
+ },
+ "quest.craft.done": {
+  "ko": "손끝에서 뭔가 만들어지는 감각 — 오랜만이다.",
+  "en": "The feeling of making something. It's been a while.",
+  "ja": "指先で何かが形になる感覚 — 久しぶりだ。"
+ },
+ "quest.clean.lore": {
+  "ko": "'마지막으로 — 집을 닦아라. 더러운 집엔 병이 먼저 이사 온다.'",
+  "en": "'Last — keep it clean. Sickness moves into a dirty home before you do.'",
+  "ja": "「最後に — 家を磨け。汚れた家には、病気が先に引っ越してくる。」"
+ },
+ "quest.clean.done": {
+  "ko": "수첩의 첫 장이 끝났다. 이제 이 하루의 리듬은 내 것이다.",
+  "en": "The notebook's first chapter ends here. The rhythm of these days is mine now.",
+  "ja": "手帳の最初の章が終わった。もうこの一日のリズムは私のものだ。"
+ },
+ "mode.zen.lock": {
+  "ko": "겨울을 {n}번 넘긴 사람의 것이다.",
+  "en": "It belongs to those who have crossed {n} winter.",
+  "ja": "冬を{n}回越えた者のものだ。"
+ },
+ "mode.zen.lockToast": {
+  "ko": "어느 모드로든 겨울 {n}번을 넘기면 열린다.",
+  "en": "Opens after crossing {n} winter in any mode.",
+  "ja": "どのモードでも冬を{n}回越えれば解放される。"
+ },
+ "ev.thawstream.title": {
+  "ko": "마당을 가로지르는 물",
+  "en": "Water Across the Yard",
+  "ja": "庭を横切る水"
+ },
+ "ev.thawstream.text": {
+  "ko": "눈 녹은 물이 가늘게 길을 내며 마당을 가로지른다. 겨우내 얼어 있던 것들이 전부 어디론가 흘러가는 소리.",
+  "en": "Meltwater cuts a thin path across the yard. The sound of everything that froze all winter, flowing off to somewhere.",
+  "ja": "雪解け水が細い道を作り、庭を横切っていく。冬のあいだ凍っていたものが、すべてどこかへ流れていく音。"
+ },
+ "ev.thawstream.c0": {
+  "ko": "💧 대야를 받쳐 둔다",
+  "en": "💧 Set a basin under it",
+  "ja": "💧 たらいを置いて受ける"
+ },
+ "ev.thawstream.c1": {
+  "ko": "물길을 터 준다",
+  "en": "Clear a path for it",
+  "ja": "水路を開けてやる"
+ },
+ "ev.thawstream.r0": {
+  "ko": "흙내 나는 물이 대야에 고였다. 끓이면 마실 수 있다. <b>(물 +2)</b>",
+  "en": "Earthy-smelling water pooled in the basin. Boiled, it will do. <b>(water +2)</b>",
+  "ja": "土の匂いのする水がたらいに溜まった。沸かせば飲める。<b>(水 +2)</b>"
+ },
+ "ev.thawstream.r1": {
+  "ko": "막힌 곳을 터 주자 물이 제 길을 찾아갔다. 봄이 일하는 걸 잠깐 구경했다.",
+  "en": "I cleared the blockage and the water found its own way. Watched spring do its work for a while.",
+  "ja": "詰まりを開けてやると、水は自分の道を見つけていった。春が働くのをしばらく眺めていた。"
+ },
+ "ev.firstsprout.title": {
+  "ko": "콘크리트 틈의 초록",
+  "en": "Green in the Concrete",
+  "ja": "コンクリートの隙間の緑"
+ },
+ "ev.firstsprout.text": {
+  "ko": "갈라진 콘크리트 틈에서 새싹 하나가 올라왔다. 아무도 심지 않았는데.",
+  "en": "A single sprout has pushed up through a crack in the concrete. Nobody planted it.",
+  "ja": "ひび割れたコンクリートの隙間から、芽が一つ顔を出した。誰も植えていないのに。"
+ },
+ "ev.firstsprout.c0": {
+  "ko": "💧 물을 나눠 준다 (물 1)",
+  "en": "💧 Share some water (water 1)",
+  "ja": "💧 水を分けてやる (水 1)"
+ },
+ "ev.firstsprout.c1": {
+  "ko": "그대로 둔다",
+  "en": "Leave it be",
+  "ja": "そのままにする"
+ },
+ "ev.firstsprout.r0": {
+  "ko": "물을 조금 부어 줬다. 내일도 있는지 볼 생각이다.",
+  "en": "Poured a little water on it. I will check if it is still there tomorrow.",
+  "ja": "水を少しかけてやった。明日もあるか、見に来るつもりだ。"
+ },
+ "ev.firstsprout.r0grew": {
+  "ko": "물을 조금 부어 줬다. 며칠 뒤, 그 옆에서 먹을 만한 순이 올라왔다. <b>(식량 +1)</b>",
+  "en": "Poured a little water on it. Days later, an edible shoot came up beside it. <b>(food +1)</b>",
+  "ja": "水を少しかけてやった。数日後、その横から食べられそうな芽が伸びてきた。<b>(食料 +1)</b>"
+ },
+ "ev.firstsprout.r1": {
+  "ko": "손대지 않았다. 저 혼자서도 여기까지 왔으니까.",
+  "en": "Did not touch it. It made it this far on its own.",
+  "ja": "手は出さなかった。ひとりでここまで来たのだから。"
+ },
+ "ev.returningbirds.title": {
+  "ko": "돌아오는 새들",
+  "en": "The Birds Return",
+  "ja": "帰ってくる鳥たち"
+ },
+ "ev.returningbirds.text": {
+  "ko": "하늘에 V자 행렬이 걸렸다. 북쪽으로 — 겨울이 정말로 물러갔다는 뜻이다.",
+  "en": "A V of birds hangs in the sky, heading north — proof the winter has truly pulled back.",
+  "ja": "空にV字の列がかかった。北へ — 冬が本当に退いたという意味だ。"
+ },
+ "ev.returningbirds.c0": {
+  "ko": "올려다본다",
+  "en": "Look up",
+  "ja": "見上げる"
+ },
+ "ev.returningbirds.r0": {
+  "ko": "행렬이 지붕 위를 지나 사라질 때까지 서 있었다. 소리는 한참 뒤에도 남아 있었다.",
+  "en": "Stood there until the line passed over the roof and out of sight. The sound stayed long after.",
+  "ja": "列が屋根の上を過ぎて消えるまで、立って見ていた。鳴き声はずいぶんあとまで残っていた。"
+ },
+ "ev.returningbirds.r0detail": {
+  "ko": "망원경으로 좇았다. 앞선 놈이 지치면 뒷놈이 앞으로 나선다. 그렇게들 간다.",
+  "en": "Followed them with the telescope. When the lead bird tires, the next one takes the front. That is how they go.",
+  "ja": "望遠鏡で追った。先頭のやつが疲れると、後ろのやつが前に出る。そうやって行くのだ。"
+ },
+ "ev.meltreveal.title": {
+  "ko": "눈이 두고 간 것",
+  "en": "What the Snow Left Behind",
+  "ja": "雪が置いていったもの"
+ },
+ "ev.meltreveal.text": {
+  "ko": "눈이 걷힌 자리마다 겨우내 덮여 있던 것들이 드러났다. 마당 구석, 낯익지 않은 윤곽 하나.",
+  "en": "Where the snow has drawn back, things buried all winter are showing. In the corner of the yard, an outline I do not recognize.",
+  "ja": "雪が引いた跡には、冬のあいだ覆われていたものが現れた。庭の隅に、見覚えのない輪郭が一つ。"
+ },
+ "ev.meltreveal.c0": {
+  "ko": "뒤져 본다",
+  "en": "Dig it out",
+  "ja": "掘り出してみる"
+ },
+ "ev.meltreveal.c1": {
+  "ko": "두고 온다",
+  "en": "Leave it",
+  "ja": "置いて帰る"
+ },
+ "ev.meltreveal.r0": {
+  "ko": "젖고 얼었다 녹은 것치고는 쓸 만했다. <b>({name} +1)</b>",
+  "en": "For something soaked and frozen and thawed, it held up. <b>({name} +1)</b>",
+  "ja": "濡れて凍って解けたわりには、使い物になった。<b>({name} +1)</b>"
+ },
+ "ev.meltreveal.r1": {
+  "ko": "누가 두고 간 건지 모른다. 임자가 돌아올지도 모르고.",
+  "en": "No telling who left it. Its owner might still come back.",
+  "ja": "誰が置いていったのかは分からない。持ち主が戻ってくるかもしれないし。"
+ },
+ "ev.beeswarm.title": {
+  "ko": "창틀의 손님들",
+  "en": "Guests at the Window",
+  "ja": "窓辺の客たち"
+ },
+ "ev.beeswarm.text": {
+  "ko": "창틀 밑에서 낮게 웅웅거리는 소리. 벌 몇 마리가 집 지을 자리를 보고 있다. 이 도시에 아직 벌이 남아 있었다.",
+  "en": "A low hum under the windowsill. A few bees are scouting a place to build. So this city still has bees.",
+  "ja": "窓枠の下から低い羽音がする。蜂が数匹、巣を作る場所を探している。この街に、まだ蜂が残っていた。"
+ },
+ "ev.beeswarm.c0": {
+  "ko": "그대로 둔다",
+  "en": "Let them stay",
+  "ja": "そのままにする"
+ },
+ "ev.beeswarm.c1": {
+  "ko": "연기로 쫓는다",
+  "en": "Smoke them out",
+  "ja": "煙で追い払う"
+ },
+ "ev.beeswarm.r0": {
+  "ko": "웅웅거림이 창가의 배경음이 됐다. 나쁘지 않다.",
+  "en": "The hum became part of the window's sound. Not bad.",
+  "ja": "羽音が窓辺の背景音になった。悪くない。"
+ },
+ "ev.beeswarm.r0honey": {
+  "ko": "웅웅거림이 창가의 배경음이 됐다. 얼마 뒤, 창틀 안쪽에 작은 밀랍 조각과 꿀이 맺혔다. <b>(식량 +1)</b>",
+  "en": "The hum became part of the window's sound. In time, a little wax and honey formed inside the sill. <b>(food +1)</b>",
+  "ja": "羽音が窓辺の背景音になった。しばらくして、窓枠の内側に小さな蜜蝋のかけらと蜂蜜がたまった。<b>(食料 +1)</b>"
+ },
+ "ev.beeswarm.note0": {
+  "ko": "창틀의 벌집에서 꿀을 얻었다.",
+  "en": "Got honey from the windowsill hive.",
+  "ja": "窓枠の蜂の巣から蜂蜜を手に入れた。"
+ },
+ "ev.beeswarm.r1": {
+  "ko": "연기를 피우자 벌들은 미련 없이 떠났다. 창가가 다시 조용해졌다.",
+  "en": "A little smoke and they left without protest. The window is quiet again.",
+  "ja": "煙を焚くと、蜂たちは未練なく去っていった。窓辺がまた静かになった。"
+ },
+ "ev.mudtracks.title": {
+  "ko": "진창의 바퀴 자국",
+  "en": "Ruts in the Mud",
+  "ja": "ぬかるみの轍"
+ },
+ "ev.mudtracks.text": {
+  "ko": "밤사이 누가 지나갔다. 해빙으로 물러진 흙에 수레바퀴 자국이 깊게 패어 있다. 아직 마르지 않았다.",
+  "en": "Someone passed in the night. Cart ruts cut deep into the thaw-softened earth. Still wet.",
+  "ja": "夜のうちに誰かが通った。雪解けで緩んだ土に、荷車の轍が深く刻まれている。まだ乾いていない。"
+ },
+ "ev.mudtracks.c0": {
+  "ko": "자국을 따라가 본다",
+  "en": "Follow the ruts",
+  "ja": "轍をたどってみる"
+ },
+ "ev.mudtracks.c1": {
+  "ko": "집 쪽 자국만 지운다",
+  "en": "Wipe the stretch near home",
+  "ja": "家側の轍だけ消す"
+ },
+ "ev.mudtracks.r0good": {
+  "ko": "자국은 반 시간 거리에서 끊겼다. 그 자리에 수레에서 떨어진 게 하나. <b>(통조림 +1)</b>",
+  "en": "The trail ended half an hour out. Where it stopped, something had fallen off the cart. <b>(canned +1)</b>",
+  "ja": "轍は半時間ほどの先で途切れていた。そこに、荷車から落ちたものが一つ。<b>(缶詰 +1)</b>"
+ },
+ "ev.mudtracks.r0bad": {
+  "ko": "진창에 발이 빠지며 미끄러졌다. 자국은 끝내 빗물에 뭉개져 있었다.",
+  "en": "My foot went through the mud and I fell hard. The ruts washed out in the rain anyway.",
+  "ja": "ぬかるみに足を取られて滑った。轍は結局、雨水で潰れていた。"
+ },
+ "ev.mudtracks.r1": {
+  "ko": "내 집 쪽으로 이어진 자국만 지웠다. 지나가는 건 상관없다. 찾아오는 게 문제지.",
+  "en": "Erased only the stretch that led toward my place. Passing by is fine. Finding me is not.",
+  "ja": "家へ続く轍だけを消した。通り過ぎるのは構わない。訪ねてくるのが問題だ。"
+ },
+ "ev.cicada.title": {
+  "ko": "첫 매미",
+  "en": "First Cicada",
+  "ja": "初蝉"
+ },
+ "ev.cicada.text": {
+  "ko": "저녁 공기를 뚫고 매미 소리가 터졌다. 올여름 첫 소리다. 폐허가 된 도시에서도 여름은 시끄럽다.",
+  "en": "A cicada tears through the evening air — the first of the summer. Even in a ruined city, summer is loud.",
+  "ja": "夕方の空気を裂いて、蝉の声が弾けた。今年の夏、最初の声だ。廃墟になった街でも、夏は騒がしい。"
+ },
+ "ev.cicada.c0": {
+  "ko": "귀 기울인다",
+  "en": "Listen",
+  "ja": "耳を澄ます"
+ },
+ "ev.cicada.r0": {
+  "ko": "한 마리가 울자 여기저기서 따라 울었다. 오늘 밤은 이 소리를 자장가 삼기로 했다.",
+  "en": "One called and others answered from all over. Tonight this will do for a lullaby.",
+  "ja": "一匹が鳴くと、あちこちが続いた。今夜はこの声を子守唄にすることにした。"
+ },
+ "ev.cicada.r0cat": {
+  "ko": "한 마리가 울자 여기저기서 따라 울었다. 고양이가 창틀에 붙어 귀를 쫑긋거린다 — 사냥감 소리인지 재는 중이다.",
+  "en": "One called and others answered from all over. The cat is glued to the windowsill, ears twitching — deciding whether that counts as prey.",
+  "ja": "一匹が鳴くと、あちこちが続いた。猫が窓枠に張り付いて耳をぴくつかせている — 獲物の声かどうか、測っているところだ。"
+ },
+ "ev.mosquitonet.title": {
+  "ko": "창틈의 날벌레",
+  "en": "Whining at the Window",
+  "ja": "窓の隙間の羽虫"
+ },
+ "ev.mosquitonet.text": {
+  "ko": "해가 지자 창틈으로 모기가 든다. 귓가에서 앵앵거리는 소리 — 오늘 밤 잠은 글렀다.",
+  "en": "The sun goes down and mosquitoes find the gaps. That whine by the ear — sleep is in danger.",
+  "ja": "日が沈むと、窓の隙間から蚊が入ってくる。耳元の羽音 — 今夜の眠りはもう駄目だ。"
+ },
+ "ev.mosquitonet.c0": {
+  "ko": "🧵 천을 잘라 방충망을 친다 (천 1)",
+  "en": "🧵 Cut cloth for a screen (cloth 1)",
+  "ja": "🧵 布を切って防虫網を張る (布 1)"
+ },
+ "ev.mosquitonet.c1": {
+  "ko": "그냥 잔다",
+  "en": "Sleep anyway",
+  "ja": "そのまま寝る"
+ },
+ "ev.mosquitonet.r0": {
+  "ko": "창틀에 천을 촘촘히 대고 못질했다. 앵앵거림이 유리 밖의 일이 됐다.",
+  "en": "Tacked the cloth tight over the frame. The whining is now the glass's problem.",
+  "ja": "窓枠に布を隙間なく当てて釘で打ちつけた。羽音はガラスの外の出来事になった。"
+ },
+ "ev.mosquitonet.r1": {
+  "ko": "밤새 손바닥으로 얼굴을 쳤다. 이긴 건 모기다.",
+  "en": "Slapped my own face all night. The mosquitoes won.",
+  "ja": "一晩中、手のひらで自分の顔を叩いていた。勝ったのは蚊だ。"
+ },
+ "ev.wildberries.title": {
+  "ko": "담장의 산딸기",
+  "en": "Brambles on the Fence",
+  "ja": "塀の野いちご"
+ },
+ "ev.wildberries.text": {
+  "ko": "무너진 담장을 산딸기 덩굴이 차지했다. 빨갛게 익은 알이 손 닿는 데만 한 줌.",
+  "en": "Bramble has claimed the fallen fence. Ripe red berries — a handful within reach.",
+  "ja": "崩れた塀を野いちごの蔓が占領していた。赤く熟れた実が、手の届くところだけで一握り。"
+ },
+ "ev.wildberries.c0": {
+  "ko": "딴다",
+  "en": "Pick them",
+  "ja": "摘む"
+ },
+ "ev.wildberries.c1": {
+  "ko": "새들 몫으로 둔다",
+  "en": "Leave them for the birds",
+  "ja": "鳥たちの分に残す"
+ },
+ "ev.wildberries.r0": {
+  "ko": "손끝이 붉게 물들 때까지 땄다. 몇 알은 그 자리에서 먹었다. <b>(식량 +2)</b>",
+  "en": "Picked until my fingertips stained red. Ate a few on the spot. <b>(food +2)</b>",
+  "ja": "指先が赤く染まるまで摘んだ。何粒かはその場で食べた。<b>(食料 +2)</b>"
+ },
+ "ev.wildberries.r1": {
+  "ko": "손을 대지 않고 물러났다. 다음 날 보니 알이 반쯤 사라져 있었다 — 임자들이 다녀갔다.",
+  "en": "Stepped back without picking. By next day half were gone — the rightful owners had come through.",
+  "ja": "手を付けずに引き下がった。翌日見ると、実は半分ほど消えていた — 持ち主たちが立ち寄ったのだ。"
+ },
+ "ev.suddenshower.title": {
+  "ko": "소나기",
+  "en": "Cloudburst",
+  "ja": "にわか雨"
+ },
+ "ev.suddenshower.text": {
+  "ko": "하늘이 순식간에 어두워지더니 굵은 비가 쏟아진다. 이런 비는 오래가지 않는다.",
+  "en": "The sky darkens in a breath and fat rain comes down. Rain like this never stays long.",
+  "ja": "空がみるみる暗くなり、大粒の雨が降り注ぐ。こういう雨は長続きしない。"
+ },
+ "ev.suddenshower.c0": {
+  "ko": "대야를 내놓고 처마 밑에서 본다",
+  "en": "Set out a basin and watch from the eaves",
+  "ja": "たらいを出して軒下から眺める"
+ },
+ "ev.suddenshower.r0": {
+  "ko": "비는 십 분 만에 그쳤고, 젖은 도시 위로 무지개가 걸렸다. 대야엔 물이 반쯤. <b>(물 +1)</b>",
+  "en": "It stopped in ten minutes, and a rainbow hung over the wet city. The basin caught half its fill. <b>(water +1)</b>",
+  "ja": "雨は十分でやみ、濡れた街の上に虹がかかった。たらいには水が半分ほど。<b>(水 +1)</b>"
+ },
+ "ev.heathaze.title": {
+  "ko": "한낮의 아지랑이",
+  "en": "Heat Shimmer",
+  "ja": "真昼の陽炎"
+ },
+ "ev.heathaze.text": {
+  "ko": "아스팔트 위로 아지랑이가 피어오른다. 그늘 밖은 전부 적의로 가득하다.",
+  "en": "The asphalt breathes shimmer into the air. Everything outside the shade feels hostile.",
+  "ja": "アスファルトの上に陽炎が立ちのぼる。日陰の外は、すべてが敵意に満ちている。"
+ },
+ "ev.heathaze.c0": {
+  "ko": "그늘에서 버틴다",
+  "en": "Wait it out in the shade",
+  "ja": "日陰でしのぐ"
+ },
+ "ev.heathaze.c1": {
+  "ko": "💧 물 한 컵을 천천히 마신다 (물 1)",
+  "en": "💧 Drink a slow cup of water (water 1)",
+  "ja": "💧 水を一杯、ゆっくり飲む (水 1)"
+ },
+ "ev.heathaze.r0": {
+  "ko": "제일 시원한 벽에 등을 대고 해가 기울 때까지 버텼다. 여름의 하루는 이렇게도 간다.",
+  "en": "Back against the coolest wall until the sun tipped over. A summer day can pass like this too.",
+  "ja": "一番涼しい壁に背中を預けて、日が傾くまでしのいだ。夏の一日は、こんなふうにも過ぎていく。"
+ },
+ "ev.heathaze.r1": {
+  "ko": "미지근한 물인데도 몸이 금세 풀렸다. 사치 부린 기분이다.",
+  "en": "Lukewarm, and still my whole body eased. Felt like a luxury.",
+  "ja": "ぬるい水なのに、体はすぐにほぐれた。贅沢をした気分だ。"
+ },
+ "ev.firefly.title": {
+  "ko": "반딧불이",
+  "en": "Fireflies",
+  "ja": "蛍"
+ },
+ "ev.firefly.text": {
+  "ko": "마당 끝 수풀에서 불빛이 하나, 둘 — 전기가 끊긴 도시에서 남은 조명은 이것뿐이다.",
+  "en": "Lights rise from the brush at the yard's edge, one, then two — the only lighting this blacked-out city has left.",
+  "ja": "庭の端の茂みに、明かりが一つ、二つ — 電気の途絶えた街に残った照明は、これだけだ。"
+ },
+ "ev.firefly.c0": {
+  "ko": "불을 끄고 지켜본다",
+  "en": "Kill the light and watch",
+  "ja": "明かりを消して見守る"
+ },
+ "ev.firefly.r0": {
+  "ko": "랜턴을 끄자 어둠이 깊어지고, 불빛들이 그만큼 늘었다. 한참을 셌는데 자꾸 처음부터 다시 세게 됐다.",
+  "en": "With the lantern off the dark deepened, and the lights multiplied to match. Kept counting and kept starting over.",
+  "ja": "ランタンを消すと闇が深くなり、その分だけ光が増えた。ずいぶん数えたのに、何度も最初から数え直すはめになった。"
+ },
+ "ev.acorncache.title": {
+  "ko": "겨울 준비는 나만 하는 게 아니다",
+  "en": "Not the Only One Preparing",
+  "ja": "冬支度をするのは私だけじゃない"
+ },
+ "ev.acorncache.text": {
+  "ko": "장작더미 뒤에서 도토리 무더기가 나왔다. 차곡차곡 — 누가 겨울 준비를 해 뒀다. 사람은 아니다.",
+  "en": "Behind the woodpile, a heap of acorns. Neatly stacked — someone has been preparing for winter. Not a person.",
+  "ja": "薪の山の後ろから、どんぐりの山が出てきた。きちんと積まれて — 誰かが冬支度をしていた。人ではない。"
+ }
+}

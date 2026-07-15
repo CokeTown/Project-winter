@@ -7,7 +7,7 @@ import { DEFS } from './data/furniture.js';
 import { BAL } from './data/balance.js';
 import { PROJECTS } from './data/projects.js';
 // 콘텐츠 데이터 분리 Phase 1 (순수 테이블 추출) — 로직은 game.js에 그대로.
-import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS, OUTFITS } from './data/items.js';
+import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, CRAFTS, OUTFITS } from './data/items.js'; // #193: BED_TOP_Y — 침대 티어별 좌면 실높이(퍼치·착석·기상 공용)
 import { DISTRICTS, REGIONS, WEATHERS } from './data/world.js';
 import { ACH_DEFS } from './data/achs.js'; // #73 Tier4: 업적 정의(판정 chk는 아래 ACH_CHECKS 병합)
 import { SHELTER_META, SHELTER_ACCESS } from './data/shelters.js'; // 셸터 데이터 필드(분리 Phase 1) — build 함수는 아래 SHELTERS에서 병합. SHELTER_ACCESS: #182 드랍 지면 판정
@@ -28,7 +28,7 @@ import { makeAvatarSystem } from './systems/avatar.js';
 import { buildVisitor, VISITOR_IDS, ENCOUNTER_VISITOR } from './systems/visitor.js';
 import { VISITOR_TABLE, VISITOR_UI } from './data/visitors.js'; // #181 방문자 교환·대사 밸런스 테이블
 import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wildlife.js';
-import { lang, setLang, t, LN, LD, LF, LC, STR, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
+import { lang, setLang, steamLangToGame, t, LN, LD, LF, LC, STR, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
 import { stampDataL10n } from './data/l10n-registry.js'; // #114 Phase 2: 데이터 표 _lk 스탬프(비열거) — LF/LC가 로케일 JSON 우선 조회
 stampDataL10n();
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
@@ -39,7 +39,7 @@ import { SEASONS, SEASON_DAYS, seasonOf, seasonDay, seasonIndex, seasonAdjustPoo
 import { accWinterFuel, resAdd, resConsume, resHasAll, resConsumeAll, hasAnyFood, consumeAnyFood } from './core/economy.js'; // 자원 연산
 import { hasMod } from './core/shelter.js'; // 셸터 개조 술어
 import { coldDefenseLevel, coldSnapActive, coldSnapNetSeverity, frontActive, frontDiscipline } from './core/coldsnap.js'; // 한파 술어 + 대한파 프론트(2.0)
-import { comfortDetail, comfortLevel, comfortExpBonus, recoveryMult, bunkerComfortBonus, themeSetActive, activeThemeSets, setComfortWeather, tierComfortMult } from './core/comfort.js'; // 쾌적 계산
+import { comfortDetail, comfortLevel, comfortExpBonus, recoveryMult, bunkerComfortBonus, themeSetActive, activeThemeSets, setComfortWeather, setComfortFacilityLight, tierComfortMult } from './core/comfort.js'; // 쾌적 계산
 import { decayGauges, isExhausted } from './core/gauges.js'; // 생존 게이지 감소
 import { migrateLoadedState } from './core/save.js'; // 세이브 마이그레이션
 import { KNOWLEDGE, KNOWLEDGE_BRANCHES } from './data/knowledge.js'; // 「지식」 테크트리 데이터 (§9)
@@ -50,7 +50,7 @@ import { hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
 import { districtOf, rateParts, expActualRate, setExpeditionWeather, masteryTier } from './core/expedition.js'; // 탐험 판정 (Tier3) + 지역 숙련(2.0)
 import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
 import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEncounterEvents } from './core/encounter.js'; // 인카운터 술어 (Tier3)
-import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, falloutCleared, setRegionsDemo } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0)
+import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsAutoAvoid, falloutCleared, setRegionsDemo } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0) + 데모 게이트
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -60,6 +60,13 @@ const LEff  = (o) => LF(o, 'eff');       // PREPS.eff
 const LLabel = (o) => LF(o, 'label');    // perk.label / upkeep.label / appliance.label
 const LBonus = (o) => LF(o, 'bonusLabel'); // DISTRICTS.bonusLabel
 const LHint = (o) => LF(o, 'hint');      // CRAFTS.hint
+// #193: 도면 게이트 판정 — 해당 가구의 제작 레시피가 bp를 요구하는데 아직 도면을 못 주웠으면 true.
+//   툴바 노출·전체풀 드랍이 제작대·도감·지도의 「지역 독점」 원칙과 같은 게이트를 쓴다(누출 봉합).
+const FURN_CRAFT = new Map(CRAFTS.filter(c => c.out.furn).map(c => [c.out.furn, c]));
+function bpGatedLocked(defId) {
+  const rec = FURN_CRAFT.get(defId);
+  return !!(rec && rec.bp && !(state.blueprints || {})[rec.bp]);
+}
 const LLimits = (o) => LF(o, 'limits');  // SHELTERS.limits
 const LColor = (o, i) => LC(o, 'colorNames', i); // #114: 외부화 키(data.*.colorNames, 파이프 결합) 우선 — 폴백 동일
 // buff 라벨: 이벤트 버프는 labelId(신규) 또는 label(구세이브 잔재)
@@ -627,9 +634,15 @@ function beginWinterSnapshot() {
 // WEATHERS → data/world.js 이관 (#73 Tier4 — 순수 데이터, #114 l10n 합류). 파티클 생성·weather 상태는 렌더 결합이라 잔류.
 const weather = { type: 'clear', nextChange: 0, pts: null, seedY: [], seedS: [] };
 setComfortWeather(() => weather.type); // core/comfort에 현재 날씨 타입 주입 (weather는 렌더 결합이라 game.js 잔류)
+setComfortFacilityLight(() => lightingFacilityOn()); // #193: 조명 설비 급전 상태 주입 — 지하철 needsLight가 전등을 본다
 setExpeditionWeather(() => WEATHERS[weather.type].penalty || 0); // core/expedition에 날씨 페널티 주입 (rateParts용)
 setRegionsWeather(() => weather.type); // core/regions에 날씨 타입 주입 (blizzardBlocks 눈 판정용)
+<<<<<<< HEAD
 setRegionsDemo(() => DEMO_ED);         // #74 데모: 거주·공업·슬럼 3지역만 노출 (상업+확장 잠금)
+=======
+// #193: 자동 진행 회피 술어 주입 — ①눈사태 봉쇄/예보 당일(수동 선택 모달 전용) ②하드+ 도심 적대(자동엔 금지 구역 취급)
+setRegionsAutoAvoid((id) => avalancheBlocks(id) || avalancheForecastToday(id) || (id === 'citycore' && isHard()));
+>>>>>>> gd-2.0
 {
   const MAXN = 2200, SPAN = 23, TOP = 17;
   const arr = new Float32Array(MAXN * 3);
@@ -1907,7 +1920,7 @@ function sleepUntilMorning(auto = false, opt = {}) {
     // #86: 기상 연출 — 침대가 있으면 그 위에서 눈을 뜨고(2.6초 누움→일어남), 없으면 바닥에서.
     if (typeof avatarSys !== 'undefined') {
       const bed = items.find(i => i.defId === 'bed');
-      avatarSys.wakeOnBed(bed ? { x: bed.x, z: bed.z, y: 0.63, rot: bed.rot, defId: 'bed' } : null);
+      avatarSys.wakeOnBed(bed ? { x: bed.x, z: bed.z, y: BED_TOP_Y[bed.tier || 3] ?? 0.63, rot: bed.rot, defId: 'bed' } : null); // #193: 기상 눕기 y도 침대 티어 실높이 (T1/T2 공중부양 방지)
     }
     // F-1a [B] 고양이 티저: 새벽 울음 1회 (등장은 Day9 불변 — 기대감). meow 저피치로 먼 울음 느낌.
     if (state.catTeaserMeow) {
@@ -3328,7 +3341,11 @@ function resolveExpedition() {
     }
   };
   // 가구 파밍은 극히 드물다 — 그리고 큰 가구일수록 더 드물다 (대부분은 제작으로)
-  const pickFurniture = pool => {
+  // #193: 도면 게이트 가구는 전체풀(슬럼·심부)에서도 도면 보유 전 제외 — DDD-4 「지역 독점」 원칙이
+  //   슬럼 우회 드랍으로 뚫리던 감사 확정 결함. 도면을 주운 뒤엔 드랍 허용(제작 대신 줍는 행운).
+  const pickFurniture = rawPool => {
+    const pool = rawPool.filter(id => !bpGatedLocked(id));
+    if (!pool.length) return null;
     const ws = pool.map(id => 1 / (DEFS[id].fp.w * DEFS[id].fp.d));
     let sum = ws.reduce((a, b) => a + b, 0), roll = Math.random() * sum;
     for (let i = 0; i < pool.length; i++) { roll -= ws[i]; if (roll <= 0) return pool[i]; }
@@ -3351,8 +3368,8 @@ function resolveExpedition() {
     }
     // 2.0 지역 숙련: 티어당 가구 발견율 +1%p — "단골은 좋은 물건 자리를 안다" (시뮬은 티어 0 = 기존과 동일)
     if (Math.random() < r.furnChance + masteryTier(exp.region) * BAL.mastery.furnPerTier) {
-      got.push(pickFurniture(r.pool));
-      notes.push(t('exp.note.furniture'));
+      const fid = pickFurniture(r.pool);
+      if (fid) { got.push(fid); notes.push(t('exp.note.furniture')); }
     }
     // 절단기 특수 드랍 (#36) — 공업지대 성공 탐험 10%, 미보유 시 1회. 벙커 뒷문 프로젝트 재료.
     if (exp.region === 'industrial' && !state.hasCutter && Math.random() < 0.10) {
@@ -3464,8 +3481,8 @@ function resolveExpedition() {
   } else if (partial) {
     rollRes(0.5);
     if (SHELTERS[state.current].perk?.salvagePlus && Math.random() < 0.25) {
-      got.push(pickFurniture(r.pool));
-      notes.push(t('exp.note.rooftopSalvage'));
+      const fid = pickFurniture(r.pool);
+      if (fid) { got.push(fid); notes.push(t('exp.note.rooftopSalvage')); }
     }
     // #164 떠오른 자리 회수 (부분성공 = 절반 — 그래도 닿긴 했다. 실패는 스팟을 남긴다)
     resolveFieldSpot(exp, BAL.fieldSpots.partialMult, notes, special);
@@ -3637,7 +3654,7 @@ const catSys = makeCatSystem({
   B, lamb, makeCanvasTex, disposeDeep,
   footprintOf, surfaceRectOf, itemsOn, shadowDirty,
   scene, items, DEFS, state,
-  CAT_POSES, CAT_PERCH_Y, PET_HAPPY_MS,
+  CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, PET_HAPPY_MS, // #193: 침대 퍼치 y를 티어 실높이로 (T3 고정 0.63이면 T1/T2에서 공중부양)
   getRoom: () => ROOM, catCam, exitCatCloseup,
 });
 const { spawnCat, despawnCat, updateCat, catPointBlocked, catSupportValid, catFaceTex, catFaceHappyTex } = catSys;
@@ -3659,6 +3676,7 @@ const avatarSys = makeAvatarSystem({
   scene, state, items, DEFS,
   getRoom: () => ROOM, getBlockers: () => blockers, footprintOf, gameHour, opts,
   OUTFITS, getOutfit: () => state.outfit || 'default', // #86④ 복장
+  BED_TOP_Y, // #193: 착석 y도 침대 티어 실높이를 따른다 (SEAT_Y.bed 고정값 대체)
 });
 
 // #86④ 옷장 — 보유 의류(제작으로 획득) 목록에서 탭하여 갈아입기. 진입: 툴바 👕 버튼 + 아바타 탭.
@@ -3898,7 +3916,8 @@ function playEventSting(id) {
 // #165 무너진 입구 보상 롤 (디렉터 2026-07-10): Yes의 값 — 치장템(도료·도면) 가중, 최희귀 고양이 루트,
 //   나머지는 잡동사니 위로. 부상 리스크는 이벤트 쪽(choices.run)에서 별도 롤 — 보상과 독립이라 "얻고도 다칠" 수 있다.
 function collapseEntranceLoot() {
-  const region = state.exp ? state.exp.region : 'slum';
+  // #193: 발동 시점에 박제한 지역 우선 — 귀환 후 표시라 state.exp는 이미 비어 있다(항상 slum 폴백이던 결함)
+  const region = state.riskEventRegion || (state.exp ? state.exp.region : 'slum');
   const r = Math.random();
   // 최희귀: 어둠 속의 야옹 — 고양이 미보유·미조우일 때만. 입양 인카운터로 연결(집 문앞 재회 플로우 그대로).
   if (!state.cat && !state.catEventSeen && r < 0.08) {
@@ -5021,7 +5040,7 @@ function openCraftModal() {
     }
     if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
     const outLabel = c.out.res
-      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`
+      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}${t('craft.resTag')}`
       : c.out.outfit
         ? `${OUTFITS[c.out.outfit].emoji} ${LName(OUTFITS[c.out.outfit])}`
         : `${furnIcon(c.out.furn)} ${LName(DEFS[c.out.furn])}`;
@@ -5295,7 +5314,7 @@ function openCraftModal() {
         state.rooftopSlate = 'full';
         toast(t('rooftop.slateDone')); state.dayLog.notes.push(t('rooftop.slateDone'));
         // 지붕 지오메트리를 다시 짓는다 (가구 보존 — 벙커 재빌드와 동일 패턴)
-        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일) — 빠지면 재빌드 시 표면 위 소품이 바닥으로 침몰
         loadShelter('rooftop');
         closeModal();
         playSfx('craft'); scheduleSave(); renderResBar(); updateHud();
@@ -5386,7 +5405,9 @@ function openCraftModal() {
       if (c.out.res) {
         resAdd(c.out.res, c.out.n);
         craftEmoji = RESOURCES[c.out.res].emoji;
-        toast(t('craft.doneRes', { emoji: craftEmoji, name: LName(RESOURCES[c.out.res]), n: c.out.n }));
+        // 양초는 배치 가구가 아니라 연료 — "만들었는데 못 놓는다" 혼동 방지 (디렉터 신고 2026-07-16, 모바일 1.9.0)
+        toast(t('craft.doneRes', { emoji: craftEmoji, name: LName(RESOURCES[c.out.res]), n: c.out.n })
+          + (c.out.res === 'candle' ? '\n' + t('craft.candleHint') : ''));
       } else if (c.out.outfit) {
         // #86④ 의류: 옷장에 영구 추가 + 바로 갈아입기 (만든 옷을 그 자리에서 입는 게 손맛)
         state.outfits = state.outfits || ['default'];
@@ -5426,7 +5447,7 @@ function openCraftModal() {
       state.dayLog.notes.push(t('craft.modNote', { name: LName(m) }));
       if (id === 'extension' || m.rebuild) {
         // 방 구조가 바뀌므로 거처를 다시 짓는다 (rebuild: buildRoom 지오 분기 개조 — 세관 선반 철거/창구 봉쇄)
-        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
         loadShelter(state.current);
         closeModal();
       } else {
@@ -5443,7 +5464,7 @@ function openCraftModal() {
 // 벙커 지오메트리 재빌드 (#36) — 천장 수리/뒷문 상태를 반영해 방을 다시 짓는다 (extension 개조와 동일 패턴).
 function rebuildBunkerGeometry() {
   if (state.current !== 'bunker') return;
-  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
   loadShelter('bunker');
   closeModal();
   shadowDirty();
@@ -5451,7 +5472,7 @@ function rebuildBunkerGeometry() {
 // 1.1: 현재 셸터 지오메트리 재빌드 (현장 오브젝트 단계 교체용, 벙커 외 항구 셸터). 배치 보존 후 loadShelter.
 function rebuildShelterGeometry() {
   const id = state.current;
-  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
   loadShelter(id);
   closeModal();
   shadowDirty();
@@ -6162,7 +6183,9 @@ function buildDiscoveryScene(defId, colorIdx, tier) {
   const holder = new THREE.Group(); scene.add(holder);
   const def = DEFS[defId];
   try {
-    const item = def.build(def.colors ? def.colors[colorIdx] : 0, colorIdx || 0, null, tier || 3);
+    // #192 클로즈업 등급: 컷 전용 하이디테일 빌더(def.closeup, 폴리 4~5k 허용)가 있으면 우선.
+    //   배치본과 실루엣·팔레트 동일이 규약(디렉터 오더 2026-07-16) — 없으면 배치본 그대로.
+    const item = (def.closeup || def.build)(def.colors ? def.colors[colorIdx] : 0, colorIdx || 0, null, tier || 3);
     holder.add(item);
     const bb = new THREE.Box3().setFromObject(item); const sz = new THREE.Vector3(); bb.getSize(sz); const ctr = new THREE.Vector3(); bb.getCenter(ctr);
     const sc = 1.75 / (Math.max(sz.x, sz.y, sz.z) || 1);
@@ -6852,7 +6875,8 @@ function moveGhost(item, e) {
 function startPlacing(defId) {
   if (paused) { toast(t('pause.blocked')); return; }
   if ((state.inventory[defId] || 0) <= 0) {
-    toast(t('place.noStock', { name: LName(DEFS[defId]) }));
+    // #193: 획득 경로별 안내 분기 — 제작 가구에 "탐험에서 구해 오자"는 틀린 길잡이(양초류 혼동의 동류)
+    toast(t(FURN_CRAFT.has(defId) ? 'place.noStockCraft' : 'place.noStock', { name: LName(DEFS[defId]) }));
     return;
   }
   let maxN = SHELTERS[state.current].maxItems;
@@ -6906,8 +6930,14 @@ function deselect() {
   hideSelPanel();
   updateSelRing();
 }
-function reclaimSelected() {
+// #193: 수거는 개수만 저장(6861·6880)하고 재배치는 T1·기본색·무젤(6811)이라, 손질 티어(T2/T3)·도색(비기본색)·조명 젤 투자분은 인스턴스와 함께 소실된다 — 소실 대상 판정
+const reclaimLosesInvest = it => (DEFS[it.defId].tiered && (it.tier || 3) > 1) || (it.colorIdx || 0) !== 0 || !!it.gel;
+async function reclaimSelected() {
   if (!selected) return;
+  // #193: 손질·도색·젤 투자 가구는 무경고 소실 금지 — 확인 후 진행 (투자 없으면 기존 무확인 흐름 그대로)
+  if (reclaimLosesInvest(selected)
+    && !(await gameConfirm(t('reclaim.investConfirm', { name: LName(DEFS[selected.defId]) }), t('reclaim.investOk'), t('reclaim.investCancel')))) return;
+  if (!selected) return; // 확인창 대기 중 선택 해제 방어
   // 지속효과 가전(냉장고/정수기/발전기)이 가동 중이면 회수 시 효과 중단을 안내 (비파괴 — 토스트만)
   const app = DEFS[selected.defId].appliance;
   const wasOn = app && selected.on !== false;
@@ -6926,7 +6956,10 @@ function reclaimSelected() {
 async function reclaimAll() {
   const n = items.length;
   if (n <= 0) { toast(t('inv.collectAll.none')); return; }
-  if (!(await gameConfirm(t('reclaimAll.confirm', { n }), t('reclaimAll.ok'), t('reclaimAll.cancel')))) return;
+  // #193: 손질·도색·젤 투자 가구가 섞여 있으면 기존 확인창에 소실 경고 1줄 병기 (창 2개 연속 방지)
+  const investN = items.filter(reclaimLosesInvest).length;
+  const confirmMsg = t('reclaimAll.confirm', { n }) + (investN > 0 ? ' ' + t('reclaimAll.investWarn', { n: investN }) : '');
+  if (!(await gameConfirm(confirmMsg, t('reclaimAll.ok'), t('reclaimAll.cancel')))) return;
   let applianceOff = 0;
   // 스냅샷 복사 후 순회 (removeItem이 items를 변형하므로)
   for (const it of [...items]) {
@@ -7704,6 +7737,7 @@ function showTitle() {
   const cur = opts.lang || 'ko';
   $('lang-ko')?.classList.toggle('primary', cur === 'ko');
   $('lang-en')?.classList.toggle('primary', cur === 'en');
+  $('lang-ja')?.classList.toggle('primary', cur === 'ja');
   if (typeof syncBgm === 'function') syncBgm(); // Main_theme
 }
 function hideTitle() {
@@ -8396,10 +8430,22 @@ function processDay() {
       notes.push(t('avalanche.blocked'));
     }
   }
-  // 1) 발전기: 연료를 태우면 그날 배터리 소비가 무료
+  // #189 P2: 태양광 = 지속 급전 승격 — 설치돼 있으면 조명·가전 배터리 소비 무료(주간 충전 픽션, 상시).
+  //   발전량(이틀 배터리 +1)은 기존 캘리브레이션 유지 — "전력 걱정 해소"는 급전이, 잉여는 기존 산출이 맡는다.
+  //   밸런스 축 완성: 어둠(무비용) ↔ 화기(연료) ↔ 전기조명(전력 관리) ↔ 태양광(초기투자→무한).
+  //   #193: 태양광 판정을 발전기보다 먼저 — 뒤에 두면 켜둔 발전기가 연료를 중복 연소(감사 확정 결함).
   let freePower = false;
+  if (hasMod('solar')) {
+    freePower = true;
+    // 노트는 실제 전기 부하(조명 설비·배터리 가전·전기 조명)가 있는 날만 — 아침 보고 스팸 방지
+    const anyBatteryLoad = hasMod('lighting') || items.some(it => it.on !== false &&
+      (DEFS[it.defId].light?.fuel === 'battery' || (DEFS[it.defId].appliance?.fuel === 'battery' && DEFS[it.defId].appliance?.effect !== 'power')));
+    if (anyBatteryLoad) notes.push(t('day.solarPower'));
+  }
+  // 1) 발전기: 연료를 태우면 그날 배터리 소비가 무료. 태양광 급전 중이면 연료를 태우지 않는다(무소모 대기).
   for (const it of items) {
     if (DEFS[it.defId].appliance?.effect !== 'power' || it.on === false) continue;
+    if (freePower) continue;
     if (resConsume('fuel', 1)) {
       freePower = true;
       notes.push(t('day.genRun'));
@@ -8407,16 +8453,6 @@ function processDay() {
       setItemPower(it, false);
       notes.push(t('day.genStop'));
     }
-  }
-  // #189 P2: 태양광 = 지속 급전 승격 — 설치돼 있으면 조명·가전 배터리 소비 무료(주간 충전 픽션, 상시).
-  //   발전량(이틀 배터리 +1)은 기존 캘리브레이션 유지 — "전력 걱정 해소"는 급전이, 잉여는 기존 산출이 맡는다.
-  //   밸런스 축 완성: 어둠(무비용) ↔ 화기(연료) ↔ 전기조명(전력 관리) ↔ 태양광(초기투자→무한).
-  if (!freePower && hasMod('solar')) {
-    freePower = true;
-    // 노트는 실제 전기 부하(조명 설비·배터리 가전·전기 조명)가 있는 날만 — 아침 보고 스팸 방지
-    const anyBatteryLoad = hasMod('lighting') || items.some(it => it.on !== false &&
-      (DEFS[it.defId].light?.fuel === 'battery' || (DEFS[it.defId].appliance?.fuel === 'battery' && DEFS[it.defId].appliance?.effect !== 'power')));
-    if (anyBatteryLoad) notes.push(t('day.solarPower'));
   }
   const consumeFuel = (fuelId, n = 1) => (fuelId === 'battery' && freePower) ? true : resConsume(fuelId, n);
   // 2) 켜진 조명·가전의 일일 연료 소비 (부족 시 자동 꺼짐)
@@ -8579,7 +8615,8 @@ function processDay() {
       let upN = up.n;
       if (up.res === 'fuel' && knowHeatFuelMul() !== 1) { const x = up.n * knowHeatFuelMul(); const f = x - Math.floor(x); upN = Math.floor(x) + (f > 0 && Math.random() < f ? 1 : 0); }
       if (upN <= 0) { state.upkeepOk = true; } // 효율 난방으로 그날은 연료 소모 없음
-      else if (resConsume(up.res, upN)) {
+      // #193: 배터리 유지비(벙커 환기·지하철 팬·관제탑 콘솔)도 태양광/발전기 급전 커버 — consumeFuel 경유
+      else if (consumeFuel(up.res, upN)) {
         state.upkeepOk = true;
         notes.push(t('day.upkeepPaid', { emoji: RESOURCES[up.res].emoji, name: LName(RESOURCES[up.res]), n: upN }));
       } else {
@@ -9057,13 +9094,19 @@ function renderInventoryBar() {
   }
   for (const [id, def] of Object.entries(DEFS)) {
     const cnt = state.inventory[id] || 0;
+<<<<<<< HEAD
     // 데모 콘텐츠 게이트 (디렉터 2026-07-09): 2.0 시그니처(리조트·도심 지역독점)는 데모에서 도면이 안 떨어진다
     //   → 이름·존재 자체를 감춘다("조회 자체 불가" 원칙, 제작창과 동일). 데모 화이트리스트 + 보유분 + 해금 도면만 노출.
     if (DEMO_ED && cnt <= 0 && !DEMO_CRAFT_FURN.has(id) && !(state.blueprints || {})[id]) continue;
+=======
+    // #193: 도면 게이트 가구는 도면을 줍기 전엔 툴바에서도 안 보인다 — 제작대·도감·지도와 동일 원칙(시그니처 누출 봉합)
+    if (cnt <= 0 && bpGatedLocked(id)) continue;
+>>>>>>> gd-2.0
     const el = document.createElement('div');
     el.className = 'tool-item' + (cnt <= 0 ? ' empty' : '');
     el.innerHTML = `<span class="emoji">${furnIcon(id)}</span><span>${LName(def)}</span><span class="cnt">${cnt}</span>`;
-    el.title = cnt > 0 ? t('inv.place', { name: LName(def) }) : t('inv.getByExp');
+    // 빈 슬롯 안내를 획득 경로별로 분기 — 제작 레시피가 있으면 제작대로(양초류 혼동의 동류 봉합)
+    el.title = cnt > 0 ? t('inv.place', { name: LName(def) }) : (FURN_CRAFT.has(id) ? t('inv.getByCraft') : t('inv.getByExp'));
     el.addEventListener('click', () => startPlacing(id));
     bar.appendChild(el);
   }
@@ -9120,6 +9163,8 @@ function tickExpeditionUI() {
       const deepMul = state.exp.region === 'slumdeep' ? (BAL.events.riskDeepMul || 1.5) : 1;
       if (!state.pendingEvent && !isWallpaper() && Math.random() < (BAL.events.riskExpChance || 0) * deepMul * encFreqMul()) {
         state.pendingEvent = 'collapsed_entrance';
+        // #193: 표시가 귀환 후(state.exp=null 이후)라 발동 지역을 박제 — 문안·보상이 항상 슬럼으로 굳던 결함
+        state.riskEventRegion = state.exp.region;
         state.exp.midRolled = true;
       }
     }
@@ -10142,7 +10187,7 @@ $('opt-bgidle').addEventListener('change', e => {
 });
 // 언어 전환: 저장 후 재로딩 (라이브 리렌더 대신 단순하게) — veil로 암전 후 전환
 $('opt-lang').addEventListener('change', async e => {
-  const next = e.target.value === 'en' ? 'en' : 'ko';
+  const next = (e.target.value === 'en' || e.target.value === 'ja') ? e.target.value : 'ko';
   if (next === (opts.lang || 'ko')) return;
   if (!(await gameConfirm(t('lang.confirm'), t('confirm.change'), t('confirm.cancel')))) { e.target.value = opts.lang || 'ko'; return; }
   opts.lang = next;
@@ -10446,9 +10491,10 @@ if (!loadSave()) {
 // #34 Steam 언어 연동: 유저가 언어를 고른 적 없으면(첫 실행) Steam 클라이언트 언어 → OS 언어 순으로 추정.
 //   명시 선택(opts.lang)이 항상 우선이고, 자동값은 저장하지 않는다 — 이후 Steam 언어를 바꾸면 따라간다.
 const autoLang = (() => {
-  const sl = (window.nineSteam && window.nineSteam.lang) || '';
-  if (sl) return sl === 'koreana' ? 'ko' : 'en';
-  return ((navigator.language || '').toLowerCase().startsWith('ko')) ? 'ko' : 'en';
+  const m = steamLangToGame(window.nineSteam && window.nineSteam.lang);
+  if (m) return m;
+  const os = (navigator.language || '').toLowerCase();
+  return os.startsWith('ko') ? 'ko' : (os.startsWith('ja') ? 'ja' : 'en');
 })();
 setLang(opts.lang || autoLang);   // 세이브된 언어 > Steam/OS 추정
 applyLocaleOverrides();       // 설치본 locales/*.json 유저 편집분 병합 (Electron 동기 — 렌더 전, 플래시 없음)
@@ -10573,6 +10619,7 @@ function pickTitleLang(next) {
 }
 $('lang-ko').addEventListener('click', () => pickTitleLang('ko'));
 $('lang-en').addEventListener('click', () => pickTitleLang('en'));
+$('lang-ja')?.addEventListener('click', () => pickTitleLang('ja'));
 $('t-new').addEventListener('click', () => openSlotModal('new'));
 $('t-load').addEventListener('click', () => openSlotModal('load'));
 $('t-help').addEventListener('click', openHelpModal);
@@ -11225,7 +11272,7 @@ window.__shelter = {
   knowColdDefense, knowExpBonus, knowComfortBonus, knowWaterPerDay, knowsForecast,
   knowGardenAnywhere, knowGardenBonus, knowSpoilMul, knowSaltCureBonus, knowDirtReduce, knowHeatFuelMul, knowCraftMul, knowForecastLead, knowBroadcastBonus,
   // v1.4.1 QA 훅: i18n/josa/세이브 왕복 검증용 (하네스 전용, 프로덕션 무해)
-  t, LName, josa, WEATHERS, buildWinterMemoir, flushSave, loadSave, readSlot, slotKey, setLang,
+  t, LName, josa, WEATHERS, buildWinterMemoir, flushSave, loadSave, readSlot, slotKey, setLang, steamLangToGame,
   // ③ 창유리 성에 QA 훅: 현재 성에 강도 + 창별 오버레이 투명도
   frostState: () => ({ frostLevel, netSev: coldSnapNetSeverity(), panes: winFrostMats.map(m => +m.material.opacity.toFixed(3)) }),
   renderFrame: () => renderFrame(),

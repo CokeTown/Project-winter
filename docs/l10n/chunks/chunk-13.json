@@ -1,0 +1,427 @@
+{
+ "subway.marketIntro": {
+  "ko": "얼굴 없는 교환대. 쪽지와 물건만 오간다 — 남는 것을 덜 흔한 것으로.",
+  "en": "A faceless counter. Only notes and goods change hands — surplus for something rarer.",
+  "ja": "顔のない交換所。メモと品物だけが行き交う — 余った物を、より珍しい物へ。"
+ },
+ "subway.marketRateNote": {
+  "ko": "개통 구간 {n}개만큼 산출이 늘었다.",
+  "en": "Opened segments (×{n}) sweeten the yield.",
+  "ja": "開通区間{n}か所ぶん、実入りが増えた。"
+ },
+ "subway.marketSlots": {
+  "ko": "({left}/{total} 남음)",
+  "en": "({left}/{total} left)",
+  "ja": "(残り{left}/{total})"
+ },
+ "subway.marketWinter": {
+  "ko": "겨울값",
+  "en": "winter rate",
+  "ja": "冬相場"
+ },
+ "subway.marketTradeBtn": {
+  "ko": "교환",
+  "en": "Trade",
+  "ja": "交換"
+ },
+ "subway.marketNoSlot": {
+  "ko": "오늘은 더 교환할 수 없다.",
+  "en": "No more trades today.",
+  "ja": "今日はもう交換できない。"
+ },
+ "subway.marketTraded": {
+  "ko": "{give}을(를) 놓고 {emoji} {name} ×{n}을(를) 챙겼다.",
+  "en": "Left {give}, took {emoji} {name} ×{n}.",
+  "ja": "{give}を置いて、{emoji} {name} ×{n}を手に入れた。"
+ },
+ "proj.subRail1.name": {
+  "ko": "선로 복구 · 1구간 (주거지 방면)",
+  "en": "Rail Recovery · Segment 1 (Residential)",
+  "ja": "線路復旧・第1区間 (住宅地方面)"
+ },
+ "proj.subRail1.stage1": {
+  "ko": "무너진 잔해로 막힌 선로부터 걷어낸다. 첫 삽이 제일 무겁다.",
+  "en": "I clear the caved-in rubble blocking the rails. The first shovel is the heaviest.",
+  "ja": "崩れた瓦礫で塞がれた線路から片付ける。最初のひと掘りが一番重い。"
+ },
+ "proj.subRail1.stage2": {
+  "ko": "썩은 침목을 걷어내고 새 침목을 깐다. 어둠 속에서 손끝으로 간격을 잰다.",
+  "en": "I pull the rotted ties and lay new ones, gauging the spacing by fingertip in the dark.",
+  "ja": "腐った枕木を剥がし、新しい枕木を敷く。暗闇の中、指先で間隔を測る。"
+ },
+ "proj.subRail1.stage3": {
+  "ko": "레일을 이어 체결한다. 핸드카를 굴려 끝까지 밀어본다 — 통한다.",
+  "en": "I couple the rails and bolt them down. I roll the hand-car to the end — it runs through.",
+  "ja": "レールを繋いで締結する。ハンドカーを転がして端まで押してみる — 通る。"
+ },
+ "proj.subRail1.workNote": {
+  "ko": "주거지 방면 선로를 조금 되살렸다.",
+  "en": "Brought the Residential-bound rails a little further back to life.",
+  "ja": "住宅地方面の線路を少し蘇らせた。"
+ },
+ "proj.subRail1.doneToast": {
+  "ko": "1구간이 개통됐다. 주거지까지 어둠 속 지름길이 열렸다 — 절반의 시간에 닿고, 폭설도 이 길은 막지 못한다.",
+  "en": "Segment 1 is open. A shortcut to Residential runs through the dark now — half the time, and no blizzard closes this road.",
+  "ja": "第1区間が開通した。住宅地までの暗闇の近道が開いた — 半分の時間で着き、大雪もこの道だけは塞げない。"
+ },
+ "proj.subRail1.memoir": {
+  "ko": "{day}일째. 주거지 방면 첫 구간을 개통했다. 잔해를 치우고, 침목을 깔고, 레일을 이었다. 핸드카가 어둠 속을 굴러간다. 이제 눈이 아무리 쌓여도 이 길만은 열려 있다.",
+  "en": "Day {day}. Opened the first segment toward Residential. Cleared rubble, laid ties, coupled rails. The hand-car rolls through the dark. However deep the snow, this one road stays open.",
+  "ja": "{day}日目。住宅地方面の最初の区間を開通させた。瓦礫を片付け、枕木を敷き、レールを繋いだ。ハンドカーが暗闇の中を転がっていく。もう、どれだけ雪が積もっても、この道だけは開いている。"
+ },
+ "proj.subRail2.name": {
+  "ko": "선로 복구 · 2구간 (상업지구 방면)",
+  "en": "Rail Recovery · Segment 2 (Commercial)",
+  "ja": "線路復旧・第2区間 (商業地区方面)"
+ },
+ "proj.subRail2.stage1": {
+  "ko": "더 깊은 구간이다. 물이 고인 잔해를 퍼내는 일부터 시작한다.",
+  "en": "A deeper segment. I start by bailing out the flooded rubble.",
+  "ja": "さらに深い区間だ。水の溜まった瓦礫を掻い出す作業から始める。"
+ },
+ "proj.subRail2.stage2": {
+  "ko": "침목을 깐다. 벽을 타고 흐르는 물소리가 유일한 동행이다.",
+  "en": "I lay the ties. Water running down the walls is my only company.",
+  "ja": "枕木を敷く。壁を伝う水の音だけが道連れだ。"
+ },
+ "proj.subRail2.stage3": {
+  "ko": "레일을 체결하고 이음매를 점검한다. 상업지구까지 길이 뚫렸다.",
+  "en": "I bolt the rails and check the joints. The way to Commercial is through.",
+  "ja": "レールを締結し、継ぎ目を点検する。商業地区までの道が通った。"
+ },
+ "proj.subRail2.workNote": {
+  "ko": "상업지구 방면 선로 공사를 진척시켰다.",
+  "en": "Made progress on the Commercial-bound rails.",
+  "ja": "商業地区方面の線路工事を進めた。"
+ },
+ "proj.subRail2.doneToast": {
+  "ko": "2구간이 개통됐다. 상업지구도 이제 지하로 닿는다.",
+  "en": "Segment 2 is open. Commercial is within reach underground now.",
+  "ja": "第2区間が開通した。これで商業地区へも地下で行ける。"
+ },
+ "proj.subRail2.memoir": {
+  "ko": "{day}일째. 상업지구 방면 구간을 개통했다. 고인 물을 퍼내며 며칠을 보냈다. 이 어둠이 조금씩 내 길이 되어간다.",
+  "en": "Day {day}. Opened the Commercial-bound segment. Days spent bailing standing water. This dark is slowly becoming my road.",
+  "ja": "{day}日目。商業地区方面の区間を開通させた。溜まった水を掻い出しながら数日を過ごした。この暗闇が、少しずつ私の道になっていく。"
+ },
+ "proj.subRail3.name": {
+  "ko": "선로 복구 · 3구간 (공업지대 방면)",
+  "en": "Rail Recovery · Segment 3 (Industrial)",
+  "ja": "線路復旧・第3区間 (工業地帯方面)"
+ },
+ "proj.subRail3.stage1": {
+  "ko": "가장 먼 구간. 무너진 천장 조각까지 치워야 한다.",
+  "en": "The farthest segment. Even fallen ceiling has to be cleared.",
+  "ja": "一番遠い区間。崩れた天井の破片まで片付けなければならない。"
+ },
+ "proj.subRail3.stage2": {
+  "ko": "길고 곧은 구간에 침목을 놓는다. 끝이 보이지 않는다.",
+  "en": "I set ties along a long straight run. I can’t see the end of it.",
+  "ja": "長い直線区間に枕木を置いていく。終わりが見えない。"
+ },
+ "proj.subRail3.stage3": {
+  "ko": "마지막 레일을 잇는다. 핸드카를 굴리자, 공업지대의 찬 공기가 밀려온다.",
+  "en": "I join the last rail. I push the hand-car, and the cold air of the Industrial yard rolls in.",
+  "ja": "最後のレールを繋ぐ。ハンドカーを転がすと、工業地帯の冷たい空気が押し寄せてくる。"
+ },
+ "proj.subRail3.workNote": {
+  "ko": "공업지대 방면 선로를 이어붙였다.",
+  "en": "Extended the Industrial-bound rails.",
+  "ja": "工業地帯方面の線路を繋ぎ足した。"
+ },
+ "proj.subRail3.doneToast": {
+  "ko": "3구간이 개통됐다. 가장 먼 공업지대까지 노선이 이어졌다 — 이제 겨울이 나를 가두지 못한다.",
+  "en": "Segment 3 is open. The line reaches the far Industrial yard — winter can’t wall me in now.",
+  "ja": "第3区間が開通した。一番遠い工業地帯まで路線が繋がった — もう冬は私を閉じ込められない。"
+ },
+ "proj.subRail3.memoir": {
+  "ko": "{day}일째. 마지막 구간, 공업지대 방면을 개통했다. 무너진 천장을 치우고 긴 직선에 침목을 놓았다. 세 갈래 노선이 어둠 아래로 뻗는다. 도시의 혈관은 아직 뛴다 — 내가 되살렸다.",
+  "en": "Day {day}. Opened the last segment, toward the Industrial yard. Cleared collapsed ceiling, laid ties down a long straight. Three lines now reach under the dark. The city’s veins still beat — I brought them back.",
+  "ja": "{day}日目。最後の区間、工業地帯方面を開通させた。崩れた天井を片付け、長い直線に枕木を置いた。三本の路線が闇の下へ延びていく。都市の血管はまだ脈打っている — 私が蘇らせた。"
+ },
+ "record.regionSubway": {
+  "ko": "지하 노선",
+  "en": "The Underground Line",
+  "ja": "地下路線"
+ },
+ "proj.cablecar.name": {
+  "ko": "케이블카 복구",
+  "en": "Cable Car Recovery",
+  "ja": "ロープウェイ復旧"
+ },
+ "proj.cablecar.stage1": {
+  "ko": "무너진 승강장 잔해를 걷어내고 지주를 세운다. 산바람이 세다.",
+  "en": "Clear the collapsed platform debris and raise the pylons. The mountain wind is fierce.",
+  "ja": "崩れた乗り場の瓦礫を片付け、支柱を立てる。山風が強い。"
+ },
+ "proj.cablecar.stage2": {
+  "ko": "끊어진 케이블을 절벽 너머로 다시 건다. 손이 곱는다.",
+  "en": "String the snapped cable back across the cliff. My hands go numb.",
+  "ja": "切れたケーブルを崖の向こうへ張り直す。手がかじかむ。"
+ },
+ "proj.cablecar.stage3": {
+  "ko": "곤돌라를 매달고 구동부를 손본다. 삐걱, 한 칸이 움직인다.",
+  "en": "Hang the gondola and mend the drive. With a creak, one car moves.",
+  "ja": "ゴンドラを吊るし、駆動部を手直しする。ギシッと、一台が動く。"
+ },
+ "proj.cablecar.workNote": {
+  "ko": "케이블카 복구 작업을 했다.",
+  "en": "Worked on the cable car recovery.",
+  "ja": "ロープウェイの復旧作業をした。"
+ },
+ "proj.cablecar.doneToast": {
+  "ko": "케이블카가 다시 움직인다. 이제 고원까지 오르는 길이 훨씬 짧아졌다.",
+  "en": "The cable car runs again. The climb to the highland is far shorter now.",
+  "ja": "ロープウェイが再び動いている。高原へ登る道がずっと短くなった。"
+ },
+ "proj.cablecar.memoir": {
+  "ko": "{day}일째. 케이블카를 되살렸다. 잔해를 걷고, 케이블을 걸고, 곤돌라를 매다는 데 며칠이 걸렸다. 산이 조금 더 가까워졌다.",
+  "en": "Day {day}. I brought the cable car back. Days of clearing rubble, stringing cable, hanging a gondola. The mountain feels a little closer now.",
+  "ja": "{day}日目。ロープウェイを蘇らせた。瓦礫を片付け、ケーブルを張り、ゴンドラを吊るすのに数日かかった。山が少し近くなった。"
+ },
+ "proj.observatory.name": {
+  "ko": "관측소 건설",
+  "en": "Observatory Build",
+  "ja": "観測所建設"
+ },
+ "proj.observatory.stage1": {
+  "ko": "언덕 위에 콘크리트 기초를 붓는다. 밤이면 하늘이 유난히 가깝다.",
+  "en": "Pour a concrete base on the hill. At night the sky feels unusually close.",
+  "ja": "丘の上にコンクリートの基礎を打つ。夜になると、空がやけに近い。"
+ },
+ "proj.observatory.stage2": {
+  "ko": "돔의 골조를 둥글게 세운다. 별빛이 골조 사이로 샌다.",
+  "en": "Raise the dome frame in a ring. Starlight leaks between the ribs.",
+  "ja": "ドームの骨組みを丸く立てる。星明かりが骨組みの間から漏れる。"
+ },
+ "proj.observatory.stage3": {
+  "ko": "돔을 씌우고 망원경을 앉힌다. 슬릿을 열자, 하늘이 눈에 들어온다.",
+  "en": "Cap the dome and seat the telescope. I open the slit, and the sky comes in.",
+  "ja": "ドームを被せ、望遠鏡を据える。スリットを開くと、空が目に飛び込んでくる。"
+ },
+ "proj.observatory.workNote": {
+  "ko": "관측소 건설 작업을 했다.",
+  "en": "Worked on the observatory build.",
+  "ja": "観測所の建設作業をした。"
+ },
+ "proj.observatory.doneToast": {
+  "ko": "관측소가 완성됐다. 맑은 밤이면 이제 하늘이 무언가를 보여줄 것이다.",
+  "en": "The observatory is done. On clear nights the sky will show me things now.",
+  "ja": "観測所が完成した。晴れた夜には、空が何かを見せてくれるだろう。"
+ },
+ "proj.observatory.memoir": {
+  "ko": "{day}일째. 언덕 위에 관측소를 세웠다. 기초를 붓고, 돔을 올리고, 망원경을 앉혔다. 이제 맑은 밤이면 나는 오래 서서 하늘을 본다.",
+  "en": "Day {day}. I built an observatory on the hill. Poured a base, raised a dome, seated a telescope. On clear nights now, I stand a long while and watch the sky.",
+  "ja": "{day}日目。丘の上に観測所を建てた。基礎を打ち、ドームを載せ、望遠鏡を据えた。晴れた夜はもう、長いあいだ立って空を見ている。"
+ },
+ "highland.altitudeFuel": {
+  "ko": "🏔️ 고도가 높아 난방에 연료가 {n} 더 들었다.",
+  "en": "🏔️ The altitude burned {n} more fuel to stay warm.",
+  "ja": "🏔️ 標高が高いぶん、暖房に燃料が{n}余計にかかった。"
+ },
+ "highland.altitudeCold": {
+  "ko": "🏔️ 고도 난방 연료가 떨어졌다 — 벽난로의 온기가 잦아든다.",
+  "en": "🏔️ Ran out of altitude heating fuel — the hearth’s warmth fades.",
+  "ja": "🏔️ 高地暖房の燃料が尽きた — 暖炉の暖かさが薄れていく。"
+ },
+ "avalanche.forecast": {
+  "ko": "🏔️ 능선에서 낮은 우르릉 소리가 난다. 눈사태가 임박했다 — 오늘 고원에 오르려면 각오해야 한다.",
+  "en": "🏔️ A low rumble rolls off the ridge. An avalanche is near — think twice before climbing today.",
+  "ja": "🏔️ 稜線から低い地鳴りがする。雪崩が近い — 今日、高原へ登るなら覚悟がいる。"
+ },
+ "avalanche.blocked": {
+  "ko": "🏔️ 눈사태가 길을 덮었다. 고원(리조트)이 며칠간 막혔다.",
+  "en": "🏔️ An avalanche buried the path. The highland resort is closed for a few days.",
+  "ja": "🏔️ 雪崩が道を覆った。高原 (リゾート) が数日間塞がれた。"
+ },
+ "avalanche.cleared": {
+  "ko": "🏔️ 눈이 다져졌다. 고원으로 가는 길이 다시 열렸다.",
+  "en": "🏔️ The snow has settled. The way to the highland is open again.",
+  "ja": "🏔️ 雪が締まった。高原への道が再び開いた。"
+ },
+ "avalanche.blockedToast": {
+  "ko": "눈사태로 길이 막혔다. {n}일 뒤 다시 열린다.",
+  "en": "The path is blocked by avalanche. It reopens in {n} days.",
+  "ja": "雪崩で道が塞がれた。{n}日後に再び開く。"
+ },
+ "avalanche.title": {
+  "ko": "🏔️ 눈사태 경보",
+  "en": "🏔️ Avalanche Warning",
+  "ja": "🏔️ 雪崩警報"
+ },
+ "avalanche.body": {
+  "ko": "능선이 우르릉거린다. 리조트로 가는 정규 경로가 위태롭다. 위험을 무릅쓰고 우회로로 오를 수도, 오늘은 돌아설 수도 있다.",
+  "en": "The ridge is rumbling. The usual route to the resort is unsafe. You can take the risky detour up, or turn back for today.",
+  "ja": "稜線が鳴っている。リゾートへの正規ルートが危うい。危険を冒して迂回路を登ることも、今日は引き返すこともできる。"
+ },
+ "avalanche.detour": {
+  "ko": "⚠️ 위험 우회로로 오른다 (성공률 -15%p · 시간 증가 · 보상 1.5배 · 부상 위험)",
+  "en": "⚠️ Take the risky detour (success -15%p · slower · loot ×1.5 · injury risk)",
+  "ja": "⚠️ 危険な迂回路を登る (成功率-15%p・時間増・報酬1.5倍・負傷リスク)"
+ },
+ "avalanche.turnback": {
+  "ko": "오늘은 돌아선다 (고원이 며칠 막힘)",
+  "en": "Turn back for today (highland closed for a few days)",
+  "ja": "今日は引き返す (高原が数日塞がる)"
+ },
+ "avalanche.turnedback": {
+  "ko": "돌아섰다. 눈사태가 지나갈 때까지 고원은 막힌다.",
+  "en": "You turned back. The highland is closed until the avalanche passes.",
+  "ja": "引き返した。雪崩が過ぎるまで、高原は塞がれる。"
+ },
+ "avalanche.detourLoot": {
+  "ko": "⚠️ 위험을 무릅쓴 만큼, 남들이 못 가는 곳까지 뒤졌다 — 전리품이 넉넉하다.",
+  "en": "⚠️ The risk paid off — you reached what others couldn’t. The haul is generous.",
+  "ja": "⚠️ 危険を冒したぶん、誰も行けない場所まで漁った — 戦利品はたっぷりだ。"
+ },
+ "avalanche.detourHurt": {
+  "ko": "⚠️ 우회로의 눈길에서 미끄러졌다.",
+  "en": "⚠️ You slipped on the detour’s icy path.",
+  "ja": "⚠️ 迂回路の雪道で滑った。"
+ },
+ "nightsky.foundNote": {
+  "ko": "🌌 맑은 밤, 하늘이 무언가를 보여줬다 — 수첩에 「{title}」을 스케치했다.",
+  "en": "🌌 On a clear night, the sky showed something — you sketched “{title}” in your notebook.",
+  "ja": "🌌 晴れた夜、空が何かを見せてくれた — 手帳に「{title}」をスケッチした。"
+ },
+ "sketch.tag": {
+  "ko": "밤하늘 스케치",
+  "en": "A Night-Sky Sketch",
+  "ja": "夜空のスケッチ"
+ },
+ "sight.jungleSun.note": {
+  "ko": "발코니에 나가 콘크리트 정글 너머로 해가 넘어가는 걸 오래 봤다. 불 꺼진 도시도 이 시간엔 빛난다.",
+  "en": "Stood on the balcony and watched the sun sink past the concrete jungle. Even a city with no lights left glows at this hour.",
+  "ja": "バルコニーに出て、コンクリートジャングルの向こうに日が沈むのを長いこと見ていた。灯りの消えた都市も、この時間だけは輝く。"
+ },
+ "sight.jungleSun.first": {
+  "ko": "본 광경 — 콘크리트 정글의 해",
+  "en": "A Sight Seen — Sun Over the Concrete Jungle",
+  "ja": "目にした光景 — コンクリートジャングルの陽"
+ },
+ "sight.goldenGate.note": {
+  "ko": "부서진 다리 너머, 해가 해협으로 잠기는 걸 한참 봤다. 무너진 것들 위에도 노을은 진다.",
+  "en": "Watched the sun drown in the strait beyond the broken bridge for a long while. Even over the ruins, the sky still burns.",
+  "ja": "壊れた橋の向こう、陽が海峡に沈むのをしばらく見ていた。崩れたものの上にも、夕焼けは降りる。"
+ },
+ "sight.goldenGate.first": {
+  "ko": "본 광경: 불타는 해협",
+  "en": "A Sight Seen: The Burning Strait",
+  "ja": "目にした光景: 燃える海峡"
+ },
+ "discovery.rareHeader": {
+  "ko": "희귀 발견",
+  "en": "RARE DISCOVERY",
+  "ja": "希少な発見"
+ },
+ "record.sketchTitle": {
+  "ko": "밤하늘 스케치 ({n}/{total})",
+  "en": "Night-Sky Sketches ({n}/{total})",
+  "ja": "夜空のスケッチ ({n}/{total})"
+ },
+ "record.regionResort": {
+  "ko": "리조트 폐허",
+  "en": "The Resort Ruins",
+  "ja": "リゾート廃墟"
+ },
+ "memo.tagRegion.research": {
+  "ko": "금지 구역에서 — 봉쇄선 너머의 기록",
+  "en": "From the forbidden zone — records past the cordon",
+  "ja": "禁止区域にて — 封鎖線の向こうの記録"
+ },
+ "record.regionResearch": {
+  "ko": "기밀 문서",
+  "en": "Classified Documents",
+  "ja": "機密文書"
+ },
+ "memo.tagRegion.harbor": {
+  "ko": "좌초한 여객선에서 — 갑판 판잣집의 내력",
+  "en": "From the grounded liner — how the deck shanty came to be",
+  "ja": "座礁した客船にて — 甲板のバラックの来歴"
+ },
+ "record.regionHarbor": {
+  "ko": "좌초한 여객선",
+  "en": "The Grounded Liner",
+  "ja": "座礁した客船"
+ },
+ "record.regionCitycore": {
+  "ko": "도심 중심지",
+  "en": "City Core",
+  "ja": "都心部"
+ },
+ "record.truthTitle": {
+  "ko": "📖 그날의 진실",
+  "en": "📖 The Truth of That Day",
+  "ja": "📖 あの日の真実"
+ },
+ "map.survivorLight": {
+  "ko": "응답한 먼 불빛",
+  "en": "A distant light, answering",
+  "ja": "応答した遠い灯り"
+ },
+ "forbidden.intro": {
+  "ko": "봉쇄선 너머의 일이다. 방호복 없이는 한 걸음도 들일 수 없다.",
+  "en": "This is beyond the cordon. Without a suit, not one step in.",
+  "ja": "封鎖線の向こう側だ。防護服なしでは一歩も踏み込めない。"
+ },
+ "hazmat.name": {
+  "ko": "방호복",
+  "en": "Hazmat Suit",
+  "ja": "防護服"
+ },
+ "hazmat.craftHint": {
+  "ko": "금지 구역에 들어가려면 필요하다 (내구 {dur}회 · 탐험마다 닳는다)",
+  "en": "Needed to enter the forbidden zone (durability {dur} · wears each expedition)",
+  "ja": "禁止区域に入るには必要だ (耐久{dur}回・探索ごとに消耗する)"
+ },
+ "hazmat.craftBtn": {
+  "ko": "만들기",
+  "en": "Make",
+  "ja": "作成"
+ },
+ "hazmat.repairBtn": {
+  "ko": "수선",
+  "en": "Mend",
+  "ja": "修繕"
+ },
+ "hazmat.ready": {
+  "ko": "온전함",
+  "en": "Intact",
+  "ja": "万全"
+ },
+ "hazmat.durLine": {
+  "ko": "내구 {dur}/{max}회",
+  "en": "Durability {dur}/{max}",
+  "ja": "耐久 {dur}/{max}回"
+ },
+ "hazmat.crafted": {
+  "ko": "방호복을 지어 입었다. 내구 {dur}회.",
+  "en": "You made the hazmat suit and put it on. Durability {dur}.",
+  "ja": "防護服を仕立てて着込んだ。耐久{dur}回。"
+ },
+ "hazmat.craftedNote": {
+  "ko": "🥽 방호복을 완성했다 — 이제 봉쇄선을 넘을 수 있다.",
+  "en": "🥽 Finished the hazmat suit — you can cross the cordon now.",
+  "ja": "🥽 防護服を完成させた — これで封鎖線を越えられる。"
+ },
+ "hazmat.firstHint": {
+  "ko": "봉쇄선 너머, 검문소부터 하나씩.",
+  "en": "Past the cordon — start at the checkpoint.",
+  "ja": "封鎖線の向こう、まずは検問所から一つずつ。"
+ },
+ "hazmat.repaired": {
+  "ko": "방호복을 수선했다. 내구 {dur}회로 돌아왔다.",
+  "en": "You mended the suit. Back to {dur} durability.",
+  "ja": "防護服を修繕した。耐久{dur}回に戻った。"
+ },
+ "hazmat.alreadyFull": {
+  "ko": "방호복은 이미 온전하다.",
+  "en": "The suit is already intact.",
+  "ja": "防護服はもう万全だ。"
+ },
+ "hazmat.needCraft": {
+  "ko": "먼저 방호복을 만들어야 한다.",
+  "en": "You need to make a suit first.",
+  "ja": "まず防護服を作らなければ。"
+ }
+}
