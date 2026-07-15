@@ -28,7 +28,7 @@ import { makeAvatarSystem } from './systems/avatar.js';
 import { buildVisitor, VISITOR_IDS, ENCOUNTER_VISITOR } from './systems/visitor.js';
 import { VISITOR_TABLE, VISITOR_UI } from './data/visitors.js'; // #181 방문자 교환·대사 밸런스 테이블
 import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wildlife.js';
-import { lang, setLang, t, LN, LD, LF, LC, STR, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
+import { lang, setLang, steamLangToGame, t, LN, LD, LF, LC, STR, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
 import { stampDataL10n } from './data/l10n-registry.js'; // #114 Phase 2: 데이터 표 _lk 스탬프(비열거) — LF/LC가 로케일 JSON 우선 조회
 stampDataL10n();
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
@@ -10241,8 +10241,8 @@ if (!loadSave()) {
 // #34 Steam 언어 연동: 유저가 언어를 고른 적 없으면(첫 실행) Steam 클라이언트 언어 → OS 언어 순으로 추정.
 //   명시 선택(opts.lang)이 항상 우선이고, 자동값은 저장하지 않는다 — 이후 Steam 언어를 바꾸면 따라간다.
 const autoLang = (() => {
-  const sl = (window.nineSteam && window.nineSteam.lang) || '';
-  if (sl) return sl === 'koreana' ? 'ko' : 'en';
+  const m = steamLangToGame(window.nineSteam && window.nineSteam.lang);
+  if (m) return m;
   return ((navigator.language || '').toLowerCase().startsWith('ko')) ? 'ko' : 'en';
 })();
 setLang(opts.lang || autoLang);   // 세이브된 언어 > Steam/OS 추정
@@ -11013,7 +11013,7 @@ window.__shelter = {
   knowColdDefense, knowExpBonus, knowComfortBonus, knowWaterPerDay, knowsForecast,
   knowGardenAnywhere, knowGardenBonus, knowSpoilMul, knowSaltCureBonus, knowDirtReduce, knowHeatFuelMul, knowCraftMul, knowForecastLead, knowBroadcastBonus,
   // v1.4.1 QA 훅: i18n/josa/세이브 왕복 검증용 (하네스 전용, 프로덕션 무해)
-  t, LName, josa, WEATHERS, buildWinterMemoir, flushSave, loadSave, readSlot, slotKey, setLang,
+  t, LName, josa, WEATHERS, buildWinterMemoir, flushSave, loadSave, readSlot, slotKey, setLang, steamLangToGame,
   // ③ 창유리 성에 QA 훅: 현재 성에 강도 + 창별 오버레이 투명도
   frostState: () => ({ frostLevel, netSev: coldSnapNetSeverity(), panes: winFrostMats.map(m => +m.material.opacity.toFixed(3)) }),
   renderFrame: () => renderFrame(),

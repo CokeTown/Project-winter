@@ -426,6 +426,19 @@ const KNOWLEDGE_HASH = -451536973;
     const p = JSON.parse(i18n);
     check('i18n 대표 키 해석됨', p.missing.length === 0, p.missing.length ? '누락 ' + p.missing.join(',') : '');
 
+    // ── 3b) #34 Steam 언어 매핑 (fd76bc3의 뒤늦은 게이트) ──
+    //   koreana→ko · english→en · 미지원(schinese 등)→en 폴백 · 빈 값(비Steam)→null(OS 추정으로).
+    const slj = await call(`
+      return JSON.stringify({
+        ko: S.steamLangToGame('koreana'), en: S.steamLangToGame('english'),
+        other: S.steamLangToGame('schinese'), none: S.steamLangToGame(''), nul: S.steamLangToGame(null),
+      });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const sl = JSON.parse(slj);
+    check('#34 Steam 언어 매핑 (ko·en·폴백·비Steam null)',
+      sl.ko === 'ko' && sl.en === 'en' && sl.other === 'en' && sl.none === null && sl.nul === null,
+      JSON.stringify(sl));
+
     // ── 엔딩 3분기 + 이관의 진실 (GD-2.0 §5·§9.5) — 스위트 끝 배치(엔딩 시퀀스 DOM 오염 회피) ──
     const e3 = await call(`
       // 1) 9겨울 트리거 (#170 REV3): winters 8→9 processDay → passWinter가 재건(rebuildPending) 예약 →

@@ -28,6 +28,16 @@ export function setLang(l) {
 }
 export function isEn() { return lang === 'en'; }
 
+// #34 Steam 언어 연동: Steam API 언어 코드 → 게임 로케일.
+//   지원 로케일만 명시 매핑, 그 밖의 언어는 en 폴백(스토어 노출 언어 정책과 일치).
+//   빈 값(비Steam 실행)은 null — 호출부(부팅 autoLang)가 OS 언어 추정으로 넘어간다.
+//   ja 로케일 합류 시 여기에 japanese: 'ja' 한 줄이 전부다.
+const STEAM_LANG_MAP = { koreana: 'ko', english: 'en' };
+export function steamLangToGame(sl) {
+  if (!sl) return null;
+  return STEAM_LANG_MAP[sl] || 'en';
+}
+
 // {key} 플레이스홀더 치환
 function fill(str, vars) {
   if (vars == null) return str;
