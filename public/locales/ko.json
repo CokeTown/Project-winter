@@ -2066,5 +2066,7 @@
   "data.will.will5.desc": "문은 열어뒀다. 너는 나보다 오래 살아라.\n누구든 이 녀석을 보거든, 착한 개다. 겁이 많을 뿐이다.",
   "data.will.will5.name": "개에게 남긴 말",
   "data.will.will6.desc": "네 편지 잘 받았다. 나도 보고 싶었다고, 그 말을 꼭 하고 싶었다.\n부칠 곳이 이제 없구나.",
-  "data.will.will6.name": "전하지 못한 답장"
+  "data.will.will6.name": "전하지 못한 답장",
+  "craft.resTag": " · 자원",
+  "craft.candleHint": "양초는 놓는 가구가 아니라 연료다 — 캔들 스툴·랜턴·촛대가 태운다."
 }

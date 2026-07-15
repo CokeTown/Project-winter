@@ -4966,7 +4966,7 @@ function openCraftModal() {
   const rowArr = CRAFTS.map((c, i) => {
     if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
     const outLabel = c.out.res
-      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}`
+      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}${t('craft.resTag')}`
       : c.out.outfit
         ? `${OUTFITS[c.out.outfit].emoji} ${LName(OUTFITS[c.out.outfit])}`
         : `${furnIcon(c.out.furn)} ${LName(DEFS[c.out.furn])}`;
@@ -5327,7 +5327,9 @@ function openCraftModal() {
       if (c.out.res) {
         resAdd(c.out.res, c.out.n);
         craftEmoji = RESOURCES[c.out.res].emoji;
-        toast(t('craft.doneRes', { emoji: craftEmoji, name: LName(RESOURCES[c.out.res]), n: c.out.n }));
+        // 양초는 배치 가구가 아니라 연료 — "만들었는데 못 놓는다" 혼동 방지 (디렉터 신고 2026-07-16, 모바일 1.9.0)
+        toast(t('craft.doneRes', { emoji: craftEmoji, name: LName(RESOURCES[c.out.res]), n: c.out.n })
+          + (c.out.res === 'candle' ? '\n' + t('craft.candleHint') : ''));
       } else if (c.out.outfit) {
         // #86④ 의류: 옷장에 영구 추가 + 바로 갈아입기 (만든 옷을 그 자리에서 입는 게 손맛)
         state.outfits = state.outfits || ['default'];
