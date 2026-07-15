@@ -10,6 +10,10 @@ import { state } from './state.js';
 import { SEASON_DAYS } from './season.js';
 import { SHELTER_META } from '../data/shelters.js';
 import { RESOURCES } from '../data/items.js';
+import { REGIONS } from '../data/world.js';
+
+// #193: 특수 해금 지역(게이트 술어가 regions.js에 결합) — 마이그레이션 발자국 복원에서 제외하는 집합.
+const GATED_REGIONS = ['harborYard', 'fishMarket', 'resort', 'checkpoint', 'lab', 'citycore', 'slumdeep'];
 
 // rawState = 원본 data.state(필드 존재 여부 판정용) · defaults = 로드 전 pristine state 깊은복사 · oldVer = data.state.ver||2
 export function migrateLoadedState(rawState, defaults, oldVer) {
@@ -73,6 +77,14 @@ export function migrateLoadedState(rawState, defaults, oldVer) {
   if (rawState.bagDur == null) state.bagDur = 0; // DDD-3 내구성 가방 — 구세이브 미보유(1회용 시절 세이브 포함)
   if (state.blueprints == null || typeof state.blueprints !== 'object') state.blueprints = {}; // DDD-4 도면 — 구세이브 빈 손
   if (state.sights == null || typeof state.sights !== 'object') state.sights = {}; // 비네트 「본 광경」 — 구세이브 빈 눈
+  // #193: 지도 「그려지는 발견」(v1.6) 이전 구세이브 — regionVisits 부재로 전 지역이 ??? 베일에 잠기던 결함.
+  //   탐험 이력이 있으면 기본 개방 지역만 보수적으로 발자국 복원(가봤던 곳이 확실한 집합).
+  //   게이트 지역(리조트·금지구역 등)은 재방문 시 다시 그려진다 — 과복원보다 안전.
+  if (rawState.regionVisits == null && (state.successes || 0) > 0) {
+    state.regionVisits = {};
+    for (const rid of Object.keys(REGIONS)) if (!GATED_REGIONS.includes(rid)) state.regionVisits[rid] = 1;
+  }
+  if (state.regionVisits == null || typeof state.regionVisits !== 'object') state.regionVisits = {};
   // Phase D 마이그레이션 (#12·#35·#36) — 구세이브에 없던 필드는 기본값으로 보정
   if (!Array.isArray(state.knowledge)) state.knowledge = []; // 「지식」 트리(§9) — 구세이브 안전
   if (!Array.isArray(state.evHistory)) state.evHistory = [];

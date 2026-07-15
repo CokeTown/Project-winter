@@ -7,7 +7,7 @@ import { DEFS } from './data/furniture.js';
 import { BAL } from './data/balance.js';
 import { PROJECTS } from './data/projects.js';
 // 콘텐츠 데이터 분리 Phase 1 (순수 테이블 추출) — 로직은 game.js에 그대로.
-import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS, OUTFITS } from './data/items.js';
+import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, CRAFTS, OUTFITS } from './data/items.js'; // #193: BED_TOP_Y — 침대 티어별 좌면 실높이(퍼치·착석·기상 공용)
 import { DISTRICTS, REGIONS, WEATHERS } from './data/world.js';
 import { ACH_DEFS } from './data/achs.js'; // #73 Tier4: 업적 정의(판정 chk는 아래 ACH_CHECKS 병합)
 import { SHELTER_META, SHELTER_ACCESS } from './data/shelters.js'; // 셸터 데이터 필드(분리 Phase 1) — build 함수는 아래 SHELTERS에서 병합. SHELTER_ACCESS: #182 드랍 지면 판정
@@ -1908,7 +1908,7 @@ function sleepUntilMorning(auto = false, opt = {}) {
     // #86: 기상 연출 — 침대가 있으면 그 위에서 눈을 뜨고(2.6초 누움→일어남), 없으면 바닥에서.
     if (typeof avatarSys !== 'undefined') {
       const bed = items.find(i => i.defId === 'bed');
-      avatarSys.wakeOnBed(bed ? { x: bed.x, z: bed.z, y: 0.63, rot: bed.rot, defId: 'bed' } : null);
+      avatarSys.wakeOnBed(bed ? { x: bed.x, z: bed.z, y: BED_TOP_Y[bed.tier || 3] ?? 0.63, rot: bed.rot, defId: 'bed' } : null); // #193: 기상 눕기 y도 침대 티어 실높이 (T1/T2 공중부양 방지)
     }
     // F-1a [B] 고양이 티저: 새벽 울음 1회 (등장은 Day9 불변 — 기대감). meow 저피치로 먼 울음 느낌.
     if (state.catTeaserMeow) {
@@ -3621,7 +3621,7 @@ const catSys = makeCatSystem({
   B, lamb, makeCanvasTex, disposeDeep,
   footprintOf, surfaceRectOf, itemsOn, shadowDirty,
   scene, items, DEFS, state,
-  CAT_POSES, CAT_PERCH_Y, PET_HAPPY_MS,
+  CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, PET_HAPPY_MS, // #193: 침대 퍼치 y를 티어 실높이로 (T3 고정 0.63이면 T1/T2에서 공중부양)
   getRoom: () => ROOM, catCam, exitCatCloseup,
 });
 const { spawnCat, despawnCat, updateCat, catPointBlocked, catSupportValid, catFaceTex, catFaceHappyTex } = catSys;
@@ -3643,6 +3643,7 @@ const avatarSys = makeAvatarSystem({
   scene, state, items, DEFS,
   getRoom: () => ROOM, getBlockers: () => blockers, footprintOf, gameHour, opts,
   OUTFITS, getOutfit: () => state.outfit || 'default', // #86④ 복장
+  BED_TOP_Y, // #193: 착석 y도 침대 티어 실높이를 따른다 (SEAT_Y.bed 고정값 대체)
 });
 
 // #86④ 옷장 — 보유 의류(제작으로 획득) 목록에서 탭하여 갈아입기. 진입: 툴바 👕 버튼 + 아바타 탭.
@@ -5251,7 +5252,7 @@ function openCraftModal() {
         state.rooftopSlate = 'full';
         toast(t('rooftop.slateDone')); state.dayLog.notes.push(t('rooftop.slateDone'));
         // 지붕 지오메트리를 다시 짓는다 (가구 보존 — 벙커 재빌드와 동일 패턴)
-        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일) — 빠지면 재빌드 시 표면 위 소품이 바닥으로 침몰
         loadShelter('rooftop');
         closeModal();
         playSfx('craft'); scheduleSave(); renderResBar(); updateHud();
@@ -5384,7 +5385,7 @@ function openCraftModal() {
       state.dayLog.notes.push(t('craft.modNote', { name: LName(m) }));
       if (id === 'extension' || m.rebuild) {
         // 방 구조가 바뀌므로 거처를 다시 짓는다 (rebuild: buildRoom 지오 분기 개조 — 세관 선반 철거/창구 봉쇄)
-        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
         loadShelter(state.current);
         closeModal();
       } else {
@@ -5401,7 +5402,7 @@ function openCraftModal() {
 // 벙커 지오메트리 재빌드 (#36) — 천장 수리/뒷문 상태를 반영해 방을 다시 짓는다 (extension 개조와 동일 패턴).
 function rebuildBunkerGeometry() {
   if (state.current !== 'bunker') return;
-  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
   loadShelter('bunker');
   closeModal();
   shadowDirty();
@@ -5409,7 +5410,7 @@ function rebuildBunkerGeometry() {
 // 1.1: 현재 셸터 지오메트리 재빌드 (현장 오브젝트 단계 교체용, 벙커 외 항구 셸터). 배치 보존 후 loadShelter.
 function rebuildShelterGeometry() {
   const id = state.current;
-  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
   loadShelter(id);
   closeModal();
   shadowDirty();
@@ -6851,8 +6852,14 @@ function deselect() {
   hideSelPanel();
   updateSelRing();
 }
-function reclaimSelected() {
+// #193: 수거는 개수만 저장(6861·6880)하고 재배치는 T1·기본색·무젤(6811)이라, 손질 티어(T2/T3)·도색(비기본색)·조명 젤 투자분은 인스턴스와 함께 소실된다 — 소실 대상 판정
+const reclaimLosesInvest = it => (DEFS[it.defId].tiered && (it.tier || 3) > 1) || (it.colorIdx || 0) !== 0 || !!it.gel;
+async function reclaimSelected() {
   if (!selected) return;
+  // #193: 손질·도색·젤 투자 가구는 무경고 소실 금지 — 확인 후 진행 (투자 없으면 기존 무확인 흐름 그대로)
+  if (reclaimLosesInvest(selected)
+    && !(await gameConfirm(t('reclaim.investConfirm', { name: LName(DEFS[selected.defId]) }), t('reclaim.investOk'), t('reclaim.investCancel')))) return;
+  if (!selected) return; // 확인창 대기 중 선택 해제 방어
   // 지속효과 가전(냉장고/정수기/발전기)이 가동 중이면 회수 시 효과 중단을 안내 (비파괴 — 토스트만)
   const app = DEFS[selected.defId].appliance;
   const wasOn = app && selected.on !== false;
@@ -6871,7 +6878,10 @@ function reclaimSelected() {
 async function reclaimAll() {
   const n = items.length;
   if (n <= 0) { toast(t('inv.collectAll.none')); return; }
-  if (!(await gameConfirm(t('reclaimAll.confirm', { n }), t('reclaimAll.ok'), t('reclaimAll.cancel')))) return;
+  // #193: 손질·도색·젤 투자 가구가 섞여 있으면 기존 확인창에 소실 경고 1줄 병기 (창 2개 연속 방지)
+  const investN = items.filter(reclaimLosesInvest).length;
+  const confirmMsg = t('reclaimAll.confirm', { n }) + (investN > 0 ? ' ' + t('reclaimAll.investWarn', { n: investN }) : '');
+  if (!(await gameConfirm(confirmMsg, t('reclaimAll.ok'), t('reclaimAll.cancel')))) return;
   let applianceOff = 0;
   // 스냅샷 복사 후 순회 (removeItem이 items를 변형하므로)
   for (const it of [...items]) {
