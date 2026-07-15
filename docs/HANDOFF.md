@@ -22,9 +22,9 @@
 | 작업 | 위치 | 상태 |
 |---|---|---|
 | **#3 스토어 샷 8장 마감** — 컴포저에 셸터별 배치 추가(요트·로지·지하철·등대·온실·벙커 + 응답불빛 컷) + 고양이 포즈·골든아워·디더 튜닝 | `tools/store-shot.cjs` → `docs/steam/shots/v2/` | 컴포저·히어로 완료, 나머지 7 |
-| steamcmd depot 파이프라인 (#75) | `tools/` (신규) | 미착수 |
-| #34 Steam 언어 연동 · #117 서포터팩 DLC 게이트 | `src/game.js`, `docs/steam/SKU-PLAN.md §7` | 미착수 |
-| 데모 정본 재빌드 (레버 반영분 → v1.7.x-demo) | `tools/build-demo.ps1` (가드 포함) | 레버 반영됨, 릴리스만 |
+| steamcmd depot 파이프라인 (#75) | `tools/steam/push-steam.ps1` · `docs/steam/DEPOT.md` | 완료 (f14baa4, DryRun 그린) — 잔여: AppID·steamcmd 설치〔D〕 |
+| #34 Steam 언어 연동 · #117 서포터팩 DLC 게이트 | `src/game.js`, `docs/steam/SKU-PLAN.md §7` | #34 완료(db4e263, 88/88) · #117 미착수 |
+| 데모 정본 재빌드 → v1.9.0-demo | `tools/build-demo.ps1` (가드 포함) | 완료 — 재수렴(625571c) 빌드, GitHub Release 발행(포터블·NSIS·APK) |
 
 ### B. 게임 리뷰 레버 (내가 구현 가능분)
 | 레버 | 작업 | 위치 |
@@ -94,7 +94,7 @@ docs/
 tools/
 ├── store-shot.cjs          스크린샷 컴포저 (셸터+T3가구+골든아워+고양이 → PNG)
 ├── build-demo.ps1          데모 빌드 (프리즈+가드 내장)
-└── check-i18n.mjs          i18n 게이트 (ko/en + src↔public 동기화)
+└── check-i18n.mjs          i18n 게이트 (ko/en/ja 3로케일 + src↔public 동기화)
 
 src/
 ├── game.js                 메인 (인트로·인카운터 스케줄러·트래커 등)

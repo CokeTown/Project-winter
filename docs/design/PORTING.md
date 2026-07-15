@@ -3,19 +3,29 @@
 > 목적: 웹(Vite/JS) 콘텐츠 데이터를 유니티(C#/Steamworks.NET)로 이식할 때
 > **테이블 → ScriptableObject**, **BAL → config**, **i18n → JSON**, **Platform → Steamworks.NET**
 > 1:1 매핑을 고정한다. Phase 1(2026-07)에서 순수 콘텐츠 테이블을 `src/data/`로 분리했고,
-> 이 문서는 그 결과물의 이식 청사진이다.
+> 이후 #73 엔지니어링 패스 Tier4까지 진행되어 현재 모듈 구성은 core 14(coldsnap/comfort/economy/encounter/expedition/gauges/knowledge/mode/projects/regions/save/season/shelter/state) · systems 4(avatar/cat/visitor/wildlife) · data 16이다.
+> 이 문서는 그 결과물의 이식 청사진이다. 다음 티어 후보는 SHELTERS 빌더(buildRoom/buildEnv) 분리.
 
 ## 1. 데이터 파일 목록 (분리 후 현재 `src/data/`)
 
 | 파일 | 내보내기(export) | 성격 | 줄수 | 의존성 |
 |------|------------------|------|------|--------|
-| `balance.js` | `BAL` | 튜닝 수치(게이지·경제·계절…) | 412 | 없음(순수) |
-| `projects.js` | `PROJECTS` | 대형 프로젝트 스테이지 정의 | 208 | 없음(문자열 키로 BAL 간접참조) |
-| `furniture.js` | `DEFS` | 가구 12종 정의 + 3D `build(c)` | 548 | THREE, `lib/helpers` |
-| `events.js` | `makeEvents(ctx)` | 인카운터 25종(팩토리) | 295 | 없음(game→data 단방향, ctx 주입) |
-| `items.js` | `RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS` | 자원/부상/준비물/제작/테마/고양이 포즈 | 117 | `BAL`(CRAFTS 염장 비용) |
-| `world.js` | `DISTRICTS, REGIONS` | 지도 구역·탐험 지역 수치·메타 | 161 | `DEFS`(REGIONS.slum.pool) |
-| `lore.js` | `MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, BROADCASTS, SKETCHES` | 서사 텍스트(메모/유서/방송/스케치) | 136 | 없음(순수) |
+| `balance.js` | `BAL` | 튜닝 수치(게이지·경제·계절…) | 639 | 없음(순수) |
+| `projects.js` | `PROJECTS` | 대형 프로젝트 스테이지 정의 | 228 | 없음(문자열 키로 BAL 간접참조) |
+| `furniture.js` | `DEFS, WOODS` | 가구 17종(티어 T1~T3 포함) 정의 + 3D `build(c)` | 1530 | THREE, `lib/helpers` |
+| `events.js` | `makeEvents(ctx)` | 인카운터(팩토리) | 762 | 없음(game→data 단방향, ctx 주입) |
+| `items.js` | `RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, CRAFTS` | 자원/부상/준비물/제작/테마/고양이 포즈 | 175 | `BAL`(CRAFTS 염장 비용) |
+| `world.js` | `WEATHERS, DISTRICTS, REGIONS` | 날씨(#73 Tier4 합류)·지도 구역·탐험 지역 수치·메타 | 201 | `DEFS`(REGIONS.slum.pool) |
+| `lore.js` | `MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, BROADCASTS, SKETCHES` | 서사 텍스트(메모/유서/방송/스케치) | 179 | 없음(순수) |
+| `achs.js` | `ACH_DEFS` | 업적 18종 정의(#73 Tier4 분리) | 32 | 없음(순수) |
+| `decotex.js` | `makeDecoTex(ctx)` | 벽지·바닥재 텍스처 팩토리(WALLPAPERS·FLOORINGS 분리) | 130 | 없음(makeCanvasTex 주입식) |
+| `knowledge.js` | `KNOWLEDGE_BRANCHES, KNOWLEDGE` | 지식 테크트리 정의 | 59 | 없음(순수) |
+| `l10n-registry.js` | `walkDataL10n, stampDataL10n` | 데이터 표 병기 문자열 레지스트리(#114 P2) | 101 | data 테이블 참조 |
+| `paints.js` | `PAINT_FAMILIES, RARE_PAINTS, SIGNATURE_PAINT, PAINT_ALL` | 도료 12계열+희귀(네온 안료) | 64 | 없음(순수) |
+| `shelters.js` | `SHELTER_META, SHELTER_ACCESS` | 셸터 순수 필드(빌더는 game.js 잔류) | 270 | 없음(순수) |
+| `spots.js` | `FIELD_SPOTS` | 필드 스팟 정의 | 31 | 없음(순수) |
+| `visitors.js` | `VISITOR_TABLE, VISITOR_UI` | 방문자 테이블·UI 메타 | 92 | 없음(순수) |
+| `wildlife.js` | `WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE` | 야생동물 종·출현 테이블 | 133 | 없음(순수) |
 
 의존 방향 규칙: **game → data (단방향)**. data끼리는 `balance.js`(의존성 0)와
 `furniture.js`(THREE만)에 한해 참조 허용(순환 없음). data는 절대 game.js를 import하지 않는다.
@@ -40,6 +50,8 @@
 | `EVENTS` (via `makeEvents`) | `EncounterDef` + 액션 델리게이트 | id(wanderer/…) | when 스키마는 데이터, run()/cost()는 **엔진 콜백**으로 이식(아래 §5) |
 | `PROJECTS` | `ProjectDef` | id | stage 배열. 이미 순수 데이터 |
 | `DEFS`(furniture) | `FurnitureDef` + Prefab | id | build(c) → 유니티 Prefab/메시로 대체 |
+| `WEATHERS` | `WeatherDef` | id | #73 Tier4에서 `data/world.js` 이관 완료. 파티클 생성·weather 런타임 상태는 렌더 결합이라 game.js 잔류(페널티 수치만 core/expedition에 주입) |
+| `ACHS`(`ACH_DEFS`) | `AchievementDef` (Steam 업적 id 1:1) | id | `data/achs.js` 분리 완료(#73 Tier4) |
 
 ## 3. BAL → config
 
@@ -50,7 +62,7 @@ config 키 이름을 그대로 보존**할 것.
 
 ## 4. i18n → JSON
 
-`src/i18n.js`는 `{ 'key': { ko, en } }` 955개 항목 + `{placeholder}` 치환 + 한국어 조사 자동선택(`{josa}`).
+i18n은 이미 언어별 외부 JSON(`public/locales/ko.json`·`en.json`·`ja.json`, 약 2,070키)으로 외부화 완료(#113 UI 993키 + #114 P2 data.* 542키 + #191 ja 로케일, 폴백 체인 ja→en→ko). `{placeholder}` 치환 + 한국어 조사 자동선택(`{josa}`)은 엔진 유지. 유니티 이식 시 이 JSON을 그대로 String Table 소스로 쓰면 된다(아래 '유니티 이식' 항목 중 'ko/en → 언어별 JSON' 단계는 이미 완료 상태).
 유니티 이식:
 - 키별 `ko`/`en` → 언어별 JSON(`ko.json`/`en.json`) 또는 유니티 Localization 패키지의 String Table.
 - `{name}` 등 플레이스홀더 → `string.Format`/SmartFormat.
@@ -81,7 +93,7 @@ Steam Cloud 파일명으로. 업적(ACHS)은 Steam 업적 id로 1:1. (세이브 
 
 | 남은 것 | 사유 |
 |---------|------|
-| `SHELTERS` (약 1811줄) | 각 셸터 항목이 `buildRoom()`/`buildEnv()` 3D 빌더 메서드를 데이터와 뒤섞어 품고 있어, 수치만 떼면 **구조 분해(재작성)** 가 되어 "이동만" 원칙 위반. 3D 빌더 분리 배치(Phase 2)에서 함께. 유니티에선 셸터별 Scene/Prefab + `ShelterDef` SO로. |
-| `WALLPAPERS` / `FLOORINGS` | `tex: () => makeCanvasTex(...)` 텍스처 빌더 클로저(캔버스/THREE 렌더). 3D 빌더 분리 배치로 유보. 유니티에선 Material/Texture asset. |
+| `SHELTERS` (3D 빌더 잔류분) | **데이터부 분리 완료**: 순수 필드(이름·쾌적·퍽·유지비 등)는 `src/data/shelters.js`(SHELTER_META·SHELTER_ACCESS, 270줄)로 이관, game.js가 `SHELTERS[id] = { ...SHELTER_META[id], buildRoom, buildEnv }`로 병합. 잔류분은 `buildRoom()`/`buildEnv()` 3D 빌더뿐(#73 다음 티어 후보). 유니티에선 셸터별 Scene/Prefab + `ShelterDef` SO로. |
+| `WALLPAPERS` / `FLOORINGS` | **분리 완료**: `src/data/decotex.js`의 `makeDecoTex({ makeCanvasTex })` 팩토리로 이관(렌더 함수는 주입식). 유니티에선 Material/Texture asset. |
 | `MAP` / `MAP_MARKERS` | 종이 지도 렌더 좌표·마커. 렌더 결합. Phase 2. |
 | `state` / `DEFAULT_STATE` | 콘텐츠 테이블이 아니라 런타임 세이브 상태(→ SAVE-SCHEMA.md). |
