@@ -24,6 +24,11 @@ const loadApp = w => CAP_URL ? w.loadURL(CAP_URL) : w.loadFile(path.join(DIST, '
 const W = 1920, HGT = 1080, FPS = SPEC.fps || 30;
 const lerp = (a, b, t) => a + (b - a) * t;
 const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+// 렌더 룩 오버라이드 (트레일러 재촬영용): CAP_PIXEL/CAP_DITHERAMT/CAP_AA env → 각 클립 setup서 적용.
+//   예) CAP_PIXEL=2 CAP_DITHERAMT=0.3 CAP_AA=1 = 스토리 트레일러와 동일한 다듬어진 도트 룩.
+const OPTS_JS = (process.env.CAP_PIXEL || process.env.CAP_DITHERAMT || process.env.CAP_AA)
+  ? `S.opts.pixel=${+process.env.CAP_PIXEL || 3};S.opts.ditherAmt=${process.env.CAP_DITHERAMT != null ? +process.env.CAP_DITHERAMT : 1};S.opts.aa=${process.env.CAP_AA === '0' ? 'false' : 'true'};S.applyOpts&&S.applyOpts();`
+  : '';
 
 const cozyLiving = (w, d) => {
   const X = w / 2, Z = d / 2; const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -82,6 +87,7 @@ async function main() {
     // 기본 세션 유지 — 커스텀 파티션은 file:// 로드가 ERR_FAILED(실측 배치3). 재생성만으로 vt 정지 해소 충분(배치1 실증).
     const w = new BrowserWindow({ show: false, width: W, height: HGT,
       webPreferences: { offscreen: true, backgroundThrottling: false } });
+    w.webContents.setAudioMuted(true); // 게임 소리 스피커 유출 차단 (디렉터 신고 2026-07-15)
     w.webContents.setFrameRate(Math.min(60, FPS));
     return w;
   };
@@ -127,6 +133,7 @@ async function main() {
       ${sc.winter ? 'const D=(S.BAL&&S.BAL.seasons&&S.BAL.seasons.daysPerSeason)||15;S.state.day=3*D+Math.ceil(D/2);' : ''}
       S.state.current=${JSON.stringify(sc.shelter)};S.loadShelter(${JSON.stringify(sc.shelter)});
       S.setWeather(${JSON.stringify(sc.weather)});S.setHour(${sc.hour});
+      ${OPTS_JS}
       ${hideUI ? `let css=document.getElementById('shotcss')||document.createElement('style');css.id='shotcss';document.head.appendChild(css);css.textContent='body > *:not(#c):not(#fx):not(#fake-cursor){display:none!important}';` : `const oc=document.getElementById('shotcss');if(oc)oc.remove();`}
       return {ok:1,exists:!!S.SHELTERS[${JSON.stringify(sc.shelter)}]};}catch(e){return {error:String(e&&e.stack||e)};}})()`);
     console.log(sc.id, 'setup:', JSON.stringify(setup));

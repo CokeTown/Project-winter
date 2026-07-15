@@ -12,6 +12,7 @@ async function main() {
   setTimeout(() => { console.log('WATCHDOG'); app.quit(); process.exit(7); }, 420000);
   await app.whenReady();
   const win = new BrowserWindow({ show: false, width: 1280, height: 800, webPreferences: { offscreen: true } });
+  win.webContents.setAudioMuted(true); // 게임 소리 스피커 유출 차단 (디렉터 신고 2026-07-15)
   win.webContents.setFrameRate(30);
   const ev = e => win.webContents.executeJavaScript(e, true);
   await win.loadURL(URL);

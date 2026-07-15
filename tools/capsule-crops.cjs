@@ -274,7 +274,8 @@ async function main() {
     const W2 = Math.min(w * 2, 3900), H2 = Math.min(h * 2, 2100); // hero 3840→2x 캡 미적용(1x로)
     const scale2 = (w * 2 <= 3900);
     const RW = scale2 ? w * 2 : w, RH = scale2 ? h * 2 : h;
-    if (!win) { win = new BrowserWindow({ show: false, width: RW, height: RH, webPreferences: { offscreen: true } }); win.webContents.setFrameRate(30); }
+    if (!win) { win = new BrowserWindow({ show: false, width: RW, height: RH, webPreferences: { offscreen: true } });
+  win.webContents.setAudioMuted(true); // 게임 소리 스피커 유출 차단 (디렉터 신고 2026-07-15) win.webContents.setFrameRate(30); }
     else { win.setSize(RW, RH); await sleep(300); }
     const ev = e => win.webContents.executeJavaScript(e, true);
     let loaded = false;

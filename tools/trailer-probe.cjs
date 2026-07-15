@@ -13,6 +13,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   app.setPath('userData', path.join(os.tmpdir(), 'nw-probe-' + process.pid));
   await app.whenReady();
   const win = new BrowserWindow({ show: false, width: 1920, height: 1080, webPreferences: { offscreen: true, backgroundThrottling: false } });
+  win.webContents.setAudioMuted(true); // 게임 소리 스피커 유출 차단 (디렉터 신고 2026-07-15)
   win.webContents.setFrameRate(30);
   const ev = e => win.webContents.executeJavaScript(e, true);
   const shot = async n => {
