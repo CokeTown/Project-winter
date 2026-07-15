@@ -5,7 +5,16 @@
 # The demo web bundle must never leak: final step rebuilds normal dist.
 $ErrorActionPreference = 'Stop'
 $env:Path = "$env:LOCALAPPDATA\node-portable;$env:Path"
+# Portable JDK21 (AGP needs JVM 17+; system has only JRE8). Same convention as build-qa.ps1.
+$env:JAVA_HOME = "$env:LOCALAPPDATA\jdk21"
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
 Set-Location (Split-Path $PSScriptRoot -Parent)
+# Worktree lacks gitignored android/local.properties (sdk.dir) - mirror it from the main tree.
+if (-not (Test-Path android\local.properties)) {
+  $mainLp = 'G:\Project_winter\android\local.properties'
+  if (Test-Path $mainLp) { Copy-Item $mainLp android\local.properties }
+  else { throw "android/local.properties missing (sdk.dir) - set Android SDK path first" }
+}
 $ver = (Get-Content package.json -Raw | ConvertFrom-Json).version
 
 Write-Host "[1/5] vite build (DEMO_BUILD=1, relative base for Capacitor)"
