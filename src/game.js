@@ -2393,6 +2393,10 @@ function setGhostVisual(item, mode) {
   item.group.traverse(o => {
     if (!o.isMesh) return;
     const m = o.material;
+    // #197(1.9.1 캔들 배치 크래시): 바닥 라이트 풀(#189 P4, MeshBasic — emissive 없음)이 광원 가구 그룹에
+    //   합류하면서 무가드 emissive.setHex가 배치 고스트 첫 프레임에 터졌다. emissive 없는 재질은 틴트 대상이
+    //   아니며, 풀의 상시 투명도(0.13)를 원복 분기가 불투명으로 파괴하는 것도 함께 방지.
+    if (!m.emissive) return;
     if (mode) {
       m.transparent = true; m.opacity = 0.75;
       if (!o.userData.glow) {
@@ -2401,8 +2405,8 @@ function setGhostVisual(item, mode) {
       }
     } else {
       m.transparent = false; m.opacity = 1;
-      m.emissive.setHex(o.userData.origEmissive);
-      m.emissiveIntensity = o.userData.origEmissiveI;
+      m.emissive.setHex(o.userData.origEmissive ?? 0);
+      m.emissiveIntensity = o.userData.origEmissiveI ?? 1;
     }
   });
 }
