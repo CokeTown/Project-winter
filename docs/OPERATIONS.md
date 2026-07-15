@@ -102,6 +102,7 @@ Get-CimInstance Win32_Process | Where-Object { ($_.Name -match 'electron|node|ja
 
 - **배터리가 로드 즉시 크래시** → node로 직접 돌렸다. `npm run test:build`로.
 - **APK 빌드 JVM 오류** → build-demo-apk.ps1가 JDK21을 주입한다(수정 완료). 워크트리 local.properties도 자동 미러.
+- **"JAVA_HOME is set to an invalid directory"** → LOCALAPPDATA가 실행 컨텍스트마다 다르다(MSIX 가상화 vs 실경로). 스크립트가 양쪽(`%LOCALAPPDATA%\jdk21` + `...\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Local\jdk21`)을 프로브한다 — 둘 다 없으면 JDK21 포터블을 후자 경로에 내려받아 풀 것.
 - **publish-beta credential 오류** → 중첩 셸 때문. pwsh에서 `&`로 직접 호출.
 - **골든 첫 재핀 후 flap** → 한 번 더 돌려 2연속 안정 확인 후 판정.
 - **"오류가 났지만 세이브는 무사하다" 토스트** → 전역 에러 핸들러. 하네스에 error 리스너 달아 스택 채집(§4)이 정석.
