@@ -36,7 +36,7 @@ import { SEASONS, SEASON_DAYS, seasonOf, seasonDay, seasonIndex, seasonAdjustPoo
 import { accWinterFuel, resAdd, resConsume, resHasAll, resConsumeAll, hasAnyFood, consumeAnyFood } from './core/economy.js'; // 자원 연산
 import { hasMod } from './core/shelter.js'; // 셸터 개조 술어
 import { coldDefenseLevel, coldSnapActive, coldSnapNetSeverity, frontActive, frontDiscipline } from './core/coldsnap.js'; // 한파 술어 + 대한파 프론트(2.0)
-import { comfortDetail, comfortLevel, comfortExpBonus, recoveryMult, bunkerComfortBonus, themeSetActive, activeThemeSets, setComfortWeather } from './core/comfort.js'; // 쾌적 계산
+import { comfortDetail, comfortLevel, comfortExpBonus, recoveryMult, bunkerComfortBonus, themeSetActive, activeThemeSets, setComfortWeather, tierComfortMult } from './core/comfort.js'; // 쾌적 계산
 import { decayGauges, isExhausted } from './core/gauges.js'; // 생존 게이지 감소
 import { migrateLoadedState } from './core/save.js'; // 세이브 마이그레이션
 import { KNOWLEDGE, KNOWLEDGE_BRANCHES } from './data/knowledge.js'; // 「지식」 테크트리 데이터 (§9)
@@ -779,7 +779,7 @@ function comfortBreakdown() {
   for (const it of items) {
     const L = DEFS[it.defId]?.light;
     if (!L || it.on === false) continue;
-    const c = (L.comfort ?? 5);
+    const c = (L.comfort ?? 5) * tierComfortMult(it); // #157 티어 스케일 — comfortDetail과 동일 배수
     const axis = CM.lightAxis[it.defId] || CM.lightAxisDefault;
     if (axis === 'warmth') { rawWarm += c; warmSrc.push({ id: it.defId, v: c }); }
     else { rawMood += c; moodSrc.push({ id: it.defId, v: c }); }

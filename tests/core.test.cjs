@@ -671,6 +671,41 @@ const KNOWLEDGE_HASH = -451536973;
     else check('복귀 서프라이즈 (게이트·고양이/새 분기·소액 지급·노트)', oj.none === false && oj.short === false && oj.cat === true && oj.dCloth === 1 && oj.bird === true && oj.dFood === 1 && oj.notes === 2,
       JSON.stringify(oj));
 
+    // #157 가구 티어 — FURNITURE-TIERS.md 확정 17종 전부 tiered + T1/T2/T3 복셀 실분기 + 쾌적 티어 스케일
+    const tt = await call(`
+      const LIST = ['bed','stove','table','chair','sofa','dresser','bookshelf','rug','lamp','candle','lantern','curtain','cushion','teatable','fridge','purifier','radio'];
+      const tieredAll = LIST.every(id => S.DEFS[id] && S.DEFS[id].tiered === true);
+      const tieredCount = Object.values(S.DEFS).filter(d => d.tiered).length;
+      // 복셀 분기: 티어별 build 결과의 (자식수+위치+회전+색 지문)이 서로 달라야 진짜 별도 모델
+      //   (T2 낡음 문법은 위치 동일+톤/기울기 변주가 정당 — lantern류 — 그래서 색·회전 포함)
+      const fp = (id, tier) => {
+        const d = S.DEFS[id];
+        const g = d.build(d.colors[0], 0, null, tier);
+        return g.children.length + '|' + g.children.slice(0, 6).map(m =>
+          m.position.x.toFixed(2) + ',' + m.position.y.toFixed(2) + ',' + (m.rotation ? m.rotation.z.toFixed(2) : '') + ',' +
+          (m.material && m.material.color ? m.material.color.getHexString() : '')).join(';');
+      };
+      const branchOk = LIST.every(id => { const a = fp(id, 1), b = fp(id, 2), c3 = fp(id, 3); return a !== c3 && b !== c3 && a !== b; });
+      // 쾌적 티어 스케일: 같은 가구 T1 < T3 (furn·light 모두 배수 반영)
+      S.simReset(); S.loadShelter('container');
+      S.addItem('bed', 0, -1.5, 0, 0, true, 0, 1);
+      S.addItem('lantern', 0, 1.5, 0, 0, true, 0, 1);
+      const lo = S.comfortDetail();
+      S.simReset(); S.loadShelter('container');
+      S.addItem('bed', 0, -1.5, 0, 0, true, 0, 3);
+      S.addItem('lantern', 0, 1.5, 0, 0, true, 0, 3);
+      const hi = S.comfortDetail();
+      return JSON.stringify({ tieredAll, tieredCount, branchOk, loFurn: lo.furn, hiFurn: hi.furn, loLight: lo.light, hiLight: hi.light });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const tj = JSON.parse(tt);
+    if (tj.error) check('#157 가구 티어 (예외 없이)', false, tj.error);
+    else {
+      check('#157 티어 17종 완성 (tiered 플래그 정확히 17)', tj.tieredAll && tj.tieredCount === 17, JSON.stringify({ all: tj.tieredAll, n: tj.tieredCount }));
+      check('#157 티어 복셀 실분기 (17종 T1≠T2≠T3)', tj.branchOk === true, `branchOk ${tj.branchOk}`);
+      check('#157 쾌적 티어 스케일 (T1 < T3, furn·light)', tj.loFurn < tj.hiFurn && tj.loLight < tj.hiLight,
+        JSON.stringify({ furn: [tj.loFurn, tj.hiFurn], light: [tj.loLight, tj.hiLight] }));
+    }
+
     const green = report();
     app.exit(green ? 0 : 1);
   } catch (err) {

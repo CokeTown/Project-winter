@@ -58,7 +58,37 @@ const DEFS = {
     colorNames: ['베이지', '그레이', '올리브', '테라코타'],
     colorNamesEn: ['Beige', 'Gray', 'Olive', 'Terracotta'],
     colors: [0xc4b295, 0x84878e, 0x7d7f5a, 0xb0644d],
-    build(c) {
+    tiered: true, // #157: T1 찢어진 시트+은색 테이프 → T2 꺼진 쿠션·빛바랜 천 → T3 현행. 착석면 높이 동일.
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const tape = 0xb4b6ba, pallet = 0x8a7550;
+        B(g, 1.9, 0.14, 0.85, pallet, 0, 0.1, 0);                            // 팔레트 받침
+        for (const z of [-0.36, 0, 0.36]) B(g, 1.86, 0.05, 0.16, shade(pallet, 0.85), 0, 0.19, z);
+        B(g, 0.9, 0.3, 0.75, shade(c, 0.6), -0.45, 0.4, 0);                  // 찢어진 시트 쿠션 ①(꺼짐)
+        const cu2 = B(g, 0.9, 0.26, 0.75, shade(c, 0.55), 0.46, 0.38, 0.02); // 쿠션 ②(더 꺼짐·어긋남)
+        cu2.rotation.y = 0.05;
+        B(g, 0.06, 0.32, 0.77, tape, -0.2, 0.4, 0);                          // 은색 테이프 줄
+        B(g, 0.06, 0.28, 0.77, tape, 0.62, 0.38, 0.02);
+        B(g, 0.3, 0.02, 0.24, 0x8a8474, -0.55, 0.56, 0.12);                  // 터진 솜 비침
+        const bl = B(g, 1.7, 0.4, 0.1, shade(c, 0.68), 0, 0.6, -0.36);       // 등받이=걸쳐둔 담요
+        bl.rotation.x = -0.14;
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        B(g, 1.9, 0.35, 0.85, shade(c, 0.7), 0, 0.3, 0);                     // 빛바랜 몸체
+        B(g, 1.9, 0.62, 0.2, shade(c, 0.72), 0, 0.72, -0.32);
+        B(g, 0.18, 0.55, 0.85, shade(c, 0.72), -0.86, 0.55, 0);
+        B(g, 0.18, 0.55, 0.85, shade(c, 0.72), 0.86, 0.55, 0);
+        B(g, 0.75, 0.1, 0.6, shade(c, 0.8), -0.39, 0.52, 0.05);              // 꺼진 쿠션(얇음)
+        const cu = B(g, 0.75, 0.12, 0.6, shade(c, 0.78), 0.39, 0.53, 0.05);  // 한쪽만 덜 꺼짐·기움
+        cu.rotation.z = 0.04;
+        B(g, 0.2, 0.02, 0.16, shade(c, 1.25), -0.5, 0.575, 0.15);            // 기운 헝겊 패치
+        B(g, 0.1, 0.14, 0.1, 0x4a3826, -0.8, 0.07, 0.32); B(g, 0.1, 0.14, 0.1, 0x4a3826, 0.8, 0.07, 0.32);
+        B(g, 0.1, 0.14, 0.1, 0x4a3826, -0.8, 0.07, -0.32); B(g, 0.1, 0.14, 0.1, 0x4a3826, 0.8, 0.07, -0.32);
+        return g;
+      }
       const g = new THREE.Group();
       B(g, 1.9, 0.35, 0.85, shade(c, 0.85), 0, 0.3, 0);
       B(g, 1.9, 0.62, 0.2, shade(c, 0.9), 0, 0.72, -0.32);
@@ -144,7 +174,40 @@ const DEFS = {
     colorNames: ['내추럴', '다크브라운', '화이트', '그레이'],
     colorNamesEn: ['Natural', 'Dark Brown', 'White', 'Gray'],
     colors: [0xa9825c, 0x5f452f, 0xd4cfc2, 0x7c7f86],
-    build(c) {
+    tiered: true, // #157: T1 종이상자 3단 → T2 문짝 하나 빠진 서랍장 → T3 현행. 상판 높이 동일(스태킹 정합).
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const card = 0xa8895e, tape = 0xb4b6ba;
+        B(g, 1.05, 0.38, 0.45, card, 0, 0.19, 0);                            // 상자 ①(아래)
+        const b2 = B(g, 0.98, 0.36, 0.42, shade(card, 0.9), 0.02, 0.56, 0);  // 상자 ②
+        b2.rotation.y = -0.05;
+        const b3 = B(g, 1.0, 0.36, 0.43, shade(card, 0.82), -0.02, 0.92, 0.01); // 상자 ③(위)
+        b3.rotation.y = 0.04;
+        B(g, 0.4, 0.02, 0.44, shade(card, 0.7), -0.28, 1.105, 0.02);         // 열린 뚜껑 날개
+        B(g, 0.4, 0.02, 0.44, shade(card, 0.75), 0.3, 1.11, -0.01);
+        B(g, 1.02, 0.05, 0.02, tape, 0, 0.56, 0.215);                        // 테이프 줄
+        B(g, 0.05, 0.38, 0.02, tape, 0.1, 0.19, 0.226);
+        B(g, 0.22, 0.1, 0.01, shade(card, 0.55), -0.25, 0.6, 0.218);         // 매직 글씨 자국
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        B(g, 1.1, 1.0, 0.45, shade(c, 0.78), 0, 0.58, 0);
+        B(g, 1.16, 0.06, 0.5, shade(c, 0.9), 0, 1.1, 0);
+        for (let i = 0; i < 3; i++) {
+          if (i === 1) {                                                     // 가운데 문짝 빠짐 — 뚫린 칸
+            B(g, 0.95, 0.22, 0.04, 0x1c1e24, 0, 0.32 + i * 0.28, 0.225);
+            B(g, 0.5, 0.1, 0.03, 0x8a8474, -0.1, 0.28 + i * 0.28, 0.23);     // 안에 쑤셔넣은 천
+            continue;
+          }
+          B(g, 0.95, 0.22, 0.04, shade(c, 0.85), 0, 0.32 + i * 0.28, 0.235);
+          if (i !== 2) B(g, 0.16, 0.05, 0.03, 0x3f342a, 0, 0.32 + i * 0.28, 0.26); // 맨 위 손잡이 분실
+        }
+        B(g, 0.3, 0.02, 0.2, shade(c, 0.6), 0.25, 1.135, 0.05);              // 상판 얼룩
+        for (const x of [-0.48, 0.48]) B(g, 0.08, 0.1, 0.4, shade(c, 0.68), x, 0.05, 0);
+        return g;
+      }
       const g = new THREE.Group();
       B(g, 1.1, 1.0, 0.45, c, 0, 0.58, 0);
       B(g, 1.16, 0.06, 0.5, shade(c, 1.15), 0, 1.1, 0);
@@ -159,7 +222,56 @@ const DEFS = {
   bookshelf: {
     name: '책장', nameEn: 'Bookshelf', emoji: '📚', fp: { w: 1.0, d: 0.4 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
-    build(c, colorIdx = 0) {
+    tiered: true, // #157: T1 벽돌+판자 선반 → T2 기울어진 책장·옹이·듬성한 책 → T3 현행.
+    build(c, colorIdx = 0, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const brick = 0x8a5138, ply = 0xa8895e;
+        const bookColors = [0xa8524e, 0x54688a, 0x6a7f5b];
+        for (const x of [-0.4, 0.4]) {                                       // 벽돌 기둥 2단×2
+          B(g, 0.18, 0.24, 0.3, brick, x, 0.17, 0); B(g, 0.18, 0.24, 0.3, shade(brick, 0.85), x, 0.73, 0);
+          B(g, 0.18, 0.24, 0.3, shade(brick, 0.9), x, 0.41, 0);
+        }
+        const p1 = B(g, 1.0, 0.05, 0.32, ply, 0, 0.05, 0);                   // 판자 3장
+        B(g, 1.0, 0.05, 0.32, shade(ply, 0.9), 0, 0.56, 0); p1.rotation.y = 0.015;
+        const p3 = B(g, 1.0, 0.05, 0.32, shade(ply, 0.85), 0, 0.88, 0);
+        p3.rotation.y = -0.02;
+        const rand = seededRand(11 + colorIdx * 5);
+        let bx = -0.3;                                                       // 책 몇 권만(듬성)
+        for (let i = 0; i < 4; i++) {
+          const bw = 0.06 + rand() * 0.04, bh = 0.24 + rand() * 0.1;
+          B(g, bw, bh, 0.2, bookColors[Math.floor(rand() * bookColors.length)], bx, 0.585 + bh / 2, 0.01);
+          bx += bw + 0.02;
+        }
+        const lean = B(g, 0.06, 0.3, 0.2, bookColors[0], 0.24, 0.72, 0.01);  // 기대 쓰러진 책
+        lean.rotation.z = -0.5;
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        g.rotation.z = 0.022;                                                // 통째로 살짝 기움
+        B(g, 0.06, 1.8, 0.32, shade(c, 0.78), -0.47, 0.9, 0); B(g, 0.06, 1.8, 0.32, shade(c, 0.78), 0.47, 0.9, 0);
+        B(g, 1.0, 0.06, 0.32, shade(c, 0.78), 0, 1.8, 0);
+        B(g, 0.94, 0.05, 0.3, shade(c, 0.78), 0, 0.05, 0);
+        const sag = B(g, 0.94, 0.04, 0.28, shade(c, 0.7), 0, 0.62, 0);       // 처진 선반
+        sag.rotation.z = -0.03;
+        B(g, 0.94, 0.04, 0.28, shade(c, 0.7), 0, 1.2, 0);
+        B(g, 0.94, 1.75, 0.05, shade(c, 0.55), 0, 0.92, -0.14);
+        B(g, 0.06, 0.04, 0.01, 0x3f342a, -0.2, 1.0, 0.02);                   // 옹이 2점
+        B(g, 0.05, 0.05, 0.01, 0x3f342a, 0.3, 0.35, 0.02);
+        const bookColors = [0xa8524e, 0x54688a, 0x6a7f5b, 0xc4a35b, 0x8a5a7a, 0xb5764a];
+        const rand = seededRand(7 + colorIdx * 13);
+        for (let sh = 0; sh < 3; sh++) {
+          let x = -0.42;
+          const yBase = [0.075, 0.64, 1.22][sh];
+          while (x < 0.36) {
+            const bw = 0.06 + rand() * 0.05, bh = 0.3 + rand() * 0.16;
+            if (rand() > 0.55) B(g, bw, bh, 0.2, shade(bookColors[Math.floor(rand() * bookColors.length)], 0.85), x + bw / 2, yBase + bh / 2, 0.01); // 절반쯤 빈 칸
+            x += bw + 0.012;
+          }
+        }
+        return g;
+      }
       const g = new THREE.Group();
       B(g, 0.06, 1.8, 0.32, c, -0.47, 0.9, 0); B(g, 0.06, 1.8, 0.32, c, 0.47, 0.9, 0);
       B(g, 1.0, 0.06, 0.32, c, 0, 1.8, 0);
@@ -296,7 +408,34 @@ const DEFS = {
     colorNames: ['레드', '블루', '그린', '베이지'],
     colorNamesEn: ['Red', 'Blue', 'Green', 'Beige'],
     colors: [0x9e524e, 0x54688a, 0x6a7f5b, 0xc4b295],
-    build(c) {
+    tiered: true, // #157: T1 골판지 위 담요 조각 → T2 해진 러그(올 풀림) → T3 현행. 두께 유지(noCollide 평면).
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const card = 0xa8895e;
+        const c1 = B(g, 1.4, 0.03, 1.0, card, -0.3, 0.015, 0.1);             // 골판지 ①
+        c1.rotation.y = 0.06; c1.castShadow = false;
+        const c2 = B(g, 1.2, 0.032, 0.9, shade(card, 0.88), 0.5, 0.016, -0.15); // 골판지 ②(어긋남)
+        c2.rotation.y = -0.1; c2.castShadow = false;
+        const bl = B(g, 0.9, 0.045, 0.7, shade(c, 0.65), -0.15, 0.035, 0);   // 담요 조각(바랜)
+        bl.rotation.y = 0.12;
+        B(g, 0.35, 0.05, 0.28, shade(c, 0.5), 0.05, 0.04, 0.12);             // 접힌 귀퉁이
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        const m1 = B(g, 2.2, 0.04, 1.5, shade(c, 0.62), 0, 0.02, 0);
+        B(g, 1.9, 0.045, 1.2, shade(c, 0.75), 0, 0.022, 0);
+        B(g, 1.3, 0.05, 0.7, shade(c, 0.9), 0, 0.024, 0);
+        m1.castShadow = false;
+        B(g, 0.4, 0.052, 0.3, shade(c, 0.5), -0.45, 0.024, 0.3);             // 해진 얼룩 패치
+        B(g, 0.25, 0.052, 0.2, shade(c, 0.55), 0.55, 0.024, -0.35);
+        for (const [x, z, r] of [[-1.05, 0.5, 0.4], [-1.02, -0.3, -0.3], [1.04, 0.15, 0.5]]) {
+          const th = B(g, 0.14, 0.02, 0.03, shade(c, 0.8), x, 0.02, z);      // 올 풀림(가장자리 실)
+          th.rotation.y = r; th.castShadow = false;
+        }
+        return g;
+      }
       const g = new THREE.Group();
       const m1 = B(g, 2.2, 0.04, 1.5, shade(c, 0.8), 0, 0.02, 0);
       B(g, 1.9, 0.045, 1.2, c, 0, 0.022, 0);
@@ -311,7 +450,42 @@ const DEFS = {
     colorNamesEn: ['Warm White', 'Sage', 'Rose', 'Sky'],
     colors: [0xe8d9b0, 0x9aa88a, 0xc79a9a, 0x93a8bb],
     light: { color: 0xffb670, intensity: 7, dist: 7, y: 1.45, fuel: 'battery', comfort: 8 },
-    build(c) {
+    tiered: true, // #157: T1 전선에 알전구 하나 → T2 갓 찌그러진 스탠드 → T3 현행. 광원 y 공통(전구 1.36).
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const stick = 0x6e5638;
+        B(g, 0.3, 0.05, 0.3, shade(stick, 0.8), 0, 0.025, 0);                // 판자 받침
+        const pole = B(g, 0.05, 1.45, 0.05, stick, 0, 0.76, 0);              // 거친 각목(비스듬)
+        pole.rotation.z = 0.04;
+        const wire1 = Cyl(g, 0.008, 0.008, 0.5, 0x26282c, 0.04, 1.35, 0, 4); // 늘어진 전선
+        wire1.rotation.z = 1.25;
+        const wire2 = Cyl(g, 0.008, 0.008, 0.45, 0x26282c, 0.1, 0.9, 0, 4);
+        wire2.rotation.z = -0.25;
+        const bulbT1 = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6),
+          new THREE.MeshLambertMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 1 }));
+        bulbT1.position.set(0.22, 1.36, 0); bulbT1.userData.glow = true;     // 알전구(갓 없음)
+        g.add(bulbT1);
+        Cyl(g, 0.025, 0.025, 0.05, 0x26282c, 0.22, 1.42, 0, 6);              // 소켓
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        Cyl(g, 0.16, 0.2, 0.06, 0x3f3a33, 0, 0.03, 0);
+        const poleW = Cyl(g, 0.025, 0.025, 1.25, shade(0x565049, 0.85), 0, 0.68, 0);
+        poleW.rotation.z = 0.03;                                             // 기둥 살짝 기움
+        B(g, 0.06, 0.08, 0.06, 0xb4b6ba, 0.02, 0.55, 0);                     // 테이프 감은 자국
+        const shD = Cyl(g, 0.16, 0.24, 0.4, shade(c, 0.72), 0, 1.5, 0);      // 찌그러진 갓
+        shD.scale.z = 0.78; shD.rotation.z = 0.14;
+        shD.material.emissive = new THREE.Color(0xffc070);
+        shD.material.emissiveIntensity = 0.55;                               // 켜져도 침침
+        shD.userData.glow = true;
+        const bulbW = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6),
+          new THREE.MeshLambertMaterial({ color: 0xffe0b0, emissive: 0xffc070, emissiveIntensity: 0.85 }));
+        bulbW.position.set(0, 1.36, 0); bulbW.userData.glow = true;
+        g.add(bulbW);
+        return g;
+      }
       const g = new THREE.Group();
       Cyl(g, 0.16, 0.2, 0.06, 0x3f3a33, 0, 0.03, 0);
       Cyl(g, 0.025, 0.025, 1.25, 0x565049, 0, 0.68, 0);
@@ -366,7 +540,41 @@ const DEFS = {
     colorNames: ['체리레드', '크림', '민트', '브라운'],
     colorNamesEn: ['Cherry Red', 'Cream', 'Mint', 'Brown'],
     colors: [0xa8433f, 0xd9cdb2, 0x93b5a5, 0x6f4f38],
-    build(c) {
+    tiered: true, // #157: T1 기판 노출 조립 무전기 → T2 테이프 감은 몸체·철사 안테나 → T3 현행. 다이얼 발광 y 공통.
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const board = 0x3a6a4a;
+        B(g, 0.5, 0.04, 0.3, 0x8a7550, 0, 0.02, 0);                          // 판자 받침
+        const pcb = B(g, 0.4, 0.22, 0.03, board, 0, 0.16, 0.02);             // 노출 기판(세워짐)
+        pcb.rotation.x = -0.12;
+        B(g, 0.05, 0.04, 0.04, 0x26282c, -0.1, 0.18, 0.05);                  // 부품 칩들
+        B(g, 0.04, 0.06, 0.04, 0x8a8f96, 0.02, 0.17, 0.05);
+        Cyl(g, 0.025, 0.025, 0.05, 0xb08a3a, 0.12, 0.2, 0.06, 6).rotation.x = Math.PI / 2; // 코일
+        const dialT1 = B(g, 0.08, 0.06, 0.02, 0xf5e3b0, 0.12, 0.24, 0.045);  // 희미한 다이얼
+        dialT1.material.emissive = new THREE.Color(0xd9b96a);
+        dialT1.material.emissiveIntensity = 0.35; dialT1.userData.glow = true;
+        Cyl(g, 0.006, 0.006, 0.08, 0x26282c, -0.18, 0.1, 0.06, 4).rotation.z = 0.9; // 늘어진 전선
+        const ant = Cyl(g, 0.006, 0.006, 0.55, 0x8b8b8b, -0.16, 0.5, -0.04, 4);     // 삐뚠 철사 안테나
+        ant.rotation.z = 0.55; ant.rotation.x = 0.15;
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        B(g, 0.55, 0.34, 0.24, shade(c, 0.72), 0, 0.2, 0);                   // 바랜 몸체
+        B(g, 0.2, 0.2, 0.02, shade(c, 0.5), -0.12, 0.2, 0.13);               // 그릴(먼지 낌)
+        B(g, 0.08, 0.06, 0.021, 0x1c1e24, -0.15, 0.16, 0.131);               // 그릴 찢김
+        const dialW = B(g, 0.16, 0.1, 0.02, shade(0xf5e3b0, 0.85), 0.13, 0.24, 0.13);
+        dialW.material.emissive = new THREE.Color(0xd9b96a);
+        dialW.material.emissiveIntensity = 0.45; dialW.userData.glow = true; // 침침한 다이얼
+        B(g, 0.57, 0.06, 0.26, 0xb4b6ba, 0, 0.09, 0);                        // 은테이프 밴드
+        B(g, 0.06, 0.36, 0.26, 0xb4b6ba, 0.2, 0.2, 0);
+        Cyl(g, 0.03, 0.03, 0.04, 0x2f2a24, 0.13, 0.1, 0.14, 8).rotation.x = Math.PI / 2;
+        const antW = Cyl(g, 0.006, 0.006, 0.55, 0x8b8b8b, -0.2, 0.55, -0.05, 4);    // 철사 대체 안테나(굽음)
+        antW.rotation.z = 0.7; antW.rotation.x = -0.1;
+        B(g, 0.1, 0.03, 0.2, shade(c, 0.65), -0.18, 0.025, 0); B(g, 0.1, 0.03, 0.2, shade(c, 0.65), 0.18, 0.025, 0);
+        return g;
+      }
       const g = new THREE.Group();
       B(g, 0.55, 0.34, 0.24, c, 0, 0.2, 0);
       B(g, 0.2, 0.2, 0.02, shade(c, 0.65), -0.12, 0.2, 0.13);
@@ -387,16 +595,46 @@ const DEFS = {
     colors: [0x8a6a48, 0xd4cfc2, 0x46484a, 0x9a8aa8],
     // 디렉터 2026-07-10: 촛불은 은은하게 — 세기 3→1.6, 반경 4→3.2. flickSlow=호롱호롱(저속 일렁임, 렌더 루프 전용 파형).
     light: { color: 0xff9438, intensity: 2.4, dist: 3.2, y: 0.75, flicker: true, flickSlow: true, fuel: 'candle', comfort: 6 }, // 촛불 강화(1.6→2.4, 더 따뜻)
-    build(c) {
+    tiered: true, // #157: T1 벽돌 위 참치캔 초 → T2 접시 위 초 두 자루 → T3 현행. 불꽃 y 공통(광원 정합).
+    build(c, ci, sk, tier) {
+      const mkFlame = (x, y, s = 1) => {
+        const f = new THREE.Mesh(new THREE.ConeGeometry(0.03 * s, 0.09 * s, 6),
+          new THREE.MeshLambertMaterial({ color: 0xffd080, emissive: 0xffaa40, emissiveIntensity: 1.4 }));
+        f.position.set(x, y, 0); f.userData.glow = true;
+        return f;
+      };
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const brick = 0x8a5138;
+        B(g, 0.26, 0.22, 0.22, brick, 0, 0.11, 0);                           // 벽돌 받침 2단
+        const b2 = B(g, 0.26, 0.22, 0.22, shade(brick, 0.85), 0.02, 0.33, -0.01);
+        b2.rotation.y = 0.1;
+        Cyl(g, 0.07, 0.07, 0.06, 0x9aa0a6, 0, 0.47, 0, 10);                  // 참치캔
+        Cyl(g, 0.045, 0.045, 0.1, 0xe8dcc0, 0, 0.54, 0, 8);                  // 뭉툭한 초
+        B(g, 0.03, 0.1, 0.03, 0xe8dcc0, 0.06, 0.42, 0.05);                   // 흘러내린 촛농
+        B(g, 0.02, 0.06, 0.02, shade(0xe8dcc0, 0.9), -0.05, 0.4, -0.04);
+        g.add(mkFlame(0, 0.63, 0.9));
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        Cyl(g, 0.2, 0.22, 0.05, shade(c, 0.75), 0, 0.42, 0, 10);             // 낡은 스툴(기움)
+        const leg = Cyl(g, 0.04, 0.05, 0.4, shade(c, 0.65), 0, 0.2, 0, 8);
+        leg.rotation.z = 0.05;
+        Cyl(g, 0.14, 0.16, 0.03, shade(c, 0.55), 0, 0.02, 0, 10);
+        Cyl(g, 0.09, 0.1, 0.02, 0xd4cfc2, 0, 0.455, 0, 10);                  // 접시
+        Cyl(g, 0.035, 0.035, 0.14, 0xf0e8d0, -0.03, 0.52, 0, 8);             // 초 두 자루(하나 짧음)
+        Cyl(g, 0.035, 0.035, 0.08, shade(0xf0e8d0, 0.9), 0.05, 0.49, 0, 8);
+        g.add(mkFlame(-0.03, 0.64, 0.85));
+        g.add(mkFlame(0.05, 0.57, 0.7));
+        return g;
+      }
       const g = new THREE.Group();
       Cyl(g, 0.2, 0.22, 0.05, c, 0, 0.42, 0, 10);
       Cyl(g, 0.04, 0.05, 0.4, shade(c, 0.85), 0, 0.2, 0, 8);
       Cyl(g, 0.14, 0.16, 0.03, shade(c, 0.7), 0, 0.02, 0, 10);
       Cyl(g, 0.05, 0.05, 0.16, 0xf0e8d0, 0, 0.53, 0, 8);
-      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.09, 6),
-        new THREE.MeshLambertMaterial({ color: 0xffd080, emissive: 0xffaa40, emissiveIntensity: 1.4 }));
-      flame.position.set(0, 0.66, 0); flame.userData.glow = true;
-      g.add(flame);
+      g.add(mkFlame(0, 0.66));
       return g;
     }
   },
@@ -406,7 +644,39 @@ const DEFS = {
     colorNamesEn: ['Cherry Red', 'Mint', 'Cream', 'White'],
     colors: [0xa8433f, 0x93b5a5, 0xd9cdb2, 0xd8d8d4],
     appliance: { fuel: 'battery', effect: 'fridge', label: '음식 부패 방지', labelEn: 'Prevents food spoilage' },
-    build(c) {
+    tiered: true, // #157: T1 아이스박스+눈 채움 → T2 웅웅대는 중고(문 얼룩·녹) → T3 현행.
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const box = 0x9ab0b8;
+        B(g, 0.68, 0.44, 0.55, box, 0, 0.22, 0);                             // 아이스박스 몸체
+        B(g, 0.7, 0.05, 0.57, shade(box, 0.85), 0, 0.06, 0);                 // 하단 몰딩
+        const lid = B(g, 0.66, 0.08, 0.53, shade(box, 1.1), -0.06, 0.5, 0);  // 반쯤 열린 뚜껑
+        lid.rotation.z = 0.18;
+        B(g, 0.5, 0.06, 0.4, 0xe8ecf0, 0.04, 0.46, 0);                       // 채워 넣은 눈
+        B(g, 0.2, 0.05, 0.16, 0xdfe6ea, 0.12, 0.51, 0.05);
+        Cyl(g, 0.05, 0.05, 0.09, 0x8a8f96, 0.18, 0.5, -0.1, 8);              // 파묻힌 통조림
+        B(g, 0.08, 0.05, 0.3, shade(box, 0.7), 0.35, 0.3, 0);                // 손잡이
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        B(g, 0.7, 1.35, 0.6, shade(c, 0.75), 0, 0.72, 0);                    // 바랜 몸체
+        B(g, 0.64, 0.12, 0.55, shade(c, 0.85), 0, 1.44, 0);
+        B(g, 0.58, 0.06, 0.5, shade(c, 0.9), 0, 1.52, 0);
+        B(g, 0.72, 0.03, 0.62, shade(c, 0.6), 0, 0.98, 0.01);                // 도어 라인
+        const hd = B(g, 0.05, 0.5, 0.05, shade(0xd8d3c8, 0.8), 0.28, 1.2, 0.33); // 삐뚠 손잡이
+        hd.rotation.z = 0.06;
+        B(g, 0.05, 0.3, 0.05, shade(0xd8d3c8, 0.8), 0.28, 0.6, 0.33);
+        B(g, 0.2, 0.14, 0.02, shade(c, 0.5), -0.15, 1.15, 0.31);             // 문 얼룩 2점
+        B(g, 0.14, 0.1, 0.02, shade(c, 0.55), 0.1, 0.45, 0.31);
+        B(g, 0.6, 0.06, 0.02, 0x6e4a30, 0, 0.1, 0.31);                       // 하단 녹 라인
+        const indW = B(g, 0.06, 0.04, 0.02, 0xcc8830, -0.24, 1.35, 0.31);    // 지친 주황 표시등
+        indW.material.emissive = new THREE.Color(0xa06018);
+        indW.material.emissiveIntensity = 0.5; indW.userData.glow = true;
+        B(g, 0.6, 0.06, 0.5, shade(c, 0.55), 0, 0.03, 0);
+        return g;
+      }
       const g = new THREE.Group();
       B(g, 0.7, 1.35, 0.6, c, 0, 0.72, 0);
       B(g, 0.64, 0.12, 0.55, shade(c, 1.1), 0, 1.44, 0);          // 둥근 상단 느낌
@@ -427,7 +697,41 @@ const DEFS = {
     colorNamesEn: ['Steel', 'White', 'Olive', 'Navy'],
     colors: [0x8a8f96, 0xd4cfc2, 0x7d7f5a, 0x46557a],
     appliance: { fuel: 'battery', effect: 'water', label: '매일 깨끗한 물 +1', labelEn: 'Clean water +1 daily' },
-    build(c) {
+    tiered: true, // #157: T1 천 여과 양동이 2단 → T2 낡은 필터통·테이프 → T3 현행.
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const stick = 0x6e5638, pail = 0x8a8f96;
+        for (const [x, z] of [[-0.2, -0.18], [0.2, -0.18], [-0.2, 0.18], [0.2, 0.18]])
+          B(g, 0.05, 0.72, 0.05, stick, x, 0.36, z);               // 나무 프레임 다리
+        B(g, 0.5, 0.04, 0.44, shade(stick, 0.85), 0, 0.72, 0);     // 상단 틀
+        const top = Cyl(g, 0.17, 0.14, 0.22, pail, 0, 0.86, 0, 10); // 위 양동이(여과)
+        top.rotation.z = 0.04;
+        const cloth = Cyl(g, 0.15, 0.15, 0.03, 0xd4cfc2, 0, 0.96, 0, 10); // 걸쳐진 여과 천
+        cloth.rotation.z = 0.06;
+        B(g, 0.2, 0.02, 0.04, 0xd4cfc2, 0.14, 0.9, 0.05);          // 천 늘어진 자락
+        Cyl(g, 0.17, 0.14, 0.26, shade(pail, 0.8), 0, 0.16, 0, 10); // 아래 양동이(받이)
+        const watT1 = Cyl(g, 0.13, 0.13, 0.05, 0x5a8ab0, 0, 0.26, 0, 10);
+        watT1.material.emissive = new THREE.Color(0x2a4a66);
+        watT1.material.emissiveIntensity = 0.2; watT1.userData.glow = true; // 고인 물(흐릿)
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        B(g, 0.5, 0.5, 0.5, shade(c, 0.68), 0, 0.25, 0);           // 바랜 캐비닛
+        B(g, 0.2, 0.12, 0.02, shade(c, 0.5), -0.1, 0.3, 0.251);    // 얼룩
+        const tankW = Cyl(g, 0.2, 0.2, 0.6, shade(c, 0.78), 0, 0.82, 0, 10);
+        tankW.rotation.z = 0.03;                                   // 필터통 살짝 기움
+        const watW = Cyl(g, 0.16, 0.16, 0.3, 0x6a7a80, 0, 0.78, 0, 10); // 물 탁함
+        watW.material.emissive = new THREE.Color(0x2a4a66);
+        watW.material.emissiveIntensity = 0.18; watW.userData.glow = true;
+        B(g, 0.42, 0.05, 0.04, 0xb4b6ba, 0, 0.66, 0.16);           // 테이프 밴드 2
+        B(g, 0.04, 0.2, 0.42, 0xb4b6ba, 0.17, 0.95, 0);
+        Cyl(g, 0.05, 0.05, 0.12, 0x3f3a33, 0.2, 0.6, 0.14, 6).rotation.z = Math.PI / 2;
+        B(g, 0.16, 0.12, 0.16, shade(0xd4cfc2, 0.8), 0.24, 0.31, 0.14); // 찌든 컵
+        Cyl(g, 0.12, 0.14, 0.08, shade(0x3f3a33, 0.85), 0, 1.16, 0, 8);
+        return g;
+      }
       const g = new THREE.Group();
       B(g, 0.5, 0.5, 0.5, shade(c, 0.85), 0, 0.25, 0);            // 받침 캐비닛
       const tank = Cyl(g, 0.2, 0.2, 0.6, c, 0, 0.82, 0, 10);
@@ -549,7 +853,30 @@ const DEFS = {
   teatable: {
     name: '찻상', nameEn: 'Tea Table', emoji: '🍵', fp: { w: 0.95, d: 0.6 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
-    build(c) {
+    tiered: true, // #157: T1 뒤집은 나무상자 → T2 낡은 찻상·컵자국 → T3 현행. 상판 높이 동일.
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const crate = 0x8a7550;
+        B(g, 0.75, 0.06, 0.5, crate, 0, 0.27, 0);                            // 뒤집은 상자 밑판(=상판)
+        for (const s of [-0.2, 0.2]) B(g, 0.72, 0.22, 0.05, shade(crate, 0.85), 0, 0.13, s); // 옆 널
+        B(g, 0.05, 0.22, 0.5, shade(crate, 0.8), -0.34, 0.13, 0); B(g, 0.05, 0.22, 0.5, shade(crate, 0.82), 0.34, 0.13, 0);
+        B(g, 0.24, 0.015, 0.2, shade(crate, 0.6), 0.18, 0.305, 0.08);        // 얼룩
+        Cyl(g, 0.04, 0.03, 0.05, 0x8a8f96, -0.15, 0.33, -0.05, 8);           // 양철 컵 하나
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        const topW = B(g, 0.9, 0.06, 0.55, shade(c, 0.78), 0, 0.3, 0);       // 바랜 상판(기움)
+        topW.rotation.z = 0.02;
+        for (const [i, [x, z]] of [[-0.38, -0.2], [0.38, -0.2], [-0.38, 0.2], [0.38, 0.2]].entries())
+          B(g, 0.06, i === 3 ? 0.24 : 0.28, 0.06, shade(c, 0.68), x, i === 3 ? 0.12 : 0.14, z); // 다리 하나 짧음
+        const ring = Cyl(g, 0.05, 0.05, 0.005, shade(c, 0.5), -0.2, 0.335, 0.05, 10); // 컵자국 링 2
+        ring.rotation.y = 0.2;
+        Cyl(g, 0.04, 0.04, 0.005, shade(c, 0.55), 0.18, 0.335, -0.1, 10);
+        Cyl(g, 0.04, 0.03, 0.05, shade(0x9dbcae, 0.8), 0.15, 0.36, -0.08, 8); // 이 빠진 찻잔 하나
+        return g;
+      }
       const g = new THREE.Group();
       B(g, 0.9, 0.06, 0.55, c, 0, 0.3, 0);
       for (const [x, z] of [[-0.38, -0.2], [0.38, -0.2], [-0.38, 0.2], [0.38, 0.2]])
@@ -746,7 +1073,37 @@ const DEFS = {
     colorNames: ['리넨', '세이지', '버건디', '머스터드'],
     colorNamesEn: ['Linen', 'Sage', 'Burgundy', 'Mustard'],
     colors: [0xd6c9ab, 0x8a9a78, 0x7a3f42, 0xbb9440],
-    build(c) {
+    tiered: true, // #157: T1 방수포+빨래집게 → T2 빛바랜 천·밑단 해짐 → T3 현행. 봉 높이 공통(1.8).
+    build(c, ci, sk, tier) {
+      if (tier === 1) {
+        const g = new THREE.Group();
+        const tarp = 0x5a7a8c;
+        const wire = Cyl(g, 0.012, 0.012, 1.34, 0x55504a, 0, 1.8, 0, 5);     // 철사 줄(처짐)
+        wire.rotation.z = Math.PI / 2 + 0.02;
+        const p1 = B(g, 0.6, 1.35, 0.04, tarp, -0.3, 1.1, 0);                // 방수포 ①(구김)
+        p1.rotation.y = 0.06; p1.castShadow = true;
+        const p2 = B(g, 0.55, 1.25, 0.05, shade(tarp, 0.85), 0.28, 1.14, 0.01); // 방수포 ②(밑단 삐뚤)
+        p2.rotation.z = -0.04; p2.castShadow = true;
+        B(g, 0.3, 0.06, 0.06, shade(tarp, 0.7), 0.05, 1.0, 0.03);            // 겹쳐 접힌 자락
+        for (const x of [-0.45, -0.05, 0.4]) B(g, 0.035, 0.07, 0.035, 0xb08a3a, x, 1.79, 0.01); // 빨래집게
+        return g;
+      }
+      if (tier === 2) {
+        const g = new THREE.Group();
+        Cyl(g, 0.03, 0.03, 1.34, shade(0x55504a, 0.85), 0, 1.8, 0, 6).rotation.z = Math.PI / 2;
+        for (const cap of [-0.68, 0.68]) Cyl(g, 0.05, 0.05, 0.05, shade(0x8a8f96, 0.8), cap, 1.8, 0, 8).rotation.z = Math.PI / 2;
+        for (const side of [-1, 1]) {
+          for (let i = 0; i < 3; i++) {
+            const px = side * (0.14 + i * 0.16);
+            const hs = [1.34, 1.5, 1.42][i];                                 // 밑단 해짐 — 길이 들쭉날쭉
+            const panel = B(g, 0.14, hs, 0.04 + (i % 2) * 0.03, shade(c, i % 2 ? 0.62 : 0.72), px, 1.8 - hs / 2, 0);
+            panel.castShadow = true;
+            if (i === 1) panel.rotation.y = side * 0.12;                     // 한 폭 젖혀짐
+          }
+        }
+        B(g, 0.1, 0.16, 0.02, shade(c, 0.5), -0.3, 0.55, 0.03);              // 얼룩 자국
+        return g;
+      }
       const g = new THREE.Group();
       Cyl(g, 0.03, 0.03, 1.34, 0x55504a, 0, 1.8, 0, 6).rotation.z = Math.PI / 2; // 커튼봉
       for (const cap of [-0.68, 0.68]) Cyl(g, 0.05, 0.05, 0.05, 0x8a8f96, cap, 1.8, 0, 8).rotation.z = Math.PI / 2;

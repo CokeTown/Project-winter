@@ -41,13 +41,17 @@ export function bunkerComfortBonus() {
   return b;
 }
 
+// #157 가구 티어 → 쾌적 배수: 티어 가구는 T1=1/3, T2=2/3, T3=1. 비티어·구세이브(t=0)는 1.
+export function tierComfortMult(it) {
+  return DEFS[it.defId]?.tiered ? (it.tier || 3) / 3 : 1;
+}
 export function comfortDetail() {
   const types = new Set(items.map(i => i.defId));
-  const furn = Math.min(45, items.length * 3 + types.size * 3);
+  const furn = Math.min(45, items.reduce((a, i) => a + 3 * tierComfortMult(i), 0) + types.size * 3);
   let light = 0;
   for (const it of items) {
     const L = DEFS[it.defId].light;
-    if (L && it.on !== false) light += L.comfort ?? 5;
+    if (L && it.on !== false) light += (L.comfort ?? 5) * tierComfortMult(it);
   }
   const lm = SHELTER_META[state.current].perk?.lightMult || 1;
   light = Math.min(24 * lm, light * lm);
