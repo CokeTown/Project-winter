@@ -314,6 +314,13 @@
   /* 도료 게이트 (REWARD-LOOP ②): 그 계열 도료가 없으면 잠금 — 어둡게 + 자물쇠 */
   .swatch.locked { opacity: 0.45; cursor: not-allowed; }
   .swatch.locked::after { content: '🔒'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  /* #194: 도료 보유 수량 상시 배지 — hover title이 안 뜨는 터치 환경에서도 보유량이 보이게 (.tool-item .cnt 축소판) */
+  .swatch .sw-cnt {
+    position: absolute; top: -7px; right: -6px;
+    background: #262a35; color: var(--text); font-size: 9px; line-height: 1;
+    padding: 1px 4px; border: 1px solid var(--panel-border); border-radius: 7px;
+    pointer-events: none;
+  }
   #sel-panel .btn-row { display: flex; gap: 5px; }
   #sel-panel .btn-row .pixel-btn { flex: 1; font-size: 10px; padding: 4px 4px; }
   #sel-panel #btn-power { font-size: 10px; padding: 4px 6px; }
@@ -344,7 +351,9 @@
     display: none; align-items: center; justify-content: center; z-index: 50;
   }
   #modal-back.show { display: flex; }
-  #modal { max-width: 560px; width: calc(100vw - 60px); max-height: 80vh; overflow-y: auto; }
+  /* #194: max-height에 ⑧(#settings-window 165-168줄) 역보정 적용 — zoom(--uiz)이 창 전체를 곱해
+     80vh 클램프를 초과(도감·업적·기록 탭 상하 잘림, 탭바·닫기 버튼 뷰포트 밖) → /--uiz로 역보정. */
+  #modal { max-width: 560px; width: calc(100vw - 60px); max-height: calc(80vh / var(--uiz, 1)); overflow-y: auto; }
   #modal h2 { font-size: 14px; color: var(--accent); margin-bottom: 10px; }
   #modal .modal-body { font-size: 12px; line-height: 1.8; }
   #modal .close-row { text-align: right; margin-top: 12px; }
@@ -907,6 +916,10 @@
     #exp-panel { top: 240px; width: 210px; left: 8px; max-height: calc(100vh - 330px); }
     .tool-item { min-width: 52px; font-size: 9px; padding: 6px 3px 4px; }
     .tool-item .emoji { font-size: 17px; }
+    /* #194: 스와치 터치 타깃 18→32px(시각≈34px) — 프로젝트 터치 기준(지도 핀 #47) 준용 + 줄바꿈 허용 */
+    .swatch { width: 32px; height: 32px; }
+    .swatch.locked::after { font-size: 14px; }
+    #sel-panel .swatches { flex-wrap: wrap; }
     /* 조작 바(디렉터 모바일 정비): zoom 축소를 끄고 실제 터치 크기로 전폭 단일 행.
        편집(🔧)=좌끝, 카메라/게임 조작 9개=그 옆부터 우끝까지 균등 배치. */
     #cam-ctrl { zoom: 1; left: 48px; right: 6px; bottom: 8px; justify-content: space-between; gap: 2px; flex-wrap: nowrap; }
@@ -922,7 +935,7 @@
     #quest-card { top: auto; bottom: 106px; }
     /* 배치 모드: 툴바(106)·선택 패널(210)이 그 자리를 쓴다 — 퀘스트 카드는 그 위로 */
     body.edit-mode #quest-card { bottom: 296px; }
-    #modal { max-height: 72vh; }
+    #modal { max-height: calc(72vh / var(--uiz, 1)); } /* #194: ⑧ 문법 — zoom(--uiz) 곱 후 뷰포트 초과 역보정 */
     /* 모바일 세로: 자원바가 상단(top:156px)으로 이동하므로 쪽지는 우하단 코너 유지(데스크톱용 오프셋 되돌림) */
     #tip-note { right: 12px; width: min(260px, calc(100vw - 24px)); }
   }
@@ -941,14 +954,21 @@
     #settings-window { max-height: calc((100vh - 12px) / var(--uiz, 1)); } /* ⑧ 미니/저해상도도 --uiz 역보정 */
     #res-bar { top: 6px; right: 180px; width: 150px; max-height: calc(100vh - 12px); overflow-y: auto; }
     #exp-panel { top: 6px; left: 178px; width: 190px; max-height: calc(100vh - 12px); }
-    #toolbar { bottom: 4px; padding: 4px; max-width: calc(100vw - 200px); }
+    /* #194: -200px는 cam-ctrl이 '우측 세로열'이던 시절의 예약 — 하단 가로 바(9~10버튼) 재배치 후엔
+       툴바가 조작 바·편집(🔧) 버튼을 통째로 덮었다(가로폰 편집 탈출 불가). 툴바를 조작 바 위 밴드로
+       분리(bottom:52)하고 max-width는 기본 규칙(246줄)과 같은 --uiz 역보정 전폭으로 교체. */
+    #toolbar { bottom: 52px; padding: 4px; max-width: calc((100vw - 16px) / var(--uiz, 1)); }
     .tool-item { min-width: 42px; padding: 4px 2px 3px; }
     .tool-item .emoji { font-size: 14px; }
     #cam-ctrl { bottom: 4px; right: 4px; gap: 3px; }
     .cam-btn { width: 32px; height: 32px; font-size: 13px; }
-    #sel-panel { top: auto; bottom: 60px; left: 50%; transform: translateX(-50%); width: auto; } /* 가로폰도 하단 시트 폴백 (A안 앵커 무시) */
-    #btn-cancel-place { bottom: 60px; }
-    #modal { max-height: 88vh; }
+    /* 가로폰도 하단 시트 폴백 (A안 앵커 무시) — #194: 툴바가 52 밴드로 올라와 60이 깔림 → 툴바 위(110), 넘치면 스크롤 */
+    #sel-panel { top: auto; bottom: 110px; left: 50%; transform: translateX(-50%); width: auto; max-height: calc(100vh / var(--uiz, 1) - 120px); overflow-y: auto; }
+    #sel-panel .swatches { flex-wrap: wrap; }
+    .swatch { width: 32px; height: 32px; } /* #194: 터치 타깃 18→32px (지도 핀 #47 기준 준용) */
+    .swatch.locked::after { font-size: 14px; }
+    #btn-cancel-place { bottom: 110px; } /* #194: 툴바 밴드(52~) 위로 동반 이동 */
+    #modal { max-height: calc(88vh / var(--uiz, 1)); } /* #194: ⑧ 문법 — zoom(--uiz) 곱 후 뷰포트 초과 역보정 */
     #journal-paper, #tip-note { max-height: 92vh; overflow-y: auto; }
     #title-logo img { width: min(240px, 76vw); }
     #intro-text, #ending-text { font-size: 12px; line-height: 1.7; margin-bottom: 16px; }

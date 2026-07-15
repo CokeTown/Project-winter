@@ -7,7 +7,7 @@ import { DEFS } from './data/furniture.js';
 import { BAL } from './data/balance.js';
 import { PROJECTS } from './data/projects.js';
 // 콘텐츠 데이터 분리 Phase 1 (순수 테이블 추출) — 로직은 game.js에 그대로.
-import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, CRAFTS, OUTFITS } from './data/items.js'; // #193: BED_TOP_Y — 침대 티어별 좌면 실높이(퍼치·착석·기상 공용)
+import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, TIER_TOP_Y, CRAFTS, OUTFITS } from './data/items.js'; // #193·#196: 티어별 좌면 실높이 표(퍼치·착석·기상 공용)
 import { DISTRICTS, REGIONS, WEATHERS } from './data/world.js';
 import { ACH_DEFS } from './data/achs.js'; // #73 Tier4: 업적 정의(판정 chk는 아래 ACH_CHECKS 병합)
 import { SHELTER_META, SHELTER_ACCESS } from './data/shelters.js'; // 셸터 데이터 필드(분리 Phase 1) — build 함수는 아래 SHELTERS에서 병합. SHELTER_ACCESS: #182 드랍 지면 판정
@@ -2219,8 +2219,12 @@ function buildItemGroup(item) {
     }
   });
   if (def.light) {
+    // #196: 티어로 발광부 위치가 변하는 가구(스토브 T1 깡통·램프 T1 측면 전구)는 anchorByTier 오버라이드 —
+    //   PointLight·헤일로가 같은 앵커를 쓰므로 여기 한 곳이면 정합. 표에 없으면 기존 def.light.y 고정.
+    const _la = (def.light.anchorByTier || {})[item.tier || 3] || {};
+    const _lx = _la.x ?? 0, _ly = _la.y ?? def.light.y;
     const L = new THREE.PointLight(def.light.color, def.light.intensity, def.light.dist, 1.8);
-    L.position.set(0, def.light.y, 0);
+    L.position.set(_lx, _ly, 0);
     g.add(L);
     item.lightObj = L;
     item.lightBase = def.light.intensity;
@@ -2231,7 +2235,7 @@ function buildItemGroup(item) {
     }));
     const sc = Math.max(0.85, def.light.dist * 0.16);
     sp.scale.set(sc, sc, 1);
-    sp.position.set(0, def.light.y, 0);
+    sp.position.set(_lx, _ly, 0); // #196: 헤일로도 티어 앵커 공유
     g.add(sp);
     item.glowSprite = sp;
     item.glowBase = 0.3;
@@ -3621,7 +3625,7 @@ const catSys = makeCatSystem({
   B, lamb, makeCanvasTex, disposeDeep,
   footprintOf, surfaceRectOf, itemsOn, shadowDirty,
   scene, items, DEFS, state,
-  CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, PET_HAPPY_MS, // #193: 침대 퍼치 y를 티어 실높이로 (T3 고정 0.63이면 T1/T2에서 공중부양)
+  CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, TIER_TOP_Y, PET_HAPPY_MS, // #193·#196: 퍼치 y 티어 실높이 표 (침대·소파·방석)
   getRoom: () => ROOM, catCam, exitCatCloseup,
 });
 const { spawnCat, despawnCat, updateCat, catPointBlocked, catSupportValid, catFaceTex, catFaceHappyTex } = catSys;
@@ -3643,7 +3647,7 @@ const avatarSys = makeAvatarSystem({
   scene, state, items, DEFS,
   getRoom: () => ROOM, getBlockers: () => blockers, footprintOf, gameHour, opts,
   OUTFITS, getOutfit: () => state.outfit || 'default', // #86④ 복장
-  BED_TOP_Y, // #193: 착석 y도 침대 티어 실높이를 따른다 (SEAT_Y.bed 고정값 대체)
+  BED_TOP_Y, TIER_TOP_Y, // #193·#196: 착석 y 티어 실높이 표 (침대·소파·방석·의자)
 });
 
 // #86④ 옷장 — 보유 의류(제작으로 획득) 목록에서 탭하여 갈아입기. 진입: 툴바 👕 버튼 + 아바타 탭.
@@ -5814,7 +5818,8 @@ function recordTabHtml() {
 }
 function journalTabBar(active) {
   const tab = (id, label) => `<button class="pixel-btn ${active === id ? 'primary' : ''}" data-jtab="${id}" style="flex:1">${label}</button>`;
-  return `<div style="display:flex;gap:6px;margin-bottom:10px">${tab('journal', t('journal.title'))}${tab('col', t('journal.colTab'))}${tab('ach', t('journal.achTab'))}${tab('record', t('record.tabTitle'))}</div>`;
+  // #194: EN/ja 라벨 4개의 min-content 합이 세로폰 모달 내폭을 넘어 Records 탭이 우측 클리핑 — 래핑 허용
+  return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${tab('journal', t('journal.title'))}${tab('col', t('journal.colTab'))}${tab('ach', t('journal.achTab'))}${tab('record', t('record.tabTitle'))}</div>`;
 }
 function openJournalModal(tab = 'journal') {
   const se = seasonOf();
@@ -9044,12 +9049,18 @@ function showSelPanel(item) {
     s.className = 'swatch' + (i === item.colorIdx ? ' active' : '') + (locked ? ' locked' : '');
     s.style.background = '#' + c.toString(16).padStart(6, '0');
     s.title = LColor(def, i) + (i === 0 ? '' : ` — ${LName(PAINT_ALL[fam])} ${t('paint.haveN', { n: have })}`);
-    s.addEventListener('click', () => {
+    // #194: hover title은 터치에서 안 뜬다 — 도료 보유 수량을 스와치 우상단 상시 배지로 병기(title은 유지)
+    if (i !== 0) { const bd = document.createElement('span'); bd.className = 'sw-cnt'; bd.textContent = have; s.appendChild(bd); }
+    s.addEventListener('click', async () => {
       if (i === item.colorIdx) return;
       if (needsPaint) {
         if (have < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
-        state.paints[fam] = have - 1;
-        toast(t('paint.used', { name: LName(PAINT_ALL[fam]), left: have - 1 }));
+        // #194: 터치(coarse)는 스와치 오탭 1회 = 도료 1통 — 소모 동작만 1단계 확인(무소모 복원·기본색은 그대로)
+        if (matchMedia('(pointer: coarse)').matches
+          && !(await gameConfirm(t('paint.confirmUse', { name: LName(PAINT_ALL[fam]) }), t('paint.confirmYes'), t('confirm.no')))) return;
+        if ((state.paints[fam] || 0) < 1) return; // 확인 대기 동안 재고가 바뀔 수 있다 — 재검사
+        state.paints[fam] = (state.paints[fam] || 0) - 1;
+        toast(t('paint.used', { name: LName(PAINT_ALL[fam]), left: state.paints[fam] }));
       }
       recolorItem(item, i); markCollection(item.defId, i); showSelPanel(item); scheduleSave();
     });
@@ -9101,18 +9112,23 @@ function showSelPanel(item) {
     div.id = 'sel-gel';
     div.style.cssText = 'margin-bottom:8px';
     const cur = item.gel || '';
+    // #194: 배지(sw-cnt)로 보유 수량 상시 병기 + gap 3→6px (밀집 13스와치 오탭 완화)
     const gsw = (fam, hex, title, free) =>
-      `<div class="swatch${cur === fam ? ' active' : ''}${!free && !(state.paints[fam] > 0) ? ' locked' : ''}" data-gel="${fam}" title="${title}" style="background:#${hex.toString(16).padStart(6, '0')}"></div>`;
+      `<div class="swatch${cur === fam ? ' active' : ''}${!free && !(state.paints[fam] > 0) ? ' locked' : ''}" data-gel="${fam}" title="${title}" style="background:#${hex.toString(16).padStart(6, '0')}">${free ? '' : `<span class="sw-cnt">${state.paints[fam] || 0}</span>`}</div>`;
     div.innerHTML = `<div style="font-size:10px;color:var(--text-dim);margin-bottom:3px">${t('gel.rowTitle')}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:3px">${gsw('', def.light.color, t('gel.original'), true)}${Object.entries(PAINT_FAMILIES).map(([f, d]) => gsw(f, d.swatch, `${LName(d)} ${t('paint.haveN', { n: state.paints[f] || 0 })}`)).join('')}</div>`;
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${gsw('', def.light.color, t('gel.original'), true)}${Object.entries(PAINT_FAMILIES).map(([f, d]) => gsw(f, d.swatch, `${LName(d)} ${t('paint.haveN', { n: state.paints[f] || 0 })}`)).join('')}</div>`;
     $('sel-swatches').after(div);
-    div.querySelectorAll('[data-gel]').forEach(b => b.addEventListener('click', () => {
+    div.querySelectorAll('[data-gel]').forEach(b => b.addEventListener('click', async () => {
       const fam = b.dataset.gel || null;
       if ((item.gel || null) === fam) return;
       if (fam) { // 원색 복원은 무료 — 틴트만 도료 소모
         const have = state.paints[fam] || 0;
         if (have < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
-        state.paints[fam] = have - 1;
+        // #194: 터치(coarse) 오탭 = 도료 1통 — 소모 동작만 1단계 확인(무소모 원색 복원은 그대로)
+        if (matchMedia('(pointer: coarse)').matches
+          && !(await gameConfirm(t('gel.confirmUse', { name: LName(PAINT_ALL[fam]) }), t('gel.confirmYes'), t('confirm.no')))) return;
+        if ((state.paints[fam] || 0) < 1) return; // 확인 대기 동안 재고가 바뀔 수 있다 — 재검사
+        state.paints[fam] = (state.paints[fam] || 0) - 1;
         toast(t('gel.applied', { name: LName(PAINT_ALL[fam]) }));
       } else toast(t('gel.reset'));
       item.gel = fam;
@@ -10646,7 +10662,10 @@ function pollGamepad(dt) {
   const lx = padDead(ax[0] || 0), ly = padDead(ax[1] || 0);
   const anyStick = lx || ly || padDead(ax[2] || 0) || padDead(ax[3] || 0);
   const anyBtn = btn.some(b => b && (b.pressed || b.value > 0.5));
-  if (anyStick || anyBtn) { if (!padState.active) showPadCursor(true); }
+  // #194: 마우스/터치가 커서를 숨긴 상태에서 첫 패드 입력은 '커서 깨우기'로만 소비 —
+  //   같은 프레임 A 엣지가 보이지 않던 옛 좌표(stale)에 즉발 합성클릭되는 유령 탭 방지(수거·스와치 등 파괴적 타깃)
+  let padWoke = false;
+  if (anyStick || anyBtn) { if (!padState.active) { showPadCursor(true); padWoke = true; } }
   if (lx || ly) {
     const sp = BAL.input.padCursorSpeed * dt;
     padState.x = Math.max(0, Math.min(window.innerWidth, padState.x + lx * sp));
@@ -10662,7 +10681,7 @@ function pollGamepad(dt) {
   if (pressed(PAD_BTN.RB)) camState.zoom = THREE.MathUtils.clamp(camState.zoom * BAL.input.padZoomStep, 0.25, 3.2);
   if (pressed(PAD_BTN.LB)) camState.zoom = THREE.MathUtils.clamp(camState.zoom / BAL.input.padZoomStep, 0.25, 3.2);
   // 버튼 엣지 액션
-  if (edge(PAD_BTN.A)) padSynthClick();
+  if (edge(PAD_BTN.A)) { if (!padWoke) padSynthClick(); } // #194: 깨우기 프레임의 A는 클릭 미발사(엣지는 소비)
   if (edge(PAD_BTN.B)) padBack();
   if (edge(PAD_BTN.START)) setPaused(!paused);
   if (edge(PAD_BTN.Y)) { if (!titleVisible && !settingsOpen()) toggleEditMode(); }

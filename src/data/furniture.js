@@ -449,8 +449,9 @@ const DEFS = {
     colorNames: ['웜화이트', '세이지', '로즈', '스카이'],
     colorNamesEn: ['Warm White', 'Sage', 'Rose', 'Sky'],
     colors: [0xe8d9b0, 0x9aa88a, 0xc79a9a, 0x93a8bb],
-    light: { color: 0xffb670, intensity: 7, dist: 7, y: 1.45, fuel: 'battery', comfort: 8, gelable: true }, // #189 P3: 전기 갓 — 젤 틴트 가능
-    tiered: true, // #157: T1 전선에 알전구 하나 → T2 갓 찌그러진 스탠드 → T3 현행. 광원 y 공통(전구 1.36).
+    // #196: T1 알전구는 x=0.22 측면 오프셋(전선 늘어짐) — 헤일로가 전구에서 벗어나던 실측. y는 전 티어 1.36 공통이라 유지.
+    light: { color: 0xffb670, intensity: 7, dist: 7, y: 1.45, anchorByTier: { 1: { x: 0.22 } }, fuel: 'battery', comfort: 8, gelable: true }, // #189 P3: 전기 갓 — 젤 틴트 가능
+    tiered: true, // #157: T1 전선에 알전구 하나 → T2 갓 찌그러진 스탠드 → T3 현행. 광원 y 공통(전구 1.36) — T1 x 오프셋만 anchorByTier.
     build(c, ci, sk, tier) {
       if (tier === 1) {
         const g = new THREE.Group();
@@ -771,8 +772,9 @@ const DEFS = {
     colorNames: ['무쇠', '벽돌레드', '크림', '올리브'],
     colorNamesEn: ['Cast Iron', 'Brick Red', 'Cream', 'Olive'],
     colors: [0x3a3d42, 0x8a5138, 0xcfc8ba, 0x6a7047],
-    light: { color: 0xff7e2a, intensity: 14, dist: 8, y: 0.7, flicker: true, fuel: 'fuel', comfort: 12 }, // 디렉터 2026-07-15: 화기=주광원. 더 따뜻(색)·강하게(9→14) — 천장 형광등 하향과 짝
-    tiered: true, // #157: T1 돌+깡통 화덕 → T2 녹슨 주물 → T3 현행. 화창 발광·광원 y는 공통(라이트 정합).
+    // #196: T1 깡통 화덕은 최고점 0.58·화구 0.34 — y 0.7 고정이면 광원+헤일로가 공중 발광(실측 감사). T2/T3는 실루엣 내부라 유지.
+    light: { color: 0xff7e2a, intensity: 14, dist: 8, y: 0.7, anchorByTier: { 1: { y: 0.40 } }, flicker: true, fuel: 'fuel', comfort: 12 }, // 디렉터 2026-07-15: 화기=주광원. 더 따뜻(색)·강하게(9→14) — 천장 형광등 하향과 짝
+    tiered: true, // #157: T1 돌+깡통 화덕 → T2 녹슨 주물 → T3 현행. 화창 발광 y는 티어별(0.34/0.40/0.42) — 광원 앵커는 anchorByTier 참조.
     build(c, ci, sk, tier) {
       if (tier === 1) {
         const g = new THREE.Group();

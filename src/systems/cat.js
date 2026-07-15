@@ -26,12 +26,15 @@ export function makeCatSystem(ctx) {
     B, lamb, makeCanvasTex, disposeDeep,
     footprintOf, surfaceRectOf, itemsOn, shadowDirty,
     scene, items, DEFS, state,
-    CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, PET_HAPPY_MS,
+    CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, TIER_TOP_Y, PET_HAPPY_MS,
     getRoom, catCam, exitCatCloseup,
   } = ctx;
   // #193: 침대는 티어가 곧 높이(#157) — CAT_PERCH_Y.bed(T3 실측 0.63) 고정 조회면 T1/T2 매트리스 위 공중부양.
-  //   침대만 BED_TOP_Y[tier] 실측으로 치환, 나머지 퍼치 가구는 티어 무관(좌면 높이 동일)이라 기존 표 그대로.
-  const perchYOf = i => i.defId === 'bed' ? ((BED_TOP_Y || {})[i.tier || 3] ?? CAT_PERCH_Y.bed) : CAT_PERCH_Y[i.defId];
+  //   #196 일반화: 소파·방석도 티어로 좌면이 변한다(지오 실측 감사) — TIER_TOP_Y[defId][tier] 우선, 표 밖 가구만 고정표.
+  const perchYOf = i => {
+    const tt = (TIER_TOP_Y || {})[i.defId];
+    return (tt && CAT_PERCH_Y[i.defId] != null) ? (tt[i.tier || 3] ?? CAT_PERCH_Y[i.defId]) : CAT_PERCH_Y[i.defId];
+  };
   let catObj = null, _catSpawning = false;
   let catSupportDirty = false; // ⑥a: 가구 제거 직후 1틱 플래그 — 퍼치 고양이 지지면 재검사 트리거
   // 관절형 치즈 태비 (v1.9.1) — 몸통(호흡)·머리·귀·꼬리 2마디·다리 4개가 따로 움직인다
