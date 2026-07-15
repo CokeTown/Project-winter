@@ -1458,6 +1458,7 @@ const DEFS = {
   // 도심 ① 네온 사인 「VIP ZONE」 — 보라 계열 튜브(자기발광). 받침 프레임에 기대 세운다.
   neonvip: {
     name: '네온 사인 · VIP ZONE', nameEn: 'Neon Sign · VIP ZONE', emoji: '🍸', fp: { w: 0.9, d: 0.3 }, noCollide: true,
+    selfLit: true, // #195: build()가 PointLight를 내장한 실광원 — 무광원 폴백·needsLight 판정에 산입(쾌적 가산은 0 유지: 시그니처=파워 아님)
     colorNames: ['바이올렛', '마젠타', '핑크', '블루 바이올렛'],
     colorNamesEn: ['Violet', 'Magenta', 'Pink', 'Blue Violet'],
     colors: [0x9a5ad4, 0xc44aa8, 0xd46a9a, 0x6a5ad4],
@@ -1478,6 +1479,7 @@ const DEFS = {
   // 도심 ② 네온 사인 「ON AIR」 — 파랑 계열. 죽은 방송국의 파편.
   neonair: {
     name: '네온 사인 · ON AIR', nameEn: 'Neon Sign · ON AIR', emoji: '🎙️', fp: { w: 0.9, d: 0.3 }, noCollide: true,
+    selfLit: true, // #195: neonvip와 동일 — 실광원 판정 산입, 쾌적 가산 없음
     colorNames: ['일렉트릭 블루', '시안', '아쿠아', '인디고'],
     colorNamesEn: ['Electric Blue', 'Cyan', 'Aqua', 'Indigo'],
     colors: [0x4a7ad4, 0x4aa8b8, 0x5ac4b0, 0x5a5ad4],

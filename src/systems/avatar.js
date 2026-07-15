@@ -203,14 +203,16 @@ export function makeAvatarSystem(ctx) {
     const fr = (it.rot || 0) * Math.PI / 2;
     const room = getRoom();
     const inRoom = c => Math.abs(c.x) < room.w / 2 - 0.35 && Math.abs(c.z) < room.d / 2 - 0.35;
-    const cand = [
-      { x: it.x + Math.sin(fr) * (fp.d / 2 + dist), z: it.z + Math.cos(fr) * (fp.d / 2 + dist) },
-      { x: it.x - Math.sin(fr) * (fp.d / 2 + dist), z: it.z - Math.cos(fr) * (fp.d / 2 + dist) },
-      { x: it.x + Math.cos(fr) * (fp.w / 2 + dist), z: it.z - Math.sin(fr) * (fp.w / 2 + dist) },
-      { x: it.x - Math.cos(fr) * (fp.w / 2 + dist), z: it.z + Math.sin(fr) * (fp.w / 2 + dist) },
+    const ring = d => [
+      { x: it.x + Math.sin(fr) * (fp.d / 2 + d), z: it.z + Math.cos(fr) * (fp.d / 2 + d) },
+      { x: it.x - Math.sin(fr) * (fp.d / 2 + d), z: it.z - Math.cos(fr) * (fp.d / 2 + d) },
+      { x: it.x + Math.cos(fr) * (fp.w / 2 + d), z: it.z - Math.sin(fr) * (fp.w / 2 + d) },
+      { x: it.x - Math.cos(fr) * (fp.w / 2 + d), z: it.z + Math.sin(fr) * (fp.w / 2 + d) },
     ];
-    for (const c of cand) if (inRoom(c) && !hitBlock(c.x, c.z, 0.24)) return c;
-    return cand.find(inRoom) || { x: it.x, z: it.z + fp.d / 2 + dist };
+    for (const d of [dist, dist + 0.4]) for (const c of ring(d)) if (inRoom(c) && !hitBlock(c.x, c.z, 0.24)) return c;
+    // 디렉터 '벽 붕쯔붕쯔' 재발 신고: '방 안이지만 가구에 박힌 점'을 목표로 주면 도달 불가 목표를 향한
+    //   회피 조향이 벽·가구 앞 제자리 춤이 된다 — 두 링을 훑고도 없으면 접근 포기(null). 호출부가 idle 처리.
+    return null;
   }
 
   // 창가 지점(디렉터 양초대 제보로 검거): 고정점(0, 창벽+0.6)이 가구에 점유되면 그 가구를
@@ -254,8 +256,8 @@ export function makeAvatarSystem(ctx) {
     av.lastAct = act;
     if (act === 'walk') { av.mode = 'walk'; setTarget(farSpot()); }
     else if (act === 'window') { av.mode = 'window'; av.timer = 8 + Math.random() * 12; setTarget(windowSpot()); }
-    else if (act === 'sit') { av.mode = 'gosit'; av.use = seatIt; setTarget(approachPoint(seatIt, 0.42)); }
-    else if (act === 'warm') { av.mode = 'gowarm'; av.use = heatIt; setTarget(approachPoint(heatIt, 0.62)); }
+    else if (act === 'sit') { const ap = approachPoint(seatIt, 0.42); if (!ap) return pickIdle(); av.mode = 'gosit'; av.use = seatIt; setTarget(ap); }
+    else if (act === 'warm') { const ap = approachPoint(heatIt, 0.62); if (!ap) return pickIdle(); av.mode = 'gowarm'; av.use = heatIt; setTarget(ap); }
     else pickIdle();
   }
   // 걷기 목표는 현 위치에서 먼 곳 선호 — 좁은 방에서 제자리 근처 재추첨이 만들던 잔걸음 왕복 제거
@@ -322,7 +324,17 @@ export function makeAvatarSystem(ctx) {
       av.parts.body.scale.y = 1 + Math.sin(t * 1.2) * 0.006;
       if (av.wakeT <= 0) {
         g.rotation.x = 0; g.position.y = 0;
-        if (av.use) { const sp = freeSpot(); const bx = av.use.x + 0.9, bz = av.use.z; g.position.set(hitBlock(bx, bz, 0.26) ? sp.x : bx, 0, hitBlock(bx, bz, 0.26) ? sp.z : bz); }
+        if (av.use) {
+          // 디렉터 '벽 붕쯔붕쯔' 재발 신고(2026-07-17): 고정 +x 하차는 침대의 +x면이 벽이면 방 밖(벽 속)에
+          //   내려선다 — hitBlock은 가구만 보고 벽은 못 본다. 이후 걸음이 전부 방 경계에 막혀 벽 비비기가 된다.
+          //   4방 후보를 방 경계+가구로 검증하고, 전부 막히면 freeSpot.
+          const room = getRoom();
+          const inR = (x, z) => Math.abs(x) < room.w / 2 - 0.35 && Math.abs(z) < room.d / 2 - 0.35;
+          const cands = [[av.use.x + 0.9, av.use.z], [av.use.x - 0.9, av.use.z], [av.use.x, av.use.z + 0.9], [av.use.x, av.use.z - 0.9]];
+          const c = cands.find(([x, z]) => inR(x, z) && !hitBlock(x, z, 0.26));
+          const sp = c ? { x: c[0], z: c[1] } : freeSpot();
+          g.position.set(sp.x, 0, sp.z);
+        }
         shadowDirty(); // 기립 점프 — 즉시 갱신
         pickIdle();
       }
@@ -342,6 +354,17 @@ export function makeAvatarSystem(ctx) {
         else if (av.mode === 'gosit') startSit();
         else if (av.mode === 'gowarm') startWarm();
       } else {
+        // '진전 없음' 감시(디렉터 '벽 붕쯔붕쯔' 재발 신고): 회피 조향이 매 프레임 '성공'하며 옆걸음만
+        //   반복하면 blockedT(완전 봉쇄 감시)가 영영 0이라 제자리 춤이 끝나지 않는다 — 목표 거리가
+        //   2.2초간 줄지 않으면 걷기는 새 목표, 상호작용 접근은 포기(idle). 봉쇄 감시와 짝을 이루는 상한.
+        const aimKey = aim.x.toFixed(2) + ',' + aim.z.toFixed(2);
+        if (av.aimKey !== aimKey) { av.aimKey = aimKey; av.bestAimD = dist; av.progT = 0; }
+        else if (dist < av.bestAimD - 0.02) { av.bestAimD = dist; av.progT = 0; }
+        else if ((av.progT = (av.progT || 0) + dt) > 2.2) {
+          av.progT = 0; av.aimKey = null;
+          if (av.mode === 'walk') { av.tgt = farSpot(); av.way = routeTo(av.tgt); }
+          else { pickIdle(); return; }
+        }
         const step = 0.62 * dt;
         const room = getRoom();
         const oldX = g.position.x, oldZ = g.position.z;
