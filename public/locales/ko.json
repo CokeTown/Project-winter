@@ -1965,7 +1965,7 @@
   "data.shelter.bunker.limits": "🔌 밀폐 구조 — 전력이 끊기면 거처 보너스·특성 정지",
   "data.shelter.bunker.name": "돔 벙커",
   "data.shelter.bunker.perk.label": "🛡️ 두꺼운 외피 — 부상 회복 2배 빠름",
-  "data.shelter.bunker.upkeep.label": "배터리 1 / 일 (환기·조명 전력)",
+  "data.shelter.bunker.upkeep.label": "배터리 1 / 일 (환기 전력)",
   "data.shelter.bus.desc": "고속도로 위에 멈춰 선 스쿨버스. 좁지만 어디로든 갈 수 있을 것 같은 기분이 든다.",
   "data.shelter.bus.limits": "📦 좁은 실내 — 가구 최대 8개",
   "data.shelter.bus.name": "버려진 스쿨버스",
@@ -2068,5 +2068,7 @@
   "data.will.will6.desc": "네 편지 잘 받았다. 나도 보고 싶었다고, 그 말을 꼭 하고 싶었다.\n부칠 곳이 이제 없구나.",
   "data.will.will6.name": "전하지 못한 답장",
   "craft.resTag": " · 자원",
-  "craft.candleHint": "양초는 놓는 가구가 아니라 연료다 — 캔들 스툴·랜턴·촛대가 태운다."
+  "craft.candleHint": "양초는 놓는 가구가 아니라 연료다 — 캔들 스툴·랜턴·촛대가 태운다.",
+  "inv.getByCraft": "제작대에서 만든다",
+  "place.noStockCraft": "{name}의 재고가 없다. 제작대에서 만들자."
 }

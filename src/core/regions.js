@@ -49,6 +49,12 @@ export function blizzardBlocks(regionId) {
   if (subwayReaches(regionId)) return false; // 개통 구간: 지하로 돌아가므로 봉쇄 무시
   return true;
 }
+// #193: 눈사태(1.3)·도심 적대 자동 회피 — 두 시스템 모두 game.js 결합이라 술어만 주입받는다(단방향, weather와 동일 문법).
+//   눈사태: 봉쇄 중이거나 예보 당일(수동 선택 모달 필요)이면 자동은 그 지역을 건너뛴다.
+//   도심 적대: 하드+에서 조우 손실(전리품 50%·중상)이 커 자동엔 금지 구역과 동일 취급 — 위험은 수동 전략 레버.
+let _autoAvoid = () => false;
+export function setRegionsAutoAvoid(fn) { _autoAvoid = fn; }
+
 // 자동진행 지역 선택: 해금·미봉쇄·미금지 중 성공률(eff) × 부족자원 보너스 가중 최고. 직전 지역은 감쇠(편중 완화).
 export function pickAutoRegion() {
   const A = BAL.auto;
@@ -58,6 +64,7 @@ export function pickAutoRegion() {
     if (!regionUnlocked(id)) continue;      // 미해금 제외
     if (blizzardBlocks(id)) continue;       // 폭설 봉쇄 제외
     if (isForbiddenRegion(id)) continue;    // 금지 구역 제외(방호복·수동 전략 레버)
+    if (_autoAvoid(id)) continue;           // #193 눈사태 봉쇄/예보 당일 + 하드 도심 적대 제외
     const eff = rateParts(id, []).eff;
     if (eff <= 0) continue;
     let scarceHits = 0;

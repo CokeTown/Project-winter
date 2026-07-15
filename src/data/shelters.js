@@ -27,7 +27,7 @@ export const SHELTER_META = {
   bunker: {
     name: '돔 벙커', nameEn: 'Dome Bunker', emoji: '🛖', unlockAt: 45, viewH: 17, ceilY: 2.6,
     baseComfort: 5,
-    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (환기·조명 전력)', labelEn: 'Battery 1 / day (ventilation & lighting)' },
+    upkeep: { res: 'battery', n: 1, every: 1, label: '배터리 1 / 일 (환기 전력)', labelEn: 'Battery 1 / day (ventilation)' },
     moveCost: { material: 12, battery: 6 }, limits: '🔌 밀폐 구조 — 전력이 끊기면 거처 보너스·특성 정지', limitsEn: '🔌 Sealed structure — losing power halts shelter bonuses & traits',
     desc: '반쯤 무너진 돔형 벙커. 갈라진 외피 사이로 별이 보이지만, 두꺼운 벽 안쪽은 의외로 아늑하다.',
     descEn: 'A half-collapsed dome bunker. Stars peek through the cracked shell, but inside the thick walls it is surprisingly snug.',

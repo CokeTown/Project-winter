@@ -22,6 +22,11 @@ const DECO_THEME_COMFORT = BAL.deco.themeSetComfort;
 let _weatherType = () => 'clear';
 export function setComfortWeather(fn) { _weatherType = fn; }
 
+// #193: 조명 설비(개조) 급전 상태 주입 — lightingFacilityOn은 렌더 리그와 한 몸이라 game.js 잔류(단방향).
+//   주입 전(하네스 초기 등)엔 false — 기존 계산과 동일해 무해.
+let _facilityLight = () => false;
+export function setComfortFacilityLight(fn) { _facilityLight = fn; }
+
 // 테마 세트(#13): 필요한 defId 개수(중복 포함)를 배치된 가구가 모두 만족하면 true.
 export function themeSetActive(ts) {
   const need = {};
@@ -53,6 +58,8 @@ export function comfortDetail() {
     const L = DEFS[it.defId].light;
     if (L && it.on !== false) light += (L.comfort ?? 5) * tierComfortMult(it);
   }
+  // #193: 조명 설비(급전 중 전등)도 빛이다 — 지하철 "완전한 어둠 -12"가 전등 켜진 방을 어둠 취급하던 결함.
+  if (_facilityLight()) light += BAL.lighting.facilityComfort;
   const lm = SHELTER_META[state.current].perk?.lightMult || 1;
   light = Math.min(24 * lm, light * lm);
   const clean = state.cleanBy[state.current] ?? 70;

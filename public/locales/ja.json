@@ -1965,7 +1965,7 @@
   "data.shelter.bunker.limits": "🔌 密閉構造 — 電力が切れるとシェルターボーナス・特性が停止",
   "data.shelter.bunker.name": "ドームバンカー",
   "data.shelter.bunker.perk.label": "🛡️ 厚い外殻 — 負傷の回復が2倍速い",
-  "data.shelter.bunker.upkeep.label": "バッテリー 1 / 日 (換気・照明の電力)",
+  "data.shelter.bunker.upkeep.label": "バッテリー 1 / 日 (換気の電力)",
   "data.shelter.bus.desc": "高速道路の上で止まったままのスクールバス。狭いが、どこへでも行けそうな気がする。",
   "data.shelter.bus.limits": "📦 狭い室内 — 家具は最大8個",
   "data.shelter.bus.name": "廃スクールバス",
@@ -2068,5 +2068,7 @@
   "data.will.will6.desc": "君の手紙は確かに受け取った。私も会いたかったと、その言葉をどうしても伝えたかった。\nもう、出す宛てがないのだな。",
   "data.will.will6.name": "出せなかった返事",
   "craft.resTag": " · 資源",
-  "craft.candleHint": "ろうそくは置く家具ではなく燃料だ — キャンドルスツールやランタン、燭台が消費する。"
+  "craft.candleHint": "ろうそくは置く家具ではなく燃料だ — キャンドルスツールやランタン、燭台が消費する。",
+  "inv.getByCraft": "作業台で作る",
+  "place.noStockCraft": "{name}の在庫がない。作業台で作ろう。"
 }
