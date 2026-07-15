@@ -2225,6 +2225,19 @@ function buildItemGroup(item) {
     g.add(sp);
     item.glowSprite = sp;
     item.glowBase = 0.3;
+    // #189 P4 「감동」 연출 ①: 바닥 라이트 풀 — 광원 아래 부드러운 빛 웅덩이(반사의 픽셀 정합 해석).
+    //   가산 원형 그라데이션 1장(정적) — 블룸 남발 금지 원칙: 광원당 딱 한 겹, 저채도 저오퍼시티.
+    //   스택 배치(테이블 위 등)면 상판 위 웅덩이가 된다 — 그것도 맞는 그림.
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(1, 24), new THREE.MeshBasicMaterial({
+      map: glowTex(), color: def.light.color, transparent: true, opacity: 0.13,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    pool.rotation.x = -Math.PI / 2;
+    pool.position.set(0, 0.025, 0);
+    pool.scale.setScalar(Math.max(0.9, def.light.dist * 0.42));
+    pool.renderOrder = 1; // 러그 등 얇은 바닥재 위에 확실히 얹히게
+    g.add(pool);
+    item.lightPool = pool;
     if (item.gel) applyGel(item); // #189 P3: 재빌드(recolorItem·도색 등) 시 젤 색 유지 — 리그 완성 후 적용
   }
   g.userData.item = item;
@@ -2238,6 +2251,7 @@ function applyGel(item) {
   const hex = (item.gel && PAINT_ALL[item.gel]?.swatch != null) ? PAINT_ALL[item.gel].swatch : def.light.color;
   if (item.lightObj) item.lightObj.color.setHex(hex);
   if (item.glowSprite) item.glowSprite.material.color.setHex(hex);
+  if (item.lightPool) item.lightPool.material.color.setHex(hex); // #189 P4: 바닥 풀도 함께 물든다
   for (const m of item.glowMeshes || []) {
     if (!m.material?.emissive) continue;
     m.material.emissive.setHex(item.gel ? hex : m.userData.origEmissive);
@@ -2265,6 +2279,7 @@ function setItemPower(item, on, { silent = true } = {}) {
   item.on = on;
   if (item.lightObj) item.lightObj.visible = on;
   if (item.glowSprite) item.glowSprite.visible = on;
+  if (item.lightPool) item.lightPool.visible = on; // #189 P4 바닥 라이트 풀
   for (const m of (item.glowMeshes || [])) {
     m.material.emissiveIntensity = on ? m.userData.origEmissiveI : 0.03;
   }
@@ -2468,6 +2483,17 @@ function loadShelter(id) {
     bulb.position.set(0, -cordH - 0.13, 0); bulb.userData.glow = true;
     g.add(bulb);
     g.userData.bulb = bulb;
+    // #189 P4: 설비 전등 아래 바닥 라이트 풀 (가구 광원과 동일 문법 — 방 중앙 빛 웅덩이)
+    const fpool = new THREE.Mesh(new THREE.CircleGeometry(1, 24), new THREE.MeshBasicMaterial({
+      map: glowTex(), color: 0xffd9a0, transparent: true, opacity: 0.12,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    fpool.rotation.x = -Math.PI / 2;
+    fpool.position.set(0, -sh.ceilY + 0.03, 0);
+    fpool.scale.setScalar(3.4);
+    fpool.renderOrder = 1;
+    g.add(fpool);
+    g.userData.pool = fpool;
     g.position.set(0, sh.ceilY, 0);
     scene.add(g);
     lightingFixture = g;
@@ -3368,6 +3394,17 @@ function resolveExpedition() {
         state.blueprints[bpId] = 1;
         notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
         special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'rare' });
+      }
+    }
+    // #189 P4 LED 라이트 바 도면 — 초희귀 전 지역 별도 롤(시그니처 풀 비희석). 발견 컷 있음(신문물의 순간).
+    {
+      if (!(state.blueprints || {}).ledbar && Math.random() < (BAL.lighting.ledChance || 0)) {
+        state.blueprints = state.blueprints || {};
+        state.blueprints.ledbar = 1;
+        notes.push(t('bp.foundNote', { name: LName(DEFS.ledbar) }));
+        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS.ledbar) }), tier: 'legendary' });
+        jackpotToast(`💠 ${t('bp.jackpot', { name: LName(DEFS.ledbar) })}`, 0xdfeaff);
+        queueDiscovery('ledbar', 0, 3, LName(DEFS.ledbar));
       }
     }
     // #189 P3 조명 젤 필터북 — 전설급 1회 한정 파밍(상업지구·도심: 극장/스튜디오 유품).
@@ -5794,8 +5831,9 @@ function openJournalModal(tab = 'journal') {
   const bpOwned = state.blueprints || {};
   const sigIdsAll = Object.values(BAL.blueprint.regionItems).flat();
   const commonIds = BAL.blueprint.commonItems || [];
-  const bpTotal = sigIdsAll.length + commonIds.length;
-  const bpGot = [...sigIdsAll, ...commonIds].filter(id => bpOwned[id]).length;
+  const soloIds = ['ledbar']; // #189 P4: 초희귀 별도 채널 도면 — 도감 집계·행 포함
+  const bpTotal = sigIdsAll.length + commonIds.length + soloIds.length;
+  const bpGot = [...sigIdsAll, ...commonIds, ...soloIds].filter(id => bpOwned[id]).length;
   const bpRow = (id, got, hint) => {
     const d = DEFS[id];
     return `<div class="prep-row" style="cursor:default;${got ? '' : 'opacity:0.6'}">
@@ -5813,11 +5851,14 @@ function openJournalModal(tab = 'journal') {
     return head + rows;
   }).join('');
   const commonRows = commonIds.map(id => bpOwned[id] ? bpRow(id, true, '') : bpVeilRow(t('col.bpCommonSrc'))).join('');
+  const soloRows = soloIds.map(id => bpOwned[id] ? bpRow(id, true, '') : bpVeilRow(t('col.bpLegendSrc'))).join('');
   const colBody = `
     <div class="report-sec"><span class="r-title">${t('col.bpTitle', { n: bpGot, total: bpTotal })}</span>
       ${sigBlocks}
       <div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${t('col.bpCommonTitle')}</div>
       ${commonRows}
+      <div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${t('col.bpLegendTitle')}</div>
+      ${soloRows}
       <div style="margin-top:6px;font-size:10px;color:var(--text-dim)">${t('col.veilHint')}</div>
     </div>
     <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount(), total: colTotal })}</span><br>${colHtml}</div>
@@ -10419,7 +10460,7 @@ function openQaPanel() {
       // 도료 검수용 — 전 계열 +3 (스와치 게이트·소모·도감 확인)
       case 'paints': for (const f of Object.keys(PAINT_ALL)) state.paints[f] = (state.paints[f] || 0) + 3; state.lightGels = 1; status('도료 12계열 + 네온 안료 +3통 + 조명 젤 필터북'); break;
       // 시그니처 도면 검수용 — 전 도면 해금 (제작 목록 노출 확인)
-      case 'bps': { state.blueprints = state.blueprints || {}; for (const ids of Object.values(BAL.blueprint.regionItems)) for (const id of ids) state.blueprints[id] = 1; for (const id of (BAL.blueprint.commonItems || [])) state.blueprints[id] = 1; status('도면 전부 해금 (시그니처 8 + 커먼 5)'); break; }
+      case 'bps': { state.blueprints = state.blueprints || {}; for (const ids of Object.values(BAL.blueprint.regionItems)) for (const id of ids) state.blueprints[id] = 1; for (const id of (BAL.blueprint.commonItems || [])) state.blueprints[id] = 1; state.blueprints.ledbar = 1; status('도면 전부 해금 (시그니처 8 + 커먼 5 + LED)'); break; }
     }
     updateHud(); renderResBar(); if (!state.exp) renderExpPanel(); scheduleSave();
   }));
@@ -10642,7 +10683,11 @@ function renderFrame() {
     if (opts.reduceMotion) ceilLight.intensity = ceilBaseInt;
     else ceilLight.intensity = ceilBaseInt * Math.max(0.5, 0.9 + 0.08 * Math.sin(t * 12.1) * Math.sin(t * 3.3) + (Math.sin(t * 0.47) > 0.99 ? -0.3 : 0));
   }
-  if (lightingFixture?.userData.bulb) lightingFixture.userData.bulb.material.emissiveIntensity = lightingFacilityOn() ? 1.1 : 0; // 소등 시 전구도 꺼짐
+  if (lightingFixture?.userData.bulb) {
+    const facOn = lightingFacilityOn();
+    lightingFixture.userData.bulb.material.emissiveIntensity = facOn ? 1.1 : 0; // 소등 시 전구도 꺼짐
+    if (lightingFixture.userData.pool) lightingFixture.userData.pool.visible = facOn;
+  }
   for (const it of items) {
     if (it.lightObj && it.on !== false && DEFS[it.defId].light?.flicker) {
       // flickSlow(촛불): 저속 일렁임 + 깊은 딥 — "호롱호롱". 일반 flicker(랜턴 등): 기존 잰 흔들림.

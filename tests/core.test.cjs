@@ -752,6 +752,16 @@ const KNOWLEDGE_HASH = -451536973;
       out.gelReset = gi2.lightObj.color.getHex() === S.DEFS.lamp.light.color;
       out.gelBal = (S.BAL.lighting.gelBookRegions || []).length >= 2 && S.BAL.lighting.gelBookChance > 0 && S.BAL.lighting.gelBookChance < 0.1;
       out.gelable3 = ['lamp', 'lantern', 'desklamp'].every(id => S.DEFS[id].light.gelable === true) && !S.DEFS.candle.light.gelable && !S.DEFS.stove.light.gelable;
+      // P4 LED 바: 초희귀 도면 채널(제작 게이트)·젤 가능·무점멸·바닥 라이트 풀(전원 연동·젤 틴트)
+      out.ledDef = !!S.DEFS.ledbar && S.DEFS.ledbar.light.gelable === true && !S.DEFS.ledbar.light.flicker &&
+        S.CRAFTS.some(c => c.out?.furn === 'ledbar' && c.bp === 'ledbar') && S.BAL.lighting.ledChance > 0 && S.BAL.lighting.ledChance < 0.05;
+      S.state.blueprints.ledbar = 1;
+      S.addItem('ledbar', 0, -1.5, 1, 0, true, 0, 0);
+      const li = S.qaItems().slice(-1)[0];
+      out.pool = !!li.lightPool && li.lightPool.visible === true;
+      S.setItemPower ? null : null;
+      li.gel = 'redOxide'; S.applyGel(li);
+      out.poolGel = li.lightPool.material.color.getHex() === 0xa8433f && li.lightObj.color.getHex() === 0xa8433f;
       Math.random = or;
       return JSON.stringify(out);
     `).catch(err => JSON.stringify({ error: String(err) }));
@@ -773,6 +783,9 @@ const KNOWLEDGE_HASH = -451536973;
       check('#189 P3 조명 젤 (적용·세이브 왕복·원색 복원·화기 제외)',
         lj.gelOn === true && lj.gelPersist === true && lj.gelReset === true && lj.gelBal === true && lj.gelable3 === true,
         JSON.stringify({ on: lj.gelOn, persist: lj.gelPersist, reset: lj.gelReset, bal: lj.gelBal, flags: lj.gelable3 }));
+      check('#189 P4 LED 바+라이트 풀 (도면 채널·무점멸·풀 전원·젤 틴트)',
+        lj.ledDef === true && lj.pool === true && lj.poolGel === true,
+        JSON.stringify({ def: lj.ledDef, pool: lj.pool, gel: lj.poolGel }));
     }
 
     const green = report();

@@ -140,6 +140,8 @@ export const CRAFTS = [
   { out: { furn: 'bookshelf' }, cost: { material: 4 }, hint: '책장', hintEn: 'Bookshelf' },
   { out: { furn: 'sofa' }, cost: { cloth: 4, material: 2 }, hint: '패브릭 소파', hintEn: 'Fabric sofa' },
   { out: { furn: 'lamp' }, cost: { parts: 2, battery: 1 }, hint: '부품 조립 조명', hintEn: 'Part-built lamp' },
+  // #189 P4: 초희귀 도면 게이트 — 선명·안정·컬러(젤 틴트)의 LED. 화기 대비 표현 스펙트럼의 끝.
+  { out: { furn: 'ledbar' }, bp: 'ledbar', cost: { parts: 3, battery: 2 }, hint: 'LED 라이트 바 — 폐허의 마지막 신문물', hintEn: 'LED light bar — the ruins\' last piece of new tech' },
   { out: { furn: 'clock' }, cost: { parts: 2, material: 2 }, hint: '괘종시계 — 시간이 흐르는 소리', hintEn: 'Grandfather clock — the sound of passing time' },
   { out: { furn: 'radio' }, cost: { parts: 3, battery: 1 }, hint: '라디오 (날씨 예보)', hintEn: 'Radio (weather forecast)' },
   { out: { furn: 'stove' }, cost: { parts: 3, material: 3 }, hint: '장작 난로 — 최고의 온기 (연료 1/일)', hintEn: 'Wood stove — the best warmth (fuel 1/day)' },

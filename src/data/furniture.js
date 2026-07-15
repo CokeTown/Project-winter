@@ -1137,6 +1137,26 @@ const DEFS = {
       return g;
     }
   },
+  // #189 P4 LED 라이트 바 — 초희귀 도면. 화기(따뜻·흔들림)의 대척: 선명·안정·컬러(젤 틴트).
+  //   폐허에 남은 마지막 신문물 — 표현 스펙트럼의 끝. 발광 스트립·광원이 젤 색을 그대로 받는다.
+  ledbar: {
+    name: 'LED 라이트 바', nameEn: 'LED Light Bar', emoji: '💠', fp: { w: 0.4, d: 0.4 },
+    colorNames: ['그래파이트', '실버', '화이트', '네이비'],
+    colorNamesEn: ['Graphite', 'Silver', 'White', 'Navy'],
+    colors: [0x3a3d42, 0xb9bec6, 0xd8d8d4, 0x46557a],
+    light: { color: 0xdfeaff, intensity: 9, dist: 8, y: 0.95, fuel: 'battery', comfort: 8, gelable: true }, // 무점멸 — 안정광
+    build(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.16, 0.19, 0.05, shade(c, 0.7), 0, 0.025, 0, 10);              // 원형 베이스
+      B(g, 0.07, 1.7, 0.07, shade(c, 0.85), 0, 0.9, 0);                      // 바디 프레임
+      const strip = B(g, 0.035, 1.6, 0.02, 0xeaf4ff, 0, 0.92, 0.045);        // 발광 스트립
+      strip.material.emissive = new THREE.Color(0xdfeaff);
+      strip.material.emissiveIntensity = 1.6; strip.userData.glow = true;
+      B(g, 0.075, 0.05, 0.075, shade(c, 0.6), 0, 1.78, 0);                   // 탑 캡
+      B(g, 0.05, 0.02, 0.05, 0x1c1e22, 0.09, 0.06, 0.06);                    // 전원 버튼
+      return g;
+    }
+  },
   firstaidbox: {
     name: '구급상자', nameEn: 'First-Aid Box', emoji: '🧰', fp: { w: 0.5, d: 0.35 },
     stackable: true, // 벽걸이 대신 선반/서랍 위 배치 (관통 회피)
