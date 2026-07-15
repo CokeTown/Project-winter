@@ -29,7 +29,7 @@
 ### B. 게임 리뷰 레버 (내가 구현 가능분)
 | 레버 | 작업 | 위치 |
 |---|---|---|
-| 5 (rank5) | 위시리스트/보급원 트래커 — 지역 정보판 "드랍 X·숙련 ★N까지 M회" + collections 탭 (#177) | `src/game.js` showMapInfo |
+| 5 (rank5) | ✅ 위시리스트/보급원 트래커 완료(2026-07-15) — 정보판 라인 + 오토픽커 넛지 + 수첩 도감 탭(#177, 5c91c6e) | `src/game.js` showMapInfo·openJournalModal |
 | 7 | 오프라인 복귀 다이제스트("밤새 쌓인 더미") | `src/game.js` rollOfflineGift |
 | — | 오토픽커 goals-bias (활성 위시리스트 지역 가중) | `src/core/regions.js` pickAutoRegion |
 | 경제 | #76 surplusCap → parts/material/cloth 확장 | `src/data/balance.js` |
@@ -39,7 +39,8 @@
 
 ### C. 재수렴 · 기술 부채
 - 데모 레버(1·4·6)·가격 문서를 넥페 후 `demo-vertical-slice`↔`gd-2.0` 재수렴 (프리즈+가드 후속).
-- #73 모듈화 Tier4.
+- ✅ #73 모듈화 Tier4 완료(2026-07-15): WEATHERS→world.js·ACHS→achs.js(판정 병합) + 장주행 soak 그린
+  (tools/soak-memory.cjs — 60로드+1500일: GPU 자원 0성장). 다음 티어 후보: SHELTERS 빌더 분리(PORTING §7).
 
 ---
 
