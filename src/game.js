@@ -5699,7 +5699,7 @@ function recordTabHtml() {
 }
 function journalTabBar(active) {
   const tab = (id, label) => `<button class="pixel-btn ${active === id ? 'primary' : ''}" data-jtab="${id}" style="flex:1">${label}</button>`;
-  return `<div style="display:flex;gap:6px;margin-bottom:10px">${tab('journal', t('journal.title'))}${tab('ach', t('journal.achTab'))}${tab('record', t('record.tabTitle'))}</div>`;
+  return `<div style="display:flex;gap:6px;margin-bottom:10px">${tab('journal', t('journal.title'))}${tab('col', t('journal.colTab'))}${tab('ach', t('journal.achTab'))}${tab('record', t('record.tabTitle'))}</div>`;
 }
 function openJournalModal(tab = 'journal') {
   const se = seasonOf();
@@ -5728,7 +5728,39 @@ function openJournalModal(tab = 'journal') {
     <div class="report-sec"><span class="r-title">${t('journal.statsTitle')}</span><br>
       ${t('journal.statsLine', { day: state.day, sicon: se.icon, exp: state.stats.exp, succ: state.stats.success, craft: state.stats.craft || 0, stay: state.stayDays || 0 })}
     </div>
-    ${comfortBreakdownHtml()}
+    ${comfortBreakdownHtml()}`;
+  // #177 도감 탭 — 위시리스트/보급원 트래커의 수집 뷰. 도면(시그니처+커먼) + 색상 도감 + 테마 세트.
+  //   시그니처: 지역별 묶음, 미수집=「{지역}에서만」(pull 표기 — 정보판 map.drops와 동일 축).
+  //   미방문 지역은 ??? 베일(#90 "조회 불가" 원칙 — showMapInfo와 같은 regionVisits 게이트).
+  const bpOwned = state.blueprints || {};
+  const sigIdsAll = Object.values(BAL.blueprint.regionItems).flat();
+  const commonIds = BAL.blueprint.commonItems || [];
+  const bpTotal = sigIdsAll.length + commonIds.length;
+  const bpGot = [...sigIdsAll, ...commonIds].filter(id => bpOwned[id]).length;
+  const bpRow = (id, got, hint) => {
+    const d = DEFS[id];
+    return `<div class="prep-row" style="cursor:default;${got ? '' : 'opacity:0.6'}">
+      <span style="font-size:16px">${d.emoji}</span><span>${LName(d)}</span>
+      <span class="p-cost">${got ? '✓' : hint}</span></div>`;
+  };
+  const bpVeilRow = (hint = '') => `<div class="prep-row" style="cursor:default;opacity:0.35">
+      <span style="font-size:16px">▫️</span><span>???</span><span class="p-cost">${hint}</span></div>`;
+  const sigBlocks = Object.entries(BAL.blueprint.regionItems).map(([rid, ids]) => {
+    const visited = ((state.regionVisits || {})[rid] || 0) > 0;
+    const head = `<div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${regionIcon(rid)} ${visited ? LName(REGIONS[rid]) : '???'}</div>`;
+    const rows = ids.map(id => (visited || bpOwned[id])
+      ? bpRow(id, bpOwned[id], t('col.bpOnly', { region: LName(REGIONS[rid]) }))
+      : bpVeilRow()).join('');
+    return head + rows;
+  }).join('');
+  const commonRows = commonIds.map(id => bpOwned[id] ? bpRow(id, true, '') : bpVeilRow(t('col.bpCommonSrc'))).join('');
+  const colBody = `
+    <div class="report-sec"><span class="r-title">${t('col.bpTitle', { n: bpGot, total: bpTotal })}</span>
+      ${sigBlocks}
+      <div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${t('col.bpCommonTitle')}</div>
+      ${commonRows}
+      <div style="margin-top:6px;font-size:10px;color:var(--text-dim)">${t('col.veilHint')}</div>
+    </div>
     <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount(), total: colTotal })}</span><br>${colHtml}</div>
     <div class="report-sec"><span class="r-title">${t('deco.themeBadgeTitle', { n: activeThemeSets().length, total: THEME_SETS.length })}</span><br>${themeBadges}</div>`;
   // #8(피드백) 업적 전용 탭 — 총 개수·달성률 + 진행 바 + 전체 목록(달성/미달성/암호). 일지 하단에 묻혀 안 보이던 것 승격.
@@ -5739,7 +5771,7 @@ function openJournalModal(tab = 'journal') {
       <div style="height:8px;background:#22252d;border-radius:4px;margin-top:7px;overflow:hidden;border:1px solid #333"><div style="height:100%;width:${achPct}%;background:var(--accent);transition:width .3s"></div></div>
     </div>
     ${achsHtml}`;
-  const jContent = tab === 'record' ? recordTabHtml() : tab === 'ach' ? achBody : journalBody;
+  const jContent = tab === 'record' ? recordTabHtml() : tab === 'ach' ? achBody : tab === 'col' ? colBody : journalBody;
   openModal(t('journal.title'), journalTabBar(tab) + jContent);
   const body = $('modal-body');
   body.querySelectorAll('button[data-jtab]').forEach(b => b.addEventListener('click', () => openJournalModal(b.dataset.jtab)));
