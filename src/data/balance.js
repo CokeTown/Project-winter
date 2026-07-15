@@ -401,6 +401,12 @@ export const BAL = {
     commonDropChance: 0.08,
   },
 
+  // #189 P3 조명 색 파밍 — 젤 필터북(전설·1회 한정) 드랍. 보유 후엔 도료 1통 = 조명 1회 틴트(도색 게이트 문법 재사용).
+  lighting: {
+    gelBookChance: 0.02,
+    gelBookRegions: ['commercial', 'citycore'], // 극장/스튜디오 유품 — 상업지구·도심 한정(지역 pull)
+  },
+
   paint: {
     dropChance: 0.10,     // 성공 탐험당 도료 1통 확률 (디렉터 하향 2026-07-08: 16%→10% — 희소해야 도파민이 돈다)
     neonDropChance: 0.05, // 네온 안료(도심 전용 최희귀) — citycore 성공 탐험당 별도 롤. 일반 도료 풀과 무관 (디렉터 2026-07-09)

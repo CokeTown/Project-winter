@@ -449,7 +449,7 @@ const DEFS = {
     colorNames: ['웜화이트', '세이지', '로즈', '스카이'],
     colorNamesEn: ['Warm White', 'Sage', 'Rose', 'Sky'],
     colors: [0xe8d9b0, 0x9aa88a, 0xc79a9a, 0x93a8bb],
-    light: { color: 0xffb670, intensity: 7, dist: 7, y: 1.45, fuel: 'battery', comfort: 8 },
+    light: { color: 0xffb670, intensity: 7, dist: 7, y: 1.45, fuel: 'battery', comfort: 8, gelable: true }, // #189 P3: 전기 갓 — 젤 틴트 가능
     tiered: true, // #157: T1 전선에 알전구 하나 → T2 갓 찌그러진 스탠드 → T3 현행. 광원 y 공통(전구 1.36).
     build(c, ci, sk, tier) {
       if (tier === 1) {
@@ -936,7 +936,7 @@ const DEFS = {
     colorNames: ['황동', '무쇠', '레드', '민트'],
     colorNamesEn: ['Brass', 'Cast Iron', 'Red', 'Mint'],
     colors: [0xb08a3a, 0x4a4d52, 0xa8433f, 0x93b5a5],
-    light: { color: 0xffb44e, intensity: 7.5, dist: 6, y: 1.15, flicker: true, fuel: 'candle', comfort: 7 }, // 화기 강화(5→7.5, 더 따뜻)
+    light: { color: 0xffb44e, intensity: 7.5, dist: 6, y: 1.15, flicker: true, fuel: 'candle', comfort: 7, gelable: true }, // 화기 강화(5→7.5) · #189 P3: 유리 하우징 — 젤 틴트 가능
     tiered: true, // #157: T1 나뭇가지+유리병 → T2 녹슨 랜턴(뿌연 유리) → T3 현행. 광원 y 공통.
     build(c, ci, sk, tier) {
       if (tier === 1) {
@@ -1124,7 +1124,7 @@ const DEFS = {
     colorNames: ['그린', '블랙', '브라스', '크림'],
     colorNamesEn: ['Green', 'Black', 'Brass', 'Cream'],
     colors: [0x3a6a4a, 0x2f2a24, 0xb08a3a, 0xd9cdb2],
-    light: { color: 0xffd090, intensity: 4, dist: 5, y: 0.5, fuel: 'battery', comfort: 5 },
+    light: { color: 0xffd090, intensity: 4, dist: 5, y: 0.5, fuel: 'battery', comfort: 5, gelable: true }, // #189 P3: 전기 갓 — 젤 틴트 가능
     build(c) {
       const g = new THREE.Group();
       Cyl(g, 0.11, 0.13, 0.04, shade(c, 0.8), 0, 0.02, 0, 10);   // 받침

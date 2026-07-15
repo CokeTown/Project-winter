@@ -1989,7 +1989,7 @@ function doSaveNow() {
     try { localStorage.setItem('nw-opts', JSON.stringify(opts)); } catch (e) { /* 저장 불가 무시 */ }
     return;
   }
-  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0 }));
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
   state.savedAt = Date.now();
   // REQ-STEAM-01: 세이브 경로를 클라우드 어댑터 경유 (현재 localStorage 위임 — 동작 불변, Steam Cloud 미러 지점).
   // 슬롯 저장 실패(quota 초과 등)는 조용히 삼키지 않는다 — 세션당 1회 고지 (스팸 방지, 진행은 계속).
@@ -2225,9 +2225,23 @@ function buildItemGroup(item) {
     g.add(sp);
     item.glowSprite = sp;
     item.glowBase = 0.3;
+    if (item.gel) applyGel(item); // #189 P3: 재빌드(recolorItem·도색 등) 시 젤 색 유지 — 리그 완성 후 적용
   }
   g.userData.item = item;
   return g;
+}
+// #189 P3 조명 젤: 광원·헤일로·발광 메시를 도료 계열 색으로 틴트. item.gel=null이면 원색 복원.
+//   화기(불꽃)는 def.light.gelable이 없어 UI에서 걸러진다 — 이 함수는 값 적용만 담당.
+function applyGel(item) {
+  const def = DEFS[item.defId];
+  if (!def?.light) return;
+  const hex = (item.gel && PAINT_ALL[item.gel]?.swatch != null) ? PAINT_ALL[item.gel].swatch : def.light.color;
+  if (item.lightObj) item.lightObj.color.setHex(hex);
+  if (item.glowSprite) item.glowSprite.material.color.setHex(hex);
+  for (const m of item.glowMeshes || []) {
+    if (!m.material?.emissive) continue;
+    m.material.emissive.setHex(item.gel ? hex : m.userData.origEmissive);
+  }
 }
 function syncTransform(item) {
   item.group.position.set(item.x, item.y || 0, item.z);
@@ -2479,6 +2493,7 @@ function loadShelter(id) {
     const [cx, cz] = clampToRoom({ defId: it.d, colorIdx: it.c ?? 0, rot: it.r ?? 0 }, it.x, it.z);
     const restored = addItem(it.d, it.c ?? 0, cx, cz, it.r ?? 0, it.o !== 0, it.y || 0, it.t ?? 3);
     if (it.s && restored) { restored.sketch = it.s; recolorItem(restored, restored.colorIdx); } // DDD-2: 걸어둔 스케치 복원(재빌드)
+    if (it.ge && restored) { restored.gel = it.ge; applyGel(restored); } // #189 P3: 조명 젤 색 복원
   }
   for (const it of items) {
     if (!it.y) continue;
@@ -2536,7 +2551,7 @@ async function moveToShelter(id) {
     state.gameMin += BAL.economy.moveCrossTimeMin; // 구역 간 여정 3시간
     const dn = LName(DISTRICTS[districtOf(id)]); state.dayLog.notes.push(t('move.journeyNote', { name: dn, josa: josa(dn, '으로/로') }));
   }
-  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0 }));
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
   state.stayDays = 0; // 새 집은 아직 낯설다
   loadShelter(id);
   scheduleSave();
@@ -3354,6 +3369,15 @@ function resolveExpedition() {
         notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
         special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'rare' });
       }
+    }
+    // #189 P3 조명 젤 필터북 — 전설급 1회 한정 파밍(상업지구·도심: 극장/스튜디오 유품).
+    //   보유 시 조명(전기·유리 계열)에 도료 계열 색을 입힐 수 있다 — "집 꾸미기의 본질은 조명"의 열쇠.
+    if (!state.lightGels && (BAL.lighting.gelBookRegions || []).includes(exp.region) &&
+        Math.random() < (BAL.lighting.gelBookChance || 0)) {
+      state.lightGels = 1;
+      notes.push(t('gel.foundNote'));
+      special.push({ icon: '🎭', label: t('gel.lootLabel'), tier: 'legendary' });
+      jackpotToast(`🎭 ${t('gel.jackpot')}`, 0xc98ad4);
     }
     // #164 떠오른 자리 회수 (성공 = 온전한 보상)
     resolveFieldSpot(exp, 1, notes, special);
@@ -4293,7 +4317,8 @@ const SHELTER_MODS = {
   mushroom: { name: '버섯 재배칸', nameEn: 'Mushroom Bed', emoji: '🍄', cost: { material: 3, water: 3 }, desc: '어둠 속 균상 — 매일 음식 +1 (연중, 물 소모)', descEn: 'A mushroom bed in the dark — food +1 daily year-round (uses water)', only: ['subway'] },
   insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '🧤', cost: { cloth: 3, material: 2 }, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
   shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '🪜', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
-  solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '🔆', cost: { parts: 4, battery: 1 },  desc: '이틀에 한 번 배터리 +1', descEn: 'Battery +1 every other day', not: ['subway'] },
+  // #189 P2 지속 급전 승격: 설치 시 조명·가전 전력 무료 + 기존 발전(이틀 배터리 +1) 유지.
+  solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '🔆', cost: { parts: 4, battery: 1 },  desc: '조명·가전 전력 무료 (지속 급전) · 이틀에 한 번 배터리 +1', descEn: 'Free power for lights & appliances (steady supply) · battery +1 every other day', not: ['subway'] },
   // #189 P1 조명 설비 — 어둠(무비용·우울) ↔ 화기(연료·온기·흔들림) ↔ 전기조명(전력·안정) 밸런스 축의 세 번째 기둥.
   //   rebuild: 설치 즉시 loadShelter 재실행 → 천장 펜던트 소품+전등 점등. 전력은 processDay가 매일 배터리 1 소비.
   lighting:   { name: '조명 설비',   nameEn: 'Electric Lighting', emoji: '💡', cost: { parts: 3, battery: 1 }, desc: '천장에 전등을 매단다 — 방이 밝아진다 (배터리 1/일, 발전기 가동 중엔 무료)', descEn: 'Hang an electric light from the ceiling — the room brightens (battery 1/day, free while the generator runs)', rebuild: true },
@@ -5174,7 +5199,7 @@ function openCraftModal() {
         state.rooftopSlate = 'full';
         toast(t('rooftop.slateDone')); state.dayLog.notes.push(t('rooftop.slateDone'));
         // 지붕 지오메트리를 다시 짓는다 (가구 보존 — 벙커 재빌드와 동일 패턴)
-        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
+        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
         loadShelter('rooftop');
         closeModal();
         playSfx('craft'); scheduleSave(); renderResBar(); updateHud();
@@ -5305,7 +5330,7 @@ function openCraftModal() {
       state.dayLog.notes.push(t('craft.modNote', { name: LName(m) }));
       if (id === 'extension' || m.rebuild) {
         // 방 구조가 바뀌므로 거처를 다시 짓는다 (rebuild: buildRoom 지오 분기 개조 — 세관 선반 철거/창구 봉쇄)
-        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
+        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
         loadShelter(state.current);
         closeModal();
       } else {
@@ -5322,7 +5347,7 @@ function openCraftModal() {
 // 벙커 지오메트리 재빌드 (#36) — 천장 수리/뒷문 상태를 반영해 방을 다시 짓는다 (extension 개조와 동일 패턴).
 function rebuildBunkerGeometry() {
   if (state.current !== 'bunker') return;
-  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
+  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
   loadShelter('bunker');
   closeModal();
   shadowDirty();
@@ -5330,7 +5355,7 @@ function rebuildBunkerGeometry() {
 // 1.1: 현재 셸터 지오메트리 재빌드 (현장 오브젝트 단계 교체용, 벙커 외 항구 셸터). 배치 보존 후 loadShelter.
 function rebuildShelterGeometry() {
   const id = state.current;
-  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0 }));
+  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
   loadShelter(id);
   closeModal();
   shadowDirty();
@@ -8186,6 +8211,16 @@ function processDay() {
       notes.push(t('day.genStop'));
     }
   }
+  // #189 P2: 태양광 = 지속 급전 승격 — 설치돼 있으면 조명·가전 배터리 소비 무료(주간 충전 픽션, 상시).
+  //   발전량(이틀 배터리 +1)은 기존 캘리브레이션 유지 — "전력 걱정 해소"는 급전이, 잉여는 기존 산출이 맡는다.
+  //   밸런스 축 완성: 어둠(무비용) ↔ 화기(연료) ↔ 전기조명(전력 관리) ↔ 태양광(초기투자→무한).
+  if (!freePower && hasMod('solar')) {
+    freePower = true;
+    // 노트는 실제 전기 부하(조명 설비·배터리 가전·전기 조명)가 있는 날만 — 아침 보고 스팸 방지
+    const anyBatteryLoad = hasMod('lighting') || items.some(it => it.on !== false &&
+      (DEFS[it.defId].light?.fuel === 'battery' || (DEFS[it.defId].appliance?.fuel === 'battery' && DEFS[it.defId].appliance?.effect !== 'power')));
+    if (anyBatteryLoad) notes.push(t('day.solarPower'));
+  }
   const consumeFuel = (fuelId, n = 1) => (fuelId === 'battery' && freePower) ? true : resConsume(fuelId, n);
   // 2) 켜진 조명·가전의 일일 연료 소비 (부족 시 자동 꺼짐)
   // v0.9.1: 캔들 스툴(candle 가구)만 이틀에 1개 소비로 완화 — 그 외(랜턴 등)는 매일 그대로
@@ -8974,6 +9009,32 @@ function showSelPanel(item) {
       toast(t('sel.upgraded'));
       showSelPanel(item); renderResBar(); scheduleSave();
     });
+  }
+  // #189 P3 조명 젤: 필터북 보유 + gelable 광원이면 빛 색 스와치 행 — 도료 1통 = 1회 틴트(도색 게이트 문법).
+  { const oldGel = $('sel-gel'); if (oldGel) oldGel.remove(); }
+  if (def.light?.gelable && state.lightGels) {
+    const div = document.createElement('div');
+    div.id = 'sel-gel';
+    div.style.cssText = 'margin-bottom:8px';
+    const cur = item.gel || '';
+    const gsw = (fam, hex, title, free) =>
+      `<div class="swatch${cur === fam ? ' active' : ''}${!free && !(state.paints[fam] > 0) ? ' locked' : ''}" data-gel="${fam}" title="${title}" style="background:#${hex.toString(16).padStart(6, '0')}"></div>`;
+    div.innerHTML = `<div style="font-size:10px;color:var(--text-dim);margin-bottom:3px">${t('gel.rowTitle')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:3px">${gsw('', def.light.color, t('gel.original'), true)}${Object.entries(PAINT_FAMILIES).map(([f, d]) => gsw(f, d.swatch, `${LName(d)} ${t('paint.haveN', { n: state.paints[f] || 0 })}`)).join('')}</div>`;
+    $('sel-swatches').after(div);
+    div.querySelectorAll('[data-gel]').forEach(b => b.addEventListener('click', () => {
+      const fam = b.dataset.gel || null;
+      if ((item.gel || null) === fam) return;
+      if (fam) { // 원색 복원은 무료 — 틴트만 도료 소모
+        const have = state.paints[fam] || 0;
+        if (have < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
+        state.paints[fam] = have - 1;
+        toast(t('gel.applied', { name: LName(PAINT_ALL[fam]) }));
+      } else toast(t('gel.reset'));
+      item.gel = fam;
+      applyGel(item);
+      showSelPanel(item); scheduleSave();
+    }));
   }
   // 조명/가전: 전원 토글 + 연료 잔량 (기획서 v0.2 UI: "양초 3개 보유 / 1일 1개 소비")
   const old = $('sel-power'); if (old) old.remove();
@@ -10356,7 +10417,7 @@ function openQaPanel() {
         break;
       }
       // 도료 검수용 — 전 계열 +3 (스와치 게이트·소모·도감 확인)
-      case 'paints': for (const f of Object.keys(PAINT_ALL)) state.paints[f] = (state.paints[f] || 0) + 3; status('도료 12계열 + 네온 안료 +3통'); break;
+      case 'paints': for (const f of Object.keys(PAINT_ALL)) state.paints[f] = (state.paints[f] || 0) + 3; state.lightGels = 1; status('도료 12계열 + 네온 안료 +3통 + 조명 젤 필터북'); break;
       // 시그니처 도면 검수용 — 전 도면 해금 (제작 목록 노출 확인)
       case 'bps': { state.blueprints = state.blueprints || {}; for (const ids of Object.values(BAL.blueprint.regionItems)) for (const id of ids) state.blueprints[id] = 1; for (const id of (BAL.blueprint.commonItems || [])) state.blueprints[id] = 1; status('도면 전부 해금 (시그니처 8 + 커먼 5)'); break; }
     }
@@ -10914,6 +10975,7 @@ window.__shelter = {
   qaScene: () => scene, // 그라운드 프로브용 씬 루트 (부유·긴 메시 전수 감사). 카메라는 씬 밖이라 traverse 불가 — 이 훅으로 접근.
   qaRenderInfo: () => renderer.info, // #73 장주행 메모리 감사: geometries/textures/programs 카운트 (GPU 자원 누수 프로브)
   qaLightState: () => { updateLightingRig(); return { fallback: ceilBaseInt, hasLight: interiorLightActive(), facility: lightingFacilityOn() }; }, // #189 P1 프로브
+  qaItems: () => items, applyGel, // #189 P3 QA: 배치 아이템 직접 접근 + 젤 적용(색 검증)
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },

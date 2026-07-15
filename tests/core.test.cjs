@@ -730,6 +730,28 @@ const KNOWLEDGE_HASH = -451536973;
       const b1 = S.state.res.battery; S.processDay();
       out.freePower = (S.state.res.battery || 0) === b1;                   // 발전기 가동 → 배터리 무료
       out.backOn = S.qaLightState();
+      // P2 태양광 지속 급전: 발전기 연료 소진 → 태양광이 급전 승계(드레인 0) + 이틀 생산 +1(day 5 홀수)
+      S.state.res.fuel = 0; S.state.res.battery = 2;
+      S.state.mods = { container: ['lighting', 'solar'] }; S.state.lightingOut = false;
+      S.processDay();
+      out.solarFree = (S.state.res.battery || 0) === 3;
+      out.solarNote = (S.state.dayLog.notes || []).some(n => n.includes('태양광이 전기를'));
+      out.solarOn = S.qaLightState();
+      // P3 조명 젤: 값 적용(라이트+헤일로 스프라이트) → 세이브 왕복(ge 필드) → 원색 복원 무료
+      S.addItem('lamp', 0, 1.5, 1, 0, true, 0, 0);
+      const gi = S.qaItems().slice(-1)[0];
+      S.state.lightGels = 1;
+      gi.gel = 'sage'; S.applyGel(gi);
+      out.gelOn = gi.lightObj.color.getHex() === 0x93b5a5 && gi.glowSprite.material.color.getHex() === 0x93b5a5;
+      // 세이브 왕복: 실게임 플로우(이주·개조 리빌드)처럼 레이아웃 직렬화 후 리로드 — ge 필드 왕복 검증
+      S.state.layouts[S.state.current] = S.qaItems().map(i => ({ d: i.defId, c: i.colorIdx, x: i.x, z: i.z, r: i.rot, o: i.on === false ? 0 : 1, y: i.y || 0, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+      S.loadShelter('container');
+      const gi2 = S.qaItems().filter(i => i.defId === 'lamp').slice(-1)[0];
+      out.gelPersist = !!gi2 && gi2.gel === 'sage' && gi2.lightObj.color.getHex() === 0x93b5a5;
+      gi2.gel = null; S.applyGel(gi2);
+      out.gelReset = gi2.lightObj.color.getHex() === S.DEFS.lamp.light.color;
+      out.gelBal = (S.BAL.lighting.gelBookRegions || []).length >= 2 && S.BAL.lighting.gelBookChance > 0 && S.BAL.lighting.gelBookChance < 0.1;
+      out.gelable3 = ['lamp', 'lantern', 'desklamp'].every(id => S.DEFS[id].light.gelable === true) && !S.DEFS.candle.light.gelable && !S.DEFS.stove.light.gelable;
       Math.random = or;
       return JSON.stringify(out);
     `).catch(err => JSON.stringify({ error: String(err) }));
@@ -745,6 +767,12 @@ const KNOWLEDGE_HASH = -451536973;
       check('#189 P1 발전기 무료 급전 (배터리 불변·재점등)',
         lj.freePower === true && lj.backOn.facility === true,
         JSON.stringify({ free: lj.freePower, on: lj.backOn }));
+      check('#189 P2 태양광 지속 급전 (드레인 0·이틀 생산 +1·노트)',
+        lj.solarFree === true && lj.solarNote === true && lj.solarOn.facility === true,
+        JSON.stringify({ free: lj.solarFree, note: lj.solarNote, on: lj.solarOn }));
+      check('#189 P3 조명 젤 (적용·세이브 왕복·원색 복원·화기 제외)',
+        lj.gelOn === true && lj.gelPersist === true && lj.gelReset === true && lj.gelBal === true && lj.gelable3 === true,
+        JSON.stringify({ on: lj.gelOn, persist: lj.gelPersist, reset: lj.gelReset, bal: lj.gelBal, flags: lj.gelable3 }));
     }
 
     const green = report();
