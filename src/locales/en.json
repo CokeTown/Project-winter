@@ -1183,7 +1183,7 @@
   "quest.head": "To Do",
   "quest.drink.text": "Click the 💧 gauge to drink water",
   "quest.eat.text": "Click the 🥫 gauge to eat something",
-  "quest.place.text": "Turn on 🔧 edit mode and place 1 furnishing (bed recommended)",
+  "quest.place.text": "🔧 Turn on placement mode and set down one furnishing (bed or candle stool recommended — nights need light)",
   "quest.depart.text": "Open the 🎒 map and set out on your first expedition",
   "quest.sleep.text": "End the day with 🛌 sleep",
   "quest.craft.text": "Craft anything once at the 🔨 workbench",
@@ -2074,5 +2074,6 @@
   "craft.resTag": " · resource",
   "craft.candleHint": "Candles are fuel, not furniture to place — candle stools, lanterns and candelabras burn them.",
   "inv.getByCraft": "Craft it at the workbench",
-  "place.noStockCraft": "No {name} in stock. Craft one at the workbench."
+  "place.noStockCraft": "No {name} in stock. Craft one at the workbench.",
+  "tip.dark": "Night has come. Without a light source the room only has the dead fluorescent — place the candle stool from my inventory. Candles are its fuel."
 }

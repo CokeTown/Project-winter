@@ -1183,7 +1183,7 @@
   "quest.head": "할 일",
   "quest.drink.text": "💧 게이지를 클릭해 물을 마셔보자",
   "quest.eat.text": "🥫 게이지를 클릭해 뭔가 먹어보자",
-  "quest.place.text": "🔧 배치 모드를 켜고 가구를 1개 놓아보자 (침대 추천)",
+  "quest.place.text": "🔧 배치 모드를 켜고 가구를 1개 놓아보자 (침대나 캔들 스툴 추천 — 밤엔 빛이 필요하다)",
   "quest.depart.text": "🎒 지도를 열어 첫 탐험을 나서보자",
   "quest.sleep.text": "🛌 취침으로 하루를 마무리하자",
   "quest.craft.text": "🔨 제작대에서 무엇이든 1개 만들어보자",
@@ -2074,5 +2074,6 @@
   "craft.resTag": " · 자원",
   "craft.candleHint": "양초는 놓는 가구가 아니라 연료다 — 캔들 스툴·랜턴·촛대가 태운다.",
   "inv.getByCraft": "제작대에서 만든다",
-  "place.noStockCraft": "{name}의 재고가 없다. 제작대에서 만들자."
+  "place.noStockCraft": "{name}의 재고가 없다. 제작대에서 만들자.",
+  "tip.dark": "밤이 왔다. 광원이 없으면 방은 죽은 형광등뿐이다 — 인벤토리의 캔들 스툴을 놓자. 양초가 연료다."
 }
