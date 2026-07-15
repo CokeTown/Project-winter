@@ -125,6 +125,8 @@ export const CRAFTS = [
   { out: { furn: 'supplyshelf' }, cost: { material: 3 }, hint: '통조림·병을 채운 보급 선반', hintEn: 'A supply shelf stocked with cans and jars' },
   { out: { furn: 'cratestack' }, cost: { material: 3 }, hint: '쌓아 올린 보급 상자 더미', hintEn: 'A stack of scavenged supply crates' },
   { out: { furn: 'fuelpile' }, cost: { material: 1, fuel: 2 }, hint: '난롯가에 쌓아 둔 장작 더미', hintEn: 'A firewood pile stacked by the stove' },
+  { out: { furn: 'noticeboard' }, cost: { material: 2, cloth: 1 }, hint: '지도·메모를 꽂은 상황판', hintEn: 'A board pinned with maps and notes' },
+  { out: { furn: 'jugcluster' }, cost: { material: 2 }, hint: '물·연료를 담은 통 무더기', hintEn: 'Clustered jugs of water and fuel' },
   { out: { furn: 'chair' }, cost: { material: 2 }, hint: '나무 의자', hintEn: 'Wooden chair' },
   { out: { furn: 'candle' }, cost: { material: 1, candle: 1 }, hint: '캔들 스툴', hintEn: 'Candle stool' },
   { out: { furn: 'teatable' }, cost: { material: 2, cloth: 1 }, hint: '낮은 찻상 — 따뜻한 한 잔', hintEn: 'A low tea table — a warm cup' },

@@ -249,6 +249,48 @@ const DEFS = {
       return g;
     }
   },
+  noticeboard: {
+    name: '상황판', nameEn: 'Notice Board', emoji: '📋', fp: { w: 1.0, d: 0.34 },
+    colorNames: ['코르크', '칠판', '화이트', '메탈'], colorNamesEn: ['Cork', 'Slate', 'White', 'Steel'],
+    colors: [0xb2905a, 0x2f3a34, 0xcfc9ba, 0x6a6e72],
+    build(c, colorIdx = 0) {
+      const g = new THREE.Group();
+      const rand = seededRand(53 + colorIdx * 11);
+      B(g, 0.05, 1.0, 0.05, 0x4a3a2a, -0.4, 0.5, 0.06); B(g, 0.05, 1.0, 0.05, 0x4a3a2a, 0.4, 0.5, 0.06);   // 앞다리
+      B(g, 0.05, 0.9, 0.05, 0x4a3a2a, -0.36, 0.45, -0.1); B(g, 0.05, 0.9, 0.05, 0x4a3a2a, 0.36, 0.45, -0.1); // 뒷다리(이젤)
+      B(g, 0.98, 0.78, 0.06, 0x5a4632, 0, 0.92, 0);   // 프레임
+      B(g, 0.9, 0.7, 0.04, c, 0, 0.92, 0.02);         // 판
+      const papers = [0xe8e0cc, 0xdcd2b8, 0xcfe0d8, 0xe0d0c0];
+      for (let i = 0; i < 7; i++) {
+        const px = -0.34 + rand() * 0.68, py = 0.66 + rand() * 0.5, pw = 0.1 + rand() * 0.08, ph = 0.1 + rand() * 0.08;
+        B(g, pw, ph, 0.015, papers[Math.floor(rand() * 4)], px, py, 0.045);
+        B(g, 0.018, 0.018, 0.02, 0xc23a2a, px + pw * 0.3, py + ph * 0.3, 0.06); // 빨간 핀
+      }
+      B(g, 0.26, 0.22, 0.016, 0x6a8a7a, -0.08, 0.98, 0.046); // 지도 한 장
+      B(g, 0.5, 0.012, 0.012, 0xb03828, 0.02, 0.9, 0.062);   // 붉은 실
+      return g;
+    }
+  },
+  jugcluster: {
+    name: '물·연료 비축', nameEn: 'Jug Cluster', emoji: '🛢️', fp: { w: 0.85, d: 0.6 },
+    colorNames: ['블루', '레드', '그린', '앰버'], colorNamesEn: ['Blue', 'Red', 'Green', 'Amber'],
+    colors: [0x3a6aa8, 0xb03828, 0x4a7a4a, 0xc08a3a],
+    build(c) {
+      const g = new THREE.Group();
+      const jug = (x, z, s, col, tall) => {
+        const h = tall ? 0.38 : 0.26;
+        B(g, s, h, s, col, x, h / 2 + 0.01, z);                       // 몸통
+        B(g, s * 0.5, 0.06, s * 0.5, shade(col, 1.2), x, h + 0.04, z); // 뚜껑
+        B(g, s * 0.9, 0.03, s * 0.95, shade(col, 1.35), x, h * 0.55, z + 0.001); // 라벨 띠
+        B(g, 0.03, 0.1, 0.03, shade(col, 0.7), x + s * 0.35, h * 0.8, z); // 손잡이
+      };
+      jug(-0.2, 0.05, 0.26, c, true);       // 큰 통(색 가변)
+      jug(0.15, -0.08, 0.22, 0xb03828, false); // 빨간 연료통
+      jug(0.28, 0.16, 0.2, 0x4a7a4a, false);   // 초록통
+      jug(-0.02, 0.22, 0.16, 0x8a8f92, false); // 회색 소형
+      return g;
+    }
+  },
   rug: {
     name: '러그', nameEn: 'Rug', emoji: '🧶', fp: { w: 2.2, d: 1.5 }, noCollide: true,
     colorNames: ['레드', '블루', '그린', '베이지'],
