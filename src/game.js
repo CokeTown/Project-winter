@@ -6829,9 +6829,15 @@ addEventListener('pointermove', e => {
     const dx = e.clientX - orbitDrag.x, dy = e.clientY - orbitDrag.y;
     if (!orbitDrag.moved && Math.hypot(dx, dy) > (orbitDrag.dead || 7)) orbitDrag.moved = true;
     if (orbitDrag.moved) {
-      if (catCam.active) exitCatCloseup(); // 드래그로 카메라를 잡으면 클로즈업 해제(원 카메라 복원)
-      if (orbitDrag.pan) panByScreenDelta(dx, dy); // #70 빈 공간 드래그 = 클램프 팬 (마우스/터치 공용)
-      else camState.targetYaw += dx * 0.008;
+      // 피드백 #3(2026-07-15 플레이테스트): 클로즈업 중 회전 드래그 = 고양이 주위를 돈다(클로즈업 유지).
+      //   catCam.targetYaw가 매 프레임 camState를 덮으므로 그쪽을 돌려야 한다. 팬 드래그는 기존대로 해제(탈출구).
+      if (catCam.active && !orbitDrag.pan) {
+        catCam.targetYaw += dx * 0.008;
+      } else {
+        if (catCam.active) exitCatCloseup(); // 팬으로 카메라를 잡으면 클로즈업 해제(원 카메라 복원)
+        if (orbitDrag.pan) panByScreenDelta(dx, dy); // #70 빈 공간 드래그 = 클램프 팬 (마우스/터치 공용)
+        else camState.targetYaw += dx * 0.008;
+      }
       orbitDrag.x = e.clientX; orbitDrag.y = e.clientY;
     }
     return;
@@ -8693,6 +8699,16 @@ function tickTime(dt) {
 }
 function renderInventoryBar() {
   const bar = $('toolbar');
+  // 피드백 #1(2026-07-15 플레이테스트): 스트립에 호버한 채 마우스 휠 = 가로 스크롤.
+  //   스크롤바를 잡아 끄는 방식이 번거롭다는 지적 — 컨테이너는 리빌드돼도 유지되므로 1회만 배선.
+  if (!bar._wheelWired) {
+    bar._wheelWired = true;
+    bar.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return; // 트랙패드 가로 제스처는 기본 스크롤에 맡긴다
+      bar.scrollLeft += e.deltaY;
+      e.preventDefault(); // 캔버스 줌/페이지 스크롤로 새지 않게
+    }, { passive: false });
+  }
   bar.innerHTML = '';
   // 배치 D ④: 전체 수거 버튼 — 현재 셸터에 놓인 가구 전부를 인벤토리로 거둔다.
   //   icon() 폴백 구조(아트 없으면 이모지). 놓인 가구가 있을 때만 활성.
@@ -10820,6 +10836,7 @@ window.__shelter = {
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
   // v1.9
   setPaused, spawnCat, despawnCat, runEndingSequence, syncBgm, bgmContext, showTitle, hideTitle,
+  catCam, // 피드백 #3 QA: 클로즈업 회전 접지 검증용 (읽기 전용 취급)
   // 생존 수첩 연출
   openJournalPages, openHelpModal, showTutorialPage, tipOnce, paperSfx, makePaperTexture,
   findSupport, itemsOn, weatherFx,
