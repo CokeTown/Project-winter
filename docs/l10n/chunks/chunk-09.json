@@ -1,0 +1,427 @@
+{
+ "ev.trader.c1": {
+  "ko": "거절한다",
+  "en": "Decline",
+  "ja": "断る"
+ },
+ "ev.trader.r0": {
+  "ko": "\"좋은 거래였소.\" 행상인이 약품을 건네고 수레를 끌고 떠났다.",
+  "en": "\"A fair trade.\" The merchant hands over the medicine and rolls his cart away.",
+  "ja": "「いい取引だったな。」行商人は薬を手渡し、荷車を引いて去っていった。"
+ },
+ "ev.trader.r1": {
+  "ko": "행상인은 어깨를 으쓱하고 다음 거처로 향했다.",
+  "en": "The merchant shrugs and moves on to the next shelter.",
+  "ja": "行商人は肩をすくめ、次のシェルターへ向かった。"
+ },
+ "ev.dog.title": {
+  "ko": "떠돌이 개",
+  "en": "Stray Dog",
+  "ja": "野良犬"
+ },
+ "ev.dog.text": {
+  "ko": "비쩍 마른 개 한 마리가 꼬리를 살랑거리며 다가온다.<br>이 폐허에서 용케도 살아남았구나.",
+  "en": "A scrawny dog approaches, tail wagging.<br>Somehow it survived in these ruins.",
+  "ja": "痩せこけた犬が一匹、尻尾を振りながら近づいてくる。<br>この廃墟でよく生き延びたものだ。"
+ },
+ "ev.dog.c0": {
+  "ko": "🥫 음식 1개를 나눠준다",
+  "en": "🥫 Share 1 food",
+  "ja": "🥫 食料を1つ分けてやる"
+ },
+ "ev.dog.c1": {
+  "ko": "모른 척한다",
+  "en": "Ignore it",
+  "ja": "知らないふりをする"
+ },
+ "ev.dog.r0": {
+  "ko": "개가 허겁지겁 먹더니 내 곁에 앉는다.<br>다음 탐험에 따라나설 모양이다. <b>(다음 탐험 +10%p)</b>",
+  "en": "The dog wolfs it down and settles beside me.<br>It seems it will come along on my next expedition. <b>(next expedition +10%p)</b>",
+  "ja": "犬はがつがつと平らげ、私のそばに座り込む。<br>次の探索についてくる気らしい。<b>(次の探索 +10%p)</b>"
+ },
+ "ev.dog.r1": {
+  "ko": "개는 한참을 서성이다 절뚝이며 떠났다.",
+  "en": "The dog lingers a while, then limps away.",
+  "ja": "犬はしばらくうろついたあと、足を引きずりながら去っていった。"
+ },
+ "buff.dog": {
+  "ko": "든든한 동행",
+  "en": "A trusty companion",
+  "ja": "頼れる相棒"
+ },
+ "ev.storm.title": {
+  "ko": "폭풍 전조",
+  "en": "Storm Warning",
+  "ja": "嵐の前兆"
+ },
+ "ev.storm.text": {
+  "ko": "하늘이 심상치 않다. 새들이 낮게 날고, 공기가 무겁다.<br>오늘 밤 강풍이 불 것 같다.",
+  "en": "The sky looks ominous. Birds fly low, the air is heavy.<br>A gale is coming tonight.",
+  "ja": "空の様子がおかしい。鳥は低く飛び、空気が重い。<br>今夜は強風が吹きそうだ。"
+ },
+ "ev.storm.c0": {
+  "ko": "🧱 건축재 1로 거처를 보강한다",
+  "en": "🧱 Reinforce the shelter with 1 material",
+  "ja": "🧱 建材1でシェルターを補強する"
+ },
+ "ev.storm.c1": {
+  "ko": "그냥 버텨본다",
+  "en": "Just ride it out",
+  "ja": "そのまま耐えてみる"
+ },
+ "ev.storm.r0": {
+  "ko": "문틈과 창을 단단히 보강했다.<br>밤새 바람이 몰아쳤지만 거처는 끄떡없었다.",
+  "en": "You sealed the gaps and windows tight.<br>The wind raged all night, but the shelter held firm.",
+  "ja": "戸の隙間と窓をしっかり補強した。<br>夜通し風が吹き荒れたが、シェルターはびくともしなかった。"
+ },
+ "ev.storm.r1": {
+  "ko": "밤새 바람이 창틈을 파고들어 모든 것에 흙먼지를 끼얹었다. <b>(청결 -10)</b>",
+  "en": "Wind poured through the cracks all night, coating everything in grit. <b>(cleanliness -10)</b>",
+  "ja": "夜通し風が窓の隙間から吹き込み、何もかもに砂埃を浴びせていった。<b>(清潔 -10)</b>"
+ },
+ "ev.broken.title": {
+  "ko": "장비 고장",
+  "en": "Gear Breakdown",
+  "ja": "装備の故障"
+ },
+ "ev.broken.text": {
+  "ko": "손전등 스위치가 헐거워졌고, 공구 손잡이에 금이 갔다.<br>폐허에서 장비는 곧 생명이다.",
+  "en": "The flashlight switch is loose and a tool handle has cracked.<br>In the ruins, your gear is your life.",
+  "ja": "懐中電灯のスイッチが緩み、工具の柄にはひびが入った。<br>廃墟では、装備がそのまま命綱だ。"
+ },
+ "ev.broken.c0": {
+  "ko": "⚙️ 부품 1로 수리한다",
+  "en": "⚙️ Repair with 1 parts",
+  "ja": "⚙️ 部品1で修理する"
+ },
+ "ev.broken.c1": {
+  "ko": "대충 쓴다",
+  "en": "Make do",
+  "ja": "だましだまし使う"
+ },
+ "ev.broken.r0": {
+  "ko": "말끔히 수리했다. 역시 장비는 관리가 생명이다.",
+  "en": "Repaired good as new. Gear well kept is gear that keeps you alive.",
+  "ja": "きれいに修理できた。やはり装備は手入れが命だ。"
+ },
+ "ev.broken.r1": {
+  "ko": "어떻게든 쓸 수는 있겠지만, 영 미덥지 않다. <b>(다음 탐험 -5%p)</b>",
+  "en": "It’ll work, somehow — but you can’t quite trust it. <b>(next expedition -5%p)</b>",
+  "ja": "どうにか使えはするだろうが、どうにも心もとない。<b>(次の探索 -5%p)</b>"
+ },
+ "buff.broken": {
+  "ko": "삐걱대는 장비",
+  "en": "Creaky gear",
+  "ja": "きしむ装備"
+ },
+ "ev.thief.title": {
+  "ko": "침입의 흔적",
+  "en": "Signs of Intrusion",
+  "ja": "侵入の痕跡"
+ },
+ "ev.thief.text": {
+  "ko": "밤사이 누군가 거처 주변을 뒤진 흔적이 있다.<br>발자국이 어지럽다.",
+  "en": "Someone rifled around your shelter in the night.<br>Footprints are scattered everywhere.",
+  "ja": "夜のうちに、誰かがシェルターの周りを漁った痕跡がある。<br>足跡が入り乱れている。"
+ },
+ "ev.thief.c0": {
+  "ko": "없어진 게 있는지 확인한다",
+  "en": "Check what’s missing",
+  "ja": "なくなった物がないか確かめる"
+ },
+ "ev.thief.r.safe": {
+  "ko": "조명이 켜져 있던 덕분인지 없어진 건 없다.<br>불빛이 도둑을 쫓아낸 모양이다.",
+  "en": "Thanks to the lights being on, nothing was taken.<br>The glow must have scared the thief off. <b>(the value of light!)</b>",
+  "ja": "明かりがついていたおかげか、なくなった物はない。<br>光が泥棒を追い払ったらしい。"
+ },
+ "ev.thief.r.none": {
+  "ko": "다행히 가져갈 만한 게 없었다... 그게 더 서글프다.",
+  "en": "Luckily there was nothing worth taking... which is somehow sadder.",
+  "ja": "幸い、持っていかれるような物もなかった……それがかえって物悲しい。"
+ },
+ "ev.seeds.title": {
+  "ko": "낯선 노인",
+  "en": "A Strange Old Man",
+  "ja": "見知らぬ老人"
+ },
+ "ev.seeds.text": {
+  "ko": "\"물 두 통만 주게. 대신 이 씨앗을 주지.<br>이 세상에 아직 싹이 트는 씨앗이야.\"",
+  "en": "\"Just two bottles of water. In return, take these seeds.<br>Seeds that still sprout, even in this world.\"",
+  "ja": "「水を二本だけくれんか。代わりにこの種をやろう。<br>この世界でまだ芽を出す種じゃよ。」"
+ },
+ "ev.seeds.c0": {
+  "ko": "💧 물 2를 건넨다",
+  "en": "💧 Hand over 2 water",
+  "ja": "💧 飲み水2を渡す"
+ },
+ "ev.seeds.c1": {
+  "ko": "거절한다",
+  "en": "Decline",
+  "ja": "断る"
+ },
+ "ev.seeds.r.green": {
+  "ko": "온실 텃밭에 씨앗을 심었다. 놀랍게도 금세 자랐다! <b>(음식 +3)</b>",
+  "en": "You planted the seeds in the greenhouse garden. Astonishingly, they grew at once! <b>(food +3)</b>",
+  "ja": "温室の菜園に種を植えた。驚いたことに、みるみる育った！<b>(食料 +3)</b>"
+ },
+ "ev.seeds.r.plain": {
+  "ko": "씨앗을 받았지만 심을 곳이 마땅치 않다. <b>(음식 +1)</b><br>온실이 있었다면 더 좋았을 텐데.",
+  "en": "You took the seeds but have nowhere good to plant them. <b>(food +1)</b><br>A greenhouse would have helped.",
+  "ja": "種は受け取ったが、植える場所が見当たらない。<b>(食料 +1)</b><br>温室があればもっとよかったのに。"
+ },
+ "ev.seeds.r1": {
+  "ko": "노인은 혀를 차며 지팡이를 끌고 떠났다.",
+  "en": "The old man clicks his tongue and hobbles off with his cane.",
+  "ja": "老人は舌打ちをして、杖を引きずりながら去っていった。"
+ },
+ "ev.radio.title": {
+  "ko": "수수께끼의 방송",
+  "en": "A Mysterious Broadcast",
+  "ja": "謎の放送"
+ },
+ "ev.radio.text": {
+  "ko": "라디오에서 잡음 섞인 목소리가 흘러나온다.<br>\"...좌표... 창고... 물자가 아직 남아있다...\"",
+  "en": "A static-laced voice crackles from the radio.<br>\"...coordinates... warehouse... supplies still remain...\"",
+  "ja": "ラジオから雑音まじりの声が流れてくる。<br>「……座標……倉庫……物資がまだ残っている……」"
+ },
+ "ev.radio.c0": {
+  "ko": "좌표를 기록한다",
+  "en": "Note the coordinates",
+  "ja": "座標を記録する"
+ },
+ "ev.radio.c1": {
+  "ko": "무시한다",
+  "en": "Ignore it",
+  "ja": "無視する"
+ },
+ "ev.radio.r0": {
+  "ko": "지도에 좌표를 옮겨 적었다. <b>(다음 탐험 성공 시 자원 2배)</b>",
+  "en": "You copied the coordinates onto your map. <b>(double resources on next successful expedition)</b>",
+  "ja": "地図に座標を書き写した。<b>(次の探索成功時、資源2倍)</b>"
+ },
+ "ev.radio.r1": {
+  "ko": "잡음뿐인 방송은 곧 끊겼다.",
+  "en": "The broadcast, nothing but static, soon cut out.",
+  "ja": "雑音ばかりの放送は、すぐに途切れた。"
+ },
+ "buff.radio": {
+  "ko": "물자 은닉처 좌표",
+  "en": "Cache coordinates",
+  "ja": "隠し物資の座標"
+ },
+ "ev.cat.title": {
+  "ko": "야윈 고양이",
+  "en": "A Gaunt Cat",
+  "ja": "痩せた猫"
+ },
+ "ev.cat.text": {
+  "ko": "문틈으로 야윈 고양이 한 마리가 들어와 나를 빤히 올려다본다.<br>얼룩진 털, 조심스러운 발걸음 — 그러나 눈만은 또렷하다.",
+  "en": "A gaunt cat slips in through the door and stares up at me.<br>Patchy fur, cautious steps — yet its eyes are clear and bright.",
+  "ja": "戸の隙間から痩せた猫が一匹入ってきて、じっと私を見上げる。<br>汚れた毛並み、用心深い足取り──それでも目だけは澄んでいる。"
+ },
+ "ev.cat.c0": {
+  "ko": "🥫 음식 1개를 내어준다 (가족으로 맞이하기)",
+  "en": "🥫 Offer 1 food (welcome it as family)",
+  "ja": "🥫 食料を1つ差し出す（家族として迎える）"
+ },
+ "ev.cat.c1": {
+  "ko": "조용히 지켜본다",
+  "en": "Watch quietly",
+  "ja": "静かに見守る"
+ },
+ "ev.cat.r0": {
+  "ko": "고양이는 그릇을 싹 비우더니, 당연하다는 듯 가장 아늑한 자리를 차지했다.<br>이제 이 집엔 심장이 두 개 뛴다. <b>(쾌적함 +6)</b>",
+  "en": "The cat licks the bowl clean and claims the coziest spot as if it were owed.<br>Now two hearts beat in this home. <b>(comfort +6)</b>",
+  "ja": "猫は皿をきれいに平らげると、当然のように一番心地よい場所を陣取った。<br>これでこの家には、心臓が二つ脈打っている。<b>(快適さ +6)</b>"
+ },
+ "ev.cat.r1": {
+  "ko": "고양이는 어둠 속으로 사라졌다. 다시는 볼 수 없을 것 같다.",
+  "en": "The cat vanished into the dark. It seems I will never see it again.",
+  "ja": "猫は闇の中へ消えていった。もう二度と会えない気がする。"
+ },
+ "ev.cat.coat.tabby": {
+  "ko": "먼지를 털어내자 드러난 건 치즈빛 줄무늬 태비였다.",
+  "en": "Once the dust was gone, a cheese-striped tabby coat showed through.",
+  "ja": "埃を払ってやると、現れたのはチーズ色の縞──茶トラだった。"
+ },
+ "ev.cat.coat.black": {
+  "ko": "온몸이 새까만 털, 그 사이에서 앰버빛 두 눈이 반짝였다.",
+  "en": "Its coat was all black, and two amber eyes glinted within it.",
+  "ja": "全身真っ黒な毛並み、その中で琥珀色の両目がきらめいていた。"
+ },
+ "ev.cat.coat.siamese": {
+  "ko": "크림빛 몸에 초콜릿빛 귀와 발, 그리고 파란 눈의 샴이었다.",
+  "en": "A cream body with chocolate ears and paws, and blue eyes—a Siamese.",
+  "ja": "クリーム色の体にチョコレート色の耳と足、そして青い目のシャム猫だった。"
+ },
+ "ev.cat.coat.ragdoll": {
+  "ko": "흰크림빛 털에 갈색 포인트, 파란 눈이 맑은 래그돌이었다.",
+  "en": "A white-cream coat with brown points and clear blue eyes—a Ragdoll.",
+  "ja": "白に近いクリーム色の毛に茶色のポイント、澄んだ青い目のラグドールだった。"
+ },
+ "cat.pet": {
+  "ko": "🐈 그르릉...",
+  "en": "🐈 Purr...",
+  "ja": "🐈 ゴロゴロ……"
+ },
+ "ev.ending.title": {
+  "ko": "하늘에서 온 손님",
+  "en": "A Visitor from the Sky",
+  "ja": "空から来た客"
+ },
+ "ev.ending.text": {
+  "ko": "요란한 프로펠러 소리가 폐허의 정적을 갈랐다. 헬리콥터다.<br>방호복을 입은 백발의 과학자가 내려와 내게 걸어온다.<br>\"믿을 수가 없군요. 관측 위성이 당신의 불빛을 10,000일 넘게 기록했습니다.<br>정화 구역이 완성됐습니다 — 함께 갑시다.\"",
+  "en": "A roar of rotors tore through the silence of the ruins. A helicopter.<br>A white-haired scientist in a hazmat suit steps down and walks toward me.<br>\"I can’t believe it. Our satellite recorded your light for over 10,000 days.<br>The cleansed zone is finished — come with us.\"",
+  "ja": "けたたましいプロペラ音が廃墟の静寂を切り裂いた。ヘリコプターだ。<br>防護服を着た白髪の科学者が降り立ち、こちらへ歩いてくる。<br>「信じられません。観測衛星はあなたの明かりを10,000日以上記録していました。<br>浄化区域が完成したのです──一緒に行きましょう。」"
+ },
+ "ev.ending.c0": {
+  "ko": "🚁 박사와 함께 떠난다 (엔딩)",
+  "en": "🚁 Leave with the doctor (ending)",
+  "ja": "🚁 博士とともに発つ（エンディング）"
+ },
+ "ev.ending.c1": {
+  "ko": "아직은 여기 남는다",
+  "en": "Stay here, for now",
+  "ja": "まだここに残る"
+ },
+ "ev.ending.r0": {
+  "ko": "나는 천천히 고개를 끄덕이고, 마지막으로 집을 돌아보았다.",
+  "en": "I nod slowly and take one last look back at my home.",
+  "ja": "ゆっくりとうなずき、最後にもう一度、家を振り返った。"
+ },
+ "ev.ending.r1": {
+  "ko": "\"...당신 같은 사람들 덕분에 이 별이 아직 살아있는 거겠죠.\"<br>박사는 통신기를 남기고 떠났다. 부르면 언제든 다시 온다고 했다.",
+  "en": "\"...it’s people like you who keep this planet alive.\"<br>The doctor leaves a radio behind and departs — call, and they’ll return anytime.",
+  "ja": "「……あなたのような人たちのおかげで、この星はまだ生きているのでしょうね。」<br>博士は通信機を残して去った。呼べばいつでもまた来ると言っていた。"
+ },
+ "end3.title": {
+  "ko": "문 두드리는 소리",
+  "en": "A Knock at the Door",
+  "ja": "戸を叩く音"
+ },
+ "end3.text": {
+  "ko": "아홉 번째 겨울을 넘겼다. 봄 냄새가 나던 밤, 누가 문을 두드렸다.<br>방한복 셋. 어깨의 휘장은 처음 보는 것이다. 그들은 서두르지 않았다.<br>\"준비되면 나오시죠. 어디로든.\"",
+  "en": "The ninth winter is behind you. On a night that smelled of spring, someone knocked.<br>Three figures in cold-weather gear. The insignia on their shoulders is one you've never seen. They were in no hurry.<br>\"Come out when you're ready. Wherever you want to go.\"",
+  "ja": "九度目の冬を越えた。春の匂いがした夜、誰かが戸を叩いた。<br>防寒着姿が三人。肩の記章は見たことのないものだ。彼らは急がなかった。<br>「支度ができたら、出てきてください。どこへでも。」"
+ },
+ "end3.lean.escape": {
+  "ko": "나는 문득, 그동안 하늘로 보낸 신호들을 생각했다. 어딘가에서 누군가 그걸 다 듣고 있었다.",
+  "en": "You find yourself thinking of every signal you sent into the sky. Somewhere, someone was listening to all of it.",
+  "ja": "ふと、これまで空へ送った信号のことを思った。どこかで誰かが、その全てを聞いていたのだ。"
+ },
+ "end3.lean.newworld": {
+  "ko": "나는 문득, 주워 모은 종이들을 생각했다. 관찰, 선별, 규합 — 이들이 누군지 나는 이미 안다.",
+  "en": "You find yourself thinking of the papers you gathered. Observation, selection, assembly — you already know who these people are.",
+  "ja": "ふと、拾い集めた紙切れのことを思った。観察、選別、糾合──この人たちが何者か、もう分かっている。"
+ },
+ "end3.lean.rest": {
+  "ko": "나는 문득, 등 뒤의 방을 생각했다. 난로, 담요, 아홉 번의 겨울을 같이 넘긴 살림들.",
+  "en": "You find yourself thinking of the room at your back. The stove, the blankets, the small things that crossed nine winters with you.",
+  "ja": "ふと、背後の部屋のことを思った。ストーブ、毛布、九度の冬をともに越えた暮らしの品々。"
+ },
+ "end3.c.escape": {
+  "ko": "구조선에 오른다",
+  "en": "Board the rescue craft",
+  "ja": "救助船に乗る"
+ },
+ "end3.c.newworld": {
+  "ko": "그들의 초대를 받아들인다",
+  "en": "Accept their invitation",
+  "ja": "彼らの招待を受け入れる"
+ },
+ "end3.c.rest": {
+  "ko": "여기 남는다",
+  "en": "Stay here",
+  "ja": "ここに残る"
+ },
+ "end3.c.wait": {
+  "ko": "아직 결정하지 못했다",
+  "en": "Not ready to decide",
+  "ja": "まだ決められない"
+ },
+ "end3.r.escape": {
+  "ko": "문을 나섰다. 뒤는 돌아보지 않기로 했다.",
+  "en": "You stepped out the door and chose not to look back.",
+  "ja": "戸口を出た。後ろは振り返らないと決めた。"
+ },
+ "end3.r.newworld": {
+  "ko": "초대장의 좌표를 내밀었다. 그들이 말없이 고개를 끄덕였다.",
+  "en": "You held out the invitation's coordinates. They nodded without a word.",
+  "ja": "招待状の座標を差し出した。彼らは黙ってうなずいた。"
+ },
+ "end3.r.rest": {
+  "ko": "고개를 저었다. 그들은 두 번 묻지 않았다.",
+  "en": "You shook your head. They didn't ask twice.",
+  "ja": "首を横に振った。彼らは二度は訊かなかった。"
+ },
+ "end3.r.wait": {
+  "ko": "다음 봄에 다시 오겠다고 했다. 문이 닫혔다.",
+  "en": "They said they'd come again next spring. The door closed.",
+  "ja": "彼らは次の春にまた来ると言い残した。戸が閉まった。"
+ },
+ "end3.early.title": {
+  "ko": "예정에 없던 교신",
+  "en": "An Unscheduled Transmission",
+  "ja": "予定外の交信"
+ },
+ "end3.early.text": {
+  "ko": "정기 교신 시간이 아닌데 라디오가 살아났다. 박사다.<br>\"다음 주 보급 항로가 네 좌표 근처를 지난다. 지금이라면 태울 수 있다. …다 보고 갈 필요는 없다.\"",
+  "en": "The radio comes alive outside the regular hour. It's the doctor.<br>\"A supply route passes near your coordinates next week. If you leave now, they can take you. ...You don't have to see all of it to the end.\"",
+  "ja": "定時交信の時間でもないのに、ラジオが息を吹き返した。博士だ。<br>「来週、補給ルートが君の座標の近くを通る。今なら乗せられる。……全部を見届けてから行く必要はない。」"
+ },
+ "end3.early.c0": {
+  "ko": "지금 떠난다",
+  "en": "Leave now",
+  "ja": "今すぐ発つ"
+ },
+ "end3.early.c1": {
+  "ko": "아직은 아니다",
+  "en": "Not yet",
+  "ja": "まだだ"
+ },
+ "end3.early.r0": {
+  "ko": "좌표를 받아 적었다. 짐은 많지 않다.",
+  "en": "You wrote down the coordinates. You don't have much to pack.",
+  "ja": "座標を書き取った。荷物は多くない。"
+ },
+ "end3.early.r1": {
+  "ko": "\"알겠다. 그 마음도 답이다.\" 잡음 속에서 박사가 웃은 것 같았다.",
+  "en": "\"Understood. That, too, is an answer.\" Through the static, the doctor seemed to smile.",
+  "ja": "「分かった。その気持ちも答えだ。」雑音の向こうで、博士が笑った気がした。"
+ },
+ "end3.escape.line0": {
+  "ko": "구조선의 문이 닫히자, 소리가 전부 멀어졌다.",
+  "en": "When the rescue craft's door closed, every sound fell away.",
+  "ja": "救助船の扉が閉まると、音がすべて遠のいた。"
+ },
+ "end3.escape.line1": {
+  "ko": "Day {day}. 그만큼의 아침을 그 도시에서 맞았다.",
+  "en": "Day {day}. That's how many mornings you greeted in that city.",
+  "ja": "Day {day}。それだけの数の朝を、あの街で迎えた。"
+ },
+ "end3.escape.line2": {
+  "ko": "창 너머로 도시가 작아진다. 내 굴뚝 연기는 이제 보이지 않는다.",
+  "en": "Through the window the city grows small. You can no longer see your own chimney smoke.",
+  "ja": "窓の向こうで街が小さくなっていく。私の煙突の煙は、もう見えない。"
+ },
+ "end3.escape.cat": {
+  "ko": " 무릎 위 고양이가 처음 듣는 엔진 소리에 귀를 접었다.",
+  "en": " On your lap, the cat folded its ears at the first engine sound it ever heard.",
+  "ja": " 膝の上の猫が、初めて聞くエンジン音に耳を伏せた。"
+ },
+ "end3.escape.line3": {
+  "ko": "박사가 말했다. 버틴 불빛이 있어서, 지켜보는 일이 헛되지 않았다고.",
+  "en": "The doctor said: because a light held out down there, the watching was never in vain.",
+  "ja": "博士は言った。持ちこたえた明かりがあったから、見守る日々は無駄ではなかったと。"
+ },
+ "end3.escape.line4": {
+  "ko": "{winters}번의 겨울. 탐험 {succ}번{cat}. 나는 살아서 나왔다.",
+  "en": "{winters} winters. {succ} expeditions{cat}. You made it out alive.",
+  "ja": "{winters}度の冬。探索{succ}回{cat}。私は生きて、ここを出た。"
+ },
+ "end3.newworld.line0": {
+  "ko": "좌표의 끝에는 불 켜진 도시가 있었다. 소각 이후 처음 보는, 전기가 도는 밤이다.",
+  "en": "At the end of the coordinates stood a lit city. The first night with electricity you've seen since the burning.",
+  "ja": "座標の先には、明かりのともる都市があった。焼却以来初めて見る、電気の通う夜だ。"
+ }
+}

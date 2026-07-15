@@ -1,0 +1,427 @@
+{
+ "data.def.candelabra.name": {
+  "ko": "촛대",
+  "en": "Candelabra",
+  "ja": "燭台"
+ },
+ "data.def.candle.colorNames": {
+  "ko": "우드|화이트|블랙|라벤더",
+  "en": "Wood|White|Black|Lavender",
+  "ja": "ウッド|ホワイト|ブラック|ラベンダー"
+ },
+ "data.def.candle.name": {
+  "ko": "캔들 스툴",
+  "en": "Candle Stool",
+  "ja": "キャンドルスツール"
+ },
+ "data.def.chair.colorNames": {
+  "ko": "오크|월넛|화이트워시|블랙우드",
+  "en": "Oak|Walnut|Whitewash|Blackwood",
+  "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+ },
+ "data.def.chair.name": {
+  "ko": "의자",
+  "en": "Chair",
+  "ja": "椅子"
+ },
+ "data.def.clock.colorNames": {
+  "ko": "마호가니|오크|블랙|아이보리",
+  "en": "Mahogany|Oak|Black|Ivory",
+  "ja": "マホガニー|オーク|ブラック|アイボリー"
+ },
+ "data.def.clock.name": {
+  "ko": "괘종시계",
+  "en": "Grandfather Clock",
+  "ja": "振り子時計"
+ },
+ "data.def.crate.colorNames": {
+  "ko": "오크|월넛|화이트워시|블랙우드",
+  "en": "Oak|Walnut|Whitewash|Blackwood",
+  "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+ },
+ "data.def.crate.name": {
+  "ko": "나무상자",
+  "en": "Wooden Crate",
+  "ja": "木箱"
+ },
+ "data.def.cratestack.colorNames": {
+  "ko": "파인|올리브|러스트|애쉬",
+  "en": "Pine|Olive|Rust|Ash",
+  "ja": "パイン|オリーブ|ラスト|アッシュ"
+ },
+ "data.def.cratestack.name": {
+  "ko": "보급 상자",
+  "en": "Supply Crates",
+  "ja": "補給箱"
+ },
+ "data.def.curtain.colorNames": {
+  "ko": "리넨|세이지|버건디|머스터드",
+  "en": "Linen|Sage|Burgundy|Mustard",
+  "ja": "リネン|セージ|バーガンディ|マスタード"
+ },
+ "data.def.curtain.name": {
+  "ko": "커튼",
+  "en": "Curtain",
+  "ja": "カーテン"
+ },
+ "data.def.cushion.colorNames": {
+  "ko": "머스터드|와인|세이지|인디고",
+  "en": "Mustard|Wine|Sage|Indigo",
+  "ja": "マスタード|ワイン|セージ|インディゴ"
+ },
+ "data.def.cushion.name": {
+  "ko": "방석",
+  "en": "Cushion",
+  "ja": "座布団"
+ },
+ "data.def.desklamp.colorNames": {
+  "ko": "그린|블랙|브라스|크림",
+  "en": "Green|Black|Brass|Cream",
+  "ja": "グリーン|ブラック|ブラス|クリーム"
+ },
+ "data.def.desklamp.name": {
+  "ko": "책상 램프",
+  "en": "Desk Lamp",
+  "ja": "デスクランプ"
+ },
+ "data.def.dresser.colorNames": {
+  "ko": "내추럴|다크브라운|화이트|그레이",
+  "en": "Natural|Dark Brown|White|Gray",
+  "ja": "ナチュラル|ダークブラウン|ホワイト|グレー"
+ },
+ "data.def.dresser.name": {
+  "ko": "서랍장",
+  "en": "Dresser",
+  "ja": "チェスト"
+ },
+ "data.def.firstaidbox.colorNames": {
+  "ko": "화이트|레드|올리브|스틸",
+  "en": "White|Red|Olive|Steel",
+  "ja": "ホワイト|レッド|オリーブ|スチール"
+ },
+ "data.def.firstaidbox.name": {
+  "ko": "구급상자",
+  "en": "First-Aid Box",
+  "ja": "救急箱"
+ },
+ "data.def.frame.colorNames": {
+  "ko": "호두나무|골드|화이트|슬레이트",
+  "en": "Walnut|Gold|White|Slate",
+  "ja": "クルミ|ゴールド|ホワイト|スレート"
+ },
+ "data.def.frame.name": {
+  "ko": "액자",
+  "en": "Framed Picture",
+  "ja": "額縁"
+ },
+ "data.def.fridge.appliance.label": {
+  "ko": "음식 부패 방지",
+  "en": "Prevents food spoilage",
+  "ja": "食料の腐敗防止"
+ },
+ "data.def.fridge.colorNames": {
+  "ko": "체리레드|민트|크림|화이트",
+  "en": "Cherry Red|Mint|Cream|White",
+  "ja": "チェリーレッド|ミント|クリーム|ホワイト"
+ },
+ "data.def.fridge.name": {
+  "ko": "냉장고",
+  "en": "Fridge",
+  "ja": "冷蔵庫"
+ },
+ "data.def.fuelpile.colorNames": {
+  "ko": "참나무|자작|소나무|유목",
+  "en": "Oak|Birch|Pine|Driftwood",
+  "ja": "ナラ|シラカバ|マツ|流木"
+ },
+ "data.def.fuelpile.name": {
+  "ko": "장작 더미",
+  "en": "Firewood Pile",
+  "ja": "薪の山"
+ },
+ "data.def.generator.appliance.label": {
+  "ko": "가동 중엔 배터리 소비 무료 (연료 1/일)",
+  "en": "Free battery use while running (fuel 1/day)",
+  "ja": "稼働中はバッテリー消費なし（燃料1/日）"
+ },
+ "data.def.generator.colorNames": {
+  "ko": "레드|옐로우|올리브|그레이",
+  "en": "Red|Yellow|Olive|Gray",
+  "ja": "レッド|イエロー|オリーブ|グレー"
+ },
+ "data.def.generator.name": {
+  "ko": "발전기",
+  "en": "Generator",
+  "ja": "発電機"
+ },
+ "data.def.globe.colorNames": {
+  "ko": "오크|월넛|화이트워시|블랙우드",
+  "en": "Oak|Walnut|Whitewash|Blackwood",
+  "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+ },
+ "data.def.globe.name": {
+  "ko": "골동품 지구본",
+  "en": "Antique Globe",
+  "ja": "アンティーク地球儀"
+ },
+ "data.def.graffiti.colorNames": {
+  "ko": "네온 핑크|라임|시안|선셋 오렌지",
+  "en": "Neon Pink|Lime|Cyan|Sunset Orange",
+  "ja": "ネオンピンク|ライム|シアン|サンセットオレンジ"
+ },
+ "data.def.graffiti.name": {
+  "ko": "그래피티 패널",
+  "en": "Graffiti Panel",
+  "ja": "グラフィティパネル"
+ },
+ "data.def.heater.appliance.label": {
+  "ko": "한파 방어 + 겨울 쾌적 (연료 1/일)",
+  "en": "Cold-snap defense + winter comfort (fuel 1/day)",
+  "ja": "寒波防御＋冬の快適さ（燃料1/日）"
+ },
+ "data.def.heater.colorNames": {
+  "ko": "오렌지|크림|슬레이트|올리브",
+  "en": "Orange|Cream|Slate|Olive",
+  "ja": "オレンジ|クリーム|スレート|オリーブ"
+ },
+ "data.def.heater.name": {
+  "ko": "온풍기",
+  "en": "Space Heater",
+  "ja": "ファンヒーター"
+ },
+ "data.def.jugcluster.colorNames": {
+  "ko": "블루|레드|그린|앰버",
+  "en": "Blue|Red|Green|Amber",
+  "ja": "ブルー|レッド|グリーン|アンバー"
+ },
+ "data.def.jugcluster.name": {
+  "ko": "물·연료 비축",
+  "en": "Jug Cluster",
+  "ja": "水・燃料備蓄"
+ },
+ "data.def.lamp.colorNames": {
+  "ko": "웜화이트|세이지|로즈|스카이",
+  "en": "Warm White|Sage|Rose|Sky",
+  "ja": "ウォームホワイト|セージ|ローズ|スカイ"
+ },
+ "data.def.lamp.name": {
+  "ko": "스탠드 조명",
+  "en": "Floor Lamp",
+  "ja": "スタンドライト"
+ },
+ "data.def.lantern.colorNames": {
+  "ko": "황동|무쇠|레드|민트",
+  "en": "Brass|Cast Iron|Red|Mint",
+  "ja": "真鍮|鋳鉄|レッド|ミント"
+ },
+ "data.def.lantern.name": {
+  "ko": "걸이 랜턴",
+  "en": "Hanging Lantern",
+  "ja": "吊りランタン"
+ },
+ "data.def.ledbar.colorNames": {
+  "ko": "그래파이트|실버|화이트|네이비",
+  "en": "Graphite|Silver|White|Navy",
+  "ja": "グラファイト|シルバー|ホワイト|ネイビー"
+ },
+ "data.def.ledbar.name": {
+  "ko": "LED 라이트 바",
+  "en": "LED Light Bar",
+  "ja": "LEDライトバー"
+ },
+ "data.def.mirror.colorNames": {
+  "ko": "오크|월넛|화이트워시|블랙우드",
+  "en": "Oak|Walnut|Whitewash|Blackwood",
+  "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+ },
+ "data.def.mirror.name": {
+  "ko": "전신 거울",
+  "en": "Standing Mirror",
+  "ja": "姿見"
+ },
+ "data.def.neonair.colorNames": {
+  "ko": "일렉트릭 블루|시안|아쿠아|인디고",
+  "en": "Electric Blue|Cyan|Aqua|Indigo",
+  "ja": "エレクトリックブルー|シアン|アクア|インディゴ"
+ },
+ "data.def.neonair.name": {
+  "ko": "네온 사인 · ON AIR",
+  "en": "Neon Sign · ON AIR",
+  "ja": "ネオンサイン · ON AIR"
+ },
+ "data.def.neonvip.colorNames": {
+  "ko": "바이올렛|마젠타|핑크|블루 바이올렛",
+  "en": "Violet|Magenta|Pink|Blue Violet",
+  "ja": "バイオレット|マゼンタ|ピンク|ブルーバイオレット"
+ },
+ "data.def.neonvip.name": {
+  "ko": "네온 사인 · VIP ZONE",
+  "en": "Neon Sign · VIP ZONE",
+  "ja": "ネオンサイン · VIP ZONE"
+ },
+ "data.def.noticeboard.colorNames": {
+  "ko": "코르크|칠판|화이트|메탈",
+  "en": "Cork|Slate|White|Steel",
+  "ja": "コルク|黒板|ホワイト|メタル"
+ },
+ "data.def.noticeboard.name": {
+  "ko": "상황판",
+  "en": "Notice Board",
+  "ja": "掲示板"
+ },
+ "data.def.phonograph.colorNames": {
+  "ko": "오크|월넛|화이트워시|블랙우드",
+  "en": "Oak|Walnut|Whitewash|Blackwood",
+  "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+ },
+ "data.def.phonograph.name": {
+  "ko": "축음기",
+  "en": "Phonograph",
+  "ja": "蓄音機"
+ },
+ "data.def.plant.colorNames": {
+  "ko": "테라코타|화이트|블랙|민트",
+  "en": "Terracotta|White|Black|Mint",
+  "ja": "テラコッタ|ホワイト|ブラック|ミント"
+ },
+ "data.def.plant.name": {
+  "ko": "화분",
+  "en": "Potted Plant",
+  "ja": "鉢植え"
+ },
+ "data.def.purifier.appliance.label": {
+  "ko": "매일 깨끗한 물 +1",
+  "en": "Clean water +1 daily",
+  "ja": "毎日きれいな水 +1"
+ },
+ "data.def.purifier.colorNames": {
+  "ko": "스틸|화이트|올리브|네이비",
+  "en": "Steel|White|Olive|Navy",
+  "ja": "スチール|ホワイト|オリーブ|ネイビー"
+ },
+ "data.def.purifier.name": {
+  "ko": "정수기",
+  "en": "Water Purifier",
+  "ja": "浄水器"
+ },
+ "data.def.radio.colorNames": {
+  "ko": "체리레드|크림|민트|브라운",
+  "en": "Cherry Red|Cream|Mint|Brown",
+  "ja": "チェリーレッド|クリーム|ミント|ブラウン"
+ },
+ "data.def.radio.name": {
+  "ko": "라디오",
+  "en": "Radio",
+  "ja": "ラジオ"
+ },
+ "data.def.rug.colorNames": {
+  "ko": "레드|블루|그린|베이지",
+  "en": "Red|Blue|Green|Beige",
+  "ja": "レッド|ブルー|グリーン|ベージュ"
+ },
+ "data.def.rug.name": {
+  "ko": "러그",
+  "en": "Rug",
+  "ja": "ラグ"
+ },
+ "data.def.skipoles.colorNames": {
+  "ko": "레이싱 레드|네이비|크롬|올리브",
+  "en": "Racing Red|Navy|Chrome|Olive",
+  "ja": "レーシングレッド|ネイビー|クローム|オリーブ"
+ },
+ "data.def.skipoles.name": {
+  "ko": "스키 폴대",
+  "en": "Ski Poles",
+  "ja": "スキーポール"
+ },
+ "data.def.skis.colorNames": {
+  "ko": "체리 레드|빙하 블루|머스터드|민트",
+  "en": "Cherry Red|Glacier Blue|Mustard|Mint",
+  "ja": "チェリーレッド|氷河ブルー|マスタード|ミント"
+ },
+ "data.def.skis.name": {
+  "ko": "스키 한 쌍",
+  "en": "Pair of Skis",
+  "ja": "スキー板"
+ },
+ "data.def.snowboard.colorNames": {
+  "ko": "선셋|딥 퍼플|아이스 블루|라임",
+  "en": "Sunset|Deep Purple|Ice Blue|Lime",
+  "ja": "サンセット|ディープパープル|アイスブルー|ライム"
+ },
+ "data.def.snowboard.name": {
+  "ko": "스노우보드",
+  "en": "Snowboard",
+  "ja": "スノーボード"
+ },
+ "data.def.sofa.colorNames": {
+  "ko": "베이지|그레이|올리브|테라코타",
+  "en": "Beige|Gray|Olive|Terracotta",
+  "ja": "ベージュ|グレー|オリーブ|テラコッタ"
+ },
+ "data.def.sofa.name": {
+  "ko": "소파",
+  "en": "Sofa",
+  "ja": "ソファ"
+ },
+ "data.def.stove.colorNames": {
+  "ko": "무쇠|벽돌레드|크림|올리브",
+  "en": "Cast Iron|Brick Red|Cream|Olive",
+  "ja": "鋳鉄|レンガレッド|クリーム|オリーブ"
+ },
+ "data.def.stove.name": {
+  "ko": "장작 난로",
+  "en": "Wood Stove",
+  "ja": "薪ストーブ"
+ },
+ "data.def.suit.colorNames": {
+  "ko": "차콜|네이비|버건디|카멜",
+  "en": "Charcoal|Navy|Burgundy|Camel",
+  "ja": "チャコール|ネイビー|バーガンディ|キャメル"
+ },
+ "data.def.suit.name": {
+  "ko": "양복 랙",
+  "en": "Suit Rack",
+  "ja": "スーツラック"
+ },
+ "data.def.supplyshelf.colorNames": {
+  "ko": "오크|월넛|화이트워시|블랙우드",
+  "en": "Oak|Walnut|Whitewash|Blackwood",
+  "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+ },
+ "data.def.supplyshelf.name": {
+  "ko": "보급 선반",
+  "en": "Supply Shelf",
+  "ja": "補給棚"
+ },
+ "data.def.table.colorNames": {
+  "ko": "오크|월넛|화이트워시|블랙우드",
+  "en": "Oak|Walnut|Whitewash|Blackwood",
+  "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+ },
+ "data.def.table.name": {
+  "ko": "테이블",
+  "en": "Table",
+  "ja": "テーブル"
+ },
+ "data.def.teatable.colorNames": {
+  "ko": "오크|월넛|화이트워시|블랙우드",
+  "en": "Oak|Walnut|Whitewash|Blackwood",
+  "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+ },
+ "data.def.teatable.name": {
+  "ko": "찻상",
+  "en": "Tea Table",
+  "ja": "ティーテーブル"
+ },
+ "data.district.city.bonusLabel": {
+  "ko": "상업지구·슬럼가 접근성 +5%p",
+  "en": "Commercial & slum access +5%p",
+  "ja": "商業地区・スラム街のアクセス +5%p"
+ },
+ "data.district.city.desc": {
+  "ko": "폐허가 된 시가지. 위험하지만 물자가 몰려 있다.",
+  "en": "A ruined city center. Dangerous, but supplies are dense here.",
+  "ja": "廃墟と化した市街地。危険だが、物資が集まっている。"
+ }
+}

@@ -1,0 +1,427 @@
+{
+ "end3.newworld.line1": {
+  "ko": "Day {day}. 그들은 내 이름 대신 번호를 먼저 불렀고, 그 다음에야 이름을 물었다.",
+  "en": "Day {day}. They called your number before your name — and only then asked what your name was.",
+  "ja": "Day {day}。彼らは名前ではなく番号を先に呼び、その後になってようやく名前を尋ねた。"
+ },
+ "end3.newworld.line2": {
+  "ko": "따뜻한 방과 정해진 자리. 문에는 잠금장치가 안쪽에도, 바깥쪽에도 있다.",
+  "en": "A warm room, an assigned place. The door locks from the inside — and from the outside.",
+  "ja": "暖かい部屋と、決められた居場所。扉の錠は内側にも、外側にもついている。"
+ },
+ "end3.newworld.cat": {
+  "ko": " 고양이는 새 방이 마음에 드는지, 오래 냄새를 맡았다.",
+  "en": " The cat took a long time smelling the new room, as if deciding whether to approve.",
+  "ja": " 猫は新しい部屋が気に入ったのか、長いあいだ匂いを嗅いでいた。"
+ },
+ "end3.newworld.line3": {
+  "ko": "여기서 인간은 다시 시작된다고 그들은 말한다. 누구의 설계로인지는, 말하지 않는다.",
+  "en": "Humanity starts again here, they say. By whose design, they don't say.",
+  "ja": "ここから人類はやり直すのだと彼らは言う。誰の設計によるものかは、口にしない。"
+ },
+ "end3.newworld.line4": {
+  "ko": "{winters}번의 겨울을 버틴 값이 이 자리라면 — 상인지 아닌지는, 살아보면 알게 될 것이다.",
+  "en": "If this place is the price of {winters} winters endured — whether it's a reward or not, living here will tell.",
+  "ja": "{winters}度の冬を耐えた対価がこの場所なら — 褒美かどうかは、暮らしてみればわかるだろう。"
+ },
+ "end3.rest.line0": {
+  "ko": "그들이 떠난 뒤, 나는 문을 닫고 난로 앞에 앉았다.",
+  "en": "After they left, you closed the door and sat down by the stove.",
+  "ja": "彼らが去ったあと、扉を閉めてストーブの前に座った。"
+ },
+ "end3.rest.line1": {
+  "ko": "Day {day}. 세상의 끝에서 시작해, 여기까지 왔다.",
+  "en": "Day {day}. You started at the end of the world, and came this far.",
+  "ja": "Day {day}。世界の終わりから始めて、ここまで来た。"
+ },
+ "end3.rest.line2": {
+  "ko": "낡은 주전자가 끓는다. 이 소리를 두고 갈 수 없었다.",
+  "en": "The old kettle is boiling. You couldn't leave this sound behind.",
+  "ja": "古びたやかんが沸いている。この音を置いては行けなかった。"
+ },
+ "end3.rest.cat": {
+  "ko": " 고양이가 무릎 위로 올라와 자리를 잡았다. 그래, 우리는 남는다.",
+  "en": " The cat climbed onto your lap and settled in. Yes — we're staying.",
+  "ja": " 猫が膝の上に乗ってきて、腰を落ち着けた。そうだ、私たちは残る。"
+ },
+ "end3.rest.line3": {
+  "ko": "구조는 구원이 아니다. 나는 이미 살아 있다 — 아홉 번의 겨울이 그 증거다.",
+  "en": "Rescue is not salvation. You are already alive — nine winters are the proof.",
+  "ja": "救助は救いではない。私はすでに生きている — 九度の冬がその証だ。"
+ },
+ "end3.rest.line4": {
+  "ko": "{winters}번의 겨울. 탐험 {succ}번{cat}. 내일 아침에도 나는 이 집에서 눈을 뜰 것이다.",
+  "en": "{winters} winters. {succ} expeditions{cat}. And tomorrow morning, you will wake in this house again.",
+  "ja": "{winters}度の冬。探索{succ}回{cat}。明日の朝も、この家で目を覚ますだろう。"
+ },
+ "end3.note.escape": {
+  "ko": "구조선에 올랐다. 그 겨울들의 기록은 여기 남는다.",
+  "en": "Boarded the rescue craft. The record of those winters stays here.",
+  "ja": "救助船に乗った。あの冬の記録は、ここに残る。"
+ },
+ "end3.note.newworld": {
+  "ko": "초대를 받아들였다. 다음 인류라는 것이 되러 간다.",
+  "en": "Accepted the invitation. Off to become the next humanity, whatever that is.",
+  "ja": "招待を受け入れた。次の人類とやらになりに行く。"
+ },
+ "end3.note.rest": {
+  "ko": "남기로 했다. 이 집이 내 답이다.",
+  "en": "Chose to stay. This house is the answer.",
+  "ja": "残ることにした。この家が私の答えだ。"
+ },
+ "end3.after.escape": {
+  "ko": "엔딩 「탈출」 — 수첩에 기록됐다. 이 겨울은 계속 이어갈 수 있다.",
+  "en": "Ending — Escape. Written in the journal. This winter can still go on.",
+  "ja": "エンディング「脱出」 — 手帳に記録された。この冬は、このまま続けられる。"
+ },
+ "end3.after.newworld": {
+  "ko": "엔딩 「신세계」 — 수첩에 기록됐다. 이 겨울은 계속 이어갈 수 있다.",
+  "en": "Ending — New World. Written in the journal. This winter can still go on.",
+  "ja": "エンディング「新世界」 — 手帳に記録された。この冬は、このまま続けられる。"
+ },
+ "end3.after.rest": {
+  "ko": "엔딩 「안식」 — 수첩에 기록됐다. 겨울은 계속된다.",
+  "en": "Ending — Rest. Written in the journal. Winter goes on.",
+  "ja": "エンディング「安息」 — 手帳に記録された。冬は続く。"
+ },
+ "hidden.foundToast": {
+  "ko": "벽 안쪽에서 빈 소리가 났다.",
+  "en": "The wall rang hollow.",
+  "ja": "壁の中から虚ろな音がした。"
+ },
+ "hidden.foundNote": {
+  "ko": "노선 끝, 막다른 벽을 두드렸다. 벽이 빈 소리를 냈다 — 너머에 공간이 있다.",
+  "en": "At the end of the line, knocked on the dead-end wall. It rang hollow — there is space beyond.",
+  "ja": "路線の果て、行き止まりの壁を叩いた。壁は虚ろな音を返した — 向こうに空間がある。"
+ },
+ "proj.hiddenGate.name": {
+  "ko": "벽 너머 통로",
+  "en": "The Passage Beyond the Wall",
+  "ja": "壁の向こうの通路"
+ },
+ "proj.hiddenGate.stage1": {
+  "ko": "타일 벽을 허문다. 두드리면 빈 소리가 나던 자리부터.",
+  "en": "Break through the tiled wall, starting where it rang hollow.",
+  "ja": "タイルの壁を崩す。叩くと虚ろな音がした場所から。"
+ },
+ "proj.hiddenGate.stage2": {
+  "ko": "버팀목을 세우고 통로를 넓힌다. 숨 쉴 때마다 오래된 공기 맛이 난다.",
+  "en": "Raise props and widen the passage. Every breath tastes of old air.",
+  "ja": "支柱を立てて通路を広げる。息をするたび、古い空気の味がする。"
+ },
+ "proj.hiddenGate.stage3": {
+  "ko": "등불을 걸고 사다리를 내린다. 바닥이 보이지 않는다 — 그래도 내려간다.",
+  "en": "Hang a lantern and lower the ladder. The bottom is out of sight — going down anyway.",
+  "ja": "ランタンを掛け、はしごを下ろす。底は見えない — それでも降りていく。"
+ },
+ "proj.hiddenGate.workNote": {
+  "ko": "벽 너머 통로를 조금 더 냈다.",
+  "en": "Dug the passage beyond the wall a little further.",
+  "ja": "壁の向こうの通路を、少しだけ先へ延ばした。"
+ },
+ "proj.hiddenGate.doneToast": {
+  "ko": "통로가 뚫렸다. 사다리가 어둠 아래로 이어진다.",
+  "en": "The passage is open. The ladder runs down into the dark.",
+  "ja": "通路が開通した。はしごが闇の下へと続いている。"
+ },
+ "proj.hiddenGate.memoir": {
+  "ko": "{day}일째. 노선 끝의 벽을 허물고 아래로 내려가는 길을 냈다. 어디로 이어지는지는 쓰지 않겠다. 이건 나만 아는 길이다.",
+  "en": "Day {day}. Broke the wall at the end of the line and opened a way down. I won't write where it leads. This road is mine alone.",
+  "ja": "{day}日目。路線の果ての壁を崩し、下へ降りる道を開いた。どこへ続くのかは書かない。これは私だけが知る道だ。"
+ },
+ "hidden.reach.title": {
+  "ko": "통로 끝의 불빛",
+  "en": "A Light at the End of the Passage",
+  "ja": "通路の果ての灯り"
+ },
+ "hidden.reach.text": {
+  "ko": "사다리는 오래된 정비 터널로, 터널은 연구소의 뒷문으로 이어졌다. 문은 잠겨 있지 않았다.<br>박사가 있었다. 무전 속 목소리가 아니라, 사람이. 놀라는 기색은 없었다 — 언젠가 누군가 이 길로 올 줄 알았다는 얼굴이었다.<br>우리는 오래 이야기했다. 떠난 자들에 대해, 남은 자들에 대해. 헤어지기 전에 박사가 물었다. \"그래서 — 너는 어느 쪽이냐.\"",
+  "en": "The ladder led to an old service tunnel, and the tunnel to a back door of the laboratory. It wasn't locked.<br>The doctor was there. Not a voice on the radio — a person. He didn't look surprised; his was the face of someone who always knew somebody would come this way.<br>You talked for a long time. About those who left. About those who stayed. Before parting, he asked: \"So — which are you?\"",
+  "ja": "はしごは古い整備トンネルへ、トンネルは研究所の裏口へと続いていた。扉には鍵がかかっていなかった。<br>博士がいた。無線の中の声ではなく、生身の人間が。驚いた様子はなかった — いつか誰かがこの道を来ると知っていた、そんな顔だった。<br>私たちは長いこと話した。去った者たちのこと、残った者たちのこと。別れる前に、博士は尋ねた。「それで — 君はどちら側だ。」"
+ },
+ "hidden.reach.c0": {
+  "ko": "대답하지 않는다",
+  "en": "Say nothing",
+  "ja": "答えない"
+ },
+ "hidden.reach.r0": {
+  "ko": "나는 대답하지 않았다. 박사는 고개를 끄덕이더니, 서랍에서 접힌 종이를 꺼내 책상 위에 밀어 두었다.",
+  "en": "You didn't answer. The doctor nodded, took a folded paper from a drawer, and slid it onto the desk.",
+  "ja": "答えなかった。博士はうなずくと、引き出しから折りたたまれた紙を取り出し、机の上に滑らせた。"
+ },
+ "hidden.doc.title": {
+  "ko": "박사가 남긴 문서",
+  "en": "The Doctor's Papers",
+  "ja": "博士が残した文書"
+ },
+ "hidden.doc.tag": {
+  "ko": "책상 위, 접힌 채로 — 펼치면 두 장",
+  "en": "On the desk, folded — two sheets",
+  "ja": "机の上、折りたたまれたまま — 開けば二枚"
+ },
+ "hidden.doc.p1": {
+  "ko": "첫 장은 지도다. 그들이 간 곳 — 신세계라 부르는 자리의 좌표가 또박또박 적혀 있다.\n여백의 손글씨. \"그들은 지켜보는 걸 멈추지 않을 것이다. 초대는 언제나 유효하고, 그래서 언제나 유효하지 않다.\"",
+  "en": "The first sheet is a map. The coordinates of where they went — the place they call the new world — written in a careful hand.\nIn the margin: \"They will not stop watching. The invitation is always open, and so it is never open.\"",
+  "ja": "一枚目は地図だ。彼らが向かった場所 — 新世界と呼ぶ地点の座標が、几帳面な字で記されている。\n余白に手書きの一文。「彼らは見張ることをやめないだろう。招待は常に有効で、だからこそ常に有効ではない。」"
+ },
+ "hidden.doc.p2": {
+  "ko": "둘째 장은 제원표다. 폐기된 사일로 하나가 아직 살아 있다는 것. 좌표 입력부터 발사까지의 절차. 그리고 사거리 안에 무엇이 있는지.\n마지막 줄만 손글씨다. \"이건 계획이 아니다. 다만 알아야 할 사람이 알고 있어야 한다.\"",
+  "en": "The second sheet is a spec table. One decommissioned silo, still alive. The procedure, from coordinates to launch. And what lies within its range.\nOnly the last line is handwritten: \"This is not a plan. But someone who should know, should know.\"",
+  "ja": "二枚目は諸元表だ。廃棄されたサイロが一基、まだ生きていること。座標入力から発射までの手順。そして射程内に何があるのか。\n最後の行だけが手書きだ。「これは計画ではない。ただ、知るべき者が知っておくべきだ。」"
+ },
+ "hidden.silo.confirm": {
+  "ko": "좌표까지는 꼬박 하루 거리다. 간다면, 지금이다.",
+  "en": "The coordinates are a full day's walk. If you're going, it's now.",
+  "ja": "座標までは丸一日の距離だ。行くなら、今だ。"
+ },
+ "hidden.silo.go": {
+  "ko": "간다",
+  "en": "Go",
+  "ja": "行く"
+ },
+ "hidden.silo.stay": {
+  "ko": "덮어둔다",
+  "en": "Put it away",
+  "ja": "伏せておく"
+ },
+ "hidden.silo.line0": {
+  "ko": "사다리 아래는 생각보다 깊었다. 내려가는 동안 아무 소리도 나지 않았다.",
+  "en": "The way down was deeper than you expected. Nothing made a sound as you went.",
+  "ja": "はしごの下は思ったより深かった。降りるあいだ、何の音もしなかった。"
+ },
+ "hidden.silo.line1": {
+  "ko": "터널 끝, 무거운 문. 문 너머는 어둠 — 그리고 어둠 속에서 계기판 하나가 살아 있었다.",
+  "en": "At the tunnel's end, a heavy door. Beyond it, dark — and in the dark, one console still alive.",
+  "ja": "トンネルの果てに、重い扉。その向こうは闇 — そして闇の中で、計器盤がひとつ生きていた。"
+ },
+ "hidden.silo.line2": {
+  "ko": "좌표를 넣는 손이 떨리지 않았다. 그게 제일 이상했다.",
+  "en": "Your hands didn't shake as you entered the coordinates. That was the strangest part.",
+  "ja": "座標を打ち込む手は震えなかった。それが一番奇妙だった。"
+ },
+ "hidden.silo.line3": {
+  "ko": "덮개 아래 버튼 하나. 그뿐이다.",
+  "en": "Under the cover, one button. That's all.",
+  "ja": "カバーの下にボタンがひとつ。それだけだ。"
+ },
+ "hidden.silo.press": {
+  "ko": "버튼을 누른다",
+  "en": "Press it",
+  "ja": "ボタンを押す"
+ },
+ "paint.foundNote": {
+  "ko": "무너진 선반 아래에서 페인트 한 통을 건졌다 — {name}. 아직 쓸 만하다.",
+  "en": "Salvaged a can of paint from under a fallen shelf — {name}. Still good.",
+  "ja": "崩れた棚の下からペンキを一缶拾い上げた — {name}。まだ使えそうだ。"
+ },
+ "paint.jackpot": {
+  "ko": "페인트 통을 찾았다 — {name}",
+  "en": "Found a can of paint — {name}",
+  "ja": "ペンキの缶を見つけた — {name}"
+ },
+ "paint.need": {
+  "ko": "{name} 도료가 필요하다. 탐험에서 가끔 나온다.",
+  "en": "Needs {name} paint. Expeditions turn it up now and then.",
+  "ja": "{name}の塗料が必要だ。探索でたまに手に入る。"
+ },
+ "paint.used": {
+  "ko": "{name} 도료로 칠했다. 남은 {left}통.",
+  "en": "Painted with {name}. {left} left.",
+  "ja": "{name}の塗料で塗った。残り{left}缶。"
+ },
+ "paint.haveN": {
+  "ko": "{n}통",
+  "en": "×{n}",
+  "ja": "{n}缶"
+ },
+ "paint.neonNote": {
+  "ko": "🌈 무너진 간판 가게 안쪽에서 네온 안료 한 통을 건졌다. 도심에서만 나는 물건이다.",
+  "en": "🌈 Salvaged a can of neon pigment from the back of a wrecked sign shop. Only turns up in the city core.",
+  "ja": "🌈 潰れた看板屋の奥からネオン顔料を一缶拾った。都心でしか手に入らない代物だ。"
+ },
+ "paint.neonJackpot": {
+  "ko": "네온 안료를 찾았다 — 도심의 색",
+  "en": "Found neon pigment — the color of the city",
+  "ja": "ネオン顔料を見つけた — 都心の色"
+ },
+ "bp.foundNote": {
+  "ko": "무너진 서랍 틈에서 접힌 도면을 찾았다 — {name}. 만드는 법이 그려져 있다.",
+  "en": "Found a folded blueprint in a broken drawer — {name}. The how-to is all there.",
+  "ja": "壊れた引き出しの隙間から折りたたまれた設計図を見つけた — {name}。作り方が描かれている。"
+ },
+ "bp.jackpot": {
+  "ko": "도면 발견 — {name}",
+  "en": "Blueprint found — {name}",
+  "ja": "設計図発見 — {name}"
+ },
+ "bp.lootLabel": {
+  "ko": "{name} 도면",
+  "en": "{name} Blueprint",
+  "ja": "{name}の設計図"
+ },
+ "offline.catGift": {
+  "ko": "🐈 자리를 비운 사이, 고양이가 문가에 천 조각을 물어다 뒀다. 어디서 났는지는 묻지 않기로 했다.",
+  "en": "🐈 While you were away, the cat left a scrap of cloth by the door. Better not to ask where it came from.",
+  "ja": "🐈 留守のあいだに、猫が扉のそばに布切れをくわえてきていた。どこで手に入れたのかは、訊かないことにした。"
+ },
+ "offline.birdGift": {
+  "ko": "🐦 창턱에 새가 다녀간 자국. 부스러기 대신 도토리 몇 알이 놓여 있었다.",
+  "en": "🐦 Traces of a bird on the sill. Instead of crumbs, a few acorns were left behind.",
+  "ja": "🐦 窓辺に鳥の立ち寄った跡。パンくずの代わりに、どんぐりがいくつか置かれていた。"
+ },
+ "frame.default": {
+  "ko": "풍경화",
+  "en": "Landscape",
+  "ja": "風景画"
+ },
+ "frame.hung": {
+  "ko": "{name} — 액자에 걸었다.",
+  "en": "{name} — hung in the frame.",
+  "ja": "{name} — 額縁に飾った。"
+ },
+ "dye.title": {
+  "ko": "염료 상인",
+  "en": "The Dye Peddler",
+  "ja": "染料商人"
+ },
+ "dye.text": {
+  "ko": "슬럼 골목 어귀, 페인트 통을 실은 손수레가 서 있다. 상인이 말없이 천을 걷는다.<br>오늘의 통 — {names}.<br>값은 하나에 통조림 {n}개. 흥정이 통할 얼굴이 아니다.",
+  "en": "At the mouth of a slum alley stands a handcart loaded with paint cans. The peddler pulls back the cloth without a word.<br>Today's cans — {names}.<br>The price is {n} canned food apiece. Not a face that haggles.",
+  "ja": "スラムの路地の入り口に、ペンキの缶を積んだ手押し車が停まっている。商人が無言で布をめくる。<br>今日の缶 — {names}。<br>値は一缶につき缶詰{n}個。値切りが通じる顔ではない。"
+ },
+ "dye.c0": {
+  "ko": "1번 통을 산다",
+  "en": "Buy can no. 1",
+  "ja": "1番の缶を買う"
+ },
+ "dye.c1": {
+  "ko": "2번 통을 산다",
+  "en": "Buy can no. 2",
+  "ja": "2番の缶を買う"
+ },
+ "dye.c2": {
+  "ko": "3번 통을 산다",
+  "en": "Buy can no. 3",
+  "ja": "3番の缶を買う"
+ },
+ "dye.pass": {
+  "ko": "지나친다",
+  "en": "Walk on",
+  "ja": "通り過ぎる"
+ },
+ "dye.r.bought": {
+  "ko": "통조림 {n}개를 건넸다. {name} 한 통이 손에 들어왔다.",
+  "en": "Handed over {n} cans of food. A can of {name} is yours.",
+  "ja": "缶詰{n}個を手渡した。{name}が一缶、手に入った。"
+ },
+ "dye.r.noGoods": {
+  "ko": "통조림이 모자라다. 상인은 어깨를 으쓱하고 천을 덮었다.",
+  "en": "Not enough canned food. The peddler shrugged and covered the cart.",
+  "ja": "缶詰が足りない。商人は肩をすくめ、布をかぶせ直した。"
+ },
+ "dye.r.pass": {
+  "ko": "고개만 까딱하고 지나쳤다. 등 뒤로 손수레 바퀴 소리가 멀어졌다.",
+  "en": "A small nod, nothing more. The cart wheels faded behind you.",
+  "ja": "会釈だけして通り過ぎた。背後で手押し車の車輪の音が遠ざかった。"
+ },
+ "ev.noResource": {
+  "ko": " (자원 부족)",
+  "en": " (not enough)",
+  "ja": " (資源不足)"
+ },
+ "ev.coldstranger.title": {
+  "ko": "문밖의 온기",
+  "en": "Warmth Beyond the Door",
+  "ja": "扉の外の暖かさ"
+ },
+ "ev.coldstranger.text": {
+  "ko": "한파가 몰아치는 밤. 문 밖에 누군가 웅크린 채 쓰러져 있다. 숨은 붙어 있다.<br>깨워도 말이 없다. 그저 떨고 있을 뿐이다.",
+  "en": "A cold-snap night. Someone lies curled and fallen beyond the door, still breathing.<br>They don’t answer when I shake them. They only shiver.",
+  "ja": "寒波の吹き荒れる夜。扉の外に、誰かがうずくまったまま倒れている。息はある。<br>揺すっても答えはない。ただ震えているだけだ。"
+ },
+ "ev.coldstranger.c0": {
+  "ko": "🔥 안으로 들여 불을 나눈다 (연료 2)",
+  "en": "🔥 Bring them in, share the fire (2 fuel)",
+  "ja": "🔥 中に入れて火を分ける (燃料2)"
+ },
+ "ev.coldstranger.c1": {
+  "ko": "문을 닫는다",
+  "en": "Close the door",
+  "ja": "扉を閉める"
+ },
+ "ev.coldstranger.r0": {
+  "ko": "난롯가에 앉혀 언 몸을 녹였다. 아침이 오자 자리엔 아무도 없었다.<br>문틈에 쪽지 한 장. 고맙다는 한 줄. 이름은 없다.",
+  "en": "I set them by the stove until the frost left their skin. By morning the spot was empty.<br>A note wedged in the doorframe. One line of thanks. No name.",
+  "ja": "ストーブのそばに座らせ、凍えた体を温めた。朝になると、そこには誰もいなかった。<br>扉の隙間にメモが一枚。感謝の一行。名前はない。"
+ },
+ "ev.coldstranger.note0": {
+  "ko": "문밖의 사람을 들여 불을 나눴다.",
+  "en": "Took in the one outside and shared the fire.",
+  "ja": "扉の外の人を招き入れ、火を分けた。"
+ },
+ "ev.coldstranger.r1": {
+  "ko": "문을 닫았다. 바람 소리에 다른 소리는 묻혔다.<br>날이 밝고 문을 열었을 때, 그 자리엔 눌린 눈자국만 남아 있었다.",
+  "en": "I closed the door. The wind swallowed whatever sound was left.<br>When light came and I opened it, only a pressed shape in the snow remained.",
+  "ja": "扉を閉めた。風の音が、ほかの音をかき消した。<br>夜が明けて扉を開けたとき、そこには押しつぶされた雪の跡だけが残っていた。"
+ },
+ "ev.coldstranger.note1": {
+  "ko": "문밖의 사람을 못 본 척했다.",
+  "en": "Pretended I never saw the one outside.",
+  "ja": "扉の外の人を、見なかったことにした。"
+ },
+ "ev.spoilmerchant.title": {
+  "ko": "반값의 상인",
+  "en": "The Half-Price Trader",
+  "ja": "半額の商人"
+ },
+ "ev.spoilmerchant.text": {
+  "ko": "한 사람이 수레를 끌고 왔다. 통조림을 반값에 넘기겠단다.<br>웃는 낯이 지나치게 붙임성 있다. 캔 몇 개는 이음매가 부풀어 있다.",
+  "en": "Someone rolls up a cart. Canned goods, half price, they say.<br>The smile is a touch too eager. A few of the cans bulge at the seams.",
+  "ja": "荷車を引いた者が現れた。缶詰を半額で譲るという。<br>笑顔が愛想よすぎる。缶のいくつかは継ぎ目が膨らんでいる。"
+ },
+ "ev.spoilmerchant.c0": {
+  "ko": "부푼 캔을 짚어 돌려보낸다",
+  "en": "Point at the swollen cans, wave them off",
+  "ja": "膨らんだ缶を指さして追い返す"
+ },
+ "ev.spoilmerchant.c1": {
+  "ko": "🔋 배터리 1로 두 개 산다",
+  "en": "🔋 Buy two for 1 battery",
+  "ja": "🔋 バッテリー1で2個買う"
+ },
+ "ev.spoilmerchant.r0": {
+  "ko": "부푼 이음매를 손끝으로 짚자, 상인은 말없이 수레를 돌렸다.<br>속지 않았다. 그거면 됐다.",
+  "en": "I press a swollen seam. The trader turns the cart without a word.<br>Not fooled. That’s enough.",
+  "ja": "膨らんだ継ぎ目を指先で示すと、商人は無言で荷車の向きを変えた。<br>騙されなかった。それで十分だ。"
+ },
+ "ev.spoilmerchant.note0": {
+  "ko": "상한 통조림을 간파해 돌려보냈다.",
+  "en": "Spotted the spoiled cans and sent them off.",
+  "ja": "傷んだ缶詰を見抜き、追い返した。"
+ },
+ "ev.spoilmerchant.r1ok": {
+  "ko": "통조림 두 개를 받았다. 흔들어보니 멀쩡한 것 같다. 운이 좋았다. <b>(통조림 +2)</b>",
+  "en": "Two cans in hand. A shake says they’re fine. Lucky. <b>(canned +2)</b>",
+  "ja": "缶詰を2個受け取った。振ってみたところ、無事なようだ。運が良かった。 <b>(缶詰 +2)</b>"
+ },
+ "ev.spoilmerchant.r1bad": {
+  "ko": "통조림 두 개를 받았다. 그날 밤부터 속이 뒤집혔다. 하나가 상해 있었다. <b>(감염 위험)</b>",
+  "en": "Two cans in hand. By nightfall my gut turned. One of them was rotten. <b>(infection risk)</b>",
+  "ja": "缶詰を2個受け取った。その夜から腹の具合がひっくり返った。ひとつが傷んでいた。 <b>(感染の危険)</b>"
+ },
+ "ev.leakyroof.title": {
+  "ko": "천장에서 떨어지는 것",
+  "en": "Something Drips from the Ceiling",
+  "ja": "天井から落ちてくるもの"
+ },
+ "ev.leakyroof.text": {
+  "ko": "빗줄기가 굵어지자 천장 한구석에서 물이 떨어지기 시작한다.<br>바닥에 고인 자국이 점점 넓어진다.",
+  "en": "As the rain thickens, water begins to fall from one corner of the ceiling.<br>The pool on the floor spreads, wider and wider.",
+  "ja": "雨脚が強まると、天井の隅から水が落ち始める。<br>床にたまった染みが、少しずつ広がっていく。"
+ },
+ "ev.leakyroof.c0": {
+  "ko": "🧱 건축재 1로 급히 막는다",
+  "en": "🧱 Patch it fast with 1 material",
+  "ja": "🧱 建材1で急いでふさぐ"
+ }
+}
