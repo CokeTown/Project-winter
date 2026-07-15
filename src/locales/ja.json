@@ -1183,7 +1183,7 @@
   "quest.head": "やること",
   "quest.drink.text": "💧ゲージをクリックして水を飲もう",
   "quest.eat.text": "🥫ゲージをクリックして何か食べよう",
-  "quest.place.text": "🔧配置モードをオンにして家具を1つ置こう (ベッド推奨)",
+  "quest.place.text": "🔧 配置モードを開いて家具を1つ置いてみよう (ベッドかキャンドルスツール推奨 — 夜には光が要る)",
   "quest.depart.text": "🎒地図を開いて初めての探索に出よう",
   "quest.sleep.text": "🛌就寝で一日を締めくくろう",
   "quest.craft.text": "🔨作業台で何でも1つ作ってみよう",
@@ -2115,5 +2115,10 @@
   "demo.hardPerk": "🔓 デモ・チャレンジモード: 探索地域に商業地区が追加で開く。",
   "demo.autoLocked": "自動進行は製品版のもの — この十五日は、この手で。",
   "demo.regionLocked": "ここはまだ閉ざされている — サバイバルモードのもの。",
-  "intro.skip": "スキップ ▸▸"
+  "intro.skip": "スキップ ▸▸",
+  "gel.confirmUse": "{name}の塗料を1缶使う。フィルターを付ける?",
+  "gel.confirmYes": "付ける",
+  "paint.confirmUse": "{name}の塗料を1缶使う。塗り替える?",
+  "paint.confirmYes": "塗る",
+  "tip.dark": "夜が来た。光源がなければ部屋は死んだ蛍光灯だけだ — インベントリのキャンドルスツールを置こう。ろうそくが燃料だ。"
 }

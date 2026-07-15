@@ -24,7 +24,7 @@ export function makeAvatarSystem(ctx) {
     scene, state, items, DEFS,
     getRoom, getBlockers, footprintOf, gameHour, opts,
     OUTFITS, getOutfit, // #86④ 복장 (없으면 기본 팔레트 — 하위호환)
-    BED_TOP_Y, // #193: 침대 티어별 좌면 실높이 (data/items.js — cat 퍼치와 동일 실측 계보)
+    BED_TOP_Y, TIER_TOP_Y, // #193·#196: 티어별 좌면 실높이 표 (data/items.js — cat 퍼치와 동일 실측 계보)
   } = ctx;
 
   const PX = 0.02;                  // cat.js 공유 복셀 단위
@@ -176,8 +176,12 @@ export function makeAvatarSystem(ctx) {
   function despawn() { if (av) { group.remove(av.g); disposeDeep(av.g); av = null; shadowDirty(); } }
 
   /* ── 상호작용 대상 탐색 ── */
-  // #193: 침대만 티어가 곧 높이(#157) — SEAT_Y.bed(T3 0.63) 고정이면 T1(≈0.25)/T2(≈0.46)에서 공중 착석
-  const seatOf = it => it.defId === 'bed' ? ((BED_TOP_Y || {})[it.tier || 3] ?? SEAT_Y.bed) : SEAT_Y[it.defId];
+  // #193→#196 일반화: 티어로 좌면이 변하는 가구(침대·소파·방석·의자)는 TIER_TOP_Y[defId][tier] 실측 조회.
+  //   표에 없는 가구만 SEAT_Y 고정값 — "티어 무관" 판정은 지오 실측 감사(2026-07-17)로 확정된 것만.
+  const seatOf = it => {
+    const tt = (TIER_TOP_Y || {})[it.defId];
+    return tt ? (tt[it.tier || 3] ?? SEAT_Y[it.defId]) : SEAT_Y[it.defId];
+  };
   function pickSeat() {
     // 침대 포함(디렉터: "침대랑 상호작용을 안 한다") — 침대는 startSit에서 모서리 걸터앉기로 처리
     const list = items.filter(it => seatOf(it) != null && !(it.y > 0.3) && !it.support);
