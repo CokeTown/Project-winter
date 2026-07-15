@@ -130,9 +130,9 @@ export const SHELTER_META = {
     limits: '🌧️ 옥상 빗물받이 — 비/눈 오는 날 깨끗한 물 +2 (자급 가능)', limitsEn: '🌧️ Rooftop rain catch — clean water +2 on rainy/snowy days (self-sufficient)',
   },
   tugboat: {
-    name: '예인선', nameEn: 'Tugboat', emoji: '🚤', unlockAt: 230, viewH: 16, ceilY: 2.3,
-    desc: '부두에 매인 작은 예인선. 발밑이 늘 흔들리지만, 물 위에서는 낚싯줄이 마르지 않는다.',
-    descEn: 'A small tugboat moored at the pier. The deck always sways, but on the water the line never runs dry.',
+    name: '요트', nameEn: 'Yacht', emoji: '🛥️', unlockAt: 230, viewH: 16, ceilY: 2.3,
+    desc: '부두에 매인 낡은 요트. 살롱은 좁아도 온기가 돌고, 물 위에서는 낚싯줄이 마르지 않는다.',
+    descEn: 'An old yacht moored at the pier. The saloon is snug but warm, and on the water the line never runs dry.',
     room: { w: 6.4, d: 4.2, h: 2.2 },
     baseComfort: 6,
     mood: { fog: 0x15222c, fogNear: 18, fogFar: 52, skyH: 0x1c2e3e, skyZ: 0x0a1018, hemiSky: 0x7a92ae, hemiGround: 0x36393c, hemiInt: 0.66, moonC: 0xa6bed6, moonInt: 0.78, stars: 0.85 },
@@ -170,4 +170,101 @@ export const SHELTER_META = {
     mood: { fog: 0x1a2436, fogNear: 20, fogFar: 62, skyH: 0x22314a, skyZ: 0x0a1120, hemiSky: 0x94a6c8, hemiGround: 0x484038, hemiInt: 0.72, moonC: 0xaec4e0, moonInt: 0.82, stars: 1.0, fire: 0.9 },
     perk: { cozyMult: 1.3, forecast: true, label: '🔥 벽난로 로지 — 쾌적 효과 1.3배 · 날씨 예보', labelEn: '🔥 Hearth lodge — comfort effects ×1.3 · weather forecast' },
   },
+
+  /* ── 2.0 동부 「대도시」 셸터 1: 세관 (GD-2.0 §6.0.5 — 심부 진행 관문) ──
+     국경 검문소의 심사 홀. TLOU 3년차 식생 + 동부 노을 팔레트(mood). unlockAt 9999 = 동부 관문
+     시스템 착지 전까지 이주 목록 비노출 — 기초 모델링 선제작분(QA loadShelter로만 진입).
+     퍽·코스트는 자리값(밸런스는 동부 경제 설계와 함께 캘리브). */
+  customs: {
+    name: '세관', nameEn: 'Customs House', emoji: '🛃', unlockAt: 9999, viewH: 17, ceilY: 2.7,
+    desc: '국경 검문소의 심사 홀. 통과하지 못한 짐들이 아직 컨베이어 위에 놓여 있다 — 이제 국경은 나 하나를 위해 열려 있다.',
+    descEn: 'The inspection hall of a border checkpoint. Luggage that never cleared still sits on the belt — now the border stands open for one.',
+    room: { w: 7.6, d: 6.2, h: 2.7 },
+    baseComfort: 6,
+    mood: { fog: 0x2a161a, fogNear: 22, fogFar: 62, skyH: 0x8a3040, skyZ: 0x160a12, hemiSky: 0xc08a70, hemiGround: 0x3a3028, hemiInt: 0.66, moonC: 0xd8a890, moonInt: 0.75, stars: 0.8 },
+    weatherPool: ['clear', 'rain', 'clear', 'snow'],
+    perk: { label: '🛃 관문의 집 — 동부 대도시의 문턱', labelEn: '🛃 Home at the gate — threshold of the eastern metropolis' },
+    moveCost: { material: 32, parts: 24 },
+    cold: 5, // 심사 창구가 뚫린 청사 — 외풍. 창구 봉쇄(customsSeal) 개조로 해소
+    limits: '🏙️ 심사 창구로 바람이 든다 — 악천후 쾌적 -5 (창구 봉쇄로 해소)', limitsEn: '🏙️ Wind slips through the booths — comfort -5 in bad weather (fix by sealing them)',
+  },
+
+  /* ── 2.0 동부 「대도시」 셸터 2: 다리 관리소 (§6.0.5 — 세관==다리 진입 층위) ──
+     무너진 현수교 옆 석조 관리소. 낮=끊어진 다리 조망, 밤=별의 집(stars 1.0 + 은하수 + 큰 달 — 밤하늘 확장 첫 사용자).
+     석재 텍스처(stoneBlockTex — "텍스처 고급" 오더 1호). unlockAt 9999 = 관문 시스템 전 비노출. */
+  bridgehouse: {
+    name: '다리 관리소', nameEn: 'Bridge Keeper House', emoji: '🌉', unlockAt: 9999, viewH: 18, ceilY: 2.6,
+    desc: '무너진 현수교 옆 석조 관리소. 낮에는 끊어진 다리가, 밤에는 온 하늘의 별이 창밖에 걸린다.',
+    descEn: 'A stone keeper house beside the fallen span. By day the broken bridge hangs in the window; by night, every star in the sky.',
+    room: { w: 6.8, d: 5.6, h: 2.6 },
+    baseComfort: 7,
+    mood: { fog: 0x1c1622, fogNear: 24, fogFar: 70, skyH: 0x3a2440, skyZ: 0x0a0a16, hemiSky: 0x9a90c0, hemiGround: 0x3a3430, hemiInt: 0.68, moonC: 0xd8e2f8, moonInt: 0.95, stars: 1.0, milkyway: true, moonScale: 2.3, moonPos: [-0.25, 0.6, -0.75] },
+    weatherPool: ['clear', 'clear', 'clear', 'rain'], // 별의 집 — 맑은 밤이 잦다
+    perk: { label: '🌌 별의 관측석 — 밤하늘이 온전히 보인다', labelEn: '🌌 A seat under the stars — the night sky, unbroken' },
+    moveCost: { material: 34, parts: 26 },
+    limits: '🌉 협곡의 집 — 겨울 바람 소리가 크다', limitsEn: '🌉 A house over the gorge — the winter wind is loud',
+  },
+
+  /* ── 2.0 동부 「대도시」 셸터 3: 역 대합실 (§6.0.5 — 심부 진행 2층위, 펜실베이니아 역 레퍼런스) ──
+     거대한 아치 홀의 한구석이 거처. 무너진 천장으로 신광이 들고, 빛 웅덩이엔 나무가 자란다(TLOU 아트리움).
+     석재 텍스처 공유(stoneBlockTex). unlockAt 9999 = 관문 시스템 전 비노출. */
+  terminal: {
+    name: '역 대합실', nameEn: 'Grand Terminal Hall', emoji: '🚉', unlockAt: 9999, viewH: 20, ceilY: 3.4,
+    desc: '거대한 아치 천장 아래, 매표소 옆 한 칸이 나의 집. 무너진 지붕 틈으로 해가 들고, 그 빛 웅덩이에서 나무 한 그루가 자란다.',
+    descEn: 'One corner beneath the great arched ceiling, beside the ticket booths. Sun falls through the broken roof, and in that pool of light a tree grows.',
+    room: { w: 11, d: 7, h: 3.4 },
+    baseComfort: 6,
+    mood: { fog: 0x18120c, fogNear: 20, fogFar: 56, skyH: 0x2a1e14, skyZ: 0x0a0806, hemiSky: 0x8a7a64, hemiGround: 0x3a3228, hemiInt: 0.64, moonC: 0xc8b89a, moonInt: 0.6, stars: 0.3 },
+    weatherPool: ['clear', 'clear', 'rain', 'snow'],
+    perk: { label: '🚉 빛 웅덩이의 홀 — 도시 한가운데의 성소', labelEn: '🚉 A hall with a pool of light — a sanctuary mid-city' },
+    moveCost: { material: 36, parts: 28 },
+    cold: 4, limits: '🕳️ 무너진 천장 — 악천후 쾌적 -4 (지붕 틈을 막으면 해소)', limitsEn: '🕳️ Broken ceiling — comfort -4 in bad weather (fix by patching the gap)',
+  },
+
+  /* ── 2.0 동부 「대도시」 셸터 4: 펜트하우스 (§6.0.5 — 심부 진행 종점, "고성 첨탑들에 둘러싸인" 압도) ──
+     마천루 꼭대기의 럭셔리 펜트하우스 잔해. 조망이 정체성 — env가 주역(둘러싼 초고층 + 아득한 아래 안개).
+     unlockAt 9999 = 관문 시스템 전 비노출. */
+  penthouse: {
+    name: '펜트하우스', nameEn: 'Penthouse', emoji: '🏙️', unlockAt: 9999, viewH: 22, ceilY: 2.9,
+    desc: '구름 높이의 펜트하우스. 사방의 마천루가 고성의 첨탑처럼 나를 둘러싸고, 발밑엔 안개에 잠긴 도시가 있다.',
+    descEn: 'A penthouse at cloud height. The towers stand around you like castle spires, and below, a city drowned in fog.',
+    room: { w: 11, d: 7.5, h: 2.9 },
+    baseComfort: 8,
+    // 발코니 배치 칸 (디렉터): 조망면(-z) 밖 데크 — 방석·양초·촛대만 놓을 수 있다 (clampToRoom 확장)
+    balcony: { x0: -3.6, x1: 3.6, z0: -5.75, z1: -4.1, allow: ['cushion', 'candle', 'candelabra'] },
+    mood: { fog: 0x1a1622, fogNear: 26, fogFar: 78, skyH: 0x2c2338, skyZ: 0x0b0a14, hemiSky: 0x9a92b8, hemiGround: 0x3a3630, hemiInt: 0.7, moonC: 0xccd4ec, moonInt: 0.9, stars: 0.9 },
+    weatherPool: ['clear', 'clear', 'snow', 'rain'],
+    perk: { label: '🏙️ 첨탑들의 왕좌 — 도시 전체가 창밖에 있다', labelEn: '🏙️ A throne among spires — the whole city hangs in the window' },
+    moveCost: { material: 40, parts: 32 },
+    limits: '🌬️ 고층 강풍 — 겨울 바람이 유리를 두드린다', limitsEn: '🌬️ High-rise wind — winter rattles the glass',
+  },
+};
+
+/* ── 셸터 접근성 (디렉터 2026-07-14 — 등장인물 인카운터 고도화) ──
+   등장인물(방문자)이 실제로 보이게 되면서, 어떤 셸터에는 특정 도착 방식이 불가능해진다.
+   도착 방식(events.js encounter.arrive)별로 셸터가 허용하는 집합:
+     foot  = 수레 끄는 행상 등 지상 도보 도착 → 지상 셸터만 (옥탑/지하철/등대/배/펜트 등 불가)
+     door  = 홀로 온 사람이 계단/입구로 문 앞까지 → 지상 + 계단 오를 수 있는 곳
+     boat  = 배로 접안 → 물가 셸터만
+     view  = 멀리 지나가는 걸 조망(다가오지 않음) → 시야 트인 곳
+     trace = 밤사이 흔적(발자국) → 지상 접근 가능한 곳
+   미등록 셸터는 _default(지상 취급)로 폴백 → 신규 지상 셸터 안전. */
+export const SHELTER_ACCESS = {
+  _default:     ['foot', 'door', 'view', 'trace'],
+  container:    ['foot', 'door', 'view', 'trace'],   // 황무지 노지
+  bunker:       ['foot', 'door', 'trace'],           // 지상 돔+문 (밀폐 — 조망 없음)
+  rooftop:      ['door', 'view'],                    // 빌딩 옥상 — 계단으로 사람만·조망 최고, 수레 불가
+  cabin:        ['foot', 'door', 'view', 'trace'],   // 숲 가장자리 지상
+  bus:          ['foot', 'door', 'view', 'trace'],   // 고속도로 지상
+  subway:       ['door'],                            // 지하 승강장 — 드물게 내려온 사람만
+  greenhouse:   ['foot', 'door', 'view', 'trace'],   // 지상 유리 온실
+  ship:         ['boat', 'view'],                    // 좌초 여객선 — 배로만
+  lighthouse:   ['boat', 'view'],                    // 절벽 등대 — 접안·조망
+  tugboat:      ['boat', 'foot', 'view'],            // 부두 정박 요트 — 부두로 도보도 가능
+  controltower: ['view'],                            // 관제탑 꼭대기 — 조망만
+  lodge:        ['foot', 'door', 'view', 'trace'],   // 고원 리조트 지상
+  customs:      ['foot', 'door', 'view', 'trace'],   // 국경 청사 지상
+  bridgehouse:  ['foot', 'door', 'view', 'trace'],   // 다리목 석조 관리소 지상
+  terminal:     ['foot', 'door', 'trace'],           // 역 대합실(실내 홀 — 조망 제한)
+  penthouse:    ['view'],                            // 마천루 최상층 — 조망만
 };

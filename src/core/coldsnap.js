@@ -39,3 +39,11 @@ export function coldSnapNetSeverity() {
   const sev = state.coldSnap.severity || 1;
   return Math.max(0, sev - coldDefenseLevel());
 }
+// ── 2.0 대한파 프론트 (GD-2.0 §9.4-③) — 연례 대한파 진행 여부 + 선택한 자기 규율 ──
+export function frontActive() {
+  return coldSnapActive() && !!state.coldSnap.front;
+}
+// 자기 규율(하드/하드코어 전용 선택): 'ration'|'sleepless'|'emergency'|'none'|null. 프론트 밖에선 항상 null.
+export function frontDiscipline() {
+  return frontActive() && state.front ? state.front.discipline : null;
+}

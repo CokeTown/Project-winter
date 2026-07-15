@@ -33,6 +33,9 @@ export const INJURIES = {
   deep:      { name: '깊은 상처',   nameEn: 'Deep Wound',      icon: '🩸', pen: 0.15, restH: 24, cure: { bandage: 1, antiseptic: 1 }, infect: 0.25 },
   sprain:    { name: '염좌',        nameEn: 'Sprain',          icon: '🦵', pen: 0.10, restH: 18, timeMult: 1.3, cure: { painkiller: 1 } },
   infection: { name: '감염 위험',   nameEn: 'Infection Risk',  icon: '🤒', pen: 0.20, restH: 36, cure: { antiseptic: 1, water: 1 } },
+  // 2.0 중상 (GD-2.0 §9.3) — 부상 트리의 정점. 하드코어 도심 중심지 조우(총 미보유) + 하드코어 악화 사슬의 끝.
+  //   사망 아님("사망 없음, 탈진만" 정체성) — 의약품 소요 급증·장기 회복. memoir 흉터(§9.4-④)로 남는다.
+  critical:  { name: '중상',        nameEn: 'Critical Wound',  icon: '🚑', pen: 0.35, restH: 72, timeMult: 1.5, cure: { bandage: 2, antiseptic: 2, painkiller: 1 } },
 };
 // ---- 탐험 준비물 (기획서 v0.2: 준비물 슬롯) ----
 export const PREPS = {
@@ -118,6 +121,13 @@ export const CRAFTS = [
   { out: { furn: 'cushion' }, cost: { cloth: 2 }, hint: '푹신한 바닥 방석', hintEn: 'A soft floor cushion' },
   { out: { furn: 'bookstack' }, cost: { cloth: 1, material: 1 }, hint: '주워 모은 책 무더기', hintEn: 'A pile of gathered books' },
   { out: { furn: 'crate' }, cost: { material: 2 }, hint: '수납 상자', hintEn: 'Storage crate' },
+  // 「생존의 흔적」 밀도 데코(2026-07-15) — 값싸게 여러 개 놓아 빈 벽·구석을 생존자 소굴처럼 채운다.
+  //   #190 커먼 도면 게이트(디렉터): 탐험 저확률 파밍으로만 제작 해금 (BAL.blueprint.commonItems).
+  { out: { furn: 'supplyshelf' }, bp: 'supplyshelf', cost: { material: 3 }, hint: '통조림·병을 채운 보급 선반', hintEn: 'A supply shelf stocked with cans and jars' },
+  { out: { furn: 'cratestack' }, bp: 'cratestack', cost: { material: 3 }, hint: '쌓아 올린 보급 상자 더미', hintEn: 'A stack of scavenged supply crates' },
+  { out: { furn: 'fuelpile' }, bp: 'fuelpile', cost: { material: 1, fuel: 2 }, hint: '난롯가에 쌓아 둔 장작 더미', hintEn: 'A firewood pile stacked by the stove' },
+  { out: { furn: 'noticeboard' }, bp: 'noticeboard', cost: { material: 2, cloth: 1 }, hint: '지도·메모를 꽂은 상황판', hintEn: 'A board pinned with maps and notes' },
+  { out: { furn: 'jugcluster' }, bp: 'jugcluster', cost: { material: 2 }, hint: '물·연료를 담은 통 무더기', hintEn: 'Clustered jugs of water and fuel' },
   { out: { furn: 'chair' }, cost: { material: 2 }, hint: '나무 의자', hintEn: 'Wooden chair' },
   { out: { furn: 'candle' }, cost: { material: 1, candle: 1 }, hint: '캔들 스툴', hintEn: 'Candle stool' },
   { out: { furn: 'teatable' }, cost: { material: 2, cloth: 1 }, hint: '낮은 찻상 — 따뜻한 한 잔', hintEn: 'A low tea table — a warm cup' },
@@ -130,6 +140,8 @@ export const CRAFTS = [
   { out: { furn: 'bookshelf' }, cost: { material: 4 }, hint: '책장', hintEn: 'Bookshelf' },
   { out: { furn: 'sofa' }, cost: { cloth: 4, material: 2 }, hint: '패브릭 소파', hintEn: 'Fabric sofa' },
   { out: { furn: 'lamp' }, cost: { parts: 2, battery: 1 }, hint: '부품 조립 조명', hintEn: 'Part-built lamp' },
+  // #189 P4: 초희귀 도면 게이트 — 선명·안정·컬러(젤 틴트)의 LED. 화기 대비 표현 스펙트럼의 끝.
+  { out: { furn: 'ledbar' }, bp: 'ledbar', cost: { parts: 3, battery: 2 }, hint: 'LED 라이트 바 — 폐허의 마지막 신문물', hintEn: 'LED light bar — the ruins\' last piece of new tech' },
   { out: { furn: 'clock' }, cost: { parts: 2, material: 2 }, hint: '괘종시계 — 시간이 흐르는 소리', hintEn: 'Grandfather clock — the sound of passing time' },
   { out: { furn: 'radio' }, cost: { parts: 3, battery: 1 }, hint: '라디오 (날씨 예보)', hintEn: 'Radio (weather forecast)' },
   { out: { furn: 'stove' }, cost: { parts: 3, material: 3 }, hint: '장작 난로 — 최고의 온기 (연료 1/일)', hintEn: 'Wood stove — the best warmth (fuel 1/day)' },

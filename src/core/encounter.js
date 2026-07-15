@@ -9,6 +9,7 @@
    ============================================================ */
 import { state, items } from './state.js';
 import { hasMod } from './shelter.js';
+import { SHELTER_ACCESS } from '../data/shelters.js';
 
 export const EV_HISTORY_MAX = 12; // 최근 발화 이력 보관 상한
 
@@ -36,6 +37,12 @@ export function eventMatches(id, ctx) {
     //   생존·혹한 전용 — 코지에는 절대 오지 않는다. minWinters=발화 최소 경과 겨울 수.
     if (w.modes && !w.modes.includes(state.mode)) return false;
     if (w.minWinters != null && (ctx.winters || 0) < w.minWinters) return false;
+  }
+  // #181 접근성 게이트 (디렉터 2026-07-14): 등장인물의 도착 방식(arrive)을 현재 셸터가 허용하지 않으면 제외.
+  //   수레 행상(foot)은 옥탑/지하철/등대 등 비지상 셸터에 못 온다. arrive 없는 이벤트(라디오·동물·발견 등)는 무영향.
+  if (ev.arrive) {
+    const acc = SHELTER_ACCESS[ctx.shelter] || SHELTER_ACCESS._default;
+    if (!acc.includes(ev.arrive)) return false;
   }
   if (ev.cond && !ev.cond()) return false; // 레거시/추가 자유조건
   return true;

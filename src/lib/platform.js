@@ -28,8 +28,9 @@
      colAll       → ACH_MUSEUM_KEEPER
      cat          → ACH_CAT_SERVANT
      ending       → ACH_BEYOND_THE_RUINS
-   (16종 게이트 문서 값과 정합: ACHS 17개 중 ending 포함 전종 매핑.
-    Steamworks 콘솔에 위 API Name으로 도전과제 등록 후 STEAM_ACH_MAP 참조.)
+     silence      → ACH_SILENCE (히든 — COMMS-KIT §3, 달성률만 노출)
+   (총 18종: 일반 17 + 히든 1. Steamworks 콘솔에 위 API Name으로 등록 후 STEAM_ACH_MAP 참조.
+    silence는 '히든 업적' 플래그로 등록.)
    ============================================================ */
 
 // ACHS.id → Steam API Name. electron/Steamworks 구현이 이 표로 unlock을 중계한다.
@@ -51,6 +52,10 @@ export const STEAM_ACH_MAP = {
   colAll: 'ACH_MUSEUM_KEEPER',
   cat: 'ACH_CAT_SERVANT',
   ending: 'ACH_BEYOND_THE_RUINS',
+  // 침묵 암호 업적 — COMMS-KIT §3: Steam엔 '히든 업적'(달성률만 노출)으로 등록해 커뮤니티 고고학을 유도.
+  //   in-game은 무기록(quiet: 토스트·저널 연출 0)이지만 Steam 중계는 한다(quiet=연출만 스킵, unlock은 호출).
+  //   Steamworks 콘솔에서 이 업적은 '히든' 플래그로 등록할 것 (이름·설명 비공개, 아이콘 실루엣).
+  silence: 'ACH_SILENCE',
 };
 
 // Steamworks 네이티브 브릿지 후보(등록 후 preload가 노출). 지금은 없음 → 항상 null.
@@ -89,7 +94,8 @@ export const Platform = {
     // 클라우드 세이브: 현재 localStorage 위임(웹/PC 공통). Steam Cloud는 파일 동기화라
     // 브릿지가 붙어도 localStorage가 truth로 유지되고 브릿지는 미러링만 한다(등록 시 구현).
     save(k, v) {
-      try { localStorage.setItem(k, v); } catch (e) { /* file:// 등 저장 불가 무시 */ }
+      // 실패(quota 초과·file:// 등)를 조용히 삼키지 않고 false 반환 — 호출부가 유저 고지 여부를 결정한다.
+      try { localStorage.setItem(k, v); return true; } catch (e) { return false; }
     },
     load(k) {
       try { return localStorage.getItem(k); } catch (e) { return null; }

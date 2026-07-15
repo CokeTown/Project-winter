@@ -41,14 +41,14 @@ export function makeModals(ctx) {
         : card('hard', 'mode.hard', 'mode.hard.tag', 'mode.hard.desc')
         + card('hardcore', 'mode.hardcore', 'mode.hardcore.tag', 'mode.hardcore.desc')
         + card('zen', 'mode.zen', 'mode.zen.tag', 'mode.zen.desc', { locked: zenLocked, lockN: BAL.modes.zenWinters })
-        + card('wallpaper', 'mode.wallpaper', 'mode.wallpaper.tag', 'mode.wallpaper.desc', { locked: wpLocked, lockN: BAL.modes.wallpaperWinters }))
+        + card('wallpaper', 'mode.wallpaper', 'mode.wallpaper.tag', 'mode.wallpaper.desc', { locked: wpLocked }))
       + `</div><button class="pixel-btn mode-back">${t('mode.back')}</button>`;
     openModal(t('mode.pick.title'), body);
     $('modal-body').querySelector('.mode-back').addEventListener('click', () => openSlotModal('new'));
     $('modal-body').querySelectorAll('.mode-card').forEach(c => c.addEventListener('click', () => {
       if (c.dataset.locked === '1') {
         const m0 = c.dataset.mode;
-        toast(t('mode.' + m0 + '.lockToast', { n: m0 === 'zen' ? BAL.modes.zenWinters : BAL.modes.wallpaperWinters }));
+        toast(t('mode.' + m0 + '.lockToast', m0 === 'zen' ? { n: BAL.modes.zenWinters } : {}));
         return;
       }
       const m = c.dataset.mode;

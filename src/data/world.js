@@ -12,6 +12,16 @@
    ============================================================ */
 import { DEFS } from './furniture.js';
 
+// ---- 날씨 정의 (#73 Tier4: game.js에서 원본 그대로 이동 — 순수 데이터) ----
+//   count/color/size/fall/sway = 파티클 렌더 파라미터(값만 — Points 생성은 game.js 잔류).
+export const WEATHERS = {
+  clear: { name: '맑음', nameEn: 'Clear', icon: '🌤️', penalty: 0 },
+  snow:  { name: '눈',   nameEn: 'Snow', icon: '🌨️', penalty: 0.15, count: 850, color: 0xdde8f0, size: 3, fall: 1.6, sway: 0.7 },
+  rain:  { name: '비',   nameEn: 'Rain', icon: '🌧️', penalty: 0.10, count: 1100, color: 0x8fa8c8, size: 2, fall: 10, sway: 0.12 },
+  ash:   { name: '재',   nameEn: 'Ash', icon: '🌫️', penalty: 0.05, count: 380, color: 0x9a938a, size: 2.5, fall: 0.45, sway: 1.3 },
+  storm: { name: '폭우', nameEn: 'Downpour', icon: '⛈️', penalty: 0.2, count: 2200, color: 0x7e97b8, size: 2, fall: 14, sway: 0.2 },
+};
+
 export const DISTRICTS = {
   outskirts: {
     name: '잿빛 외곽', nameEn: 'Ashen Outskirts', emoji: '🏜️', shelters: ['container', 'bus'],
@@ -74,6 +84,15 @@ export const DISTRICTS = {
     regionBonus: {},
     bonusLabel: '', bonusLabelEn: '',
   },
+  // 2.0 동부 「대도시」 — 세관 너머 신영토(GD-2.0 §6.0.5). 관문 셸터만 우선 편입(기초 모델링 단계).
+  //   districtOf/moveCostFor 정합용 — 파밍 지역·접근성 보너스는 동부 지역 8종 설계와 함께 붙는다.
+  eastcity: {
+    name: '동부 관문', nameEn: 'Eastern Gate', emoji: '🛃', shelters: ['customs', 'bridgehouse', 'terminal', 'penthouse'],
+    desc: '국경 검문소 너머, 동쪽 대도시의 문턱. 3년 만에 다시 열린 길이다.',
+    descEn: 'Past the border checkpoint, the threshold of the eastern metropolis. The road has been shut for three years.',
+    regionBonus: {},
+    bonusLabel: '', bonusLabelEn: '',
+  },
 };
 
 export const REGIONS = {
@@ -110,6 +129,16 @@ export const REGIONS = {
     desc: '뭐든 나올 수 있다 · 희귀 가구', descEn: 'Anything might turn up · rare furniture', risk: '매우 높음 — 응급키트 권장', riskEn: 'Very high — first-aid kit advised',
     lootRes: [['parts', 2, 2], ['cloth', 2, 2], ['painkiller', 1, 1, 0.15], ['antiseptic', 1, 1, 0.15]],
     injuries: ['deep', 'sprain', 'infection'],
+  },
+  // #167 지역 2겹화 파일럿: 슬럼의 속 — 겉(슬럼 숙련 ★1)을 아는 사람에게만 열리는 안쪽 골목.
+  //   신규 UI 개념 0: 지도 핀·탐험·숙련·컨디션 문법 전부 재사용. 기본율은 표층보다 낮고(제 숙련을
+  //   따로 쌓는다), 전리품 플로어는 더 높다 — 아무도 못 턴 방들. 무너짐(#165)이 잦다(riskDeepMul).
+  slumdeep: {
+    name: '뒷골목 심부', nameEn: 'Back-Alley Depths', emoji: '🕳️', rate: 0.22, time: 85,
+    pool: Object.keys(DEFS), furnChance: 0.05,
+    desc: '슬럼의 안쪽 · 아무도 못 턴 방들', descEn: 'The inside of the slums · rooms no one has looted', risk: '극도로 높음 — 무너짐이 잦다', riskEn: 'Extreme — collapses are frequent',
+    lootRes: [['parts', 2, 3], ['cloth', 2, 3], ['material', 1, 2], ['painkiller', 1, 1, 0.25], ['antiseptic', 1, 1, 0.25], ['canned', 1, 1, 0.2]],
+    injuries: ['deep', 'infection'],
   },
   // ── 1.1 항구 지역 2종 (harbor 해금 = 항구 셸터 해금 이후. 지도 마커 항구 구역) ──
   harborYard: {
@@ -158,5 +187,15 @@ export const REGIONS = {
     lootRes: [['parts', 3, 5], ['material', 1, 2], ['battery', 1, 2], ['fuel', 1, 1]],
     injuries: ['deep', 'infection', 'sprain'],
     forbidden: true, // 방호복 게이트·내구 소모 대상
+  },
+  // ── 2.0 「응답」 도심 중심지 (GD-2.0 §2~3) — 낙진 시계 게이트: 겨울 셋을 넘긴 뒤(state.winters>=BAL.forbidden.falloutWinters)에만 노출 ──
+  //   봉쇄선 너머 수도의 심장. 최상위 지역이되 "부품 더"가 아니라 질적 차별(책 뭉치·의약 정점·사치 가구 — REWARD-LOOP 교훈).
+  //   forbidden 아님(낙진이 걷힌 뒤에만 열리므로 방호복 게이트 불요) — 대신 최장 소요·최고 부상 위험.
+  citycore: {
+    name: '도심 중심지', nameEn: 'City Core', emoji: '🏛️', rate: 0.3, time: 80,
+    pool: ['bookshelf', 'sofa', 'teatable', 'clock', 'radio', 'lantern', 'plant', 'fridge'], furnChance: 0.04,
+    desc: '수도의 심장 · 책 뭉치·의약 정점·희귀부품 (낙진이 걷힌 뒤에만)', descEn: 'The capital’s heart · book caches, peak meds, rare parts (only after the fallout clears)', risk: '매우 높음 — 응급키트 권장', riskEn: 'Very high — first-aid kit advised',
+    lootRes: [['parts', 3, 5], ['book', 1, 2, 0.6], ['painkiller', 1, 1, 0.4], ['antiseptic', 1, 1, 0.4], ['battery', 1, 2], ['canned', 1, 2, 0.4]],
+    injuries: ['deep', 'infection', 'sprain'],
   },
 };

@@ -5,9 +5,9 @@ const { boot, evalJs, call, check, near, report, app } = require('./harness.cjs'
 
 const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
-const SHELTER_HASH = 1052806561; // 2026-07-08 재핀: 해금 강화 — unlockAt 사다리(옥탑25~로지290) + moveCost x5~10 (디렉터 오더)
+const SHELTER_HASH = -2124743439; // 2026-07-11 재핀: 예인선→요트 리네임(name/nameEn/emoji/desc) — 주거용 요트 리워크 (직전: 펜트하우스 확대)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
-const MIG_HASH = -139587060; // 2026-07-09 재핀: 데모 도면 포팅(#149) — blueprints 편입 (직전: 도료 포팅)
+const MIG_HASH = -71013442; // 2026-07-09 재핀: 시그니처 도면 blueprints 편입 (직전: 내구성 가방)
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
 const MARKET_HASH = -1012304627;
 // 「지식」 테크트리 시그니처 해시 (branch/tier/cost/effect). 노드/비용/효과 변경 시 KNOWLEDGE_HASH(actual) 재핀.
@@ -226,17 +226,22 @@ const KNOWLEDGE_HASH = -451536973;
       check('가방/챙기면 실패해도 빈손 없음 (최소 ≥1)', bg.minWithBag >= 1, `minWithBag ${bg.minWithBag}`);
       check('가방/없으면 실패 시 빈손 발생(대조군)', bg.sawZeroNoBag === true, `noBag zero ${bg.sawZeroNoBag}`);
     }
-    // 가방 UI: prep 모달에 가방 토글 행이 렌더되나 (data-prep 셀렉터 분리 확인)
+    // 가방 UI (DDD-3 내구성 승격): 미보유=제작 행(data-bag) → 클릭 제작 → 보유=내구 정보 행
     const bagUi = await call(`
       S.simReset(); if (S.hideTitle) S.hideTitle(); if (S.setPaused) S.setPaused(false);
-      S.state.res.cloth = 5; S.state.energy = 100; S.state.exp = null; S.state.expToday = 0;
+      S.state.res.cloth = 5; S.state.res.parts = 3; S.state.bagDur = 0; S.state.energy = 100; S.state.exp = null; S.state.expToday = 0;
       S.startExpedition('residential');
       const h = document.getElementById('modal-body').innerHTML;
-      return JSON.stringify({ bagRow: h.includes('가방 챙기기') && h.includes('data-bag'), prepRows: (h.match(/data-prep=/g)||[]).length });
+      const craftRow = h.includes('가방을 꿰맨다') && h.includes('data-bag');
+      const el = document.querySelector('#modal-body [data-bag]');
+      if (el) el.click();
+      const h2 = document.getElementById('modal-body').innerHTML;
+      return JSON.stringify({ craftRow, ownRow: h2.includes('가방 · 내구'), dur: S.state.bagDur, prepRows: (h.match(/data-prep=/g)||[]).length });
     `).catch(e => JSON.stringify({ error: String(e) }));
     const bu = JSON.parse(bagUi);
     if (bu.error) check('가방 UI (예외 없이)', false, bu.error);
-    else check('가방 UI/prep 모달에 가방 토글 행 렌더', bu.bagRow === true && bu.prepRows > 0, `bagRow ${bu.bagRow} prepRows ${bu.prepRows}`);
+    else check('가방 UI/prep 모달 (제작 행 → 클릭 제작 → 내구 정보 행)', bu.craftRow === true && bu.ownRow === true && bu.dur === 6 && bu.prepRows > 0,
+      `craft ${bu.craftRow} own ${bu.ownRow} dur ${bu.dur} prepRows ${bu.prepRows}`);
 
     // ── 게이트 코스트 스케일(§F) — 방호복 수리비 모드별 (허브도 동일 헬퍼) ──
     const gate = await call(`
@@ -247,6 +252,124 @@ const KNOWLEDGE_HASH = -451536973;
     const gt = JSON.parse(gate);
     if (gt.error) check('게이트 스케일 (예외 없이)', false, gt.error);
     else check('게이트/방호복 수리비 난이도 단조 (무한≤노말<하드≤하드코어)', gt.zen<=gt.normal && gt.normal<gt.hard && gt.hard<=gt.hardcore, `zen ${gt.zen} normal ${gt.normal} hard ${gt.hard} hardcore ${gt.hardcore}`);
+
+    // ── 대한파 프론트 (GD-2.0 §9.4-③) — 발동/강도/규율 효과/종료/노말 분기 ──
+    //   sim 제외(!_simRunning 가드)는 별도 명제가 아니라 위 경제 밴드+헤르메틱 핀이 그대로 지킨다
+    //   (프론트가 sim에 새면 하드코어 사망 핀이 5%대로 붕괴 — 2026-07-08 20시드 실측으로 검거된 회귀).
+    const fr = await call(`
+      // 하드: 겨울 8일차(day 44) 발동 — 강도 3, until=day+2, 규율 선택 대기(null)
+      S.simReset(); S.state.mode = 'hard'; S.state.day = 44;
+      S.state.winterSnap = { day: 37, successStart: 0, acc: { coldSnaps: 0, defended: 0, fuel: 0 } };
+      S.processDay();
+      const hit = { front: !!(S.state.coldSnap && S.state.coldSnap.front), sev: S.state.coldSnap ? S.state.coldSnap.severity : 0,
+        until: S.state.coldSnap ? S.state.coldSnap.until : 0, discNull: !!(S.state.front && S.state.front.discipline === null),
+        accFront: !!S.state.winterSnap.acc.front };
+      // 규율 효과: 쾌적(배급 -3 / 비상 -4) + 취침(쪽잠 -15) — none 대비 차분
+      S.state.front.discipline = 'none';      const lmNone = S.comfortDetail().limitMod;
+      const rNone = S.restEnergyValue(22, false).energy;
+      S.state.front.discipline = 'ration';    const lmRation = S.comfortDetail().limitMod;
+      S.state.front.discipline = 'emergency'; const lmEmg = S.comfortDetail().limitMod;
+      S.state.front.discipline = 'sleepless'; const rSleepless = S.restEnergyValue(22, false).energy;
+      // 종료(until 지남): coldSnap·front 접힘 + memoir acc에 규율 기록
+      S.state.day = 47; S.processDay();
+      const ended = { snap: S.state.coldSnap, front: S.state.front,
+        accDisc: S.state.winterSnap ? S.state.winterSnap.acc.frontDiscipline : null };
+      // 노말: 강도 2 + 규율 자동 'none'(모달 대기 없음)
+      S.simReset(); S.state.day = 44;
+      S.state.winterSnap = { day: 37, successStart: 0, acc: { coldSnaps: 0, defended: 0, fuel: 0 } };
+      S.processDay();
+      const nrm = { sev: S.state.coldSnap ? S.state.coldSnap.severity : 0, disc: S.state.front ? S.state.front.discipline : null };
+      return JSON.stringify({ hit, lmNone, lmRation, lmEmg, rNone, rSleepless, ended, nrm });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const fd = JSON.parse(fr);
+    if (fd.error) check('대한파 프론트 (예외 없이)', false, fd.error);
+    else {
+      check('프론트/하드 발동 (겨울 8일차·강도 3·3일·규율 대기)',
+        fd.hit.front && fd.hit.sev === 3 && fd.hit.until === 46 && fd.hit.discNull && fd.hit.accFront,
+        `sev ${fd.hit.sev} until ${fd.hit.until} discNull ${fd.hit.discNull}`);
+      check('프론트/규율 쾌적 (배급 -3 · 비상 -4)', fd.lmRation === fd.lmNone - 3 && fd.lmEmg === fd.lmNone - 4,
+        `none ${fd.lmNone} ration ${fd.lmRation} emg ${fd.lmEmg}`);
+      check('프론트/규율 쪽잠 취침 -15', fd.rSleepless === Math.max(0, fd.rNone - 15), `none ${fd.rNone} sleepless ${fd.rSleepless}`);
+      check('프론트/종료 (접힘 + memoir 규율 기록)', fd.ended.snap === null && fd.ended.front === null && fd.ended.accDisc === 'sleepless',
+        `accDisc ${fd.ended.accDisc}`);
+      check('프론트/노말 강도 2 · 규율 자동 none', fd.nrm.sev === 2 && fd.nrm.disc === 'none', `sev ${fd.nrm.sev} disc ${fd.nrm.disc}`);
+    }
+
+    // ── 부상 서사화 (GD-2.0 §9.4-④) — 겨울 부상 집계 + 흉터 기록 + memoir 라인 3분기 ──
+    const sc = await call(`
+      S.simReset(); S.state.day = 40; // 겨울 4일차 — winterSnap 활성 구간
+      S.state.winterSnap = { day: 37, successStart: 0, acc: { coldSnaps: 0, defended: 0, fuel: 0, injuries: 0, lastInjury: null } };
+      S.state.scars = []; S.state.pendingWinterMemoir = [];
+      const it = Object.keys(S.INJURIES)[0];
+      S.applyInjury(it, false);
+      const a = { n: S.state.winterSnap.acc.injuries, last: S.state.winterSnap.acc.lastInjury === it, scars: S.state.scars.length };
+      // memoir 1회 부상 → hurt.once (부상명 포함)
+      S.state.day = 49; S.buildWinterMemoir(1);
+      const p1 = S.state.pendingWinterMemoir[S.state.pendingWinterMemoir.length - 1];
+      const hurtOnce = !!p1 && p1.bodyArgs.closing.includes('흉터가 하나');
+      // 무부상 + 흉터 보유 → unhurt (안도의 한 줄)
+      S.state.winterSnap = { day: 37, successStart: 0, acc: { coldSnaps: 0, defended: 0, fuel: 0, injuries: 0, lastInjury: null } };
+      S.buildWinterMemoir(2);
+      const p2 = S.state.pendingWinterMemoir[S.state.pendingWinterMemoir.length - 1];
+      const unhurt = !!p2 && p2.bodyArgs.closing.includes('몸 성히');
+      // 무부상 + 무흉터(첫 겨울류) → 부상 라인 없음
+      S.state.scars = [];
+      S.state.winterSnap = { day: 37, successStart: 0, acc: { coldSnaps: 0, defended: 0, fuel: 0, injuries: 0, lastInjury: null } };
+      S.buildWinterMemoir(3);
+      const p3 = S.state.pendingWinterMemoir[S.state.pendingWinterMemoir.length - 1];
+      const noLine = !!p3 && !p3.bodyArgs.closing.includes('몸 성히') && !p3.bodyArgs.closing.includes('다쳤다');
+      return JSON.stringify({ ...a, hurtOnce, unhurt, noLine });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const scd = JSON.parse(sc);
+    if (scd.error) check('부상 서사화 (예외 없이)', false, scd.error);
+    else {
+      check('흉터/겨울 부상 집계 (acc.injuries·lastInjury·scars)', scd.n === 1 && scd.last && scd.scars === 1,
+        `n ${scd.n} last ${scd.last} scars ${scd.scars}`);
+      check('흉터/memoir 라인 3분기 (1회=부상명·무부상+흉터=안도·무흉터=무언)', scd.hurtOnce && scd.unhurt && scd.noLine,
+        `once ${scd.hurtOnce} unhurt ${scd.unhurt} noLine ${scd.noLine}`);
+    }
+
+    // ── 적대 존재 다이얼 + 총·중상 (GD-2.0 §9.2·9.3) — 모드별 결과 + 총 정비 + 악화 사슬 ──
+    //   조우는 확률(0.35)이라 반복 루프로 발생을 유도하되 상한 가드. citycore는 winters·successes 게이트 해제 후 진입.
+    const ho = await call(`
+      const H = S.BAL.hostile;
+      const unlock = (mode) => { S.simReset(); S.state.mode = mode; S.state.winters = 3; S.state.successes = 99; S.state.res.canned = 50; };
+      const trip = () => { S.state.expToday = 0; S.state.energy = 100; S.state.injury = null;
+        S.state.exp = { region: 'citycore', rate: 1, prep: [], startGameMin: S.state.gameMin }; S.resolveExpedition(); };
+      // 1) 노말 30트립: 총 미드랍(하드코어 전용) + 중상 없음 (조우=소리만, 손실 0 계약)
+      unlock('normal');
+      let normBad = false;
+      for (let i = 0; i < 30; i++) { trip(); if (S.state.gun || (S.state.injury && S.state.injury.type === 'critical')) normBad = true; }
+      // 2) 하드코어 + 총: 조우 발생 시 탄환만 줄고 중상 없음 (60트립 내 조우 기대 ~21회)
+      unlock('hardcore'); S.state.gun = { dur: H.gunDur };
+      let gunUsed = false, gunCrit = false;
+      for (let i = 0; i < 60 && !gunUsed; i++) { trip(); if (S.state.gun.dur < H.gunDur) gunUsed = true; if (S.state.injury && S.state.injury.type === 'critical') gunCrit = true; }
+      // 3) 하드코어 무총: 조우 시 중상 확정 + 흉터 기록
+      unlock('hardcore'); S.state.gun = null; S.state.scars = [];
+      let crit = false;
+      for (let i = 0; i < 60 && !crit; i++) { trip(); if (S.state.injury && S.state.injury.type === 'critical') crit = true; }
+      const scarOk = S.state.scars.some(s2 => s2.t === 'critical');
+      // 4) 총 정비: 빈 총 + 재료 → 만충
+      S.state.gun = { dur: 0 }; S.state.res.parts = 20; S.state.res.material = 20;
+      const rep = S.repairGun(); const repDur = S.state.gun.dur;
+      // 5) 악화 사슬: 하드코어 deep→critical / 노말 deep→infection (같은 롤, 목적지만 분기)
+      const worsenTo = (mode) => { unlock(mode);
+        // day=5 고정: processDay는 실게임/sim에서 day>=2로만 불린다 — day=1 직접 호출은 seasonOf(0) 엣지를 밟는다(테스트 사용법 준수)
+        for (let i = 0; i < 80; i++) { S.state.day = 5; S.state.injury = { type: 'deep', untilMin: S.state.gameMin + 9999 }; S.processDay();
+          if (S.state.injury && S.state.injury.type !== 'deep') return S.state.injury.type; } return '(no-worsen)'; };
+      const hcNext = worsenTo('hardcore'); const nmNext = worsenTo('normal');
+      return JSON.stringify({ normBad, gunUsed, gunCrit, crit, scarOk, rep, repDur, hcNext, nmNext });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const hd2 = JSON.parse(ho);
+    if (hd2.error) check('적대 다이얼 (예외 없이)', false, hd2.error);
+    else {
+      check('적대/노말 계약 (총 미드랍·중상 없음 — 소리만)', hd2.normBad === false, `normBad ${hd2.normBad}`);
+      check('적대/하드코어+총 (탄환 소모·중상 없음)', hd2.gunUsed && !hd2.gunCrit, `used ${hd2.gunUsed} crit ${hd2.gunCrit}`);
+      check('적대/하드코어 무총 (중상 + 흉터 기록)', hd2.crit && hd2.scarOk, `crit ${hd2.crit} scar ${hd2.scarOk}`);
+      check('총/정비 (빈 총 → 만충)', hd2.rep === true && hd2.repDur === 6, `rep ${hd2.rep} dur ${hd2.repDur}`);
+      check('부상/악화 사슬 (하드코어 deep→critical · 노말 deep→infection)', hd2.hcNext === 'critical' && hd2.nmNext === 'infection',
+        `hc ${hd2.hcNext} nm ${hd2.nmNext}`);
+    }
 
     // ── 2) 구세이브 마이그레이션 — #76 신규 필드 없이 저장된 세이브가 안전하게 로드되나 ──
     //   (내가 book/bookProgress/demoEnded를 마이그레이션 테스트 없이 넣은 것 → 이 그물로 방어)
@@ -274,7 +397,11 @@ const KNOWLEDGE_HASH = -451536973;
         cablecarDone: st.cablecarDone, observatoryDone: st.observatoryDone,
         avalancheForecast: st.avalancheForecast, avalancheBlockUntil: st.avalancheBlockUntil,
         sketches: typeof st.sketches, nightSkyToday: st.nightSkyToday, deco: typeof st.deco,
-        paints: typeof st.paints, dyeOffer: st.dyeOffer, blueprints: typeof st.blueprints, // 도료 + 염료 상인 + 도면 (REWARD-LOOP ② — 데모 포팅 #149)
+        gun: st.gun, scarsIsArr: Array.isArray(st.scars), frontWinterKey: st.frontWinterKey, front: st.front, // 2.0 §9.3·§9.4 신규 필드
+        endingType: st.endingType, endingChoicePending: st.endingChoicePending, earlyRescueDay: st.earlyRescueDay, // 2.0 §9.5
+        subwayHidden: st.subwayHidden, hiddenGateDone: st.hiddenGateDone, hiddenReachPending: st.hiddenReachPending, // 2.0 §9.6
+        hiddenReached: st.hiddenReached, siloFired: st.siloFired,
+        paints: typeof st.paints, dyeOffer: st.dyeOffer, bagDur: st.bagDur, blueprints: typeof st.blueprints, // 도료 + 염료 상인 + 가방 + 도면 (REWARD-LOOP ②③)
         hazmat: st.hazmat, hazmatDone: st.hazmatDone, radioBaseDone: st.radioBaseDone,
         survivorLights: st.survivorLights, doctorRegularSeen: st.doctorRegularSeen,
         doctorRadioRegularPending: st.doctorRadioRegularPending, questIdx: st.questIdx,
@@ -314,6 +441,95 @@ const KNOWLEDGE_HASH = -451536973;
     const p = JSON.parse(i18n);
     check('i18n 대표 키 해석됨', p.missing.length === 0, p.missing.length ? '누락 ' + p.missing.join(',') : '');
 
+    // ── 엔딩 3분기 + 이관의 진실 (GD-2.0 §5·§9.5) — 스위트 끝 배치(엔딩 시퀀스 DOM 오염 회피) ──
+    const e3 = await call(`
+      // 1) 9겨울 트리거 (#170 REV3): winters 8→9 processDay → passWinter가 재건(rebuildPending) 예약 →
+      //    같은 processDay 말미의 tryDoctorRadio가 그날 밤 재건의 봄(rebuilding) 발화(플래그 소진).
+      //    노크(ending_choice)는 재건 비네트의 종결부가 세운다.
+      S.simReset(); S.state.winters = 8; S.state.day = 49; S.state.pendingEvent = null;
+      S.state.cat = 1; S.state.lastEventDay = 49; // 확률 인카운터 봉인(고양이 특수·일반 롤) — 당일 밤 발화 핀의 결정론 확보
+      S.processDay();
+      const nine = { w: S.state.winters, pend: S.state.rebuildPending };
+      const fired = S.state.pendingEvent;
+      // 2) 선택 기록: escape run → endingType (시퀀스는 0.4s 뒤 — 화면은 아래서 정리)
+      const r0 = S.EVENTS.ending_choice.choices[0].run();
+      const et = S.state.endingType;
+      // 3) 성향 결정론 (랜덤 없음): 정든 집 신호 → rest / 진실 조각 14+ → newworld
+      S.state.endingType = null; S.state.memos = {}; S.state.survivorLights = 0; S.state.doctorRegularSeen = false;
+      S.state.cat = 1; S.state.stayDays = 40;
+      const leanRest = S.endingLeaning();
+      ['rsc1','rsc2','rsc3','rsc4','rsc5','rsc6','rsc7','rsc8','rsc9','rsc10','rsc11','rsc12','nw1','nw2'].forEach(id => S.state.memos[id] = 1);
+      const leanNw = S.endingLeaning();
+      // 4) 조기 탈출: 정기 교신 예약 시 +7일 확정 → 도래일 발화
+      S.simReset(); S.state.doctorRadioRegularPending = true; S.state.doctorRegularSeen = false; S.state.pendingEvent = null; S.state.day = 100;
+      S.tryDoctorRadio();
+      const early1 = { pe: S.state.pendingEvent, d: S.state.earlyRescueDay };
+      S.state.pendingEvent = null; S.state.day = 107;
+      S.tryDoctorRadio();
+      const early2 = S.state.pendingEvent;
+      // 5) 이관의 진실 순차 드랍: citycore 반복 → nw1 → nw2 순서 (유서/일반 메모는 무시)
+      S.simReset(); S.state.memos = {};
+      const seq = [];
+      for (let i = 0; i < 800 && seq.length < 2; i++) { const d = S.tryDropMemoOnExpedition('citycore'); if (d && d.id && d.id.slice(0, 2) === 'nw') seq.push(d.id); }
+      // 6) 9겨울 밤 경합(§9.5 검수·#170 REV3): 라디오 보유 시 첫 무전이 먼저 — 복선이 재건보다 앞선다.
+      //    무전 발화 밤엔 예약이 소진되지 않고, 이튿날 밤 구판 예약(endingChoicePending)이 재건의 봄으로 승격 발화.
+      S.simReset(); S.addItem('radio', 0, 1, 1, 0);
+      S.state.doctorRadioPending = true; S.state.endingChoicePending = true; S.state.endingType = null; S.state.pendingEvent = null;
+      S.tryDoctorRadio();
+      const clash1 = { pe: S.state.pendingEvent, pend: S.state.endingChoicePending };
+      S.state.pendingEvent = null;
+      S.tryDoctorRadio();
+      const clash2 = S.state.pendingEvent;
+      return JSON.stringify({ nine, fired, et, leanRest, leanNw, early1, early2, seq, clash1, clash2 });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    // 정리: escape run()의 0.4s 지연 시퀀스가 열어둔 엔딩 화면 닫기 (call 본문은 non-async라 밖에서)
+    await evalJs(`new Promise(r => setTimeout(() => { const s = document.getElementById('ending-screen'); if (s) s.style.display = 'none'; r(1); }, 700))`);
+    const ed = JSON.parse(e3);
+    if (ed.error) check('엔딩 3분기 (예외 없이)', false, ed.error);
+    else {
+      check('엔딩/9겨울 트리거 (passWinter 재건 예약 → 당일 밤 rebuilding 발화·플래그 소진)', ed.nine.w === 9 && ed.nine.pend === false && ed.fired === 'rebuilding',
+        `w ${ed.nine.w} pend ${ed.nine.pend} fired ${ed.fired}`);
+      check('엔딩/선택 기록 (escape → endingType)', ed.et === 'escape', `et ${ed.et}`);
+      check('엔딩/성향 결정론 (정든 집=rest · 진실 14+=newworld)', ed.leanRest === 'rest' && ed.leanNw === 'newworld',
+        `rest ${ed.leanRest} nw ${ed.leanNw}`);
+      check('엔딩/조기 탈출 (정기 교신 +7일 확정 예약·도래 발화)', ed.early1.pe === 'doctor_radio_regular' && ed.early1.d === 107 && ed.early2 === 'early_rescue',
+        `pe ${ed.early1.pe} d ${ed.early1.d} then ${ed.early2}`);
+      check('응답/이관의 진실 순차 드랍 (nw1 → nw2)', ed.seq[0] === 'nw1' && ed.seq[1] === 'nw2', `seq ${ed.seq.join(',')}`);
+      check('엔딩/9겨울 밤 경합 (무전 먼저 → 이튿날 재건의 봄)', ed.clash1.pe === 'doctor_radio' && ed.clash1.pend === true && ed.clash2 === 'rebuilding',
+        `pe ${ed.clash1.pe} pend ${ed.clash1.pend} then ${ed.clash2}`);
+    }
+
+    // ── 히든 루트 「침묵」 (GD-2.0 §5.1·§9.6) — 데이터·게이트 층위(터치 레이캐스트는 접지 프로브 몫) ──
+    const hd = await call(`
+      // 1) 노출 게이트: 발견 전엔 개척 카드가 존재하지 않는다 → 발견해도 지하철 거주에서만
+      S.simReset();
+      const g0 = S.projectAvailable('hiddenGate');
+      S.state.subwayHidden = true;
+      const g1 = S.state.current === 'subway' ? '(스킵: 기본 셸터가 지하철)' : S.projectAvailable('hiddenGate');
+      S.state.current = 'subway';
+      const g2 = S.projectAvailable('hiddenGate');
+      // 2) 완공 효과: 사다리 플래그 + 대면 예약 → 그 밤 hidden_reach 발화 → 유보 기록
+      S.applyProjectEffect('subway.hiddenGate');
+      const eff = { done: S.state.hiddenGateDone, pend: S.state.hiddenReachPending };
+      S.state.pendingEvent = null;
+      S.tryDoctorRadio();
+      const fired = S.state.pendingEvent;
+      const r0 = S.EVENTS.hidden_reach.choices[0].run();
+      const reached = S.state.hiddenReached;
+      // 3) 완전 무기록: 유보·침묵 어느 쪽도 endingType을 건드리지 않는다 (siloFired는 내부 전용)
+      const et = S.state.endingType;
+      return JSON.stringify({ g0, g1, g2, eff, fired, reached, et, r0ok: !!r0 });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const hj = JSON.parse(hd);
+    if (hj.error) check('침묵 (예외 없이)', false, hj.error);
+    else {
+      check('침묵/개척 노출 게이트 (발견 전 없음 → 지하철+발견=노출)', hj.g0 === false && hj.g1 === false && hj.g2 === true,
+        `g0 ${hj.g0} g1 ${hj.g1} g2 ${hj.g2}`);
+      check('침묵/완공→대면 (사다리+예약 → 그 밤 발화 → 유보 기록)', hj.eff.done === true && hj.eff.pend === true && hj.fired === 'hidden_reach' && hj.reached === true && hj.r0ok,
+        `done ${hj.eff.done} pend ${hj.eff.pend} fired ${hj.fired} reached ${hj.reached}`);
+      check('침묵/완전 무기록 (endingType 불변)', hj.et === null, `et ${hj.et}`);
+    }
+
     // ── 도료 (REWARD-LOOP ② — 분류 전수·계열 비공집합·시그니처 커버·롤 유효) ──
     const pt = await call(`
       S.simReset();
@@ -334,6 +550,30 @@ const KNOWLEDGE_HASH = -451536973;
       check('도료/시그니처 커버 (전 계열 최소 1지역) + 롤 유효', pj.cover.length === 0 && pj.rollOk && pj.paintsType === 'object',
         `cover ${pj.cover.join(',') || '-'}`);
     }
+    // 네온 안료 + 그래피티 희귀도 (디렉터 2026-07-09): 네온=일반 풀 분리·시그니처 게이트, 그래피티=가중 하향
+    const nb = await call(`
+      const inCommon = 'neonPigment' in S.PAINT_FAMILIES, inAll = 'neonPigment' in S.PAINT_ALL;
+      let rollLeak = false; for (let i = 0; i < 400; i++) if (S.rollPaintFamily('citycore') === 'neonPigment') { rollLeak = true; break; }
+      const neonGate = S.paintFamilyRequired('neonvip', S.DEFS.neonvip.colors[1]) === 'neonPigment'
+        && S.paintFamilyRequired('neonair', S.DEFS.neonair.colors[1]) === 'neonPigment';
+      const normalGate = S.paintFamilyRequired('chair', S.DEFS.chair.colors[1]) === S.paintFamilyOf(S.DEFS.chair.colors[1]);
+      S.simReset(); if (S.hideTitle) S.hideTitle();
+      const it = S.addItem('neonvip', 0, 0, 0, 0); S.state.paints = {};
+      S.showSelPanel(it);
+      const lockedNoPigment = document.querySelectorAll('#sel-swatches .swatch')[1].classList.contains('locked');
+      S.state.paints.neonPigment = 1; S.showSelPanel(it);
+      document.querySelectorAll('#sel-swatches .swatch')[1].click();
+      const painted = it.colorIdx === 1 && (S.state.paints.neonPigment || 0) === 0;
+      const gw = (S.BAL.blueprint.weights || {}).graffiti;
+      return JSON.stringify({ inCommon, inAll, rollLeak, neonGate, normalGate, lockedNoPigment, painted, gw });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const nbj = JSON.parse(nb);
+    if (nbj.error) check('네온/그래피티 (예외 없이)', false, nbj.error);
+    else {
+      check('네온 안료 분리 (일반 풀 밖·PAINT_ALL 안·롤 무유출)', nbj.inCommon === false && nbj.inAll === true && nbj.rollLeak === false, JSON.stringify(nbj));
+      check('네온 게이트 (시그니처=안료·일반=hex·무안료 잠금→소모)', nbj.neonGate && nbj.normalGate && nbj.lockedNoPigment && nbj.painted, JSON.stringify(nbj));
+      check('그래피티 희귀도 (가중 < 1)', typeof nbj.gw === 'number' && nbj.gw < 1, `gw ${nbj.gw}`);
+    }
     // 염료 상인: 오퍼 본문 렌더 + 구매(통조림 차감·도료 +1) + 부족 거부 (모드별 값: 노말 2)
     const dm = await call(`
       S.simReset(); S.state.mode = 'normal'; S.state.paints = {}; S.state.res.canned = 3;
@@ -348,6 +588,32 @@ const KNOWLEDGE_HASH = -451536973;
     if (dj.error) check('염료 상인 (예외 없이)', false, dj.error);
     else check('염료 상인 (오퍼 렌더·구매 차감·부족 거부)', dj.hasNames && dj.bought && dj.after.canned === 1 && dj.after.paint === 1 && dj.denied && dj.sage === 0,
       JSON.stringify(dj));
+    // 내구성 가방 (DDD-3): 실패 탐험 + 보유 → 최소 회수 + 1 마모 / 미보유 → 미발동
+    const bagRes = await call(`
+      S.simReset(); if (S.hideTitle) S.hideTitle();
+      // RNG 고정(0.99): rate 0 + pity(+4%p)여도 부분성공 경계(x0.5)에 안 걸리게 — 완전 실패 확정(결정론).
+      //   도료/도면/책 드랍도 0.99 미만 확률이라 전부 미발화 → 자원 델타가 가방 floor만 남는다.
+      const __or = Math.random; Math.random = () => 0.99;
+      S.state.bagDur = 2;
+      S.state.exp = { region: 'residential', end: Date.now() - 1000, dur: 1, rate: 0, prep: [], startGameMin: S.state.gameMin, durMin: 120, bag: true };
+      const before = Object.entries(S.state.res).reduce((a, [k, v]) => a + v, 0);
+      S.resolveExpedition();
+      const gained = Object.entries(S.state.res).reduce((a, [k, v]) => a + v, 0) - before;
+      const durAfter = S.state.bagDur;
+      document.getElementById('modal-back').style.display = 'none';
+      S.state.bagDur = 0;
+      S.state.exp = { region: 'residential', end: Date.now() - 1000, dur: 1, rate: 0, prep: [], startGameMin: S.state.gameMin, durMin: 120, bag: false };
+      const b2 = Object.entries(S.state.res).reduce((a, [k, v]) => a + v, 0);
+      S.resolveExpedition();
+      const gained2 = Object.entries(S.state.res).reduce((a, [k, v]) => a + v, 0) - b2;
+      Math.random = __or;
+      document.getElementById('modal-back').style.display = 'none';
+      return JSON.stringify({ gained, durAfter, gained2 });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const bagJ = JSON.parse(bagRes);
+    if (bagJ.error) check('가방 (예외 없이)', false, bagJ.error);
+    else check('가방/내구 플로어 (실패+보유=회수·1마모 / 미보유=0)', bagJ.gained >= 1 && bagJ.durAfter === 1 && bagJ.gained2 <= 0,
+      JSON.stringify(bagJ));
 
     // 시그니처 도면 (DDD-4): 8종 정의 무결(지역별 2~3·색 4종) + 제작 목록 도면 게이트
     const bp = await call(`
@@ -373,6 +639,32 @@ const KNOWLEDGE_HASH = -451536973;
       check('도면/8종 정의 무결 (지역별 2~3·색 4종)', bpj.n === 8 && bpj.defsOk && bpj.perRegion, JSON.stringify(bpj));
       check('도면/제작 게이트 (미보유=비노출 → 보유만 노출)', bpj.hidden === true && bpj.shown === true, `hidden ${bpj.hidden} shown ${bpj.shown}`);
     }
+    // #190 커먼 도면 (「생존의 흔적」 밀도 프롭 5종): 정의 무결 + 레시피 bp 링크 + 게이트 + 시그니처 풀 비오염
+    const cbp = await call(`
+      S.simReset();
+      const ids = S.BAL.blueprint.commonItems || [];
+      const defsOk = ids.length === 5 && ids.every(id => S.DEFS[id] && S.DEFS[id].colors.length === 4);
+      const sigIds = Object.values(S.BAL.blueprint.regionItems).flat();
+      const noOverlap = ids.every(id => !sigIds.includes(id));
+      const crafts = S.CRAFTS || [];
+      const bpLinked = ids.every(id => crafts.some(c => c.out && c.out.furn === id && c.bp === id));
+      S.state.blueprints = {};
+      S.openCraftModal();
+      const h0 = document.getElementById('modal-body').innerHTML;
+      const hidden = ids.every(id => !h0.includes(S.DEFS[id].name));
+      S.state.blueprints = { fuelpile: 1 };
+      S.openCraftModal();
+      const h1 = document.getElementById('modal-body').innerHTML;
+      const shown = h1.includes(S.DEFS.fuelpile.name) && !h1.includes(S.DEFS.noticeboard.name);
+      document.getElementById('modal-back').style.display = 'none';
+      return JSON.stringify({ n: ids.length, defsOk, noOverlap, bpLinked, hidden, shown, chance: S.BAL.blueprint.commonDropChance });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const cbpj = JSON.parse(cbp);
+    if (cbpj.error) check('커먼 도면 (예외 없이)', false, cbpj.error);
+    else {
+      check('커먼 도면/5종 정의+bp 링크+비중복 (#190)', cbpj.defsOk && cbpj.noOverlap && cbpj.bpLinked && cbpj.chance > 0 && cbpj.chance < 0.2, JSON.stringify(cbpj));
+      check('커먼 도면/제작 게이트 (미보유=비노출 → 보유만 노출)', cbpj.hidden === true && cbpj.shown === true, `hidden ${cbpj.hidden} shown ${cbpj.shown}`);
+    }
     // 복귀 서프라이즈 (DDD-5): 게이트(240분+·35%)·고양이 분기·손실 없음 — RNG 고정으로 결정론
     const og = await call(`
       S.simReset();
@@ -393,6 +685,123 @@ const KNOWLEDGE_HASH = -451536973;
     if (oj.error) check('복귀 서프라이즈 (예외 없이)', false, oj.error);
     else check('복귀 서프라이즈 (게이트·고양이/새 분기·소액 지급·노트)', oj.none === false && oj.short === false && oj.cat === true && oj.dCloth === 1 && oj.bird === true && oj.dFood === 1 && oj.notes === 2,
       JSON.stringify(oj));
+
+    // #157 가구 티어 — FURNITURE-TIERS.md 확정 17종 전부 tiered + T1/T2/T3 복셀 실분기 + 쾌적 티어 스케일
+    const tt = await call(`
+      const LIST = ['bed','stove','table','chair','sofa','dresser','bookshelf','rug','lamp','candle','lantern','curtain','cushion','teatable','fridge','purifier','radio'];
+      const tieredAll = LIST.every(id => S.DEFS[id] && S.DEFS[id].tiered === true);
+      const tieredCount = Object.values(S.DEFS).filter(d => d.tiered).length;
+      // 복셀 분기: 티어별 build 결과의 (자식수+위치+회전+색 지문)이 서로 달라야 진짜 별도 모델
+      //   (T2 낡음 문법은 위치 동일+톤/기울기 변주가 정당 — lantern류 — 그래서 색·회전 포함)
+      const fp = (id, tier) => {
+        const d = S.DEFS[id];
+        const g = d.build(d.colors[0], 0, null, tier);
+        return g.children.length + '|' + g.children.slice(0, 6).map(m =>
+          m.position.x.toFixed(2) + ',' + m.position.y.toFixed(2) + ',' + (m.rotation ? m.rotation.z.toFixed(2) : '') + ',' +
+          (m.material && m.material.color ? m.material.color.getHexString() : '')).join(';');
+      };
+      const branchOk = LIST.every(id => { const a = fp(id, 1), b = fp(id, 2), c3 = fp(id, 3); return a !== c3 && b !== c3 && a !== b; });
+      // 쾌적 티어 스케일: 같은 가구 T1 < T3 (furn·light 모두 배수 반영)
+      S.simReset(); S.loadShelter('container');
+      S.addItem('bed', 0, -1.5, 0, 0, true, 0, 1);
+      S.addItem('lantern', 0, 1.5, 0, 0, true, 0, 1);
+      const lo = S.comfortDetail();
+      S.simReset(); S.loadShelter('container');
+      S.addItem('bed', 0, -1.5, 0, 0, true, 0, 3);
+      S.addItem('lantern', 0, 1.5, 0, 0, true, 0, 3);
+      const hi = S.comfortDetail();
+      return JSON.stringify({ tieredAll, tieredCount, branchOk, loFurn: lo.furn, hiFurn: hi.furn, loLight: lo.light, hiLight: hi.light });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const tj = JSON.parse(tt);
+    if (tj.error) check('#157 가구 티어 (예외 없이)', false, tj.error);
+    else {
+      check('#157 티어 17종 완성 (tiered 플래그 정확히 17)', tj.tieredAll && tj.tieredCount === 17, JSON.stringify({ all: tj.tieredAll, n: tj.tieredCount }));
+      check('#157 티어 복셀 실분기 (17종 T1≠T2≠T3)', tj.branchOk === true, `branchOk ${tj.branchOk}`);
+      check('#157 쾌적 티어 스케일 (T1 < T3, furn·light)', tj.loFurn < tj.hiFurn && tj.loLight < tj.hiLight,
+        JSON.stringify({ furn: [tj.loFurn, tj.hiFurn], light: [tj.loLight, tj.hiLight] }));
+    }
+
+    // #189 Lighting P1 — 어둠 기본값(폴백 10/냉백), 광원 레지스트리, 조명 설비 전력(배터리/일·발전기 무료)
+    const lp = await call(`
+      const or = Math.random; Math.random = () => 0.99;   // 이벤트/드랍 롤 봉인 — 자원 델타 결정론
+      S.simReset(); S.loadShelter('container');
+      S.state.day = 5;                                    // processDay는 day 증가 후 호출되는 함수 — day-1 계절 조회가 유효해야 함
+      const out = {};
+      out.empty = S.qaLightState();                                        // 광원 0 → 폴백 10
+      S.addItem('lantern', 0, 1, 0, 0, true, 0, 3);
+      out.lantern = S.qaLightState();                                      // 랜턴 → 폴백 소등
+      S.state.res.candle = 0; S.processDay();                              // 연료 소진 → 자동 꺼짐
+      out.fuelOut = S.qaLightState();
+      S.state.mods = { container: ['lighting'] }; S.state.lightingOut = false;
+      S.state.res.battery = 3;
+      out.mod = S.qaLightState();                                          // 설비 급전 → 점등
+      const b0 = S.state.res.battery; S.processDay();
+      out.drain = b0 - (S.state.res.battery || 0);                         // 1/일 소비
+      S.state.res.battery = 0; S.processDay();
+      out.blackout = S.qaLightState();                                     // 단전 → 소등+폴백
+      out.outNote = (S.state.dayLog.notes || []).some(n => n.includes('전등이 나갔다'));
+      S.addItem('generator', 0, -1.5, 0, 0, true, 0, 0);
+      S.state.res.fuel = 3; S.state.res.battery = 1; S.state.lightingOut = false;
+      const b1 = S.state.res.battery; S.processDay();
+      out.freePower = (S.state.res.battery || 0) === b1;                   // 발전기 가동 → 배터리 무료
+      out.backOn = S.qaLightState();
+      // P2 태양광 지속 급전: 발전기 연료 소진 → 태양광이 급전 승계(드레인 0) + 이틀 생산 +1(day 5 홀수)
+      S.state.res.fuel = 0; S.state.res.battery = 2;
+      S.state.mods = { container: ['lighting', 'solar'] }; S.state.lightingOut = false;
+      S.processDay();
+      out.solarFree = (S.state.res.battery || 0) === 3;
+      out.solarNote = (S.state.dayLog.notes || []).some(n => n.includes('태양광이 전기를'));
+      out.solarOn = S.qaLightState();
+      // P3 조명 젤: 값 적용(라이트+헤일로 스프라이트) → 세이브 왕복(ge 필드) → 원색 복원 무료
+      S.addItem('lamp', 0, 1.5, 1, 0, true, 0, 0);
+      const gi = S.qaItems().slice(-1)[0];
+      S.state.lightGels = 1;
+      gi.gel = 'sage'; S.applyGel(gi);
+      out.gelOn = gi.lightObj.color.getHex() === 0x93b5a5 && gi.glowSprite.material.color.getHex() === 0x93b5a5;
+      // 세이브 왕복: 실게임 플로우(이주·개조 리빌드)처럼 레이아웃 직렬화 후 리로드 — ge 필드 왕복 검증
+      S.state.layouts[S.state.current] = S.qaItems().map(i => ({ d: i.defId, c: i.colorIdx, x: i.x, z: i.z, r: i.rot, o: i.on === false ? 0 : 1, y: i.y || 0, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+      S.loadShelter('container');
+      const gi2 = S.qaItems().filter(i => i.defId === 'lamp').slice(-1)[0];
+      out.gelPersist = !!gi2 && gi2.gel === 'sage' && gi2.lightObj.color.getHex() === 0x93b5a5;
+      gi2.gel = null; S.applyGel(gi2);
+      out.gelReset = gi2.lightObj.color.getHex() === S.DEFS.lamp.light.color;
+      out.gelBal = (S.BAL.lighting.gelBookRegions || []).length >= 2 && S.BAL.lighting.gelBookChance > 0 && S.BAL.lighting.gelBookChance < 0.1;
+      out.gelable3 = ['lamp', 'lantern', 'desklamp'].every(id => S.DEFS[id].light.gelable === true) && !S.DEFS.candle.light.gelable && !S.DEFS.stove.light.gelable;
+      // P4 LED 바: 초희귀 도면 채널(제작 게이트)·젤 가능·무점멸·바닥 라이트 풀(전원 연동·젤 틴트)
+      out.ledDef = !!S.DEFS.ledbar && S.DEFS.ledbar.light.gelable === true && !S.DEFS.ledbar.light.flicker &&
+        S.CRAFTS.some(c => c.out?.furn === 'ledbar' && c.bp === 'ledbar') && S.BAL.lighting.ledChance > 0 && S.BAL.lighting.ledChance < 0.05;
+      S.state.blueprints.ledbar = 1;
+      S.addItem('ledbar', 0, -1.5, 1, 0, true, 0, 0);
+      const li = S.qaItems().slice(-1)[0];
+      out.pool = !!li.lightPool && li.lightPool.visible === true;
+      S.setItemPower ? null : null;
+      li.gel = 'redOxide'; S.applyGel(li);
+      out.poolGel = li.lightPool.material.color.getHex() === 0xa8433f && li.lightObj.color.getHex() === 0xa8433f;
+      Math.random = or;
+      return JSON.stringify(out);
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const lj = JSON.parse(lp);
+    if (lj.error) check('#189 P1 (예외 없이)', false, lj.error);
+    else {
+      check('#189 P1 폴백 게이트 (광원 0=10 → 랜턴=0 → 연료 소진=10)',
+        lj.empty.fallback === 10 && !lj.empty.hasLight && lj.lantern.fallback === 0 && lj.lantern.hasLight && lj.fuelOut.fallback === 10 && !lj.fuelOut.hasLight,
+        JSON.stringify({ e: lj.empty, l: lj.lantern, f: lj.fuelOut }));
+      check('#189 P1 조명 설비 (점등·배터리 1/일·단전 소등+노트)',
+        lj.mod.facility === true && lj.mod.fallback === 0 && lj.drain === 1 && lj.blackout.facility === false && lj.blackout.fallback === 10 && lj.outNote === true,
+        JSON.stringify({ mod: lj.mod, drain: lj.drain, bo: lj.blackout, note: lj.outNote }));
+      check('#189 P1 발전기 무료 급전 (배터리 불변·재점등)',
+        lj.freePower === true && lj.backOn.facility === true,
+        JSON.stringify({ free: lj.freePower, on: lj.backOn }));
+      check('#189 P2 태양광 지속 급전 (드레인 0·이틀 생산 +1·노트)',
+        lj.solarFree === true && lj.solarNote === true && lj.solarOn.facility === true,
+        JSON.stringify({ free: lj.solarFree, note: lj.solarNote, on: lj.solarOn }));
+      check('#189 P3 조명 젤 (적용·세이브 왕복·원색 복원·화기 제외)',
+        lj.gelOn === true && lj.gelPersist === true && lj.gelReset === true && lj.gelBal === true && lj.gelable3 === true,
+        JSON.stringify({ on: lj.gelOn, persist: lj.gelPersist, reset: lj.gelReset, bal: lj.gelBal, flags: lj.gelable3 }));
+      check('#189 P4 LED 바+라이트 풀 (도면 채널·무점멸·풀 전원·젤 틴트)',
+        lj.ledDef === true && lj.pool === true && lj.poolGel === true,
+        JSON.stringify({ def: lj.ledDef, pool: lj.pool, gel: lj.poolGel }));
+    }
 
     const green = report();
     app.exit(green ? 0 : 1);

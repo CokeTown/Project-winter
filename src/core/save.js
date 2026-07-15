@@ -56,10 +56,29 @@ export function migrateLoadedState(rawState, defaults, oldVer) {
   if (rawState.winterSnap === undefined) state.winterSnap = null;   // 스냅샷 없음 → 다음 겨울 시작 때 생성
   if (!Array.isArray(state.pendingWinterMemoir)) state.pendingWinterMemoir = [];
   if (rawState.doctorRadioPending == null) state.doctorRadioPending = false;
-  // 도료 (REWARD-LOOP ② — 데모 포팅 #149): 구세이브 빈 팔레트로 시작. 이미 칠한 가구·도감은 그대로(소급 몰수 없음 — 기득권 인정)
+  // 2.0 대한파 프론트 (§9.4-③): 구세이브 기본값 — 미발령/비활성
+  if (rawState.frontWinterKey == null) state.frontWinterKey = -1;
+  if (rawState.front === undefined) state.front = null;
+  // 2.0 부상 서사화 (§9.4-④): 구세이브는 흉터 기록 없이 시작
+  if (!Array.isArray(state.scars)) state.scars = [];
+  // 2.0 총 (§9.3): 구세이브 미보유
+  if (rawState.gun === undefined) state.gun = null;
+  // 2.0 엔딩 3분기 (§9.5): 구세이브 미선택. endingSeen=true(Day10000 기감상) 세이브도 3분기는 새로 만난다(소급 없음).
+  if (rawState.endingType === undefined) state.endingType = null;
+  if (rawState.endingChoicePending == null) state.endingChoicePending = false;
+  if (rawState.earlyRescueDay == null) state.earlyRescueDay = 0;
+  // 2.0 히든 루트 「침묵」 (§9.6): 구세이브 전부 미발견 기본값
+  if (rawState.subwayHidden == null) state.subwayHidden = false;
+  if (rawState.hiddenGateDone == null) state.hiddenGateDone = false;
+  if (rawState.hiddenReachPending == null) state.hiddenReachPending = false;
+  if (rawState.hiddenReached == null) state.hiddenReached = false;
+  if (rawState.siloFired == null) state.siloFired = false;
+  // 도료 (REWARD-LOOP ②): 구세이브 빈 팔레트로 시작. 이미 칠한 가구·도감은 그대로(소급 몰수 없음 — 기득권 인정)
   if (state.paints == null || typeof state.paints !== 'object') state.paints = {};
   if (rawState.dyeOffer === undefined) state.dyeOffer = null; // 염료 상인 오퍼 — 구세이브 없음
-  if (state.blueprints == null || typeof state.blueprints !== 'object') state.blueprints = {}; // DDD-4 도면 — 구세이브 빈 손 (데모 포팅 #149)
+  if (rawState.bagDur == null) state.bagDur = 0; // DDD-3 내구성 가방 — 구세이브 미보유(1회용 시절 세이브 포함)
+  if (state.blueprints == null || typeof state.blueprints !== 'object') state.blueprints = {}; // DDD-4 도면 — 구세이브 빈 손
+  if (state.sights == null || typeof state.sights !== 'object') state.sights = {}; // 비네트 「본 광경」 — 구세이브 빈 눈
   // Phase D 마이그레이션 (#12·#35·#36) — 구세이브에 없던 필드는 기본값으로 보정
   if (!Array.isArray(state.knowledge)) state.knowledge = []; // 「지식」 트리(§9) — 구세이브 안전
   if (!Array.isArray(state.evHistory)) state.evHistory = [];

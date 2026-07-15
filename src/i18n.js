@@ -35,15 +35,36 @@ function fill(str, vars) {
 }
 
 /* ---- 데이터 테이블 병기 필드 헬퍼 ----
-   영어 모드에서 obj.<field>En 이 있으면 그것을, 없으면 원본(한국어) 필드를 쓴다.
-   → ko 모드는 항상 원본 그대로 (무변화 원칙). */
+   #114 Phase 2: 외부화 키(data.<표>.<id>.<필드>)가 로케일에 있으면 그것이 우선
+   (obj._lk = l10n-registry가 부팅 시 스탬프한 비열거 키). 번역 표면 = JSON 단일화.
+   폴백: 영어 모드에서 obj.<field>En, 최종적으로 원본(한국어) 필드 — JSON 없어도 동작 불변.
+   → ko 모드도 JSON이 우선(로케일 오버라이드로 데이터 표 문자열 핫픽스 가능). */
 export function LF(obj, field) {
   if (!obj) return '';
+  if (obj._lk) {
+    const table = STR[obj._lk + '.' + field];
+    if (table != null) return (lang === 'en' && table.en != null) ? table.en : table.ko;
+  }
   if (lang === 'en') {
     const en = obj[field + 'En'];
     if (en != null) return en;
   }
   return obj[field] ?? '';
+}
+// 배열 병기 필드(colorNames 등) — 외부화 키는 파이프 결합 문자열, 여기서 인덱스 복원.
+export function LC(obj, field, i) {
+  if (!obj) return '';
+  if (obj._lk) {
+    const table = STR[obj._lk + '.' + field];
+    if (table != null) {
+      const s = (lang === 'en' && table.en != null) ? table.en : table.ko;
+      const part = String(s).split('|')[i];
+      if (part != null) return part;
+    }
+  }
+  const enArr = obj[field + 'En'];
+  if (lang === 'en' && Array.isArray(enArr) && enArr[i] != null) return enArr[i];
+  return obj[field]?.[i] ?? '';
 }
 export const LN = (obj) => LF(obj, 'name');     // name / nameEn
 export const LD = (obj) => LF(obj, 'desc');     // desc / descEn

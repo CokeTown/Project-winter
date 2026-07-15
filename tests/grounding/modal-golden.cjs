@@ -21,6 +21,7 @@ const MODALS = [
   { id: 'journal', open: 'openJournalModal' },
   { id: 'mode', open: 'openModeModal' },
   { id: 'wardrobe', open: 'openWardrobeModal' },
+  { id: 'front_choice', open: 'openFrontChoiceModal' }, // 대한파 자기 규율 (GD-2.0 §9.4-③, 하드 전용)
 ];
 
 async function snap(fn) {

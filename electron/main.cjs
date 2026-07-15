@@ -1,7 +1,63 @@
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('node:path');
+const fs = require('node:fs');
+
+// userData 폴더명을 productName으로 고정 — app.getName()이 dev('nine-winters')/packaged 간 갈리는 걸 막아
+// Steam Auto-Cloud 경로(%APPDATA%/Nine Winters/steamcloud)를 결정론적으로 만든다. getPath 호출 전에 세팅.
+app.setName('Nine Winters');
 
 let mainWin = null;
+
+// ── Steam Cloud 파일 미러 (REQ-STEAM-01 A안: Auto-Cloud) ─────────────────────
+//   진행 세이브(localStorage)를 userData/steamcloud/ 아래 키별 파일로도 저장한다.
+//   Steam Auto-Cloud가 이 폴더를 앱 시작/종료 시 동기화(경로: WinAppDataRoaming/<productName>/steamcloud/*.json).
+//   원자적 쓰기(tmp→rename)로 부분 파일 손상을 막는다. localStorage는 여전히 truth, 이건 미러.
+const CLOUD_DIR = path.join(app.getPath('userData'), 'steamcloud');
+function cloudEnsure() { try { fs.mkdirSync(CLOUD_DIR, { recursive: true }); } catch (e) { /* */ } }
+function cloudFile(key) { return path.join(CLOUD_DIR, encodeURIComponent(String(key)) + '.json'); }
+function cloudReadAll() {
+  cloudEnsure();
+  const out = {};
+  try {
+    for (const f of fs.readdirSync(CLOUD_DIR)) {
+      if (!f.endsWith('.json')) continue;
+      try { out[decodeURIComponent(f.slice(0, -5))] = fs.readFileSync(path.join(CLOUD_DIR, f), 'utf8'); } catch (e) { /* 개별 파일 손상 무시 */ }
+    }
+  } catch (e) { /* 폴더 없음 등 */ }
+  return out;
+}
+// 부팅 하이드레이션용 동기 읽기 (preload가 sendSync로 호출).
+ipcMain.on('cloud:read-all', (evt) => { try { evt.returnValue = cloudReadAll(); } catch (e) { evt.returnValue = {}; } });
+
+// ── Steamworks (#34 언어 연동 · #117 DLC 게이트) ─────────────────────────────
+// Steam 클라이언트 밖(웹/포터블/개발/캡처 하네스)에선 init이 던진다 — null 폴백으로 전 기능 무해.
+// 앱ID: init() 무인자 = Steam 런처 실행 컨텍스트 또는 steam_appid.txt(개발)가 공급.
+let steamClient = null;
+try { steamClient = require('steamworks.js').init(); } catch (e) { steamClient = null; }
+ipcMain.on('steam:info', (evt) => {
+  try {
+    evt.returnValue = steamClient
+      ? { available: true, lang: steamClient.apps.currentGameLanguage() }
+      : { available: false, lang: null };
+  } catch (e) { evt.returnValue = { available: false, lang: null }; }
+});
+ipcMain.on('steam:dlc', (evt, appId) => {
+  try { evt.returnValue = steamClient ? steamClient.apps.isDlcInstalled(Number(appId)) : false; }
+  catch (e) { evt.returnValue = false; }
+});
+// #117 업적 해금 중계 — 렌더러 nineSteam.unlock → 여기 → steamworks.js. 비Steam(웹/개발/캡처)이면 null 폴백으로 무해.
+ipcMain.handle('steam:achieve', (evt, achId) => {
+  try { if (!steamClient) return false; steamClient.achievement.activate(String(achId)); return true; }
+  catch (e) { return false; }
+});
+// 원자적 쓰기: tmp에 쓴 뒤 rename (부분 쓰기 방지).
+ipcMain.handle('cloud:write', (evt, key, val) => {
+  cloudEnsure();
+  const dest = cloudFile(key), tmp = dest + '.tmp';
+  try { fs.writeFileSync(tmp, String(val), 'utf8'); fs.renameSync(tmp, dest); return true; }
+  catch (e) { try { fs.unlinkSync(tmp); } catch (_) { /* */ } return false; }
+});
+ipcMain.handle('cloud:remove', (evt, key) => { try { fs.unlinkSync(cloudFile(key)); } catch (e) { /* 이미 없음 */ } return true; });
 
 // 미니 모드 진입 전 창 bounds를 저장해뒀다가 해제 시 복원한다.
 let savedBounds = null;

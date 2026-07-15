@@ -43,6 +43,9 @@ const SCENES = [
   // bunker 뒷문 해금 상태: 후면 돔 반쪽이 wallList에 직접 push돼 컬링에 편입(잠김=불투명, 해금=투시).
   //   이 분기를 골든으로 커버해야 bunker build의 wallList 직접조작 이관이 무손실 검증된다.
   { id: 'z_bunker_backdoor', shelter: 'bunker', weather: 'clear', hour: 8, flags: { bunkerBackdoor: true } },
+  // §9.6 히든 루트: 통로 발견 후 조명 분기(붉은 비상등만·출구 표지 꺼짐) + 개척 완공 사다리.
+  //   발견 전 subway 골든은 조건부 분기라 불변 — 이 씬만 flags 주입 신규 커버(z_bunker_backdoor 문법).
+  { id: 'z_subway_hidden', shelter: 'subway', weather: 'clear', hour: 8, flags: { subwayHidden: true, hiddenGateDone: true, subwayHub: true, projects: { hiddenGate: { stage: 3, invested: 0 } } } },
 ];
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));

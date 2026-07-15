@@ -41,6 +41,10 @@
 - **시그니처 8종**: 지역 독점 보상 = 단일 티어가 정체성.
 - **phonograph/globe/frame/plant/crate/bookstack**: 사치·소품 — 단일 티어(이미 T3 감성)로 두는 게 티어 가구의 희소가치를 살림.
 
-## 다음
-1. 수직 슬라이스: **bed + stove + cushion** 3종 T1/T2 복셀 신작 + 업그레이드 UI(선택 카드에 "개선" 버튼) → 스크린샷 컨펌
-2. 컨펌 후 나머지 14(+3)종 확산 + 제작 코스트 사다리 + 세이브 스키마(tier 필드) + 쾌적함 스케일
+## 진행 기록
+1. ✅ 수직 슬라이스 (1b69d8a): bed T1/T2/T3 + 그 자리 손질 업그레이드 UI + 세이브 스키마(t 필드)
+2. ✅ 데모 6종 (4091ea6): stove·table·chair·lantern·cushion T1/T2
+3. ✅ 나머지 11종 (2026-07-15): sofa·dresser·bookshelf·rug·lamp·candle·curtain·teatable·fridge·purifier·radio T1/T2
+   + 쾌적함 티어 스케일(T1=⅓·T2=⅔·T3=1, furn·light 공통 — core/comfort.js tierComfortMult)
+   + 테스트 게이트 3종(17종 tiered 핀·복셀 실분기·쾌적 스케일). 후보 3종(clock·mirror·desklamp)은 보류.
+- 제작 코스트: 원가 유지, tierUp(2:재료2 / 3:재료2+부품1)이 추가 투자 — 총합≈온전한 가구 하나 값.

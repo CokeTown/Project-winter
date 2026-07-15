@@ -8,7 +8,7 @@
 import { state, items } from './state.js';
 import { seasonOf } from './season.js';
 import { hasMod } from './shelter.js';
-import { coldSnapNetSeverity } from './coldsnap.js';
+import { coldSnapNetSeverity, frontDiscipline } from './coldsnap.js';
 import { knowInsulates, knowHearthAnywhere, knowComfortBonus } from './knowledge.js';
 import { DEFS } from '../data/furniture.js';
 import { SHELTER_META } from '../data/shelters.js';
@@ -41,13 +41,17 @@ export function bunkerComfortBonus() {
   return b;
 }
 
+// #157 가구 티어 → 쾌적 배수: 티어 가구는 T1=1/3, T2=2/3, T3=1. 비티어·구세이브(t=0)는 1.
+export function tierComfortMult(it) {
+  return DEFS[it.defId]?.tiered ? (it.tier || 3) / 3 : 1;
+}
 export function comfortDetail() {
   const types = new Set(items.map(i => i.defId));
-  const furn = Math.min(45, items.length * 3 + types.size * 3);
+  const furn = Math.min(45, items.reduce((a, i) => a + 3 * tierComfortMult(i), 0) + types.size * 3);
   let light = 0;
   for (const it of items) {
     const L = DEFS[it.defId].light;
-    if (L && it.on !== false) light += L.comfort ?? 5;
+    if (L && it.on !== false) light += (L.comfort ?? 5) * tierComfortMult(it);
   }
   const lm = SHELTER_META[state.current].perk?.lightMult || 1;
   light = Math.min(24 * lm, light * lm);
@@ -63,10 +67,15 @@ export function comfortDetail() {
   let limitMod = 0;
   const wt = _weatherType();
   // 단열 지식(§9): 얇은 셸터 악천후 쾌적 페널티 무효 (insulation 개조와 동급).
-  if (sh.cold && (wt === 'rain' || wt === 'snow' || wt === 'storm') && !hasMod('insulation') && !hasMod('insulationPlus') && !knowInsulates()) limitMod -= sh.cold;
+  //   customsSeal(세관 창구 봉쇄)·terminalPatch(대합실 지붕 틈 막기)도 동급 — "shelter는 응당 안전해야".
+  if (sh.cold && (wt === 'rain' || wt === 'snow' || wt === 'storm') && !hasMod('insulation') && !hasMod('insulationPlus') && !hasMod('customsSeal') && !hasMod('terminalPatch') && !knowInsulates()) limitMod -= sh.cold;
   if (sh.needsLight && light <= 0) limitMod -= sh.needsLight;
   // 한파: 방어 안 된 만큼 쾌적함 페널티 (완전 방어 시 0)
   if (coldSnapNetSeverity() > 0) limitMod -= BAL.seasons.coldSnapComfortPen;
+  // 2.0 대한파 자기 규율(§9.4-③): 배급 반(-3)·비상식량 개봉(-4)의 살림 그늘 — 프론트 기간만
+  const disc = frontDiscipline();
+  if (disc === 'ration') limitMod -= BAL.greatColdSnap.discipline.rationComfort;
+  if (disc === 'emergency') limitMod -= BAL.greatColdSnap.discipline.emergencyComfort;
   // 온풍기(heater) 가동 시 겨울 쾌적 보너스
   let heatMod = 0;
   if (seasonOf().id === 'winter' && items.some(i => i.on !== false && DEFS[i.defId]?.appliance?.effect === 'heat')) heatMod += BAL.economy.heaterWinterComfort;

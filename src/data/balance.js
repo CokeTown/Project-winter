@@ -59,7 +59,9 @@ export const BAL = {
     hungryPenGate: 25,   // hunger/thirst 이 값 미만이면 성공률 페널티 (rateParts)
     hungryPen: 0.10,     // 허기/갈증 성공률 페널티량
     // 가방(탐사 안전망, 디렉터 2026-07-07): 출발 시 천 소모, 실패/부분이어도 랜덤 자원 최소 회수 보장(failSalvage와 max).
-    bagCost: { cloth: 2 }, // 가방 챙기기 비용 (출발 시 소모)
+    idleTimeScale: 3.2,   // 평시(비탐험) 시계 배속 — 탐험(timeScale 4)의 80% (디렉터 확정 2026-07-08)
+    bagCost: { cloth: 3, parts: 1 }, // DDD-3 내구성 승격(REWARD-LOOP ③): 1회용 챙기기 → 제작 1회(내구 6회)
+    bagDur: 6,                       // 가방 내구 — 안전망이 발동한 탐험에서만 1 마모(재제작=유지 루프)
     bagFloorMin: 1,        // 실패/부분 시 최소 확정 회수 (하한)
     bagFloorMax: 2,        // 최소 확정 회수 (상한)
   },
@@ -95,7 +97,9 @@ export const BAL = {
      겨울 N번 넘김 = 최고 생존일이 N년째 봄에 닿음 (1년 = 계절 12일 × 4 = 48일 → N×48+1일). */
   modes: {
     zenWinters: 1,       // 무한 해금: 겨울 1번 (모드 무관 최고 생존일 기준)
-    wallpaperWinters: 2, // 꾸미기 해금: 코지(노말) 겨울 2번
+    // 꾸미기/배경화면 해금(피드백 2026-07-15 완화): "봄 지나면" — 첫 봄(1~12일)을 넘겨 여름 진입(day≥13).
+    //   가장 사랑받는 코지-꾸미기 축을 첫 세션 안에 열어 준다(구 2겨울=96일+ 게이트가 관객을 막던 문제 해소).
+    wallpaperUnlockDay: 13,
   },
 
   /* ── 성공률 pity 보정 (expActualRate / resolveExpedition) ── */
@@ -214,6 +218,7 @@ export const BAL = {
     // #165 탐험 리스크 인카운터 (디렉터 2026-07-10): 진행률 35% 지점 별도 롤 — "무너진 입구" Yes/No.
     //   Yes = 치장템(도료·도면) 가중 드랍 + 부상 리스크(모드별). 탐험당 최대 1회, 발동 시 일반 중간 인카운터는 양보.
     riskExpChance: 0.22,   // 탐험당 리스크 인카운터 발동 확률 (~5탐험에 1번 꼴)
+    riskDeepMul: 1.5,      // #167 뒷골목 심부 배수 — 속은 자주 무너진다 (0.22×1.5=0.33)
     riskInjury: { normal: 0.25, hard: 0.32, hardcore: 0.38, zen: 0.2, wallpaper: 0 }, // Yes 선택 시 경상 확률 — 리스크 트레이드오프의 값
     memoDropChance: 0.02,  // 탐험 성공 시 지역 메모 1개 드랍 확률 (디렉터 지시: 문서 희소화 12%→2% — 종이 한 장이 귀해야 한다)
     willDropChance: 0.02,  // 탐험 성공 시 생존자 유서 드랍 확률 (극저확률, REQ-LORE-01: 1.5~2.5% 밴드)
@@ -274,6 +279,10 @@ export const BAL = {
     maxExpPerDay: 4,        // 자동 탐험 일일 상한 (기존 하드코딩 이관 — 5회 중 4회까지 대행)
     // 부족 판정 대상 자원 (신선/물은 autoEat이 따로 관리하므로 제외 — 건축/제작/유지 자원 위주)
     scarceWatch: ['fuel', 'parts', 'material', 'salt', 'cloth', 'battery', 'canned'],
+    // #177 레버5: 미수집 시그니처 도면이 남은 지역(정보판 트래커 "여기서만" 표기)에 곱하는 가중.
+    //   pull 실현 — 트래커가 가리킨 곳으로 자동 탐험도 향한다. 다만 생존 우선을 지키려 부족자원 1종(×1.6)보다
+    //   낮게 잡아 순수 넛지로 둔다(전부 수집하면 자동 소멸). 자원 산출은 불변 — 지역 선호만 미세 조정.
+    wishlistWeight: 1.35,
   },
 
   /* ── 고양이 클로즈업 카메라 (v1.2.0 디렉터 오더) ──
@@ -289,6 +298,9 @@ export const BAL = {
     glideLerp: 0.16,     // 진입/추적 카메라 보간 계수 (급회전 금지 — 지연 추적)
     yawOffset: 0.9,      // 고양이 정면 대비 카메라 yaw 오프셋(rad) — 3/4 측면각
   },
+  // #181 방문자 클로즈업: 등장인물이 화면 끝에서 걸어오면 카메라가 그쪽으로 팬+줌(자동 복귀).
+  //   yaw는 안 돌리고 center 이동+줌만(급회전 금지). zoom 1.45 = view height ~6.2u (1.58m 인물 프레이밍).
+  visitorCam: { zoom: 1.85, glideLerp: 0.1, centerY: 0.8 }, // #181 타이트 프레이밍(디렉터) — 인물 크게
 
   /* ── 쾌적함 4요소 분해 (Living Shelter #29) ──
      comfortDetail()의 기존 컴포넌트를 4개 축으로 "재분류"만 한다.
@@ -361,6 +373,12 @@ export const BAL = {
     radioAntenna1: { material: 2, parts: 1 },   // 안테나 — 접시/마스트 세우기 — 3회
     radioTx1: { parts: 1, cloth: 1 },           // 송신기 — 회로 배선·절연 — 3회
     radioPower1: { parts: 1, battery: 1, fuel: 1 }, // 전원 — 발전·축전 계통 — 3회
+
+    /* 2.0 §9.6 히든 통로 개척 (「침묵」) — 역대 최고 코스트(무전 기지 약 2배·투입 12회, 디렉터 확정 2026-07-08).
+       총: 건축재3+부품1 ×4 + 부품2+천1+연료1 ×4 + 부품1+배터리1+연료1 ×4 = 건축재12/부품16/천4/배터리4/연료8. */
+    hiddenGate1: { material: 3, parts: 1 },         // 벽을 허문다 — 4회
+    hiddenGate2: { parts: 2, cloth: 1, fuel: 1 },   // 버팀목과 통로 — 4회
+    hiddenGate3: { parts: 1, battery: 1, fuel: 1 }, // 개통(등불·사다리) — 4회
   },
 
   /* ── 도료 (REWARD-LOOP ② 1차 착지 — 디렉터 확정 2026-07-08: 소모품 1통=1회·12계열·지역 시그니처) ──
@@ -378,10 +396,24 @@ export const BAL = {
       resort: ['skis', 'skipoles', 'snowboard'],
       citycore: ['neonvip', 'neonair', 'suit'],
     },
+    // 도면 선택 가중 (디렉터 2026-07-09): 기본 1. 그래피티는 더 희귀하게(다른 슬럼 시그니처 대비 1/3).
+    weights: { graffiti: 0.35 },
+    // #190 「생존의 흔적」 커먼 도면 (디렉터 2026-07-15): 밀도 프롭 5종은 기본 배치에 심지 않고
+    //   낮은 확률 파밍으로. 시그니처와 별도 채널 — 전 지역, rare 층(발견컷 없음), 시그니처 풀 비희석.
+    commonItems: ['supplyshelf', 'cratestack', 'fuelpile', 'noticeboard', 'jugcluster'],
+    commonDropChance: 0.08,
+  },
+
+  // #189 P3 조명 색 파밍 — 젤 필터북(전설·1회 한정) 드랍. 보유 후엔 도료 1통 = 조명 1회 틴트(도색 게이트 문법 재사용).
+  lighting: {
+    gelBookChance: 0.02,
+    gelBookRegions: ['commercial', 'citycore'], // 극장/스튜디오 유품 — 상업지구·도심 한정(지역 pull)
+    ledChance: 0.012, // #189 P4 LED 바 도면 — 전 지역 초희귀 별도 롤 (기대 ~83성공, 최후반 표현 목표)
   },
 
   paint: {
-    dropChance: 0.10,     // 성공 탐험당 도료 1통 확률 (본선 정본 10% — 디렉터: 희소성이 곧 잭팟의 무게. 데모는 ×1.5)
+    dropChance: 0.10,     // 성공 탐험당 도료 1통 확률 (디렉터 하향 2026-07-08: 16%→10% — 희소해야 도파민이 돈다)
+    neonDropChance: 0.05, // 네온 안료(도심 전용 최희귀) — citycore 성공 탐험당 별도 롤. 일반 도료 풀과 무관 (디렉터 2026-07-09)
     merchant: { chance: 0.05 }, // 염료 상인 — 슬럼 탐험당 조우 확률(성패 무관). 값은 dyeCost(모드별 통조림 2/3/4)
     signatureWeight: 0.7, // 그 지역 시그니처 계열에서 뽑힐 확률 (나머지 30%는 전 계열 균일 — 어디서든 가끔은)
     // 지역 → 시그니처 계열 ("그 색은 거기서 잘 나온다" — 어려운 곳에 갈 이유. 12계열 전부 최소 1지역 보유)
@@ -390,6 +422,7 @@ export const BAL = {
       commercial: ['mustard', 'terracotta', 'slateBlue'],
       industrial: ['redOxide', 'ashgray', 'charcoal'],
       slum: ['walnutStain', 'olive', 'charcoal'],
+      slumdeep: ['charcoal', 'terracotta', 'olive'], // #167 심부: 오래 탄 것과 오래된 벽돌의 색
       harborYard: ['slateBlue', 'whitewash'],
       fishMarket: ['sage', 'ashgray'],
       resort: ['lavender', 'whitewash', 'sage'],
@@ -421,6 +454,61 @@ export const BAL = {
     /* 벙커 지하 통로 경로 (1.1 clearPassage 복선 회수) — 통로 정리 완공 + 벙커 거주 시,
        연구동(lab)까지 지하망으로 이어져 접근 시간 단축(2번째 접근 경로). 정공법(검문소)의 우회. */
     undercroftLabTimeMult: 0.6, // 벙커 통로 경로로 연구동 접근 시 탐험 시간 배수 (지하 지름길)
+
+    /* ── 2.0 낙진 시계 (GD-2.0 §2) — 핵겨울 낙진은 2~3년이면 가라앉는다. 겨울 셋을 넘기면:
+       ① 금지 구역(checkpoint/lab)이 맨몸 개방(방호복 없이 진입 가능 — 단 잔류 방사능 부상 롤)
+       ② 그 너머 도심 중심지(citycore)가 노출된다.
+       방호복 재프레임: "먼저 들어가는 자의 어드밴티지"(1~3겨울 선진입) + 걷힌 뒤에도 부상 방어로 가치 유지.
+       경제 게이트: winters>=3은 Day 145+ 후반 — Day30/60 시뮬 밴드 구조적 불변. */
+    falloutWinters: 3,          // 낙진이 걷히는 넘긴 겨울 수 (state.winters >= 이 값)
+    barehandInjuryChance: 0.45, // 걷힌 뒤 맨몸(방호복 없이) 금지 구역 탐험 시 잔류 방사능 부상 확률 (성패 무관 롤)
+  },
+
+  /* ── 2.0 대한파 프론트 (GD-2.0 §9.4-③ · DEPTH-DESIGN §10.2③ — Frostpunk 프론트의 1인칭 번역) ──
+     연례 대한파: 겨울당 1회 확정, 겨울 고정일 발령(sim 결정론 — 랜덤 없음), 기존 랜덤 한파 상한 밖 별도.
+     노말 = 계절 의식(예보→그 밤→memoir). 하드/하드코어 = 자기 규율 선택 모달(1개 선택·기간 지속,
+     디렉터 확정 2026-07-08). 고양이 몫 선택지 금지(캐논). 수치는 초안 — sim/실측 튜닝 대상. */
+  greatColdSnap: {
+    forecastSeasonDay: 5,   // 겨울 5일차 아침: 대한파 예보 (리드 3일 — 랜덤 한파 예보 2일보다 김)
+    hitSeasonDay: 8,        // 겨울 8일차: 발동 (고정 결정론 — Math.random 없음)
+    durDays: 3,             // 지속 3일 (8~10일차, 겨울 12일 안에 종료)
+    severityNormal: 2,      // 노말 대한파 강도 (랜덤 한파 1보다 한 단계 위 — 방어 2단은 갖춰야 무풍)
+    severityHard: 3,        // 하드/하드코어 강도 (완전 방어에 3단 필요 — 준비의 벼랑)
+    discipline: {           // 자기 규율(하드/하드코어 전용) — 효과는 프론트 기간 지속
+      rationHungerMul: 0.65,  // 배급 반: 배고픔 감소 -35% (덜 먹고 버틴다 → 자동/수동 섭취 빈도 자체가 줄어 실질 식량 절약)
+      rationComfort: 3,       // 배급 반: 쾌적 -3 (허리띠를 조른 집)
+      sleeplessRestPen: 15,   // 쪽잠: 취침 회복 -15. 대신 난방 연료 격일 소비(불침번이 불을 지킨다)
+      emergencyCanned: 4,     // 비상식량 개봉: 즉시 통조림 +4
+      emergencyComfort: 4,    // 비상식량: 쾌적 -4 (바닥 보이는 찬장)
+    },
+  },
+
+  /* ── 2.0 지역 숙련 (GD-2.0 §9.4-② · REWARD-LOOP ① — 디렉터 확정 2026-07-08) ──
+     같은 지역 반복(성공+실패 포함) → 지리 지식 티어 → 성공률 가산 + 가구 발견율 가산.
+     디렉터 원문: "각 지역을 일정 횟수(실패 포함 50회라던지) 달성하면 지리 지식을 획득해서 확률이 비약적으로 오른다".
+     경제 게이트: regionVisits는 !_simRunning 가드 안에서만 증가(#85 시뮬 순수성) → 시드 시뮬 항상 티어 0,
+       Day30/60 밴드 구조적 불변. 가구 발견율은 자원 경제 밖(코스매틱) — surplusCap 무관. */
+  mastery: {
+    tiers: [20, 50, 100],  // 시도 임계 → ★1/★2/★3 (디렉터 "50회" = 중간 티어의 비약)
+    ratePerTier: 0.12,     // 티어당 성공률 가산 (지역 캡까지)
+    capGain: 0.40,         // 지역별 숙련 캡 = base + capGain — 저확률 지역일수록 성장 여지가 크다
+    capMax: 0.85,          // 절대 상한 — 숙련만으로 pity 천장(0.95)에 닿지 못하게 (하드가 시시해지지 않게)
+    furnPerTier: 0.01,     // 티어당 가구 발견율 가산 — "단골은 좋은 물건 자리를 안다" (시그니처 코스매틱 트랙의 발판)
+  },
+
+  /* ── 2.0 적대 존재 다이얼 + 총 (GD-2.0 §9.2·9.3 — 디렉터 확정 2026-07-08) ──
+     도심 중심지 전용, 오프스크린 판정만(온스크린 전투 금지 — 캐논). 모드 다이얼:
+     노말/무한 = 소리·흔적만(손실 0, "둘러싸였으나 혼자"의 앰비언스) / 하드 = 조우 시 전리품 일부 손실 /
+     하드코어 = 총 없으면 중상(critical), 총 있으면 1발로 격퇴(손실 0 — 로드아웃·정비의 결정).
+     sim 게이트: citycore는 sim 로테이션 밖 + 조우 블록 !_simRunning 가드 — Day30/60 밴드 불가침. */
+  hostile: {
+    encounterChance: 0.35,   // 도심 중심지 트립당 조우 확률 (전 모드 동일 — 결과만 모드별로 갈린다)
+    lootLossFactor: 0.5,     // 하드+: 조우 시 이번 트립 전리품을 잃는 비율 (가방 최소회수 안전망은 그 뒤에 적용 — 계약 유지)
+    gunDur: 6,               // 총 내구(발) — 조우 격퇴 1회당 1발. 다 쓰면 빈 총(정비 필요)
+    gunDropChance: 0.30,     // 도심 중심지 성공 탐험 시 총 발견 확률 (하드코어 전용·미보유 시 1정)
+    gunRepairCost: { parts: 3, material: 1 }, // 총 정비 비용 — gateCost 모드 스케일 적용 (방호복 수리 문법)
+    // 하드코어 악화 사슬(§9.3 "다단계"): 기존 방치-악화 롤의 목적지만 바꾼다(신규 RNG 없음 — 스트림 불변).
+    //   minor→deep→critical. 노말/하드는 기존 →infection 유지.
   },
 
   /* ── 1.1 「얼어붙은 항구」 (신규 섹션) ──

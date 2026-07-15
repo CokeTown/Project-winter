@@ -58,10 +58,29 @@ export const state = {
   coldSnapForecast: 0, // 한파 발동 예정일 (day). 0=예보 없음. 예보 리드타임 동안 브리핑에 표시
   coldSnapsThisWinter: 0, // 이번 겨울 한파 발동 횟수 (겨울당 상한 제한용)
   coldSnapWinterKey: -1,  // 카운터가 속한 겨울 식별자 (계절 인덱스). 겨울이 바뀌면 리셋
-  // ── 도료 (REWARD-LOOP ② — 데모 포팅 #149. 2.0 시스템은 콘텐츠 게이트로 미포함) ──
+  // ── 2.0 대한파 프론트 (GD-2.0 §9.4-③) ──
+  frontWinterKey: -1,     // 이번 겨울 대한파를 이미 발령했는가 (계절 인덱스 — 겨울당 1회 확정)
+  front: null,            // 진행 중 대한파 부속 { discipline:'ration'|'sleepless'|'emergency'|'none'|null } — null=하드 선택 대기(모달), 노말은 발동 즉시 'none'
+  // ── 2.0 부상 서사화 (GD-2.0 §9.4-④) ──
+  scars: [],              // 아문 부상의 기록 [{t:부상id, d:day}] — memoir 흉터 라인의 재료. 서사 전용(경제 무관), 상한 50
+  // ── 2.0 총 (GD-2.0 §9.3 — 하드코어 도심 중심지 로드아웃) ──
+  gun: null,              // { dur } — 조우 격퇴 1회당 1발 소모. null=미보유. 도심 중심지 파밍 드랍, 제작대 정비(방호복 문법)
+  // ── 2.0 엔딩 3분기 (GD-2.0 §5·§9.5 — 탈출/신세계/안식) ──
+  endingType: null,       // 선택한 엔딩 'escape'|'newworld'|'rest'|null. 시퀀스 후에도 런은 계속(방치형 정체성 — 엔딩은 서사 마침표)
+  endingChoicePending: false, // 9겨울 구조 인카운터 예약 (passWinter가 세움 → 밤에 발화. '보류' 선택 시 다음 봄 재예약)
+  earlyRescueDay: 0,      // 조기 탈출 제안일 (박사 정기 교신 +7일 확정 예약. 0=없음. 1회만 — 보류하면 9겨울에 다시)
+  // ── 2.0 히든 루트 「침묵」 (GD-2.0 §5.1·§9.6 — UI 힌트 0, 커뮤니티 발견 콘텐츠) ──
+  subwayHidden: false,    // 승강장 히든 지점(왼쪽 터널 개구부) 더블탭으로 통로 발견 — 발견 즉시 역사 조명이 붉은 비상등만으로(디렉터 확정)
+  hiddenGateDone: false,  // 개척 대형 프로젝트(hiddenGate) 완공 — 사다리 등장, "네 번째 문"
+  hiddenReachPending: false, // 개척 완공 후 첫 밤 박사 대면 인카운터 예약
+  hiddenReached: false,   // 연구소 도달·선택 유보 — 이후 사다리 터치로 박사의 문서 열람
+  siloFired: false,       // 사일로 버튼을 눌렀다 — 내부 전용(수첩·기록·업적 어디에도 안 씀. 완전 무기록 = 디렉터 확정). 재발화 방지만
+  // ── 도료 (REWARD-LOOP ② — 디렉터 확정 2026-07-08) ──
   paints: {},             // 보유 도료 { 계열id: 통 수 } — 1통=1회 도색(소모품). 기본색은 도료 불요
   dyeOffer: null,         // 염료 상인 오퍼 [계열id ×3] — 슬럼 조우 시 세팅, 인카운터 본문·구매가 읽는다
-  blueprints: {},         // DDD-4 시그니처 도면 { 가구id: 1 } — 보유해야 제작 목록에 뜬다(지역 독점, 데모 포팅 #149. 내구성 가방(bagDur)은 데모 미포함 — 1회용 가방으로 충분)
+  bagDur: 0,              // DDD-3 내구성 가방 — 남은 내구(0=미보유). 소지만 하면 자동 적용, 발동 시 1 마모
+  blueprints: {},         // DDD-4 시그니처 도면 { 가구id: 1 } — 보유해야 제작 목록에 뜬다(지역 독점)
+  sights: {},             // 비네트 「본 광경」 { id: 본 횟수 } — 발코니 조망 등 (2.0 동부)
   // ── Nine Winters 엔드게임 마일스톤 (#11) ──
   winters: 0,          // 넘긴 겨울 수 (봄으로 넘어가는 날 +1). 제목이 곧 장기 목표.
   demoEnded: false,    // #74 데모 빌드 전용: (구) 첫 겨울 통과로 데모가 끝난 세이브. 재설계 후 demoPhase 브리지로만 참조 (정식 빌드에선 항상 false)
@@ -121,7 +140,9 @@ export const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: 
   // 렌더 품질: aa=MSAA 안티에일리어싱(도트 유지·엣지 매끄럽게) / ditherAmt=디더 도트 강도(0~1)
   aa: true, ditherAmt: 1,
   // 접근성 (REQ-ACC-01): 폰트 3단(1/1.12/1.25) · 색약 팔레트 · 흔들림/깜빡임 감소
-  fontScale: 1, colorblind: false, reduceMotion: false };
+  fontScale: 1, colorblind: false, reduceMotion: false,
+  // 피드백 #2: 즉시 행동(먹기·마시기·청소) 확인창 — 기본 off(코지 무마찰 유지). 확인창 안에서 "다음부터 묻지 않기"로 끔.
+  confirmActions: false };
 // #52: 설정 창 [기본값] 버튼용 — 선언부 값의 스냅샷 (탭별 부분 복원)
 export const OPTS_DEFAULT = { ...opts };
 

@@ -17,6 +17,7 @@ async function boot() {
   //   (F1 비-헤르메틱성은 2026-07-07 해결 — simReset 완전 리셋 + 렌더부수효과 _simRunning 가드. FINDINGS.md F1.)
   _win = new BrowserWindow({ show: false, width: 900, height: 600,
     webPreferences: { backgroundThrottling: false, offscreen: true } });
+  _win.webContents.setAudioMuted(true); // 오프스크린 QA에서 게임 BGM/SFX가 실제 스피커로 새는 것 차단 (디렉터 신고 2026-07-15)
   _win.webContents.setFrameRate(30);
   await _win.loadFile(path.join(DIST, 'index.html'));
   const sleep = ms => new Promise(r => setTimeout(r, ms));

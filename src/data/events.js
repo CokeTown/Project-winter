@@ -10,7 +10,7 @@
    ctx 필드(모두 game.js가 소유·정의): 데이터 t,LN,RESOURCES,DEFS,MEMOS,
          MEMOS_RESEARCH,BROADCASTS,BAL / 상태참조 state,items / 함수 resAdd,resConsume,
          addMoodBuff,applyInjury,seasonOf,coldSnapActive,dropMemo,dropBroadcast,
-         recordDistantLight,spawnCat,playSfx,runEndingSequence,doctorFragmentsComplete.
+         recordDistantLight,spawnCat,playSfx,runEndingSequence,runRebuildSequence,doctorFragmentsComplete.
          (state/items는 const 참조 — game.js에서 재할당되지 않아 캡처가 안전하다.)
    출처: game.js EVENTS (원본 그대로 이동, 팩토리로 래핑).
    ============================================================ */
@@ -20,7 +20,8 @@ export function makeEvents(ctx) {
     state, items,
     resAdd, resConsume, addMoodBuff, applyInjury, seasonOf, coldSnapActive,
     dropMemo, dropBroadcast, recordDistantLight, spawnCat, playSfx,
-    runEndingSequence, doctorFragmentsComplete,
+    runEndingSequence, runRebuildSequence, doctorFragmentsComplete,
+    endingLeaning, // 2.0 §9.5: 엔딩 성향(누적 신호 기반 — 3분기 문안 뉘앙스)
     encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도 — 암시장과 캐논 공유)
     PAINT_FAMILIES, buyDye, dyeCost, // 염료 상인 (디렉터 2026-07-08 — 도료 교환 채널)
     collapseEntranceLoot, // #165 탐험 리스크 인카운터 — 보상 롤 (도료·도면·고양이·잡동사니)
@@ -28,6 +29,7 @@ export function makeEvents(ctx) {
   const EVENTS = {
     wanderer: {
       icon: '🚶', titleId: 'ev.wanderer.title', textId: 'ev.wanderer.text',
+      arrive: 'door', // #181 홀로 온 거지 — 계단으로 문 앞까지 (수레 아님)
       choices: [
         { labelId: 'ev.wanderer.c0', cost: { food: 2 }, run() { state.buff = { exp: 0.10, labelId: 'buff.wanderer' }; return t('ev.wanderer.r0'); } },
         { labelId: 'ev.wanderer.c1', run() { return t('ev.wanderer.r1'); } },
@@ -35,6 +37,7 @@ export function makeEvents(ctx) {
     },
     trader: {
       icon: '🎒', titleId: 'ev.trader.title', textId: 'ev.trader.text',
+      arrive: 'foot', // #181 수레 끄는 행상 — 지상 셸터만
       choices: [
         { labelId: 'ev.trader.c0', cost: { battery: 2 }, run() { resAdd('bandage', 1); resAdd('antiseptic', 1); return t('ev.trader.r0'); } },
         { labelId: 'ev.trader.c1', run() { return t('ev.trader.r1'); } },
@@ -50,6 +53,7 @@ export function makeEvents(ctx) {
     // 1.1 밀수꾼 행상인 — 항구 한정, 지나가는 존재(캐논: 타인은 흐른다). 계절 가격 극단(겨울 연료 프리미엄).
     smuggler: {
       icon: '🚢', titleId: 'ev.smuggler.title', textId: 'ev.smuggler.text',
+      arrive: 'boat', // #181 배로 접안 — 물가 셸터만
       when: { districts: ['harbor'], dayOnly: true },
       choices: [
         // 겨울이면 연료 프리미엄(배터리 3), 평시엔 배터리 1 — 계절로 대가가 갈린다. 모드 배수(costMul)로 야박도 가산.
@@ -81,6 +85,7 @@ export function makeEvents(ctx) {
     },
     thief: {
       icon: '👣', titleId: 'ev.thief.title', textId: 'ev.thief.text',
+      arrive: 'trace', // #181 밤사이 흔적(발자국) — 지상 접근 가능한 곳만
       choices: [
         { labelId: 'ev.thief.c0', run() {
           const lit = items.some(it => DEFS[it.defId].light && it.on !== false);
@@ -117,6 +122,7 @@ export function makeEvents(ctx) {
     // 1. 겨울+한파: 문 밖에 쓰러진 낯선 이. 데워 보내기 / 못 본 척.
     coldsnap_stranger: {
       icon: '🧊', titleId: 'ev.coldstranger.title', textId: 'ev.coldstranger.text',
+      arrive: 'door', // #181 문 밖에 쓰러진 사람 — 계단 오를 수 있는 곳
       when: { seasons: ['winter'] }, cond: () => coldSnapActive(),
       choices: [
         { labelId: 'ev.coldstranger.c0', cost: { fuel: 2 }, run() { addMoodBuff(3, 3); state.dayLog.notes.push(t('ev.coldstranger.note0')); return t('ev.coldstranger.r0'); } },
@@ -126,6 +132,7 @@ export function makeEvents(ctx) {
     // 2. 여름: 상한 것 반값에 떠넘기려는 행상. 간파 / 속아 삼(식중독).
     spoil_merchant: {
       icon: '🥴', titleId: 'ev.spoilmerchant.title', textId: 'ev.spoilmerchant.text',
+      arrive: 'foot', // #181 수레 끄는 상인 — 지상 셸터만
       when: { seasons: ['summer'] },
       choices: [
         { labelId: 'ev.spoilmerchant.c0', run() { state.dayLog.notes.push(t('ev.spoilmerchant.note0')); return t('ev.spoilmerchant.r0'); } },
@@ -270,6 +277,7 @@ export function makeEvents(ctx) {
     // 12. 봄/가을+낮: 멀리 지나가는 행렬. 관측만(만나지 않는다). 쌍안경 있으면 상세 노트.
     caravan_pass: {
       icon: '🛻', titleId: 'ev.caravanpass.title', textId: 'ev.caravanpass.text',
+      arrive: 'view', // #181 멀리 지나가는 행렬 — 시야 트인 곳만 (다가오지 않음)
       when: { seasons: ['spring', 'autumn'], dayOnly: true },
       choices: [
         { labelId: 'ev.caravanpass.c0', run() {
@@ -586,6 +594,7 @@ export function makeEvents(ctx) {
     },
     desperate_knock: {
       icon: '🚪', titleId: 'ev.desperateknock.title', textId: 'ev.desperateknock.text',
+      arrive: 'door', // #181 문 너머의 목소리 — 계단 오를 수 있는 곳
       when: { modes: ['hard', 'hardcore'], minWinters: 2, night: true },
       choices: [
         { labelId: 'ev.desperateknock.c0', cost: { canned: 1 }, run() { addMoodBuff(2, 3); state.dayLog.notes.push(t('ev.desperateknock.note0')); return t('ev.desperateknock.r0'); } },
@@ -605,6 +614,7 @@ export function makeEvents(ctx) {
     },
     harsh_barter: {
       icon: '🛒', titleId: 'ev.harshbarter.title', textId: 'ev.harshbarter.text',
+      arrive: 'foot', // #181 다리 밑 행상 — 지상 셸터만
       when: { modes: ['hard', 'hardcore'], minWinters: 2, seasons: ['winter'], dayOnly: true },
       choices: [
         { labelId: 'ev.harshbarter.c0', cost: { canned: 3 }, run() { resAdd('fuel', 1); return t('ev.harshbarter.r0'); } },
@@ -620,6 +630,7 @@ export function makeEvents(ctx) {
       icon: '🧱', titleId: 'ev.collapse.title',
       textFn: () => {
         const rg = state.exp && state.exp.region;
+        if (rg === 'slumdeep') return t('ev.collapse.text.slum'); // #167 심부: 슬럼 문안 공유 (같은 골목의 안쪽)
         return t(['slum', 'residential', 'industrial', 'harbor'].includes(rg) ? `ev.collapse.text.${rg}` : 'ev.collapse.text');
       },
       choices: [
@@ -657,7 +668,68 @@ export function makeEvents(ctx) {
         { labelId: 'ev.cat.c1', run() { return t('ev.cat.r1'); } },
       ],
     },
-    // 염료 상인 (디렉터 2026-07-08 · 데모 포팅 #149): 슬럼 탐험 5% — 손수레 위 페인트 통 셋. 통조림 교환,
+    // ── 문 두드리는 소리 (#170 REV3: ENDINGS-REV3 §3d) — 재건의 봄, 비네트의 종결부로만 발화 ──
+    //   신세계 선택지는 제거: 초대장은 이미 흘렀다(그 문은 겨울 3~4의 것). 보류도 제거 — 아홉 번의
+    //   겨울이 이미 답을 빚었다. 문안은 누적 성향(endingLeaning) 한 줄 변주 유지. 두 갈래 모두 런은 계속된다.
+    ending_choice: {
+      special: true,
+      icon: '🚁', titleId: 'end3.title', textId: 'end3.text',
+      textFn: () => t('end3.text', { winters: state.winters }) + '<br><br>' + t('end3.lean.' + endingLeaning()),
+      choices: [
+        { labelId: 'end3.c.escape', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.r.escape'); } },
+        { labelId: 'end3.c.rest', run() { state.endingType = 'rest'; setTimeout(() => runEndingSequence('rest'), 400); return t('end3.r.rest'); } },
+      ],
+    },
+    // 2.0 조기 탈출 (§9.5) — 박사의 정기 교신에 닿은 사람에게만, 아홉 번째 겨울 전에 한 번 열리는 문.
+    //   보류하면 이 문은 닫힌다(구조는 9겨울에 다시 온다). 진실을 다 보기 전에 떠나는 자의 엔딩.
+    early_rescue: {
+      special: true,
+      icon: '📻', titleId: 'end3.early.title', textId: 'end3.early.text',
+      choices: [
+        { labelId: 'end3.early.c0', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.early.r0'); } },
+        { labelId: 'end3.early.c1', run() { return t('end3.early.r1'); } },
+      ],
+    },
+    // ── #170 REV3 초대장 (ENDINGS-REV3 §3a) — 진실 4단 완성 다음 아침, 종이가 그들의 노크다 ──
+    //   그들은 오지 않는다(접촉 스펙트럼 §3: 재회는 엔딩뿐). 신세계는 내가 가는 엔딩.
+    //   소각/마감 보류(endingStayed)가 안식의 능동 선언 — 이후 무전 조기 구조도 오지 않는다.
+    invitation_choice: {
+      special: true,
+      icon: '📄', titleId: 'end3.inv.title', textId: 'end3.inv.text',
+      choices: [
+        { labelId: 'end3.inv.c0', run() { state.endingType = 'newworld'; state.invitationHeld = false; setTimeout(() => runEndingSequence('newworld'), 400); return t('end3.inv.r0'); } },
+        { labelId: 'end3.inv.c1', run() { state.endingStayed = true; state.invitationHeld = false; state.dayLog.notes.push(t('end3.inv.note')); return t('end3.inv.r1'); } },
+        { labelId: 'end3.inv.c2', run() { return t('end3.inv.r2'); } },
+      ],
+    },
+    // 초대장 마감일 아침 — 서랍의 종이가 마지막으로 묻는다(1회). 흘려보내면 안식 확정.
+    invitation_due: {
+      special: true,
+      icon: '📄', titleId: 'end3.due.title', textId: 'end3.due.text',
+      choices: [
+        { labelId: 'end3.due.c0', run() { state.endingType = 'newworld'; setTimeout(() => runEndingSequence('newworld'), 400); return t('end3.due.r0'); } },
+        { labelId: 'end3.due.c1', run() { state.endingStayed = true; state.dayLog.notes.push(t('end3.inv.note')); return t('end3.due.r1'); } },
+      ],
+    },
+    // ── #170 REV3 밤의 교신 (ENDINGS-REV3 §3c) — 사일로를 보고 돌아선 자에게, 박사의 마지막 물음 ──
+    //   무기록 원칙: 사일로·버튼·문서를 직접 말하지 않는다("개방 기록"까지만). 박사도 게임도 판단하지 않는다.
+    doctor_call: {
+      special: true,
+      icon: '📻', titleId: 'end3.call.title', textId: 'end3.call.text',
+      choices: [
+        { labelId: 'end3.call.c0', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.call.r0'); } },
+        { labelId: 'end3.call.c1', run() { return t('end3.call.r1'); } },
+      ],
+    },
+    // ── #170 REV3 재건의 봄 도입 (ENDINGS-REV3 §3d) — 카드 5장은 runRebuildSequence(ending-screen)가 맡는다 ──
+    rebuilding: {
+      special: true,
+      icon: '🌱', titleId: 'end3.rb.title', textId: 'end3.rb.text',
+      choices: [
+        { labelId: 'end3.rb.c0', run() { setTimeout(() => runRebuildSequence(), 400); return t('end3.rb.r0'); } },
+      ],
+    },
+    // 염료 상인 (디렉터 2026-07-08): 슬럼 탐험 5% — 손수레 위 페인트 통 셋. 통조림 교환,
     //   모드별 값 차등(노말·무한 2 / 하드 3 / 하드코어 4). 만나는 건 운, 사는 건 선택 — 도료 드랍의 교환 채널.
     dye_merchant: {
       special: true,
@@ -671,6 +743,15 @@ export function makeEvents(ctx) {
         { labelId: 'dye.c1', run() { return buyDye(1); } },
         { labelId: 'dye.c2', run() { return buyDye(2); } },
         { labelId: 'dye.pass', run() { return t('dye.r.pass'); } },
+      ],
+    },
+    // 2.0 §9.6 히든 루트 「침묵」 — 개척 완공 후 첫 밤, 통로 끝의 연구소에서 박사와 마주 앉는다.
+    //   선택지는 하나: 유보. 떠나지도, 받아들이지도 않는다(§5.1 — 유보한 자만이 문서를 발견한다).
+    hidden_reach: {
+      special: true,
+      icon: '🕳️', titleId: 'hidden.reach.title', textId: 'hidden.reach.text',
+      choices: [
+        { labelId: 'hidden.reach.c0', run() { state.hiddenReached = true; return t('hidden.reach.r0'); } },
       ],
     },
     ending: {

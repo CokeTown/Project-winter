@@ -181,6 +181,26 @@ export const PROJECTS = {
     ],
     doneSiteStage: 4,
   },
+
+  /* ── 2.0 §9.6 히든 통로 개척 (「침묵」 — GD-2.0 §5.1) ──
+     노출 조건: 지하철 거주 + 히든 지점 발견(subwayHidden — 선로 3구간 완주 뒤 승강장 개구부 더블탭).
+     UI 힌트 0 원칙: 발견 전엔 이 카드 자체가 존재하지 않는다(needsFlag 게이트가 그 역할).
+     역대 최고 코스트(무전 기지 약 2배·투입 12회 — 디렉터 확정 2026-07-08). "막대한 자원"의 문자화.
+     완공 효과(subway.hiddenGate): 사다리 등장 + 그날 밤 박사 대면 예약(§5.1 유보).
+     엔진 규칙 무수정 계약 유지: 테이블 추가 + applyProjectEffect case 1개뿐. */
+  hiddenGate: {
+    id: 'hiddenGate',
+    when: { shelters: ['subway'], needsFlag: 'subwayHidden' },
+    site: 'hiddenGate',
+    icon: '🕳️',
+    memoirKey: 'proj.hiddenGate.memoir',
+    stages: [
+      { costKey: 'hiddenGate1', need: 4, siteStage: 1, effectKey: null },                // 벽을 허문다
+      { costKey: 'hiddenGate2', need: 4, siteStage: 2, effectKey: null },                // 버팀목과 통로
+      { costKey: 'hiddenGate3', need: 4, siteStage: 3, effectKey: 'subway.hiddenGate' }, // 개통 — 어둠 속 사다리
+    ],
+    doneSiteStage: 4,
+  },
 };
 
 /* ── 1.2~1.4 확장 수용성 증명 (설계 노트, 이번 배치 미구현) ────────

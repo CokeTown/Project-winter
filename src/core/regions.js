@@ -8,7 +8,7 @@
    ============================================================ */
 import { state } from './state.js';
 import { seasonOf } from './season.js';
-import { rateParts } from './expedition.js';
+import { rateParts, masteryTier } from './expedition.js';
 import { REGIONS } from '../data/world.js';
 import { SHELTER_META } from '../data/shelters.js';
 import { BAL } from '../data/balance.js';
@@ -25,12 +25,21 @@ const DEMO_HARD_REGIONS = new Set(['commercial']);
 
 const BLIZZARD_EXEMPT_REGIONS = ['harborYard', 'fishMarket']; // 지상 폭설 봉쇄에서 제외되는 지역(항구)
 
+// 2.0 낙진 시계 (GD-2.0 §2): 겨울 셋을 넘기면 낙진이 걷힌다 — 금지 구역 맨몸 개방 + 도심 중심지 노출.
+//   successes가 아니라 winters 파생(day 기반 결정론) — 시간이 지도 자체를 바꾼다.
+export function falloutCleared() {
+  return (state.winters || 0) >= BAL.forbidden.falloutWinters;
+}
 // 지역 해금 여부 (성공 횟수 게이트). 항구·리조트·금지구역은 대응 셸터/후반선 도달 시 지도 노출.
 export function regionUnlocked(rid) {
   if (_demoLock()) return DEMO_REGIONS.has(rid) || (state.mode === 'hard' && DEMO_HARD_REGIONS.has(rid)); // #74 데모 3지역 + #159 도전=상업지구
   if (rid === 'harborYard' || rid === 'fishMarket') return state.successes >= SHELTER_META.tugboat.unlockAt;
   if (rid === 'resort') return state.successes >= SHELTER_META.lodge.unlockAt; // 1.3: 리조트는 스키 로지 해금 후
   if (rid === 'checkpoint' || rid === 'lab') return state.successes >= BAL.forbidden.unlockAt; // 1.4 금지구역(진입은 방호복 게이트가 별도)
+  if (rid === 'citycore') return falloutCleared(); // 2.0: 봉쇄선 너머 수도의 심장 — 낙진이 걷혀야만
+  // #167 2겹화 파일럿: 뒷골목 심부는 겉(슬럼)을 아는 사람에게만 — 숙련 ★1(20회 시도)이 곧 열쇠.
+  //   "다시 마주칠 때 더 보인다"(DEPTH-DESIGN)의 공간 적용. 해금 전엔 지도에 아예 없다(소문조차 없음).
+  if (rid === 'slumdeep') return masteryTier('slum') >= 1;
   return true;
 }
 export function isForbiddenRegion(regionId) {
@@ -61,6 +70,10 @@ export function pickAutoRegion() {
     let scarceHits = 0;
     for (const [rid] of REGIONS[id].lootRes) if (scarce.has(rid)) scarceHits++; // 부족 자원 종 수
     let w = eff * (1 + scarceHits * A.scarceWeightPerRes);
+    // #177 레버5: 활성 위시리스트(미수집 시그니처 도면 보유) 지역 넛지 — 정보판 트래커가 "여기서만"이라
+    //   가리킨 곳으로 자동 탐험도 향한다(pull 실현). 전부 수집하면 조건이 풀려 자동 소멸.
+    const sigs = BAL.blueprint.regionItems[id];
+    if (sigs && sigs.some(bp => !(state.blueprints || {})[bp])) w *= A.wishlistWeight;
     if (id === state.lastAutoRegion) w *= A.revisitDecay; // 직전 방문 감쇠
     if (w > bestW) { bestW = w; bestId = id; }
   }

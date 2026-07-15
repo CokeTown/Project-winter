@@ -51,13 +51,60 @@ export const WILDLIFE_SPECIES = {
     palette: { fur: 0x4a4038, belly: 0x5a5048, ear: 0x6a4a48, nose: 0xc08078, eye: 0x140f0a, tailTip: 0x6a4a48 },
     nameKo: '쥐', nameEn: 'rat',
   },
+  // #182 B1 개 — 폐허의 떠돌이 개. dog 플래그로 buildQuad가 늘어진 귀·긴 주둥이·치켜든 꼬리로 실루엣 분화.
+  //   shy 낮음(사람에게 다가온다) — 카논 "따뜻하게". 드랍(뼈다귀 등)은 B2에서 spawnGroundDrop 연결.
+  dog: {
+    kind: 'quad', sizeH: 0.34, gait: 0.72, shy: 1.1, dog: true,
+    palette: { fur: 0x8a6a44, belly: 0xc4a67e, ear: 0x6a4e34, nose: 0x1a1410, eye: 0x140f0a, tailTip: 0x9a7a54 },
+    nameKo: '개', nameEn: 'dog',
+  },
+  // #182 B1 참새 — 소형 참새(온실새·귀환새(봄)·언참새(겨울) 공용 모델. 계절 게이트는 B2).
+  sparrow: {
+    kind: 'bird', sizeH: 0.12, gait: 0.5, shy: 2.4,
+    palette: { body: 0x8a6f4e, wing: 0x66502f, beak: 0x2a2018, eye: 0x0d0b09, belly: 0xcabfa4 },
+    nameKo: '참새', nameEn: 'sparrow',
+  },
+  // #182 B1 기러기 — 긴 목(goose 플래그)·큰 몸. 남행 행렬(geesesouth, 가을). 계절/편대는 B2.
+  goose: {
+    kind: 'bird', sizeH: 0.30, gait: 0.52, shy: 2.8, goose: true,
+    palette: { body: 0xb8b0a4, wing: 0x8a8278, beak: 0x30281e, eye: 0x0d0b09, neck: 0x2a2824 },
+    nameKo: '기러기', nameEn: 'goose',
+  },
+  // #182 B1 곤충 — kind:'insect'(부유·군집). glow 있으면 발광(반딧불). 계절/밤 게이트는 B2.
+  firefly: {
+    kind: 'insect', sizeH: 0.05, gait: 0.3, shy: 0.6, glow: 0xd4ff8c,
+    palette: { body: 0x2a2818, head: 0x1a180f, wing: 0x3a4a20 },
+    nameKo: '반딧불', nameEn: 'firefly',
+  },
+  bee: {
+    kind: 'insect', sizeH: 0.05, gait: 0.42, shy: 1.0,
+    palette: { body: 0xd9a72e, head: 0x2a2214, wing: 0xe6ecec },
+    nameKo: '벌', nameEn: 'bee',
+  },
+  cicada: {
+    kind: 'insect', sizeH: 0.085, gait: 0.22, shy: 1.4,
+    palette: { body: 0x4a5238, head: 0x2a3020, wing: 0xaab2a4 },
+    nameKo: '매미', nameEn: 'cicada',
+  },
+  mosquito: {
+    kind: 'insect', sizeH: 0.035, gait: 0.5, shy: 0.8,
+    palette: { body: 0x3a352c, head: 0x2a2620, wing: 0xc8ccd0 },
+    nameKo: '모기', nameEn: 'mosquito',
+  },
+  // #182 B1 거미줄 — 로밍 아님(kind:'web'). 정적 프롭: 방 구석 창틀에 방사형 실 + 이슬 + 작은 거미.
+  //   단일 텍스처 평면(픽셀 저해상에서 또렷). 인카운터 'spiderweb'(아침 거미줄)의 인엔진 실체. 게이트는 B2.
+  spiderweb: {
+    kind: 'web', sizeH: 0.42, shy: 0,
+    palette: { silk: 0xd6dce4, spider: 0x1e1a16, dew: 0xe6f4ff },
+    nameKo: '거미줄', nameEn: 'spiderweb',
+  },
   // 산양(goat)은 디렉터 판단으로 제외(지리 정합 — 2026-07). 고원/초지는 사슴이 대신한다.
 };
 
 // 구역(district)별 등장 종. districtOf(shelterId) 결과 키. 셸터별 override 는 SHELTER_WILDLIFE.
 export const DISTRICT_WILDLIFE = {
-  outskirts: ['rabbit', 'crow'],
-  city:      ['strayCat', 'crow'],
+  outskirts: ['rabbit', 'crow', 'dog'],
+  city:      ['strayCat', 'crow', 'dog'],
   meadow:    ['rabbit', 'deer'],
   forest:    ['deer', 'fox'],
   coast:     ['seagull', 'crow'],
