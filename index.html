@@ -59,11 +59,24 @@
 <div class="panel" id="hud">
   <div class="shelter-name" id="hud-shelter" data-i18n="hud.shelter">🏚️ 셸터</div>
   <div class="stat" id="hud-stat" data-i18n="hud.stat">성공한 탐험 0회</div>
+  <!-- #199 5차 「필드 터미널」(디렉터 목업): 게이지 = 카드형(아이콘+라벨+큰 숫자+컬러 바) -->
   <div id="gauges">
-    <div class="gauge" id="g-hunger" data-i18n-title="g.hunger.title" title="배고픔 — 클릭하면 음식을 먹습니다"><div class="g-fill"></div><span class="g-label">🥫 80</span></div>
-    <div class="gauge" id="g-thirst" data-i18n-title="g.thirst.title" title="갈증 — 클릭하면 물을 마십니다"><div class="g-fill"></div><span class="g-label">💧 80</span></div>
-    <div class="gauge" id="g-energy" data-i18n-title="g.energy.title" title="에너지 — 탐험마다 소모, 취침으로 회복"><div class="g-fill"></div><span class="g-label">⚡ 100</span></div>
-    <div class="gauge" id="g-clean" data-i18n-title="g.clean.title" title="청결 — 클릭하면 청소한다"><div class="g-fill"></div><span class="g-label">🧹 70</span></div>
+    <div class="gauge" id="g-hunger" data-i18n-title="g.hunger.title" title="배고픔 — 클릭하면 음식을 먹습니다">
+      <div class="g-top"><span class="g-ic">🥫</span><span class="g-name" data-i18n="pda.g.hunger">허기</span><b class="g-num">80</b></div>
+      <div class="g-bar"><i class="g-fill"></i></div>
+    </div>
+    <div class="gauge" id="g-thirst" data-i18n-title="g.thirst.title" title="갈증 — 클릭하면 물을 마십니다">
+      <div class="g-top"><span class="g-ic">💧</span><span class="g-name" data-i18n="pda.g.thirst">갈증</span><b class="g-num">80</b></div>
+      <div class="g-bar"><i class="g-fill"></i></div>
+    </div>
+    <div class="gauge" id="g-energy" data-i18n-title="g.energy.title" title="에너지 — 탐험마다 소모, 취침으로 회복">
+      <div class="g-top"><span class="g-ic">⚡</span><span class="g-name" data-i18n="pda.g.energy">기력</span><b class="g-num">100</b></div>
+      <div class="g-bar"><i class="g-fill"></i></div>
+    </div>
+    <div class="gauge" id="g-clean" data-i18n-title="g.clean.title" title="청결 — 클릭하면 청소한다">
+      <div class="g-top"><span class="g-ic">🧹</span><span class="g-name" data-i18n="pda.clean">청결</span><b class="g-num">70</b></div>
+      <div class="g-bar"><i class="g-fill"></i></div>
+    </div>
   </div>
   <div class="btn-row icons">
     <button class="pixel-btn primary" id="btn-exp" data-i18n-title="btn.exp.title" title="탐험 (지도)"><img class="act-icon" src="img/icons/icon_act_explore.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('🎒'))"><span class="act-lbl" data-i18n="btn.exp.lbl">탐험</span></button>

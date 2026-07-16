@@ -8668,21 +8668,15 @@ function updateHud() {
     limit: cd.limitMod ? t('hud.comfortLimit', { n: cd.limitMod }) : '',
     bonus: bonus ? t('hud.comfortBonus', { n: bonus }) : '',
   });
-  // 아이콘 중심 상태 표시 (자세한 설명은 툴팁으로)
-  $('hud-stat').innerHTML =
-    `${W.icon}${W.penalty ? `<span style="color:var(--bad)">-${Math.round(W.penalty * 100)}%</span>` : ''}` +
-    `${injIcon ? `<span data-tip="${state.injury ? LName(INJURIES[state.injury.type]) : ''}">${injIcon}</span>` : ''}` +
-    `${cd.limitMod ? ` <span style="color:var(--bad)" data-tip="${LLimits(sh) || ''}">⚠️</span>` : ''}` +
-    `${state.buff ? ` <span style="color:var(--good)" data-tip="${buffLabel(state.buff)}">✨</span>` : ''}` +
-    ` · <span style="color:var(--accent)" data-tip="${comfortTip}">😊${cd.score} ${'★'.repeat(lv)}</span>` +
-    ` · <span data-tip="${t('hud.cleanTip')}">🧹${Math.round(cd.clean)}</span>` +
-    ` · <span data-tip="${t('hud.expTip', { n: state.expToday, max: EXP_PER_DAY })}">🎒${state.expToday}/${EXP_PER_DAY}</span>` +
-    // #195: 배경화면 모드는 successes가 셸터 해금용 치환값(탐험 봉인) — 가짜 '탐험 성공 N회' 노출 차단
-    (isWallpaper() ? '' : ` · <span data-tip="${t('hud.succTip')}">🏆${state.successes}</span>`) +
-    // Nine Winters(#11): 넘긴 겨울 배지 — 1겨울부터 노출. 9 초과는 약속을 넘어선 시간 → accent
-    ((state.winters || 0) >= 1
-      ? ` · <span class="hud-winters${state.winters > 9 ? ' beyond' : ''}" data-tip="${t('winter.badge.tip', { n: state.winters })}">❄️${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}</span>`
-      : '');
+  // #199 5차 「필드 터미널」 컨디션 스트립(디렉터 목업): 날씨 | 경고 | 쾌적 | 탐험 — 상세는 PDA 상태 탭
+  const warnN = (state.injury ? 1 : 0) + (cd.limitMod ? 1 : 0);
+  const segs = [
+    `<span class="cond-seg" data-tip="${LName(W)}">${W.icon}${W.penalty ? `<b class="bad">-${Math.round(W.penalty * 100)}%</b>` : `<b>—</b>`}</span>`,
+    `<span class="cond-seg" data-tip="${[state.injury ? LName(INJURIES[state.injury.type]) : '', cd.limitMod ? (LLimits(sh) || '') : ''].filter(Boolean).join(' · ')}">${injIcon || '⚠️'}<b class="${warnN ? 'bad' : ''}">${warnN}</b>${state.buff ? ' ✨' : ''}</span>`,
+    `<span class="cond-seg" data-tip="${comfortTip}">😊<b>${cd.score}</b></span>`,
+    `<span class="cond-seg" data-tip="${t('hud.expTip', { n: state.expToday, max: EXP_PER_DAY })}">🎒<b>${state.expToday}/${EXP_PER_DAY}</b></span>`,
+  ];
+  $('hud-stat').innerHTML = segs.join('<span class="cond-div">|</span>');
   renderGauge('g-hunger', state.hunger, 'hunger', '🥫');
   renderGauge('g-thirst', state.thirst, 'thirst', '💧');
   renderGauge('g-energy', state.energy, 'energy', '⚡');
@@ -8694,7 +8688,15 @@ function renderGauge(id, val, gkey, emoji) {
   const fill = g.querySelector('.g-fill');
   fill.style.width = Math.max(0, Math.round(val)) + '%';
   fill.className = 'g-fill' + (val < 25 ? ' crit' : val < 45 ? ' warn' : '');
-  g.querySelector('.g-label').innerHTML = `${icon(GAUGE_ICON[gkey], emoji)} ${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
+  // #199 5차 「필드 터미널」: 카드형(아이콘·라벨·큰 숫자·컬러 바) — 구형 .g-label 폴백 병행
+  const num = g.querySelector('.g-num');
+  if (num) {
+    g.querySelector('.g-ic').innerHTML = icon(GAUGE_ICON[gkey], emoji);
+    num.textContent = `${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
+  } else {
+    const lb = g.querySelector('.g-label');
+    if (lb) lb.innerHTML = `${icon(GAUGE_ICON[gkey], emoji)} ${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
+  }
   // #199: 도킹 PDA 마이크로 게이지 동기화 — 접힘 상태에서도 보이는 상시 계측(LED 스트립)
   const dk = $('dkg-' + gkey[0]);
   if (dk) { dk.style.setProperty('--v', Math.max(0, Math.round(val)) + '%'); dk.className = val < 25 ? 'crit' : val < 45 ? 'warn' : ''; }
