@@ -3,14 +3,20 @@
     src: url('./assets/fonts/DungGeunMo.woff') format('woff');
     font-weight: normal; font-style: normal; font-display: swap;
   }
+  /* ── UI 표면 언어 A안 (디렉터 확정 2026-07-17): "클로드 스타일" 청회 차콜 → Nine Winters 고유 재질 ──
+     잿빛(웜 차콜) 판자·강판 + 앰버(랜턴) + 종이 토큰. 레이아웃 불변 — 관상 3요소(팔레트·프레임·재질)만 교체. */
   :root {
-    --panel-bg: rgba(16, 18, 23, 0.93);
-    --panel-border: #3a3f4d;
+    --panel-bg: rgba(24, 21, 17, 0.94);      /* 웜 차콜(잿빛) — 청색기 제거 */
+    --panel-border: #4a4136;                  /* 그을린 나무·강판 웜 그레이 */
+    --panel-edge: #14110d;                    /* 외곽 프레임(근흑 웜) */
+    --panel-hi: rgba(255, 236, 200, 0.07);    /* 상단 하이라이트 — 랜턴 빛이 스치는 면 */
     --accent: #e8a86c;
     --good: #8fbb7a;
     --bad: #c96a5f;
     --text: #d8d5cc;
-    --text-dim: #8a8d99;
+    --text-dim: #9a9184;                      /* 청회 딤 → 웜 딤 */
+    --paper: #d8cdb4;                         /* 종이 토큰 (B단계 수첩 대비) */
+    --paper-ink: #3a3226;
     --uiz: 1;
     --rarity-rare: #b06ee6;   /* 희귀 = 보라 (도료·책) */
     --rarity-legend: #ffcf49; /* 전설 = 금색 (도면·네온 안료) */
@@ -50,8 +56,14 @@
   #c { display: block; width: 100%; height: 100%; }
 
   .panel {
-    position: absolute; background: var(--panel-bg);
-    border: 2px solid var(--panel-border); border-radius: 4px;
+    position: absolute;
+    /* 재질: 상단 랜턴 하이라이트 + 미세 수평 그레인(판자 결) + 웜 차콜 — 플랫 사각 탈피 */
+    background:
+      linear-gradient(180deg, var(--panel-hi), transparent 22%),
+      repeating-linear-gradient(0deg, rgba(255, 236, 200, 0.016) 0 1px, transparent 1px 3px),
+      var(--panel-bg);
+    border: 2px solid var(--panel-edge); border-radius: 2px;
+    box-shadow: inset 0 0 0 1px var(--panel-border), 0 3px 10px rgba(0, 0, 0, 0.35);
     padding: 10px 12px;
     zoom: var(--uiz);
     /* P1-F: 라운드 코너 기준 내부 클리핑 — p-head의 음수 마진/줌 반올림으로 생기는
@@ -66,10 +78,12 @@
   }
   button.pixel-btn {
     font-family: inherit; font-size: 11px; color: var(--text);
-    background: #262a35; border: 2px solid var(--panel-border); border-radius: 3px;
+    background: #2b2620; border: 2px solid var(--panel-edge); border-radius: 2px;
+    box-shadow: inset 0 1px 0 rgba(255, 236, 200, 0.09), inset 0 -2px 0 rgba(0, 0, 0, 0.32); /* 픽셀 베벨 */
     padding: 6px 9px; cursor: pointer;
     white-space: nowrap; /* 좁아져도 글자가 세로로 꺾이지 않게 */
   }
+  button.pixel-btn:active { box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.32); transform: translateY(1px); }
   button.pixel-btn:hover { border-color: var(--accent); color: var(--accent); }
   button.pixel-btn.danger:hover { border-color: var(--bad); color: var(--bad); }
   button.pixel-btn.primary { border-color: #6b5a40; color: var(--accent); }
@@ -80,7 +94,7 @@
   .zzz-badge {
     position: absolute; top: -6px; right: -4px;
     padding: 1px 3px; font-size: 9px; line-height: 1; font-weight: bold;
-    background: #2c3444; color: #cfe0ff; border: 1px solid #10141c; border-radius: 4px;
+    background: #3a332a; color: #ffe2b8; border: 1px solid #10141c; border-radius: 4px;
     pointer-events: none; letter-spacing: 0.5px;
   }
   .act-glyph {
@@ -139,7 +153,7 @@
   #exp-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
   .region-card {
     border: 2px solid var(--panel-border); border-radius: 3px;
-    padding: 7px 8px; margin-bottom: 7px; background: #1c1f28;
+    padding: 7px 8px; margin-bottom: 7px; background: #201b16;
   }
   .region-card .r-head { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
   .region-card .r-rate { color: var(--good); }
@@ -183,7 +197,7 @@
   .settings-tab {
     flex: 1 1 auto; min-width: 0;
     font-family: inherit; font-size: 11px; color: var(--text-dim);
-    background: #20242e; border: 2px solid var(--panel-border); border-bottom: none;
+    background: #241f19; border: 2px solid var(--panel-border); border-bottom: none;
     border-radius: 4px 4px 0 0; padding: 6px 4px; margin-right: 2px; cursor: pointer;
     white-space: nowrap;
   }
@@ -205,7 +219,7 @@
   #settings-window input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
   #settings-window h2 { font-size: 12px; color: var(--accent); margin: 12px 0 6px; }
   #settings-window select {
-    background: #1c1f28; color: var(--text);
+    background: #201b16; color: var(--text);
     border: 2px solid var(--panel-border); border-radius: 3px;
     font-family: inherit; font-size: inherit; padding: 2px 4px;
   }
@@ -214,7 +228,7 @@
   #controls-guide .cg-key {
     flex: 0 0 auto; min-width: 62px; color: var(--accent);
     font-size: 10px; border: 1px solid var(--panel-border); border-radius: 3px;
-    padding: 1px 5px; text-align: center; background: #20242e;
+    padding: 1px 5px; text-align: center; background: #241f19;
   }
   #controls-guide .cg-desc { flex: 1 1 auto; }
   #controls-guide .cg-note { font-size: 10px; opacity: 0.7; margin-top: 10px; }
@@ -223,7 +237,7 @@
   #controls-guide button.cg-bind {
     flex: 0 0 auto; min-width: 62px; color: var(--accent);
     font-family: inherit; font-size: 10px; border: 1px solid var(--panel-border);
-    border-radius: 3px; padding: 2px 5px; text-align: center; background: #20242e;
+    border-radius: 3px; padding: 2px 5px; text-align: center; background: #241f19;
     cursor: pointer; align-self: center;
   }
   #controls-guide button.cg-bind:hover { border-color: var(--accent); }
@@ -284,7 +298,7 @@
     position: relative;
     display: flex; flex-direction: column; align-items: center; gap: 3px;
     min-width: 60px; padding: 7px 4px 5px; cursor: pointer;
-    background: #262a35; border: 2px solid var(--panel-border); border-radius: 4px;
+    background: #2b2620; border: 2px solid var(--panel-border); border-radius: 4px;
     font-size: 10px; color: var(--text);
   }
   .tool-item:hover { border-color: var(--accent); transform: translateY(-2px); }
@@ -317,7 +331,7 @@
   /* #194: 도료 보유 수량 상시 배지 — hover title이 안 뜨는 터치 환경에서도 보유량이 보이게 (.tool-item .cnt 축소판) */
   .swatch .sw-cnt {
     position: absolute; top: -7px; right: -6px;
-    background: #262a35; color: var(--text); font-size: 9px; line-height: 1;
+    background: #2b2620; color: var(--text); font-size: 9px; line-height: 1;
     padding: 1px 4px; border: 1px solid var(--panel-border); border-radius: 7px;
     pointer-events: none;
   }
@@ -364,7 +378,7 @@
   .shelter-card {
     display: flex; gap: 10px; align-items: center;
     border: 2px solid var(--panel-border); border-radius: 4px;
-    padding: 9px 10px; margin-bottom: 8px; background: #1c1f28;
+    padding: 9px 10px; margin-bottom: 8px; background: #201b16;
   }
   .shelter-card .s-emoji { font-size: 26px; }
   .shelter-card .s-body { flex: 1; }
@@ -388,7 +402,7 @@
   .loot-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
   .loot-item {
     border: 2px solid var(--panel-border); border-radius: 4px;
-    padding: 6px 10px; font-size: 12px; background: #1c1f28;
+    padding: 6px 10px; font-size: 12px; background: #201b16;
   }
   /* 정산 희귀도 테두리 (디렉터 2026-07-09): 획득 난이도별 빛나는 테두리 — 희귀=보라, 전설=금색.
      글로우 펄스는 ::after로(박스 자체 animation은 개봉 리빌 lootPop이 차지 — 충돌 방지). */
@@ -418,7 +432,7 @@
   .res-chip {
     display: flex; align-items: center; gap: 5px;
     font-size: 12px; padding: 4px 6px; border-radius: 3px;
-    background: #1c1f28; white-space: nowrap; border: 1px solid #262a35;
+    background: #201b16; white-space: nowrap; border: 1px solid #2b2620;
   }
   .res-chip .re { font-size: 14px; line-height: 1; flex: none; }
   /* min-width:0 이 없으면 flex 자식이 min-content(이름 전체폭) 밑으로 안 줄어 칩이 트랙을 넘고,
@@ -443,7 +457,7 @@
   .prep-row {
     display: flex; align-items: center; gap: 8px;
     border: 2px solid var(--panel-border); border-radius: 3px;
-    padding: 6px 8px; margin-bottom: 6px; background: #1c1f28;
+    padding: 6px 8px; margin-bottom: 6px; background: #201b16;
     cursor: pointer; font-size: 11px;
   }
   .prep-row.sel { border-color: var(--accent); }
@@ -560,7 +574,7 @@
   .report-sec .r-title { color: var(--accent); font-size: 12px; }
   .report-warn { color: var(--bad); }
   .report-tip { color: var(--good); }
-  kbd { background:#262a35; border:1px solid var(--panel-border); border-radius:3px; padding:0 5px; font-family: inherit; }
+  kbd { background:#2b2620; border:1px solid var(--panel-border); border-radius:3px; padding:0 5px; font-family: inherit; }
 
   #toast {
     position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
@@ -602,7 +616,7 @@
   .slot-card {
     display: flex; gap: 10px; align-items: center;
     border: 2px solid var(--panel-border); border-radius: 4px;
-    padding: 9px 10px; margin-bottom: 8px; background: #1c1f28; cursor: pointer;
+    padding: 9px 10px; margin-bottom: 8px; background: #201b16; cursor: pointer;
   }
   .slot-card:hover { border-color: var(--accent); }
   .slot-card.empty { opacity: 0.55; }
@@ -771,11 +785,21 @@
   .p-head {
     display: flex; align-items: center; gap: 6px;
     margin: -10px -12px 8px; padding: 5px 8px;
-    background: #20242e; border-bottom: 2px solid var(--panel-border);
+    background: linear-gradient(180deg, #2c2620, #211c16); /* 그을린 헤더 스트립 */
+    border-bottom: 2px solid var(--panel-edge);
+    box-shadow: inset 0 -1px 0 rgba(232, 168, 108, 0.22);  /* 앰버 심 — 랜턴 불빛 한 줄 */
     border-radius: 2px 2px 0 0;
     cursor: grab; user-select: none; touch-action: none;
     font-size: 10px; color: var(--text-dim); letter-spacing: 1px;
   }
+  /* 프레임 리벳(못) — 헤더 좌우 상단 2점. 판자 게시판의 물성 한 방울 */
+  .panel::before, .panel::after {
+    content: ''; position: absolute; top: 5px; width: 4px; height: 4px;
+    background: #6a5d49; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 236, 200, 0.35);
+    z-index: 2; pointer-events: none;
+  }
+  .panel::before { left: 5px; }
+  .panel::after { right: 5px; }
   .p-head:active { cursor: grabbing; }
   /* 📌 UI 배치 고정: 드래그 잠금 상태 — 손이 못 잡는 헤더 (디렉터 2026-07-10) */
   body.ui-pinned .p-head, body.ui-pinned .p-head:active { cursor: default; }
