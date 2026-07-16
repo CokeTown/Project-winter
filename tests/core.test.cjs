@@ -438,6 +438,18 @@ const KNOWLEDGE_HASH = -451536973;
       JSON.stringify(ct));
     check('2.0-α citiesReached 기록 (loadShelter 관문)', ct.reachedAfterLoad === 1, `reached ${ct.reachedAfterLoad}`);
 
+    // ── 2d) 2.0-(b) regionReachable — 기능 플래그 격리(§9.8.3: off=현 전역 회귀·동작 변화 0) ──
+    const rr = await call(`
+      const S2 = window.__shelter;
+      const offAll = ['slum','residential','industrial','commercial'].every(r => S2.regionReachable(r));
+      S2.BAL.cities.enabled = true;                       // 플래그 on — 기존 10지역은 전부 home이라 여전히 전부 도달 가능
+      const onHome = ['slum','residential','resort','citycore'].every(r => S2.regionReachable(r));
+      S2.BAL.cities.enabled = false;                      // 원복 (후속 테스트 오염 방지)
+      return JSON.stringify({ offAll, onHome });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const rj = JSON.parse(rr);
+    check('2.0-(b) regionReachable (off=전역 true · on+home 셸터=기존 전 지역 true)', rj.offAll === true && rj.onHome === true, JSON.stringify(rj));
+
     // ── 2b) #195 레이아웃 아이템 왕복 (감사 P2: MIG 게이트가 톱레벨만 봐 y·s·t·ge가 그물 밖이던 사각) ──
     //   저장 스키마(d/c/x/z/r/o/y/s/t/ge) → loadSave 복원 → 인메모리 아이템 필드 → flushSave 재직렬화까지
     //   전 구간 보존을 검증. #193의 y 결손 4사이트가 이 테스트 부재로 통과했었다.

@@ -50,7 +50,7 @@ import { hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
 import { districtOf, cityOf, rateParts, expActualRate, setExpeditionWeather, masteryTier } from './core/expedition.js'; // 탐험 판정 (Tier3) + 지역 숙련(2.0) + 도시 파생(2.0-α)
 import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
 import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEncounterEvents } from './core/encounter.js'; // 인카운터 술어 (Tier3)
-import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsAutoAvoid, falloutCleared } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0)
+import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsAutoAvoid, falloutCleared, regionReachable } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0) + 도시 필터(2.0-b)
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -2737,6 +2737,7 @@ function openMapModal() {
     const p = MAP_MARKERS[rid];
     if (!p) continue;
     if (!regionUnlocked(rid)) continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
+    if (!regionReachable(rid)) continue; // 2.0-(b): 타 도시 지역은 그 도시에서만 — 지도 자체가 도시 스코프(플래그 off면 무변화)
     const el = document.createElement('div');
     el.className = 'map-pin region';
     el.dataset.rid = rid; // 식별자 노출(테스트·자동화·트레일러 캡처가 지역별로 마커를 짚게)
@@ -3119,6 +3120,7 @@ function startExpedition(regionId) {
   if (state.energy < BAL.exp.minEnergy) { toast(t('toast.tooTired')); return; }
   if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); return; }
   if (blizzardBlocks(regionId)) { toast(t('subway.blizzardBlocked')); return; } // 1.2 폭설 봉쇄 (개통 구간은 예외)
+  if (!regionReachable(regionId)) return; // 2.0-(b): 타 도시 지역 출발 차단 — 지도에서 이미 숨겨 도달 불가 방어선(무토스트)
   // 1.4 금지 구역 진입 게이트 — 방호복 미제작/내구 소진 시 차단. "방호복 없이는 한 걸음도"의 실측 지점.
   //   2.0 낙진 시계: 겨울 셋을 넘겨 낙진이 걷히면 맨몸 개방(우회) — 대신 resolve에서 잔류 방사능 부상 롤.
   if (isForbiddenRegion(regionId) && !hazmatUsable() && !falloutCleared()) {
@@ -11351,6 +11353,7 @@ window.__shelter = {
   loadShelter, // #195 QA: 레이아웃 왕복 게이트 — loadSave는 상태만 싣고 씬 복원은 부팅 절차 몫이라 직접 구동
   cityOf, // 2.0-α QA: 도시 파생 게이트(셸터→도시 매핑·기록 필드 검증)
   playCollapseVignette, // #199 QA: 문+상자 연출 직접 구동(캡처 검수용)
+  regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
