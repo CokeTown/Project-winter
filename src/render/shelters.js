@@ -2871,12 +2871,37 @@ export function makeShelterBuilders(ctx) {
         for (const [px, pz] of [[-3.6, -4.3], [3.6, -4.4]]) { Cyl(envRoot, 0.32, 0.24, 0.5, 0x2e2620, px, 0.25, pz, 8); B(envRoot, 0.16, 1.1, 0.16, 0x2e2218, px, 1.0, pz); for (let kk = 0; kk < 4; kk++) B(envRoot, 0.6 + rand() * 0.5, 0.5 + rand() * 0.4, 0.6, rand() < 0.5 ? 0x24361e : 0x2e4420, px + (rand() - 0.5) * 0.5, 1.4 + kk * 0.22, pz + (rand() - 0.5) * 0.5); }
         for (const [lx, lz] of [[-3.95, -5.2], [3.95, -5.2]]) { const lan = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.34, 0.22), new THREE.MeshLambertMaterial({ color: 0xffcf8a, emissive: 0xd8963c, emissiveIntensity: 1.1 })); lan.position.set(lx, 0.6, lz); envRoot.add(lan); }
         // ── 잠식된 폐허 도시 3링 ──
+        // (d)-2d: 창은 개별 패널(+z 한 면)이 아니라 4면 캔버스 텍스처 — 링 배치에선 어느 면이 보일지
+        //   모르므로 한 면 창은 '검은 통짜'로 읽혔다. 셀 파손·희귀 불빛 포함, 시드 캐시.
+        const _pentTex = {};
+        const towerFaceTex = (seed) => {
+          if (_pentTex[seed]) return _pentTex[seed];
+          const c = document.createElement('canvas'); c.width = 64; c.height = 256;
+          const g2 = c.getContext('2d'); const tr = seededRand(seed);
+          g2.fillStyle = '#221d2a'; g2.fillRect(0, 0, 64, 256);
+          for (let y = 6; y < 248; y += 9) for (let x = 4; x < 58; x += 8) {
+            const r = tr();
+            if (r > 0.88) continue;                                                        // 파손 셀 — 몸체 노출
+            g2.fillStyle = r < 0.012 ? '#ffb877' : r < 0.06 ? '#2a3350' : '#141220';
+            g2.fillRect(x, y, 5, 6);
+          }
+          const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+          return (_pentTex[seed] = tex);
+        };
         const overgrow = (grp, tw, th) => {
           for (let i = 0; i < 3 + ((tw * 0.5) | 0); i++) B(grp, tw * 0.3 + rand() * tw * 0.4, 0.8 + rand() * 2.2, tw * 0.3 + rand() * tw * 0.4, [0x1c2a18, 0x24361e, 0x2e4420][(rand() * 3) | 0], (rand() - 0.5) * tw * 0.7, th + 0.6 + rand() * 1.4, (rand() - 0.5) * tw * 0.7);
           for (let vv = 0; vv < 6 + ((th / 6) | 0); vv++) { const face = (rand() * 4) | 0, hy = th - 2 - rand() * th * 0.8, wSide = face < 2; const vg = B(grp, wSide ? 1.2 + rand() * 1.6 : 0.5, 1.2 + rand() * 2.5, wSide ? 0.5 : 1.2 + rand() * 1.6, rand() < 0.5 ? 0x1a2616 : 0x22321c, 0, 0, 0); vg.position.set(face === 0 ? tw / 2 + 0.2 : face === 1 ? -tw / 2 - 0.2 : (rand() - 0.5) * tw, hy, face === 2 ? tw / 2 + 0.2 : face === 3 ? -tw / 2 - 0.2 : (rand() - 0.5) * tw); }
         };
-        for (let i = 0; i < 16; i++) { const ang = -Math.PI * 0.5 + (i / 16 - 0.5) * Math.PI * 1.5, R = 24 + rand() * 20, tw = 7 + rand() * 6, th = 26 + rand() * 30; const g = new THREE.Group(), bodyH = th + 55; const bd = new THREE.Mesh(new THREE.BoxGeometry(tw, bodyH, tw), lamb(i % 2 ? 0x241f2c : 0x1e1a26)); bd.position.y = th - bodyH / 2; bd.castShadow = true; g.add(bd); for (let fy = 3; fy < th - 2; fy += 3.4) for (let fx = -tw / 2 + 1.2; fx < tw / 2 - 0.9; fx += 2.2) { const r = rand(), c = r < 0.012 ? 0xffb877 : (r < 0.05 ? 0x2a3350 : 0x141220); const wn = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.7, 0.1), lamb(c)); wn.position.set(fx, fy, tw / 2 + 0.06); g.add(wn); } overgrow(g, tw, th); const sp = rand() < 0.4 ? new THREE.Mesh(new THREE.ConeGeometry(0.5, 3 + rand() * 3, 6), lamb(0x161320)) : new THREE.Mesh(new THREE.BoxGeometry(0.18, 5 + rand() * 3, 0.18), lamb(0x161320)); sp.position.y = th + 2.4; g.add(sp); g.position.set(R * Math.sin(ang), GY, -R * Math.cos(ang) * 0.9 + (rand() - 0.5) * 6); envRoot.add(g); }
-        for (let i = 0; i < 22; i++) { const ang = rand() * Math.PI * 2, R = 48 + rand() * 36, tw = 6 + rand() * 7, th = 20 + rand() * 34; const g = new THREE.Group(), bodyH = th + 50; const bd = new THREE.Mesh(new THREE.BoxGeometry(tw, bodyH, tw), lamb(0x1b1826)); bd.position.y = th - bodyH / 2; g.add(bd); overgrow(g, tw, th); g.position.set(R * Math.sin(ang), GY, -R * Math.cos(ang) * 0.8 - 6); envRoot.add(g); }
+        for (let i = 0; i < 16; i++) { const ang = -Math.PI * 0.5 + (i / 16 - 0.5) * Math.PI * 1.5, R = 24 + rand() * 20, tw = 7 + rand() * 6, th = 26 + rand() * 30; const g = new THREE.Group(), bodyH = th + 55;
+          const bd = new THREE.Mesh(new THREE.BoxGeometry(tw, bodyH, tw), new THREE.MeshLambertMaterial({ map: towerFaceTex(3100 + i) })); // 4면 창 그리드
+          bd.position.y = th - bodyH / 2; bd.castShadow = true; g.add(bd); overgrow(g, tw, th);
+          // 지붕선 붕괴 변주 — 평평한 정수리 금지: 컬럼별 낙차 블록 + 기운 슬래브
+          for (let rb = 0; rb < 2 + ((rand() * 2) | 0); rb++) { const rw = tw * (0.2 + rand() * 0.3); const blk = new THREE.Mesh(new THREE.BoxGeometry(rw, 1.2 + rand() * 2.6, rw), lamb(0x1e1a26)); blk.position.set((rand() - 0.5) * tw * 0.6, th + 0.7 + rand() * 0.8, (rand() - 0.5) * tw * 0.6); if (rand() < 0.4) blk.rotation.z = (rand() - 0.5) * 0.3; g.add(blk); }
+          const sp = rand() < 0.4 ? new THREE.Mesh(new THREE.ConeGeometry(0.5, 3 + rand() * 3, 6), lamb(0x161320)) : new THREE.Mesh(new THREE.BoxGeometry(0.18, 5 + rand() * 3, 0.18), lamb(0x161320)); sp.position.y = th + 2.4; g.add(sp); g.position.set(R * Math.sin(ang), GY, -R * Math.cos(ang) * 0.9 + (rand() - 0.5) * 6); envRoot.add(g); }
+        for (let i = 0; i < 22; i++) { const ang = rand() * Math.PI * 2, R = 48 + rand() * 36, tw = 6 + rand() * 7, th = 20 + rand() * 34; const g = new THREE.Group(), bodyH = th + 50;
+          const bd = new THREE.Mesh(new THREE.BoxGeometry(tw, bodyH, tw), new THREE.MeshLambertMaterial({ map: towerFaceTex(3200 + i) })); // 중간 링도 4면 창(통짜 탈피)
+          bd.position.y = th - bodyH / 2; g.add(bd);
+          overgrow(g, tw, th); g.position.set(R * Math.sin(ang), GY, -R * Math.cos(ang) * 0.8 - 6); envRoot.add(g); }
         for (let i = 0; i < 26; i++) { const tx = -150 + i * 11.5 + (rand() - 0.5) * 8, tw = 5 + rand() * 9, th = 14 + rand() * 30, tz = -95 - rand() * 32; B(envRoot, tw, th, 3, 0x1a1f2e, tx, GY + th / 2, tz); B(envRoot, tw * 0.8, 0.8 + rand() * 1.6, 3, 0x1a2418, tx, GY + th + 0.6, tz); }
         // ── 만/수평선 ──
         for (const [zz, op] of [[-134, 0.28], [-131, 0.2]]) { const s = B(envRoot, 300, 0.5, 1, 0x4a6076, 0, GY + 2.4, zz); s.material = new THREE.MeshBasicMaterial({ color: 0x4a6076, transparent: true, opacity: op, depthWrite: false, fog: false }); }
