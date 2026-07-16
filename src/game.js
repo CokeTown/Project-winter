@@ -132,6 +132,51 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 소프트 엣지(디렉터:
 renderer.shadowMap.autoUpdate = false; // 정적 씬: 변경 시에만 갱신 (이동체는 shadowDirty로 직접 신고)
 function shadowDirty() { renderer.shadowMap.needsUpdate = true; }
 
+/* ── #203 터치 픽셀 버스트 (플레이어 피드백 — 디렉터: 비주얼만, SFX 없음) ──
+   씬 캔버스를 누른 지점에서 사각 픽셀이 방사형으로 흩어진다. 도트 미학에 맞춰 2px 그리드 스냅.
+   패널·모달 위 터치는 제외(캔버스 리스너라 자연 스코프). 파티클이 살아 있는 동안만 rAF —
+   방치형 배터리 캐논 준수(평시 루프 0). reduceMotion이면 생략. */
+const tapFx = (() => {
+  const cv = document.createElement('canvas');
+  cv.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:8'; // 씬(0) 위, 패널(10+) 아래
+  document.body.appendChild(cv);
+  const cx = cv.getContext('2d');
+  let parts = [], raf = 0, W = 0, H = 0;
+  const fit = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; };
+  fit(); addEventListener('resize', fit);
+  const PAL = ['#f2e9d8', '#e8c690', '#b8c4cc']; // 크림·앰버·한랭 회청 — 게임 톤
+  function loop() {
+    cx.clearRect(0, 0, W, H);
+    const now = performance.now();
+    parts = parts.filter(p => now - p.t0 < p.life);
+    for (const p of parts) {
+      const t = (now - p.t0) / p.life;
+      const d = p.dist * (1 - Math.pow(1 - t, 2.2)); // 감속 방사
+      const x = Math.round((p.x + Math.cos(p.a) * d) / 2) * 2; // 2px 그리드 스냅(도트 결)
+      const y = Math.round((p.y + Math.sin(p.a) * d + t * t * 6) / 2) * 2; // 말미 미세 낙하
+      cx.globalAlpha = 1 - t;
+      cx.fillStyle = p.c;
+      const sz = Math.max(2, Math.round(p.sz * (1 - t * 0.5)));
+      cx.fillRect(x, y, sz, sz);
+    }
+    cx.globalAlpha = 1;
+    raf = parts.length ? requestAnimationFrame(loop) : 0; // 전멸 시 루프 정지
+  }
+  function burst(x, y) {
+    if (opts.reduceMotion) return;
+    const n = 10 + (Math.random() * 4 | 0);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + Math.random() * 0.5; // 균등 방사 + 지터
+      parts.push({ x, y, a, t0: performance.now(), life: 280 + Math.random() * 160,
+        dist: 14 + Math.random() * 22, sz: 3 + (Math.random() * 3 | 0),
+        c: PAL[Math.random() * PAL.length | 0] });
+    }
+    if (!raf) raf = requestAnimationFrame(loop);
+  }
+  canvas.addEventListener('pointerdown', e => burst(e.clientX, e.clientY));
+  return { burst };
+})();
+
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x1a2233, 24, 58);
 
