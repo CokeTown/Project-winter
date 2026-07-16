@@ -190,7 +190,8 @@
     padding: 5px 6px; margin-bottom: 8px;
     font-size: 11px; color: #8fce7d;
   }
-  #hud .stat .cond-seg { display: flex; align-items: center; gap: 4px; }
+  #hud .stat .cond-seg { display: flex; align-items: center; gap: 4px; line-height: 1; }
+  #hud .stat .cond-seg .px-icon { width: 14px; height: 14px; flex: 0 0 auto; } /* 아트 아이콘 — 이모지 베이스라인 어긋남 해소 */
   #hud .stat .cond-seg b { color: #b8f0a0; font-weight: normal; font-variant-numeric: tabular-nums; }
   #hud .stat .cond-seg b.bad { color: #d06a48; }
   #hud .stat .cond-div { color: #2c4424; }
@@ -408,6 +409,41 @@
     #pda { height: min(620px, calc(84vh / var(--uiz, 1)), calc(94vw / var(--uiz, 1) * 1.7315)); }
     #fieldnote { width: min(calc(96vw / var(--uiz, 1)), calc(86vh / var(--uiz, 1) * 1.3299)); }
   }
+  /* ── #199 5차-c: PDA 앱 모드 — 공용 모달(#modal-back)이 LCD 안으로 들어와 "기기 화면"이 된다 ── */
+  body.pda-app #pda-screen, body.pda-app #pda-tabs { visibility: hidden; } /* 탭 UI는 앱 뒤로 */
+  body.pda-app #pda-lcd #modal-back { background: rgba(6, 10, 5, 0.55); z-index: 2; }
+  body.pda-app #pda-lcd #modal {
+    width: 100%; height: 100%; max-width: none;
+    max-height: none; margin: 0;
+    background: transparent; border: none; box-shadow: none;
+    padding: 6px 10px 8px; overflow-y: auto; overscroll-behavior: contain;
+    color: #b8f0a0; text-shadow: 0 0 4px rgba(140, 240, 120, 0.25);
+    font-size: 11px; word-break: keep-all;
+  }
+  body.pda-app #pda-lcd #modal::-webkit-scrollbar { width: 5px; }
+  body.pda-app #pda-lcd #modal::-webkit-scrollbar-thumb { background: #3f5a35; border-radius: 3px; }
+  body.pda-app #pda-lcd #modal h2 { /* 앱 헤더 — LCD 상단 세그먼트 톤 */
+    font-size: 12px; letter-spacing: 2px; color: #b8f0a0;
+    border-bottom: 1px solid rgba(106, 154, 95, 0.5); padding-bottom: 5px;
+    text-shadow: 0 0 6px rgba(140, 240, 120, 0.5);
+  }
+  body.pda-app #pda-lcd .prep-row { /* 행 = 포스퍼 리스트. 좁은 LCD 폭 정돈: 이름 한 줄 + 코스트·버튼 줄 */
+    display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px;
+    padding: 6px 8px; overflow: hidden;
+    background: rgba(184, 240, 160, 0.04); border: 1px solid #2c4424; border-radius: 3px;
+  }
+  body.pda-app #pda-lcd .prep-row > span:first-child { flex: 1 1 100%; min-width: 0; }
+  body.pda-app #pda-lcd .prep-row .p-eff { flex: 1 1 auto; min-width: 0; }
+  body.pda-app #pda-lcd .prep-row .pixel-btn { margin-left: auto !important; } /* 인라인 margin 6px보다 우선 — 버튼 우측 정렬 */
+  body.pda-app #pda-lcd #modal img { max-width: 100%; }
+  body.pda-app #pda-lcd .prep-row.no { opacity: 0.55; }
+  body.pda-app #pda-lcd .prep-row.sel { border-color: #4f7a44; background: rgba(184, 240, 160, 0.08); }
+  body.pda-app #pda-lcd .pixel-btn {
+    background: linear-gradient(180deg, #1d2916, #131a10);
+    border-color: #2c4424; color: #8fce7d; border-radius: 3px;
+  }
+  body.pda-app #pda-lcd .pixel-btn:not([disabled]):hover { border-color: #4f7a44; color: #b8f0a0; }
+  body.pda-app #pda-lcd .pixel-btn.primary { border-color: #e8c060; color: #e8c060; }
   body.title-mode #edge-dock, body.wallpaper-mode #edge-dock,
   body.title-mode #pda-back, body.wallpaper-mode #pda-back,
   body.title-mode #note-back, body.wallpaper-mode #note-back { display: none !important; }

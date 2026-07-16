@@ -3319,7 +3319,7 @@ function startExpedition(regionId) {
   if (state.exp) return;
   if (isExhausted()) { toast(t('toast.exhausted')); return; }
   if (state.energy < BAL.exp.minEnergy) { toast(t('toast.tooTired')); return; }
-  if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); return; }
+  // #199 5차-c(디렉터): 일일 상한 차단 폐지 — 에너지가 실질 제한. 과로 회복 페널티(expFatigue)는 존치.
   if (blizzardBlocks(regionId)) { toast(t('subway.blizzardBlocked')); return; } // 1.2 폭설 봉쇄 (개통 구간은 예외)
   if (!regionReachable(regionId)) return; // 2.0-(b): 타 도시 지역 출발 차단 — 지도에서 이미 숨겨 도달 불가 방어선(무토스트)
   // 1.4 금지 구역 진입 게이트 — 방호복 미제작/내구 소진 시 차단. "방호복 없이는 한 걸음도"의 실측 지점.
@@ -3443,7 +3443,7 @@ async function departExpedition(regionId, prep, opts2 = {}) {
   // 준비 모달을 열어둔 사이 상태가 나빠졌을 수도 있다 — 출발 직전 재검사
   if (isExhausted()) { toast(t('toast.exhausted')); closeModal(); return; }
   if (state.energy < 20) { toast(t('toast.tooTired')); closeModal(); return; }
-  if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); closeModal(); return; }
+  // #199 5차-c(디렉터): 일일 상한 차단 폐지(출발 재검사도) — 과로 페널티(expFatigue)는 존치
   const r = REGIONS[regionId];
   const p = rateParts(regionId, prep);
   // 저성공률 출발 확인 — 수동 클릭 경로에서만 (자동진행/blackout에선 확인창 금지: 게임이 멈춘다)
@@ -5233,7 +5233,6 @@ function openCraftModal() {
     return `
       <div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
         <span>${outLabel}</span>
-        <span class="p-eff" style="font-size:10px">${LHint(c)}</span>
         <span class="p-cost">${owned ? '' : costLabel(craftCost(c))}</span>
         ${owned
           ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('craft.owned')}</span>`
@@ -8027,7 +8026,7 @@ addEventListener('keydown', e => {
   if (titleVisible) return;
   if (e.key === 'Escape') {
     // 우선순위: PDA/노트 닫기 > 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
-    if (pdaVisible()) { pdaClose(); }
+    if (pdaVisible()) { pdaAppOn ? closeModal() : pdaClose(); } // 앱 모드면 모달 정리+원위치까지(잔류 DOM 방지)
     else if (noteVisible()) { noteClose(); }
     else if (settingsOpen()) { closeSettings(); }
     else if (catCam.active) { exitCatCloseup(); }
@@ -8678,9 +8677,10 @@ function updateHud() {
     cd.limitMod ? (LLimits(sh) || '') : '',
     cleanLow ? `${t('hud.cleanTip')} (${Math.round(cd.clean)})` : '',
   ].filter(Boolean).join(' · ');
+  // 기본 이모지 금지(디렉터) — 제작 아이콘 + 이모지 폴백
   const segs = [
-    `<span class="cond-seg" data-tip="${warnTip}">${injIcon || (cleanLow ? '🧹' : '⚠️')}<b class="${warnN ? 'bad' : ''}">${warnN}</b>${state.buff ? ' ✨' : ''}</span>`,
-    `<span class="cond-seg" data-tip="${comfortTip}">😊<b>${cd.score}</b></span>`,
+    `<span class="cond-seg" data-tip="${warnTip}">${icon('icon_cond_warn', '⚠️')}<b class="${warnN ? 'bad' : ''}">${warnN}</b>${state.buff ? icon('icon_cond_buff', '✨') : ''}</span>`,
+    `<span class="cond-seg" data-tip="${comfortTip}">${icon('icon_cond_comfort', '😊')}<b>${cd.score}</b></span>`,
   ];
   $('hud-stat').innerHTML = segs.join('<span class="cond-div">|</span>');
   renderGauge('g-hunger', state.hunger, 'hunger', '🥫');
@@ -8733,6 +8733,24 @@ function pdaOpen(tab) {
   lcd.classList.remove('pda-boot'); void lcd.offsetWidth; lcd.classList.add('pda-boot');
 }
 function pdaClose() { $('pda-back').style.display = 'none'; }
+// #199 5차-c(디렉터 B안): HUD 메뉴 → PDA 앱 모드 — 공용 모달을 LCD 안으로 라우팅해 기존 로직 무수정 재사용.
+//   #modal-back은 absolute inset:0이라 #pda-lcd(relative)로 옮기면 그대로 화면에 맞는다. 닫으면 원위치+기기 끔.
+let pdaAppOn = false;
+function pdaOpenApp(openFn) {
+  if (paused) { toast(t('pause.blocked')); return; }
+  pdaOpen(); // 부트 플리커 포함 — 기기가 켜지며 앱이 뜬다
+  pdaAppOn = true;
+  document.body.classList.add('pda-app');
+  $('pda-lcd').appendChild($('modal-back'));
+  openFn();
+}
+function pdaAppExit() {
+  if (!pdaAppOn) return;
+  pdaAppOn = false;
+  document.body.classList.remove('pda-app');
+  document.body.appendChild($('modal-back')); // 원위치(body 직속) 복귀 — 일반 모달 경로 보전
+  pdaClose();
+}
 // #199 3차: 「필드 노트」(디렉터 에셋) — 기록=종이. 일지 도킹이 연다. 조회 전용.
 const noteVisible = () => $('note-back').style.display !== 'none';
 function noteOpen() {
@@ -8781,7 +8799,7 @@ function renderPDA() {
     base.push(`${t('pda.comfort')}: ${cd.score} ${'★'.repeat(lv2)}<span style="opacity:.3">${'★'.repeat(5 - lv2)}</span>`); // ☆ 글리프가 픽셀 폰트에서 ★와 동일 렌더 — 감쇠로 구분
     if (w?.penalty) base.push(`${t('pda.weatherPen')}: -${Math.round(w.penalty * 100)}%`);
     if (state.buff) base.push(`✨ ${buffLabel(state.buff)}`);
-    base.push(`${t('pda.exp')}: ${state.expToday}/${EXP_PER_DAY}`);
+    base.push(`${t('pda.exp')}: ${state.expToday}${state.expToday >= EXP_PER_DAY ? ` · ${t('exp.fatigue')}` : ''}`); // 상한 표기 폐지 — 과로 경고만
     if (!isWallpaper()) base.push(`${t('pda.succ')}: ${state.successes}`);
     if ((state.winters || 0) >= 1) base.push(`${t('pda.winters')}: ${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}`);
     body += `<div class="ph">${t('pda.camp')}</div>` + base.map(l => `<div>${l}</div>`).join('');
@@ -10082,6 +10100,7 @@ function closeModal() {
   }
   $('modal-back').classList.remove('show');
   modalKind = null;
+  pdaAppExit(); // #199: PDA 앱 모드였다면 모달 원위치 + 기기 끄기 (no-op 가드)
 }
 $('modal-close').addEventListener('click', closeModal);
 $('modal-back').addEventListener('click', e => { if (e.target === $('modal-back')) closeModal(); });
@@ -11273,7 +11292,7 @@ $('btn-auto').addEventListener('click', () => {
   toast(t(opts.autoPlay ? 'auto.on' : 'auto.off'));
 });
 syncAutoBtn();
-$('btn-craft').addEventListener('click', openCraftModal);
+$('btn-craft').addEventListener('click', () => pdaOpenApp(openCraftModal)); // #199 5차-c: 제작은 PDA 앱으로 열린다
 { const bk = $('btn-knowledge'); if (bk) bk.addEventListener('click', openKnowledgeModal); }
 $('btn-journal').addEventListener('click', () => openJournalModal('journal'));
 $('g-hunger').addEventListener('click', eatFood);
@@ -11976,7 +11995,7 @@ window.__shelter = {
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
-  pdaOpen, pdaClose, noteOpen, noteClose, // #199 PDA·필드노트 도킹 QA 훅
+  pdaOpen, pdaClose, noteOpen, noteClose, pdaOpenApp, // #199 PDA·필드노트 도킹·앱 모드 QA 훅
   seasonOf, SEASONS, openMapModal, showMapInfo, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
   // Phase D (#12 · #35 · #36) QA 훅
   MEMOS, WILLS, BROADCASTS, MEMOS_BY_REGION, eventCtx, eventMatches, drawEvent, eventWeight,
