@@ -7,7 +7,7 @@
 
 | # | 작업 | 현재 상태 |
 |---|---|---|
-| #73 | 엔지니어링 패스 (지속) | Tier4 완료(WEATHERS·ACHS 분리+soak) — 다음: SHELTERS 빌더 분리 |
+| #73 | 엔지니어링 패스 (지속) | **Tier5 완료(716e731)**: 비네트 4종+러너 → render/vignettes.js(-863줄, 왕복·프레임 동일 검증) — 다음 후보: 발견 컷·일지/도감 UI 분리 |
 | #74 | Steam Next Fest 데모 | **v1.9.3-demo 발행 완료**(exe 2종+APK) — 잔여: 디렉터 검수·depot 업로드 |
 | #75 | Steam 페이지 애셋 패키지 | depot 파이프라인 완비 — 잔여: 캡슐 세대 확정〔D〕·스크린샷 검수〔D〕 |
 | #117 | Steamworks DLC 그라운드워크 | 업적 브릿지 완료 — DLC 게이트(hasSupporterDLC) 잔여 |
