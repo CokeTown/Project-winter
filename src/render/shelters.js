@@ -2650,12 +2650,14 @@ export function makeShelterBuilders(ctx) {
         }
         // 신광: 지붕 구멍에서 바닥 웅덩이로 내리꽂는 볼륨 빛(beamTex 십자면) + 먼지 티끌 + 부드러운 빛웅덩이
         if (!patched) {
-          const mkBeam = (bw, op) => { for (const ry of [0, Math.PI / 2]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(bw, h + 1.6), new THREE.MeshBasicMaterial({ map: beamTex, color: 0xffe0b0, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); m.position.set(TX + 0.2, (h + 0.8) / 2, TZ - 0.2); m.rotation.set(0, ry, -0.13); roomGroup.add(m); } };
+          // ⚠️ beamTex/floorGlowTex는 지연 생성 팩토리 — 반드시 호출해서 넘긴다. 함수 자체를 map에 넣으면
+          //    THREE refreshMaterialUniforms가 map.matrix.elements에서 크래시(동부 봉인 탓에 숨어 있던 결함).
+          const mkBeam = (bw, op) => { for (const ry of [0, Math.PI / 2]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(bw, h + 1.6), new THREE.MeshBasicMaterial({ map: beamTex(), color: 0xffe0b0, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); m.position.set(TX + 0.2, (h + 0.8) / 2, TZ - 0.2); m.rotation.set(0, ry, -0.13); roomGroup.add(m); } };
           mkBeam(2.2, 0.17); mkBeam(3.4, 0.07);
-          const moteMat = new THREE.SpriteMaterial({ map: floorGlowTex, color: 0xffe8c0, transparent: true, opacity: 0.34, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+          const moteMat = new THREE.SpriteMaterial({ map: floorGlowTex(), color: 0xffe8c0, transparent: true, opacity: 0.34, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
           for (let i = 0; i < 14; i++) { const mote = new THREE.Sprite(moteMat); mote.scale.set(0.07, 0.07, 1); mote.position.set(TX + (rand() - 0.5) * 1.8, 0.4 + rand() * (h + 0.4), TZ + (rand() - 0.5) * 1.6); roomGroup.add(mote); }
-          const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.7), new THREE.MeshBasicMaterial({ map: floorGlowTex, color: 0xffcf8a, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); pool.rotation.x = -Math.PI / 2; pool.position.set(TX + 0.2, 0.02, TZ); roomGroup.add(pool);
-          const core = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.4), new THREE.MeshBasicMaterial({ map: floorGlowTex, color: 0xfff0d0, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); core.rotation.x = -Math.PI / 2; core.position.set(TX + 0.2, 0.03, TZ); roomGroup.add(core);
+          const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.7), new THREE.MeshBasicMaterial({ map: floorGlowTex(), color: 0xffcf8a, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); pool.rotation.x = -Math.PI / 2; pool.position.set(TX + 0.2, 0.02, TZ); roomGroup.add(pool);
+          const core = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.4), new THREE.MeshBasicMaterial({ map: floorGlowTex(), color: 0xfff0d0, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); core.rotation.x = -Math.PI / 2; core.position.set(TX + 0.2, 0.03, TZ); roomGroup.add(core);
         }
         Cyl(roomGroup, 0.14, 0.18, 1.6, 0x2a1c10, TX, 0.8, TZ, 7);
         const br2 = B(roomGroup, 0.09, 0.9, 0.09, 0x2a1c10, TX + 0.35, 1.75, TZ + 0.1); br2.rotation.z = 0.5;
@@ -2709,10 +2711,32 @@ export function makeShelterBuilders(ctx) {
           }
           train.position.set(2, GY, -22); envRoot.add(train);
           for (let i = 0; i < 6; i++) B(envRoot, 0.5 + rand() * 0.7, 0.4 + rand() * 0.4, 0.6, rand() < 0.5 ? 0x1c2a18 : 0x24361e, -4 + rand() * 18, GY + 0.25, -21 + rand() * 2); }
-        // 원경 도심 + 3년차 수풀
-        for (let i = 0; i < 7; i++) {
-          const bw2 = 4 + rand() * 5, bh3 = 7 + rand() * 12;
-          B(envRoot, bw2, bh3, 4, i % 2 ? 0x2a2026 : 0x221a20, -28 + i * 10 + rand() * 3, GY + bh3 / 2, -38 - rand() * 6);
+        // 원경: 차량기지 (통짜 도심 박스 7 폐기 — 세관 교훈: 장소성이 실루엣보다 우선. 역 뒤편은 도심이 아니라 유치선)
+        for (const [pz2, brk] of [[-30, 1], [-35.5, 3]]) {                                 // 플랫폼 캐노피 2열(한 구간씩 무너짐)
+          for (let pi = 0; pi < 9; pi++) {
+            if (pi === brk) continue;                                                      // 무너진 구간 — 기둥만 남고 지붕 없음
+            B(envRoot, 4.2, 0.28, 3.0, 0x4a443c, -18 + pi * 4.6, GY + 3.3, pz2);
+            if (pi === brk + 1) B(envRoot, 4.0, 0.26, 2.8, 0x443e36, -18 + (brk) * 4.6 + 1.2, GY + 1.1, pz2 + 0.6).rotation.z = 0.4; // 떨어진 지붕판
+          }
+          for (let pi = 0; pi < 10; pi++) B(envRoot, 0.3, 3.3, 0.3, 0x55504a, -20.3 + pi * 4.6, GY + 1.65, pz2);
+          for (let pi = 0; pi < 3; pi++) if (rand() < 0.8) B(envRoot, 1.4, 0.34, 0.7, 0x243018, -14 + pi * 9 + rand() * 3, GY + 3.55, pz2); // 지붕 위 수풀
+        }
+        { const far2 = new THREE.Group(); far2.position.set(-4, GY, -41); envRoot.add(far2); // 원경 유치 열차(멈춘 지 3년)
+          for (let c5 = 0; c5 < 4; c5++) { const car2 = new THREE.Mesh(new THREE.BoxGeometry(7.6, 2.4, 2.2), lamb(c5 % 2 ? 0x241e26 : 0x2a2230)); car2.position.set(-11 + c5 * 8, 1.35, 0); far2.add(car2); }
+          B(far2, 1.2, 0.5, 2.0, 0x1c2a18, -3, 2.75, 0); B(far2, 0.9, 0.4, 1.8, 0x24361e, 6, 2.7, 0.2); } // 지붕 수풀
+        { const wt = new THREE.Group(); wt.position.set(17, GY, -44); envRoot.add(wt);      // 급수탑(증기 시대의 유물)
+          for (const [lx2, lz2] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) B(wt, 0.24, 6.5, 0.24, 0x4a3a30, lx2, 3.25, lz2);
+          Cyl(wt, 2.0, 2.0, 3.0, 0x5e4a3a, 0, 8, 0, 12); Cyl(wt, 2.1, 2.1, 0.3, 0x4a3a30, 0, 9.6, 0, 12);
+          B(wt, 0.14, 2.4, 0.14, 0x3a2c24, 1.6, 5.4, 0).rotation.z = 0.3; }                 // 늘어진 급수 파이프
+        { const sg = new THREE.Group(); sg.position.set(-6, GY, -26.5); envRoot.add(sg);    // 신호 갠트리(전 선로 가로지름)
+          for (const gx3 of [-13, 13]) B(sg, 0.34, 6.2, 0.34, 0x3e3830, gx3, 3.1, 0);
+          B(sg, 26.6, 0.5, 0.4, 0x3e3830, 0, 6.1, 0);
+          for (let si = 0; si < 4; si++) { const sb = B(sg, 0.5, 0.9, 0.3, 0x2a2622, -8 + si * 5.4, 5.3, 0.2);
+            const lampS = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.06), new THREE.MeshLambertMaterial({ color: 0x201c18, emissive: si === 2 ? 0xcc2a1a : 0x100c0a, emissiveIntensity: si === 2 ? 0.9 : 0 }));
+            lampS.position.set(-8 + si * 5.4, 5.1, 0.38); sg.add(lampS); } }                // 하나만 아직 붉게 살아 있다
+        for (let i = 0; i < 4; i++) {                                                       // 최원경 도심 힌트(어두운 입체, 낮게)
+          const bw2 = 5 + rand() * 5, bh3 = 6 + rand() * 8;
+          B(envRoot, bw2, bh3, 4, i % 2 ? 0x2a2026 : 0x221a20, -24 + i * 15 + rand() * 4, GY + bh3 / 2, -54 - rand() * 5);
         }
         ogGround((x, z) => GY, 16, 26, 6, (x, z) => z > -14);
       },

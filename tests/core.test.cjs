@@ -519,6 +519,30 @@ const KNOWLEDGE_HASH = -451536973;
       && ecj.eastSideHome === true && ecj.homeSideEast === true && ecj.mapsDiffer === true,
       JSON.stringify(ecj));
 
+    // ── 2g) 동부 4셸터 렌더 스모크 — 로드 + 수 프레임 구동 무예외 ──
+    //   동부는 unlockAt 9999 봉인이라 평시 테스트 경로가 이 코드를 안 밟는다(terminal beamTex 미호출
+    //   크래시가 기초 모델링부터 숨어 있던 이유). 로드 직후가 아니라 렌더 루프(유니폼 리프레시)에서
+    //   터지는 클래스까지 잡으려면 수 프레임을 실제로 돌려야 한다 — 이 게이트가 유일한 순찰자.
+    const smk = await evalJs(`(async () => {
+      const S = window.__shelter;
+      let err = null;
+      const h = (ev) => { err = err || String((ev.error && ev.error.message) || ev.message); };
+      window.addEventListener('error', h);
+      S.state.eastGateOpen = true;
+      for (const sid of ['customs', 'bridgehouse', 'terminal', 'penthouse']) {
+        S.loadShelter(sid);
+        await new Promise(r => setTimeout(r, 450));
+        if (err) { err = sid + ': ' + err; break; }
+      }
+      window.removeEventListener('error', h);
+      S.state.eastGateOpen = false;
+      S.simReset();
+      return JSON.stringify({ err });
+    })()`);
+    const smj = JSON.parse(smk);
+    check('2.0-(d) 동부 4셸터 렌더 스모크 (로드+수 프레임 무예외 — 봉인 코드 경로 상시 순찰)',
+      smj.err === null, JSON.stringify(smj));
+
     // ── 2b) #195 레이아웃 아이템 왕복 (감사 P2: MIG 게이트가 톱레벨만 봐 y·s·t·ge가 그물 밖이던 사각) ──
     //   저장 스키마(d/c/x/z/r/o/y/s/t/ge) → loadSave 복원 → 인메모리 아이템 필드 → flushSave 재직렬화까지
     //   전 구간 보존을 검증. #193의 y 결손 4사이트가 이 테스트 부재로 통과했었다.
