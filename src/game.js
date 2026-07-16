@@ -10249,8 +10249,8 @@ function openShelterModal() {
           ${unlocked && sh.limits ? `<div class="s-desc" style="color:var(--bad)">${LLimits(sh)}</div>` : ''}
           ${unlocked ? `<div class="s-desc">${t('shelter.baseComfort', { n: sh.baseComfort || 0, upkeep: sh.upkeep ? LLabel(sh.upkeep) : t('upkeep.none') })}</div>` : ''}
           ${costLine}
+          ${btn}
         </div>
-        ${btn}
       </div>`;
     }).join('');
     return `

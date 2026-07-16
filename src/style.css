@@ -477,7 +477,7 @@
   body.pda-app #pda-lcd .shelter-card .s-emoji { grid-column: 1; font-size: 20px; line-height: 1; }
   body.pda-app #pda-lcd .shelter-card .s-emoji .px-icon { width: 22px; height: 22px; vertical-align: -3px; }
   body.pda-app #pda-lcd .shelter-card .s-body { grid-column: 2; min-width: 0; }
-  body.pda-app #pda-lcd .shelter-card > .pixel-btn { grid-column: 1 / -1; justify-self: end; padding: 4px 14px; }
+  body.pda-app #pda-lcd .shelter-card .s-body .pixel-btn { padding: 3px 12px; }
   body.pda-app #pda-lcd .prep-row .p-eff { flex: 1 1 auto; min-width: 0; }
   body.pda-app #pda-lcd .prep-row .pixel-btn { margin-left: auto !important; } /* 인라인 margin 6px보다 우선 — 버튼 우측 정렬 */
   body.pda-app #pda-lcd #modal img { max-width: 100%; }
@@ -731,6 +731,7 @@
   }
   .shelter-card .s-emoji { font-size: 26px; }
   .shelter-card .s-body { flex: 1; }
+  .shelter-card .s-body .pixel-btn { display: block; margin: 3px 0 0 auto; } /* 칩 바로 아래 우측 — 별도 행 갭 제거 */
   .shelter-card .s-name { font-size: 13px; }
   .shelter-card .s-desc { font-size: 10px; color: var(--text-dim); line-height: 1.5; }
   .shelter-card.current { border-color: var(--accent); }
