@@ -1820,6 +1820,46 @@
    "fit": "cover",
    "dest": "assets-src/art/out/icons/icon_cond_buff.png",
    "prompt": "a small cluster of three sparkling four-pointed stars, warm golden glow. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_time_night",
+   "purpose": "UI 아이콘: time_night",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_time_night.png",
+   "prompt": "a crescent moon with two tiny stars, pale silver-blue glow on deep night tone. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_time_dawn",
+   "purpose": "UI 아이콘: time_dawn",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_time_dawn.png",
+   "prompt": "a rising sun half over a dark horizon line, soft pink-orange rays. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_time_day",
+   "purpose": "UI 아이콘: time_day",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_time_day.png",
+   "prompt": "a full bright sun with bold rays, warm yellow. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_time_dusk",
+   "purpose": "UI 아이콘: time_dusk",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_time_dusk.png",
+   "prompt": "a setting sun low over a dark horizon, deep orange-red sky band. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
   }
  ]
 }

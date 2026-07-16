@@ -589,15 +589,15 @@ function applyTimeLighting() {
   updateWindowSkies();
   updateSunShafts();
 }
-function timeLabel() {
+function timeLabel() { // [2]=아트 아이콘 키(#199 이모지 스윕) — 기존 [0][1] 사용처 무영향
   const h = gameHour();
-  if (h < 4.5) return ['🌙', t('time.night')];
-  if (h < 7) return ['🌄', t('time.dawn')];
-  if (h < 11) return ['🌅', t('time.morning')];
-  if (h < 16.5) return ['☀️', t('time.day')];
-  if (h < 19) return ['🌆', t('time.evening')];
-  if (h < 21) return ['🌇', t('time.dusk')];
-  return ['🌙', t('time.night')];
+  if (h < 4.5) return ['🌙', t('time.night'), 'icon_time_night'];
+  if (h < 7) return ['🌄', t('time.dawn'), 'icon_time_dawn'];
+  if (h < 11) return ['🌅', t('time.morning'), 'icon_time_dawn'];
+  if (h < 16.5) return ['☀️', t('time.day'), 'icon_time_day'];
+  if (h < 19) return ['🌆', t('time.evening'), 'icon_time_dusk'];
+  if (h < 21) return ['🌇', t('time.dusk'), 'icon_time_dusk'];
+  return ['🌙', t('time.night'), 'icon_time_night'];
 }
 function clockText() {
   const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
@@ -8643,10 +8643,10 @@ function updateClock() {
   const se = seasonOf();
   $('lcd-day').textContent = t('clock.dayLine', { day: String(state.day).padStart(2, '0'), sicon: se.icon, sname: LName(se), sd: seasonDay(), total: SEASON_DAYS });
   $('lcd-time').innerHTML = `${String(h).padStart(2, '0')}<span id="lcd-colon">:</span>${String(m).padStart(2, '0')}`;
-  const [timeIcon, label] = timeLabel();
-  // #199 5차-b(디렉터): 날씨(+페널티)는 시계가 계기 — HUD 스트립에서 이관
+  const [timeIcon, label, timeArt] = timeLabel();
+  // #199 5차-b(디렉터): 날씨(+페널티)는 시계가 계기 — HUD 스트립에서 이관. 이모지 금지 → 아트 아이콘
   const wPen = WEATHERS[weather.type]?.penalty;
-  $('lcd-sub').innerHTML = `${timeIcon} ${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:#e07050">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + INJURIES[state.injury.type].icon : ''}`;
+  $('lcd-sub').innerHTML = `${icon(timeArt, timeIcon)} ${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:#e07050">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + INJURIES[state.injury.type].icon : ''}`;
 }
 
 function updateHud() {
@@ -8757,7 +8757,7 @@ function noteOpen() {
   const li = s => `<li>${s}</li>`;
   $('nt-log-list').innerHTML = (state.dayLog.notes || []).slice(-7).map(li).join('') || li(t('pda.noLog'));
   const w = WEATHERS[state.weatherType];
-  const memo = [`${t('pda.day', { n: state.day })} · ${w ? `${w.icon} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}`];
+  const memo = [`${t('pda.day', { n: state.day })} · ${w ? `${wxIcon(state.weatherType)} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}`];
   if (hasForecast()) memo.push(t('forecast.prefix', { text: forecastText() }));
   const lacks = ['water', 'food'].filter(id => (state.res[id] || 0) === 0);
   if (lacks.length) memo.push(lacks.map(id => `${resIcon(id)} ${LName(RESOURCES[id])} 0`).join(' · '));
@@ -8774,7 +8774,7 @@ function renderPDA() {
   const scr = $('pda-screen');
   const mm = state.gameMin % 1440, hh = String(Math.floor(mm / 60)).padStart(2, '0'), mi = String(Math.floor(mm % 60)).padStart(2, '0');
   const w = WEATHERS[state.weatherType];
-  const head = `<div class="ph">${t('pda.day', { n: state.day })} · ${hh}:${mi} · ${w ? `${w.icon} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}</div>`;
+  const head = `<div class="ph">${t('pda.day', { n: state.day })} · ${hh}:${mi} · ${w ? `${wxIcon(state.weatherType)} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}</div>`;
   let body = '';
   if (pdaTab === 'status') {
     const bar = (label, v) => {
@@ -8797,7 +8797,7 @@ function renderPDA() {
     const base = [];
     base.push(`${t('pda.comfort')}: ${cd.score} ${'★'.repeat(lv2)}<span style="opacity:.3">${'★'.repeat(5 - lv2)}</span>`); // ☆ 글리프가 픽셀 폰트에서 ★와 동일 렌더 — 감쇠로 구분
     if (w?.penalty) base.push(`${t('pda.weatherPen')}: -${Math.round(w.penalty * 100)}%`);
-    if (state.buff) base.push(`✨ ${buffLabel(state.buff)}`);
+    if (state.buff) base.push(`${icon('icon_cond_buff', '✨')} ${buffLabel(state.buff)}`);
     base.push(`${t('pda.exp')}: ${state.expToday}${state.expToday >= EXP_PER_DAY ? ` · ${t('exp.fatigue')}` : ''}`); // 상한 표기 폐지 — 과로 경고만
     if (!isWallpaper()) base.push(`${t('pda.succ')}: ${state.successes}`);
     if ((state.winters || 0) >= 1) base.push(`${t('pda.winters')}: ${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}`);
@@ -10701,7 +10701,7 @@ $('btn-exp').addEventListener('click', () => {
   else openMapModal();
 });
 $('btn-move').addEventListener('click', () => pdaOpenApp(openShelterModal)); // #199 5차-d: 이주도 PDA 앱
-$('btn-help').addEventListener('click', openHelpModal);
+$('btn-help').addEventListener('click', () => pdaOpenApp(openHelpModal)); // #199 5차-e: 도움말도 PDA 앱
 $('btn-rotate').addEventListener('click', rotateActive);
 $('btn-delete').addEventListener('click', reclaimSelected);
 $('btn-reset').addEventListener('click', () => {
