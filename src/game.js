@@ -4395,19 +4395,25 @@ function dropSpotPos() {
 }
 function spawnGroundDrop(evId, opts = {}) {
   if (!ROOM || !EVENTS[evId] || !shelterHasGround(state.current)) return false; // 지면 셸터·유효 이벤트만
-  const p = opts.pos || dropSpotPos();
+  const f = opts.follow || null; // 동물 그룹 — 반짝임이 몸에 붙어 동행(디렉터)
+  const p = f ? { x: f.position.x, z: f.position.z, y: visitorGroundY() } : (opts.pos || dropSpotPos());
   const g = new THREE.Group(); g.position.set(p.x, p.y, p.z);
   const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkleTexOnce(), color: 0xfff6e0, blending: THREE.AdditiveBlending, transparent: true, opacity: 0, depthWrite: false }));
   spr.scale.set(0.95, 0.95, 1); spr.position.set(0, 0.45, 0); g.add(spr);
   const hit = new THREE.Sprite(new THREE.SpriteMaterial({ opacity: 0, transparent: true, depthWrite: false })); // 넉넉한 터치 히트박스
   hit.scale.set(1.3, 1.3, 1); hit.position.set(0, 0.45, 0); g.add(hit);
   scene.add(g);
-  dropSpots.push({ g, spr, hit, evId, yBase: 0.4 });
+  dropSpots.push({ g, spr, hit, evId, yBase: f ? 0.85 : 0.4, follow: f }); // 동행 시 몸 위에 뜨도록 상향
   if (playSfx) playSfx('place', { vol: 0.28, jitter: 0.2 });
   return true;
 }
 function tickDropSpots(t) {
   for (const d of dropSpots) {
+    // 동물 동행(디렉터): 살아 있는 동안 몸을 따라다니고, 떠나면(parent 해제) 마지막 자리에 잔류
+    if (d.follow) {
+      if (d.follow.parent) { d.g.position.x = d.follow.position.x; d.g.position.z = d.follow.position.z; }
+      else { d.follow = null; d.yBase = 0.4; } // 떨구고 갔다 — 지면 높이로 안착
+    }
     const k = 0.5 + 0.5 * Math.sin(t * 3.4);
     d.spr.material.opacity = 0.55 + 0.45 * k;
     d.spr.scale.setScalar(0.85 + 0.22 * k);
@@ -4459,10 +4465,13 @@ function presentWildlife(id) {
   const m = ENCOUNTER_WILDLIFE[id];
   if (!m) { openEventCard(id); return; }
   // 종 엔티티 스폰(실제 로밍) — 실패해도 카드/드랍은 뜬다.
-  try { wildlifeSys && wildlifeSys._spawnSpecies && wildlifeSys._spawnSpecies(m.species); } catch (e) {}
-  // 조망(하늘 나는 새 등): 떨군 게 없으니 지면 드랍 없이 카드 직결. 그 외: 지면 반짝임 → 터치 → 카드.
+  let ent = null;
+  try { ent = (wildlifeSys && wildlifeSys._spawnSpecies && wildlifeSys._spawnSpecies(m.species)) || null; } catch (e) {}
+  // 조망(하늘 나는 새 등): 떨군 게 없으니 지면 드랍 없이 카드 직결.
   if (m.sky) { openEventCard(id); return; }
-  if (!spawnGroundDrop(id)) openEventCard(id);
+  // 디렉터(2026-07-16): 반짝임은 동물 몸에 붙어 따라다닌다 — 땅에 따로 뜨면 개연성이 없다.
+  //   동물이 떠나면 그 자리에 잔류(떨구고 갔다) — 보상 유실 없음. 정적 발견물(FIND)은 기존 지면 방식.
+  if (!spawnGroundDrop(id, { follow: ent?.g || null })) openEventCard(id);
 }
 
 function showEvent(id) {
