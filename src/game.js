@@ -3908,6 +3908,7 @@ function playEventSting(id) {
 // title/text/choice label 은 언어 전환 시점(showEvent) 에 t() 로 해석하므로 id 로 보관한다.
 // #165 무너진 입구 보상 롤 (디렉터 2026-07-10): Yes의 값 — 치장템(도료·도면) 가중, 최희귀 고양이 루트,
 //   나머지는 잡동사니 위로. 부상 리스크는 이벤트 쪽(choices.run)에서 별도 롤 — 보상과 독립이라 "얻고도 다칠" 수 있다.
+let collapseLootFx = null; // #199 상자 개봉 연출용 전리품 메타(색·이모지) — collapseEntranceLoot가 굴릴 때 기록
 function collapseEntranceLoot() {
   // #193: 발동 시점에 박제한 지역 우선 — 귀환 후 표시라 state.exp는 이미 비어 있다(항상 slum 폴백이던 결함)
   const region = state.riskEventRegion || (state.exp ? state.exp.region : 'slum');
@@ -3915,11 +3916,13 @@ function collapseEntranceLoot() {
   // 최희귀: 어둠 속의 야옹 — 고양이 미보유·미조우일 때만. 입양 인카운터로 연결(집 문앞 재회 플로우 그대로).
   if (!state.cat && !state.catEventSeen && r < 0.08) {
     state.pendingEvent = 'cat';
+    collapseLootFx = { color: 0xffd487, emoji: '🐾' };
     return t('ev.collapse.rCat');
   }
   if (r < 0.5) { // 도료 (지역 시그니처 계열 가중 — 기존 잭팟 층 재사용)
     const fam = rollPaintFamily(region);
     state.paints[fam] = (state.paints[fam] || 0) + 1;
+    collapseLootFx = { color: PAINT_FAMILIES[fam].swatch, emoji: '🪣' };
     jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
     return t('ev.collapse.rPaint', { name: LName(PAINT_FAMILIES[fam]) });
   }
@@ -3928,11 +3931,13 @@ function collapseEntranceLoot() {
     const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
     state.blueprints = state.blueprints || {};
     state.blueprints[bpId] = 1;
+    collapseLootFx = { color: 0xd4b46a, emoji: '📐' };
     jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
     return t('ev.collapse.rBp', { name: LName(DEFS[bpId]) });
   }
   const rid = Math.random() < 0.5 ? 'cloth' : 'parts';
   resAdd(rid, 1);
+  collapseLootFx = { color: 0x9aa0a8, emoji: rid === 'cloth' ? '🧵' : '🔩' };
   return t('ev.collapse.rJunk', { name: LN(RESOURCES[rid]) });
 }
 // #164 「떠오른 자리」 회수 — 스팟 지역 탐험이 성공/부분성공으로 닿았을 때 resolveExpedition에서 호출.
@@ -4260,6 +4265,8 @@ function presentWildlife(id) {
 function showEvent(id) {
   const ev = EVENTS[id];
   if (!ev) return;
+  // #199 무너진 입구(디렉터 2026-07-17): 사진 카드 → 인엔진 문+상자 연출 (러너 점유 시 내부에서 카드 폴백)
+  if (id === 'collapsed_entrance') { playCollapseVignette(); return; }
   playEventSting(id);
   // 걸어오는 등장인물(arrive foot/door/boat)은 인엔진 연출로 분기. 그 외는 즉시 카드.
   if (ev.arrive && ENCOUNTER_VISITOR[id] && canPresentVisitor()) { presentVisitor(id); return; }
@@ -6101,6 +6108,196 @@ function playVignette(build, durMs, onDone) {
     const t = Math.min(1, (performance.now() - t0) / durMs);
     v.update(t); vr.render(v.scene, v.camera);
     if (t >= 1) { setTimeout(finish, 1100); return; } // 마지막 프레임을 잠시 머금고 닫는다
+    requestAnimationFrame(loop);
+  })();
+}
+
+/* ── #199 무너진 입구 인엔진 연출 (디렉터 2026-07-17, 레퍼런스 Box.mp4 — 상자 개봉만 참조) ──
+   사진 카드 폐지: ①복셀 문 씬(문틈 안은 완전한 어둠) ②하단 선택 UI(들어간다/그냥 간다)
+   ③입장 시 상자 개봉 버스트 — 예열 흔들림 → 뚜껑 팝 + 수직 광선 부챗살(전리품 색) + 전리품 부유 + 파편 산개.
+   보상·부상·확률·문안은 기존 collapsed_entrance choices.run() 그대로 재사용 — 표시 계층만 교체(신규 문자열 0). */
+function playCollapseVignette() {
+  const ev = EVENTS.collapsed_entrance;
+  if (!ev || vignetteActive) { openEventCard('collapsed_entrance'); return; } // 러너 점유 시 카드 폴백
+  vignetteActive = true;
+  playEventSting('collapsed_entrance');
+  const evTitle = t(ev.titleId);
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:400;background:#000;opacity:0;transition:opacity .5s';
+  const cv = document.createElement('canvas'); cv.style.cssText = 'width:100%;height:100%;filter:contrast(1.14) saturate(1.1)'; ov.appendChild(cv);
+  const vf = document.createElement('div');
+  vf.style.cssText = 'position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 44%, transparent 50%, rgba(6,4,3,0.74) 100%)';
+  ov.appendChild(vf);
+  const fade = document.createElement('div'); // 문→상자 장면 전환용 암전막
+  fade.style.cssText = 'position:absolute;inset:0;pointer-events:none;background:#000;opacity:0;transition:opacity .35s';
+  ov.appendChild(fade);
+  const ui = document.createElement('div');
+  ui.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);bottom:max(26px, env(safe-area-inset-bottom, 26px));width:min(430px, 86vw);display:flex;flex-direction:column;gap:8px;z-index:2';
+  ov.appendChild(ui);
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => { ov.style.opacity = '1'; });
+  const vr = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b0a0c);
+  scene.fog = new THREE.Fog(0x0b0a0c, 9, 20); // 문(카메라 ~5-6m)이 안개에 묻히지 않게 — 문틈 칠흑은 대비로 산다
+  const camera = new THREE.PerspectiveCamera(44, innerWidth / innerHeight, 0.1, 60);
+  const fit = () => { vr.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); };
+  fit(); addEventListener('resize', fit);
+  scene.add(new THREE.AmbientLight(0x8a92a4, 0.62));
+  const key = new THREE.DirectionalLight(0xbfd0e8, 0.95); key.position.set(-3, 6, 4); scene.add(key);
+  const torch = new THREE.PointLight(0xffc98a, 2.8, 10, 1.7); torch.position.set(0.3, 1.4, 2.6); scene.add(torch); // 손전등 웜 스팟 — 문짝·프레임을 핥는다
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshLambertMaterial({ color: 0x2c2a2e }));
+  ground.rotation.x = -Math.PI / 2; scene.add(ground);
+  const M = c => new THREE.MeshLambertMaterial({ color: c });
+  const bx = (g, w, h, d, c, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); m.position.set(x, y, z); g.add(m); return m; };
+  // ── 장면 1: 무너진 입구 — 콘크리트 프레임 + 반열림 철문 + 문틈 칠흑 ──
+  const doorG = new THREE.Group(); scene.add(doorG);
+  bx(doorG, 0.52, 2.7, 0.5, 0x5a5650, -1.06, 1.35, 0);                                   // 좌 기둥
+  bx(doorG, 0.52, 2.45, 0.5, 0x545049, 1.09, 1.22, 0).rotation.z = -0.07;                // 우 기둥(기움)
+  bx(doorG, 3.0, 0.52, 0.56, 0x4f4b46, 0.06, 2.72, 0).rotation.z = 0.05;                 // 상인방(내려앉음)
+  bx(doorG, 0.5, 0.34, 0.5, 0x47433e, 1.28, 2.32, 0.06).rotation.z = 0.3;                // 상인방 파편
+  for (const [rx, ry, rs, rr] of [[-1.5, 0.14, 0.42, 0.2], [-0.6, 0.1, 0.3, -0.4], [1.5, 0.18, 0.5, 0.5], [0.8, 0.09, 0.26, 1.1], [-2.1, 0.1, 0.3, 0.8]])
+    bx(doorG, rs, rs * 0.7, rs, 0x3e3b3f, rx, ry, 1.0 + rr * 0.4).rotation.y = rr;       // 발치 잔해
+  for (const [bx2, by2, brz] of [[-0.7, 2.9, 0.5], [0.5, 3.0, -0.7], [1.3, 2.75, 1.2]]) {
+    const rb = bx(doorG, 0.035, 0.6, 0.035, 0x6a4a30, bx2, by2, 0.1); rb.rotation.z = brz; // 철근 삐침
+  }
+  const darkIn = new THREE.Mesh(new THREE.PlaneGeometry(1.72, 2.4), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+  darkIn.position.set(0, 1.2, -0.08); doorG.add(darkIn);                                  // 안 = 완전한 어둠(디렉터 스펙)
+  const doorPivot = new THREE.Group(); doorPivot.position.set(-0.78, 0, 0.12); doorG.add(doorPivot);
+  const doorPanel = bx(doorPivot, 0.82, 2.14, 0.07, 0x49505a, 0.41, 1.07, 0);             // 철문(경첩=좌변)
+  bx(doorPivot, 0.82, 0.06, 0.075, 0x3a4048, 0.41, 1.85, 0);                              // 보강 리브
+  bx(doorPivot, 0.82, 0.06, 0.075, 0x3a4048, 0.41, 0.35, 0);
+  bx(doorPivot, 0.07, 0.16, 0.08, 0x2c3138, 0.74, 1.05, 0.02);                            // 손잡이
+  doorPivot.rotation.y = 0.85;                                                            // 반쯤 열림 — 어둠이 보인다
+  // 부유 먼지
+  const dustN = 50, dustPos = new Float32Array(dustN * 3);
+  for (let i = 0; i < dustN; i++) { dustPos[i * 3] = (Math.random() - 0.5) * 5; dustPos[i * 3 + 1] = Math.random() * 2.8; dustPos[i * 3 + 2] = Math.random() * 3; }
+  const dustGeo = new THREE.BufferGeometry(); dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+  const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0xcabfa8, size: 0.03, transparent: true, opacity: 0.55, depthWrite: false }));
+  scene.add(dust);
+  // ── 장면 2: 상자 (입장 시 생성) ──
+  let chestG = null, lidPivot = null, rays = null, lootSprite = null, debris = null, glowIn = null;
+  const buildChest = () => {
+    chestG = new THREE.Group(); scene.add(chestG);
+    const body = 0x6a5a42, rim = 0x8a8f96;
+    bx(chestG, 1.12, 0.58, 0.72, body, 0, 0.29, 0);                                       // 몸통(군용 궤짝)
+    bx(chestG, 1.16, 0.05, 0.76, shade(body, 0.75), 0, 0.035, 0);                         // 하단 굽
+    for (const ex of [-0.54, 0.54]) bx(chestG, 0.05, 0.6, 0.74, shade(body, 0.82), ex, 0.3, 0); // 모서리 판
+    for (const ez of [-0.34, 0.34]) bx(chestG, 1.14, 0.05, 0.05, rim, 0, 0.56, ez);       // 상단 금속 림
+    bx(chestG, 0.16, 0.12, 0.05, rim, 0, 0.5, 0.375);                                     // 걸쇠
+    lidPivot = new THREE.Group(); lidPivot.position.set(0, 0.58, -0.36); chestG.add(lidPivot);
+    bx(lidPivot, 1.16, 0.16, 0.78, shade(body, 1.12), 0, 0.08, 0.36);                     // 뚜껑(경첩=뒷변)
+    bx(lidPivot, 1.18, 0.05, 0.06, rim, 0, 0.14, 0.7);                                    // 뚜껑 앞 림
+    const gi = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.62), new THREE.MeshBasicMaterial({
+      color: collapseLootFx?.color || 0xffcf9a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+    gi.rotation.x = -Math.PI / 2; gi.position.set(0, 0.6, 0); chestG.add(gi); glowIn = gi; // 내부 발광판
+  };
+  const spawnBurst = () => {
+    const col = collapseLootFx?.color || 0xffcf9a;
+    rays = new THREE.Group(); chestG.add(rays);                                           // 광선 부챗살(레퍼런스 f008)
+    for (const [rz, w] of [[-0.42, 0.26], [-0.2, 0.3], [0, 0.36], [0.2, 0.3], [0.42, 0.26]]) {
+      const ray = new THREE.Mesh(new THREE.PlaneGeometry(w, 5.2), new THREE.MeshBasicMaterial({
+        color: col, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      ray.position.set(rz * 0.5, 0.6, 0); ray.rotation.z = rz; ray.userData.baseOp = 0.62 - Math.abs(rz) * 0.4;
+      rays.add(ray);
+    }
+    const lc = document.createElement('canvas'); lc.width = lc.height = 128;              // 전리품 아이콘 스프라이트
+    const g2 = lc.getContext('2d'); g2.font = '96px serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle';
+    g2.shadowColor = 'rgba(0,0,0,0.6)'; g2.shadowBlur = 10; g2.fillText(collapseLootFx?.emoji || '📦', 64, 70);
+    lootSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lc), transparent: true, depthWrite: false }));
+    lootSprite.position.set(0, 0.7, 0.1); lootSprite.scale.setScalar(0.01); chestG.add(lootSprite);
+    debris = [];                                                                          // 파편 산개(레퍼런스 f010 보석 파편)
+    for (let i = 0; i < 14; i++) {
+      const d = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.07, 0.05), new THREE.MeshBasicMaterial({ color: shade(col, 0.75 + Math.random() * 0.6), transparent: true }));
+      d.position.set(0, 0.62, 0);
+      const a = Math.random() * Math.PI * 2, sp = 0.9 + Math.random() * 1.4;
+      d.userData.v = { x: Math.cos(a) * sp * 0.7, y: 1.6 + Math.random() * 1.6, z: Math.sin(a) * sp * 0.5 };
+      d.userData.rs = (Math.random() - 0.5) * 8;
+      chestG.add(d); debris.push(d);
+    }
+    playSfx('craft', { rate: 0.82, vol: 0.6 });
+  };
+  // ── 상태 머신: door → (선택) → chest → 결과 ──
+  let phase = 'door', done = false, ct0 = 0, opened = false, openT = 0;
+  const cleanup = () => {
+    if (done) return; done = true;
+    removeEventListener('resize', fit);
+    ov.style.opacity = '0';
+    setTimeout(() => { ov.remove(); vr.dispose(); disposeDeep(scene); vignetteActive = false; }, 550);
+  };
+  const showChoice = () => {
+    ui.innerHTML = `
+      <div style="color:#e8e0d0;font-size:13px;font-weight:bold;text-shadow:0 2px 8px #000">${ev.icon} ${evTitle}</div>
+      <div style="color:#cfc6b4;font-size:11px;line-height:1.85;text-shadow:0 2px 8px #000">${ev.textFn ? ev.textFn() : ''}</div>
+      <button class="pixel-btn primary" data-cc="0">${t('ev.collapse.c0')}</button>
+      <button class="pixel-btn" data-cc="1">${t('ev.collapse.c1')}</button>`;
+    ui.querySelectorAll('button[data-cc]').forEach(b => b.addEventListener('click', () => {
+      const c = ev.choices[+b.dataset.cc];
+      const result = c.run();                                    // 보상·부상·문안 — 카드와 동일 경로
+      state.dayLog.notes.push(t('event.metNote', { icon: ev.icon, title: evTitle }));
+      scheduleSave(); renderResBar();
+      if (b.dataset.cc === '1') { toast(result); cleanup(); return; }  // 그냥 간다 — 조용히 물러난다
+      ui.innerHTML = '';
+      fade.style.opacity = '1';                                   // 문지방을 넘는다 — 암전
+      setTimeout(() => {
+        scene.remove(doorG); disposeDeep(doorG);
+        torch.position.set(0.4, 1.6, 2.2); torch.intensity = 1.2;
+        buildChest();
+        phase = 'chest'; ct0 = performance.now();
+        fade.style.opacity = '0';
+        setTimeout(() => {                                        // 결과 시트 (개봉 여운 뒤)
+          ui.innerHTML = `
+            <div style="color:#e8e0d0;font-size:12px;line-height:1.85;text-shadow:0 2px 8px #000;background:rgba(10,8,6,0.55);padding:10px 12px;border-radius:6px">${result}</div>
+            <button class="pixel-btn primary" data-cx="1">${t('modal.close')}</button>`;
+          ui.querySelector('button[data-cx]').addEventListener('click', cleanup);
+        }, 2300);
+      }, 380);
+    }));
+  };
+  showChoice();
+  const camDoor = tt => { const z = 6.4 - tt * 1.5, y = 1.75 - tt * 0.3; camera.position.set(0.4 * Math.sin(tt * 0.9), y, z); camera.lookAt(0, 1.15, 0); };
+  const t0 = performance.now();
+  (function loop() {
+    if (done) return;
+    const now = performance.now();
+    if (phase === 'door') {
+      camDoor(Math.min(1, (now - t0) / 9000));                    // 9초 느린 푸시인 후 정지
+      doorPivot.rotation.y = 0.85 + Math.sin(now * 0.0011) * 0.012; // 바람에 삐걱이는 문
+      const dp = dust.geometry.attributes.position;
+      for (let i = 0; i < dustN; i++) { dp.array[i * 3 + 1] += 0.0016; if (dp.array[i * 3 + 1] > 2.8) dp.array[i * 3 + 1] = 0; }
+      dp.needsUpdate = true;
+    } else {
+      const ct = (now - ct0) / 1000;
+      camera.position.set(Math.sin(ct * 0.25) * 0.3, 1.6, 3.4); camera.lookAt(0, 0.95, 0);
+      if (ct < 0.55) {                                            // 예열 — 들썩이는 상자
+        chestG.rotation.z = Math.sin(ct * 52) * 0.022 * (0.55 - ct) * 2;
+        chestG.position.y = Math.abs(Math.sin(ct * 26)) * 0.035 * (0.55 - ct);
+      } else {
+        if (!opened) { opened = true; openT = ct; spawnBurst(); }
+        chestG.rotation.z = 0; chestG.position.y = 0;
+        const ot = ct - openT;
+        lidPivot.rotation.x = -Math.min(1, ot / 0.14) * 2.05;     // 뚜껑 팝
+        if (glowIn) glowIn.material.opacity = Math.min(0.85, ot * 4) * Math.max(0.35, 1 - ot * 0.25);
+        if (rays) for (const ray of rays.children) {
+          ray.scale.y = Math.min(1, ot / 0.28);
+          ray.material.opacity = ot < 1.7 ? ray.userData.baseOp * Math.min(1, ot / 0.2) : Math.max(0, ray.userData.baseOp * (1 - (ot - 1.7) / 0.8));
+        }
+        if (lootSprite) {                                          // 전리품 상승 + 팝 스케일 + 부유 (프레임 안 유지 — 1.05)
+          const rt = Math.min(1, ot / 0.7), ease = 1 - Math.pow(1 - rt, 3);
+          lootSprite.position.y = 0.7 + ease * 1.05 + (ot > 0.7 ? Math.sin((ot - 0.7) * 2.4) * 0.06 : 0);
+          lootSprite.scale.setScalar(rt < 0.85 ? 1.15 * ease : 1.15 - 0.2 * Math.min(1, (rt - 0.85) / 0.15));
+        }
+        if (debris) for (const d of debris) {
+          d.userData.v.y -= 4.6 * 0.016;
+          d.position.x += d.userData.v.x * 0.016; d.position.y += d.userData.v.y * 0.016; d.position.z += d.userData.v.z * 0.016;
+          d.rotation.x += d.userData.rs * 0.016; d.rotation.z += d.userData.rs * 0.012;
+          if (d.position.y < 0.03) { d.position.y = 0.03; d.userData.v.y = 0; d.userData.v.x *= 0.9; d.userData.v.z *= 0.9; }
+          if (ot > 1.9) d.material.opacity = Math.max(0, 1 - (ot - 1.9) / 0.7);
+        }
+        if (ot > 0.05 && ot < 0.22) camera.position.y += Math.sin(ot * 90) * 0.018;       // 개봉 순간 카메라 잔떨림
+      }
+    }
+    vr.render(scene, camera);
     requestAnimationFrame(loop);
   })();
 }
@@ -11153,6 +11350,7 @@ window.__shelter = {
   qaItems: () => items, applyGel, // #189 P3 QA: 배치 아이템 직접 접근 + 젤 적용(색 검증)
   loadShelter, // #195 QA: 레이아웃 왕복 게이트 — loadSave는 상태만 싣고 씬 복원은 부팅 절차 몫이라 직접 구동
   cityOf, // 2.0-α QA: 도시 파생 게이트(셸터→도시 매핑·기록 필드 검증)
+  playCollapseVignette, // #199 QA: 문+상자 연출 직접 구동(캡처 검수용)
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
