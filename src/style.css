@@ -20,6 +20,15 @@
     --uiz: 1;
     --rarity-rare: #b06ee6;   /* 희귀 = 보라 (도료·책) */
     --rarity-legend: #ffcf49; /* 전설 = 금색 (도면·네온 안료) */
+    /* ── UI 토큰 정본(docs/design/UI-TOKENS.md) — 신규 CSS는 이 밖의 리터럴 금지 ── */
+    --fs-s: 10px;   /* 캡션·태그·보조 수치 */
+    --fs-m: 12px;   /* 본문·버튼·리스트 행 */
+    --fs-l: 15px;   /* 창 제목·섹션 헤더 */
+    --fs-display: 26px; /* 계기 디스플레이(시계 숫자) */
+    --r: 3px;       /* 라운드 단일값 — 종이·LCD 내부는 0 */
+    --lcd-ink: #9fe8a0; /* PDA·필드 터미널 포스퍼 */
+    --lcd-dim: #5a8f5e;
+    --bloom: 0 0 6px rgba(159, 232, 160, 0.3); /* LCD 포스퍼 블룸 1규칙 */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   /* ── 생성 아트 아이콘 (#19): 이모지 UI 교체 ── */
@@ -154,28 +163,28 @@
   }
   #hud .p-min { display: none; }
   #hud .shelter-name {
-    display: block; color: #e8c060; font-size: 12px;
-    padding: 4px 2px 8px; text-shadow: 0 0 5px rgba(232, 192, 96, 0.3);
+    display: block; color: #e8c060; font-size: var(--fs-m);
+    padding: 4px 2px 8px; /* 토큰 수렴: 블룸은 g-num 1곳만(--bloom 규칙) — 이름 글로우 제거 */
     word-break: keep-all;
   }
+  #hud .shelter-name .px-icon { width: 14px; height: 14px; vertical-align: -3px; }
   #hud #gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 6px; } /* 계기 3종(밥·물·에너지) — 폭 확보로 라벨 잘림 해소 */
   #hud #btn-journal { display: none; } /* 일지 진입점은 우측 도킹 — 그리드 중복 제거(디렉터) */
   #hud .gauge {
     height: auto; display: flex; flex-direction: column; gap: 4px;
     padding: 5px 6px 6px;
-    background: #0c1408; border: 1px solid #2c4424; border-radius: 4px;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+    background: #0c1408; border: 1px solid #2c4424; border-radius: var(--r); /* 토큰: 인셋 섀도 제거(요소 단위 남발 금지) */
   }
   #hud .gauge:hover { border-color: #4f7a44; }
   #hud .g-top { display: flex; align-items: center; gap: 2px; }
   #hud .g-top .px-icon { width: 12px; height: 12px; flex: 0 0 auto; }
   #hud .g-name { font-size: 10px; color: #6a9a5f; letter-spacing: 0; min-width: 0; overflow: hidden; white-space: nowrap; } /* 3열 폭 확보 — 라벨 원복 */
   #hud .g-num {
-    margin-left: auto; font-size: 13px; color: #b8f0a0; font-weight: normal;
-    font-variant-numeric: tabular-nums; text-shadow: 0 0 5px rgba(140, 240, 120, 0.4);
+    margin-left: auto; font-size: var(--fs-m); color: #b8f0a0; font-weight: normal;
+    font-variant-numeric: tabular-nums; text-shadow: var(--bloom); /* 화면 유일 블룸 */
   }
-  #hud .g-bar { position: relative; height: 5px; background: rgba(184, 240, 160, 0.1); border-radius: 2px; overflow: hidden; }
-  #hud .g-fill { position: absolute; inset: 0 auto 0 0; display: block; height: 100%; width: 50%; border-radius: 2px; transition: width 0.3s; } /* 전역 .g-fill(inset:0 카드 채움) 무력화 — 바 안에서만 */
+  #hud .g-bar { position: relative; height: 5px; background: rgba(184, 240, 160, 0.1); overflow: hidden; } /* LCD 내부 = 각지게(토큰) */
+  #hud .g-fill { position: absolute; inset: 0 auto 0 0; display: block; height: 100%; width: 50%; transition: width 0.3s; } /* 전역 .g-fill(inset:0 카드 채움) 무력화 — 바 안에서만 */
   /* 게이지 고유색(디렉터 목업: 배고픔 머스터드·수분 시안·에너지 그린) + 청결 라임 */
   #hud #g-hunger .g-fill { background: #d8ae52; }
   #hud #g-thirst .g-fill { background: #52aed8; }
@@ -186,9 +195,9 @@
   #hud #gauges .g-fill.crit { background: #d06a48; animation: dkblink 1.1s steps(1) infinite; }
   #hud .stat { /* 컨디션 스트립: 날씨 | 경고 | 탐험 */
     display: flex; align-items: center; justify-content: space-around; gap: 4px;
-    background: #0c1408; border: 1px solid #2c4424; border-radius: 4px;
+    background: #0c1408; border: 1px solid #2c4424; border-radius: var(--r);
     padding: 5px 6px; margin-bottom: 8px;
-    font-size: 11px; color: #8fce7d;
+    font-size: var(--fs-s); color: #8fce7d;
   }
   #hud .stat .cond-seg { display: flex; align-items: center; gap: 4px; line-height: 1; }
   #hud .stat .cond-seg .px-icon { width: 14px; height: 14px; flex: 0 0 auto; } /* 아트 아이콘 — 이모지 베이스라인 어긋남 해소 */
@@ -198,18 +207,30 @@
   #hud .btn-row.icons { gap: 4px; }
   #hud .btn-row.icons .pixel-btn {
     padding: 6px 0 5px;
-    background: linear-gradient(180deg, #131a10, #0d120a);
-    border-color: #2c4424; border-radius: 4px;
-    box-shadow: inset 0 1px 0 rgba(184, 240, 160, 0.06);
+    background: #10150d; /* 토큰 수렴: 그라데이션 버튼(웹 문법)→솔리드 면 */
+    border-color: #2c4424; border-radius: var(--r);
   }
   #hud .btn-row.icons .pixel-btn:hover { border-color: #4f7a44; }
   #hud .btn-row.icons .act-icon { width: 24px; height: 24px; }
   #hud .btn-row.icons .act-lbl { color: #6a9a5f; }
   #hud .btn-row.icons .pixel-btn.primary {
     border-color: #e8c060;
-    box-shadow: inset 0 0 8px rgba(232, 192, 96, 0.12), 0 0 6px rgba(232, 192, 96, 0.18);
+    box-shadow: 0 0 6px rgba(232, 192, 96, 0.22); /* 화면당 글로우 1곳 = 주 행동(탐험) */
   }
   #hud .btn-row.icons .pixel-btn.primary .act-lbl { color: #e8c060; }
+  /* ── B안 시안 「플랫」(211214 의견): 구 차콜 팔레트·무광·무블룸 — body.ui-flat로만 활성(디렉터 A/B 선택용) ── */
+  body.ui-flat #hud { background: var(--panel-bg); border-color: var(--panel-border); }
+  body.ui-flat #hud .shelter-name { color: var(--accent); }
+  body.ui-flat #hud .gauge, body.ui-flat #hud .stat { background: rgba(0, 0, 0, 0.25); border-color: var(--panel-border); }
+  body.ui-flat #hud .g-name, body.ui-flat #hud .btn-row.icons .act-lbl { color: var(--text-dim); }
+  body.ui-flat #hud .g-num { color: var(--text); text-shadow: none; }
+  body.ui-flat #hud .g-bar { background: rgba(255, 255, 255, 0.08); }
+  body.ui-flat #hud .stat { color: var(--text-dim); }
+  body.ui-flat #hud .stat .cond-seg b { color: var(--text); }
+  body.ui-flat #hud .stat .cond-div { color: var(--panel-border); }
+  body.ui-flat #hud .btn-row.icons .pixel-btn { background: rgba(0, 0, 0, 0.25); border-color: var(--panel-border); }
+  body.ui-flat #hud .btn-row.icons .pixel-btn:hover { border-color: var(--text-dim); }
+  body.ui-flat #hud .btn-row.icons .pixel-btn.primary { border-color: var(--accent); box-shadow: none; }
   /* ── #199 UI B: 우측 엣지 도킹(접힘 보관) + PDA 계측 오버레이 ──
      디렉터 레퍼런스: 화면 우측에 반쯤 걸친 PDA 하우징·가죽 일지. 당기면 열림.
      하이브리드: 계측=전자(LCD 포스퍼 — 기존 #lcd 톤 계승), 기록=종이(일지=기존 저널). */
