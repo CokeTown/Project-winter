@@ -2145,5 +2145,12 @@
   "pda.openMap": "OPEN FULL MAP",
   "pda.here": "POSITION",
   "pda.noLog": "NO ENTRIES",
-  "pda.gained": "GAINED TODAY"
+  "pda.gained": "GAINED TODAY",
+  "g.clean.title": "Cleanliness — click to clean up",
+  "pda.camp": "CAMP / PROGRESS",
+  "pda.comfort": "COMFORT",
+  "pda.weatherPen": "WEATHER PENALTY",
+  "pda.exp": "RUNS TODAY",
+  "pda.succ": "SUCCESSFUL RUNS",
+  "pda.winters": "WINTERS SURVIVED"
 }

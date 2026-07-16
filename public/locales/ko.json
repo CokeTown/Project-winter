@@ -2145,5 +2145,12 @@
   "pda.openMap": "전도 펼치기",
   "pda.here": "현재 위치",
   "pda.noLog": "기록 없음",
-  "pda.gained": "오늘 얻은 것"
+  "pda.gained": "오늘 얻은 것",
+  "g.clean.title": "청결 — 클릭하면 청소한다",
+  "pda.camp": "거점·진행",
+  "pda.comfort": "쾌적",
+  "pda.weatherPen": "날씨 페널티",
+  "pda.exp": "오늘 탐험",
+  "pda.succ": "성공한 탐험",
+  "pda.winters": "넘긴 겨울"
 }

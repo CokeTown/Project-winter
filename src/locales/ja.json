@@ -2145,5 +2145,12 @@
   "pda.openMap": "全図を開く",
   "pda.here": "現在地",
   "pda.noLog": "記録なし",
-  "pda.gained": "本日の入手"
+  "pda.gained": "本日の入手",
+  "g.clean.title": "清潔 — クリックで掃除する",
+  "pda.camp": "拠点・進行",
+  "pda.comfort": "快適",
+  "pda.weatherPen": "天候ペナルティ",
+  "pda.exp": "本日の探索",
+  "pda.succ": "成功した探索",
+  "pda.winters": "越えた冬"
 }

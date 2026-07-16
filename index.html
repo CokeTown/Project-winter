@@ -63,6 +63,7 @@
     <div class="gauge" id="g-hunger" data-i18n-title="g.hunger.title" title="배고픔 — 클릭하면 음식을 먹습니다"><div class="g-fill"></div><span class="g-label">🥫 80</span></div>
     <div class="gauge" id="g-thirst" data-i18n-title="g.thirst.title" title="갈증 — 클릭하면 물을 마십니다"><div class="g-fill"></div><span class="g-label">💧 80</span></div>
     <div class="gauge" id="g-energy" data-i18n-title="g.energy.title" title="에너지 — 탐험마다 소모, 취침으로 회복"><div class="g-fill"></div><span class="g-label">⚡ 100</span></div>
+    <div class="gauge" id="g-clean" data-i18n-title="g.clean.title" title="청결 — 클릭하면 청소한다"><div class="g-fill"></div><span class="g-label">🧹 70</span></div>
   </div>
   <div class="btn-row icons">
     <button class="pixel-btn primary" id="btn-exp" data-i18n-title="btn.exp.title" title="탐험 (지도)"><img class="act-icon" src="img/icons/icon_act_explore.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('🎒'))"><span class="act-lbl" data-i18n="btn.exp.lbl">탐험</span></button>
@@ -92,7 +93,7 @@
     <span class="dk-body">
       <span class="dk-slits" aria-hidden="true"></span>
       <span class="dk-label">PDA</span>
-      <span class="dk-gauges" aria-hidden="true"><i id="dkg-h"></i><i id="dkg-t"></i><i id="dkg-e"></i></span>
+      <span class="dk-gauges" aria-hidden="true"><i id="dkg-h"></i><i id="dkg-t"></i><i id="dkg-e"></i><i id="dkg-c"></i></span>
     </span>
   </button>
   <button id="dock-journal" data-i18n-title="btn.journal.title" title="일지 (도감·업적·통계)">
@@ -104,17 +105,36 @@
   </button>
 </div>
 <div id="pda-back" style="display:none">
+  <!-- 진짜 기기 외관(디렉터 오더): 러기드 하우징·안테나·스피커·나사·D-패드 — 화면(LCD) 안에서 동작.
+       다이제틱 UI 원론(Pip-Boy 계보): 기기 자체가 세계 내 물건, 조작부도 하드웨어 문법. -->
   <div id="pda">
+    <span id="pda-antenna" aria-hidden="true"></span>
     <div id="pda-top">
       <span id="pda-brand">PDA-04</span><span id="pda-led" aria-hidden="true"></span>
-      <button id="pda-x" aria-label="close">✕</button>
+      <span id="pda-speaker" aria-hidden="true"></span>
+      <button id="pda-x" aria-label="power">⏻</button>
     </div>
-    <div id="pda-screen"></div>
-    <div id="pda-tabs">
-      <button class="pda-tab" data-tab="status" data-i18n="pda.tab.status">상태</button>
-      <button class="pda-tab" data-tab="res" data-i18n="pda.tab.res">자원</button>
-      <button class="pda-tab" data-tab="map" data-i18n="pda.tab.map">지도</button>
-      <button class="pda-tab" data-tab="log" data-i18n="pda.tab.log">기록</button>
+    <div id="pda-lcd">
+      <div id="pda-tabs">
+        <button class="pda-tab" data-tab="status" data-i18n="pda.tab.status">상태</button>
+        <button class="pda-tab" data-tab="res" data-i18n="pda.tab.res">자원</button>
+        <button class="pda-tab" data-tab="map" data-i18n="pda.tab.map">지도</button>
+        <button class="pda-tab" data-tab="log" data-i18n="pda.tab.log">기록</button>
+      </div>
+      <div id="pda-screen"></div>
+    </div>
+    <div id="pda-hw">
+      <div id="pda-dpad" aria-hidden="false">
+        <button class="dp" data-d="up">▲</button>
+        <button class="dp" data-d="left">◀</button>
+        <span id="dp-c"></span>
+        <button class="dp" data-d="right">▶</button>
+        <button class="dp" data-d="down">▼</button>
+      </div>
+      <div id="pda-keys">
+        <button class="pda-key" id="pda-key-a">A</button>
+        <button class="pda-key" id="pda-key-b">B</button>
+      </div>
     </div>
   </div>
 </div>

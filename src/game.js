@@ -92,7 +92,7 @@ function icon(name, emoji = '', cls = '') {
 }
 // ID→아이콘명 매핑 (테이블 원본 대신 별도 객체). 대부분 ID가 파일명과 직결되나 예외(region slum→slums)만 명시.
 const REGION_ICON = { residential: 'icon_region_residential', commercial: 'icon_region_commercial', industrial: 'icon_region_industrial', slum: 'icon_region_slums' };
-const GAUGE_ICON = { hunger: 'icon_g_hunger', thirst: 'icon_g_thirst', energy: 'icon_g_energy' };
+const GAUGE_ICON = { hunger: 'icon_g_hunger', thirst: 'icon_g_thirst', energy: 'icon_g_energy', clean: 'icon_g_clean' };
 const WEATHER_ICON = { clear: 'icon_weather_clear', snow: 'icon_weather_snow', rain: 'icon_weather_rain', ash: 'icon_weather_ash', storm: 'icon_weather_storm' };
 // 렌더 편의 래퍼 (테이블 객체를 받아 아이콘 우선, emoji 폴백)
 const resIcon   = (id, cls = '') => icon(`icon_res_${id}`, RESOURCES[id]?.emoji || '', cls);
@@ -8685,6 +8685,7 @@ function updateHud() {
   renderGauge('g-hunger', state.hunger, 'hunger', '🥫');
   renderGauge('g-thirst', state.thirst, 'thirst', '💧');
   renderGauge('g-energy', state.energy, 'energy', '⚡');
+  renderGauge('g-clean', cd.clean, 'clean', '🧹'); // #199: 상단 필수 4계기 확정(디렉터) — 물·배고픔·에너지·청결
 }
 function renderGauge(id, val, gkey, emoji) {
   const g = $(id);
@@ -8720,6 +8721,8 @@ function pdaOpen(tab) {
   if (tab) pdaTab = tab;
   $('pda-back').style.display = '';
   renderPDA();
+  const lcd = $('pda-lcd'); // 켜질 때 LCD 부트 플리커 — 기기 핍진성
+  lcd.classList.remove('pda-boot'); void lcd.offsetWidth; lcd.classList.add('pda-boot');
 }
 function pdaClose() { $('pda-back').style.display = 'none'; }
 function renderPDA() {
@@ -8744,6 +8747,17 @@ function renderPDA() {
     if (state.expFatigue === state.day) lines.push(t('exp.fatigue'));
     if (state.moodBuff && state.moodBuff.until > state.day) lines.push(t('pda.mood', { amt: state.moodBuff.amt, d: state.moodBuff.until - state.day }));
     body += `<div class="ph">${t('pda.cond')}</div>` + lines.map(l => `<div>${l}</div>`).join('');
+    // #199 2차: 상단 HUD 슬리밍으로 이관된 거점·진행 계측 (구 .stat 라인의 새 집)
+    const cd = comfortDetail();
+    const lv2 = Math.min(5, Math.round(cd.score / 20));
+    const base = [];
+    base.push(`${t('pda.comfort')}: ${cd.score} ${'★'.repeat(lv2)}<span style="opacity:.3">${'★'.repeat(5 - lv2)}</span>`); // ☆ 글리프가 픽셀 폰트에서 ★와 동일 렌더 — 감쇠로 구분
+    if (w?.penalty) base.push(`${t('pda.weatherPen')}: -${Math.round(w.penalty * 100)}%`);
+    if (state.buff) base.push(`✨ ${buffLabel(state.buff)}`);
+    base.push(`${t('pda.exp')}: ${state.expToday}/${EXP_PER_DAY}`);
+    if (!isWallpaper()) base.push(`${t('pda.succ')}: ${state.successes}`);
+    if ((state.winters || 0) >= 1) base.push(`${t('pda.winters')}: ${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}`);
+    body += `<div class="ph">${t('pda.camp')}</div>` + base.map(l => `<div>${l}</div>`).join('');
   } else if (pdaTab === 'res') {
     body = `<div class="pgrid">` + Object.entries(RESOURCES).map(([id, r]) => {
       const n = state.res[id] || 0;
@@ -11237,6 +11251,7 @@ $('btn-journal').addEventListener('click', () => openJournalModal('journal'));
 $('g-hunger').addEventListener('click', eatFood);
 $('g-thirst').addEventListener('click', drinkWater);
 $('g-energy').addEventListener('click', () => promptSleep());
+$('g-clean').addEventListener('click', () => cleanShelter()); // #199: 상단 필수 4계기 — 청결도 즉시 조치 가능
 $('btn-sleep').addEventListener('click', () => promptSleep());
 $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
 // #199 우측 엣지 도킹: PDA 토글 + 일지(기존 저널 진입점) + PDA 오버레이 닫기/탭
@@ -11246,6 +11261,19 @@ $('pda-x').addEventListener('click', () => pdaClose());
 $('pda-back').addEventListener('pointerdown', e => { if (e.target.id === 'pda-back') pdaClose(); });
 document.querySelectorAll('#pda-tabs .pda-tab').forEach(b =>
   b.addEventListener('click', () => { pdaTab = b.dataset.tab; renderPDA(); }));
+// #199 2차: 기기 하드웨어 조작 — D-패드 ◀▶=탭 순환·▲▼=화면 스크롤, B=끄기(게임기 문법), A=재조회
+{
+  const PDA_TABS = ['status', 'res', 'map', 'log'];
+  const step = dir => { const i = PDA_TABS.indexOf(pdaTab); pdaTab = PDA_TABS[(i + dir + 4) % 4]; renderPDA(); };
+  document.querySelectorAll('#pda-dpad .dp').forEach(b => b.addEventListener('click', () => {
+    const d = b.dataset.d;
+    if (d === 'left') step(-1);
+    else if (d === 'right') step(1);
+    else $('pda-screen').scrollBy({ top: d === 'up' ? -120 : 120, behavior: 'smooth' });
+  }));
+  $('pda-key-a').addEventListener('click', () => renderPDA());
+  $('pda-key-b').addEventListener('click', () => pdaClose());
+}
 // 온스크린 카메라 컨트롤 (모바일/데스크톱 공용)
 $('cam-rotl').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw -= Math.PI / 2; }); // v1.5.1: 90° 스텝 — 정면 T자 원천 차단
 $('cam-rotr').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw += Math.PI / 2; });

@@ -177,6 +177,10 @@
   }
   #hud .gauge { background: #bfb296; border-color: #8a7c62; }
   #hud .gauge .g-label { color: #241f18; text-shadow: 0 1px 0 rgba(255, 248, 230, 0.35); }
+  /* #199 2차(디렉터 확정): 상단 HUD = 필수 계기(허기·갈증·기력·청결)만.
+     셸터명·스탯 줄은 PDA 상태 탭으로 이관 — 원론: 상시 HUD는 생존 즉결 정보만(The Long Dark 계보). */
+  #hud .shelter-name, #hud .stat { display: none; }
+  #hud #gauges { border-radius: 2px; padding-top: 8px; margin-top: 0; }
   /* ── #199 UI B: 우측 엣지 도킹(접힘 보관) + PDA 계측 오버레이 ──
      디렉터 레퍼런스: 화면 우측에 반쯤 걸친 PDA 하우징·가죽 일지. 당기면 열림.
      하이브리드: 계측=전자(LCD 포스퍼 — 기존 #lcd 톤 계승), 기록=종이(일지=기존 저널). */
@@ -249,30 +253,83 @@
     background: rgba(8, 9, 12, 0.5);
     display: flex; align-items: center; justify-content: center;
   }
-  #pda {
+  #pda { /* 진짜 기기 하우징(디렉터 오더): 러기드 케이스 + 나사 + 안테나 + 스피커 + D-패드 */
+    position: relative;
     zoom: var(--uiz); width: min(520px, calc(94vw / var(--uiz, 1)));
-    background: linear-gradient(175deg, #383b32, #24261f 55%, #1a1c16);
-    border: 2px solid #14110d; border-radius: 12px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 3px #3f4438, 0 12px 34px rgba(0, 0, 0, 0.6);
-    padding: 10px 12px 12px;
+    background:
+      repeating-linear-gradient(52deg, rgba(255, 255, 255, 0.015) 0 2px, transparent 2px 5px), /* 미세 헤어라인 */
+      linear-gradient(170deg, #3f4437, #2b2f25 55%, #1e211a);
+    border: 3px solid #14110d; border-radius: 14px 14px 18px 18px;
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.14), inset 0 0 0 4px #474d3c,
+      inset 0 -8px 14px rgba(0, 0, 0, 0.4), 0 14px 40px rgba(0, 0, 0, 0.65);
+    padding: 12px 14px 14px;
   }
-  #pda-top { display: flex; align-items: center; gap: 8px; padding: 2px 2px 8px; }
-  #pda-brand { font-size: 10px; letter-spacing: 3px; color: #8a8f7f; }
-  #pda-led { width: 7px; height: 7px; border-radius: 50%; background: #b8f0a0; box-shadow: 0 0 6px rgba(140, 240, 120, 0.8); animation: dkblink 2.4s steps(1) infinite; }
-  #pda-x {
-    margin-left: auto; width: 26px; height: 26px; cursor: pointer;
-    font-family: inherit; font-size: 12px; line-height: 1; color: #d8cdb4;
-    background: #2c2519; border: 2px solid #14110d; border-radius: 4px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  #pda::before, #pda::after { /* 상단 코너 나사(일자 홈) */
+    content: ''; position: absolute; top: 9px; width: 9px; height: 9px; border-radius: 50%;
+    background:
+      linear-gradient(45deg, transparent 42%, #171a13 42% 58%, transparent 58%),
+      radial-gradient(circle at 35% 30%, #8a8f7f, #3a3e33 55%, #23261e);
+    box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.08);
   }
+  #pda::before { left: 9px; }
+  #pda::after { right: 9px; }
+  #pda-antenna { /* 좌상단 스터브 안테나 */
+    position: absolute; top: -15px; left: 24px; width: 14px; height: 18px;
+    background: linear-gradient(90deg, #23261e, #454b39 45%, #23261e);
+    border: 2px solid #14110d; border-bottom: none; border-radius: 4px 4px 0 0;
+  }
+  #pda-antenna::after {
+    content: ''; position: absolute; top: -7px; left: 1px; right: 1px; height: 6px;
+    background: #191c15; border: 1px solid #14110d; border-radius: 3px 3px 0 0;
+  }
+  #pda-top { display: flex; align-items: center; gap: 8px; padding: 2px 14px 9px; }
+  #pda-brand { /* 케이스 음각 각인 */
+    font-size: 10px; letter-spacing: 3px; color: #878d7a;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.09), 0 -1px 0 rgba(0, 0, 0, 0.55);
+  }
+  #pda-led { width: 7px; height: 7px; border-radius: 50%; background: #b8f0a0; box-shadow: 0 0 6px rgba(140, 240, 120, 0.8), inset 0 -1px 1px rgba(0, 0, 0, 0.3); animation: dkblink 2.4s steps(1) infinite; }
+  #pda-speaker { /* 통화부 슬릿 */
+    margin-left: auto; width: 48px; height: 10px; border-radius: 2px; opacity: 0.85;
+    background: repeating-linear-gradient(90deg, #14110d 0 3px, transparent 3px 6px);
+  }
+  #pda-x { /* 전원 러버 버튼 */
+    width: 32px; height: 24px; cursor: pointer;
+    font-family: inherit; font-size: 12px; line-height: 1; color: #c8cdbb;
+    background: linear-gradient(180deg, #4a503f, #2b2f25);
+    border: 2px solid #14110d; border-radius: 5px;
+    box-shadow: 0 2px 0 #14110d, inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+  #pda-x:active { transform: translateY(1px); box-shadow: 0 1px 0 #14110d; }
+  #pda-lcd { /* LCD 유닛: 두꺼운 베젤 + 유리 반사/CRT 스윕 오버레이 */
+    position: relative; background: #0a0c07;
+    border: 2px solid #14110d; border-radius: 7px; padding: 6px;
+    box-shadow: inset 0 2px 7px rgba(0, 0, 0, 0.85), inset 0 0 0 1px #1e2a18;
+  }
+  #pda-lcd::after {
+    content: ''; position: absolute; inset: 6px; border-radius: 4px; pointer-events: none;
+    background:
+      radial-gradient(130% 55% at 82% 0%, rgba(255, 255, 255, 0.05), transparent 42%),
+      linear-gradient(180deg, rgba(184, 240, 160, 0.07), transparent 70%);
+    background-repeat: no-repeat;
+    background-size: 100% 100%, 100% 90px;
+    animation: crtSweep 7s linear infinite;
+  }
+  @keyframes crtSweep {
+    from { background-position: 0 0, 0 -90px; }
+    to { background-position: 0 0, 0 calc(100% + 90px); }
+  }
+  .pda-boot { animation: pdaBoot 0.3s steps(3); }
+  @keyframes pdaBoot { 0% { opacity: 0.15; } 55% { opacity: 0.75; } 70% { opacity: 0.4; } 100% { opacity: 1; } }
   #pda-screen {
-    height: min(430px, calc(66vh / var(--uiz, 1))); overflow-y: auto; overscroll-behavior: contain;
+    height: min(400px, calc(60vh / var(--uiz, 1))); overflow-y: auto; overscroll-behavior: contain;
     background:
       repeating-linear-gradient(180deg, rgba(184, 240, 160, 0.028) 0 2px, transparent 2px 4px),
       radial-gradient(120% 90% at 50% 0%, #12200c, #0c1408 70%);
-    border: 2px solid #1e2a18; border-radius: 4px;
+    border-radius: 3px;
     padding: 10px 12px; color: #b8f0a0; font-size: 11px; line-height: 1.8;
     text-shadow: 0 0 4px rgba(140, 240, 120, 0.3); word-break: keep-all;
+    box-shadow: inset 0 0 28px rgba(60, 160, 60, 0.1); /* 백라이트 */
   }
   #pda-screen::-webkit-scrollbar { width: 5px; }
   #pda-screen::-webkit-scrollbar-thumb { background: #3f5a35; border-radius: 3px; }
@@ -307,21 +364,59 @@
   #pda-screen ul.plog li { margin: 2px 0; }
   .pda-flick { animation: pdaFlick 0.16s steps(2); }
   @keyframes pdaFlick { 0% { opacity: 0.35; } 100% { opacity: 1; } }
-  #pda-tabs { display: flex; gap: 6px; margin-top: 10px; }
-  .pda-tab { /* 물리 버튼 열 — 기기 하단 */
-    flex: 1; padding: 7px 4px; cursor: pointer;
-    font-family: inherit; font-size: 10px; letter-spacing: 1px; color: #a8ad9c;
-    background: linear-gradient(180deg, #33362d, #22241e);
-    border: 2px solid #14110d; border-radius: 4px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 0 rgba(0, 0, 0, 0.35);
+  #pda-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
+  .pda-tab { /* LCD 상단 세그먼트 탭 — 화면 안에서 동작(디렉터: 기기 화면 위에서 구동) */
+    flex: 1; padding: 5px 2px; cursor: pointer;
+    font-family: inherit; font-size: 10px; letter-spacing: 1px; color: #4f7a44;
+    background: transparent; border: 1px solid #2c4424; border-radius: 2px;
+    text-shadow: 0 0 4px rgba(140, 240, 120, 0.2);
   }
-  .pda-tab:active { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
-  .pda-tab.active { color: #b8f0a0; text-shadow: 0 0 5px rgba(140, 240, 120, 0.5); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5); background: linear-gradient(180deg, #1d1f19, #24261f); }
+  .pda-tab.active {
+    color: #b8f0a0; background: #1d3315; border-color: #4f7a44;
+    text-shadow: 0 0 6px rgba(140, 240, 120, 0.6);
+  }
+  #pda-hw { /* 물리 조작부: D-패드 + A/B 러버 키 + 하단 나사 */
+    position: relative; display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 22px 2px;
+  }
+  #pda-hw::before, #pda-hw::after { /* 하단 코너 나사 */
+    content: ''; position: absolute; bottom: 0; width: 9px; height: 9px; border-radius: 50%;
+    background:
+      linear-gradient(-45deg, transparent 42%, #171a13 42% 58%, transparent 58%),
+      radial-gradient(circle at 35% 30%, #8a8f7f, #3a3e33 55%, #23261e);
+    box-shadow: inset 0 -1px 1px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  #pda-hw::before { left: -6px; }
+  #pda-hw::after { right: -6px; }
+  #pda-dpad {
+    display: grid; gap: 2px;
+    grid-template-columns: repeat(3, 26px); grid-template-rows: repeat(3, 22px);
+    grid-template-areas: '. up .' 'left c right' '. down .';
+  }
+  .dp {
+    cursor: pointer; font-family: inherit; font-size: 8px; line-height: 1; color: #9aa08c;
+    background: linear-gradient(180deg, #3a3f31, #262a20);
+    border: 2px solid #14110d; box-shadow: 0 2px 0 #14110d, inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  .dp[data-d="up"] { grid-area: up; border-radius: 5px 5px 0 0; }
+  .dp[data-d="down"] { grid-area: down; border-radius: 0 0 5px 5px; }
+  .dp[data-d="left"] { grid-area: left; border-radius: 5px 0 0 5px; }
+  .dp[data-d="right"] { grid-area: right; border-radius: 0 5px 5px 0; }
+  .dp:active { transform: translateY(1px); box-shadow: 0 1px 0 #14110d; }
+  #dp-c { grid-area: c; background: #23261e; border: 2px solid #14110d; }
+  #pda-keys { display: flex; gap: 12px; }
+  .pda-key { /* 러버 원형 키 (B=끄기) */
+    width: 34px; height: 34px; border-radius: 50%; cursor: pointer;
+    font-family: inherit; font-size: 11px; color: #c8cdbb;
+    background: radial-gradient(circle at 35% 30%, #4a503f, #2b2f25 72%);
+    border: 2px solid #14110d; box-shadow: 0 3px 0 #14110d, inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  }
+  .pda-key:active { transform: translateY(2px); box-shadow: 0 1px 0 #14110d; }
   @media (max-width: 700px) {
     #edge-dock { top: 40%; } /* 모바일: 자원 패널(우상단) 아래 빈 구간 */
     .dk-body { width: 72px; padding: 8px; }
     #pda { width: calc(96vw / var(--uiz, 1)); }
-    #pda-screen { height: calc(58vh / var(--uiz, 1)); }
+    #pda-screen { height: calc(46vh / var(--uiz, 1)); } /* 기기+D-패드가 세로폰 뷰포트 안에 들도록 */
   }
   body.title-mode #edge-dock, body.wallpaper-mode #edge-dock,
   body.title-mode #pda-back, body.wallpaper-mode #pda-back { display: none !important; }
