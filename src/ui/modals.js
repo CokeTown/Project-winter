@@ -86,7 +86,7 @@ export function makeModals(ctx) {
     const sel = id === cur;
     const sw = (c) => `<span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:#${(c ?? 0x5a5648).toString(16).padStart(6, '0')};margin-right:3px;vertical-align:-1px"></span>`;
     return `
-      <div class="prep-row ${sel ? 'sel' : owned ? '' : 'no'}" style="cursor:default">
+      <div class="prep-row wd-row ${sel ? 'sel' : owned ? '' : 'no'}" style="cursor:default">
         <span>${o.emoji} ${LName(o)}</span>
         <span class="p-eff" style="font-size:10px">${sw(o.pal.coat)}${sw(o.pal.scarf ?? 0xb8862e)}${owned ? '' : t('wardrobe.locked')}</span>
         ${sel

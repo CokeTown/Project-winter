@@ -465,6 +465,12 @@
   body.pda-app #pda-lcd .craft-row .p-cost .px-icon { width: 12px; height: 12px; }
   body.pda-app #pda-lcd .craft-row .cr-arrow { width: 14px; height: 14px; flex: 0 0 auto; opacity: 0.7; }
   body.pda-app #pda-lcd .craft-row .pixel-btn { flex: 0 0 auto; padding: 3px 10px; }
+  /* 옷장 행 한 줄 압축(디렉터 — craft-row 문법 일관 적용): 「코트 ▪▪ [입기]」 */
+  body.pda-app #pda-lcd .wd-row { flex-wrap: nowrap; padding: 4px 8px; }
+  body.pda-app #pda-lcd .wd-row > span:first-child { flex: 0 0 auto; white-space: nowrap; }
+  body.pda-app #pda-lcd .wd-row .p-eff { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+  body.pda-app #pda-lcd .wd-row .pixel-btn { flex: 0 0 auto; padding: 3px 10px; }
+  body.pda-app #pda-lcd .wd-row > span:last-child:not(.p-eff) { flex: 0 0 auto; white-space: nowrap; }
   body.pda-app #pda-lcd .prep-row .p-eff { flex: 1 1 auto; min-width: 0; }
   body.pda-app #pda-lcd .prep-row .pixel-btn { margin-left: auto !important; } /* 인라인 margin 6px보다 우선 — 버튼 우측 정렬 */
   body.pda-app #pda-lcd #modal img { max-width: 100%; }
