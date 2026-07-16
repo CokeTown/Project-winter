@@ -441,10 +441,12 @@ const KNOWLEDGE_HASH = -451536973;
     // ── 2d) 2.0-(b) regionReachable — 기능 플래그 격리(§9.8.3: off=현 전역 회귀·동작 변화 0) ──
     const rr = await call(`
       const S2 = window.__shelter;
+      const sav = S2.BAL.cities.enabled;                  // 2.0-(d) 점등 후: 기본값을 가정하지 않는다 — 명시 설정·원복
+      S2.BAL.cities.enabled = false;
       const offAll = ['slum','residential','industrial','commercial'].every(r => S2.regionReachable(r));
       S2.BAL.cities.enabled = true;                       // 플래그 on — 기존 10지역은 전부 home이라 여전히 전부 도달 가능
       const onHome = ['slum','residential','resort','citycore'].every(r => S2.regionReachable(r));
-      S2.BAL.cities.enabled = false;                      // 원복 (후속 테스트 오염 방지)
+      S2.BAL.cities.enabled = sav;                        // 원복 (후속 테스트 오염 방지)
       return JSON.stringify({ offAll, onHome });
     `).catch(err => JSON.stringify({ error: String(err) }));
     const rj = JSON.parse(rr);
@@ -494,13 +496,17 @@ const KNOWLEDGE_HASH = -451536973;
       S2.state.eastGateOpen = true;
       out.openAfter = E.every(r => S2.regionUnlocked(r));
       // 도시 분리(cities.enabled on): 동부 셸터에선 동부만, 홈 셸터에선 홈만 닿는다
+      const sav = S2.BAL.cities.enabled;
       S2.BAL.cities.enabled = true;
       S2.state.current = 'customs';
       out.eastSideEast = E.every(r => S2.regionReachable(r));
       out.eastSideHome = !S2.regionReachable('residential') && !S2.regionReachable('slum');
       S2.state.current = 'container';
       out.homeSideEast = E.every(r => !S2.regionReachable(r));
-      S2.BAL.cities.enabled = false;                      // 원복 (후속 테스트 오염 방지)
+      // 2.0-(d): 전도 자체도 도시 스코프 — 두 지도가 서로 다른 캔버스인지(백지 지도의 실체)
+      out.mapsDiffer = S2.mapBiomeDataUrl('east') !== S2.mapBiomeDataUrl('home')
+        && S2.mapBiomeDataUrl('east').length > 20000;
+      S2.BAL.cities.enabled = sav;                        // 원복 (후속 테스트 오염 방지)
       S2.state.eastGateOpen = false;
       return JSON.stringify(out);
     `).catch(err => JSON.stringify({ error: String(err) }));
@@ -510,7 +516,7 @@ const KNOWLEDGE_HASH = -451536973;
       JSON.stringify(ecj));
     check('2.0-(c) 동부 8지역 게이트 (개통 전 전부 잠김 → 개통 후 해금 · 도시 분리 왕복)',
       ecj.lockedBefore === true && ecj.openAfter === true && ecj.eastSideEast === true
-      && ecj.eastSideHome === true && ecj.homeSideEast === true,
+      && ecj.eastSideHome === true && ecj.homeSideEast === true && ecj.mapsDiffer === true,
       JSON.stringify(ecj));
 
     // ── 2b) #195 레이아웃 아이템 왕복 (감사 P2: MIG 게이트가 톱레벨만 봐 y·s·t·ge가 그물 밖이던 사각) ──

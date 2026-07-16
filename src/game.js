@@ -2731,7 +2731,7 @@ function openMapModal() {
   // #85 2차(디렉터 반려 → 7DTD/구판 비오메 레퍼런스): 손그림 종이는 지리가 없어 '내 위치'가 성립 안 한다.
   //   비오메 타일 지형(바다/해안·도심 회백·외곽 갈색·숲 초록·설산·봉쇄구역 해치)을 캔버스로 그려
   //   마커 좌표와 지형이 서로를 낳게 한다 — 지형이 먼저, 마커는 그 위에.
-  wrap.style.backgroundImage = `url(${mapBiomeDataUrl()})`;
+  wrap.style.backgroundImage = `url(${mapBiomeDataUrl(cityOf(state.current))})`; // 2.0-(d): 도시 스코프 전도 — 동부에선 항구도시 백지 지도
   wrap.style.backgroundSize = '100% 100%';
   // 손그림 종이 지도 위에 4개 파밍 지역 마커를 지구 클러스터 위치에 % 절대 배치 (#47).
   // 좌표는 map_paper.png 위 집/빌딩/공장/판자촌 그림에 맞춰 하네스 스크린샷으로 조정.
@@ -2800,6 +2800,8 @@ function openMapModal() {
   //   가구 미배치=원 1겹(해금만) · 배치=원 2겹(정착) · 현 거처=강조색+펄스. 아이콘 없이 순수 원형(지역 핀보다 아래).
   for (const [sid, sp] of Object.entries(SHELTER_MAP)) {
     if (!shelterUnlocked(sid)) continue;
+    if (cityOf(sid) !== cityOf(state.current)) continue; // 2.0-(d): 셸터 점도 도시 스코프 — 좌표계가 전도별이라 교차 표시는 오배치
+
     const furnished = (state.layouts[sid]?.length || 0) > 0;
     const isCurrent = sid === state.current;
     const el = document.createElement('div');
@@ -2855,6 +2857,15 @@ const MAP_MARKERS = {
   checkpoint:  { x: 77, y: 71 },  // 우하단 봉쇄선 검문소
   lab:         { x: 87, y: 80 },  // 검문소 안쪽 폭심지 연구동 (봉쇄선 너머 구석)
   citycore:    { x: 87, y: 62 },  // 2.0 봉쇄선 너머 수도의 심장 (동쪽 가장자리 — 낙진 걷힌 뒤에만 노출)
+  // ── 2.0-(d) 동부 8지역 — 좌표는 동부 전도(eastMapBiomeDataUrl) 공간. 지도는 도시 스코프라 겹침 없음 ──
+  customsyard:   { x: 12, y: 55 }, // 관문 남측 압류창고
+  containerport: { x: 31, y: 68 }, // 남서 스택 격자 위
+  interchange:   { x: 30, y: 26 }, // 램프 고리 북측
+  uptown:        { x: 22, y: 37 }, // 강변 주거단지
+  grandplatform: { x: 51, y: 59 }, // 역사 홀 위
+  outpost:       { x: 61, y: 66 }, // 역 남측 진지
+  megamall:      { x: 62, y: 28 }, // 마천루 코어
+  deptstore:     { x: 73, y: 40 }, // 코어 동측 백화점 지구
 };
 // 셸터 지도 좌표(% left/top) — 해금된 내 거점 점 마커용(디렉터 오더). 구역당 2셸터는 오프셋해 겹침 방지.
 //   지역 마커(MAP_MARKERS)와 안 겹치게 배치. openMapModal이 MAP_SAFE로 자동 클램프.
@@ -2866,18 +2877,20 @@ const SHELTER_MAP = {
   ship: { x: 14, y: 78 }, lighthouse: { x: 21, y: 73 },       // 잿빛 해안
   tugboat: { x: 46, y: 75 }, controltower: { x: 52, y: 72 },  // 얼어붙은 항구
   lodge: { x: 81, y: 27 },                                    // 고요한 고원
-  customs: { x: 94, y: 52 },                                  // 2.0 동부 관문 (지도 동쪽 끝 — §6.0.5)
-  bridgehouse: { x: 91, y: 43 },                              // 2.0 동부 다리 관리소 (세관 북서 — 협곡)
-  terminal: { x: 88, y: 49 },                                 // 2.0 동부 역 대합실 (도심 심부 2층위)
-  penthouse: { x: 85, y: 45 },                                // 2.0 동부 펜트하우스 (심부 종점)
+  // 2.0-(d) 동부 4앵커 — 좌표는 동부 전도 공간(홈 지도 동쪽 끝 임시 클러스터 폐기). 진행 축 서→동.
+  customs: { x: 10, y: 47 },                                  // 국경 검문소(관문 그 자체가 거처)
+  bridgehouse: { x: 19, y: 42 },                              // 무너진 현수교 옆 관리소
+  terminal: { x: 46, y: 51 },                                 // 역 대합실(아치 홀 북측)
+  penthouse: { x: 67, y: 34 },                                // 마천루 코어 종점
 };
 /* ── 지도 리워크 2차(디렉터: 타르코프 Woods식 진짜 지형도) ──
    지역별 색면 폐기. 회백 종이 전면 + 초록은 '식생'만 + 갈색 등고선(높이장 marching-squares)이
    주 텍스처 + 파랑 물 + 구불구불 곡선 도로. 지형색·설산 같은 작위적 요소 제거.
    지리(강·바다 남·봉쇄 남동)는 마커 좌표와 정합. 결정론(seed 4207 + 해시 노이즈) — 항상 같은 도시. */
-let _mapBiomeUrl = null;
-function mapBiomeDataUrl() {
-  if (_mapBiomeUrl) return _mapBiomeUrl;
+let _mapBiomeUrls = {}; // 도시별 캐시 (2.0-(d): home/east 두 전도)
+function mapBiomeDataUrl(city = 'home') {
+  if (_mapBiomeUrls[city]) return _mapBiomeUrls[city];
+  if (city === 'east') return (_mapBiomeUrls.east = eastMapBiomeDataUrl());
   const W = 1120, H = 800, CELL = 4;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const g = cv.getContext('2d');
@@ -3018,8 +3031,180 @@ function mapBiomeDataUrl() {
   const vg = g.createRadialGradient(W / 2, H / 2, H * 0.32, W / 2, H / 2, H * 0.78);
   vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(44,32,18,0.16)');
   g.fillStyle = vg; g.fillRect(0, 0, W, H);
-  _mapBiomeUrl = cv.toDataURL();
-  return _mapBiomeUrl;
+  _mapBiomeUrls.home = cv.toDataURL();
+  return _mapBiomeUrls.home;
+}
+/* ── 2.0-(d) 동부 전도 「항구도시」 — 백지 지도의 설렘(§6.2) ──
+   홈 전도와 같은 지형도 문법(회백 종이·등고선·식생·곡선 도로·접힘)이되 지리는 부산형:
+   남측 만(灣) 전폭 + 남서 컨테이너항(스택 격자) + 중동부 마천루 코어(대형 발자국 밀집) +
+   서측 강과 무너진 현수교(끊긴 경간) + 역으로 모이는 철도 축 + 서쪽 가장자리 국경 일점쇄선(홈 지도의 미러).
+   3년 무인 진입지라 식생 잠식(overgrowth)을 도심 안까지 허용 — TLOU 감성의 지도 버전. 결정론 seed 8104. */
+function eastMapBiomeDataUrl() {
+  const W = 1120, H = 800, CELL = 4;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  const rand = seededRand(8104);
+  const X = p => p / 100 * W, Y = p => p / 100 * H;
+  const hash = (i, j) => { let n = Math.imul(i | 0, 374761393) + Math.imul(j | 0, 668265263); n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967296; };
+  const vnoise = (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v;
+  };
+  // 높이장: 북고남저(만으로 하강) + 북동 구릉. 해안선은 대각(남서 낮음 → 북동 높음) — 부산형 만곡.
+  const seaLine = x => 74 + Math.sin(x * 0.045 + 1.2) * 4 + (x - 50) * 0.10; // x%에서의 해안 y%
+  const hAt = (x, y) => {
+    let e = (vnoise(x * 0.05 + 9, y * 0.05 + 3) - 0.5) * 2.0
+          + (vnoise(x * 0.12 + 31, y * 0.12 + 17) - 0.5) * 0.8
+          + (vnoise(x * 0.27 + 55, y * 0.27 + 41) - 0.5) * 0.3;
+    e += (1 - y / 100) * 0.55 + (x / 100) * 0.18 - Math.max(0, (y - seaLine(x)) / 14) * 2.6;
+    return e;
+  };
+  // 식생: 3년 잠식 — 홈 도심보다 관대(도심 억제 계수 절반). 강변·구릉 우세.
+  const vegAt = (x, y) => vnoise(x * 0.075 + 70, y * 0.075 + 20) + (vnoise(x * 0.18 + 12, y * 0.18 + 66) - 0.5) * 0.4
+    - Math.max(0, (x - 52) / 48) * Math.max(0, (38 - Math.abs(y - 34)) / 38) * 0.34;
+  // 1) 색면 — 종이/식생/바다 (홈과 동일 팔레트·디더 문법)
+  const paper = ['#e7e2d5', '#e0dbcd'], green = ['#b7c398', '#abb98a'], sea = ['#a8c1c5', '#9cb7bc'];
+  for (let cy = 0; cy < H / CELL; cy++) {
+    for (let cx = 0; cx < W / CELL; cx++) {
+      const px = (cx * CELL + CELL / 2) / W * 100, py = (cy * CELL + CELL / 2) / H * 100;
+      const jx = px + (rand() - 0.5) * 4.5, jy = py + (rand() - 0.5) * 4.5;
+      const pal = (jy > seaLine(jx) || hAt(jx, jy) < -1.35) ? sea : (vegAt(jx, jy) > 0.52 ? green : paper);
+      g.fillStyle = (cx + cy) % 2 ? pal[1] : pal[0];
+      g.fillRect(cx * CELL, cy * CELL, CELL, CELL);
+    }
+  }
+  // 2) 등고선 (marching squares — 홈과 동일 관습, 바다 위 생략)
+  const gw = 140, gh = 100, cw = W / gw, ch = H / gh, hg = [];
+  for (let j = 0; j <= gh; j++) { hg[j] = []; for (let i = 0; i <= gw; i++) hg[j][i] = hAt(i / gw * 100, j / gh * 100); }
+  let k = 0;
+  for (let lv = -1.5; lv <= 2.5; lv += 0.4, k++) {
+    g.lineWidth = k % 2 ? 0.8 : 1.5; g.strokeStyle = k % 2 ? 'rgba(150,120,76,0.34)' : 'rgba(138,108,66,0.55)';
+    g.beginPath();
+    for (let j = 0; j < gh; j++) {
+      for (let i = 0; i < gw; i++) {
+        const px = (i + 0.5) / gw * 100, py = (j + 0.5) / gh * 100;
+        if (py > seaLine(px)) continue;
+        const a = hg[j][i], b = hg[j][i + 1], c = hg[j + 1][i + 1], d = hg[j + 1][i];
+        const x0 = i * cw, y0 = j * ch, x1 = x0 + cw, y1 = y0 + ch, pts = [];
+        if ((a > lv) !== (b > lv)) pts.push([x0 + cw * (lv - a) / (b - a), y0]);
+        if ((b > lv) !== (c > lv)) pts.push([x1, y0 + ch * (lv - b) / (c - b)]);
+        if ((c > lv) !== (d > lv)) pts.push([x1 - cw * (lv - c) / (d - c), y1]);
+        if ((d > lv) !== (a > lv)) pts.push([x0, y1 - ch * (lv - d) / (a - d)]);
+        if (pts.length >= 2) { g.moveTo(pts[0][0], pts[0][1]); g.lineTo(pts[1][0], pts[1][1]); }
+        if (pts.length === 4) { g.moveTo(pts[2][0], pts[2][1]); g.lineTo(pts[3][0], pts[3][1]); }
+      }
+    }
+    g.stroke();
+  }
+  // 3) 강 — 북서에서 만으로. 하구(y~52)에 무너진 현수교: 끊긴 경간 + 낙하 잔해.
+  const river = t => [16 + Math.sin(t * 5 + 2) * 3.5 + t * 4, t * 78];
+  g.lineCap = 'round';
+  for (const [w, col] of [[9, 'rgba(140,172,178,0.9)'], [3.5, 'rgba(190,212,214,0.7)']]) {
+    g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(X(river(0)[0]), 0);
+    for (let t = 0; t <= 1.001; t += 0.04) { const [rx, ry] = river(t); g.lineTo(X(rx), Y(ry)); }
+    g.stroke();
+  }
+  g.lineCap = 'butt';
+  // 무너진 현수교(y 45): 서안 경간 + 동안 경간, 가운데가 없다 — 주탑 2점 + 강물 위 잔해 점
+  const bry = 45, brx = river(bry / 78)[0];
+  g.strokeStyle = 'rgba(120,92,58,0.9)'; g.lineWidth = 3.5;
+  g.beginPath(); g.moveTo(X(brx - 7), Y(bry)); g.lineTo(X(brx - 1.8), Y(bry)); g.stroke();   // 서측 경간
+  g.beginPath(); g.moveTo(X(brx + 2.2), Y(bry + 0.4)); g.lineTo(X(brx + 7), Y(bry + 0.6)); g.stroke(); // 동측 경간(어긋남)
+  g.fillStyle = 'rgba(120,92,58,0.85)';
+  g.fillRect(X(brx - 2.4) - 2, Y(bry) - 5, 4, 10); g.fillRect(X(brx + 2.6) - 2, Y(bry) - 5, 4, 10); // 주탑
+  g.fillStyle = 'rgba(100,80,55,0.5)';
+  for (let i = 0; i < 5; i++) g.fillRect(X(brx - 1.5 + rand() * 3), Y(bry + 0.5 + rand() * 1.6), 3, 2); // 강에 떨어진 경간 잔해
+  // 4) 컨테이너항(남서 물가) — 스택 격자: 작은 직사각 열(건물 발자국과 구별되는 항만 시그니처)
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 11; col++) {
+      if (rand() < 0.22) continue; // 빠진 스택(하역된 자리)
+      const sx = X(20 + col * 2.1), sy = Y(64 + row * 2.2);
+      g.fillStyle = ['rgba(150,110,90,0.5)', 'rgba(110,120,140,0.5)', 'rgba(120,130,105,0.5)'][(row + col) % 3];
+      g.fillRect(sx, sy, 16, 9);
+      g.strokeStyle = 'rgba(70,62,50,0.45)'; g.lineWidth = 0.8; g.strokeRect(sx, sy, 16, 9);
+    }
+  }
+  for (const qx of [24, 33, 42]) { g.fillStyle = 'rgba(90,84,72,0.6)'; g.fillRect(X(qx), Y(75.5), 3, 26); } // 안벽 크레인 레일 말뚝
+  // 5) 건물 발자국 — 마천루 코어(중동부)는 대형·밀집, 주거단지(강변 북)는 정연, 역세권은 중간.
+  const urban = [
+    [64, 32, 13, 10, 26, 0.5],   // 마천루 코어 (대형 블록)
+    [73, 42, 9, 7, 24, 0.42],    // 백화점 지구
+    [24, 36, 8, 6, 18, 0.2],     // 강변 고급 주거(정연한 소형)
+    [48, 54, 10, 6, 20, 0.3],    // 역세권
+    [58, 64, 8, 5, 18, 0.28],    // 역 남측(아웃포스트 언저리)
+  ];
+  for (const [cxp, cyp, hwp, hhp, step, bigP] of urban) {
+    const cx = X(cxp), cy = Y(cyp), hw = hwp / 100 * W, hh = hhp / 100 * H;
+    for (let by = cy - hh; by <= cy + hh; by += step) {
+      for (let bx = cx - hw; bx <= cx + hw; bx += step) {
+        const dxn = (bx - cx) / hw, dyn = (by - cy) / hh;
+        if (dxn * dxn + dyn * dyn > 1.05) continue;
+        if (vnoise(bx * 0.05 + 300, by * 0.05 + 300) < 0.36) continue;
+        const big = rand() < bigP;
+        const bw = big ? 20 + rand() * 16 : 8 + rand() * 11, bh = big ? 14 + rand() * 13 : 6 + rand() * 9;
+        const jx = bx + (rand() - 0.5) * 6, jy = by + (rand() - 0.5) * 6;
+        g.fillStyle = 'rgba(120,112,96,0.32)'; g.fillRect(jx, jy, bw, bh);
+        g.strokeStyle = 'rgba(70,62,50,0.55)'; g.lineWidth = 1; g.strokeRect(jx, jy, bw, bh);
+        if (big && rand() < 0.5) { g.fillStyle = 'rgba(171,185,138,0.5)'; g.fillRect(jx + 2, jy + 2, 4 + rand() * 5, 3 + rand() * 4); } // 옥상 식생(3년 잠식)
+      }
+    }
+  }
+  // 6) 도로 — 서쪽 국경에서 들어오는 간선(홈 지도 동측 간선의 연속) + 해안로 + 코어 순환.
+  const curveRoad = (pts, w, col, dash) => {
+    g.strokeStyle = col; g.lineWidth = w; g.lineJoin = 'round'; g.lineCap = 'round'; if (dash) g.setLineDash(dash);
+    const P = pts.map(([px, py]) => [X(px), Y(py)]);
+    g.beginPath(); g.moveTo(P[0][0], P[0][1]);
+    for (let i = 1; i < P.length - 1; i++) g.quadraticCurveTo(P[i][0], P[i][1], (P[i][0] + P[i + 1][0]) / 2, (P[i][1] + P[i + 1][1]) / 2);
+    g.lineTo(P[P.length - 1][0], P[P.length - 1][1]); g.stroke(); if (dash) g.setLineDash([]);
+  };
+  const roads = [
+    [[0, 47], [8, 47], [15, 46], [24, 44], [32, 40], [40, 36], [50, 33], [60, 31]],   // 국경 간선 → 코어
+    [[30, 30], [34, 26], [40, 22], [48, 20]],                                          // 인터체인지 북지선
+    [[30, 30], [28, 38], [30, 48], [34, 56], [40, 62]],                                // 인터체인지 남지선(항만)
+    [[40, 62], [50, 60], [58, 62], [66, 60]],                                          // 해안로
+    [[60, 31], [68, 34], [74, 40], [76, 48]],                                          // 코어 순환
+    [[48, 54], [56, 56], [64, 55]],                                                    // 역전로
+  ];
+  for (const r of roads) curveRoad(r, 6, 'rgba(226,218,194,0.6)');
+  for (const r of roads) curveRoad(r, 2.6, 'rgba(120,92,58,0.85)');
+  // 인터체인지 램프 고리(고가 교차 시그니처)
+  g.strokeStyle = 'rgba(120,92,58,0.7)'; g.lineWidth = 2;
+  g.beginPath(); g.arc(X(30), Y(30), 14, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.arc(X(30), Y(30), 24, 0.6, Math.PI * 1.7); g.stroke();
+  // 7) 철도 — 북동에서 역으로: 복선 + 침목 대시, 역사(대승강장) 홀 지붕
+  const rail = [[86, 14], [74, 24], [62, 36], [52, 48], [47, 55]];
+  curveRoad(rail, 4, 'rgba(110,100,86,0.55)');
+  g.strokeStyle = 'rgba(80,70,58,0.6)'; g.lineWidth = 1.2;
+  for (let t = 0; t < 1; t += 0.055) { // 침목
+    const i = Math.min(rail.length - 2, Math.floor(t * (rail.length - 1)));
+    const f = t * (rail.length - 1) - i;
+    const rx = rail[i][0] + (rail[i + 1][0] - rail[i][0]) * f, ry = rail[i][1] + (rail[i + 1][1] - rail[i][1]) * f;
+    g.beginPath(); g.moveTo(X(rx) - 4, Y(ry) - 3); g.lineTo(X(rx) + 4, Y(ry) + 3); g.stroke();
+  }
+  g.fillStyle = 'rgba(110,102,88,0.55)'; g.fillRect(X(44.5), Y(53), 52, 20);            // 역사 아치 홀 발자국
+  g.strokeStyle = 'rgba(70,62,50,0.7)'; g.lineWidth = 1.4; g.strokeRect(X(44.5), Y(53), 52, 20);
+  for (let i = 1; i < 4; i++) { g.strokeStyle = 'rgba(70,62,50,0.35)'; g.beginPath(); g.moveTo(X(44.5), Y(53) + i * 5), g.lineTo(X(44.5) + 52, Y(53) + i * 5); g.stroke(); } // 승강장 홈
+  // 8) 서쪽 국경 — 일점쇄선(홈 지도 동측의 미러) + 검문 차단 획
+  g.strokeStyle = 'rgba(110,88,60,0.55)'; g.lineWidth = 1.6; g.setLineDash([14, 5, 3, 5]);
+  g.beginPath(); g.moveTo(X(5.5), Y(16)); g.lineTo(X(6.5), Y(34)); g.lineTo(X(5.2), Y(52)); g.lineTo(X(6.0), Y(66)); g.stroke();
+  g.setLineDash([]);
+  g.strokeStyle = 'rgba(150,70,58,0.8)'; g.lineWidth = 2.2;
+  g.beginPath(); g.moveTo(X(5.8), Y(44.4)); g.lineTo(X(5.8), Y(49.6)); g.stroke();
+  // 9) 접힘 자국 + 표고점 + 그레인 + 비네트 (홈과 동일 마감)
+  const crease = (x0, y0, x1, y1) => {
+    g.strokeStyle = 'rgba(78,64,42,0.09)'; g.lineWidth = 4; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    g.strokeStyle = 'rgba(255,250,236,0.14)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x0 + 1.5, y0); g.lineTo(x1 + 1.5, y1); g.stroke();
+  };
+  crease(W / 3, 0, W / 3, H); crease(W * 2 / 3, 0, W * 2 / 3, H); crease(0, H / 2, W, H / 2);
+  g.fillStyle = 'rgba(92,70,44,0.45)'; g.font = 'italic 14px Georgia, "Times New Roman", serif';
+  for (let i = 0; i < 16; i++) { const nx = 6 + rand() * 86, ny = 10 + rand() * 60; if (ny > seaLine(nx) - 4) continue; g.fillText((1 + rand() * 38).toFixed(1), X(nx), Y(ny)); }
+  for (let i = 0; i < 2600; i++) { g.fillStyle = rand() < 0.5 ? 'rgba(70,54,34,0.04)' : 'rgba(255,250,236,0.05)'; g.fillRect(rand() * W, rand() * H, 2, 2); }
+  const vg = g.createRadialGradient(W / 2, H / 2, H * 0.32, W / 2, H / 2, H * 0.78);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(44,32,18,0.16)');
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  return cv.toDataURL();
 }
 // 항구 지역 해금 게이트: 항구 셸터(예인선)를 해금한 뒤부터 지도에 항구 구역이 뜬다.
 // 기존 4지역은 항상 해금(true). ARC-03 마커 문법 그대로, 노출 조건만 얹는다.
@@ -11593,6 +11778,7 @@ window.__shelter = {
   playCollapseVignette, // #199 QA: 문+상자 연출 직접 구동(캡처 검수용)
   playGeigerVignette, // 2.0-(b) QA: 가이거 계수기 비네트 직접 구동(캡처 검수용)
   playEastGateVignette, // 2.0-(b) QA: 국경 개통 비네트 직접 구동(캡처 검수용)
+  mapBiomeDataUrl, // 2.0-(d) QA: 도시별 전도 분기 검증(홈/동부 캔버스 상이)
   regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
   shelterUnlocked, // 2.0-(b) QA: 동부 관문 이주 게이트(eastGateOpen) 검증
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
