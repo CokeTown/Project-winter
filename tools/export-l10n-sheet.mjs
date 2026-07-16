@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ko = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/locales/ko.json'), 'utf8'));
 const en = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/locales/en.json'), 'utf8'));
+const ja = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/locales/ja.json'), 'utf8')); // #191 완역분 — 시트에 현행 반영
 
 // 프리픽스 → 출력 위치/용도 설명 (인터뷰: "UI 텍스트 ID는 용도를 알 수 있는 것" — 부족분을 문맥 칼럼으로 보강)
 const CONTEXT = {
@@ -44,7 +45,7 @@ const rows = [['id', 'context', 'tone', 'vars', 'chars_ko', 'ko', 'en', 'ja', 'z
 for (const k of Object.keys(ko)) {
   const pre = k.split('.')[0];
   const vars = [...String(ko[k]).matchAll(/\{(\w+)\}/g)].map(m => m[0]).join(' ');
-  rows.push([k, CONTEXT[pre] || '일반 UI', toneOf(pre), vars, String(String(ko[k]).length), esc(ko[k]), esc(en[k] ?? ''), '', '']);
+  rows.push([k, CONTEXT[pre] || '일반 UI', toneOf(pre), vars, String(String(ko[k]).length), esc(ko[k]), esc(en[k] ?? ''), esc(ja[k] ?? ''), '']);
 }
 const outDir = path.join(ROOT, 'docs/l10n');
 fs.mkdirSync(outDir, { recursive: true });
