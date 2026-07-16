@@ -4542,7 +4542,15 @@ function liveCardIllust(id) {
   const c = EVENT_CARD_CAMS[id];
   if (!c || titleVisible || !rt) return null;
   const savedPos = camera.position.clone();
+  let lift = null;
   try {
+    // 밤 노출 보정(디렉터 2026-07-17): 낮(dayness 1)은 무보정 그대로, 밤일수록 달빛 리프트를
+    //   스냅샷 프레임에만 얹는다(씬에 잠깐 넣고 finally에서 제거 — 게임 라이팅 무접점).
+    const nightK = 1 - dayness;
+    if (nightK > 0.02) {
+      lift = new THREE.HemisphereLight(0x8fa8cc, 0x4a4136, 0.5 * nightK);
+      scene.add(lift);
+    }
     cineCam.position.set(c[0], c[1], c[2]);
     cineCam.up.set(0, 1, 0);
     cineCam.lookAt(c[3], c[4], c[5]);
@@ -4557,6 +4565,7 @@ function liveCardIllust(id) {
     return renderer.domElement.toDataURL('image/jpeg', 0.88);
   } catch (e) { return null; }
   finally {
+    if (lift) scene.remove(lift);
     setForceClosed(false);
     camera.position.copy(savedPos);
     updateWallCulling(0, true); // 원래 컬링 마스크 즉시 복귀
