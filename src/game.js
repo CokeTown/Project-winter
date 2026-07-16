@@ -6419,34 +6419,59 @@ function playEastGateVignette() {
     // 하늘 — 세로 그라디언트(심홍 → 주황 지평선), 동부 팔레트 정본
     const skc = document.createElement('canvas'); skc.width = 8; skc.height = 256;
     const skg = skc.getContext('2d'); const skr = skg.createLinearGradient(0, 0, 0, 256);
-    skr.addColorStop(0, '#1c090d'); skr.addColorStop(0.45, '#4a1a16'); skr.addColorStop(0.78, '#93401f'); skr.addColorStop(1, '#c56a2e');
+    skr.addColorStop(0, '#150609'); skr.addColorStop(0.42, '#521c11'); skr.addColorStop(0.74, '#9c3f1a'); skr.addColorStop(1, '#d97b32');
     skg.fillStyle = skr; skg.fillRect(0, 0, 8, 256);
     const skTex = new THREE.CanvasTexture(skc); skTex.colorSpace = THREE.SRGBColorSpace;
-    const sky = new THREE.Mesh(new THREE.PlaneGeometry(90, 26), new THREE.MeshBasicMaterial({ map: skTex, fog: false, depthWrite: false }));
-    sky.position.set(0, 8.5, -30); scene.add(sky);
-    scene.fog = new THREE.Fog(0x381612, 10, 34);
+    const sky = new THREE.Mesh(new THREE.PlaneGeometry(96, 28), new THREE.MeshBasicMaterial({ map: skTex, fog: false, depthWrite: false }));
+    sky.position.set(0, 9, -33); scene.add(sky);
+    scene.fog = new THREE.Fog(0x341410, 9, 32);
     scene.add(new THREE.AmbientLight(0xb06a48, 0.5));
     const sun = new THREE.DirectionalLight(0xff9a58, 0.85); sun.position.set(2, 3.5, -8); scene.add(sun);
+    const fill = new THREE.DirectionalLight(0x8a5a40, 0.38); fill.position.set(0, 3, 8); scene.add(fill); // 정면 필 — 차단기 줄무늬·전경 잔해가 실루엣에 먹히지 않게
     const M = c => new THREE.MeshLambertMaterial({ color: c });
     const bx3 = (g, w, h, d, c, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); m.position.set(x, y, z); g.add(m); return m; };
-    // 지면 + 동쪽으로 달아나는 길(중앙 대시)
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(70, 70), M(0x33201c)); ground.rotation.x = -Math.PI / 2; scene.add(ground);
-    const road = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 44), M(0x27201f)); road.rotation.x = -Math.PI / 2; road.position.set(0, 0.01, -14); scene.add(road);
+    // 넝쿨 헬퍼 — 매달린 덩굴 복셀 사슬 (디렉터 레퍼런스 2026-07-17: 3년 자란 국경 — 차단기·갠트리·부스가 초록에 먹힌다)
+    const vine = (g, x, y, z, len, seed = 0) => {
+      const vg = new THREE.Group(); vg.position.set(x, y, z); g.add(vg);
+      for (let i = 0; i < len; i++) {
+        const s = 0.055 + ((seed + i * 7) % 3) * 0.012;
+        bx3(vg, s, 0.09, s, i % 3 === 2 ? 0x2a3418 : 0x1c2610, Math.sin(seed + i * 1.7) * 0.05, -i * 0.085, Math.cos(seed * 2 + i) * 0.04);
+      }
+      return vg;
+    };
+    // 지면 + 동쪽으로 달아나는 길(중앙 대시) + 균열 잡초 + 길가 잔해 방벽 + 노면 태양 반사
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), M(0x2b1a16)); ground.rotation.x = -Math.PI / 2; scene.add(ground);
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 44), M(0x211a19)); road.rotation.x = -Math.PI / 2; road.position.set(0, 0.01, -14); scene.add(road);
     for (let i = 0; i < 9; i++) { const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.7), M(0x6a5240)); dash.rotation.x = -Math.PI / 2; dash.position.set(0, 0.02, -2 - i * 2.6); scene.add(dash); }
+    for (let i = 0; i < 26; i++) {                                                          // 균열을 뚫은 잡초 무더기
+      const wx = (Math.random() < 0.5 ? -1 : 1) * (1.5 + Math.random() * 1.7), wz = -1 - Math.random() * 20;
+      bx3(scene, 0.1 + Math.random() * 0.15, 0.1 + Math.random() * 0.24, 0.12, Math.random() < 0.4 ? 0x24300f : 0x1a230c, wx, 0.08, wz);
+    }
+    for (const [bxp, bzp, bw2] of [[-3.0, -3, 2.2], [-3.3, -7.5, 3.0], [-2.9, -13, 2.4], [3.2, -9, 2.6], [3.4, -14.5, 3.2], [-3.1, -19, 2.8]]) {
+      bx3(scene, bw2, 0.6 + Math.random() * 0.5, 0.5, 0x2e211c, bxp, 0.32, bzp).rotation.y = (Math.random() - 0.5) * 0.3; // 콘크리트 방벽 잔해
+      if (Math.random() < 0.7) bx3(scene, 0.5, 0.3, 0.3, 0x1c2610, bxp + 0.5, 0.75, bzp);   // 방벽 위 수풀
+    }
+    const streak = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 30), new THREE.MeshBasicMaterial({ color: 0xff8a40, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, depthWrite: false }));
+    streak.rotation.x = -Math.PI / 2; streak.position.set(0.5, 0.03, -14); scene.add(streak); // 젖은 균열 노면에 해가 눕는다
     // 검문소 부스(우측) — 깨진 유리 갈아 끼운 창(stage2 서사)에 불이 들어온다
     const booth = new THREE.Group(); booth.position.set(2.7, 0, -5.6); scene.add(booth);
     bx3(booth, 1.5, 2.1, 1.4, 0x4a3a34, 0, 1.05, 0);
     bx3(booth, 1.7, 0.14, 1.6, 0x352a26, 0, 2.17, 0);                                     // 지붕 슬래브
+    for (let i = 0; i < 5; i++) bx3(booth, 0.3 + Math.random() * 0.34, 0.14 + Math.random() * 0.14, 0.3 + Math.random() * 0.34,
+      i % 2 ? 0x243012 : 0x1a250e, -0.6 + Math.random() * 1.2, 2.32, -0.5 + Math.random()); // 지붕 수풀(3년 잠식)
+    vine(booth, -0.84, 2.2, 0.3, 6, 1); vine(booth, -0.1, 2.22, -0.72, 8, 4);              // 처마 넝쿨
     const winMat = new THREE.MeshBasicMaterial({ color: 0xffc98a, transparent: true, opacity: 0 });
-    const winPane = new THREE.Mesh(new THREE.PlaneGeometry(0.72, 0.6), winMat);
+    const winPane = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.5), winMat);
     winPane.position.set(-0.76, 1.35, 0); winPane.rotation.y = -Math.PI / 2; booth.add(winPane);
     const winGlow = new THREE.PointLight(0xffc98a, 0, 6, 1.8); winGlow.position.set(-1.1, 1.4, 0); booth.add(winGlow);
+    const winSpill = new THREE.PointLight(0xffb070, 0, 5, 1.8); winSpill.position.set(-1.5, 1.1, 1.2); booth.add(winSpill); // 창빛이 부스 벽·노면에 번진다 — 창만 떠 보이는 것 방지
     // 차단기 — 지주(부스 옆) + 줄무늬 팔(길 가로지름), 피벗 상승
     const post = new THREE.Group(); post.position.set(2.0, 0, -4.6); scene.add(post);
     bx3(post, 0.3, 1.15, 0.3, 0x5a5048, 0, 0.575, 0);
     const armPivot = new THREE.Group(); armPivot.position.set(0, 1.02, 0); post.add(armPivot);
     for (let i = 0; i < 7; i++) bx3(armPivot, 0.6, 0.12, 0.1, i % 2 ? 0xd8d0c2 : 0xb0402e, -0.3 - i * 0.6, 0, 0); // 빨강/흰 줄무늬
     bx3(armPivot, 0.1, 0.1, 0.12, 0xd8d0c2, -4.25, 0, 0);                                  // 팔 끝 캡
+    const armVines = [[-1.1, 5], [-2.3, 7], [-3.4, 5], [-4.1, 8]].map(([vx, vl]) => vine(armPivot, vx, -0.06, 0, vl, vx * 3)); // 팔에 매달린 덩굴 — 상승 시 수직 유지(update에서 역회전)
     // 가로등 2기(stage3 "등을 걸고") — 순차 점등
     const lamps = [];
     for (const lz of [-9, -15]) {
@@ -6458,23 +6483,59 @@ function playEastGateVignette() {
       const pl = new THREE.PointLight(0xffcf9a, 0, 7, 1.7); pl.position.set(0.62, 2.7, 0); lg.add(pl);
       lamps.push({ head, pl });
     }
-    // 지평선 — 항구 도시 실루엣(크레인 2기 + 건물 블록), 노을 앞 역광
-    const cityMat = new THREE.MeshBasicMaterial({ color: 0x1e0e10, fog: false });
-    const cityG = new THREE.Group(); cityG.position.set(0, 0, -27); scene.add(cityG);
-    for (const [cx, cw, ch] of [[-9, 2.4, 2.6], [-6.2, 1.8, 4.2], [-3.4, 2.2, 3.1], [4.2, 2.0, 3.6], [7.6, 2.6, 2.4], [10.5, 1.8, 3.2]])
-      bx3(cityG, cw, ch, 1, 0x1e0e10, cx, ch / 2, 0);
-    for (const kx of [1.2, 6.0]) {                                                          // 항만 크레인(부산형 항구 시그니처)
-      const kr = new THREE.Group(); kr.position.set(kx, 0, 0); cityG.add(kr);
-      const kb = (w, h, x, y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.5), cityMat); m.position.set(x, y, 0); kr.add(m); };
+    // 폐허 스카이라인 3겹 (디렉터 레퍼런스 2026-07-17: 빽빽한 피폭 도심) — 대기 원근:
+    //   원경=노을 헤이즈 톤 밀집 스트립 · 중경=철골 뼈대 타워(코너 기둥+슬래브+철근) · 근경=근흑 플랭크.
+    //   태양 코어 자리만 비워 "마천루 협곡 사이로 지는 해" 구도를 만든다.
+    const ruinFrame = (x, z, w, h, c) => {                                                  // 철골 뼈대 타워
+      const rg = new THREE.Group(); rg.position.set(x, 0, z); scene.add(rg);
+      const fm = new THREE.MeshBasicMaterial({ color: c, fog: false });
+      const bb = (bw, bh, bd, px, py, pz) => { const mm = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), fm); mm.position.set(px, py, pz); rg.add(mm); };
+      for (const [cx2, cz2] of [[-w / 2, -w / 2], [w / 2, -w / 2], [-w / 2, w / 2], [w / 2, w / 2]]) bb(w * 0.14, h, w * 0.14, cx2, h / 2, cz2);
+      const floors = 3 + Math.floor(Math.random() * 3);
+      for (let f = 1; f <= floors; f++) if (Math.random() < 0.8) bb(w * 1.06, h * 0.05, w * 1.06, 0, h * f / (floors + 0.5), 0);
+      if (Math.random() < 0.7) bb(w * 0.1, h * 0.32, w * 0.1, (Math.random() - 0.5) * w, h + h * 0.12, 0); // 삐친 철근
+    };
+    const farMat = new THREE.MeshBasicMaterial({ color: 0x572618, fog: false });            // 원경 — 헤이즈에 잠긴 밀집 스카이라인
+    const farG = new THREE.Group(); farG.position.set(0, 0, -31); scene.add(farG);
+    for (let i = 0; i < 20; i++) {
+      const fx = -22 + i * 2.3 + Math.random() * 1.2;
+      if (Math.abs(fx - 1.5) < 2.4) continue;                                               // 협곡 사이 해 자리
+      const fh = 2 + Math.random() * 6, fw = 1.4 + Math.random() * 1.7;
+      const mm = new THREE.Mesh(new THREE.BoxGeometry(fw, fh, 1), farMat); mm.position.set(fx, fh / 2, Math.random() * 2); farG.add(mm);
+    }
+    for (const kx of [-8.5, 9.5]) {                                                         // 항만 크레인(부산형 시그니처) — 원경 소속
+      const kr = new THREE.Group(); kr.position.set(kx, 0, -30); scene.add(kr);
+      const kb = (w2, h2, x2, y2) => { const mm = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, 0.5), farMat); mm.position.set(x2, y2, 0); kr.add(mm); };
       kb(0.32, 5.2, 0, 2.6); kb(3.4, 0.26, 1.2, 5.1); kb(0.14, 1.5, 2.6, 4.3); kb(0.9, 0.5, 2.6, 3.4);
     }
+    for (const [mx, mz, mw, mh] of [[-8, -24, 2.6, 7.5], [-4.8, -22, 2.0, 5.5], [-11.5, -21, 3.0, 6.2], [5.5, -23, 2.4, 8.2], [9.5, -21.5, 2.8, 6.0], [13, -24, 2.2, 7.0], [-6.5, -18, 1.8, 4.2], [7.2, -17.5, 2.0, 4.8]])
+      ruinFrame(mx, mz, mw, mh, 0x2a1210);                                                  // 중경 — 뼈대 협곡
+    // 근경 — 뼈대 폐허(틈으로 하늘이 샌다: 검은 덩어리 금지) + 낮은 잔해 기단
+    for (const [nx, nz, nw, nh] of [[-6.5, -12, 3.2, 4.6], [-9.4, -14, 3.0, 6.4], [6.9, -13, 3.0, 5.2], [10, -15, 3.4, 7.0]]) {
+      ruinFrame(nx, nz, nw, nh, 0x150a0a);
+      bx3(scene, nw * 1.1, 0.8, 2.0, 0x1a0e0c, nx, 0.4, nz + 0.6);                          // 붕괴 기단
+      if (Math.random() < 0.8) bx3(scene, nw * 0.4, 0.4, 0.5, 0x18220f, nx + 0.4, 1.0, nz + 1.2); // 기단 수풀
+    }
+    // 게이트 갠트리 열 — 검문 아치가 도로를 따라 후퇴(레퍼런스: 열 지은 문). 한 열은 보가 끊겨 매달렸다.
+    [[-9, true], [-13, false], [-17, true], [-21, true]].forEach(([gz, intact], gi) => {
+      for (const gx of [-2.5, 2.5]) bx3(scene, 0.3, 3.7, 0.3, 0x2c1c16, gx, 1.85, gz);
+      if (intact) bx3(scene, 5.3, 0.24, 0.3, 0x2c1c16, 0, 3.8, gz);
+      else {
+        bx3(scene, 1.6, 0.24, 0.3, 0x2c1c16, -1.8, 3.8, gz);                                // 좌측 스텁
+        bx3(scene, 0.24, 2.0, 0.3, 0x2c1c16, 2.35, 2.8, gz).rotation.z = 0.18;              // 우측 — 부러져 늘어진 토막
+      }
+      vine(scene, -2.5 + gi * 0.3, 3.65, gz, 5 + (gi % 3) * 2, gi * 2);
+      vine(scene, 2.2 - gi * 0.2, 3.6, gz, 4 + ((gi + 1) % 3) * 2, gi * 3 + 1);
+    });
     // 태양 글로우(라디얼 스프라이트) — 지평선 위, 후반 부풀어 오른다
     const gc2 = document.createElement('canvas'); gc2.width = gc2.height = 128;
     const gg3 = gc2.getContext('2d'); const grd2 = gg3.createRadialGradient(64, 64, 4, 64, 64, 62);
     grd2.addColorStop(0, 'rgba(255,170,90,0.95)'); grd2.addColorStop(0.5, 'rgba(255,130,60,0.35)'); grd2.addColorStop(1, 'rgba(255,130,60,0)');
     gg3.fillStyle = grd2; gg3.fillRect(0, 0, 128, 128);
-    const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc2), transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-    sunGlow.scale.set(16, 9, 1); sunGlow.position.set(2.5, 2.6, -26); scene.add(sunGlow);
+    const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc2), transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+    sunGlow.scale.set(18, 10, 1); sunGlow.position.set(1.5, 2.4, -28); scene.add(sunGlow);
+    const sunCore = new THREE.Sprite(new THREE.SpriteMaterial({ map: sunGlow.material.map, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+    sunCore.scale.set(3.8, 3.4, 1); sunCore.position.set(1.5, 1.2, -29.5); scene.add(sunCore); // 지평선에 낮게 걸린 해 — 협곡 사이
     // 부유 먼지(노을 역광 모트)
     const mtN = 40, mtPos = new Float32Array(mtN * 3);
     for (let i = 0; i < mtN; i++) { mtPos[i * 3] = (Math.random() - 0.5) * 10; mtPos[i * 3 + 1] = 0.3 + Math.random() * 3; mtPos[i * 3 + 2] = -7 - Math.random() * 11; } // 카메라 종점(z −2.2)보다 항상 뒤 — 근접 대형 사각 방지
@@ -6488,10 +6549,11 @@ function playEastGateVignette() {
       // ① 부스 창 점등(살짝 깜빡이며 t0.1~0.2 안착)
       const wOn = smooth((t - 0.08) / 0.1);
       const flick = t < 0.22 ? (Math.sin(now * 0.05) > -0.4 ? 1 : 0.3) : 1;
-      winMat.opacity = 0.92 * wOn * flick; winGlow.intensity = 1.5 * wOn * flick;
+      winMat.opacity = 0.85 * wOn * flick; winGlow.intensity = 2.0 * wOn * flick; winSpill.intensity = 1.1 * wOn * flick;
       // ② 차단기 상승 t0.28~0.62 — 끝에서 살짝 반동
       const aT = smooth((t - 0.28) / 0.34);
       armPivot.rotation.z = -1.22 * aT + (aT >= 1 ? Math.sin(now * 0.02) * 0.015 : 0);
+      armVines.forEach((v, i) => { v.rotation.z = -armPivot.rotation.z + Math.sin(now * 0.0016 + i) * 0.04; }); // 덩굴은 항상 아래로 늘어진 채 흔들린다
       // ③ 가로등 순차 점등(팝)
       lamps.forEach((L, i) => { const on = smooth((t - (0.5 + i * 0.13)) / 0.06); L.head.material.emissiveIntensity = 1.6 * on; L.pl.intensity = 2.2 * on; });
       // ④ 노을 부풂 + 카메라 — 길을 따라 동쪽으로
