@@ -88,6 +88,13 @@ export const MAP = [
   ['leaf', 'icon_season_summer'],
   ['leaf-fall', 'icon_season_autumn'],
   ['snowflake', 'icon_season_winter'],
+  // P2: 툴바 시스템 6 (설정=기어 자작 재사용)
+  ['pause', 'icon_sys_pause'],
+  ['android', 'icon_sys_auto'],
+  ['edit', 'icon_sys_edit'],
+  ['gear', 'icon_sys_settings'],
+  ['pin', 'icon_sys_pin'],
+  ['eye', 'icon_sys_uihide'],
   // P2: 부상 5
   ['plaster', 'icon_inj_minor'],
   ['scar', 'icon_inj_deep'],
