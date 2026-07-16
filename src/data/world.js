@@ -101,15 +101,41 @@ export const DISTRICTS = {
     regionBonus: {},
     bonusLabel: '', bonusLabelEn: '',
   },
-  // 2.0 동부 「대도시」 — 세관 너머 신영토(GD-2.0 §6.0.5). 관문 셸터만 우선 편입(기초 모델링 단계).
-  //   districtOf/moveCostFor 정합용 — 파밍 지역·접근성 보너스는 동부 지역 8종 설계와 함께 붙는다.
-  eastcity: {
+  // ── 2.0-(c) 동부 신영토 4구역 (GD-2.0 §6.0.5 확정 로스터: 앵커 4 × 파밍 2) ──
+  //   진행 축: 세관 == 다리(진입 층위) → 역 → 펜트하우스(도심 코어). 구역 분해로 이주 cross 비용도
+  //   이 진행을 따른다(심부로 갈수록 짐이 무겁다). 구 eastcity 단일 구역은 여기서 4분할 — 세이브 무영향
+  //   (구역은 셸터에서 파생, 저장 안 함).
+  eastgate: {
     city: 'east',
-    name: '동부 관문', nameEn: 'Eastern Gate', emoji: '🛃', shelters: ['customs', 'bridgehouse', 'terminal', 'penthouse'],
+    name: '동부 관문', nameEn: 'Eastern Gate', emoji: '🛃', shelters: ['customs'],
     desc: '국경 검문소 너머, 동쪽 대도시의 문턱. 3년 만에 다시 열린 길이다.',
     descEn: 'Past the border checkpoint, the threshold of the eastern metropolis. The road has been shut for three years.',
-    regionBonus: {},
-    bonusLabel: '', bonusLabelEn: '',
+    regionBonus: { customsyard: 0.05, containerport: 0.05 },
+    bonusLabel: '세관·항만 접근성 +5%p', bonusLabelEn: 'Customs & port access +5%p',
+  },
+  eastbridge: {
+    city: 'east',
+    name: '다리 어귀', nameEn: 'Bridge Mouth', emoji: '🌉', shelters: ['bridgehouse'],
+    desc: '무너진 현수교 아래 강변. 끊긴 고속도로가 하늘에 걸려 있다.',
+    descEn: 'The riverside beneath a fallen suspension bridge. A severed highway hangs in the sky.',
+    regionBonus: { interchange: 0.05, uptown: 0.05 },
+    bonusLabel: '인터체인지·주거단지 접근성 +5%p', bonusLabelEn: 'Interchange & uptown access +5%p',
+  },
+  eaststation: {
+    city: 'east',
+    name: '중앙역 일대', nameEn: 'Central Station', emoji: '🚉', shelters: ['terminal'],
+    desc: '거대한 아치 지붕의 역. 떠나지 못한 여행이 승강장마다 멈춰 있다.',
+    descEn: 'A station under a vast arched roof. On every platform, a journey that never left.',
+    regionBonus: { grandplatform: 0.05, outpost: 0.05 },
+    bonusLabel: '승강장·아웃포스트 접근성 +5%p', bonusLabelEn: 'Platform & outpost access +5%p',
+  },
+  eastcore: {
+    city: 'east',
+    name: '마천루 심부', nameEn: 'Skyscraper Core', emoji: '🏙️', shelters: ['penthouse'],
+    desc: '고성 첨탑처럼 둘러선 마천루의 한가운데. 도시의 가장 높은 침묵.',
+    descEn: 'The heart of skyscrapers ringed like castle spires. The city\'s highest silence.',
+    regionBonus: { megamall: 0.05, deptstore: 0.05 },
+    bonusLabel: '상가·백화점 접근성 +5%p', bonusLabelEn: 'Mall & department store access +5%p',
   },
 };
 
@@ -218,5 +244,74 @@ export const REGIONS = {
     desc: '수도의 심장 · 책 뭉치·의약 정점·희귀부품 (낙진이 걷힌 뒤에만)', descEn: 'The capital’s heart · book caches, peak meds, rare parts (only after the fallout clears)', risk: '매우 높음 — 응급키트 권장', riskEn: 'Very high — first-aid kit advised',
     lootRes: [['parts', 3, 5], ['book', 1, 2, 0.6], ['painkiller', 1, 1, 0.4], ['antiseptic', 1, 1, 0.4], ['battery', 1, 2], ['canned', 1, 2, 0.4]],
     injuries: ['deep', 'infection', 'sprain'],
+  },
+  /* ── 2.0-(c) 동부 신영토 파밍 8종 (GD-2.0 §6.0.5 로스터 — 구역당 2) ──
+     해금: 전부 eastGateOpen(관문 「국경 길」 완공) — regionUnlocked의 city:'east' 일괄 게이트.
+     rate·전리품은 Fable 초안(§6.0.5 "Fable 초안 → 디렉터 컨펌") — 후반 진입지라 홈 도시보다 전리품
+     플로어를 높게, 질적 차별(REWARD-LOOP: '부품 더'가 아니라 지역마다 다른 이유)을 우선했다.
+     진행 축 반영: 관문·다리(진입 층위) > 역 > 마천루 심부 순으로 소요·위험이 깊어진다. */
+  customsyard: {
+    city: 'east',
+    name: '세관 압류창고', nameEn: 'Customs Impound', emoji: '📦', rate: 0.5, time: 45,
+    pool: ['crate', 'dresser', 'clock', 'radio', 'lamp'], furnChance: 0.03,
+    desc: '통관을 못 넘은 화물의 무덤 · 뭐가 나올지 모른다', descEn: 'A graveyard of cargo that never cleared customs · anything could surface', risk: '보통', riskEn: 'Medium',
+    lootRes: [['canned', 1, 2], ['battery', 1, 2], ['cloth', 1, 2], ['parts', 1, 2], ['book', 1, 1, 0.25]],
+    injuries: ['minor', 'sprain'],
+  },
+  containerport: {
+    city: 'east',
+    name: '컨테이너항', nameEn: 'Container Port', emoji: '🏗️', rate: 0.4, time: 60,
+    pool: ['crate', 'lamp', 'generator', 'purifier'], furnChance: 0.02,
+    desc: '컨테이너의 바다 · 건축재·부품의 광맥', descEn: 'A sea of containers · a vein of material and parts', risk: '높음 — 장갑 권장', riskEn: 'High — gloves advised',
+    lootRes: [['material', 2, 4], ['parts', 2, 3], ['fuel', 1, 2], ['salt', 1, 1, 0.4]],
+    injuries: ['deep', 'sprain'],
+  },
+  interchange: {
+    city: 'east',
+    name: '인터체인지', nameEn: 'Interchange', emoji: '🛣️', rate: 0.5, time: 50,
+    pool: ['crate', 'lamp', 'radio', 'generator'], furnChance: 0.02,
+    desc: '고가 위에 멈춘 차들 · 연료·부품 회수', descEn: 'Cars stalled on the overpass · fuel and parts salvage', risk: '보통', riskEn: 'Medium',
+    lootRes: [['fuel', 2, 3], ['parts', 2, 3], ['battery', 1, 1, 0.5], ['material', 1, 2]],
+    injuries: ['minor', 'sprain', 'deep'],
+  },
+  uptown: {
+    city: 'east',
+    name: '고급 주거단지', nameEn: 'Uptown Residences', emoji: '🏡', rate: 0.55, time: 45,
+    pool: ['bed', 'sofa', 'rug', 'dresser', 'cushion', 'teatable', 'plant'], furnChance: 0.04,
+    desc: '강변의 부촌 · 좋은 살림과 좋은 찬장', descEn: 'Riverside wealth · fine households, fine pantries', risk: '낮음', riskEn: 'Low',
+    lootRes: [['food', 3, 4], ['canned', 1, 2], ['cloth', 1, 2], ['painkiller', 1, 1, 0.35], ['candle', 1, 1, 0.5]],
+    injuries: ['minor'],
+  },
+  grandplatform: {
+    city: 'east',
+    name: '대승강장', nameEn: 'Grand Platform', emoji: '🚂', rate: 0.45, time: 55,
+    pool: ['chair', 'table', 'clock', 'radio', 'bookstack', 'lantern'], furnChance: 0.03,
+    desc: '떠나지 못한 기차와 짐가방들 · 매점과 대합실', descEn: 'Trains that never left, luggage that stayed · kiosks and waiting halls', risk: '보통', riskEn: 'Medium',
+    lootRes: [['canned', 2, 3], ['water', 2, 3], ['cloth', 1, 2], ['book', 1, 1, 0.4], ['candle', 1, 1]],
+    injuries: ['minor', 'sprain'],
+  },
+  outpost: {
+    city: 'east',
+    name: '군사 아웃포스트', nameEn: 'Military Outpost', emoji: '🪖', rate: 0.3, time: 70,
+    pool: ['crate', 'lamp', 'generator', 'radio', 'stove'], furnChance: 0.02,
+    desc: '역을 지키던 부대의 마지막 진지 · 최상급 부품·의약', descEn: 'The last position of the unit that held the station · top-grade parts and meds', risk: '매우 높음 — 응급키트 권장', riskEn: 'Very high — first-aid kit advised',
+    lootRes: [['parts', 3, 5], ['battery', 1, 2], ['fuel', 1, 2], ['painkiller', 1, 1, 0.4], ['antiseptic', 1, 1, 0.4], ['bandage', 1, 1, 0.5]],
+    injuries: ['deep', 'infection', 'sprain'],
+  },
+  megamall: {
+    city: 'east',
+    name: '거대상가', nameEn: 'Grand Arcade', emoji: '🛍️', rate: 0.45, time: 55,
+    pool: ['sofa', 'table', 'clock', 'plant', 'fridge', 'teatable', 'lantern'], furnChance: 0.04,
+    desc: '몇 블록째 이어지는 아케이드 · 잡화의 바다', descEn: 'An arcade running block after block · a sea of goods', risk: '보통', riskEn: 'Medium',
+    lootRes: [['canned', 2, 3], ['cloth', 2, 3], ['battery', 1, 1, 0.6], ['candle', 1, 1], ['book', 1, 1, 0.3]],
+    injuries: ['minor', 'minor', 'sprain'],
+  },
+  deptstore: {
+    city: 'east',
+    name: '백화점', nameEn: 'Department Store', emoji: '🏛️', rate: 0.4, time: 60,
+    pool: ['dresser', 'clock', 'lamp', 'rug', 'cushion', 'bookshelf'], furnChance: 0.05,
+    desc: '마천루 아래 사치의 전당 · 천·사치 가구 정점', descEn: 'A palace of luxury beneath the towers · peak cloth and fine furniture', risk: '높음 — 응급키트 권장', riskEn: 'High — first-aid kit advised',
+    lootRes: [['cloth', 3, 4], ['canned', 1, 2], ['book', 1, 1, 0.4], ['painkiller', 1, 1, 0.3], ['battery', 1, 1, 0.5]],
+    injuries: ['sprain', 'deep'],
   },
 };

@@ -33,6 +33,9 @@ export function regionUnlocked(rid) {
   // #167 2겹화 파일럿: 뒷골목 심부는 겉(슬럼)을 아는 사람에게만 — 숙련 ★1(20회 시도)이 곧 열쇠.
   //   "다시 마주칠 때 더 보인다"(DEPTH-DESIGN)의 공간 적용. 해금 전엔 지도에 아예 없다(소문조차 없음).
   if (rid === 'slumdeep') return masteryTier('slum') >= 1;
+  // 2.0-(c): 동부 신영토 8지역 일괄 게이트 — 관문 「국경 길」 완공(eastGateOpen) 전엔 존재 자체가 없다
+  //   (지도·자동 선택·원정 전부 이 술어를 거친다). cities.enabled와 무관 — 개통은 플레이어가 번 것.
+  if (regionCityOf(rid) === 'east') return !!state.eastGateOpen;
   return true;
 }
 export function isForbiddenRegion(regionId) {

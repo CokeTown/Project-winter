@@ -9731,7 +9731,7 @@ addEventListener('keydown', e => {
 
 function shelterUnlocked(id) {
   // 2.0-(b): 동부 관문 구역은 successes가 아니라 국경 개통(eastgate 프로젝트 완공)이 열쇠 — unlockAt 9999는 폴백 봉인.
-  if (districtOf(id) === 'eastcity') return !!state.eastGateOpen || (state.layouts[id]?.length > 0);
+  if (cityOf(id) === 'east') return !!state.eastGateOpen || (state.layouts[id]?.length > 0); // 2.0-(c): eastcity 4분할 후 도시 기반 판정
   return state.successes >= SHELTERS[id].unlockAt || (state.layouts[id]?.length > 0);
 }
 function openShelterModal() {

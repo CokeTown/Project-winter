@@ -474,6 +474,45 @@ const KNOWLEDGE_HASH = -451536973;
       && ej.invests === 15 && ej.gateOpen === true && ej.unlockedAfter === true,
       JSON.stringify(ej));
 
+    // ── 2f) 2.0-(c) 동부 파밍 8종 (§6.0.5 로스터) — 데이터 정합 + 일괄 게이트 + 도시 분리 ──
+    const EAST8 = ['customsyard', 'containerport', 'interchange', 'uptown', 'grandplatform', 'outpost', 'megamall', 'deptstore'];
+    const ec = await call(`
+      const S2 = window.__shelter;
+      S2.simReset();
+      const E = ${JSON.stringify(EAST8)};
+      const out = {};
+      // 데이터 정합: 8종 존재 · city 태그 · 전리품/가구 풀 id가 실재하는지(오타 = 런타임 undefined 드랍)
+      out.allExist = E.every(r => !!S2.REGIONS[r] && S2.REGIONS[r].city === 'east');
+      out.lootValid = E.every(r => S2.REGIONS[r].lootRes.every(([rid]) => !!S2.RESOURCES[rid]));
+      out.poolValid = E.every(r => S2.REGIONS[r].pool.every(f => !!S2.DEFS[f]));
+      // 구역 4분할: 앵커 셸터 → 구역 → 도시 파생 사슬
+      out.split = S2.districtOf('customs') === 'eastgate' && S2.districtOf('bridgehouse') === 'eastbridge'
+        && S2.districtOf('terminal') === 'eaststation' && S2.districtOf('penthouse') === 'eastcore'
+        && ['eastgate','eastbridge','eaststation','eastcore'].every(d => S2.DISTRICTS[d].city === 'east');
+      // 일괄 게이트: 개통 전 전부 잠김(지도·자동 선택이 이 술어를 공유) → 개통 후 전부 해금
+      out.lockedBefore = E.every(r => !S2.regionUnlocked(r));
+      S2.state.eastGateOpen = true;
+      out.openAfter = E.every(r => S2.regionUnlocked(r));
+      // 도시 분리(cities.enabled on): 동부 셸터에선 동부만, 홈 셸터에선 홈만 닿는다
+      S2.BAL.cities.enabled = true;
+      S2.state.current = 'customs';
+      out.eastSideEast = E.every(r => S2.regionReachable(r));
+      out.eastSideHome = !S2.regionReachable('residential') && !S2.regionReachable('slum');
+      S2.state.current = 'container';
+      out.homeSideEast = E.every(r => !S2.regionReachable(r));
+      S2.BAL.cities.enabled = false;                      // 원복 (후속 테스트 오염 방지)
+      S2.state.eastGateOpen = false;
+      return JSON.stringify(out);
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const ecj = JSON.parse(ec);
+    check('2.0-(c) 동부 8지역 데이터 정합 (존재·city 태그·전리품/풀 id 실재·구역 4분할)',
+      ecj.allExist === true && ecj.lootValid === true && ecj.poolValid === true && ecj.split === true,
+      JSON.stringify(ecj));
+    check('2.0-(c) 동부 8지역 게이트 (개통 전 전부 잠김 → 개통 후 해금 · 도시 분리 왕복)',
+      ecj.lockedBefore === true && ecj.openAfter === true && ecj.eastSideEast === true
+      && ecj.eastSideHome === true && ecj.homeSideEast === true,
+      JSON.stringify(ecj));
+
     // ── 2b) #195 레이아웃 아이템 왕복 (감사 P2: MIG 게이트가 톱레벨만 봐 y·s·t·ge가 그물 밖이던 사각) ──
     //   저장 스키마(d/c/x/z/r/o/y/s/t/ge) → loadSave 복원 → 인메모리 아이템 필드 → flushSave 재직렬화까지
     //   전 구간 보존을 검증. #193의 y 결손 4사이트가 이 테스트 부재로 통과했었다.
