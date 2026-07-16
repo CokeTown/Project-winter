@@ -10700,7 +10700,7 @@ $('btn-exp').addEventListener('click', () => {
   if (state.exp || state.injury) { $('exp-panel').classList.toggle('show'); renderExpPanel(); }
   else openMapModal();
 });
-$('btn-move').addEventListener('click', openShelterModal);
+$('btn-move').addEventListener('click', () => pdaOpenApp(openShelterModal)); // #199 5차-d: 이주도 PDA 앱
 $('btn-help').addEventListener('click', openHelpModal);
 $('btn-rotate').addEventListener('click', rotateActive);
 $('btn-delete').addEventListener('click', reclaimSelected);
@@ -11278,7 +11278,7 @@ renderQuestCard();
 loadLocaleOverridesWeb().then(a => { if (a) { applyStaticI18n(); updateHud(); renderResBar(); renderQuestCard(); } });
 if (state.minimizedEvent && EVENTS[state.minimizedEvent]) showEventChip(state.minimizedEvent); // 로드 후 내려둔 이벤트 칩 복원
 $('btn-clean').addEventListener('click', cleanShelter);
-$('btn-wardrobe').addEventListener('click', openWardrobeModal); // #86④
+$('btn-wardrobe').addEventListener('click', () => pdaOpenApp(openWardrobeModal)); // #86④ · #199 5차-d: 옷장도 PDA 앱
 $('btn-edit').addEventListener('click', () => toggleEditMode());
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
 // P2-b: 자동 진행 토글 버튼 (cam-ctrl) — Day 10 미만이면 잠금 토스트, 아니면 opts.autoPlay 토글 + 체크박스 양방향 동기화
@@ -11292,7 +11292,7 @@ $('btn-auto').addEventListener('click', () => {
 });
 syncAutoBtn();
 $('btn-craft').addEventListener('click', () => pdaOpenApp(openCraftModal)); // #199 5차-c: 제작은 PDA 앱으로 열린다
-{ const bk = $('btn-knowledge'); if (bk) bk.addEventListener('click', openKnowledgeModal); }
+{ const bk = $('btn-knowledge'); if (bk) bk.addEventListener('click', () => pdaOpenApp(openKnowledgeModal)); } // #199 5차-d: 지식도 PDA 앱
 $('btn-journal').addEventListener('click', () => openJournalModal('journal'));
 $('g-hunger').addEventListener('click', eatFood);
 $('g-thirst').addEventListener('click', drinkWater);

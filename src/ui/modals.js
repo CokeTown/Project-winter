@@ -96,9 +96,7 @@ export function makeModals(ctx) {
             : ''}
       </div>`;
   }).join('');
-  openModal(`👕 ${t('wardrobe.title')}`, `
-    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('wardrobe.hint')}</div>
-    ${rows}`);
+  openModal(`👕 ${t('wardrobe.title')}`, rows); // 인트로 힌트 삭제(디렉터 심볼릭 원칙) — 획득 경로는 각 행에 이미 표기
   $('modal-body').querySelectorAll('button[data-wear]').forEach(b => b.addEventListener('click', () => {
     state.outfit = b.dataset.wear;
     avatarSys.refreshOutfit();
