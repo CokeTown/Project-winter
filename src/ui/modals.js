@@ -96,7 +96,7 @@ export function makeModals(ctx) {
             : ''}
       </div>`;
   }).join('');
-  openModal(`👕 ${t('wardrobe.title')}`, rows); // 인트로 힌트 삭제(디렉터 심볼릭 원칙) — 획득 경로는 각 행에 이미 표기
+  openModal(t('wardrobe.title'), rows); // 인트로 힌트·타이틀 이모지 삭제(디렉터 심볼릭 원칙) — 획득 경로는 각 행에 이미 표기
   $('modal-body').querySelectorAll('button[data-wear]').forEach(b => b.addEventListener('click', () => {
     state.outfit = b.dataset.wear;
     avatarSys.refreshOutfit();
@@ -127,7 +127,7 @@ export function makeModals(ctx) {
     }).join('');
     return `<div style="margin-top:8px"><div style="font-weight:bold;font-size:12px;margin-bottom:2px">${br.emoji} ${LName(br)}</div>${rows}</div>`;
   }).join('');
-  openModal(`📚 ${t('know.title')}`, `<div style="font-size:12px;color:var(--accent);margin-bottom:6px">${t('know.books', { n: books })}</div>${sections}`);
+  openModal(t('know.title'), `<div style="font-size:12px;color:var(--accent);margin-bottom:6px">${t('know.books', { n: books })}</div>${sections}`);
   $('modal-body').querySelectorAll('button[data-know]').forEach(b =>
     b.addEventListener('click', () => {
       if (unlockKnowledge(b.dataset.know)) { playSfx('craft'); renderResBar(); updateHud(); openKnowledgeModal(); }

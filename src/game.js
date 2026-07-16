@@ -6111,7 +6111,7 @@ function openJournalModal(tab = 'journal') {
   const bpRow = (id, got, hint) => {
     const d = DEFS[id];
     return `<div class="prep-row" style="cursor:default;${got ? '' : 'opacity:0.6'}">
-      <span style="font-size:16px">${d.emoji}</span><span>${LName(d)}</span>
+      ${furnIcon(id, 'px-lg')}<span>${LName(d)}</span>
       <span class="p-cost">${got ? '✓' : hint}</span></div>`;
   };
   const bpVeilRow = (hint = '') => `<div class="prep-row" style="cursor:default;opacity:0.35">
@@ -10241,7 +10241,7 @@ function openShelterModal() {
     }).join('');
     return `
       <div style="margin:12px 0 6px;font-size:12px;color:${here ? 'var(--accent)' : 'var(--text-dim)'}">
-        ${t('shelter.districtHeader', { emoji: dist.emoji, name: LName(dist), here: here ? t('shelter.hereTag') : '', bonus: LBonus(dist), desc: LDesc(dist) })}
+        ${t('shelter.districtHeader', { emoji: distIcon(did), name: LName(dist), here: here ? t('shelter.hereTag') : '', bonus: LBonus(dist), desc: LDesc(dist) })}
       </div>${cards}`;
   }).join('');
   // 배치 D ④: 현재 셸터에 놓인 가구가 있으면 "남는 가구 N개" 안내 + 전체 수거 바로가기
@@ -11489,7 +11489,7 @@ function openQaPanel() {
       ${btn('bps', '시그니처 도면 전부')}
     </div>
     <div id="qa-status" style="font-size:11px;color:var(--good);margin-top:8px;min-height:16px"></div>`;
-  openModal('🛠️ QA 치트 패널', body);
+  openModal('QA 치트 패널', body);
   const status = m => { const el = $('qa-status'); if (el) el.textContent = m; };
   $('modal-body').querySelectorAll('[data-qa]').forEach(b => b.addEventListener('click', () => {
     markQa();
