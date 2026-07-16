@@ -5223,7 +5223,7 @@ function openCraftModal() {
   const rowArr = CRAFTS.map((c, i) => {
     if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
     const outLabel = c.out.res
-      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}${t('craft.resTag')}`
+      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}` // '· 자원' 태그 삭제(디렉터 — 이름에 내포)
       : c.out.outfit
         ? `${OUTFITS[c.out.outfit].emoji} ${LName(OUTFITS[c.out.outfit])}`
         : `${furnIcon(c.out.furn)} ${LName(DEFS[c.out.furn])}`;
@@ -5475,8 +5475,7 @@ function openCraftModal() {
       : `<div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${decoSwatches('wall', WALLPAPERS, dcur.wall)}</div>`}
     <div style="font-size:11px;margin-bottom:3px">${t('deco.floor')}</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${decoSwatches('floor', FLOORINGS, dcur.floor)}</div>
     <div style="font-size:11px;color:var(--accent);margin:8px 0 4px">${t('deco.themeHeader')}</div>${themeHtml}`;
-  openModal(t('craft.title'), `
-    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('craft.intro')}</div>${rows}
+  openModal(t('craft.title'), `${rows}
     <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>
     <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}
     ${bunkerHtml}${rooftopHtml}${subwayHtml}${icefishHtml}${forbiddenHtml}${projHtml}${decoHtml}`);

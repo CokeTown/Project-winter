@@ -216,6 +216,7 @@
   #edge-dock { /* 화면 측면 상주(디렉터) — 오버레이가 열려도 딤(58) 위에 남아 토글 가능 */
     position: fixed; right: 0; top: 20%; z-index: 59;
     display: flex; flex-direction: column; gap: 10px;
+    align-items: flex-end; /* 디렉터 신고: PDA(53px)가 일지 폭 컨테이너에서 왼쪽 정렬돼 우측 갭 발생 — 끝 정렬로 밀착 */
     zoom: var(--uiz);
   }
   #edge-dock button { /* 호버=살짝 튀어나옴(디렉터 오더) — 오버슈트 커브로 반응형 팝 */
