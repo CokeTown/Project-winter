@@ -22,8 +22,18 @@ export const WEATHERS = {
   storm: { name: '폭우', nameEn: 'Downpour', icon: '⛈️', penalty: 0.2, count: 2200, color: 0x7e97b8, size: 2, fall: 14, sway: 0.2 },
 };
 
+/* 2.0-α (§9.8.1): 도시 = 구역 위 파생 태그 1층. 저장하지 않는다(state.current에서 매번 파생) —
+   구 §9.8이 지목한 currentCity 세이브 대변경을 파생으로 회피. 명칭은 가칭(디렉터 미결 §9.9-1) —
+   id는 엔지니어링 태그라 표시명이 바뀌어도 세이브·코드 불변. */
+export const CITIES = {
+  home: { name: '첫 도시', nameEn: 'First City', emoji: '🏚️' },         // 잿빛 외곽~금지 구역 — 본편 지도 전체(불변)
+  east: { name: '동부 항구도시', nameEn: 'Eastern Port City', emoji: '🌉' }, // 세관 너머 신영토(부산형, 가칭) — 본편의 2편
+};
+export const CITY_OF = {}; // districtId → cityId 역인덱스 (아래 DISTRICTS의 city 태그에서 파생)
+
 export const DISTRICTS = {
   outskirts: {
+    city: 'home',
     name: '잿빛 외곽', nameEn: 'Ashen Outskirts', emoji: '🏜️', shelters: ['container', 'bus'],
     desc: '도시 밖 황무지. 고속도로가 지나가 이동이 편하다.',
     descEn: 'Wasteland beyond the city. A highway runs through, making travel easy.',
@@ -31,6 +41,7 @@ export const DISTRICTS = {
     bonusLabel: '주거지역 접근성 +3%p', bonusLabelEn: 'Residential access +3%p',
   },
   city: {
+    city: 'home',
     name: '무너진 도심', nameEn: 'Fallen Downtown', emoji: '🏙️', shelters: ['rooftop', 'subway'],
     desc: '폐허가 된 시가지. 위험하지만 물자가 몰려 있다.',
     descEn: 'A ruined city center. Dangerous, but supplies are dense here.',
@@ -38,6 +49,7 @@ export const DISTRICTS = {
     bonusLabel: '상업지구·슬럼가 접근성 +5%p', bonusLabelEn: 'Commercial & slum access +5%p',
   },
   meadow: {
+    city: 'home',
     name: '초원 구릉지', nameEn: 'Meadow Hills', emoji: '🌾', shelters: ['bunker', 'greenhouse'],
     desc: '들풀이 무성한 벌판. 조용하고 흙이 살아있다.',
     descEn: 'A field thick with wild grass. Quiet, and the soil is alive.',
@@ -45,6 +57,7 @@ export const DISTRICTS = {
     bonusLabel: '주거지역 접근성 +5%p', bonusLabelEn: 'Residential access +5%p',
   },
   forest: {
+    city: 'home',
     name: '숲과 산기슭', nameEn: 'Forest & Foothills', emoji: '🌲', shelters: ['cabin'],
     desc: '침엽수림 가장자리. 폐허에서 가장 먼 안식처.',
     descEn: 'The edge of a conifer forest. The refuge farthest from the ruins.',
@@ -52,6 +65,7 @@ export const DISTRICTS = {
     bonusLabel: '공업지대 접근성 +5%p', bonusLabelEn: 'Industrial access +5%p',
   },
   coast: {
+    city: 'home',
     name: '잿빛 해안', nameEn: 'Ashen Coast', emoji: '🌊', shelters: ['ship', 'lighthouse'],
     desc: '안개 낀 바닷가. 바다가 주는 것과 빼앗는 것이 있다.',
     descEn: 'A fog-wrapped shore. The sea gives, and the sea takes.',
@@ -60,6 +74,7 @@ export const DISTRICTS = {
   },
   // 1.1 「얼어붙은 항구」 — 강 하구를 따라 내려간 얼어붙은 항구. 예인선/관제탑 셸터가 이 구역.
   harbor: {
+    city: 'home',
     name: '얼어붙은 항구', nameEn: 'Frozen Harbor', emoji: '⚓', shelters: ['tugboat', 'controltower'],
     desc: '강 하구의 죽은 항만. 바다는 얼었어도 죽지 않았다.',
     descEn: 'A dead port at the river mouth. The sea is frozen, but not dead.',
@@ -68,6 +83,7 @@ export const DISTRICTS = {
   },
   // 1.3 「고요한 고원」 — 산 위로 올라간 고원. 스키 로지 셸터가 이 구역. 겨울 접근성이 나쁜 대신 보상이 좋다.
   highland: {
+    city: 'home',
     name: '고요한 고원', nameEn: 'Silent Highland', emoji: '🏔️', shelters: ['lodge'],
     desc: '구름 위로 솟은 고원. 겨울이 더 혹독한 만큼, 남은 것도 더 값지다.',
     descEn: 'A plateau above the clouds. The winters bite harder here, and what remains is worth more for it.',
@@ -78,6 +94,7 @@ export const DISTRICTS = {
   //   지도 상의 구역으로만 존재 — 검문소·연구동 지역이 여기 속한다. districtOf는 셸터로 판정하므로
   //   이 구역은 shelters:[] (거주 불가). 지역 접근성 보너스는 없음(금지 구역엔 우대가 없다).
   research: {
+    city: 'home',
     name: '금지 구역', nameEn: 'Forbidden Zone', emoji: '☢️', shelters: [],
     desc: '군이 마지막까지 봉쇄한 폭심지. 방호복 없이는 한 걸음도 들일 수 없다.',
     descEn: 'The blast core the army sealed to the last. Without a hazmat suit, not one step in.',
@@ -87,6 +104,7 @@ export const DISTRICTS = {
   // 2.0 동부 「대도시」 — 세관 너머 신영토(GD-2.0 §6.0.5). 관문 셸터만 우선 편입(기초 모델링 단계).
   //   districtOf/moveCostFor 정합용 — 파밍 지역·접근성 보너스는 동부 지역 8종 설계와 함께 붙는다.
   eastcity: {
+    city: 'east',
     name: '동부 관문', nameEn: 'Eastern Gate', emoji: '🛃', shelters: ['customs', 'bridgehouse', 'terminal', 'penthouse'],
     desc: '국경 검문소 너머, 동쪽 대도시의 문턱. 3년 만에 다시 열린 길이다.',
     descEn: 'Past the border checkpoint, the threshold of the eastern metropolis. The road has been shut for three years.',
@@ -94,6 +112,9 @@ export const DISTRICTS = {
     bonusLabel: '', bonusLabelEn: '',
   },
 };
+
+// 2.0-α: CITY_OF 역인덱스 채움 — 태그 누락 구역은 home 폴백(신규 구역 추가 시 안전값)
+for (const [did, d] of Object.entries(DISTRICTS)) CITY_OF[did] = d.city || 'home';
 
 export const REGIONS = {
   residential: {

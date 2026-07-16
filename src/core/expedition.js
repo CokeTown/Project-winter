@@ -11,7 +11,7 @@ import { isHard } from './mode.js';
 import { coldSnapNetSeverity } from './coldsnap.js';
 import { comfortExpBonus } from './comfort.js';
 import { knowExpBonus } from './knowledge.js';
-import { REGIONS, DISTRICTS } from '../data/world.js';
+import { REGIONS, DISTRICTS, CITY_OF } from '../data/world.js';
 import { SHELTER_META } from '../data/shelters.js';
 import { PREPS, INJURIES } from '../data/items.js';
 import { BAL } from '../data/balance.js';
@@ -23,6 +23,10 @@ let _weatherPenalty = () => 0;
 export function setExpeditionWeather(fn) { _weatherPenalty = fn; }
 
 // 셸터 → 구역 (DISTRICTS.shelters 역참조). 없으면 outskirts.
+// 2.0-α (§9.8.1): 셸터 → 도시. 무저장 파생 — state.current에서 매번 계산, currentCity 세이브 필드 불요.
+export function cityOf(shelterId) {
+  return CITY_OF[districtOf(shelterId)] || 'home';
+}
 export function districtOf(shelterId) {
   for (const [id, d] of Object.entries(DISTRICTS)) if (d.shelters.includes(shelterId)) return id;
   return 'outskirts';

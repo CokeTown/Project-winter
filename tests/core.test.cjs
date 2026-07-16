@@ -7,7 +7,7 @@ const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
 const SHELTER_HASH = 2079726321; // 2026-07-17 재핀: #193 벙커 유지비 라벨 '조명' 삭제(환기 전용 — 어둠 기본값 정합) (직전: 요트 리네임)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
-const MIG_HASH = -71013442; // 2026-07-09 재핀: 시그니처 도면 blueprints 편입 (직전: 내구성 가방)
+const MIG_HASH = -1042252206; // 2026-07-17 재핀: 2.0-α 4도시 가산 필드 4종(citiesReached·cityWinters·finalWinterCity·homeStay) 스냅샷 편입 (직전: 시그니처 도면)
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
 const MARKET_HASH = -1012304627;
 // 「지식」 테크트리 시그니처 해시 (branch/tier/cost/effect). 노드/비용/효과 변경 시 KNOWLEDGE_HASH(actual) 재핀.
@@ -391,12 +391,16 @@ const KNOWLEDGE_HASH = -451536973;
         survivorLights: st.survivorLights, doctorRegularSeen: st.doctorRegularSeen,
         doctorRadioRegularPending: st.doctorRadioRegularPending, questIdx: st.questIdx,
         current: st.current, bookType: typeof st.res.book, demoType: typeof st.demoEnded,
-        renovatedContainer: !!(st.renovated && st.renovated.container) };
+        renovatedContainer: !!(st.renovated && st.renovated.container),
+        // 2.0-α 4도시 가산 필드 4종 (§9.8) — 구세이브 = 첫 도시 이력으로 마이그레이션
+        citiesReached: st.citiesReached, cityWintersHome: (st.cityWinters || {}).home,
+        finalWinterCity: st.finalWinterCity, homeStayType: typeof st.homeStay };
       const sig = JSON.stringify(mig);
       let h = 0; for (let i=0;i<sig.length;i++) h=(Math.imul(h,31)+sig.charCodeAt(i))|0;
       return JSON.stringify({ day: mig.day, winters: mig.winters, canned: mig.canned, bookType: mig.bookType,
         demoType: mig.demoType, bunkerRoof: mig.bunkerRoof, hasCutter: mig.hasCutter, projects: mig.projects,
-        hazmat: mig.hazmat, mode: mig.mode, energy: mig.energy, migHash: h });
+        hazmat: mig.hazmat, mode: mig.mode, energy: mig.energy, migHash: h,
+        cReached: mig.citiesReached, cWinHome: mig.cityWintersHome, finCity: mig.finalWinterCity, hsType: mig.homeStayType });
     `).catch(err => JSON.stringify({ error: String(err) }));
     const s = JSON.parse(sv);
     if (s.error) {
@@ -413,7 +417,26 @@ const KNOWLEDGE_HASH = -451536973;
       check('마이그레이션/기본값(projects=object)', s.projects === 'object', `projects ${s.projects}`);
       check('마이그레이션/기본값(hazmat=null)', s.hazmat === null, `hazmat ${s.hazmat}`);
       check('마이그레이션 전 필드 해시 불변(save 추출 안전망)', s.migHash === MIG_HASH, `hash ${s.migHash}`);
+      // 2.0-α: 구세이브(winters 3)는 첫 도시 이력으로 — citiesReached {home}, cityWinters.home=3, finalWinterCity null(9겨울 미만)
+      check('2.0-α 마이그레이션/구세이브=첫 도시 이력', !!(s.cReached && s.cReached.home) && s.cWinHome === 3 && s.finCity === null && s.hsType === 'object',
+        JSON.stringify({ cReached: s.cReached, cWinHome: s.cWinHome, finCity: s.finCity, hsType: s.hsType }));
     }
+
+    // ── 2c) 2.0-α cityOf 파생 (§9.8.1 — 도시는 저장하지 않는다) ──
+    const cty = await call(`
+      S.state.citiesReached = {};          // 기록 초기화 — loadShelter 관문이 직접 쓰는지 본다
+      S.loadShelter(S.state.current);
+      return JSON.stringify({
+        home: S.cityOf('container'), homeHarbor: S.cityOf('tugboat'), homeHigh: S.cityOf('lodge'),
+        east: S.cityOf('customs'), eastDeep: S.cityOf('penthouse'),
+        reachedAfterLoad: (S.state.citiesReached || {}).home,
+      });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const ct = JSON.parse(cty);
+    check('2.0-α cityOf 파생 (본편 전역=home · 동부 관문 4셸터=east)',
+      ct.home === 'home' && ct.homeHarbor === 'home' && ct.homeHigh === 'home' && ct.east === 'east' && ct.eastDeep === 'east',
+      JSON.stringify(ct));
+    check('2.0-α citiesReached 기록 (loadShelter 관문)', ct.reachedAfterLoad === 1, `reached ${ct.reachedAfterLoad}`);
 
     // ── 2b) #195 레이아웃 아이템 왕복 (감사 P2: MIG 게이트가 톱레벨만 봐 y·s·t·ge가 그물 밖이던 사각) ──
     //   저장 스키마(d/c/x/z/r/o/y/s/t/ge) → loadSave 복원 → 인메모리 아이템 필드 → flushSave 재직렬화까지
