@@ -6486,30 +6486,80 @@ function playEastGateVignette() {
     // 폐허 스카이라인 3겹 (디렉터 레퍼런스 2026-07-17: 빽빽한 피폭 도심) — 대기 원근:
     //   원경=노을 헤이즈 톤 밀집 스트립 · 중경=철골 뼈대 타워(코너 기둥+슬래브+철근) · 근경=근흑 플랭크.
     //   태양 코어 자리만 비워 "마천루 협곡 사이로 지는 해" 구도를 만든다.
-    const ruinFrame = (x, z, w, h, c) => {                                                  // 철골 뼈대 타워
+    // 폐건물 실루엣 텍스처 — "네모 복셀" 탈피(디렉터 2026-07-17): 창 구멍으로 하늘이 새고,
+    //   지붕선은 붕괴로 들쭉날쭉, 안테나·급수탱크·측면 붕괴 바이트. 역광 폐허의 실체는 '구멍'이다.
+    const towerTexCache = {};
+    const towerTex = (col, seed) => {
+      const key = col + '_' + seed;
+      if (towerTexCache[key]) return towerTexCache[key];
+      const c = document.createElement('canvas'); c.width = 96; c.height = 256;
+      const g2 = c.getContext('2d');
+      const rnd = (() => { let s = seed * 2654435761 >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); })();
+      g2.fillStyle = '#' + col.toString(16).padStart(6, '0');
+      // 몸체 — 상단 붕괴 계단(컬럼별 높이 차) + 측면 바이트
+      const topBase = 12 + rnd() * 30;
+      const cols = 6, cw2 = 96 / cols;
+      for (let ci = 0; ci < cols; ci++) {
+        const ty = topBase + (rnd() < 0.4 ? rnd() * 46 : rnd() * 12);
+        g2.fillRect(ci * cw2, ty, cw2 + 1, 256 - ty);
+      }
+      if (rnd() < 0.6) g2.clearRect(rnd() < 0.5 ? 0 : 72, 40 + rnd() * 60, 24, 30 + rnd() * 40); // 측면 붕괴 바이트
+      // 창 구멍 그리드 — 하늘이 뚫고 보인다. 층·열마다 일부는 막혀 있고(생존 창), 일부는 크게 무너짐.
+      for (let wy = topBase + 18; wy < 240; wy += 14) {
+        for (let wx = 7; wx < 88; wx += 13) {
+          const r = rnd();
+          if (r < 0.42) g2.clearRect(wx, wy, 7, 8);                 // 뚫린 창
+          else if (r < 0.5) g2.clearRect(wx - 1, wy - 1, 11, 11);   // 크게 무너진 개구부
+        }
+      }
+      // 옥상 디테일 — 안테나 / 급수탱크 / 물탱크 다리
+      const rx0 = 14 + rnd() * 56;
+      if (rnd() < 0.7) g2.fillRect(rx0, topBase - 22, 2.5, 24);                              // 안테나
+      if (rnd() < 0.5) { g2.fillRect(rx0 + 14, topBase - 9, 14, 10); g2.fillRect(rx0 + 16, topBase, 2, 4); g2.fillRect(rx0 + 24, topBase, 2, 4); } // 급수탱크
+      const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+      return (towerTexCache[key] = tex);
+    };
+    const towerPlane = (x, z, w, h, col, seed) => {
+      const mm = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+        new THREE.MeshBasicMaterial({ map: towerTex(col, seed), transparent: true, fog: false, side: THREE.DoubleSide }));
+      mm.position.set(x, h / 2, z); scene.add(mm); return mm;
+    };
+    const ruinFrame = (x, z, w, h, c) => {                                                  // 철골 뼈대 타워 (+대각 브레이싱·기운 슬래브)
       const rg = new THREE.Group(); rg.position.set(x, 0, z); scene.add(rg);
       const fm = new THREE.MeshBasicMaterial({ color: c, fog: false });
-      const bb = (bw, bh, bd, px, py, pz) => { const mm = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), fm); mm.position.set(px, py, pz); rg.add(mm); };
+      const bb = (bw, bh, bd, px, py, pz, rz) => { const mm = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), fm); mm.position.set(px, py, pz); if (rz) mm.rotation.z = rz; rg.add(mm); return mm; };
       for (const [cx2, cz2] of [[-w / 2, -w / 2], [w / 2, -w / 2], [-w / 2, w / 2], [w / 2, w / 2]]) bb(w * 0.14, h, w * 0.14, cx2, h / 2, cz2);
       const floors = 3 + Math.floor(Math.random() * 3);
-      for (let f = 1; f <= floors; f++) if (Math.random() < 0.8) bb(w * 1.06, h * 0.05, w * 1.06, 0, h * f / (floors + 0.5), 0);
+      for (let f = 1; f <= floors; f++) if (Math.random() < 0.8)
+        bb(w * 1.06, h * 0.045, w * 1.06, 0, h * f / (floors + 0.5), 0, Math.random() < 0.3 ? (Math.random() - 0.5) * 0.16 : 0); // 일부 슬래브는 내려앉아 기움
+      bb(w * 0.09, h * 0.5, w * 0.09, 0, h * 0.55, w / 2, Math.random() < 0.5 ? 0.62 : -0.62); // 전면 대각 브레이싱
+      if (Math.random() < 0.6) bb(w * 0.09, h * 0.34, w * 0.09, -w / 2, h * 0.3, w / 2, 0.55);
       if (Math.random() < 0.7) bb(w * 0.1, h * 0.32, w * 0.1, (Math.random() - 0.5) * w, h + h * 0.12, 0); // 삐친 철근
     };
-    const farMat = new THREE.MeshBasicMaterial({ color: 0x572618, fog: false });            // 원경 — 헤이즈에 잠긴 밀집 스카이라인
-    const farG = new THREE.Group(); farG.position.set(0, 0, -31); scene.add(farG);
-    for (let i = 0; i < 20; i++) {
-      const fx = -22 + i * 2.3 + Math.random() * 1.2;
-      if (Math.abs(fx - 1.5) < 2.4) continue;                                               // 협곡 사이 해 자리
-      const fh = 2 + Math.random() * 6, fw = 1.4 + Math.random() * 1.7;
-      const mm = new THREE.Mesh(new THREE.BoxGeometry(fw, fh, 1), farMat); mm.position.set(fx, fh / 2, Math.random() * 2); farG.add(mm);
+    // 원경 — 실루엣 텍스처 스카이라인 2열(밀집·파랄락스). 헤이즈 톤.
+    for (let i = 0; i < 14; i++) {
+      const fx = -24 + i * 3.6 + Math.random() * 1.6;
+      if (Math.abs(fx - 1.5) < 2.6) continue;                                               // 협곡 사이 해 자리
+      towerPlane(fx, -31 + Math.random() * 1.5, 2.2 + Math.random() * 1.8, 3.5 + Math.random() * 5.5, 0x572618, 10 + i);
     }
+    for (let i = 0; i < 10; i++) {                                                          // 뒷열(더 흐리고 낮게)
+      const fx = -26 + i * 5.4 + Math.random() * 2;
+      if (Math.abs(fx - 1.5) < 3) continue;
+      towerPlane(fx, -34, 3 + Math.random() * 2, 2.6 + Math.random() * 3.4, 0x6e3620, 30 + i);
+    }
+    const farMat = new THREE.MeshBasicMaterial({ color: 0x572618, fog: false });            // 크레인용 헤이즈 톤
     for (const kx of [-8.5, 9.5]) {                                                         // 항만 크레인(부산형 시그니처) — 원경 소속
       const kr = new THREE.Group(); kr.position.set(kx, 0, -30); scene.add(kr);
       const kb = (w2, h2, x2, y2) => { const mm = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, 0.5), farMat); mm.position.set(x2, y2, 0); kr.add(mm); };
       kb(0.32, 5.2, 0, 2.6); kb(3.4, 0.26, 1.2, 5.1); kb(0.14, 1.5, 2.6, 4.3); kb(0.9, 0.5, 2.6, 3.4);
     }
-    for (const [mx, mz, mw, mh] of [[-8, -24, 2.6, 7.5], [-4.8, -22, 2.0, 5.5], [-11.5, -21, 3.0, 6.2], [5.5, -23, 2.4, 8.2], [9.5, -21.5, 2.8, 6.0], [13, -24, 2.2, 7.0], [-6.5, -18, 1.8, 4.2], [7.2, -17.5, 2.0, 4.8]])
-      ruinFrame(mx, mz, mw, mh, 0x2a1210);                                                  // 중경 — 뼈대 협곡
+    // 중경 — 뼈대 협곡: 실루엣 타워(창 구멍)와 3D 철골 프레임을 섞는다(단조 탈피 + 파랄락스 입체감)
+    [[-8, -24, 2.6, 7.5, 1], [-4.8, -22, 2.0, 5.5, 0], [-11.5, -21, 3.0, 6.2, 1], [5.5, -23, 2.4, 8.2, 1],
+     [9.5, -21.5, 2.8, 6.0, 0], [13, -24, 2.2, 7.0, 1], [-6.5, -18, 1.8, 4.2, 0], [7.2, -17.5, 2.0, 4.8, 1]]
+      .forEach(([mx, mz, mw, mh, plane], mi) => {
+        if (plane) towerPlane(mx, mz, mw * 1.25, mh, 0x2a1210, 50 + mi);
+        else ruinFrame(mx, mz, mw, mh, 0x2a1210);
+      });
     // 근경 — 뼈대 폐허(틈으로 하늘이 샌다: 검은 덩어리 금지) + 낮은 잔해 기단
     for (const [nx, nz, nw, nh] of [[-6.5, -12, 3.2, 4.6], [-9.4, -14, 3.0, 6.4], [6.9, -13, 3.0, 5.2], [10, -15, 3.4, 7.0]]) {
       ruinFrame(nx, nz, nw, nh, 0x150a0a);
