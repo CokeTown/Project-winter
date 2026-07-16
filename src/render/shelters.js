@@ -33,7 +33,7 @@ export function makeShelterBuilders(ctx) {
   const _leafSilMat = new THREE.SpriteMaterial({ map: _leafTex, color: 0x2c3c20, transparent: true, depthWrite: false });   // 그늘측 잎(어두운 올리브)
   const _leafRimMat = new THREE.SpriteMaterial({ map: _leafTex, color: 0x62703a, transparent: true, depthWrite: false });   // 광측 잎(밝은 올리브)
   // 잎 덩이 클러스터: 3~5장 겹침·미러·지터. rim=true면 절반은 광측 톤. rnd=seededRand.
-  const leafCluster = (parent, x, y, z, r, rnd, rim) => { const n = 3 + Math.floor(rnd() * 3); for (let i = 0; i < n; i++) { const sp = new THREE.Sprite((rim && rnd() < 0.5) ? _leafRimMat : _leafSilMat); const s = r * (0.7 + rnd() * 0.8); sp.scale.set(s * (rnd() < 0.5 ? -1 : 1), s * (0.72 + rnd() * 0.4), 1); sp.position.set(x + (rnd() - 0.5) * r * 1.2, y + r * 0.28 + (rnd() - 0.5) * r * 0.6, z + (rnd() - 0.5) * r * 1.2); parent.add(sp); } };
+  const leafCluster = (parent, x, y, z, r, rnd, rim) => { const n = 3 + Math.floor(rnd() * 3); for (let i = 0; i < n; i++) { const sp = new THREE.Sprite((rim && rnd() < 0.5) ? _leafRimMat : _leafSilMat); sp.raycast = () => {}; /* 장식 잎 — 픽킹 무효. Sprite.raycast는 raycaster.camera를 요구해 카메라 미설정 레이(아바타 장애물 검사)에서 matrixWorld null 크래시(2g 검거) */ const s = r * (0.7 + rnd() * 0.8); sp.scale.set(s * (rnd() < 0.5 ? -1 : 1), s * (0.72 + rnd() * 0.4), 1); sp.position.set(x + (rnd() - 0.5) * r * 1.2, y + r * 0.28 + (rnd() - 0.5) * r * 0.6, z + (rnd() - 0.5) * r * 1.2); parent.add(sp); } };
   // ── 폐건물 실루엣 타워 (디렉터 2026-07-17 '복셀 네모' 반려 → 창 구멍 문법, 개통 비네트와 동일 언어) ──
   //   시드 결정론 캔버스: 컬럼별 붕괴 지붕선 + 창 구멍(하늘이 관통) + 측면 붕괴 바이트 + 안테나·급수탱크.
   //   Lambert 재질 — 시간대 조명·무드 틴트를 따라 낮엔 원경 폐허, 노을엔 역광 실루엣이 된다.
