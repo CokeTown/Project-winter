@@ -450,6 +450,30 @@ const KNOWLEDGE_HASH = -451536973;
     const rj = JSON.parse(rr);
     check('2.0-(b) regionReachable (off=전역 true · on+home 셸터=기존 전 지역 true)', rj.offAll === true && rj.onHome === true, JSON.stringify(rj));
 
+    // ── 2e) 2.0-(b) 동부 관문 「국경 길」 — 소문 게이트 → 프로젝트 노출 → 완주 → 이주 개방 사슬 ──
+    const eg = await call(`
+      const S2 = window.__shelter;
+      S2.simReset();
+      const out = {};
+      out.lockedBefore = !S2.shelterUnlocked('customs');                  // 개통 전 세관 봉인
+      out.hiddenBefore = !S2.projectAvailable('eastgate');                // 소문 전 프로젝트 비노출
+      S2.state.eastRoadRumor = 1;                                        // 소문 도달(processDay 훅의 결과 상태)
+      out.shownAfterRumor = S2.projectAvailable('eastgate');
+      // 자재를 채우고 15회 완주 (5+5+5)
+      S2.state.res.material = 200; S2.state.res.parts = 200; S2.state.res.battery = 50; S2.state.res.fuel = 50; S2.state.res.cloth = 50;
+      let guard = 0;
+      while (!S2.projectDone('eastgate') && guard++ < 20) S2.investProject('eastgate');
+      out.invests = guard;
+      out.gateOpen = S2.state.eastGateOpen === true && S2.state.eastGatePending === true;
+      out.unlockedAfter = ['customs', 'bridgehouse', 'terminal', 'penthouse'].every(id => S2.shelterUnlocked(id));
+      return JSON.stringify(out);
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const ej = JSON.parse(eg);
+    check('2.0-(b) 관문 사슬 (봉인→소문 노출→15회 완주→개통 플래그→동부 4셸터 개방)',
+      ej.lockedBefore === true && ej.hiddenBefore === true && ej.shownAfterRumor === true
+      && ej.invests === 15 && ej.gateOpen === true && ej.unlockedAfter === true,
+      JSON.stringify(ej));
+
     // ── 2b) #195 레이아웃 아이템 왕복 (감사 P2: MIG 게이트가 톱레벨만 봐 y·s·t·ge가 그물 밖이던 사각) ──
     //   저장 스키마(d/c/x/z/r/o/y/s/t/ge) → loadSave 복원 → 인메모리 아이템 필드 → flushSave 재직렬화까지
     //   전 구간 보존을 검증. #193의 y 결손 4사이트가 이 테스트 부재로 통과했었다.

@@ -387,6 +387,10 @@ export const BAL = {
     hiddenGate1: { material: 3, parts: 1 },         // 벽을 허문다 — 4회
     hiddenGate2: { parts: 2, cloth: 1, fuel: 1 },   // 버팀목과 통로 — 4회
     hiddenGate3: { parts: 1, battery: 1, fuel: 1 }, // 개통(등불·사다리) — 4회
+    // 2.0-(b) 동부 관문 「국경 길」 — 역대 최대(투입 15회·자재 총 ~100단위, 개척의 2배+). 초안 캘리브 — 디렉터 컨펌 여지.
+    eastgate1: { material: 5, parts: 2 },                       // 잔해 개통 — 5회 (35)
+    eastgate2: { parts: 3, material: 3 },                       // 검문소 복구 — 5회 (30)
+    eastgate3: { parts: 2, battery: 1, fuel: 2, cloth: 1 },     // 통행 준비 — 5회 (30)
   },
 
   /* ── 도료 (REWARD-LOOP ② 1차 착지 — 디렉터 확정 2026-07-08: 소모품 1통=1회·12계열·지역 시그니처) ──

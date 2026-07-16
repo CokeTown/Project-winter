@@ -201,6 +201,26 @@ export const PROJECTS = {
     ],
     doneSiteStage: 4,
   },
+
+  /* ── 2.0-(b) 동부 관문 「국경 길」 (§6.0.5 — 디렉터 확정 2026-07-17: 낙진 서사 연결·개척급 대형·인엔진 비네트) ──
+     노출 조건: eastRoadRumor 플래그 — processDay가 낙진 걷힘(3겨울) + 도심 중심지 진실 메모 1개 이상일 때
+       아침 소문 노트와 함께 세운다("수도의 기록에서 동쪽 길을 알게 된다" — 2.0 서사와 자연 연결).
+     역대 최대 코스트(투입 15회·자재 총 ~100 — 개척(12회·28단위)의 2배 이상): "본편 2편의 문"다운 무게.
+     완공 효과(east.gateOpen): 동부 관문 구역 셸터 4종 이주 개방 + 개통 비네트 예약(eastGatePending).
+     site='eastgate' — 현장 3D는 (c) 동부 지역 데이터와 함께(radioBase 선례: 지도·행동 UI 중심, site 폴백 허용). */
+  eastgate: {
+    id: 'eastgate',
+    when: { needsFlag: 'eastRoadRumor' },
+    site: 'eastgate',
+    icon: '🛃',
+    memoirKey: 'proj.eastgate.memoir',
+    stages: [
+      { costKey: 'eastgate1', need: 5, siteStage: 1, effectKey: null },             // 도로의 3년 — 잔해 개통
+      { costKey: 'eastgate2', need: 5, siteStage: 2, effectKey: null },             // 검문소 복구 — 게이트·차단기
+      { costKey: 'eastgate3', need: 5, siteStage: 3, effectKey: 'east.gateOpen' },  // 통행 준비 — 등화·표지 → 국경이 열린다
+    ],
+    doneSiteStage: 4,
+  },
 };
 
 /* ── 1.2~1.4 확장 수용성 증명 (설계 노트, 이번 배치 미구현) ────────

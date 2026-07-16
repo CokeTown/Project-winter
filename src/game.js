@@ -5488,6 +5488,8 @@ function applyProjectEffect(effectKey) {
     case 'radio.broadcastAction': state.radioBaseDone = true; break;
     // 2.0 §9.6 히든 통로 개척 완공 — 사다리 등장(플래그 판정, subway buildEnv) + 그날 밤 박사 대면 예약.
     case 'subway.hiddenGate': state.hiddenGateDone = true; state.hiddenReachPending = true; break;
+    // 2.0-(b) 동부 관문 완공 — 국경이 열린다: 동부 셸터 4종 이주 개방(shelterUnlocked) + 개통 비네트 예약.
+    case 'east.gateOpen': state.eastGateOpen = true; state.eastGatePending = true; break;
     default: break; // 1.2~1.4 확장이 여기에 case를 추가한다.
   }
 }
@@ -8811,6 +8813,13 @@ function processDay() {
   tryRadioBroadcast(notes);
   // 1.3 밤하늘 수집 — 관측소 완공 후 맑은 밤 하루 1회 확률로 미수집 스케치 1종.
   tryNightSky(notes);
+  // 2.0-(b) 동쪽 길 소문 (디렉터 확정 2026-07-17 — 낙진 서사 연결): 낙진이 걷히고(3겨울) 수도의 진실
+  //   메모를 하나라도 읽었다면, 어느 아침 기록 속에서 동쪽 국경 검문소를 알게 된다 — 관문 프로젝트 노출 스위치.
+  if (!state.eastRoadRumor && !isWallpaper() && falloutCleared()
+      && MEMOS_CITYCORE.some(id => (state.memos || {})[id])) {
+    state.eastRoadRumor = 1;
+    notes.push(t('east.rumorNote'));
+  }
   // #164 「떠오른 자리」 + 지역 컨디션 (디렉터 2026-07-10 — 반복 타파). 배경화면 모드는 무대상.
   //   ⚠️ 난수는 공유 Math.random을 쓰지 않는다 — 시드 시뮬(하드코어 치사성 등 밴드 테스트)의 스트림을
   //   밀어버리기 때문(실측: 데모 스위트 50/51 회귀). 런 시드+일자 해시의 자체 스트림 → 시뮬 무접점
@@ -9496,6 +9505,8 @@ addEventListener('keydown', e => {
 }, true); // 캡처 단계: 게임 전역 ESC(설정 토글 등)보다 먼저 소비
 
 function shelterUnlocked(id) {
+  // 2.0-(b): 동부 관문 구역은 successes가 아니라 국경 개통(eastgate 프로젝트 완공)이 열쇠 — unlockAt 9999는 폴백 봉인.
+  if (districtOf(id) === 'eastcity') return !!state.eastGateOpen || (state.layouts[id]?.length > 0);
   return state.successes >= SHELTERS[id].unlockAt || (state.layouts[id]?.length > 0);
 }
 function openShelterModal() {
@@ -11356,6 +11367,7 @@ window.__shelter = {
   cityOf, // 2.0-α QA: 도시 파생 게이트(셸터→도시 매핑·기록 필드 검증)
   playCollapseVignette, // #199 QA: 문+상자 연출 직접 구동(캡처 검수용)
   regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
+  shelterUnlocked, // 2.0-(b) QA: 동부 관문 이주 게이트(eastGateOpen) 검증
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
