@@ -10241,9 +10241,8 @@ function openShelterModal() {
       }
       return `
       <div class="shelter-card ${cur ? 'current' : ''} ${unlocked ? '' : 'locked'}">
-        <div class="s-emoji">${unlocked ? shIcon(id, 'px-lg') : '🔒'}</div>
+        <div class="s-head"><span class="s-emoji">${unlocked ? shIcon(id, 'px-lg') : '🔒'}</span><span class="s-name">${LName(sh)} ${cur ? `<span style="color:var(--accent)">${t('current')}</span>` : ''}${unlocked && !state.renovated[id] ? t('shelter.unrefit') : ''}</span></div>
         <div class="s-body">
-          <div class="s-name">${LName(sh)} ${cur ? `<span style="color:var(--accent)">${t('current')}</span>` : ''}${unlocked && !state.renovated[id] ? t('shelter.unrefit') : ''}</div>
           <div class="s-desc">${unlocked ? LDesc(sh) : t('shelter.locked', { need: sh.unlockAt, cur: state.successes })}</div>
           ${unlocked && sh.perk ? `<div class="s-desc" style="color:var(--good)">${LLabel(sh.perk)}</div>` : ''}
           ${unlocked && sh.limits ? `<div class="s-desc" style="color:var(--bad)">${LLimits(sh)}</div>` : ''}

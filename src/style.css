@@ -471,12 +471,11 @@
   body.pda-app #pda-lcd .wd-row .p-eff { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
   body.pda-app #pda-lcd .wd-row .pixel-btn { flex: 0 0 auto; padding: 3px 10px; }
   body.pda-app #pda-lcd .wd-row > span:last-child:not(.p-eff) { flex: 0 0 auto; white-space: nowrap; }
-  /* 이주 셸터 카드 — 좁은 LCD에서 [아이콘|본문|버튼] 3열이 본문을 ~180px로 압착해 문장이 세로 폭포(디렉터 신고).
-     아이콘+본문 2열 그리드, 버튼은 하단 행 우측 → 본문이 전폭을 받아 블록당 1~2줄로 정돈. */
-  body.pda-app #pda-lcd .shelter-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px; align-items: start; padding: 7px 9px; }
-  body.pda-app #pda-lcd .shelter-card .s-emoji { grid-column: 1; font-size: 20px; line-height: 1; }
+  /* 이주 셸터 카드 — 좁은 LCD 정돈(디렉터): 헤더(아이콘+이름) 한 줄 + 본문 전폭 문단(들여쓰기 0) */
+  body.pda-app #pda-lcd .shelter-card { padding: 7px 9px; }
+  body.pda-app #pda-lcd .shelter-card .s-emoji { font-size: 20px; }
   body.pda-app #pda-lcd .shelter-card .s-emoji .px-icon { width: 22px; height: 22px; vertical-align: -3px; }
-  body.pda-app #pda-lcd .shelter-card .s-body { grid-column: 2; min-width: 0; }
+  body.pda-app #pda-lcd .shelter-card .s-desc { font-size: 11px; } /* 전폭 회복분만큼 본문 확대 */
   body.pda-app #pda-lcd .shelter-card .s-body .pixel-btn { padding: 3px 12px; }
   body.pda-app #pda-lcd .prep-row .p-eff { flex: 1 1 auto; min-width: 0; }
   body.pda-app #pda-lcd .prep-row .pixel-btn { margin-left: auto !important; } /* 인라인 margin 6px보다 우선 — 버튼 우측 정렬 */
@@ -725,12 +724,12 @@
   #modal-back.ev-visitor #modal { max-width: 380px; width: auto; min-width: 260px; margin-bottom: 6vh; }
   #modal-back.ev-visitor #modal h2 { text-align: center; margin-bottom: 8px; }
   .shelter-card {
-    display: flex; gap: 10px; align-items: center;
     border: 2px solid var(--panel-border); border-radius: 4px;
     padding: 9px 10px; margin-bottom: 8px; background: #201b16;
   }
-  .shelter-card .s-emoji { font-size: 26px; }
-  .shelter-card .s-body { flex: 1; }
+  .shelter-card .s-head { display: flex; align-items: center; gap: 8px; } /* 헤더 = 아이콘+이름 한 줄 */
+  .shelter-card .s-emoji { font-size: 26px; line-height: 1; }
+  .shelter-card .s-body { margin-top: 3px; } /* 본문 = 헤더 아래 전폭 문단 */
   .shelter-card .s-body .pixel-btn { display: block; margin: 3px 0 0 auto; } /* 칩 바로 아래 우측 — 별도 행 갭 제거 */
   .shelter-card .s-name { font-size: 13px; }
   .shelter-card .s-desc { font-size: 10px; color: var(--text-dim); line-height: 1.5; }
