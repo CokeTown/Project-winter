@@ -1641,9 +1641,11 @@ const DEFS = {
       const g = new THREE.Group();
       const bk = B(g, 0.9, 0.62, 0.05, 0x16141c, 0, 0.62, 0); bk.rotation.x = -0.07; bk.castShadow = true; // 검은 패널
       const neonMat = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 1.5 });
-      const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); };
+      const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); return s; };
       // V I P — 글자만 크게 (디렉터 2026-07-09: 밑줄 제거, VIP 단독)
-      seg(-0.26, 0.66, 0.045, 0.3); seg(-0.15, 0.66, 0.045, 0.3); seg(-0.205, 0.535, 0.07, 0.045); // V
+      // V = 대각 두 획 (디렉터 2026-07-17: 기둥+밑바 구성이 'U'로 읽히던 것 교정)
+      seg(-0.2325, 0.655, 0.045, 0.32).rotation.z = 0.19;
+      seg(-0.1775, 0.655, 0.045, 0.32).rotation.z = -0.19;
       seg(-0.02, 0.64, 0.045, 0.34);                                                                 // I
       seg(0.12, 0.64, 0.045, 0.34); seg(0.21, 0.755, 0.14, 0.045); seg(0.21, 0.63, 0.14, 0.045); seg(0.26, 0.695, 0.045, 0.09); // P
       // 실제 광원 (디렉터 2026-07-09): 상시 점광 — 주변 벽·바닥에 네온 빛이 번진다 (그림자 없음, 유지비 0)
@@ -1662,16 +1664,17 @@ const DEFS = {
         B(p, 0.024, 0.024, 0.058, shade(METAL, 1.1), bx, by, 0);                                       // 마운트 볼트 4
       for (const [dx, dy, dw, dh] of [[-0.25, 0.44, 0.1, 0.05], [0.3, 0.82, 0.08, 0.04], [0.05, 0.38, 0.06, 0.06]])
         B(p, dw, dh, 0.052, 0x221f28, dx, dy, 0);                                                      // 표면 얼룩(먼지·그을음)
-      const seg = (x, y, w, h, dim) => {
-        B(p, w + 0.014, h + 0.014, 0.024, shade(c, 0.35), x, y, 0.038);                                // 튜브 외피(어두운 유리)
+      const seg = (x, y, w, h, dim, rz = 0) => {
+        const sh2 = B(p, w + 0.014, h + 0.014, 0.024, shade(c, 0.35), x, y, 0.038);                    // 튜브 외피(어두운 유리)
+        if (rz) sh2.rotation.z = rz;
         const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03),
           new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: dim ? 0.45 : 1.6 }));
-        s.position.set(x, y, 0.05); s.userData.glow = true; p.add(s);
-        // 새들 클립 — 긴 획에만(세로획 h>0.2 중앙)
-        if (h > 0.2) B(p, w + 0.03, 0.016, 0.02, METAL, x, y, 0.036);
+        s.position.set(x, y, 0.05); if (rz) s.rotation.z = rz; s.userData.glow = true; p.add(s);
+        // 새들 클립 — 긴 수직 획에만(대각 획 제외)
+        if (h > 0.2 && !rz) B(p, w + 0.03, 0.016, 0.02, METAL, x, y, 0.036);
       };
-      // V I P — build와 동일 좌표. P의 우측 세로획 하나만 반죽음(폐허의 네온 — 실루엣 불변)
-      seg(-0.26, 0.66, 0.045, 0.3); seg(-0.15, 0.66, 0.045, 0.3); seg(-0.205, 0.535, 0.07, 0.045);
+      // V I P — build와 동일 조형(V=대각 두 획). P의 우측 세로획 하나만 반죽음(폐허의 네온 — 실루엣 불변)
+      seg(-0.2325, 0.655, 0.045, 0.32, false, 0.19); seg(-0.1775, 0.655, 0.045, 0.32, false, -0.19);
       seg(-0.02, 0.64, 0.045, 0.34);
       seg(0.12, 0.64, 0.045, 0.34); seg(0.21, 0.755, 0.14, 0.045); seg(0.21, 0.63, 0.14, 0.045); seg(0.26, 0.695, 0.045, 0.09, true);
       // 배선 — 패널 하단→트랜스 박스 연속 케이블(겹침 세그먼트 — 점선처럼 끊기면 안 된다, 1차 캡처 검거)
@@ -1697,19 +1700,19 @@ const DEFS = {
       const g = new THREE.Group();
       const bk = B(g, 0.9, 0.5, 0.05, 0x14161c, 0, 0.56, 0); bk.rotation.x = -0.07; bk.castShadow = true;
       const neonMat = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 1.5 });
-      const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); };
+      const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); return s; };
       // O N   A I R — 다섯 글자 전부 픽셀 튜브 (디렉터 2026-07-09: "ON"만은 금지, 무조건 ON AIR)
       const CY = 0.6, H = 0.2, T = 0.032;
       // O
       seg(-0.37, CY, T, H); seg(-0.27, CY, T, H); seg(-0.32, CY + 0.09, 0.08, T); seg(-0.32, CY - 0.09, 0.08, T);
-      // N (좌우 기둥 + 중간 사선 흉내 가로바)
-      seg(-0.19, CY, T, H); seg(-0.09, CY, T, H); seg(-0.14, CY + 0.03, 0.06, T);
+      // N (좌우 기둥 + 실제 대각 획 — 디렉터 2026-07-17: 가로바 구성이 'H'로 읽히던 것 교정)
+      seg(-0.19, CY, T, H); seg(-0.09, CY, T, H); seg(-0.14, CY, T, 0.21).rotation.z = 0.46;
       // A (좌우 기둥 + 상단·중간 바)
       seg(0.03, CY, T, H); seg(0.13, CY, T, H); seg(0.08, CY + 0.09, 0.08, T); seg(0.08, CY - 0.01, 0.08, T);
       // I
       seg(0.21, CY, T, H);
-      // R (좌기둥 + 상단·중간 바 + 우상단 기둥 + 우하단 다리)
-      seg(0.29, CY, T, H); seg(0.345, CY + 0.09, 0.09, T); seg(0.345, CY, 0.09, T); seg(0.39, CY + 0.045, T, 0.09); seg(0.39, CY - 0.055, T, 0.1);
+      // R (좌기둥 + 상단·중간 바 + 우상단 기둥 + 대각 다리 — 다리도 사선이 R답다)
+      seg(0.29, CY, T, H); seg(0.345, CY + 0.09, 0.09, T); seg(0.345, CY, 0.09, T); seg(0.39, CY + 0.045, T, 0.09); seg(0.3725, CY - 0.05, T, 0.12).rotation.z = 0.5;
       // 실제 광원 (디렉터 2026-07-09): 상시 점광 — 파란 빛이 주변에 번진다 (그림자 없음, 유지비 0)
       const lt = new THREE.PointLight(c, 1.1, 3.6, 1.7); lt.position.set(0, 0.6, 0.35); g.add(lt);
       return g;
@@ -1726,19 +1729,20 @@ const DEFS = {
         B(p, 0.024, 0.024, 0.058, shade(METAL, 1.1), bx, by, 0);
       for (const [dx, dy, dw, dh] of [[0.28, 0.42, 0.09, 0.05], [-0.32, 0.72, 0.07, 0.04]])
         B(p, dw, dh, 0.052, 0x1e2028, dx, dy, 0);
-      const seg = (x, y, w, h, dim) => {
-        B(p, w + 0.012, h + 0.012, 0.024, shade(c, 0.35), x, y, 0.038);
+      const seg = (x, y, w, h, dim, rz = 0) => {
+        const sh2 = B(p, w + 0.012, h + 0.012, 0.024, shade(c, 0.35), x, y, 0.038);
+        if (rz) sh2.rotation.z = rz;
         const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03),
           new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: dim ? 0.45 : 1.6 }));
-        s.position.set(x, y, 0.05); s.userData.glow = true; p.add(s);
-        if (h > 0.15) B(p, w + 0.026, 0.014, 0.02, METAL, x, y, 0.036);
+        s.position.set(x, y, 0.05); if (rz) s.rotation.z = rz; s.userData.glow = true; p.add(s);
+        if (h > 0.15 && !rz) B(p, w + 0.026, 0.014, 0.02, METAL, x, y, 0.036);
       };
       const CY = 0.6, H = 0.2, T = 0.032;
       seg(-0.37, CY, T, H); seg(-0.27, CY, T, H); seg(-0.32, CY + 0.09, 0.08, T); seg(-0.32, CY - 0.09, 0.08, T);
-      seg(-0.19, CY, T, H); seg(-0.09, CY, T, H); seg(-0.14, CY + 0.03, 0.06, T);
+      seg(-0.19, CY, T, H); seg(-0.09, CY, T, H); seg(-0.14, CY, T, 0.21, false, 0.46);   // N 대각(build 동일 조형)
       seg(0.03, CY, T, H); seg(0.13, CY, T, H); seg(0.08, CY + 0.09, 0.08, T); seg(0.08, CY - 0.01, 0.08, T);
       seg(0.21, CY, T, H);
-      seg(0.29, CY, T, H); seg(0.345, CY + 0.09, 0.09, T); seg(0.345, CY, 0.09, T); seg(0.39, CY + 0.045, T, 0.09); seg(0.39, CY - 0.055, T, 0.1, true);
+      seg(0.29, CY, T, H); seg(0.345, CY + 0.09, 0.09, T); seg(0.345, CY, 0.09, T); seg(0.39, CY + 0.045, T, 0.09); seg(0.3725, CY - 0.05, T, 0.12, true, 0.5); // R 대각 다리(반죽음 유지)
       // 연속 케이블 — neonvip와 동일 문법(점선 금지)
       for (let i = 0; i < 10; i++) {
         const t = i / 9, x = 0.32 - 0.23 * t, y = 0.29 - 0.195 * t - Math.sin(Math.PI * t) * 0.045;

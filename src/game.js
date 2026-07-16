@@ -6143,6 +6143,15 @@ function buildDiscoveryScene(defId, colorIdx, tier) {
     // #192 클로즈업 등급: 컷 전용 하이디테일 빌더(def.closeup, 폴리 4~5k 허용)가 있으면 우선.
     //   배치본과 실루엣·팔레트 동일이 규약(디렉터 오더 2026-07-16) — 없으면 배치본 그대로.
     const item = (def.closeup || def.build)(def.colors ? def.colors[colorIdx] : 0, colorIdx || 0, null, tier || 3);
+    // #192 후속(디렉터 2026-07-17): 광원 가구는 컷에서도 빛난다 — 배치본의 def.light를 컷 씬에 재현.
+    //   (네온은 build 내장 광원이라 원래 빛남 — LED 바·랜턴·양초류처럼 buildItemGroup이 광원을 다는
+    //   def.light 계열은 컷에서 광원이 통째로 빠져 있었다. 위치는 아이템 로컬 — 스케일에 같이 접힌다.)
+    if (def.light) {
+      const L = def.light;
+      const pl = new THREE.PointLight(L.color || 0xffcf9a, L.intensity || 6, L.dist || 6, 1.6);
+      pl.position.set(L.x || 0, L.y || 1.0, L.z || 0);
+      item.add(pl);
+    }
     holder.add(item);
     const bb = new THREE.Box3().setFromObject(item); const sz = new THREE.Vector3(); bb.getSize(sz); const ctr = new THREE.Vector3(); bb.getCenter(ctr);
     const sc = 1.75 / (Math.max(sz.x, sz.y, sz.z) || 1);
