@@ -6212,6 +6212,103 @@ function playGeigerVignette() {
   }, 8200);
 }
 
+/* ── 2.0-(b) 국경 개통 비네트 (디렉터 확정: 인엔진): 「국경 길」 완공의 순간 ──
+   동부 아트 디렉션(붉은 노을 팔레트) 첫 착지: 검문소 부스 창에 불이 들어오고, 줄무늬 차단기가 올라가고,
+   내가 건 가로등이 순서대로 켜지고, 노을 지평선 끝 항구 크레인 실루엣을 향해 카메라가 나아간다.
+   신규 문자열 0 — 문안은 proj.eastgate.doneToast/memoir가 담당. 트리거: east.gateOpen → eastGatePending → drain. */
+function playEastGateVignette() {
+  playVignette(() => {
+    const scene = new THREE.Scene();
+    // 하늘 — 세로 그라디언트(심홍 → 주황 지평선), 동부 팔레트 정본
+    const skc = document.createElement('canvas'); skc.width = 8; skc.height = 256;
+    const skg = skc.getContext('2d'); const skr = skg.createLinearGradient(0, 0, 0, 256);
+    skr.addColorStop(0, '#1c090d'); skr.addColorStop(0.45, '#4a1a16'); skr.addColorStop(0.78, '#93401f'); skr.addColorStop(1, '#c56a2e');
+    skg.fillStyle = skr; skg.fillRect(0, 0, 8, 256);
+    const skTex = new THREE.CanvasTexture(skc); skTex.colorSpace = THREE.SRGBColorSpace;
+    const sky = new THREE.Mesh(new THREE.PlaneGeometry(90, 26), new THREE.MeshBasicMaterial({ map: skTex, fog: false, depthWrite: false }));
+    sky.position.set(0, 8.5, -30); scene.add(sky);
+    scene.fog = new THREE.Fog(0x381612, 10, 34);
+    scene.add(new THREE.AmbientLight(0xb06a48, 0.5));
+    const sun = new THREE.DirectionalLight(0xff9a58, 0.85); sun.position.set(2, 3.5, -8); scene.add(sun);
+    const M = c => new THREE.MeshLambertMaterial({ color: c });
+    const bx3 = (g, w, h, d, c, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); m.position.set(x, y, z); g.add(m); return m; };
+    // 지면 + 동쪽으로 달아나는 길(중앙 대시)
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(70, 70), M(0x33201c)); ground.rotation.x = -Math.PI / 2; scene.add(ground);
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 44), M(0x27201f)); road.rotation.x = -Math.PI / 2; road.position.set(0, 0.01, -14); scene.add(road);
+    for (let i = 0; i < 9; i++) { const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.7), M(0x6a5240)); dash.rotation.x = -Math.PI / 2; dash.position.set(0, 0.02, -2 - i * 2.6); scene.add(dash); }
+    // 검문소 부스(우측) — 깨진 유리 갈아 끼운 창(stage2 서사)에 불이 들어온다
+    const booth = new THREE.Group(); booth.position.set(2.7, 0, -5.6); scene.add(booth);
+    bx3(booth, 1.5, 2.1, 1.4, 0x4a3a34, 0, 1.05, 0);
+    bx3(booth, 1.7, 0.14, 1.6, 0x352a26, 0, 2.17, 0);                                     // 지붕 슬래브
+    const winMat = new THREE.MeshBasicMaterial({ color: 0xffc98a, transparent: true, opacity: 0 });
+    const winPane = new THREE.Mesh(new THREE.PlaneGeometry(0.72, 0.6), winMat);
+    winPane.position.set(-0.76, 1.35, 0); winPane.rotation.y = -Math.PI / 2; booth.add(winPane);
+    const winGlow = new THREE.PointLight(0xffc98a, 0, 6, 1.8); winGlow.position.set(-1.1, 1.4, 0); booth.add(winGlow);
+    // 차단기 — 지주(부스 옆) + 줄무늬 팔(길 가로지름), 피벗 상승
+    const post = new THREE.Group(); post.position.set(2.0, 0, -4.6); scene.add(post);
+    bx3(post, 0.3, 1.15, 0.3, 0x5a5048, 0, 0.575, 0);
+    const armPivot = new THREE.Group(); armPivot.position.set(0, 1.02, 0); post.add(armPivot);
+    for (let i = 0; i < 7; i++) bx3(armPivot, 0.6, 0.12, 0.1, i % 2 ? 0xd8d0c2 : 0xb0402e, -0.3 - i * 0.6, 0, 0); // 빨강/흰 줄무늬
+    bx3(armPivot, 0.1, 0.1, 0.12, 0xd8d0c2, -4.25, 0, 0);                                  // 팔 끝 캡
+    // 가로등 2기(stage3 "등을 걸고") — 순차 점등
+    const lamps = [];
+    for (const lz of [-9, -15]) {
+      const lg = new THREE.Group(); lg.position.set(-2.0, 0, lz); scene.add(lg);
+      bx3(lg, 0.14, 3.0, 0.14, 0x3a332e, 0, 1.5, 0);
+      bx3(lg, 0.7, 0.1, 0.14, 0x3a332e, 0.3, 2.98, 0);
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.12, 0.2), new THREE.MeshLambertMaterial({ color: 0x2c2824, emissive: 0xffcf9a, emissiveIntensity: 0 }));
+      head.position.set(0.62, 2.92, 0); lg.add(head);
+      const pl = new THREE.PointLight(0xffcf9a, 0, 7, 1.7); pl.position.set(0.62, 2.7, 0); lg.add(pl);
+      lamps.push({ head, pl });
+    }
+    // 지평선 — 항구 도시 실루엣(크레인 2기 + 건물 블록), 노을 앞 역광
+    const cityMat = new THREE.MeshBasicMaterial({ color: 0x1e0e10, fog: false });
+    const cityG = new THREE.Group(); cityG.position.set(0, 0, -27); scene.add(cityG);
+    for (const [cx, cw, ch] of [[-9, 2.4, 2.6], [-6.2, 1.8, 4.2], [-3.4, 2.2, 3.1], [4.2, 2.0, 3.6], [7.6, 2.6, 2.4], [10.5, 1.8, 3.2]])
+      bx3(cityG, cw, ch, 1, 0x1e0e10, cx, ch / 2, 0);
+    for (const kx of [1.2, 6.0]) {                                                          // 항만 크레인(부산형 항구 시그니처)
+      const kr = new THREE.Group(); kr.position.set(kx, 0, 0); cityG.add(kr);
+      const kb = (w, h, x, y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.5), cityMat); m.position.set(x, y, 0); kr.add(m); };
+      kb(0.32, 5.2, 0, 2.6); kb(3.4, 0.26, 1.2, 5.1); kb(0.14, 1.5, 2.6, 4.3); kb(0.9, 0.5, 2.6, 3.4);
+    }
+    // 태양 글로우(라디얼 스프라이트) — 지평선 위, 후반 부풀어 오른다
+    const gc2 = document.createElement('canvas'); gc2.width = gc2.height = 128;
+    const gg3 = gc2.getContext('2d'); const grd2 = gg3.createRadialGradient(64, 64, 4, 64, 64, 62);
+    grd2.addColorStop(0, 'rgba(255,170,90,0.95)'); grd2.addColorStop(0.5, 'rgba(255,130,60,0.35)'); grd2.addColorStop(1, 'rgba(255,130,60,0)');
+    gg3.fillStyle = grd2; gg3.fillRect(0, 0, 128, 128);
+    const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc2), transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+    sunGlow.scale.set(16, 9, 1); sunGlow.position.set(2.5, 2.6, -26); scene.add(sunGlow);
+    // 부유 먼지(노을 역광 모트)
+    const mtN = 40, mtPos = new Float32Array(mtN * 3);
+    for (let i = 0; i < mtN; i++) { mtPos[i * 3] = (Math.random() - 0.5) * 10; mtPos[i * 3 + 1] = 0.3 + Math.random() * 3; mtPos[i * 3 + 2] = -7 - Math.random() * 11; } // 카메라 종점(z −2.2)보다 항상 뒤 — 근접 대형 사각 방지
+    const mtGeo = new THREE.BufferGeometry(); mtGeo.setAttribute('position', new THREE.BufferAttribute(mtPos, 3));
+    const motes = new THREE.Points(mtGeo, new THREE.PointsMaterial({ color: 0xffb070, size: 0.045, transparent: true, opacity: 0.5, depthWrite: false }));
+    scene.add(motes);
+    const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.1, 80);
+    const smooth = (x) => { const c = Math.min(1, Math.max(0, x)); return c * c * (3 - 2 * c); };
+    const update = (t) => {
+      const now = performance.now();
+      // ① 부스 창 점등(살짝 깜빡이며 t0.1~0.2 안착)
+      const wOn = smooth((t - 0.08) / 0.1);
+      const flick = t < 0.22 ? (Math.sin(now * 0.05) > -0.4 ? 1 : 0.3) : 1;
+      winMat.opacity = 0.92 * wOn * flick; winGlow.intensity = 1.5 * wOn * flick;
+      // ② 차단기 상승 t0.28~0.62 — 끝에서 살짝 반동
+      const aT = smooth((t - 0.28) / 0.34);
+      armPivot.rotation.z = -1.22 * aT + (aT >= 1 ? Math.sin(now * 0.02) * 0.015 : 0);
+      // ③ 가로등 순차 점등(팝)
+      lamps.forEach((L, i) => { const on = smooth((t - (0.5 + i * 0.13)) / 0.06); L.head.material.emissiveIntensity = 1.6 * on; L.pl.intensity = 2.2 * on; });
+      // ④ 노을 부풂 + 카메라 — 길을 따라 동쪽으로
+      sunGlow.material.opacity = 0.4 + 0.25 * smooth((t - 0.45) / 0.4);
+      const mp = motes.geometry.attributes.position.array;
+      for (let i = 0; i < mtN; i++) mp[i * 3 + 1] += Math.sin(now * 0.001 + i) * 0.0012;
+      motes.geometry.attributes.position.needsUpdate = true;
+      camera.position.set(-0.5 + Math.sin(now * 0.0007) * 0.05, 1.55, 2.4 - smooth(t / 0.96) * 4.6);
+      camera.lookAt(0.3, 1.5 + t * 0.3, -20);
+    };
+    return { scene, camera, update };
+  }, 9000);
+}
+
 /* ── #199 무너진 입구 인엔진 연출 (디렉터 2026-07-17, 레퍼런스 Box.mp4 — 상자 개봉만 참조) ──
    사진 카드 폐지: ①복셀 문 씬(문틈 안은 완전한 어둠) ②하단 선택 UI(들어간다/그냥 간다)
    ③입장 시 상자 개봉 버스트 — 예열 흔들림 → 뚜껑 팝 + 수직 광선 부챗살(전리품 색) + 전리품 부유 + 파편 산개.
@@ -6418,6 +6515,16 @@ function drainDiscoveryQueue() {
     if (!(mb0 && mb0.classList.contains('show'))) {
       state.geigerPending = false;
       playGeigerVignette();
+      scheduleSave();
+      return;
+    }
+  }
+  // 2.0-(b) 국경 개통 비네트: 「국경 길」 3단 완공 직후 — 완공 토스트·모달이 걷힌 뒤 개통 컷 1회.
+  if (state.eastGatePending && !vignetteActive && !paused && !titleVisible && !state.exp) {
+    const mb1 = document.getElementById('modal-back');
+    if (!(mb1 && mb1.classList.contains('show'))) {
+      state.eastGatePending = false;
+      playEastGateVignette();
       scheduleSave();
       return;
     }
@@ -11473,6 +11580,7 @@ window.__shelter = {
   cityOf, // 2.0-α QA: 도시 파생 게이트(셸터→도시 매핑·기록 필드 검증)
   playCollapseVignette, // #199 QA: 문+상자 연출 직접 구동(캡처 검수용)
   playGeigerVignette, // 2.0-(b) QA: 가이거 계수기 비네트 직접 구동(캡처 검수용)
+  playEastGateVignette, // 2.0-(b) QA: 국경 개통 비네트 직접 구동(캡처 검수용)
   regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
   shelterUnlocked, // 2.0-(b) QA: 동부 관문 이주 게이트(eastGateOpen) 검증
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
