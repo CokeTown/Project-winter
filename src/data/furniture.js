@@ -1158,6 +1158,32 @@ const DEFS = {
       B(g, 0.075, 0.05, 0.075, shade(c, 0.6), 0, 1.78, 0);                   // 탑 캡
       B(g, 0.05, 0.02, 0.05, 0x1c1e22, 0.09, 0.06, 0.06);                    // 전원 버튼
       return g;
+    },
+    // #192 클로즈업 — 방열 홈·LED 다이오드 열·디퓨저 레일·케이블·고무 패드. 실루엣·발광 스트립은 build 동일.
+    closeup(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.16, 0.19, 0.05, shade(c, 0.7), 0, 0.025, 0, 24);              // 베이스(고세그)
+      Cyl(g, 0.185, 0.195, 0.012, 0x1c1e22, 0, 0.006, 0, 24);                // 고무 패드
+      B(g, 0.07, 1.7, 0.07, shade(c, 0.85), 0, 0.9, 0);                      // 바디
+      for (const hx of [-0.026, 0.026]) B(g, 0.012, 1.62, 0.072, shade(c, 0.62), hx, 0.9, 0); // 방열 홈 2줄
+      for (const hy of [0.3, 0.62, 0.94, 1.26, 1.58]) B(g, 0.072, 0.014, 0.072, shade(c, 0.6), 0, hy, 0); // 분절 링
+      for (const rx of [-0.024, 0.024]) B(g, 0.012, 1.6, 0.03, shade(c, 0.5), rx, 0.92, 0.042); // 디퓨저 레일
+      const strip = B(g, 0.035, 1.6, 0.02, 0xeaf4ff, 0, 0.92, 0.045);
+      strip.material.emissive = new THREE.Color(0xdfeaff);
+      strip.material.emissiveIntensity = 1.6; strip.userData.glow = true;
+      for (let i = 0; i < 16; i++) {                                          // LED 다이오드 점열(코어 위 고휘도 점)
+        const d = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.016, 0.008),
+          new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2.2 }));
+        d.position.set(0, 0.18 + i * 0.1, 0.056); d.userData.glow = true; g.add(d);
+      }
+      B(g, 0.075, 0.05, 0.075, shade(c, 0.6), 0, 1.78, 0);                   // 탑 캡
+      B(g, 0.05, 0.03, 0.05, shade(c, 0.45), 0, 1.815, 0);                   // 캡 상단 단
+      B(g, 0.05, 0.02, 0.05, 0x1c1e22, 0.09, 0.06, 0.06);                    // 전원 버튼
+      B(g, 0.014, 0.01, 0.014, 0x8fc45a, 0.09, 0.072, 0.06);                 // 전원 파일럿 점
+      B(g, 0.05, 0.024, 0.062, 0xd8d4cc, 0, 1.42, 0.038);                    // 사양 라벨
+      const CABLE = [[0.05, 0.1, 0.05, 0.3], [0.09, 0.06, 0.08, 0.7], [0.14, 0.035, 0.1, 1.1]]; // 늘어진 전원 케이블
+      for (const [cx, cy2, cz, rz] of CABLE) B(g, 0.014, 0.07, 0.014, 0x24262a, cx, cy2, cz).rotation.z = rz;
+      return g;
     }
   },
   firstaidbox: {
@@ -1623,6 +1649,41 @@ const DEFS = {
       // 실제 광원 (디렉터 2026-07-09): 상시 점광 — 주변 벽·바닥에 네온 빛이 번진다 (그림자 없음, 유지비 0)
       const lt = new THREE.PointLight(c, 1.1, 3.6, 1.7); lt.position.set(0, 0.66, 0.35); g.add(lt);
       return g;
+    },
+    // #192 클로즈업 — 금속 프레임·마운트 볼트·튜브 이중층(코어+새들 클립)·늘어진 배선·트랜스박스. VIP 레이아웃 build 동일.
+    closeup(c) {
+      const g = new THREE.Group();
+      const p = new THREE.Group(); p.rotation.x = -0.07; g.add(p);
+      const METAL = 0x8a8f96;
+      const bk = B(p, 0.9, 0.62, 0.05, 0x16141c, 0, 0.62, 0); bk.castShadow = true;
+      for (const ey of [0.315, -0.315]) B(p, 0.92, 0.02, 0.055, shade(METAL, 0.7), 0, 0.62 + ey, 0);   // 상하 프레임 몰딩
+      for (const ex of [-0.46, 0.46]) B(p, 0.02, 0.66, 0.055, shade(METAL, 0.7), ex, 0.62, 0);         // 좌우 몰딩
+      for (const [bx, by] of [[-0.42, 0.9], [0.42, 0.9], [-0.42, 0.34], [0.42, 0.34]])
+        B(p, 0.024, 0.024, 0.058, shade(METAL, 1.1), bx, by, 0);                                       // 마운트 볼트 4
+      for (const [dx, dy, dw, dh] of [[-0.25, 0.44, 0.1, 0.05], [0.3, 0.82, 0.08, 0.04], [0.05, 0.38, 0.06, 0.06]])
+        B(p, dw, dh, 0.052, 0x221f28, dx, dy, 0);                                                      // 표면 얼룩(먼지·그을음)
+      const seg = (x, y, w, h, dim) => {
+        B(p, w + 0.014, h + 0.014, 0.024, shade(c, 0.35), x, y, 0.038);                                // 튜브 외피(어두운 유리)
+        const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03),
+          new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: dim ? 0.45 : 1.6 }));
+        s.position.set(x, y, 0.05); s.userData.glow = true; p.add(s);
+        // 새들 클립 — 긴 획에만(세로획 h>0.2 중앙)
+        if (h > 0.2) B(p, w + 0.03, 0.016, 0.02, METAL, x, y, 0.036);
+      };
+      // V I P — build와 동일 좌표. P의 우측 세로획 하나만 반죽음(폐허의 네온 — 실루엣 불변)
+      seg(-0.26, 0.66, 0.045, 0.3); seg(-0.15, 0.66, 0.045, 0.3); seg(-0.205, 0.535, 0.07, 0.045);
+      seg(-0.02, 0.64, 0.045, 0.34);
+      seg(0.12, 0.64, 0.045, 0.34); seg(0.21, 0.755, 0.14, 0.045); seg(0.21, 0.63, 0.14, 0.045); seg(0.26, 0.695, 0.045, 0.09, true);
+      // 배선 — 패널 하단→트랜스 박스 연속 케이블(겹침 세그먼트 — 점선처럼 끊기면 안 된다, 1차 캡처 검거)
+      for (let i = 0; i < 10; i++) {
+        const t = i / 9, x = -0.3 + 0.28 * t, y = 0.31 - 0.215 * t - Math.sin(Math.PI * t) * 0.05;
+        const w = B(p, 0.016, 0.06, 0.016, 0x24222a, x, y, 0.012 + 0.01 * Math.sin(Math.PI * t));
+        w.rotation.z = 0.9 - 0.9 * t;
+      }
+      B(p, 0.12, 0.07, 0.05, shade(METAL, 0.55), 0, 0.05, 0.02);                                       // 트랜스 박스
+      B(p, 0.02, 0.014, 0.052, 0x8fc45a, 0.035, 0.06, 0.021);                                          // 파일럿 LED(비발광 점)
+      const lt = new THREE.PointLight(c, 1.1, 3.6, 1.7); lt.position.set(0, 0.66, 0.35); g.add(lt);    // 배치본과 동일 광원
+      return g;
     }
   },
   // 도심 ② 네온 사인 「ON AIR」 — 파랑 계열. 죽은 방송국의 파편.
@@ -1652,6 +1713,42 @@ const DEFS = {
       // 실제 광원 (디렉터 2026-07-09): 상시 점광 — 파란 빛이 주변에 번진다 (그림자 없음, 유지비 0)
       const lt = new THREE.PointLight(c, 1.1, 3.6, 1.7); lt.position.set(0, 0.6, 0.35); g.add(lt);
       return g;
+    },
+    // #192 클로즈업 — neonvip와 같은 문법(프레임·볼트·튜브 이중층·배선). ON AIR 레이아웃 build 동일, R 다리 반죽음.
+    closeup(c) {
+      const g = new THREE.Group();
+      const p = new THREE.Group(); p.rotation.x = -0.07; g.add(p);
+      const METAL = 0x8a8f96;
+      const bk = B(p, 0.9, 0.5, 0.05, 0x14161c, 0, 0.56, 0); bk.castShadow = true;
+      for (const ey of [0.26, -0.26]) B(p, 0.92, 0.02, 0.055, shade(METAL, 0.7), 0, 0.56 + ey, 0);
+      for (const ex of [-0.46, 0.46]) B(p, 0.02, 0.54, 0.055, shade(METAL, 0.7), ex, 0.56, 0);
+      for (const [bx, by] of [[-0.42, 0.78], [0.42, 0.78], [-0.42, 0.34], [0.42, 0.34]])
+        B(p, 0.024, 0.024, 0.058, shade(METAL, 1.1), bx, by, 0);
+      for (const [dx, dy, dw, dh] of [[0.28, 0.42, 0.09, 0.05], [-0.32, 0.72, 0.07, 0.04]])
+        B(p, dw, dh, 0.052, 0x1e2028, dx, dy, 0);
+      const seg = (x, y, w, h, dim) => {
+        B(p, w + 0.012, h + 0.012, 0.024, shade(c, 0.35), x, y, 0.038);
+        const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03),
+          new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: dim ? 0.45 : 1.6 }));
+        s.position.set(x, y, 0.05); s.userData.glow = true; p.add(s);
+        if (h > 0.15) B(p, w + 0.026, 0.014, 0.02, METAL, x, y, 0.036);
+      };
+      const CY = 0.6, H = 0.2, T = 0.032;
+      seg(-0.37, CY, T, H); seg(-0.27, CY, T, H); seg(-0.32, CY + 0.09, 0.08, T); seg(-0.32, CY - 0.09, 0.08, T);
+      seg(-0.19, CY, T, H); seg(-0.09, CY, T, H); seg(-0.14, CY + 0.03, 0.06, T);
+      seg(0.03, CY, T, H); seg(0.13, CY, T, H); seg(0.08, CY + 0.09, 0.08, T); seg(0.08, CY - 0.01, 0.08, T);
+      seg(0.21, CY, T, H);
+      seg(0.29, CY, T, H); seg(0.345, CY + 0.09, 0.09, T); seg(0.345, CY, 0.09, T); seg(0.39, CY + 0.045, T, 0.09); seg(0.39, CY - 0.055, T, 0.1, true);
+      // 연속 케이블 — neonvip와 동일 문법(점선 금지)
+      for (let i = 0; i < 10; i++) {
+        const t = i / 9, x = 0.32 - 0.23 * t, y = 0.29 - 0.195 * t - Math.sin(Math.PI * t) * 0.045;
+        const w = B(p, 0.016, 0.06, 0.016, 0x22242a, x, y, 0.012 + 0.01 * Math.sin(Math.PI * t));
+        w.rotation.z = -(0.9 - 0.9 * t);
+      }
+      B(p, 0.12, 0.07, 0.05, shade(METAL, 0.55), 0.06, 0.05, 0.02);
+      B(p, 0.02, 0.014, 0.052, 0x8fc45a, 0.095, 0.06, 0.021);
+      const lt = new THREE.PointLight(c, 1.1, 3.6, 1.7); lt.position.set(0, 0.6, 0.35); g.add(lt);
+      return g;
     }
   },
   // 도심 ③ 양복 랙 — 행거 스탠드에 걸린 재킷. 폐허 이전의 출근길.
@@ -1674,6 +1771,46 @@ const DEFS = {
       B(g, 0.03, 0.22, 0.022, shade(c, 0.6), 0, 1.08, 0.055);          // 타이
       jk(0.09, 0.42, -0.21, 1.06, 0, shade(c, 0.9));                   // 왼팔
       jk(0.09, 0.42, 0.21, 1.06, 0, shade(c, 0.9));                    // 오른팔
+      return g;
+    },
+    // #192 클로즈업 — 라펠·단추·행커치프·소맷단·옷 주름·후크 디테일. 실루엣(스탠드+재킷)은 build 동일.
+    closeup(c) {
+      const g = new THREE.Group();
+      const METAL = 0xb0b4ba;
+      Cyl(g, 0.18, 0.18, 0.03, 0x4a4640, 0, 0.02, 0, 20);              // 받침(고세그)
+      Cyl(g, 0.19, 0.19, 0.012, shade(0x4a4640, 0.7), 0, 0.006, 0, 20);// 받침 하단 몰딩
+      Cyl(g, 0.02, 0.02, 1.5, 0x6a6660, 0, 0.75, 0, 10);               // 기둥
+      for (const cy of [0.5, 1.0]) Cyl(g, 0.028, 0.028, 0.025, shade(0x6a6660, 0.75), 0, cy, 0, 10); // 이음 칼라 2
+      B(g, 0.5, 0.025, 0.025, 0x6a6660, 0, 1.48, 0);                   // 가로 봉
+      for (const ex of [-0.25, 0.25]) B(g, 0.02, 0.035, 0.035, shade(0x6a6660, 0.7), ex, 1.48, 0); // 봉 끝 캡
+      // 옷걸이 — 어깨목 + 후크(작은 박스 체인 곡선)
+      B(g, 0.36, 0.05, 0.06, 0x8a7a5c, 0, 1.4, 0);
+      B(g, 0.016, 0.05, 0.016, METAL, 0, 1.45, 0);
+      B(g, 0.03, 0.016, 0.016, METAL, 0.012, 1.475, 0);
+      B(g, 0.016, 0.028, 0.016, METAL, 0.026, 1.463, 0);
+      const jk = (w, h, x, y, z2, col) => { const m = B(g, w, h, 0.09, col, x, y, z2); m.castShadow = true; return m; };
+      jk(0.4, 0.14, 0, 1.3, 0, c);                                     // 어깨판
+      jk(0.34, 0.5, 0, 1.02, 0, c);                                    // 몸판
+      // 라펠 — V자 어두운 패널 2 + 스티치 라인
+      const lp1 = B(g, 0.09, 0.3, 0.02, shade(c, 0.8), -0.075, 1.16, 0.052); lp1.rotation.z = 0.32;
+      const lp2 = B(g, 0.09, 0.3, 0.02, shade(c, 0.8), 0.075, 1.16, 0.052); lp2.rotation.z = -0.32;
+      B(g, 0.06, 0.34, 0.02, 0xe8e4d8, 0, 1.1, 0.05);                  // 셔츠 브이
+      for (const sx of [-0.045, 0.045]) { const cl = B(g, 0.05, 0.05, 0.022, 0xf2eee2, sx, 1.245, 0.052); cl.rotation.z = sx > 0 ? -0.5 : 0.5; } // 셔츠 칼라
+      B(g, 0.03, 0.22, 0.022, shade(c, 0.6), 0, 1.08, 0.055);          // 타이
+      B(g, 0.04, 0.035, 0.024, shade(c, 0.5), 0, 1.2, 0.056);          // 타이 노트
+      for (const ty of [1.14, 1.05]) B(g, 0.032, 0.012, 0.023, shade(c, 0.75), 0, ty, 0.0555); // 타이 사선 스트라이프
+      for (const by of [1.02, 0.94, 0.86]) B(g, 0.018, 0.018, 0.02, 0x2a2622, 0.05, by, 0.052); // 재킷 단추 3
+      B(g, 0.07, 0.045, 0.02, shade(c, 0.7), -0.1, 1.18, 0.052);       // 가슴 포켓
+      B(g, 0.05, 0.018, 0.022, 0xe8e4d8, -0.1, 1.2, 0.053);            // 행커치프
+      for (const [fx, fh] of [[-0.14, 0.4], [0.05, 0.34], [0.12, 0.42]]) B(g, 0.012, fh, 0.012, shade(c, 0.85), fx, 1.0, 0.048); // 주름 골
+      B(g, 0.012, 0.36, 0.012, shade(c, 1.12), -0.05, 1.0, 0.048);     // 주름 하이라이트
+      jk(0.09, 0.42, -0.21, 1.06, 0, shade(c, 0.9));                   // 왼팔
+      jk(0.09, 0.42, 0.21, 1.06, 0, shade(c, 0.9));                    // 오른팔
+      for (const sx of [-0.21, 0.21]) {
+        B(g, 0.095, 0.03, 0.092, shade(c, 0.7), sx, 0.87, 0);          // 소맷단
+        B(g, 0.014, 0.014, 0.02, 0x2a2622, sx + (sx > 0 ? -0.025 : 0.025), 0.88, 0.048); // 커프 단추
+      }
+      B(g, 0.09, 0.05, 0.02, 0x35322e, 0.09, 0.82, 0.046);             // 밑단 먼지 얼룩 — 재킷 천 위(0.66은 밑단 아래 허공, 캡처 검거)
       return g;
     }
   },
