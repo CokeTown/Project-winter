@@ -2152,5 +2152,11 @@
   "pda.weatherPen": "天候ペナルティ",
   "pda.exp": "本日の探索",
   "pda.succ": "成功した探索",
-  "pda.winters": "越えた冬"
+  "pda.winters": "越えた冬",
+  "pda.close": "閉じる",
+  "nt.log": "本日の記録",
+  "nt.memo": "メモ",
+  "nt.gained": "入手",
+  "nt.spent": "消費",
+  "nt.openJournal": "図鑑・実績を開く"
 }

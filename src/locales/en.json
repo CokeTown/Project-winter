@@ -2152,5 +2152,11 @@
   "pda.weatherPen": "WEATHER PENALTY",
   "pda.exp": "RUNS TODAY",
   "pda.succ": "SUCCESSFUL RUNS",
-  "pda.winters": "WINTERS SURVIVED"
+  "pda.winters": "WINTERS SURVIVED",
+  "pda.close": "Close",
+  "nt.log": "Today's log",
+  "nt.memo": "Memo",
+  "nt.gained": "Gained",
+  "nt.spent": "Spent",
+  "nt.openJournal": "Open records"
 }

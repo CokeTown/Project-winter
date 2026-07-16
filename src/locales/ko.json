@@ -2152,5 +2152,11 @@
   "pda.weatherPen": "날씨 페널티",
   "pda.exp": "오늘 탐험",
   "pda.succ": "성공한 탐험",
-  "pda.winters": "넘긴 겨울"
+  "pda.winters": "넘긴 겨울",
+  "pda.close": "닫기",
+  "nt.log": "오늘의 기록",
+  "nt.memo": "메모",
+  "nt.gained": "얻은 것",
+  "nt.spent": "쓴 것",
+  "nt.openJournal": "도감·업적 펼치기"
 }

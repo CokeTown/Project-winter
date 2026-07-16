@@ -105,15 +105,9 @@
   </button>
 </div>
 <div id="pda-back" style="display:none">
-  <!-- 진짜 기기 외관(디렉터 오더): 러기드 하우징·안테나·스피커·나사·D-패드 — 화면(LCD) 안에서 동작.
-       다이제틱 UI 원론(Pip-Boy 계보): 기기 자체가 세계 내 물건, 조작부도 하드웨어 문법. -->
+  <!-- #199 3차(디렉터 에셋): GPT 제작 PDA-04 픽셀아트가 하우징 그 자체 — 콘텐츠는 스크린 좌표(%) 위에서 동작.
+       하드웨어 버튼(뒤로·D-패드·확인)은 에셋에 그려진 자리 위 투명 히트 영역. -->
   <div id="pda">
-    <span id="pda-antenna" aria-hidden="true"></span>
-    <div id="pda-top">
-      <span id="pda-brand">PDA-04</span><span id="pda-led" aria-hidden="true"></span>
-      <span id="pda-speaker" aria-hidden="true"></span>
-      <button id="pda-x" aria-label="power">⏻</button>
-    </div>
     <div id="pda-lcd">
       <div id="pda-tabs">
         <button class="pda-tab" data-tab="status" data-i18n="pda.tab.status">상태</button>
@@ -123,18 +117,26 @@
       </div>
       <div id="pda-screen"></div>
     </div>
-    <div id="pda-hw">
-      <div id="pda-dpad" aria-hidden="false">
-        <button class="dp" data-d="up">▲</button>
-        <button class="dp" data-d="left">◀</button>
-        <span id="dp-c"></span>
-        <button class="dp" data-d="right">▶</button>
-        <button class="dp" data-d="down">▼</button>
-      </div>
-      <div id="pda-keys">
-        <button class="pda-key" id="pda-key-a">A</button>
-        <button class="pda-key" id="pda-key-b">B</button>
-      </div>
+    <button class="pda-hit" id="pda-hit-back" aria-label="close" data-i18n-title="pda.close" title="닫기"></button>
+    <button class="pda-hit dp" data-d="up" aria-label="scroll up"></button>
+    <button class="pda-hit dp" data-d="left" aria-label="prev tab"></button>
+    <button class="pda-hit dp" data-d="right" aria-label="next tab"></button>
+    <button class="pda-hit dp" data-d="down" aria-label="scroll down"></button>
+    <button class="pda-hit" id="pda-hit-ok" aria-label="refresh"></button>
+  </div>
+</div>
+<div id="note-back" style="display:none">
+  <!-- 일지 도킹을 당기면 펼쳐지는 「필드 노트」(디렉터 에셋) — 기록=종이. 존 좌표는 에셋 카드 위 %. -->
+  <div id="fieldnote">
+    <div class="nt-zone" id="nt-log"><div class="nt-h" data-i18n="nt.log">오늘의 기록</div><ul id="nt-log-list"></ul></div>
+    <div class="nt-zone" id="nt-memo"><div class="nt-h" data-i18n="nt.memo">메모</div><div id="nt-memo-body"></div></div>
+    <div class="nt-zone" id="nt-gain">
+      <div class="nt-col"><div class="nt-h" data-i18n="nt.gained">얻은 것</div><div id="nt-gain-list"></div></div>
+      <div class="nt-col"><div class="nt-h" data-i18n="nt.spent">쓴 것</div><div id="nt-spent-list"></div></div>
+    </div>
+    <div class="nt-zone" id="nt-act">
+      <button class="pixel-btn" id="nt-journal" data-i18n="nt.openJournal">도감·업적 펼치기</button>
+      <button class="pixel-btn" id="nt-close">✕</button>
     </div>
   </div>
 </div>

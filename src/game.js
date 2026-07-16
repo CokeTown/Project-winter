@@ -8026,8 +8026,9 @@ addEventListener('keydown', e => {
   if (awaitingRebind) { captureRebind(e); return; }
   if (titleVisible) return;
   if (e.key === 'Escape') {
-    // 우선순위: PDA 닫기 > 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
+    // 우선순위: PDA/노트 닫기 > 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
     if (pdaVisible()) { pdaClose(); }
+    else if (noteVisible()) { noteClose(); }
     else if (settingsOpen()) { closeSettings(); }
     else if (catCam.active) { exitCatCloseup(); }
     else if (placing) { cancelPlacing(); }
@@ -8725,6 +8726,25 @@ function pdaOpen(tab) {
   lcd.classList.remove('pda-boot'); void lcd.offsetWidth; lcd.classList.add('pda-boot');
 }
 function pdaClose() { $('pda-back').style.display = 'none'; }
+// #199 3차: 「필드 노트」(디렉터 에셋) — 기록=종이. 일지 도킹이 연다. 조회 전용.
+const noteVisible = () => $('note-back').style.display !== 'none';
+function noteOpen() {
+  $('note-back').style.display = '';
+  const li = s => `<li>${s}</li>`;
+  $('nt-log-list').innerHTML = (state.dayLog.notes || []).slice(-7).map(li).join('') || li(t('pda.noLog'));
+  const w = WEATHERS[state.weatherType];
+  const memo = [`${t('pda.day', { n: state.day })} · ${w ? `${w.icon} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}`];
+  if (hasForecast()) memo.push(t('forecast.prefix', { text: forecastText() }));
+  const lacks = ['water', 'food'].filter(id => (state.res[id] || 0) === 0);
+  if (lacks.length) memo.push(lacks.map(id => `${resIcon(id)} ${LName(RESOURCES[id])} 0`).join(' · '));
+  $('nt-memo-body').innerHTML = memo.map(m => `<div>${m}</div>`).join('');
+  const cell = ([id, n], sign) => `<div class="nt-cell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><b>${sign}${n}</b></div>`;
+  const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+  const spent = Object.entries(state.dayLog.spend || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+  $('nt-gain-list').innerHTML = gains.map(g => cell(g, '+')).join('') || `<div class="nt-cell dim">—</div>`;
+  $('nt-spent-list').innerHTML = spent.map(s => cell(s, '-')).join('') || `<div class="nt-cell dim">—</div>`;
+}
+function noteClose() { $('note-back').style.display = 'none'; }
 function renderPDA() {
   document.querySelectorAll('#pda-tabs .pda-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === pdaTab));
   const scr = $('pda-screen');
@@ -8759,9 +8779,10 @@ function renderPDA() {
     if ((state.winters || 0) >= 1) base.push(`${t('pda.winters')}: ${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}`);
     body += `<div class="ph">${t('pda.camp')}</div>` + base.map(l => `<div>${l}</div>`).join('');
   } else if (pdaTab === 'res') {
+    const wp = isWallpaper(); // 자원 패널이 PDA로 이관됨 — 배경화면 모드 ∞ 표기도 승계
     body = `<div class="pgrid">` + Object.entries(RESOURCES).map(([id, r]) => {
       const n = state.res[id] || 0;
-      return `<div class="pcell${n === 0 ? ' zero' : ''}">${resIcon(id)}<span>${LName(r)}</span><span class="pn">${n}</span></div>`;
+      return `<div class="pcell${!wp && n === 0 ? ' zero' : ''}">${resIcon(id)}<span>${LName(r)}</span><span class="pn">${wp ? '∞' : n}</span></div>`;
     }).join('') + `</div>`;
   } else if (pdaTab === 'map') {
     const sp = SHELTER_MAP[state.current];
@@ -11254,25 +11275,30 @@ $('g-energy').addEventListener('click', () => promptSleep());
 $('g-clean').addEventListener('click', () => cleanShelter()); // #199: 상단 필수 4계기 — 청결도 즉시 조치 가능
 $('btn-sleep').addEventListener('click', () => promptSleep());
 $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
-// #199 우측 엣지 도킹: PDA 토글 + 일지(기존 저널 진입점) + PDA 오버레이 닫기/탭
+// #199 우측 엣지 도킹: PDA 토글 + 일지=필드 노트 오버레이 + PDA 하드웨어 히트(에셋 버튼 자리)
+// 에셋 하우징은 JS 인라인 — CSS url()은 번들 후 /assets/ 기준으로 풀려 file://에서 깨진다(스타일시트 709행 교훈)
+$('pda').style.backgroundImage = "url('img/ui/pda04.png')";
+$('fieldnote').style.backgroundImage = "url('img/ui/fieldnote.png')";
 $('dock-pda').addEventListener('click', () => pdaVisible() ? pdaClose() : pdaOpen());
-$('dock-journal').addEventListener('click', () => openJournalModal('journal'));
-$('pda-x').addEventListener('click', () => pdaClose());
+$('dock-journal').addEventListener('click', () => noteVisible() ? noteClose() : noteOpen());
 $('pda-back').addEventListener('pointerdown', e => { if (e.target.id === 'pda-back') pdaClose(); });
+$('note-back').addEventListener('pointerdown', e => { if (e.target.id === 'note-back') noteClose(); });
+$('nt-close').addEventListener('click', () => noteClose());
+$('nt-journal').addEventListener('click', () => { noteClose(); openJournalModal('journal'); });
 document.querySelectorAll('#pda-tabs .pda-tab').forEach(b =>
   b.addEventListener('click', () => { pdaTab = b.dataset.tab; renderPDA(); }));
-// #199 2차: 기기 하드웨어 조작 — D-패드 ◀▶=탭 순환·▲▼=화면 스크롤, B=끄기(게임기 문법), A=재조회
+// 기기 하드웨어 문법: 뒤로(⏎)=닫기, D-패드 ◀▶=탭 순환·▲▼=화면 스크롤, 확인(✓)=재조회
 {
   const PDA_TABS = ['status', 'res', 'map', 'log'];
   const step = dir => { const i = PDA_TABS.indexOf(pdaTab); pdaTab = PDA_TABS[(i + dir + 4) % 4]; renderPDA(); };
-  document.querySelectorAll('#pda-dpad .dp').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#pda .dp').forEach(b => b.addEventListener('click', () => {
     const d = b.dataset.d;
     if (d === 'left') step(-1);
     else if (d === 'right') step(1);
     else $('pda-screen').scrollBy({ top: d === 'up' ? -120 : 120, behavior: 'smooth' });
   }));
-  $('pda-key-a').addEventListener('click', () => renderPDA());
-  $('pda-key-b').addEventListener('click', () => pdaClose());
+  $('pda-hit-back').addEventListener('click', () => pdaClose());
+  $('pda-hit-ok').addEventListener('click', () => renderPDA());
 }
 // 온스크린 카메라 컨트롤 (모바일/데스크톱 공용)
 $('cam-rotl').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw -= Math.PI / 2; }); // v1.5.1: 90° 스텝 — 정면 T자 원천 차단
@@ -11942,7 +11968,7 @@ window.__shelter = {
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
-  pdaOpen, pdaClose, // #199 PDA 도킹 QA 훅
+  pdaOpen, pdaClose, noteOpen, noteClose, // #199 PDA·필드노트 도킹 QA 훅
   seasonOf, SEASONS, openMapModal, showMapInfo, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
   // Phase D (#12 · #35 · #36) QA 훅
   MEMOS, WILLS, BROADCASTS, MEMOS_BY_REGION, eventCtx, eventMatches, drawEvent, eventWeight,
