@@ -8463,7 +8463,7 @@ function showTitle() {
     $('t-continue').style.display = '';
     $('t-continue-info').textContent = t('title.continueInfo', { slot: currentSlot, day: meta.day, sicon: meta.season.icon, semoji: meta.shelter.emoji, sname: LName(meta.shelter) })
       + (meta.winters >= 1 ? t('title.continueWinters', { n: meta.winters }) : '') // Nine Winters(#11)
-      + (meta.mode === 'hard' ? ' 🔥' : meta.mode === 'zen' ? ' ♾️' : '');
+      + (meta.mode === 'hard' ? ' 🔥' : meta.mode === 'hardcore' ? ' 💀' : meta.mode === 'zen' ? ' ♾️' : meta.mode === 'wallpaper' ? ' 🖼️' : ''); // #90: 슬롯 배지(slotModeBadge)와 4모드 표기 일치 — 혹한·꾸미기 공백 봉합
   } else {
     $('t-continue').style.display = 'none';
   }
