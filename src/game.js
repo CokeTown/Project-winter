@@ -9790,11 +9790,14 @@ function clearRadioBubble() {
   radioBubble = null;
 }
 
-/* ── 첫 3일 튜토리얼 (신규 게임 한정) ── */
+/* ── 첫날 튜토리얼 (신규 게임 한정) — #202 디렉터: 3일 루틴(매일 메모→탐험)을 하루로 압축.
+   세 메모를 Day 1 한 권으로 합본 — 탐험 1번이면 온보딩 루틴이 끝난다. */
 const TUTORIAL_PAGES = {
-  1: [{ titleId: 'jnl.tut1.title', bodyId: 'jnl.tut1.body' }],
-  2: [{ titleId: 'jnl.tut2.title', bodyId: 'jnl.tut2.body' }],
-  3: [{ titleId: 'jnl.tut3.title', bodyId: 'jnl.tut3.body' }],
+  1: [
+    { titleId: 'jnl.tut1.title', bodyId: 'jnl.tut1.body' },
+    { titleId: 'jnl.tut2.title', bodyId: 'jnl.tut2.body' },
+    { titleId: 'jnl.tut3.title', bodyId: 'jnl.tut3.body' },
+  ],
 };
 function showTutorialPage(day) {
   if (!tutorialEligible()) return; // 노말 전용 (디렉터 오더)
@@ -9812,9 +9815,9 @@ function showTutorialPage(day) {
    기존 세이브는 loadSave()에서 -1로 마이그레이션해 표시하지 않는다.
 ============================================================ */
 const QUESTS = [
-  // icon = 이모지 폴백 · img = HUD 액션 아트 아이콘(디렉터: 튜토리얼도 거점 그리드와 동일 아이콘). drink/eat는 게이지(이모지)라 그대로.
-  { id: 'drink',  icon: '💧', textId: 'quest.drink.text',  loreId: 'quest.drink.lore',  doneId: 'quest.drink.done',  reward: { water: 1 } },
-  { id: 'eat',    icon: '🥫', textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
+  // icon = 이모지 폴백 · img = 현행 아트 아이콘(#202 디렉터: 전 단계 아이콘 현행화 — drink/eat도 게이지·자원 아이콘으로).
+  { id: 'drink',  icon: '💧', img: 'icon_g_thirst',     textId: 'quest.drink.text',  loreId: 'quest.drink.lore',  doneId: 'quest.drink.done',  reward: { water: 1 } },
+  { id: 'eat',    icon: '🥫', img: 'icon_res_canned',   textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
   { id: 'place',  icon: '🔧', img: 'icon_sys_edit',    textId: 'quest.place.text',  loreId: 'quest.place.lore',  doneId: 'quest.place.done',  reward: { cloth: 1 } },
   { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart.text', loreId: 'quest.depart.lore', doneId: 'quest.depart.done', reward: {} },
   // '결산 리포트 확인' 단계였음 — 거점 UI에 그런 화면이 없어 유저가 길을 잃었다.
@@ -9846,6 +9849,17 @@ function renderQuestCard() {
   card.classList.remove('done-flash');
   card.classList.add('show');
 }
+// #202 튜토리얼 건너뛰기 — 체인 종료 + 수첩 페이지 억제(보상 없음, 카드 즉시 퇴장)
+$('quest-skip')?.addEventListener('click', () => {
+  if (!questActive()) return;
+  state.questIdx = -1;
+  state.tutDay = 3; // 남은 수첩 튜토리얼 페이지도 표시 안 함
+  const eb = $('btn-edit');
+  if (eb) eb.classList.remove('pulse');
+  renderQuestCard();
+  toast(t('quest.skip.done'));
+  scheduleSave();
+});
 // 퀘스트 진행 훅 — 해당 id가 현재 진행 중인 퀘스트일 때만 완료 처리
 function questProgress(id) {
   if (!questActive()) return;

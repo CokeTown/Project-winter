@@ -1122,6 +1122,13 @@
   }
   #quest-card.done-flash .q-body { display: none; }
   #quest-card.done-flash .q-check { display: block; }
+  /* #202 튜토리얼 건너뛰기 — 우하단 소형(본문 흐름 우측 정렬, 카드 문법의 버튼 규칙과 동일) */
+  #quest-card .q-skip {
+    display: block; margin: 6px 0 0 auto;
+    font-size: 9px; padding: 2px 8px; opacity: 0.75;
+  }
+  #quest-card .q-skip:hover { opacity: 1; }
+  #quest-card.done-flash .q-skip { display: none; }
   @keyframes questcheck { 0% { opacity: 0; transform: scale(0.6); } 40% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
   body.title-mode #quest-card { display: none !important; }
   /* 디렉터 신고(PC 배치·퀘스트 겹침, 데모 1.6.3 포팅): top:340 고정 앵커는 lore 길이·창 높이에 따라
