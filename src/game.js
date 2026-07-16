@@ -11279,6 +11279,7 @@ $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
 // 에셋 하우징은 JS 인라인 — CSS url()은 번들 후 /assets/ 기준으로 풀려 file://에서 깨진다(스타일시트 709행 교훈)
 $('pda').style.backgroundImage = "url('img/ui/pda04.png')";
 $('fieldnote').style.backgroundImage = "url('img/ui/fieldnote.png')";
+$('dock-pda').style.backgroundImage = "url('img/ui/dock_pda.png')";
 $('dock-pda').addEventListener('click', () => pdaVisible() ? pdaClose() : pdaOpen());
 $('dock-journal').addEventListener('click', () => noteVisible() ? noteClose() : noteOpen());
 $('pda-back').addEventListener('pointerdown', e => { if (e.target.id === 'pda-back') pdaClose(); });

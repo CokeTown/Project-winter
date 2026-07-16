@@ -88,13 +88,9 @@
      PDA(전자 계측: 상태/자원/지도/기록 + 도킹면 마이크로 게이지 상시) · 일지(가죽, 기존 저널 진입점).
      하이브리드 원칙: 계측=전자(PDA), 기록=종이(일지). 기존 HUD는 불변 — 상단 정리는 디렉터 결정 대기. -->
 <div id="edge-dock">
-  <button id="dock-pda" data-i18n-title="pda.open" title="PDA 단말">
-    <span class="dk-pull" aria-hidden="true">‹</span>
-    <span class="dk-body">
-      <span class="dk-slits" aria-hidden="true"></span>
-      <span class="dk-label">PDA</span>
-      <span class="dk-gauges" aria-hidden="true"><i id="dkg-h"></i><i id="dkg-t"></i><i id="dkg-e"></i><i id="dkg-c"></i></span>
-    </span>
+  <!-- 도킹 하우징=디렉터 에셋(dock_pda.png) — 마이크로 게이지 4줄만 그린 윈도 좌표 위에 얹는다 -->
+  <button id="dock-pda" data-i18n-title="pda.open" title="PDA 단말 — 계측·지도·기록">
+    <span class="dk-gauges" aria-hidden="true"><i id="dkg-h"></i><i id="dkg-t"></i><i id="dkg-e"></i><i id="dkg-c"></i></span>
   </button>
   <button id="dock-journal" data-i18n-title="btn.journal.title" title="일지 (도감·업적·통계)">
     <span class="dk-pull" aria-hidden="true">‹</span>

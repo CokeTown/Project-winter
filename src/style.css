@@ -181,6 +181,16 @@
      셸터명·스탯 줄은 PDA 상태 탭으로 이관 — 원론: 상시 HUD는 생존 즉결 정보만(The Long Dark 계보). */
   #hud .shelter-name, #hud .stat { display: none; }
   #hud #gauges { border-radius: 2px; padding-top: 8px; margin-top: 0; }
+  /* #199 4차(디렉터 신고): 모바일에서 게이지 글씨 안 보임 + 패널 과대 — 가독·밀도 튠 */
+  #hud .gauge { height: 20px; }
+  #hud .gauge .g-label {
+    display: flex; align-items: center; justify-content: center; gap: 3px;
+    font-size: 11px; line-height: 1; height: 100%;
+  }
+  #hud .gauge .g-label .px-icon { width: 13px; height: 13px; flex: 0 0 auto; }
+  #hud .btn-row.icons { gap: 4px; }
+  #hud .btn-row.icons .pixel-btn { padding: 5px 0 4px; }
+  #hud .btn-row.icons .act-icon { width: 24px; height: 24px; }
   /* ── #199 UI B: 우측 엣지 도킹(접힘 보관) + PDA 계측 오버레이 ──
      디렉터 레퍼런스: 화면 우측에 반쯤 걸친 PDA 하우징·가죽 일지. 당기면 열림.
      하이브리드: 계측=전자(LCD 포스퍼 — 기존 #lcd 톤 계승), 기록=종이(일지=기존 저널). */
@@ -189,34 +199,38 @@
     display: flex; flex-direction: column; gap: 10px;
     zoom: var(--uiz);
   }
-  #edge-dock button {
+  #edge-dock button { /* 호버=살짝 튀어나옴(디렉터 오더) — 오버슈트 커브로 반응형 팝 */
     display: flex; align-items: center; padding: 0; cursor: pointer;
     background: none; border: none; font-family: inherit;
-    transform: translateX(30%); transition: transform 0.18s ease-out;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
     filter: drop-shadow(-3px 3px 4px rgba(0, 0, 0, 0.5));
   }
-  #edge-dock button:hover, #edge-dock button:focus-visible { transform: translateX(12%); }
-  .dk-pull {
+  /* PDA 에셋은 각인·계기 윈도가 몸통 중앙~우측 — 살짝만 걸치고 거의 다 보인다.
+     주의: #edge-dock button(1-0-1)이 #dock-pda(1-0-0)를 이긴다 — 반드시 #edge-dock 프리픽스로 승격. */
+  #edge-dock #dock-pda { transform: translateX(12%); }
+  #edge-dock #dock-pda:hover, #edge-dock #dock-pda:focus-visible { transform: translateX(2%); }
+  #edge-dock #dock-journal { transform: translateX(30%); }
+  #edge-dock #dock-journal:hover, #edge-dock #dock-journal:focus-visible { transform: translateX(10%); }
+  #edge-dock button:active { transform: translateX(0%) !important; transition-duration: 0.1s; }
+  #edge-dock #dock-pda { /* 하우징=디렉터 에셋(dock_pda.png, JS 인라인) — 마이크로 게이지만 그린 윈도 위에 */
+    position: relative; width: 110px; aspect-ratio: 373 / 928;
+    background: center / contain no-repeat; /* 축소 표시 — 스무스 다운스케일이 디테일 보존(픽셀아트 확대와 반대) */
+    /* 어두운 씬에 묻히는 실루엣 분리: 밝기 리프트 + 앰버 림 */
+    filter: brightness(1.22) saturate(1.05) drop-shadow(0 0 5px rgba(232, 192, 96, 0.22)) drop-shadow(-3px 3px 4px rgba(0, 0, 0, 0.55));
+  }
+  .dk-pull { /* 일지 도킹(에셋 대기)용 풀 핸들 */
     color: #d8cdb4; font-size: 14px; line-height: 1; padding: 10px 3px;
     background: rgba(20, 17, 13, 0.85); border: 2px solid #4a4136; border-right: none;
     border-radius: 4px 0 0 4px; text-shadow: 0 0 4px rgba(216, 205, 180, 0.4);
   }
-  .dk-body { /* PDA 하우징: 건메탈 + 스피커 슬릿 + 발광 라벨 + 마이크로 게이지 */
+  .dk-body { /* 일지 도킹 몸체(가죽) 베이스 */
     display: flex; flex-direction: column; gap: 5px; width: 86px; padding: 9px 10px;
-    background: linear-gradient(175deg, #35382f, #22241e 60%, #191b16);
     border: 2px solid #14110d; border-radius: 8px 0 0 8px; border-right: none;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 4px rgba(0, 0, 0, 0.45);
   }
-  .dk-slits {
-    height: 10px;
-    background: repeating-linear-gradient(180deg, #101209 0 2px, transparent 2px 4px);
-    border-radius: 2px; opacity: 0.85;
+  #dock-pda .dk-gauges { /* 에셋 그린 윈도 유리 안 LED 4줄 — 실계측 */
+    position: absolute; left: 45%; top: 46.6%; width: 26%; height: 15.2%;
+    display: flex; flex-direction: column; gap: 2px; justify-content: center;
   }
-  #dock-pda .dk-label {
-    font-size: 11px; letter-spacing: 3px; color: #e8c060; text-align: left;
-    text-shadow: 0 0 5px rgba(232, 192, 96, 0.5);
-  }
-  .dk-gauges { display: flex; flex-direction: column; gap: 3px; }
   .dk-gauges i {
     display: block; height: 4px; width: 100%; border-radius: 1px;
     background:
@@ -320,8 +334,8 @@
   .pda-flick { animation: pdaFlick 0.16s steps(2); }
   @keyframes pdaFlick { 0% { opacity: 0.35; } 100% { opacity: 1; } }
   #pda-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
-  .pda-tab { /* LCD 상단 세그먼트 탭 — 화면 안에서 동작(디렉터: 기기 화면 위에서 구동) */
-    flex: 1; padding: 5px 2px; cursor: pointer;
+  .pda-tab { /* LCD 상단 세그먼트 탭 — 화면 안에서 동작. 하드웨어 버튼과 병행, 터치 타깃 확보 */
+    flex: 1; padding: 8px 2px; cursor: pointer;
     font-family: inherit; font-size: 10px; letter-spacing: 1px; color: #4f7a44;
     background: transparent; border: 1px solid #2c4424; border-radius: 2px;
     text-shadow: 0 0 4px rgba(140, 240, 120, 0.2);
