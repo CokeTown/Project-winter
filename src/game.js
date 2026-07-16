@@ -8658,7 +8658,7 @@ function updateClock() {
   // #199 5차-b(디렉터): 날씨(+페널티)는 시계가 계기 — HUD 스트립에서 이관. 이모지 금지 → 아트 아이콘
   const wPen = WEATHERS[weather.type]?.penalty;
   // 시간대 아이콘은 밤(달)만 — 새벽/낮/황혼의 해 계열은 제거(디렉터: 해 모양 금지), 라벨 텍스트가 식별자
-  $('lcd-sub').innerHTML = `${timeArt === 'icon_time_night' ? icon(timeArt, timeIcon) + ' ' : ''}${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:#e07050">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + injIconEl(state.injury.type) : ''}`;
+  $('lcd-sub').innerHTML = `${timeArt === 'icon_time_night' ? icon(timeArt, timeIcon) + ' ' : ''}${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:var(--bad)">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + injIconEl(state.injury.type) : ''}`;
 }
 
 function updateHud() {
