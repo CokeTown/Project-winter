@@ -870,11 +870,12 @@ const KNOWLEDGE_HASH = -451536973;
     const lj = JSON.parse(lp);
     if (lj.error) check('#189 P1 (예외 없이)', false, lj.error);
     else {
-      check('#189 P1 폴백 게이트 (광원 0=10 → 랜턴=0 → 연료 소진=10)',
-        lj.empty.fallback === 10 && !lj.empty.hasLight && lj.lantern.fallback === 0 && lj.lantern.hasLight && lj.fuelOut.fallback === 10 && !lj.fuelOut.hasLight,
+      // 디렉터 정정(2026-07-17): 폴백은 상시 유지 + 광원 가산 — 구 어서션(광원 시 폴백 0)은 폐기
+      check('#189 P1 폴백 가산 모델 (폴백 상시 10 · 광원 레지스트리 판정 유지)',
+        lj.empty.fallback === 10 && !lj.empty.hasLight && lj.lantern.fallback === 10 && lj.lantern.hasLight && lj.fuelOut.fallback === 10 && !lj.fuelOut.hasLight,
         JSON.stringify({ e: lj.empty, l: lj.lantern, f: lj.fuelOut }));
-      check('#189 P1 조명 설비 (점등·배터리 1/일·단전 소등+노트)',
-        lj.mod.facility === true && lj.mod.fallback === 0 && lj.drain === 1 && lj.blackout.facility === false && lj.blackout.fallback === 10 && lj.outNote === true,
+      check('#189 P1 조명 설비 (점등·배터리 1/일·단전 소등+노트 — 폴백은 가산 모델로 상시)',
+        lj.mod.facility === true && lj.mod.fallback === 10 && lj.drain === 1 && lj.blackout.facility === false && lj.blackout.fallback === 10 && lj.outNote === true,
         JSON.stringify({ mod: lj.mod, drain: lj.drain, bo: lj.blackout, note: lj.outNote }));
       check('#189 P1 발전기 무료 급전 (배터리 불변·재점등)',
         lj.freePower === true && lj.backOn.facility === true,

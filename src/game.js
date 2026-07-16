@@ -257,8 +257,10 @@ function interiorLightActive() {
 }
 function lightingFacilityOn() { return hasMod('lighting') && !state.lightingOut; }
 // 폴백/설비 광원 동기화 — 렌더 루프·로드 시 호출(전원 토글·연료 소진·설치를 전부 자동 반영).
+// 디렉터 정정(2026-07-17): 폴백 천장광은 광원이 켜져도 끄지 않는다 — "기본 안 밝은 조명 + 광원 밝기 가산".
+//   (구 #189 P1은 광원 존재 시 폴백 0의 이분법 — 촛불을 켜면 방이 되레 어두워지던 역설을 낳았다.)
 function updateLightingRig() {
-  ceilBaseInt = (state.current === 'subway' && state.subwayHidden) ? 2 : (interiorLightActive() ? 0 : 10);
+  ceilBaseInt = (state.current === 'subway' && state.subwayHidden) ? 2 : 10;
   facilityLight.intensity = lightingFacilityOn() ? 16 : 0;
 }
 
@@ -6284,10 +6286,10 @@ function playCollapseVignette() {
           ray.scale.y = Math.min(1, ot / 0.28);
           ray.material.opacity = ot < 1.7 ? ray.userData.baseOp * Math.min(1, ot / 0.2) : Math.max(0, ray.userData.baseOp * (1 - (ot - 1.7) / 0.8));
         }
-        if (lootSprite) {                                          // 전리품 상승 + 팝 스케일 + 부유 (프레임 안 유지 — 1.05)
+        if (lootSprite) {                                          // 전리품 상승 + 팝 스케일 + 부유 (디렉터: 아이콘 축소 0.68)
           const rt = Math.min(1, ot / 0.7), ease = 1 - Math.pow(1 - rt, 3);
           lootSprite.position.y = 0.7 + ease * 1.05 + (ot > 0.7 ? Math.sin((ot - 0.7) * 2.4) * 0.06 : 0);
-          lootSprite.scale.setScalar(rt < 0.85 ? 1.15 * ease : 1.15 - 0.2 * Math.min(1, (rt - 0.85) / 0.15));
+          lootSprite.scale.setScalar(rt < 0.85 ? 0.68 * ease : 0.68 - 0.1 * Math.min(1, (rt - 0.85) / 0.15));
         }
         if (debris) for (const d of debris) {
           d.userData.v.y -= 4.6 * 0.016;
