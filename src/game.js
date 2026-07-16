@@ -8026,8 +8026,9 @@ addEventListener('keydown', e => {
   if (awaitingRebind) { captureRebind(e); return; }
   if (titleVisible) return;
   if (e.key === 'Escape') {
-    // 우선순위: 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
-    if (settingsOpen()) { closeSettings(); }
+    // 우선순위: PDA 닫기 > 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
+    if (pdaVisible()) { pdaClose(); }
+    else if (settingsOpen()) { closeSettings(); }
     else if (catCam.active) { exitCatCloseup(); }
     else if (placing) { cancelPlacing(); }
     else if (selected) { deselect(); }
@@ -8692,6 +8693,9 @@ function renderGauge(id, val, gkey, emoji) {
   fill.style.width = Math.max(0, Math.round(val)) + '%';
   fill.className = 'g-fill' + (val < 25 ? ' crit' : val < 45 ? ' warn' : '');
   g.querySelector('.g-label').innerHTML = `${icon(GAUGE_ICON[gkey], emoji)} ${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
+  // #199: 도킹 PDA 마이크로 게이지 동기화 — 접힘 상태에서도 보이는 상시 계측(LED 스트립)
+  const dk = $('dkg-' + gkey[0]);
+  if (dk) { dk.style.setProperty('--v', Math.max(0, Math.round(val)) + '%'); dk.className = val < 25 ? 'crit' : val < 45 ? 'warn' : ''; }
 }
 let lastResSnapshot = {};
 function renderResBar() {
@@ -8706,6 +8710,63 @@ function renderResBar() {
   }).join('');
   lastResSnapshot = { ...state.res };
   updateMoveBadge();
+}
+// ── #199 UI B: 우측 도킹 PDA — 전자 계측 오버레이 (상태/자원/지도/기록) ──
+//   하이브리드 원칙: 계측=전자(이 단말), 기록=종이(일지 도킹=기존 저널 진입점).
+//   기존 HUD는 불변 — 상단 정리 여부는 디렉터 결정 대기. 조회 전용(게임 진행 비정지).
+let pdaTab = 'status';
+const pdaVisible = () => $('pda-back').style.display !== 'none';
+function pdaOpen(tab) {
+  if (tab) pdaTab = tab;
+  $('pda-back').style.display = '';
+  renderPDA();
+}
+function pdaClose() { $('pda-back').style.display = 'none'; }
+function renderPDA() {
+  document.querySelectorAll('#pda-tabs .pda-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === pdaTab));
+  const scr = $('pda-screen');
+  const mm = state.gameMin % 1440, hh = String(Math.floor(mm / 60)).padStart(2, '0'), mi = String(Math.floor(mm % 60)).padStart(2, '0');
+  const w = WEATHERS[state.weatherType];
+  const head = `<div class="ph">${t('pda.day', { n: state.day })} · ${hh}:${mi} · ${w ? `${w.icon} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}</div>`;
+  let body = '';
+  if (pdaTab === 'status') {
+    const bar = (label, v) => {
+      const cls = v < 25 ? 'crit' : v < 45 ? 'warn' : '';
+      return `<div class="pline"><span class="pk">${label}</span><span class="pbar"><i class="${cls}" style="width:${Math.max(0, Math.round(v))}%"></i></span><span class="pv">${Math.round(v)}</span></div>`;
+    };
+    body = bar(t('pda.g.hunger'), state.hunger) + bar(t('pda.g.thirst'), state.thirst)
+      + bar(t('pda.g.energy'), state.energy) + bar(t('pda.clean'), state.cleanBy?.[state.current] ?? 70);
+    const lines = [];
+    if (state.injury) {
+      const h = Math.max(0, Math.ceil((state.injury.untilMin - state.gameMin) / 60));
+      lines.push(`${LName(INJURIES[state.injury.type])} — ${t('pda.injuryLeft', { h })}`);
+    } else lines.push(t('pda.noInjury'));
+    if (state.expFatigue === state.day) lines.push(t('exp.fatigue'));
+    if (state.moodBuff && state.moodBuff.until > state.day) lines.push(t('pda.mood', { amt: state.moodBuff.amt, d: state.moodBuff.until - state.day }));
+    body += `<div class="ph">${t('pda.cond')}</div>` + lines.map(l => `<div>${l}</div>`).join('');
+  } else if (pdaTab === 'res') {
+    body = `<div class="pgrid">` + Object.entries(RESOURCES).map(([id, r]) => {
+      const n = state.res[id] || 0;
+      return `<div class="pcell${n === 0 ? ' zero' : ''}">${resIcon(id)}<span>${LName(r)}</span><span class="pn">${n}</span></div>`;
+    }).join('') + `</div>`;
+  } else if (pdaTab === 'map') {
+    const sp = SHELTER_MAP[state.current];
+    body = `<div class="pmap"><img src="${mapBiomeDataUrl(cityOf(state.current))}" alt="">`
+      + (sp ? `<span class="pyou" style="left:${sp.x}%;top:${sp.y}%"></span>` : '') + `</div>`
+      + `<div class="pnote">${t('pda.here')}: ${LName(SHELTERS[state.current])}</div>`
+      + `<div class="pbtn-row"><button class="pixel-btn" id="pda-openmap">${t('pda.openMap')}</button></div>`;
+  } else {
+    const notes = state.dayLog.notes || [];
+    body = notes.length
+      ? `<ul class="plog">${notes.slice(-12).reverse().map(n => `<li>${n}</li>`).join('')}</ul>`
+      : `<div class="pnote">${t('pda.noLog')}</div>`;
+    const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+    if (gains.length) body += `<div class="ph">${t('pda.gained')}</div><div class="pgrid">`
+      + gains.map(([id, n]) => `<div class="pcell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><span class="pn">+${n}</span></div>`).join('') + `</div>`;
+  }
+  scr.innerHTML = head + body;
+  scr.classList.remove('pda-flick'); void scr.offsetWidth; scr.classList.add('pda-flick'); // 전자 화면 전환 플리커
+  scr.querySelector('#pda-openmap')?.addEventListener('click', () => { pdaClose(); openMapModal(); });
 }
 async function cleanShelter(auto = false) {
   if (paused) { toast(t('pause.blocked')); return; }
@@ -11178,6 +11239,13 @@ $('g-thirst').addEventListener('click', drinkWater);
 $('g-energy').addEventListener('click', () => promptSleep());
 $('btn-sleep').addEventListener('click', () => promptSleep());
 $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
+// #199 우측 엣지 도킹: PDA 토글 + 일지(기존 저널 진입점) + PDA 오버레이 닫기/탭
+$('dock-pda').addEventListener('click', () => pdaVisible() ? pdaClose() : pdaOpen());
+$('dock-journal').addEventListener('click', () => openJournalModal('journal'));
+$('pda-x').addEventListener('click', () => pdaClose());
+$('pda-back').addEventListener('pointerdown', e => { if (e.target.id === 'pda-back') pdaClose(); });
+document.querySelectorAll('#pda-tabs .pda-tab').forEach(b =>
+  b.addEventListener('click', () => { pdaTab = b.dataset.tab; renderPDA(); }));
 // 온스크린 카메라 컨트롤 (모바일/데스크톱 공용)
 $('cam-rotl').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw -= Math.PI / 2; }); // v1.5.1: 90° 스텝 — 정면 T자 원천 차단
 $('cam-rotr').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw += Math.PI / 2; });
@@ -11846,6 +11914,7 @@ window.__shelter = {
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
+  pdaOpen, pdaClose, // #199 PDA 도킹 QA 훅
   seasonOf, SEASONS, openMapModal, showMapInfo, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
   // Phase D (#12 · #35 · #36) QA 훅
   MEMOS, WILLS, BROADCASTS, MEMOS_BY_REGION, eventCtx, eventMatches, drawEvent, eventWeight,

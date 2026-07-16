@@ -83,6 +83,42 @@
 
 <div class="panel" id="res-bar"><div id="res-chips"></div></div>
 
+<!-- #199 UI B(디렉터 레퍼런스 3장 확정): 우측 엣지 도킹 — 접힘 보관 상태가 기본.
+     PDA(전자 계측: 상태/자원/지도/기록 + 도킹면 마이크로 게이지 상시) · 일지(가죽, 기존 저널 진입점).
+     하이브리드 원칙: 계측=전자(PDA), 기록=종이(일지). 기존 HUD는 불변 — 상단 정리는 디렉터 결정 대기. -->
+<div id="edge-dock">
+  <button id="dock-pda" data-i18n-title="pda.open" title="PDA 단말">
+    <span class="dk-pull" aria-hidden="true">‹</span>
+    <span class="dk-body">
+      <span class="dk-slits" aria-hidden="true"></span>
+      <span class="dk-label">PDA</span>
+      <span class="dk-gauges" aria-hidden="true"><i id="dkg-h"></i><i id="dkg-t"></i><i id="dkg-e"></i></span>
+    </span>
+  </button>
+  <button id="dock-journal" data-i18n-title="btn.journal.title" title="일지 (도감·업적·통계)">
+    <span class="dk-pull" aria-hidden="true">‹</span>
+    <span class="dk-body leather">
+      <span class="dk-label" data-i18n="btn.journal.lbl">일지</span>
+      <span class="dk-clip" aria-hidden="true"></span>
+    </span>
+  </button>
+</div>
+<div id="pda-back" style="display:none">
+  <div id="pda">
+    <div id="pda-top">
+      <span id="pda-brand">PDA-04</span><span id="pda-led" aria-hidden="true"></span>
+      <button id="pda-x" aria-label="close">✕</button>
+    </div>
+    <div id="pda-screen"></div>
+    <div id="pda-tabs">
+      <button class="pda-tab" data-tab="status" data-i18n="pda.tab.status">상태</button>
+      <button class="pda-tab" data-tab="res" data-i18n="pda.tab.res">자원</button>
+      <button class="pda-tab" data-tab="map" data-i18n="pda.tab.map">지도</button>
+      <button class="pda-tab" data-tab="log" data-i18n="pda.tab.log">기록</button>
+    </div>
+  </div>
+</div>
+
 <div class="panel" id="clock-panel">
   <div id="lcd">
     <div id="lcd-day">DAY 01</div>

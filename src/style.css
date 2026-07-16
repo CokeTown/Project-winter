@@ -177,6 +177,156 @@
   }
   #hud .gauge { background: #bfb296; border-color: #8a7c62; }
   #hud .gauge .g-label { color: #241f18; text-shadow: 0 1px 0 rgba(255, 248, 230, 0.35); }
+  /* ── #199 UI B: 우측 엣지 도킹(접힘 보관) + PDA 계측 오버레이 ──
+     디렉터 레퍼런스: 화면 우측에 반쯤 걸친 PDA 하우징·가죽 일지. 당기면 열림.
+     하이브리드: 계측=전자(LCD 포스퍼 — 기존 #lcd 톤 계승), 기록=종이(일지=기존 저널). */
+  #edge-dock { /* 데스크톱: 시계(우상단)와 자원 패널(우중단) 사이 빈 띠에 스택 안착 */
+    position: fixed; right: 0; top: 20%; z-index: 40;
+    display: flex; flex-direction: column; gap: 10px;
+    zoom: var(--uiz);
+  }
+  #edge-dock button {
+    display: flex; align-items: center; padding: 0; cursor: pointer;
+    background: none; border: none; font-family: inherit;
+    transform: translateX(30%); transition: transform 0.18s ease-out;
+    filter: drop-shadow(-3px 3px 4px rgba(0, 0, 0, 0.5));
+  }
+  #edge-dock button:hover, #edge-dock button:focus-visible { transform: translateX(12%); }
+  .dk-pull {
+    color: #d8cdb4; font-size: 14px; line-height: 1; padding: 10px 3px;
+    background: rgba(20, 17, 13, 0.85); border: 2px solid #4a4136; border-right: none;
+    border-radius: 4px 0 0 4px; text-shadow: 0 0 4px rgba(216, 205, 180, 0.4);
+  }
+  .dk-body { /* PDA 하우징: 건메탈 + 스피커 슬릿 + 발광 라벨 + 마이크로 게이지 */
+    display: flex; flex-direction: column; gap: 5px; width: 86px; padding: 9px 10px;
+    background: linear-gradient(175deg, #35382f, #22241e 60%, #191b16);
+    border: 2px solid #14110d; border-radius: 8px 0 0 8px; border-right: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 4px rgba(0, 0, 0, 0.45);
+  }
+  .dk-slits {
+    height: 10px;
+    background: repeating-linear-gradient(180deg, #101209 0 2px, transparent 2px 4px);
+    border-radius: 2px; opacity: 0.85;
+  }
+  #dock-pda .dk-label {
+    font-size: 11px; letter-spacing: 3px; color: #e8c060; text-align: left;
+    text-shadow: 0 0 5px rgba(232, 192, 96, 0.5);
+  }
+  .dk-gauges { display: flex; flex-direction: column; gap: 3px; }
+  .dk-gauges i {
+    display: block; height: 4px; width: 100%; border-radius: 1px;
+    background:
+      linear-gradient(90deg, #b8f0a0 0 var(--v, 50%), rgba(184, 240, 160, 0.12) var(--v, 50%) 100%);
+    box-shadow: 0 0 3px rgba(140, 240, 120, 0.35);
+  }
+  .dk-gauges i.warn { background: linear-gradient(90deg, #e8c060 0 var(--v, 50%), rgba(232, 192, 96, 0.14) var(--v, 50%) 100%); box-shadow: 0 0 3px rgba(232, 192, 96, 0.4); }
+  .dk-gauges i.crit { background: linear-gradient(90deg, #e0704a 0 var(--v, 50%), rgba(224, 112, 74, 0.16) var(--v, 50%) 100%); box-shadow: 0 0 4px rgba(224, 112, 74, 0.55); animation: dkblink 1.1s steps(1) infinite; }
+  @keyframes dkblink { 50% { opacity: 0.45; } }
+  .dk-body.leather { /* 가죽 일지: 스티치 + 견출지 라벨 + 클립 */
+    gap: 6px;
+    background:
+      radial-gradient(140% 100% at 20% 0%, rgba(255, 240, 210, 0.07), transparent 55%),
+      linear-gradient(170deg, #4a3c2a, #382c1e 70%, #2c2216);
+    box-shadow: inset 0 0 0 3px rgba(20, 17, 13, 0.35), inset 0 0 0 4px rgba(216, 205, 180, 0.14), inset 0 -2px 5px rgba(0, 0, 0, 0.4);
+  }
+  #dock-journal .dk-label {
+    align-self: flex-start; font-size: 10px; letter-spacing: 2px; color: #3a3226;
+    background: #d8cdb4; padding: 3px 8px; border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+  .dk-clip { /* 종이 + 클립 삐져나옴 */
+    height: 12px; border-radius: 2px;
+    background: linear-gradient(180deg, #e2d8bf 0 8px, transparent 8px);
+    position: relative;
+  }
+  .dk-clip::after {
+    content: ''; position: absolute; left: 8px; top: -3px; width: 8px; height: 14px;
+    border: 2px solid #9aa0a6; border-radius: 4px 4px 2px 2px; border-bottom: none;
+  }
+  /* ── PDA 오버레이 ── */
+  #pda-back {
+    position: fixed; inset: 0; z-index: 58; /* 모달(50)·tip 위, 저널(60) 아래 */
+    background: rgba(8, 9, 12, 0.5);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #pda {
+    zoom: var(--uiz); width: min(520px, calc(94vw / var(--uiz, 1)));
+    background: linear-gradient(175deg, #383b32, #24261f 55%, #1a1c16);
+    border: 2px solid #14110d; border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 3px #3f4438, 0 12px 34px rgba(0, 0, 0, 0.6);
+    padding: 10px 12px 12px;
+  }
+  #pda-top { display: flex; align-items: center; gap: 8px; padding: 2px 2px 8px; }
+  #pda-brand { font-size: 10px; letter-spacing: 3px; color: #8a8f7f; }
+  #pda-led { width: 7px; height: 7px; border-radius: 50%; background: #b8f0a0; box-shadow: 0 0 6px rgba(140, 240, 120, 0.8); animation: dkblink 2.4s steps(1) infinite; }
+  #pda-x {
+    margin-left: auto; width: 26px; height: 26px; cursor: pointer;
+    font-family: inherit; font-size: 12px; line-height: 1; color: #d8cdb4;
+    background: #2c2519; border: 2px solid #14110d; border-radius: 4px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  #pda-screen {
+    height: min(430px, calc(66vh / var(--uiz, 1))); overflow-y: auto; overscroll-behavior: contain;
+    background:
+      repeating-linear-gradient(180deg, rgba(184, 240, 160, 0.028) 0 2px, transparent 2px 4px),
+      radial-gradient(120% 90% at 50% 0%, #12200c, #0c1408 70%);
+    border: 2px solid #1e2a18; border-radius: 4px;
+    padding: 10px 12px; color: #b8f0a0; font-size: 11px; line-height: 1.8;
+    text-shadow: 0 0 4px rgba(140, 240, 120, 0.3); word-break: keep-all;
+  }
+  #pda-screen::-webkit-scrollbar { width: 5px; }
+  #pda-screen::-webkit-scrollbar-thumb { background: #3f5a35; border-radius: 3px; }
+  #pda-screen .ph { font-size: 10px; letter-spacing: 2px; color: #6a9a5f; border-bottom: 1px solid rgba(106, 154, 95, 0.4); padding-bottom: 3px; margin-bottom: 6px; }
+  #pda-screen .ph:not(:first-child) { margin-top: 12px; }
+  #pda-screen .pline { display: flex; align-items: center; gap: 8px; }
+  #pda-screen .pline .pk { flex: 0 0 auto; min-width: 64px; color: #8fce7d; }
+  #pda-screen .pline .pbar { flex: 1; height: 8px; background: rgba(184, 240, 160, 0.1); border: 1px solid #2c4424; border-radius: 2px; overflow: hidden; }
+  #pda-screen .pline .pbar > i { display: block; height: 100%; background: #7dc465; box-shadow: 0 0 5px rgba(140, 240, 120, 0.5); }
+  #pda-screen .pline .pbar > i.warn { background: #d8ae52; box-shadow: 0 0 5px rgba(232, 192, 96, 0.5); }
+  #pda-screen .pline .pbar > i.crit { background: #d06a48; box-shadow: 0 0 5px rgba(224, 112, 74, 0.6); }
+  #pda-screen .pline .pv { flex: 0 0 auto; min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+  #pda-screen .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+  #pda-screen .pcell { display: flex; align-items: center; gap: 6px; border-bottom: 1px dashed rgba(106, 154, 95, 0.3); padding: 2px 0; }
+  #pda-screen .pcell .pn { margin-left: auto; font-variant-numeric: tabular-nums; }
+  #pda-screen .pcell.zero { color: #d8ae52; }
+  #pda-screen .pcell.zero .pn { animation: dkblink 1.1s steps(1) infinite; }
+  #pda-screen .pmap { position: relative; margin-top: 6px; border: 1px solid #2c4424; border-radius: 3px; overflow: hidden; }
+  #pda-screen .pmap img {
+    display: block; width: 100%; image-rendering: pixelated;
+    /* 종이 지도 → 포스퍼 스캔: invert로 어두운 바탕+발광 라인 (밝은 라임 뜸 방지) */
+    filter: grayscale(1) invert(1) sepia(1) hue-rotate(60deg) saturate(2.2) brightness(0.78) contrast(1.15);
+  }
+  #pda-screen .pmap .pyou {
+    position: absolute; width: 9px; height: 9px; transform: translate(-50%, -50%); border-radius: 50%;
+    background: #b8f0a0; box-shadow: 0 0 7px rgba(140, 240, 120, 0.9), 0 0 0 2px rgba(12, 20, 8, 0.8);
+    animation: dkblink 1.4s steps(1) infinite;
+  }
+  #pda-screen .pnote { color: #6a9a5f; font-size: 10.5px; }
+  #pda-screen .pbtn-row { margin-top: 10px; display: flex; justify-content: flex-end; }
+  #pda-screen ul.plog { margin: 0; padding-left: 14px; }
+  #pda-screen ul.plog li { margin: 2px 0; }
+  .pda-flick { animation: pdaFlick 0.16s steps(2); }
+  @keyframes pdaFlick { 0% { opacity: 0.35; } 100% { opacity: 1; } }
+  #pda-tabs { display: flex; gap: 6px; margin-top: 10px; }
+  .pda-tab { /* 물리 버튼 열 — 기기 하단 */
+    flex: 1; padding: 7px 4px; cursor: pointer;
+    font-family: inherit; font-size: 10px; letter-spacing: 1px; color: #a8ad9c;
+    background: linear-gradient(180deg, #33362d, #22241e);
+    border: 2px solid #14110d; border-radius: 4px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 0 rgba(0, 0, 0, 0.35);
+  }
+  .pda-tab:active { transform: translateY(1px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+  .pda-tab.active { color: #b8f0a0; text-shadow: 0 0 5px rgba(140, 240, 120, 0.5); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5); background: linear-gradient(180deg, #1d1f19, #24261f); }
+  @media (max-width: 700px) {
+    #edge-dock { top: 40%; } /* 모바일: 자원 패널(우상단) 아래 빈 구간 */
+    .dk-body { width: 72px; padding: 8px; }
+    #pda { width: calc(96vw / var(--uiz, 1)); }
+    #pda-screen { height: calc(58vh / var(--uiz, 1)); }
+  }
+  body.title-mode #edge-dock, body.wallpaper-mode #edge-dock,
+  body.title-mode #pda-back, body.wallpaper-mode #pda-back { display: none !important; }
+
+
 
   /* ── 탐험 패널 ── */
   /* 디렉터 UI 정비: 탐험 패널 = 거점 오른편으로 (튜토리얼 카드가 거점 아래로 오면서 자리 교대) */
