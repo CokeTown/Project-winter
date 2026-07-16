@@ -412,13 +412,29 @@
     filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.55));
   }
   .nt-zone { position: absolute; color: #3a3226; font-size: 11px; line-height: 1.65; overflow: hidden; word-break: keep-all; }
-  .nt-h { font-size: 10px; letter-spacing: 1px; color: #55492f; margin: 0 0 6px 24px; } /* 에셋 회색 헤더탭 위에 정렬 */
+  .nt-h { font-size: 10px; letter-spacing: 1px; color: #55492f; margin: 0 0 6px 24px; min-height: 13px; } /* 에셋 회색 헤더탭 위에 정렬 — 빈 헤더도 높이 유지(2열 시작점 정렬) */
   #nt-log { left: 11%; top: 12.4%; width: 34%; height: 29%; }
   #nt-log ul { margin: 0; padding-left: 12px; list-style: none; } /* 에셋 ◆ 마커와 이중 방지 */
   #nt-log li { margin: 1px 0; }
   #nt-memo { left: 11%; top: 46.8%; width: 34%; height: 21%; }
   #nt-memo-body { margin: 8px 0 0 4px; }
   #nt-gain { left: 53.5%; top: 13.8%; width: 33.5%; height: 31.5%; display: flex; gap: 6%; }
+  #nt-rb { left: 53.5%; top: 78.5%; width: 33.5%; height: 13%; } /* 에셋 우하 가로 박스 */
+  /* #199-c 견출지 실기능화 — 에셋 우측 탭 4개(♥쾌적·📦수급·📍거점·📔도감) 위 히트 존.
+     스킨 무변경 원칙: 그림은 에셋 그대로, 활성 탭만 종이빛 베일로 "들려 보임". */
+  .nt-tab { position: absolute; left: 92.3%; width: 7.2%; background: transparent; border: none; cursor: pointer; padding: 0; }
+  .nt-tab[data-ntab="comfort"] { top: 10.2%; height: 10%; }
+  .nt-tab[data-ntab="supply"] { top: 22.8%; height: 11.3%; }
+  .nt-tab[data-ntab="base"] { top: 43.6%; height: 11.5%; }
+  .nt-tab[data-ntab="journal"] { top: 55.8%; height: 11.2%; }
+  .nt-tab:hover { background: rgba(255, 246, 220, 0.12); }
+  .nt-tab.active { background: rgba(255, 246, 220, 0.2); box-shadow: inset -2px 0 0 rgba(58, 50, 38, 0.45); }
+  /* ♥ 쾌적 탭 컴팩트 축: 헤더+잉크 바+로그 2줄 (종이 위 연필 결) */
+  .nt-ax { margin: 0 0 7px; }
+  .nt-ax .ax-h { display: flex; justify-content: space-between; font-size: var(--fs-s); }
+  .nt-ax .ax-bar { height: 5px; background: rgba(58, 50, 38, 0.16); margin: 2px 0 1px; }
+  .nt-ax .ax-bar i { display: block; height: 100%; background: #55492f; }
+  .nt-ax .ax-log { font-size: var(--fs-s); color: rgba(58, 50, 38, 0.72); line-height: 1.5; }
   .nt-col { flex: 1; min-width: 0; }
   .nt-cell { display: flex; align-items: center; gap: 5px; padding: 1px 0; border-bottom: 1px dashed rgba(58, 50, 38, 0.25); }
   .nt-cell b { margin-left: auto; font-variant-numeric: tabular-nums; }

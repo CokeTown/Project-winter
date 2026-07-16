@@ -8762,7 +8762,9 @@ function pdaAppExit() {
   pdaClose();
 }
 // #199 3차: 「필드 노트」(디렉터 에셋) — 기록=종이. 일지 도킹이 연다. 조회 전용.
+// #199-c 견출지 실기능화: 우측 페이지가 탭 3태(♥쾌적/📦수급(기본)/📍거점) + 📔=도감 액션.
 const noteVisible = () => $('note-back').style.display !== 'none';
+let noteTab = 'supply';
 function noteOpen() {
   $('note-back').style.display = '';
   const li = s => `<li>${s}</li>`;
@@ -8773,11 +8775,46 @@ function noteOpen() {
   const lacks = ['water', 'food'].filter(id => (state.res[id] || 0) === 0);
   if (lacks.length) memo.push(lacks.map(id => `${resIcon(id)} ${LName(RESOURCES[id])} 0`).join(' · '));
   $('nt-memo-body').innerHTML = memo.map(m => `<div>${m}</div>`).join('');
-  const cell = ([id, n], sign) => `<div class="nt-cell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><b>${sign}${n}</b></div>`;
-  const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
-  const spent = Object.entries(state.dayLog.spend || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
-  $('nt-gain-list').innerHTML = gains.map(g => cell(g, '+')).join('') || `<div class="nt-cell dim">—</div>`;
-  $('nt-spent-list').innerHTML = spent.map(s => cell(s, '-')).join('') || `<div class="nt-cell dim">—</div>`;
+  renderNoteRight();
+}
+function renderNoteRight() {
+  document.querySelectorAll('.nt-tab').forEach(b => b.classList.toggle('active', b.dataset.ntab === noteTab));
+  const col = (h, body) => `<div class="nt-col"><div class="nt-h">${h}</div>${body}</div>`;
+  let top = '', rb = '';
+  if (noteTab === 'supply') {
+    const cell = ([id, n], sign) => `<div class="nt-cell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><b>${sign}${n}</b></div>`;
+    const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+    const spent = Object.entries(state.dayLog.spend || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+    top = col(t('nt.gained'), gains.map(g => cell(g, '+')).join('') || `<div class="nt-cell dim">—</div>`)
+        + col(t('nt.spent'), spent.map(s => cell(s, '-')).join('') || `<div class="nt-cell dim">—</div>`);
+  } else if (noteTab === 'comfort') {
+    // ♥ 쾌적 상세: comfortBreakdown 4축을 2열 컴팩트로 (잉크 바 + 원인 로그 2줄)
+    const b = comfortBreakdown();
+    const ax = (label, v, logs) => `<div class="nt-ax">
+      <div class="ax-h"><span>${label}</span><b>${v < 0 ? '' : '+'}${Math.round(v)}</b></div>
+      <div class="ax-bar"><i style="width:${Math.max(0, Math.min(100, (v / 40) * 100))}%"></i></div>
+      ${(logs || []).slice(0, 2).map(l => `<div class="ax-log">${l.name} ${l.v}</div>`).join('')}
+    </div>`;
+    top = col(t('nt.comfort'), ax(t('comfort.warmth'), b.warmth, b.logs.warmth) + ax(t('comfort.clean'), b.clean, b.logs.clean))
+        + col('', ax(t('comfort.security'), b.security, b.logs.security) + ax(t('comfort.mood'), b.mood, b.logs.mood));
+    rb = t('comfort.breakdownTitle', { score: b.score });
+  } else if (noteTab === 'base') {
+    // 📍 거점: 좌=거처(셸터·구역·정착일) / 우=오늘(날씨·예보·결핍)
+    const sh = SHELTERS[state.current], w = WEATHERS[state.weatherType];
+    const line = s => `<div class="nt-cell">${s}</div>`;
+    const left = line(`${shIcon(state.current)}<span>${LName(sh)}</span>`)
+      + line(`${distIcon(districtOf(state.current))}<span>${LName(DISTRICTS[districtOf(state.current)])}</span>`)
+      + line(`<span>${t('nt.settledDays', { n: state.stayDays || 0 })}</span>`);
+    const lacks = ['water', 'food'].filter(id => (state.res[id] || 0) === 0);
+    const right = line(`${w ? wxIcon(state.weatherType) : ''}<span>${w ? LName(w) : ''}</span>`)
+      + (hasForecast() ? line(`<span>${t('forecast.prefix', { text: forecastText() })}</span>`) : '')
+      + (lacks.length ? line(lacks.map(id => `${resIcon(id)} ${LName(RESOURCES[id])} 0`).join(' · ')) : '');
+    top = col(t('nt.base'), left) + col(t('nt.today'), right);
+    rb = (state.expToday ? t('nt.expToday', { n: state.expToday }) : t('nt.expNone'))
+       + (state.expFatigue === state.day ? ' · ' + t('exp.fatigue') : '');
+  }
+  $('nt-gain').innerHTML = top;
+  $('nt-rb').textContent = rb;
 }
 function noteClose() { $('note-back').style.display = 'none'; }
 function renderPDA() {
@@ -11322,6 +11359,12 @@ $('pda-back').addEventListener('pointerdown', e => { if (e.target.id === 'pda-ba
 $('note-back').addEventListener('pointerdown', e => { if (e.target.id === 'note-back') noteClose(); });
 $('nt-close').addEventListener('click', () => noteClose());
 $('nt-journal').addEventListener('click', () => { noteClose(); openJournalModal('journal'); });
+// #199-c 견출지: ♥쾌적/📦수급/📍거점 = 우측 페이지 전환, 📔도감 = nt-journal과 동일 액션
+document.querySelectorAll('.nt-tab').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.ntab === 'journal') { noteClose(); openJournalModal('journal'); return; }
+  noteTab = b.dataset.ntab;
+  renderNoteRight();
+}));
 document.querySelectorAll('#pda-tabs .pda-tab').forEach(b =>
   b.addEventListener('click', () => { pdaTab = b.dataset.tab; renderPDA(); }));
 // 기기 하드웨어 문법: 뒤로(⏎)=닫기, D-패드 ◀▶=탭 순환·▲▼=화면 스크롤, 확인(✓)=재조회

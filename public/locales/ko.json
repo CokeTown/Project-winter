@@ -2158,5 +2158,11 @@
   "nt.memo": "메모",
   "nt.gained": "얻은 것",
   "nt.spent": "쓴 것",
-  "nt.openJournal": "도감·업적 펼치기"
+  "nt.openJournal": "도감·업적 펼치기",
+  "nt.comfort": "쾌적",
+  "nt.base": "거처",
+  "nt.today": "오늘",
+  "nt.expToday": "오늘 탐험 {n}회",
+  "nt.expNone": "오늘은 나가지 않았다",
+  "nt.settledDays": "정착 {n}일차"
 }

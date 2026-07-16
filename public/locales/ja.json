@@ -2158,5 +2158,11 @@
   "nt.memo": "メモ",
   "nt.gained": "入手",
   "nt.spent": "消費",
-  "nt.openJournal": "図鑑・実績を開く"
+  "nt.openJournal": "図鑑・実績を開く",
+  "nt.comfort": "快適",
+  "nt.base": "住処",
+  "nt.today": "今日",
+  "nt.expToday": "今日の探索 {n}回",
+  "nt.expNone": "今日は出かけなかった",
+  "nt.settledDays": "定住{n}日目"
 }

@@ -2158,5 +2158,11 @@
   "nt.memo": "Memo",
   "nt.gained": "Gained",
   "nt.spent": "Spent",
-  "nt.openJournal": "Open records"
+  "nt.openJournal": "Open records",
+  "nt.comfort": "Comfort",
+  "nt.base": "Home",
+  "nt.today": "Today",
+  "nt.expToday": "Trips today: {n}",
+  "nt.expNone": "Stayed in today",
+  "nt.settledDays": "Settled day {n}"
 }
