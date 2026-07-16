@@ -5477,7 +5477,7 @@ function openCraftModal() {
     const owned = active || !def.cost || resHasAll(def.cost);
     const costTip = def.cost ? costLabel(def.cost) : t('deco.free');
     return `<button class="pixel-btn ${active ? 'primary' : ''}" data-deco="${kind}:${id}" ${owned || active ? '' : 'disabled'}
-      title="${LName(def)} · ${costTip}" style="margin:2px;padding:4px 6px;font-size:11px">${def.emoji} ${LName(def)}${active ? ' ✓' : (def.cost ? ` <span style="opacity:.6">${costTip}</span>` : '')}</button>`;
+      title="${LName(def)}" style="margin:2px;padding:4px 6px;font-size:11px">${def.emoji} ${LName(def)}${active ? ' ✓' : (def.cost ? ` <span style="opacity:.6">${costTip}</span>` : '')}</button>`;
   }).join('');
   const themeHtml = THEME_SETS.map(ts => {
     const done = themeSetActive(ts);
@@ -10236,7 +10236,8 @@ function openShelterModal() {
           ? `<div class="s-desc" style="color:var(--text-dim)">${t('shelter.reqLabel')}</div><div class="req-chips">${chips}</div>`
           : '';
         const ok = resHasAll(cost);
-        btn = `<button class="pixel-btn" data-shelter="${id}" ${ok ? '' : 'disabled'} title="${ok ? '' : t('shelter.noCostNeed', { cost: costLabel(cost) })}">${renov ? t('shelter.moveRefit') : t('shelter.move')}</button>`;
+        // title 제거: costLabel이 HTML(img)이 된 뒤 속성이 깨져 마크업이 텍스트로 유출되던 결함 — 부족분 대조는 req-chips가 이미 표시
+        btn = `<button class="pixel-btn" data-shelter="${id}" ${ok ? '' : 'disabled'}>${renov ? t('shelter.moveRefit') : t('shelter.move')}</button>`;
       }
       return `
       <div class="shelter-card ${cur ? 'current' : ''} ${unlocked ? '' : 'locked'}">

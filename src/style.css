@@ -471,6 +471,13 @@
   body.pda-app #pda-lcd .wd-row .p-eff { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
   body.pda-app #pda-lcd .wd-row .pixel-btn { flex: 0 0 auto; padding: 3px 10px; }
   body.pda-app #pda-lcd .wd-row > span:last-child:not(.p-eff) { flex: 0 0 auto; white-space: nowrap; }
+  /* 이주 셸터 카드 — 좁은 LCD에서 [아이콘|본문|버튼] 3열이 본문을 ~180px로 압착해 문장이 세로 폭포(디렉터 신고).
+     아이콘+본문 2열 그리드, 버튼은 하단 행 우측 → 본문이 전폭을 받아 블록당 1~2줄로 정돈. */
+  body.pda-app #pda-lcd .shelter-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px; align-items: start; padding: 7px 9px; }
+  body.pda-app #pda-lcd .shelter-card .s-emoji { grid-column: 1; font-size: 20px; line-height: 1; }
+  body.pda-app #pda-lcd .shelter-card .s-emoji .px-icon { width: 22px; height: 22px; vertical-align: -3px; }
+  body.pda-app #pda-lcd .shelter-card .s-body { grid-column: 2; min-width: 0; }
+  body.pda-app #pda-lcd .shelter-card > .pixel-btn { grid-column: 1 / -1; justify-self: end; padding: 4px 14px; }
   body.pda-app #pda-lcd .prep-row .p-eff { flex: 1 1 auto; min-width: 0; }
   body.pda-app #pda-lcd .prep-row .pixel-btn { margin-left: auto !important; } /* 인라인 margin 6px보다 우선 — 버튼 우측 정렬 */
   body.pda-app #pda-lcd #modal img { max-width: 100%; }
