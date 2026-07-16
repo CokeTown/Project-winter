@@ -99,6 +99,9 @@ export const BAL = {
     // 꾸미기/배경화면 해금(피드백 2026-07-15 완화): "봄 지나면" — 첫 봄(1~12일)을 넘겨 여름 진입(day≥13).
     //   가장 사랑받는 코지-꾸미기 축을 첫 세션 안에 열어 준다(구 2겨울=96일+ 게이트가 관객을 막던 문제 해소).
     wallpaperUnlockDay: 13,
+    /* #108 난이도별 깊이 — 텃밭 수확 확률(하드가 오를수록 흉작 리스크). 정착 farming이 하드에서도
+       "심으면 끝"이 되지 않게. 기대값: 옥탑 텃밭 하드 1.7/일 · 혹한 1.4/일 (노말 2.0). */
+    gardenChance: { normal: 1.0, hard: 0.85, hardcore: 0.7, zen: 1.0, wallpaper: 1.0 },
   },
 
   /* ── 성공률 pity 보정 (expActualRate / resolveExpedition) ── */

@@ -552,6 +552,7 @@
   "day.raincatch": "🪣 The rain barrel collected water. (+1)",
   "day.bigraincatch": "🛢️ The large rain catch filled up with water. (+{n})",
   "day.gardenBoxFrozen": "🌱 The garden box is frozen; no harvest.",
+  "day.gardenMiss": "The garden's dry — nothing to pick today.",
   "day.gardenBox": "🌱 Harvested from the garden box. (+1)",
   "day.solar": "🔆 The solar panel charged a battery. (+1)",
   "day.lightingOut": "💡 The lights went out — no battery. The room is dark again.",

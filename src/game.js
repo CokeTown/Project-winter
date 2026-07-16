@@ -2582,7 +2582,8 @@ function loadShelter(id) {
 function moveCostFor(id) {
   const cost = {};
   if (!state.renovated[id]) {
-    for (const [rid, n] of Object.entries(SHELTERS[id].moveCost || {})) cost[rid] = (cost[rid] || 0) + n;
+    // #108 정비코스트 배수: 재정비 자원에 gateCostMul(하드 1.25·혹한 1.5·무한 0.85) — 여정 물자(음식·물)는 생존 상수라 제외.
+    for (const [rid, n] of Object.entries(gateCost(SHELTERS[id].moveCost || {}))) cost[rid] = (cost[rid] || 0) + n;
   }
   const cross = districtOf(id) !== districtOf(state.current);
   if (cross) { cost.food = (cost.food || 0) + BAL.economy.moveCrossFood; cost.water = (cost.water || 0) + BAL.economy.moveCrossWater; }
@@ -2602,7 +2603,7 @@ async function moveToShelter(id) {
   resConsumeAll(cost);
   if (renov) {
     state.renovated[id] = true;
-    state.dayLog.notes.push(t('move.renovNote', { name: LName(SHELTERS[id]), cost: costLabel(SHELTERS[id].moveCost || {}) || t('free') }));
+    state.dayLog.notes.push(t('move.renovNote', { name: LName(SHELTERS[id]), cost: costLabel(gateCost(SHELTERS[id].moveCost || {})) || t('free') })); // #108 표기=판정 동일 게이트 비용
   }
   if (cross) {
     state.gameMin += BAL.economy.moveCrossTimeMin; // 구역 간 여정 3시간
@@ -9359,14 +9360,19 @@ function processDay() {
     const n = hasMod('bigraincatch') ? BAL.economy.bigRaincatchWater : 1;
     resAdd('water', n); notes.push(t(hasMod('bigraincatch') ? 'day.bigraincatch' : 'day.raincatch', { n }));
   }
+  // #108 텃밭 확률화: 하드일수록 흉작 리스크 (노말/무한/배경화면 1.0 — 기존 결정론 유지)
+  const gardenRoll = () => Math.random() < (BAL.modes.gardenChance[state.mode] ?? 1);
   if (hasMod('garden') && state.day % 2 === 0) {
     if (seasonOf().id === 'winter') notes.push(t('day.gardenBoxFrozen'));
+    else if (!gardenRoll()) notes.push(t('day.gardenMiss'));
     else { resAdd('food', 1); notes.push(t('day.gardenBox')); }
   }
   // 옥상 텃밭(#53): 매일 생산. 겨울엔 휴면(0). 생산량 = 기본 × 옥탑 퍽 gardenMult(2). 성장 단계 진행(시각).
   if (hasMod('rooftopGarden')) {
     if (seasonOf().id === 'winter') {
       notes.push(t('rooftop.gardenDormant'));
+    } else if (!gardenRoll()) {
+      notes.push(t('day.gardenMiss')); // #108 흉작일 — 수확 0 (성장 단계도 그날은 정지)
     } else {
       const n = BAL.economy.rooftopGardenFoodPerDay * (perk.gardenMult || 1);
       resAdd('food', n);

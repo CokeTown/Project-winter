@@ -552,6 +552,7 @@
   "day.raincatch": "🪣 雨水受けに水がたまった。(+1)",
   "day.bigraincatch": "🛢️ 大型の雨水受けに水がなみなみとたまった。(+{n})",
   "day.gardenBoxFrozen": "🌱 菜園ボックスが凍って収穫はない。",
+  "day.gardenMiss": "畑が乾いていた——今日は収穫なし。",
   "day.gardenBox": "🌱 菜園ボックスから収穫した。(+1)",
   "day.solar": "🔆 ソーラーパネルがバッテリーを充電した。(+1)",
   "day.lightingOut": "💡 明かりが消えた — バッテリーがない。部屋がまた暗くなった。",

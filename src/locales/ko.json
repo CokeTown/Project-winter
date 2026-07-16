@@ -552,6 +552,7 @@
   "day.raincatch": "🪣 빗물받이에 물이 모였다. (+1)",
   "day.bigraincatch": "🛢️ 대형 빗물받이에 물이 그득 고였다. (+{n})",
   "day.gardenBoxFrozen": "🌱 텃밭 상자가 얼어 거둘 게 없다.",
+  "day.gardenMiss": "텃밭이 말랐다 — 오늘은 거둘 게 없다.",
   "day.gardenBox": "🌱 텃밭 상자에서 거뒀다. (+1)",
   "day.solar": "🔆 태양광 패널이 배터리를 채웠다. (+1)",
   "day.lightingOut": "💡 전등이 나갔다 — 배터리가 없다. 방이 다시 어두워졌다.",
