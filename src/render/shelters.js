@@ -66,7 +66,7 @@ export function makeShelterBuilders(ctx) {
       buildRoom() {
         const { w, d, h } = getROOM();
         const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ map: plywoodTex }));
-        floor.material.color.setHex(0xffffff);
+        floor.material.color.setHex(0xb8a88e); // 낡은 합판 톤다운 (디렉터 신고: 트레일러 바닥 백색)
         floor.position.y = -0.125; floor.receiveShadow = true;
         tagDecoFloor(floor); roomGroup.add(floor);
         // 받침 블록
@@ -2236,10 +2236,10 @@ export function makeShelterBuilders(ctx) {
         const rand = seededRand(2401);
         // 바닥: 콘크리트 + 마모 띠
         const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ map: concreteTex }));
-        floor.material.color.setHex(0xcfc9bd);
+        floor.material.color.setHex(0x8f8a80); // 회콘크리트 (디렉터 신고: 바닥 백색 부상 — 크림 틴트 폐기)
         floor.position.y = -0.125; floor.receiveShadow = true;
         tagDecoFloor(floor); roomGroup.add(floor);
-        for (let i = 0; i < 3; i++) B(roomGroup, 1.2 + rand() * 1.6, 0.012, 0.5 + rand() * 0.5, 0xb4aea0, -w / 3 + rand() * w * 0.66, 0.006, -d / 3 + rand() * d * 0.66);
+        for (let i = 0; i < 3; i++) B(roomGroup, 1.2 + rand() * 1.6, 0.012, 0.5 + rand() * 0.5, 0x7c766c, -w / 3 + rand() * w * 0.66, 0.006, -d / 3 + rand() * d * 0.66);
         // 벽 4면: 회색 콘크리트. 앞벽(-z) 큰 창 2(도로 조망), +x 벽 민원 창구 창
         const wallMat = wallPhong({ map: concreteTex });
         wallMat.userData.shared = true;
@@ -2436,7 +2436,7 @@ export function makeShelterBuilders(ctx) {
         const rand = seededRand(2403);
         // 바닥: 석판 + 낡은 러너 카펫
         const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ map: stoneBlockTex }));
-        floor.material.color.setHex(0xd8d2c6);
+        floor.material.color.setHex(0x9a9288); // 석판 웜그레이 (백색 부상 방지)
         floor.position.y = -0.125; floor.receiveShadow = true;
         tagDecoFloor(floor); roomGroup.add(floor);
         B(roomGroup, 1.2, 0.02, 3.4, 0x5a3c34, -1.2, 0.012, 0);
@@ -2572,11 +2572,11 @@ export function makeShelterBuilders(ctx) {
         const patched = (state.mods?.terminal || []).includes('terminalPatch');
         // 바닥: 석판 + 중앙 대리석 띠
         const floor = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.25, d + 0.5), wallPhong({ map: stoneBlockTex }));
-        floor.material.color.setHex(0xd2cabc);
+        floor.material.color.setHex(0x968e80); // 석재 그레이 (디렉터 신고: 대합실 바닥 백색)
         floor.position.y = -0.125; floor.receiveShadow = true;
         tagDecoFloor(floor); roomGroup.add(floor);
-        B(roomGroup, w * 0.7, 0.012, 1.4, 0xc2b8a4, 0, 0.006, 0);
-        B(roomGroup, w * 0.7, 0.014, 0.08, 0x9a8f7c, 0, 0.007, -0.7); B(roomGroup, w * 0.7, 0.014, 0.08, 0x9a8f7c, 0, 0.007, 0.7);
+        B(roomGroup, w * 0.7, 0.012, 1.4, 0x8f877a, 0, 0.006, 0);
+        B(roomGroup, w * 0.7, 0.014, 0.08, 0x6e665a, 0, 0.007, -0.7); B(roomGroup, w * 0.7, 0.014, 0.08, 0x6e665a, 0, 0.007, 0.7);
         // 벽: 석재 — 앞벽 홀 조망 창
         const wallMat = wallPhong({ map: stoneBlockTex });
         wallMat.userData.shared = true;
