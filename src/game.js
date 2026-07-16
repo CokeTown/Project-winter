@@ -6084,8 +6084,8 @@ function openJournalModal(tab = 'journal') {
   const achsHtml = ACHS.map(a => {
     const got = state.achs?.[a.id];
     const veiled = a.hidden && !got; // 암호 업적: 미해금 시 존재만 — 이름·아이콘 은닉
+    // 아이콘 없음(디렉터): 업적 아이콘은 스팀 도전과제 쪽 채널 — 인게임 목록은 텍스트만
     return `<div class="prep-row li-row" style="cursor:default;${got ? '' : 'opacity:0.4'}">
-      <span style="font-size:16px">${veiled ? '▫️' : a.icon}</span>
       <span>${veiled ? '???' : LName(a)}</span>
       <span class="p-cost">${LDesc(a)}${got ? ' ✓' : ''}</span>
     </div>`;
@@ -6119,11 +6119,11 @@ function openJournalModal(tab = 'journal') {
   const bpRow = (id, got, hint) => {
     const d = DEFS[id];
     return `<div class="prep-row li-row" style="cursor:default;${got ? '' : 'opacity:0.6'}">
-      ${furnIcon(id, 'px-lg')}<span>${LName(d)}</span>
+      <span>${LName(d)}</span>
       <span class="p-cost">${got ? '✓' : hint}</span></div>`;
   };
   const bpVeilRow = (hint = '') => `<div class="prep-row li-row" style="cursor:default;opacity:0.35">
-      <span style="font-size:16px">▫️</span><span>???</span><span class="p-cost">${hint}</span></div>`;
+      <span>???</span><span class="p-cost">${hint}</span></div>`;
   const sigBlocks = Object.entries(BAL.blueprint.regionItems).map(([rid, ids]) => {
     const visited = ((state.regionVisits || {})[rid] || 0) > 0;
     const head = `<div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${regionIcon(rid)} ${visited ? LName(REGIONS[rid]) : '???'}</div>`;
@@ -6136,7 +6136,7 @@ function openJournalModal(tab = 'journal') {
   const soloRows = soloIds.map(id => bpOwned[id] ? bpRow(id, true, '') : bpVeilRow(t('col.bpLegendSrc'))).join('');
   // #195: 젤 필터북 — 도면은 아니지만 같은 전설 채널의 1회 한정 유품(#189 P3). 미보유 잠금 행으로 pull 가시화.
   const gelRow = state.lightGels
-    ? `<div class="prep-row li-row" style="cursor:default"><span style="font-size:16px">📔</span><span>${t('col.gelBook')}</span><span class="p-cost">✓</span></div>`
+    ? `<div class="prep-row li-row" style="cursor:default"><span>${t('col.gelBook')}</span><span class="p-cost">✓</span></div>`
     : bpVeilRow(t('col.bpGelSrc'));
   const colBody = `
     <div class="report-sec"><span class="r-title">${t('col.bpTitle', { n: bpGot, total: bpTotal })}</span>
