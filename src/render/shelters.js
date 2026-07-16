@@ -2535,9 +2535,10 @@ export function makeShelterBuilders(ctx) {
         B(envRoot, 3.4, 0.24, 16, 0x4a453e, -6.5, GY - 0.1, 4);
         for (let i = 0; i < 6; i++) { B(envRoot, 0.1, 0.5, 0.1, 0x55524c, -8.3, GY + 0.25, -2 + i * 2.6); B(envRoot, 0.1, 0.5, 0.1, 0x55524c, -4.7, GY + 0.25, -2 + i * 2.6); }
         B(envRoot, 0.06, 0.1, 15, 0x66625a, -8.3, GY + 0.5, 4); B(envRoot, 0.06, 0.1, 15, 0x66625a, -4.7, GY + 0.5, 4);
-        for (let i = 0; i < 6; i++) {
-          const bw = 3.5 + rand() * 4, bh2 = 6 + rand() * 10;
-          B(envRoot, bw, bh2, 3.5, i % 2 ? 0x241a26 : 0x1c141e, -34 + i * 12 + rand() * 3, GY + bh2 / 2 - 1, -70 - rand() * 8);
+        // 원경 도심 — 창 구멍 실루엣 타워(협곡 건너, 다리 상판 너머 안개 끝자락에 걸린다. 통짜 박스 폐기)
+        for (let i = 0; i < 9; i++) {
+          const bw = 4.5 + rand() * 4, bh2 = 7 + rand() * 13;
+          ruinTowerSil(envRoot, -40 + i * 10 + rand() * 4, GY - 1, -56 - rand() * 6, bw, bh2, 8400 + i, '#241a26');
         }
         ogGround((x, z) => GY, 12, 22, 5, (x, z) => z > -6);                     // 마당 3년차 수풀 (절벽 밖 제외)
       },
