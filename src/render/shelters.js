@@ -34,6 +34,33 @@ export function makeShelterBuilders(ctx) {
   const _leafRimMat = new THREE.SpriteMaterial({ map: _leafTex, color: 0x62703a, transparent: true, depthWrite: false });   // 광측 잎(밝은 올리브)
   // 잎 덩이 클러스터: 3~5장 겹침·미러·지터. rim=true면 절반은 광측 톤. rnd=seededRand.
   const leafCluster = (parent, x, y, z, r, rnd, rim) => { const n = 3 + Math.floor(rnd() * 3); for (let i = 0; i < n; i++) { const sp = new THREE.Sprite((rim && rnd() < 0.5) ? _leafRimMat : _leafSilMat); const s = r * (0.7 + rnd() * 0.8); sp.scale.set(s * (rnd() < 0.5 ? -1 : 1), s * (0.72 + rnd() * 0.4), 1); sp.position.set(x + (rnd() - 0.5) * r * 1.2, y + r * 0.28 + (rnd() - 0.5) * r * 0.6, z + (rnd() - 0.5) * r * 1.2); parent.add(sp); } };
+  // ── 폐건물 실루엣 타워 (디렉터 2026-07-17 '복셀 네모' 반려 → 창 구멍 문법, 개통 비네트와 동일 언어) ──
+  //   시드 결정론 캔버스: 컬럼별 붕괴 지붕선 + 창 구멍(하늘이 관통) + 측면 붕괴 바이트 + 안테나·급수탱크.
+  //   Lambert 재질 — 시간대 조명·무드 틴트를 따라 낮엔 원경 폐허, 노을엔 역광 실루엣이 된다.
+  const _ruinTexCache = {};
+  const ruinTowerSil = (parent, x, baseY, z, w, h, seed, col = '#35262c') => {
+    const key = seed + col;
+    if (!_ruinTexCache[key]) {
+      const c = document.createElement('canvas'); c.width = 96; c.height = 256;
+      const g = c.getContext('2d'); const tr = seededRand(seed);
+      g.fillStyle = col;
+      const topBase = 10 + tr() * 34, cols = 6, cw = 96 / cols;
+      for (let ci = 0; ci < cols; ci++) { const ty = topBase + (tr() < 0.4 ? tr() * 50 : tr() * 12); g.fillRect(ci * cw, ty, cw + 1, 256 - ty); }
+      if (tr() < 0.6) g.clearRect(tr() < 0.5 ? 0 : 70, 46 + tr() * 70, 26, 34 + tr() * 44); // 측면 붕괴 바이트
+      for (let wy = topBase + 16; wy < 244; wy += 13) for (let wx = 6; wx < 88; wx += 12) {
+        const r = tr();
+        if (r < 0.4) g.clearRect(wx, wy, 6.5, 7.5); else if (r < 0.47) g.clearRect(wx - 1, wy - 1, 10, 10);
+      }
+      const rx = 12 + tr() * 60;
+      if (tr() < 0.7) g.fillRect(rx, topBase - 20, 2.5, 22);                                 // 안테나
+      if (tr() < 0.5) g.fillRect(rx + 12, topBase - 8, 13, 9);                               // 급수탱크
+      const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+      _ruinTexCache[key] = tex;
+    }
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshLambertMaterial({ map: _ruinTexCache[key], transparent: true, alphaTest: 0.3, side: THREE.DoubleSide }));
+    m.position.set(x, baseY + h / 2, z); parent.add(m); return m;
+  };
   return {
     container: {
       buildRoom() {
@@ -2357,12 +2384,13 @@ export function makeShelterBuilders(ctx) {
         }
         Cyl(envRoot, 0.07, 0.07, 5.4, 0x8a857a, -10.5, GY + 2.7, -7.5, 8);
         const flag = B(envRoot, 1.1, 0.62, 0.03, 0x6a3a34, -9.9, GY + 4.9, -7.5); tagSway(flag, 0.3);
-        // 원경: 동부 도심 스카이라인(북쪽 실루엣) + 크레인
-        for (let i = 0; i < 8; i++) {
-          const bw = 4 + rand() * 5, bh = 8 + rand() * 14;
-          const bd2 = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, 4), lamb(i % 2 ? 0x35262c : 0x2c2026));
-          bd2.position.set(-30 + i * 9 + rand() * 3, GY + bh / 2, -34 - rand() * 8); envRoot.add(bd2);
+        // 원경: 동부 도심 스카이라인 — 창 구멍 실루엣 타워 2열(개통 비네트와 동일 문법. 통짜 박스 폐기)
+        for (let i = 0; i < 11; i++) {
+          const bw = 5 + rand() * 4, bh = 9 + rand() * 15;
+          ruinTowerSil(envRoot, -34 + i * 7 + rand() * 3, GY, -36 - rand() * 6, bw, bh, 8200 + i);
         }
+        for (let i = 0; i < 7; i++)                                                        // 뒷열 — 더 흐린 톤(대기 원근)
+          ruinTowerSil(envRoot, -30 + i * 11 + rand() * 4, GY, -48, 6 + rand() * 5, 7 + rand() * 10, 8300 + i, '#452c30');
         { const cr2 = new THREE.Group();
           const mast = new THREE.Mesh(new THREE.BoxGeometry(0.6, 16, 0.6), lamb(0x3c2c2a)); mast.position.set(0, 8, 0); cr2.add(mast);
           const jib = new THREE.Mesh(new THREE.BoxGeometry(11, 0.5, 0.5), lamb(0x3c2c2a)); jib.position.set(3.6, 15.6, 0); cr2.add(jib);
@@ -2372,6 +2400,12 @@ export function makeShelterBuilders(ctx) {
         ogGround((x, z) => GY, 20, 30, 6, (x, z) => Math.abs(x) > 2.6 || z < -14);
         for (const [vx, vz] of [[-5.4, canZ - 1.6], [5.4, canZ + 1.6], [-7.4, canZ - 3.4]])
           for (let i = 0; i < 4; i++) B(envRoot, 0.5 - i * 0.07, 0.6, 0.5 - i * 0.07, i % 2 ? 0x2a3d24 : 0x35492a, vx + (rand() - 0.5) * 0.3, GY + 0.4 + i * 0.62, vz + (rand() - 0.5) * 0.3);
+        // (d)-2 잠식 보강: 캐노피 상판·컨테이너 스택 정수리·트럭 적재함·펜스 라인 — 초록이 구조물을 탄다
+        for (let i = 0; i < 5; i++) leafCluster(envRoot, -5 + rand() * 10, GY + 4.15, canZ - 1.8 + rand() * 3.4, 0.5 + rand() * 0.2, rand, true);
+        for (const [lx, ly, lz] of [[-15.7, GY + 5.85, -4.8], [-16, GY + 6.95, -1], [-16.2, GY + 2.5, 2.5], [15.5, GY + 2.45, -8], [16.2, GY + 2.45, -2]])
+          for (let i = 0; i < 3; i++) leafCluster(envRoot, lx + (rand() - 0.5) * 2.4, ly, lz + (rand() - 0.5) * 1.0, 0.55 + rand() * 0.2, rand, true);
+        leafCluster(envRoot, 0.6 + 0.5, GY + 2.6, 20.5, 0.6, rand, false);                 // 기운 트럭 적재함
+        for (let i = 0; i < 8; i++) leafCluster(envRoot, (i % 2 ? -24 : 24) + (rand() - 0.5) * 0.6, GY + 0.9 + rand() * 0.7, -17 + rand() * 32, 0.45 + rand() * 0.2, rand, false); // 펜스 담쟁이
       },
     },
 

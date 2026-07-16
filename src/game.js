@@ -554,7 +554,9 @@ function applyTimeLighting() {
   dayness = THREE.MathUtils.clamp((hemi.intensity - 0.7) / 0.35, 0, 1);
   // #54: 지역(지구)별 무드 틴트 — 어디에 있는지가 색으로 읽히게. 낮에만 은은하게(18%×dayness).
   // 외곽=갈색 헤이즈 / 도심=차가운 회청 / 초원=옅은 초록기 / 숲=짙은 초록 / 해안=푸른 습기
-  const _dt = { outskirts: 0x9a8368, city: 0x7e8ea6, meadow: 0x93a67e, forest: 0x7a9678, coast: 0x7e9aac }[districtOf(state.current)];
+  // 2.0-(d): 동부 4구역 = 붉은 노을 팔레트(아트 디렉션 정본) — 관문이 가장 붉고 심부로 갈수록 자줏빛으로 식는다
+  const _dt = { outskirts: 0x9a8368, city: 0x7e8ea6, meadow: 0x93a67e, forest: 0x7a9678, coast: 0x7e9aac,
+    eastgate: 0xa8604a, eastbridge: 0x9e5a52, eaststation: 0x94585a, eastcore: 0x8a545e }[districtOf(state.current)];
   if (_dt && dayness > 0.01) {
     scene.fog.color.lerp(_tc.b.setHex(_dt), 0.18 * dayness);
     hemi.color.lerp(_tc.b, 0.10 * dayness);
