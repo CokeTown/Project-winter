@@ -1622,7 +1622,8 @@ function buildOvergrowth() {
 // state / DEFAULT_STATE 는 core/state.js 로 이전 (모놀리스 분해 Phase 1). 위 import 참조.
 
 function costLabel(cost) {
-  return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(' + ');
+  // P2 스윕: 이모지 → 모노 아트 (toast가 innerHTML로 승격돼 전 표면 HTML 안전)
+  return Object.entries(cost).map(([id, n]) => `${resIcon(id)}${LName(RESOURCES[id])} ${n}`).join(' + ');
 }
 // (B-④) 보유/필요 대조 칩 공통 렌더러 — 이주 창·프로젝트 카드·셸터 카드 전부 이 한 곳을 쓴다.
 //   [아이콘 이름 보유/필요] 형태로 자원 이름을 병기(아이콘+숫자만으론 무슨 아이템인지·무슨 수치인지 모른다는 신고).
@@ -8652,7 +8653,8 @@ function endingLeaning() {
 function updateClock() {
   const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
   const se = seasonOf();
-  $('lcd-day').textContent = t('clock.dayLine', { day: String(state.day).padStart(2, '0'), sicon: se.icon, sname: LName(se), sd: seasonDay(), total: SEASON_DAYS });
+  // 계절 아트 아이콘 (이모지 sicon → icon(), textContent→innerHTML — P2 스윕)
+  $('lcd-day').innerHTML = t('clock.dayLine', { day: String(state.day).padStart(2, '0'), sicon: icon(`icon_season_${se.id}`, se.icon), sname: LName(se), sd: seasonDay(), total: SEASON_DAYS });
   $('lcd-time').innerHTML = `${String(h).padStart(2, '0')}<span id="lcd-colon">:</span>${String(m).padStart(2, '0')}`;
   const [timeIcon, label, timeArt] = timeLabel();
   // #199 5차-b(디렉터): 날씨(+페널티)는 시계가 계기 — HUD 스트립에서 이관. 이모지 금지 → 아트 아이콘
@@ -10811,7 +10813,7 @@ $('t-import').addEventListener('click', importSave);
 const toastEl = $('toast');
 let toastTimer = null;
 function toast(msg) {
-  toastEl.textContent = msg;
+  toastEl.innerHTML = msg; // P2: costLabel 등 아트 아이콘 수용 — msg는 전부 자체 로케일 문자열(외부 입력 없음)
   toastEl.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
