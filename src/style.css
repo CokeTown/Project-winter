@@ -213,7 +213,7 @@
   #edge-dock #dock-journal:hover, #edge-dock #dock-journal:focus-visible { transform: translateX(10%); }
   #edge-dock button:active { transform: translateX(0%) !important; transition-duration: 0.1s; }
   #edge-dock #dock-pda { /* 하우징=디렉터 에셋(dock_pda.png, JS 인라인) — 마이크로 게이지만 그린 윈도 위에 */
-    position: relative; width: 110px; aspect-ratio: 373 / 928;
+    position: relative; width: 76px; aspect-ratio: 373 / 928; /* 디렉터: 110px는 과대 — 30% 감 */
     background: center / contain no-repeat; /* 축소 표시 — 스무스 다운스케일이 디테일 보존(픽셀아트 확대와 반대) */
     /* 어두운 씬에 묻히는 실루엣 분리: 밝기 리프트 + 앰버 림 */
     filter: brightness(1.22) saturate(1.05) drop-shadow(0 0 5px rgba(232, 192, 96, 0.22)) drop-shadow(-3px 3px 4px rgba(0, 0, 0, 0.55));
