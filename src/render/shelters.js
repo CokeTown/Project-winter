@@ -2323,10 +2323,12 @@ export function makeShelterBuilders(ctx) {
       buildEnv() {
         const GY = -0.55;
         const rand = seededRand(2402);
-        // 아스팔트 마당 + 차선 + 균열
+        // 아스팔트 마당 + 관통 국경도로 + 차선 + 균열 — 도로가 마당 밖까지 이어진다(디렉터 신고: 경계에서 끊겨 보임)
         const lot = B(envRoot, 64, 0.3, 44, 0x54524d, 0, GY - 0.15, 0); lot.receiveShadow = true;
-        for (let i = 0; i < 8; i++) B(envRoot, 0.24, 0.012, 2.2, 0xb8b09a, -3.5, GY + 0.01, -20 + i * 5.4);   // 차로 중앙선(남북)
-        for (let i = 0; i < 8; i++) B(envRoot, 0.24, 0.012, 2.2, 0xb8b09a, 3.5, GY + 0.01, -20 + i * 5.4);
+        B(envRoot, 14, 0.26, 60, 0x504e49, 0, GY - 0.16, -52);                                // 북측 연장 노반
+        B(envRoot, 14, 0.26, 26, 0x504e49, 0, GY - 0.16, 35);                                 // 남측 연장 노반
+        for (let i = 0; i < 17; i++) B(envRoot, 0.24, 0.012, 2.2, 0xb8b09a, -3.5, GY + 0.01, -74 + i * 7.2); // 차로 중앙선(남북 관통)
+        for (let i = 0; i < 17; i++) B(envRoot, 0.24, 0.012, 2.2, 0xb8b09a, 3.5, GY + 0.01, -74 + i * 7.2);
         for (let i = 0; i < 10; i++) { const cr = B(envRoot, 0.6 + rand() * 2, 0.014, 0.14, 0x3c3a36, -20 + rand() * 40, GY + 0.008, -16 + rand() * 32); cr.rotation.y = rand() * 3; }
         // 검문 캐노피 (남쪽 차로 위): 기둥 4 + 상판 + 세관 사인(적테 백판 + 청 엠블럼)
         const canZ = 9.5;
@@ -2384,13 +2386,29 @@ export function makeShelterBuilders(ctx) {
         }
         Cyl(envRoot, 0.07, 0.07, 5.4, 0x8a857a, -10.5, GY + 2.7, -7.5, 8);
         const flag = B(envRoot, 1.1, 0.62, 0.03, 0x6a3a34, -9.9, GY + 4.9, -7.5); tagSway(flag, 0.3);
-        // 원경: 동부 도심 스카이라인 — 창 구멍 실루엣 타워 2열(개통 비네트와 동일 문법. 통짜 박스 폐기)
-        for (let i = 0; i < 11; i++) {
-          const bw = 5 + rand() * 4, bh = 9 + rand() * 15;
-          ruinTowerSil(envRoot, -34 + i * 7 + rand() * 3, GY, -36 - rand() * 6, bw, bh, 8200 + i);
+        // 원경: 컨테이너의 바다 (디렉터 2026-07-17 정정 — 실루엣 플레인은 낮에 '그림자 패널'로 읽힘.
+        //   세관의 장소성은 마천루가 아니라 야적장: 국경도로 양옆을 컨테이너 스택 벽이 지평선까지 메운다)
+        for (let side = 0; side < 2; side++) {
+          const sgn = side ? 1 : -1;
+          for (let col = 0; col < 6; col++) {                                              // 열(도로에서 멀어지며)
+            for (let row = 0; row < 4; row++) {                                            // 행(북쪽으로)
+              const bx = sgn * (10 + col * 6.2 + rand() * 1.6), bz = -26 - row * 7.5 - rand() * 2;
+              const tiers = 1 + Math.floor(rand() * 3);                                    // 1~3단 스택
+              for (let tzr = 0; tzr < tiers; tzr++) {
+                if (rand() < 0.12) continue;                                               // 빠진 자리(하역 흔적)
+                cont(bx + (rand() - 0.5) * 0.5, GY + tzr * 2.3, bz + (rand() - 0.5) * 0.5, (rand() - 0.5) * 0.14, (col * 3 + row + tzr) % 5);
+                if (tzr === tiers - 1 && rand() < 0.4) leafCluster(envRoot, bx, GY + tiers * 2.3 + 0.15, bz, 0.5 + rand() * 0.2, rand, true); // 정수리 수풀
+              }
+            }
+          }
         }
-        for (let i = 0; i < 7; i++)                                                        // 뒷열 — 더 흐린 톤(대기 원근)
-          ruinTowerSil(envRoot, -30 + i * 11 + rand() * 4, GY, -48, 6 + rand() * 5, 7 + rand() * 10, 8300 + i, '#452c30');
+        for (const gx of [-14, 15]) {                                                      // 야드 갠트리 크레인 2기 — 스택 위 거대 문형
+          const gr = new THREE.Group(); gr.position.set(gx, GY, -34); envRoot.add(gr);
+          for (const lx of [-4.6, 4.6]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.7, 11, 0.7), lamb(0x4a3430)); leg.position.set(lx, 5.5, 0); leg.castShadow = true; gr.add(leg); }
+          const beam = new THREE.Mesh(new THREE.BoxGeometry(11.4, 0.8, 1.1), lamb(0x4a3430)); beam.position.set(0, 11.2, 0); gr.add(beam);
+          const trolley = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 1.0), lamb(0x3a2a26)); trolley.position.set(-1.5 + rand() * 3, 10.4, 0); gr.add(trolley);
+          const hook = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3.2, 0.1), lamb(0x2c211e)); hook.position.set(trolley.position.x, 8.2, 0); gr.add(hook);
+        }
         { const cr2 = new THREE.Group();
           const mast = new THREE.Mesh(new THREE.BoxGeometry(0.6, 16, 0.6), lamb(0x3c2c2a)); mast.position.set(0, 8, 0); cr2.add(mast);
           const jib = new THREE.Mesh(new THREE.BoxGeometry(11, 0.5, 0.5), lamb(0x3c2c2a)); jib.position.set(3.6, 15.6, 0); cr2.add(jib);
