@@ -9,53 +9,38 @@
         · language:     opts.lang 반환
    원칙(ARC-01/05): 이 파일은 순수 어댑터다. 로직/밸런스는 여기 두지 않는다.
 
-   ── Steam 도전과제 매핑표 (등록 시 참조) ──────────────────────
-   ACHS[].id (game.js) → Steam API Name (대문자 스네이크). 16종.
-     first        → ACH_FIRST_STEPS
-     exp10        → ACH_VETERAN_SCAVENGER
-     exp30        → ACH_LORD_OF_THE_RUINS
-     craft5       → ACH_HANDY
-     craft20      → ACH_RUINS_ARTISAN
-     comfort90    → ACH_PERFECT_REFUGE
-     settled8     → ACH_SETTLED_HOME
-     renov3       → ACH_PIONEER
-     renovAll     → ACH_EVERYWHERE_IS_HOME
-     mods3        → ACH_MODDER
-     winter       → ACH_PAST_FIRST_WINTER
-     nine_winters → ACH_NINE_WINTERS
-     col21        → ACH_COLLECTOR
-     col42        → ACH_CURATOR
-     colAll       → ACH_MUSEUM_KEEPER
-     cat          → ACH_CAT_SERVANT
-     ending       → ACH_BEYOND_THE_RUINS
-     silence      → ACH_SILENCE (히든 — COMMS-KIT §3, 달성률만 노출)
-   (총 18종: 일반 17 + 히든 1. Steamworks 콘솔에 위 API Name으로 등록 후 STEAM_ACH_MAP 참조.
-    silence는 '히든 업적' 플래그로 등록.)
+   ── Steam 도전과제 매핑표 ──────────────────────
+   ⚠️ 콘솔 정합(디렉터 실등록 확인 2026-07-17): Steamworks에 스팀 기본 API명
+   NEW_ACHIEVEMENT_1_0 ~ 1_15로 16종이 이미 등록·현지화(4950160_loc_upload.vdf)됐다.
+   API명은 게시 후 변경이 어렵다 — 코드가 콘솔을 따른다(구 ACH_* 계획명 폐기).
+   슬롯 순서 = ACHS 순서에서 mods3·winter(미등록 2종)를 뺀 것. 미등록 2종은
+   디렉터가 콘솔 신규 생성 시 API명을 아래 값(1_16·1_17) 그대로 입력해야 한다.
+   정본 표: docs/steam/ACHIEVEMENTS-SUBMIT.md
    ============================================================ */
 
-// ACHS.id → Steam API Name. electron/Steamworks 구현이 이 표로 unlock을 중계한다.
+// ACHS.id → Steam API Name(콘솔 실등록명). electron/Steamworks 구현이 이 표로 unlock을 중계한다.
 export const STEAM_ACH_MAP = {
-  first: 'ACH_FIRST_STEPS',
-  exp10: 'ACH_VETERAN_SCAVENGER',
-  exp30: 'ACH_LORD_OF_THE_RUINS',
-  craft5: 'ACH_HANDY',
-  craft20: 'ACH_RUINS_ARTISAN',
-  comfort90: 'ACH_PERFECT_REFUGE',
-  settled8: 'ACH_SETTLED_HOME',
-  renov3: 'ACH_PIONEER',
-  renovAll: 'ACH_EVERYWHERE_IS_HOME',
-  mods3: 'ACH_MODDER',
-  winter: 'ACH_PAST_FIRST_WINTER',
-  nine_winters: 'ACH_NINE_WINTERS',
-  col21: 'ACH_COLLECTOR',
-  col42: 'ACH_CURATOR',
-  colAll: 'ACH_MUSEUM_KEEPER',
-  cat: 'ACH_CAT_SERVANT',
-  ending: 'ACH_BEYOND_THE_RUINS',
+  first: 'NEW_ACHIEVEMENT_1_0',
+  exp10: 'NEW_ACHIEVEMENT_1_1',
+  exp30: 'NEW_ACHIEVEMENT_1_2',
+  craft5: 'NEW_ACHIEVEMENT_1_3',
+  craft20: 'NEW_ACHIEVEMENT_1_4',
+  comfort90: 'NEW_ACHIEVEMENT_1_5',
+  settled8: 'NEW_ACHIEVEMENT_1_6',
+  renov3: 'NEW_ACHIEVEMENT_1_7',
+  renovAll: 'NEW_ACHIEVEMENT_1_8',
+  nine_winters: 'NEW_ACHIEVEMENT_1_9',
+  col21: 'NEW_ACHIEVEMENT_1_10',
+  col42: 'NEW_ACHIEVEMENT_1_11',
+  colAll: 'NEW_ACHIEVEMENT_1_12',
+  cat: 'NEW_ACHIEVEMENT_1_13',
+  ending: 'NEW_ACHIEVEMENT_1_14',
   // 침묵 암호 업적 — COMMS-KIT §3: Steam엔 '히든 업적'(달성률만 노출)으로 등록해 커뮤니티 고고학을 유도.
   //   in-game은 무기록(quiet: 토스트·저널 연출 0)이지만 Steam 중계는 한다(quiet=연출만 스킵, unlock은 호출).
-  //   Steamworks 콘솔에서 이 업적은 '히든' 플래그로 등록할 것 (이름·설명 비공개, 아이콘 실루엣).
-  silence: 'ACH_SILENCE',
+  silence: 'NEW_ACHIEVEMENT_1_15',
+  // ── 콘솔 미등록 2종 (디렉터 생성 대기 — API명을 정확히 이 값으로) ──
+  mods3: 'NEW_ACHIEVEMENT_1_16',
+  winter: 'NEW_ACHIEVEMENT_1_17',
 };
 
 // Steamworks 네이티브 브릿지 후보(등록 후 preload가 노출). 지금은 없음 → 항상 null.
