@@ -2988,6 +2988,18 @@ function mapBiomeDataUrl() {
   for (const r of roads) curveRoad(r, 2.6, 'rgba(120,92,58,0.85)');
   curveRoad([[75, 18], [80, 15], [85, 13]], 2, 'rgba(120,92,58,0.6)', [6, 6]);   // 산길
   curveRoad([[31, 71], [24, 74], [17, 77]], 1.8, 'rgba(120,92,58,0.5)', [5, 5]); // 해안 오솔길
+  // 6b) 2.0-(b) 동측 국경 힌트 — 동부 간선이 지도 밖(두 번째 도시)으로 이어진다.
+  //     인쇄 시절부터 종이에 있던 길: 행정경계 일점쇄선 + 검문소 발자국 + 차단 표시. 문자열 0(도법 기호만).
+  const eastRoad = [[76, 31], [84, 33], [92, 35], [100, 36]];
+  curveRoad(eastRoad, 6, 'rgba(226,218,194,0.6)');
+  curveRoad(eastRoad, 2.6, 'rgba(120,92,58,0.85)');
+  g.strokeStyle = 'rgba(110,88,60,0.55)'; g.lineWidth = 1.6; g.setLineDash([14, 5, 3, 5]); // 행정경계(일점쇄선, 남북)
+  g.beginPath(); g.moveTo(X(95.6), Y(14)); g.lineTo(X(94.6), Y(30)); g.lineTo(X(95.9), Y(50)); g.lineTo(X(95.2), Y(60)); g.stroke();
+  g.setLineDash([]);
+  g.fillStyle = 'rgba(120,112,96,0.5)'; g.fillRect(X(92.6), Y(31.4), 10, 8);               // 검문소 부스 발자국(도로변)
+  g.strokeStyle = 'rgba(70,62,50,0.7)'; g.lineWidth = 1; g.strokeRect(X(92.6), Y(31.4), 10, 8);
+  g.strokeStyle = 'rgba(150,70,58,0.8)'; g.lineWidth = 2.2;                                 // 차단 표시(도로 직교 붉은 획)
+  g.beginPath(); g.moveTo(X(94.8), Y(32.6)); g.lineTo(X(94.8), Y(38.4)); g.stroke();
   g.lineCap = 'butt';
   // 7) 해안선 — 물가 파도 대시(얕게).
   g.strokeStyle = 'rgba(120,150,155,0.5)'; g.lineWidth = 1.2;
