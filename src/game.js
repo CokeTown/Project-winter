@@ -7368,8 +7368,12 @@ function buildGoldenGateScene() {
   const cB = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); car.add(m); return m; };
   cB(9.2, 1.7, 4.2, propDark, 0, 1.35, 0); cB(3.4, 0.9, 4.0, propRust, 3.1, 2.0, 0); cB(3.0, 0.9, 4.0, propRust, -3.2, 1.95, 0); cB(4.4, 1.9, 3.8, propDark, -0.2, 2.7, 0); cB(2.4, 1.0, 4.1, propDark, 4.6, 1.0, 0); cB(2.4, 1.0, 4.1, propDark, -4.6, 1.0, 0);
   const wsh = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.6), new THREE.MeshBasicMaterial({ color: 0xff9a4e, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); wsh.position.set(1.7, 2.9, 2.0); car.add(wsh);
-  car.position.set(-34, 1.0, 20); car.rotation.set(0, 0.55, 0.05); scene.add(car);
-  for (let i = 0; i < 4; i++) { const v = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.2 + srand() * 1.4, 2.2), vegSil); v.position.set(-34 + (srand() - 0.5) * 8, 2.4 + srand() * 1.4, 20 + (srand() - 0.5) * 3); scene.add(v); }
+  // 지붕·보닛 상단 엣지 림 — 해가 윗면을 긁는 '가는 선'(몸체 실루엣은 검게 유지, 과광 금지: propRust+극세)
+  const rimTop = (w, d, x, y, z) => { const rm = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), propRust); rm.position.set(x, y, z); car.add(rm); };
+  rimTop(4.0, 0.16, -0.2, 3.66, 1.8); rimTop(2.8, 0.14, 3.15, 2.46, 1.9);
+  // 위치 재접지: 종전 (-34,20)은 카메라 축 60°(반각 42°) 밖 — 여태 화면에 없던 죽은 앵커. 시축 안 3/4 각도로.
+  car.position.set(-33, 1.0, -18); car.rotation.set(0, 0.8, 0.05); scene.add(car);
+  for (let i = 0; i < 4; i++) { const v = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.2 + srand() * 1.4, 2.2), vegSil); v.position.set(-30 + (srand() - 0.5) * 8, 2.4 + srand() * 1.4, -14 + (srand() - 0.5) * 3); scene.add(v); }
   // ── 도로 표지(무명 — 콘텐츠 게이트) + 접지 W빔 가드레일 ──
   const sPost = new THREE.Mesh(new THREE.BoxGeometry(0.4, 12, 0.4), propDark); sPost.position.set(-50, 5.5, 30); sPost.rotation.z = 0.5; scene.add(sPost);
   const sPanel = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 0.35), propRust); sPanel.position.set(-52.5, 10.5, 30); sPanel.rotation.z = 0.5; scene.add(sPanel);
@@ -7408,7 +7412,7 @@ function buildGoldenGateScene() {
   const refTex = new THREE.CanvasTexture(refCv);
   // 2겹 가산 기둥: 좁고 진한 코어 + 넓고 옅은 브로드 — 헤이즈 밴드 위에서도 '불타는' 반사가 살아남는다
   const mkStreak = (w2, len, op, z) => { const st = new THREE.Mesh(new THREE.PlaneGeometry(w2, len), new THREE.MeshBasicMaterial({ map: refTex, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); st.rotation.x = -Math.PI / 2; st.position.set(72, 0.32, z); scene.add(st); return st; };
-  mkStreak(26, 330, 0.72, -190); mkStreak(64, 300, 0.3, -180);
+  const streakCore = mkStreak(26, 330, 0.72, -190), streakBroad = mkStreak(64, 300, 0.3, -180); // update에서 일렁임
   const drawWater = (kn, t) => {
     wg.fillStyle = '#160f0a'; wg.fillRect(0, 0, 256, 256);
     const wgr = wg.createLinearGradient(0, 0, 0, 256);
@@ -7473,6 +7477,11 @@ function buildGoldenGateScene() {
     for (let i = 0; i < emN; i++) { emArr[i * 3 + 1] += 0.05; emArr[i * 3] += Math.sin(t * 6 + emSeed[i]) * 0.06; if (emArr[i * 3 + 1] > 28) emArr[i * 3 + 1] = 1; }
     emGeo.attributes.position.needsUpdate = true; emMat.opacity = 0.28 + 0.14 * Math.sin(t * 26) * Math.sin(t * 7 + 1);
     for (const v of swayG) v.g.rotation.z = Math.sin(t * 1.3 + v.seed) * v.amp; // 살아 있는 초목의 흔들림
+    // 반사 기둥 일렁임 — 폭·밝기를 서로 다른 위상으로 (물이 살아 있게)
+    streakCore.scale.x = 1 + Math.sin(t * 34) * 0.07 + Math.sin(t * 9) * 0.04;
+    streakCore.material.opacity = (0.6 + 0.14 * Math.sin(t * 27 + 1)) * (0.4 + 0.6 * kn);
+    streakBroad.scale.x = 1 + Math.sin(t * 21 + 2) * 0.05;
+    streakBroad.material.opacity = (0.26 + 0.08 * Math.sin(t * 16)) * (0.4 + 0.6 * kn);
     drawWater(kn, t);
   };
   update(0);
