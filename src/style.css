@@ -834,19 +834,25 @@
     background: #b7a98c center / 100% 100% no-repeat; /* 로드 전 종이톤 폴백 */
     border: 2px solid var(--panel-border); border-radius: 4px;
   }
+  /* #204 타르코프식 핀(디렉터): 점 + 옆 이름 가로 배치 — 아이콘 폐기 */
   .map-pin {
     position: absolute; transform: translate(-50%, -50%);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    display: flex; flex-direction: row; align-items: center; gap: 5px;
     cursor: pointer; pointer-events: auto; z-index: 2;
-    min-width: 44px; min-height: 48px; padding: 4px;   /* 터치 타깃 보장 (#47) */
+    min-height: 34px; padding: 6px;   /* 터치 타깃 보장 (#47) */
   }
-  .map-pin img.px-icon { width: 44px; height: 44px; image-rendering: auto;
-    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.45)); transition: transform .12s; }
-  .map-pin:hover img.px-icon { transform: scale(1.12); }
+  .map-pin .pin-dot {
+    flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+    background: #f2ead6; border: 2px solid rgba(18, 14, 9, 0.85);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5); transition: transform .12s;
+  }
+  .map-pin:hover .pin-dot { transform: scale(1.35); }
+  .map-pin.sketch .pin-dot { background: #9a917f; }
+  .map-pin.blocked .pin-dot { background: #7d8a99; }
   /* 좁은 화면(모바일 가로/세로): zoom 축소분을 상쇄해 마커를 키운다 — 터치 타깃 확보 */
   @media (max-width: 640px) {
-    .map-pin { min-width: 52px; min-height: 56px; }
-    .map-pin img.px-icon { width: 52px; height: 52px; }
+    .map-pin { min-height: 42px; }
+    .map-pin .pin-dot { width: 11px; height: 11px; }
     .map-pin .pin-rate { font-size: 12px; padding: 3px 7px; }
   }
   /* 성공률 칩 — 종이 위에서 읽히도록 반투명 배경 */

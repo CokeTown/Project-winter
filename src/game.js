@@ -138,7 +138,7 @@ function shadowDirty() { renderer.shadowMap.needsUpdate = true; }
    방치형 배터리 캐논 준수(평시 루프 0). reduceMotion이면 생략. */
 const tapFx = (() => {
   const cv = document.createElement('canvas');
-  cv.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:8'; // 씬(0) 위, 패널(10+) 아래
+  cv.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:59'; // PDA(58) 위, 저널(60) 아래
   document.body.appendChild(cv);
   const cx = cv.getContext('2d');
   let parts = [], raf = 0, W = 0, H = 0;
@@ -173,7 +173,10 @@ const tapFx = (() => {
     }
     if (!raf) raf = requestAnimationFrame(loop);
   }
-  canvas.addEventListener('pointerdown', e => burst(e.clientX, e.clientY));
+  // #204(디렉터 정정): 버스트는 PDA 터치 한정 — 플라스틱 단말을 만지는 촉감. 씬/일반 UI엔 안 뜬다.
+  //   리스너는 지연 부착(#pda-back은 정적 DOM). 도킹 버튼(dock-pda)도 같은 기기라 포함.
+  document.getElementById('pda-back')?.addEventListener('pointerdown', e => burst(e.clientX, e.clientY));
+  document.getElementById('dock-pda')?.addEventListener('pointerdown', e => burst(e.clientX, e.clientY));
   return { burst };
 })();
 
@@ -2804,15 +2807,16 @@ function openMapModal() {
     const avBlocked = avalancheBlocks(rid); // #195: 눈사태 봉쇄도 지도에 — 클릭해야 거부당하며 알게 되던 이음매
     const blocked = blizzardBlocks(rid) || avBlocked; // 1.2: 폭설 봉쇄된 지상 지역 (개통 구간은 예외)
     if (blocked) el.classList.add('blocked');
-    // #85 그려지는 발견: 안 가본 곳은 연필 스케치(수치 없음 — 소문), 다녀오면 잉크(성공률+발자취 점).
+    // #85 그려지는 발견: 안 가본 곳은 연필 스케치(수치 없음 — 소문), 다녀오면 잉크(성공률).
     const visits = (state.regionVisits || {})[rid] || 0;
     const rate = Math.round(rateParts(rid).eff * 100);
     const cls = rate >= 50 ? 'ok' : 'lack';
-    // 2.0 지역 숙련: 티어가 생기면 발자취 점(•) 대신 지리 지식 별(★) — 단골 동네의 표식
-    const mTier = masteryTier(rid);
-    const dots = mTier > 0
-      ? `<span class="pin-visits mastery" title="${t('map.mastery', { n: mTier })}">${'★'.repeat(mTier)}</span>`
-      : visits > 0 ? `<span class="pin-visits" title="${t('map.visits', { n: visits })}">${'•'.repeat(Math.min(visits, 4))}</span>` : '';
+    // #204(디렉터): 숙련은 이름 색으로 — 첫 방문 붉은색에서 최종 티어(100%)의 초록까지 천천히.
+    //   ★/• 발자취 표식은 색 인코딩이 대체(타르코프식 점+이름 미니멀). 진행률은 툴팁으로.
+    const mProg = Math.min(1, visits / BAL.mastery.tiers[BAL.mastery.tiers.length - 1]);
+    const nameCol = visits > 0
+      ? `rgb(${Math.round(198 - 71 * mProg)},${Math.round(83 + 109 * mProg)},${Math.round(64 + 42 * mProg)})`
+      : '';
     // #164: 떠오른 자리 배지(스팟 아이콘) + 지역 컨디션 태그(풍/마름) — "오늘은 뭐가 떠 있나"가 아침의 질문이 되게.
     const spotHere = state.fieldSpot && state.fieldSpot.region === rid;
     const spotTag = spotHere
@@ -2822,14 +2826,16 @@ function openMapModal() {
       : cLv < 0 ? `<span class="pin-rate lack" title="${t('map.cond.leanTip')}">${t('map.cond.lean')}</span>` : '';
     if (spotHere) el.title += ' — ' + t('spot.' + state.fieldSpot.id);
     if (!visits && !blocked) el.classList.add('sketch');
-    // 지역명 상시 라벨 (디렉터: 아이콘만으론 주거지/슬럼 구분 불가 — 미방문 스케치 상태에서도 이름은 읽히게).
+    if (visits > 0) el.title += ` · ${t('map.masteryPct', { p: Math.round(mProg * 100) })}`;
+    // #204 타르코프식 핀(디렉터 레퍼런스): 아이콘 대신 점 + 옆 이름. 이름 색 = 숙련 그라데이션.
     //   핀의 자식이라 클릭·호버가 핀 핸들러로 버블 — 이름 자체가 터치 타깃을 겸한다.
-    const nameTag = `<span class="pin-name">${LName(r)}</span>`;
+    const nameTag = `<span class="pin-name"${nameCol ? ` style="color:${nameCol}"` : ''}>${LName(r)}</span>`;
+    const dotTag = `<span class="pin-dot"></span>`;
     el.innerHTML = blocked
-      ? `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate lack">${avBlocked ? '🏔️' : '❄️'}</span>${spotTag}`
+      ? `${dotTag}${nameTag}<span class="pin-rate lack">${avBlocked ? '🏔️' : '❄️'}</span>${spotTag}`
       : !visits
-        ? `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate sketch-q">?</span>${spotTag}`
-        : `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate ${cls}">${rate}%</span>${dots}${spotTag}${condTag}`;
+        ? `${dotTag}${nameTag}<span class="pin-rate sketch-q">?</span>${spotTag}`
+        : `${dotTag}${nameTag}<span class="pin-rate ${cls}">${rate}%</span>${spotTag}${condTag}`;
     // 첫 귀환 후 처음 여는 지도: 잉크가 배어드는 연출 1회
     state.mapInked = state.mapInked || {};
     if (visits > 0 && !state.mapInked[rid]) { el.classList.add('inked-now'); state.mapInked[rid] = 1; scheduleSave(); }
@@ -2840,7 +2846,7 @@ function openMapModal() {
       if (ev.clientX || ev.clientY) {
         for (const pe of wrap.querySelectorAll('.map-pin.region')) {
           const rb = pe.getBoundingClientRect();
-          const d = Math.hypot(ev.clientX - (rb.left + rb.width / 2), ev.clientY - (rb.top + rb.height * 0.35));
+          const d = Math.hypot(ev.clientX - (rb.left + rb.width / 2), ev.clientY - (rb.top + rb.height / 2)); // #204 가로형 핀: 중심=height/2
           if (d < bestD) { bestD = d; best = pe.dataset.rid; }
         }
       }
@@ -3540,12 +3546,23 @@ function resolveExpedition() {
   //   자원 궤적을 미세 변화시키는 히든 커플링 실측(생존 지표는 diff-0, 경로 미규명 — 백로그 조사).
   //   시뮬엔 지도 연출이 무의미하므로 제외 — 기준선 재현성 보존.
   let masteryUp = 0; // 2.0 지역 숙련: 이번 귀환으로 지리 지식 티어가 올랐는가 (아래 notes에 인과문)
+  let masteryFull = false; // #204: 이번 귀환으로 숙련 100% 첫 도달 (정산 노트 병기)
   if (!_simRunning) {
     state.regionVisits = state.regionVisits || {};
     const _mPrev = masteryTier(exp.region);
     state.regionVisits[exp.region] = (state.regionVisits[exp.region] || 0) + 1;
     const _mNow = masteryTier(exp.region);
     if (_mNow > _mPrev) masteryUp = _mNow;
+    // #204: 숙련 100%(최종 티어) 첫 도달 — 업적식 알림 1회(세이브 플래그로 재발화 차단).
+    //   토스트는 단일 엘리먼트 덮어쓰기라 정산 전리품 토스트 러시에 묻힌다(하네스 실측) —
+    //   러시가 끝난 4초 뒤 지연 발화 + 정산 카드 노트에도 병기(놓쳐도 기록이 남게).
+    state.masteryDone = state.masteryDone || {};
+    if (_mNow >= BAL.mastery.tiers.length && !state.masteryDone[exp.region]) {
+      state.masteryDone[exp.region] = 1;
+      masteryFull = true;
+      const _mName = LName(REGIONS[exp.region]);
+      setTimeout(() => toast(t('ach.unlocked', { icon: '🧭', name: t('mastery.fullName', { name: _mName }) })), 4000);
+    }
   }
   const prep = exp.prep || [];
   const startedInjured = !!state.injury;        // 다친 몸으로 출발했는가 (인과문용)
@@ -3576,6 +3593,7 @@ function resolveExpedition() {
   if (isForbiddenRegion(exp.region)) { wearHazmat(); if (state.hazmat) notes.push(t('hazmat.wearNote', { dur: state.hazmat.dur })); }
   // 2.0 지역 숙련: 티어 상승의 순간 — 성패와 무관하게 알린다 (실패한 트립도 진행이었다는 감각).
   if (masteryUp) notes.push(t('mastery.up', { name: LName(r), stars: '★'.repeat(masteryUp) }));
+  if (masteryFull) notes.push(t('mastery.fullNote', { name: LName(r) })); // #204: 숙련 100% — 정산 카드에도 기록
   // #167 2겹화: 슬럼 ★1 도달의 그 귀환에서 심부가 열린다 — 지도에 새 핀 + 아침 보고 한 줄.
   if (masteryUp === 1 && exp.region === 'slum') {
     notes.push(t('map.deepOpen'));
