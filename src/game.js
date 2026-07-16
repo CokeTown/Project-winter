@@ -6118,6 +6118,100 @@ function playVignette(build, durMs, onDone) {
   })();
 }
 
+/* ── 2.0-(b) 가이거 계수기 비네트 (디렉터 2026-07-17): 동쪽 소문의 물증 ──
+   낙진이 걷혀 국경이 열릴 수 있게 됐다는 걸 "계수기 바늘이 빨강에서 초록으로 내려앉는" 8초로 보여준다.
+   초반: 바늘 떨림·수치 점멸·경고 LED. 후반: 바늘 안착·초록 LED·배경에 동쪽 길과 게이트 실루엣이 떠오른다.
+   playVignette 러너 재사용(탭=스킵). 트리거: eastRoadRumor 아침 → geigerPending → drainDiscoveryQueue. */
+function playGeigerVignette() {
+  playVignette(() => {
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0b0e);
+    scene.fog = new THREE.Fog(0x0a0b0e, 7, 16);
+    const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 60);
+    scene.add(new THREE.AmbientLight(0x9aa2b0, 0.7));
+    const key = new THREE.DirectionalLight(0xcfd8e8, 0.9); key.position.set(-2, 4, 3); scene.add(key);
+    const warm = new THREE.PointLight(0xffc98a, 1.0, 6, 1.8); warm.position.set(0.8, 1.6, 1.6); scene.add(warm);
+    const M = c => new THREE.MeshLambertMaterial({ color: c });
+    const dev = new THREE.Group(); dev.position.y = 1.05; scene.add(dev);
+    const bx2 = (w, h, d, c, x, y, z, g = dev) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); m.position.set(x, y, z); g.add(m); return m; };
+    // 몸체 — 낡은 올리브 계측기 + 전면 패널 + 스피커 슬릿 + 노브
+    bx2(1.0, 1.42, 0.24, 0x4c4a3a, 0, 0, 0);
+    bx2(1.04, 0.06, 0.26, 0x3a382e, 0, 0.72, 0); bx2(1.04, 0.06, 0.26, 0x3a382e, 0, -0.72, 0);
+    bx2(0.9, 1.28, 0.03, 0x35332b, 0, 0, 0.125);
+    for (let i = 0; i < 4; i++) bx2(0.3, 0.025, 0.035, 0x22201b, -0.24, -0.36 - i * 0.07, 0.13);   // 스피커 슬릿
+    const kn1 = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.05, 12), M(0x2c2a24)); kn1.rotation.x = Math.PI / 2; kn1.position.set(0.26, -0.42, 0.15); dev.add(kn1);
+    const kn2 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.05, 12), M(0x2c2a24)); kn2.rotation.x = Math.PI / 2; kn2.position.set(0.26, -0.58, 0.15); dev.add(kn2);
+    // 다이얼 — 크림판 + 존 눈금(초록→호박→빨강) + 바늘(피벗)
+    const dial = new THREE.Mesh(new THREE.CircleGeometry(0.36, 28), new THREE.MeshLambertMaterial({ color: 0xe8e2d0 }));
+    dial.position.set(0, 0.3, 0.145); dev.add(dial);
+    for (let i = 0; i <= 12; i++) {
+      const a = Math.PI * 0.85 - (i / 12) * Math.PI * 0.7;                       // 좌(초록) → 우(빨강)
+      const zone = i < 5 ? 0x5a8a5a : i < 9 ? 0xb08a3a : 0xa8433f;
+      const tk = bx2(0.02, i % 3 === 0 ? 0.08 : 0.05, 0.012, zone, Math.cos(a) * 0.3, 0.3 + Math.sin(a) * 0.3, 0.15);
+      tk.rotation.z = a - Math.PI / 2;
+    }
+    const pivot = new THREE.Group(); pivot.position.set(0, 0.3, 0.155); dev.add(pivot);
+    const needle = bx2(0.022, 0.3, 0.012, 0x8a2c28, 0, 0.15, 0, pivot);
+    bx2(0.06, 0.06, 0.02, 0x2c2a24, 0, 0.3, 0.158);                              // 바늘 축 캡
+    // LED 2점 + 수치창(캔버스 스프라이트)
+    const ledR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.03), new THREE.MeshLambertMaterial({ color: 0xa8433f, emissive: 0xff3020, emissiveIntensity: 0 }));
+    ledR.position.set(-0.32, 0.66, 0.14); dev.add(ledR);
+    const ledG = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.03), new THREE.MeshLambertMaterial({ color: 0x3a5a3a, emissive: 0x40ff60, emissiveIntensity: 0 }));
+    ledG.position.set(0.32, 0.66, 0.14); dev.add(ledG);
+    const rc = document.createElement('canvas'); rc.width = 256; rc.height = 80;
+    const rg = rc.getContext('2d');
+    const rTex = new THREE.CanvasTexture(rc);
+    const readout = new THREE.Sprite(new THREE.SpriteMaterial({ map: rTex, transparent: true, depthWrite: false }));
+    readout.scale.set(0.66, 0.2, 1); readout.position.set(0, -0.12, 0.2); dev.add(readout);
+    // 배경 — 동쪽 길 + 게이트 실루엣 (후반 페이드 인: "이제 갈 수 있다")
+    // 기둥 ±2.3: 계측기(화면 중앙 ~36%폭)에 가리지 않고 양옆으로 아치가 서도록. 길은 바닥에 눕혀 소실점 원근.
+    const sil = new THREE.Group(); sil.position.set(0, 0, -5.5); scene.add(sil);
+    const silMat = new THREE.MeshBasicMaterial({ color: 0x3e4a63, transparent: true, opacity: 0 }); // 글로우 없이도 흑배경 위에서 읽히는 슬레이트
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 9), silMat);
+    road.rotation.x = -Math.PI / 2; road.position.set(0, 0.01, 4.0); sil.add(road);
+    for (let i = 0; i < 4; i++) { const dash = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.6), silMat); dash.rotation.x = -Math.PI / 2; dash.position.set(0, 0.02, 0.6 + i * 1.6); sil.add(dash); }
+    for (const gx of [-2.3, 2.3]) { const post = new THREE.Mesh(new THREE.BoxGeometry(0.34, 3.1, 0.34), silMat); post.position.set(gx, 1.55, 0); sil.add(post); }
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(5.1, 0.28, 0.34), silMat); beam.position.set(0, 3.15, 0); sil.add(beam);
+    const gc = document.createElement('canvas'); gc.width = gc.height = 128;              // 소프트 웜 글로우(하드엣지 사각 금지)
+    const gg2 = gc.getContext('2d');
+    const grd = gg2.createRadialGradient(64, 64, 4, 64, 64, 62);
+    grd.addColorStop(0, 'rgba(255,176,112,0.85)'); grd.addColorStop(0.55, 'rgba(255,176,112,0.28)'); grd.addColorStop(1, 'rgba(255,176,112,0)');
+    gg2.fillStyle = grd; gg2.fillRect(0, 0, 128, 128);
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+    glow.scale.set(10, 5.2, 1); glow.position.set(0, 1.5, -6.2); scene.add(glow);
+    const drawReadout = (v) => {
+      rg.fillStyle = '#0e120e'; rg.fillRect(0, 0, 256, 80);
+      rg.strokeStyle = '#2a2e2a'; rg.strokeRect(3, 3, 250, 74);
+      rg.font = 'bold 44px monospace'; rg.textAlign = 'center'; rg.textBaseline = 'middle';
+      rg.fillStyle = v > 1.2 ? '#ff5a40' : v > 0.5 ? '#e0a840' : '#6ae080';
+      rg.fillText(v.toFixed(2) + ' µSv/h', 128, 42);
+      rTex.needsUpdate = true;
+    };
+    const update = (t) => {
+      const now = performance.now();
+      // 수치: 3.42 → 0.34 (초반 점멸·요동, 후반 안착)
+      const ease = 1 - Math.pow(1 - t, 2.2);
+      const jitterAmp = Math.max(0, 1 - t * 1.35);
+      const v = Math.max(0.34, 3.42 - 3.08 * ease + Math.sin(now * 0.021) * 0.32 * jitterAmp + Math.sin(now * 0.007) * 0.18 * jitterAmp);
+      drawReadout(v);
+      // 바늘: 우(빨강 -0.95) → 좌(초록 +0.95), 같은 요동 계수 공유
+      pivot.rotation.z = -0.95 + 1.9 * ease + Math.sin(now * 0.019) * 0.16 * jitterAmp;
+      // LED: 경고 점멸 → 초록 상시
+      ledR.material.emissiveIntensity = v > 0.9 ? (Math.sin(now * 0.012) > 0 ? 1.6 : 0.1) : 0;
+      ledG.material.emissiveIntensity = v < 0.5 ? 1.4 : 0;
+      // 배경 실루엣 — 바늘이 안착할 무렵 떠오른다
+      const so = Math.max(0, (t - 0.62) / 0.3);
+      silMat.opacity = Math.min(0.9, so);
+      glow.material.opacity = Math.min(0.55, so * 0.55);
+      // 카메라 — 미세 푸시인 + 손떨림
+      camera.position.set(0.22 + Math.sin(now * 0.0008) * 0.04, 1.28, 2.35 - t * 0.35);
+      camera.lookAt(0, 1.12, 0);
+      dev.rotation.y = Math.sin(now * 0.0006) * 0.05;
+    };
+    return { scene, camera, update };
+  }, 8200);
+}
+
 /* ── #199 무너진 입구 인엔진 연출 (디렉터 2026-07-17, 레퍼런스 Box.mp4 — 상자 개봉만 참조) ──
    사진 카드 폐지: ①복셀 문 씬(문틈 안은 완전한 어둠) ②하단 선택 UI(들어간다/그냥 간다)
    ③입장 시 상자 개봉 버스트 — 예열 흔들림 → 뚜껑 팝 + 수직 광선 부챗살(전리품 색) + 전리품 부유 + 파편 산개.
@@ -6317,6 +6411,17 @@ function queueDiscovery(defId, colorIdx, tier, name) {
   discoveryQueue.push({ defId, colorIdx: colorIdx || 0, tier: tier || 3, name: name || LName(DEFS[defId]) });
 }
 function drainDiscoveryQueue() {
+  // 2.0-(b) 가이거 비네트(디렉터 2026-07-17): 동쪽 소문이 닿은 아침 — 보고 모달이 닫힌 뒤 계수기 컷 1회.
+  //   "낙진이 걷혀서 열리는 길"의 물증: 바늘이 빨강에서 초록으로 내려앉는다.
+  if (state.geigerPending && !vignetteActive && !paused && !titleVisible && !state.exp) {
+    const mb0 = document.getElementById('modal-back');
+    if (!(mb0 && mb0.classList.contains('show'))) {
+      state.geigerPending = false;
+      playGeigerVignette();
+      scheduleSave();
+      return;
+    }
+  }
   if (!discoveryQueue.length || vignetteActive || paused || titleVisible || state.exp) return;
   const mb = document.getElementById('modal-back'); if (mb && mb.classList.contains('show')) return; // 결산/보고 모달 닫힌 뒤 재생
   const d = discoveryQueue.shift();
@@ -8818,6 +8923,7 @@ function processDay() {
   if (!state.eastRoadRumor && !isWallpaper() && falloutCleared()
       && MEMOS_CITYCORE.some(id => (state.memos || {})[id])) {
     state.eastRoadRumor = 1;
+    state.geigerPending = true; // 보고 모달이 닫히면 가이거 계수기 비네트 1회 (drainDiscoveryQueue가 소비)
     notes.push(t('east.rumorNote'));
   }
   // #164 「떠오른 자리」 + 지역 컨디션 (디렉터 2026-07-10 — 반복 타파). 배경화면 모드는 무대상.
@@ -11366,6 +11472,7 @@ window.__shelter = {
   loadShelter, // #195 QA: 레이아웃 왕복 게이트 — loadSave는 상태만 싣고 씬 복원은 부팅 절차 몫이라 직접 구동
   cityOf, // 2.0-α QA: 도시 파생 게이트(셸터→도시 매핑·기록 필드 검증)
   playCollapseVignette, // #199 QA: 문+상자 연출 직접 구동(캡처 검수용)
+  playGeigerVignette, // 2.0-(b) QA: 가이거 계수기 비네트 직접 구동(캡처 검수용)
   regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
   shelterUnlocked, // 2.0-(b) QA: 동부 관문 이주 게이트(eastGateOpen) 검증
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
