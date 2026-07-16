@@ -28,6 +28,7 @@ import { makeAvatarSystem } from './systems/avatar.js';
 import { buildVisitor, VISITOR_IDS, ENCOUNTER_VISITOR } from './systems/visitor.js';
 import { VISITOR_TABLE, VISITOR_UI } from './data/visitors.js'; // #181 방문자 교환·대사 밸런스 테이블
 import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wildlife.js';
+import { EVENT_CARD_CAMS } from './data/eventcams.js'; // #201 라이브 카드 스냅샷 카메라 프리셋
 import { lang, setLang, steamLangToGame, t, LN, LD, LF, LC, STR, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
 import { stampDataL10n } from './data/l10n-registry.js'; // #114 Phase 2: 데이터 표 _lk 스탬프(비열거) — LF/LC가 로케일 JSON 우선 조회
 stampDataL10n();
@@ -4533,6 +4534,34 @@ function openVisitorTradeCard(id, ev, evTitle) {
   });
   tipOnce('tip.event');
 }
+// #201 라이브 카드 스냅샷 — 카드가 열리는 '지금'의 씬(내 가구·날씨·계절·고양이)을
+//   프리셋 앵글·풀셸(지붕/천장 포함)로 1프레임 렌더해 dataURL 일러로 쓴다.
+//   도트 포스트패스(rt→postScene)까지 통과시켜 인게임 픽셀룩 그대로. 실패는 조용히 null(→ PNG/텍스트 폴백).
+//   게임 상태 무접점: 카메라 위치·컬링은 함수 안에서 원복(다음 renderFrame이 정상 마스크로 갱신).
+function liveCardIllust(id) {
+  const c = EVENT_CARD_CAMS[id];
+  if (!c || titleVisible || !rt) return null;
+  const savedPos = camera.position.clone();
+  try {
+    cineCam.position.set(c[0], c[1], c[2]);
+    cineCam.up.set(0, 1, 0);
+    cineCam.lookAt(c[3], c[4], c[5]);
+    cineCam.fov = c[6]; cineCam.aspect = innerWidth / innerHeight; cineCam.updateProjectionMatrix();
+    camera.position.set(c[0], c[1], c[2]); // 컬링 기준점 동기(풀셸이라 마스크 불변이지만 일관성 유지)
+    setForceClosed(true);
+    updateWallCulling(0, true); // 풀셸 즉시 확정(무페이드) — 닫힌 집 외경/천장
+    renderer.setRenderTarget(rt);
+    renderer.render(scene, cineCam);
+    renderer.setRenderTarget(null);
+    renderer.render(postScene, postCam);
+    return renderer.domElement.toDataURL('image/jpeg', 0.88);
+  } catch (e) { return null; }
+  finally {
+    setForceClosed(false);
+    camera.position.copy(savedPos);
+    updateWallCulling(0, true); // 원래 컬링 마스크 즉시 복귀
+  }
+}
 function openEventCard(id, opts = {}) {
   const ev = EVENTS[id];
   if (!ev) return;
@@ -4551,8 +4580,11 @@ function openEventCard(id, opts = {}) {
     body = `<div style="display:flex;flex-direction:column;gap:6px">${choicesHtml}</div>`;
     kind = 'visitor';
   } else {
-    // 그 외: 기존 일러스트(미보유 id는 onerror 제거) + 서술 + 선택지.
-    const illust = opts.noImg ? '' : `<img class="ev-illust" src="img/events/ev_${id}.png" alt="" draggable="false" onerror="this.remove()">`;
+    // 그 외: 라이브 스냅샷(#201 — 지금 이 순간의 내 집) → 설치 PNG → 텍스트 카드 폴백 체인.
+    const live = opts.noImg ? null : liveCardIllust(id);
+    const illust = opts.noImg ? '' : (live
+      ? `<img class="ev-illust" src="${live}" alt="" draggable="false">`
+      : `<img class="ev-illust" src="img/events/ev_${id}.png" alt="" draggable="false" onerror="this.remove()">`);
     body = `${illust}
     <div class="modal-body" style="line-height:2">${ev.textFn ? ev.textFn() : t(ev.textId)}</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">${choicesHtml}</div>`;
@@ -7257,7 +7289,7 @@ function rotateActive() {
 // ① 컬링 페이드 (디렉터 승인, GD-THESIS L1/L5 손맛): 벽/천장이 뚝 사라지는 대신 투명도로 부드럽게 소멸.
 //   렌더 상수(BAL 아님) — 순수 시각 튜닝값.
 // 벽/천장 투시 컬링 → render/culling.js (Tier4 Phase1-②). ctx=game.js 클로저 + 가변배열/타이틀 게터.
-const { updateWallCulling, resetWallMask } = makeCulling({
+const { updateWallCulling, resetWallMask, setForceClosed } = makeCulling({
   opts, shadowDirty, camera, camCenter, camPanApplied,
   getWallList: () => wallList, getCeilCullList: () => ceilCullList, getTitleVisible: () => titleVisible,
   SHELTERS, state,
@@ -11349,6 +11381,8 @@ window.__shelter = {
   VISITOR_IDS,
   // #181 방문자 연출 QA 훅: 인카운터 트리거 / 상태 조회 / 클릭 시뮬 / 강제 퇴장
   debugEvent: (id) => showEvent(id),
+  cardSnapshot: (id) => liveCardIllust(id), // #201: 라이브 카드 스냅샷 직접 호출(검증)
+  setForceClosed, // #201: 풀셸 컬링 강제(검증)
   visitorState: () => visitor ? { mode: visitor.mode, x: +visitor.g.position.x.toFixed(2), z: +visitor.g.position.z.toFixed(2), camActive: visitorCam.active, spoke: visitor.spoke } : null,
   visitorClick: () => onVisitorClicked(),
   visitorDismiss: () => dismissVisitor(),

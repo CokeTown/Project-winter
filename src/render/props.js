@@ -37,23 +37,6 @@ export function pineGeo(rand, s, dark) {
   return mergeGeometries(parts);
 }
 
-export function addRoofGrass(wallGroup, len, h, seed) {
-  const rand = seededRand(seed);
-  const palette = [0x6a7f4a, 0x8a8a4f, 0xa3703f, 0x7d5a3a, 0x5f7a45, 0x96633c];
-  const geos = [];
-  let x = -len / 2 + 0.1;
-  while (x < len / 2 - 0.1) {
-    const gh = 0.14 + rand() * 0.3;
-    const g = new THREE.ConeGeometry(0.05 + rand() * 0.09, gh, 5);
-    g.rotateZ((rand() - 0.5) * 0.35);
-    g.translate(x, h + gh / 2 - 0.03, (rand() - 0.5) * 0.16);
-    paintGeo(g, palette[Math.floor(rand() * palette.length)]);
-    geos.push(g);
-    x += 0.14 + rand() * 0.18;
-  }
-  wallGroup.add(new THREE.Mesh(mergeGeometries(geos), vcLambert));
-}
-
 export function groundPlane(colFn, hFn, size = 300, seg = 52) {
   const gGeo = new THREE.PlaneGeometry(size, size, seg, seg);
   gGeo.rotateX(-Math.PI / 2);

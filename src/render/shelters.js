@@ -11,7 +11,7 @@ import { makeCanvasTex, floorWoodTex, wallWoodTex, metalTex, plywoodTex, brickTe
 import { SHELTER_META } from '../data/shelters.js'; // rooftop이 정적 _slab 필드 참조 (SHELTERS 순환 회피)
 import { projectSiteStage } from '../core/projects.js'; // bunker 뒷문 undercroft 단계별 성장 (순수 술어)
 // 순수 지오/프롭 빌더 → render/props.js에서 직접 import(주입 아님 — ctx 슬림화)
-import { deadTreeGeo, pineGeo, addRoofGrass, groundPlane, buildObservatorySite, buildCablecarSite, buildBreakwaterSite, tagDecoFloor, tagDecoWall } from './props.js';
+import { deadTreeGeo, pineGeo, groundPlane, buildObservatorySite, buildCablecarSite, buildBreakwaterSite, tagDecoFloor, tagDecoWall } from './props.js';
 
 export function makeShelterBuilders(ctx) {
   const {
@@ -379,8 +379,10 @@ export function makeShelterBuilders(ctx) {
           { group: mk(d), pos: [-w / 2 - 0.11, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
           { group: mk(d), pos: [w / 2 + 0.11, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
         ];
-        defs.forEach((df, i) => addRoofGrass(df.group, i < 2 ? w : d, h, 41 + i * 17));
         makeWalls(defs);
+        // #201(디렉터): 오두막에 지붕이 없어 '벽 상자'로 읽히던 것 보완 — 슬레이트 지붕 상설.
+        //   페리 간이집과 같은 full 고정 재사용(옥탑 보수 루프 비연동). tagCeiling 내장이라 부감 컬링은 기존과 동일.
+        buildRooftopSlate(w, d, h, { full: true });
         blockers = [];
         setBlockers(blockers);
       },
