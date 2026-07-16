@@ -158,7 +158,8 @@
     padding: 4px 2px 8px; text-shadow: 0 0 5px rgba(232, 192, 96, 0.3);
     word-break: keep-all;
   }
-  #hud #gauges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 6px; }
+  #hud #gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 6px; } /* 계기 3종(밥·물·에너지) — 폭 확보로 라벨 잘림 해소 */
+  #hud #btn-journal { display: none; } /* 일지 진입점은 우측 도킹 — 그리드 중복 제거(디렉터) */
   #hud .gauge {
     height: auto; display: flex; flex-direction: column; gap: 4px;
     padding: 5px 6px 6px;
@@ -168,7 +169,7 @@
   #hud .gauge:hover { border-color: #4f7a44; }
   #hud .g-top { display: flex; align-items: center; gap: 2px; }
   #hud .g-top .px-icon { width: 12px; height: 12px; flex: 0 0 auto; }
-  #hud .g-name { font-size: 8px; color: #6a9a5f; letter-spacing: 0; min-width: 0; overflow: hidden; white-space: nowrap; }
+  #hud .g-name { font-size: 10px; color: #6a9a5f; letter-spacing: 0; min-width: 0; overflow: hidden; white-space: nowrap; } /* 3열 폭 확보 — 라벨 원복 */
   #hud .g-num {
     margin-left: auto; font-size: 13px; color: #b8f0a0; font-weight: normal;
     font-variant-numeric: tabular-nums; text-shadow: 0 0 5px rgba(140, 240, 120, 0.4);

@@ -8646,7 +8646,9 @@ function updateClock() {
   $('lcd-day').textContent = t('clock.dayLine', { day: String(state.day).padStart(2, '0'), sicon: se.icon, sname: LName(se), sd: seasonDay(), total: SEASON_DAYS });
   $('lcd-time').innerHTML = `${String(h).padStart(2, '0')}<span id="lcd-colon">:</span>${String(m).padStart(2, '0')}`;
   const [timeIcon, label] = timeLabel();
-  $('lcd-sub').innerHTML = `${timeIcon} ${label} · ${wxIcon(weather.type)}${state.injury ? ' · ' + INJURIES[state.injury.type].icon : ''}`;
+  // #199 5차-b(디렉터): 날씨(+페널티)는 시계가 계기 — HUD 스트립에서 이관
+  const wPen = WEATHERS[weather.type]?.penalty;
+  $('lcd-sub').innerHTML = `${timeIcon} ${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:#e07050">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + INJURIES[state.injury.type].icon : ''}`;
 }
 
 function updateHud() {
@@ -8668,19 +8670,22 @@ function updateHud() {
     limit: cd.limitMod ? t('hud.comfortLimit', { n: cd.limitMod }) : '',
     bonus: bonus ? t('hud.comfortBonus', { n: bonus }) : '',
   });
-  // #199 5차 「필드 터미널」 컨디션 스트립(디렉터 목업): 날씨 | 경고 | 쾌적 | 탐험 — 상세는 PDA 상태 탭
-  const warnN = (state.injury ? 1 : 0) + (cd.limitMod ? 1 : 0);
+  // #199 5차-b 컨디션 스트립(디렉터 정정): 경고 | 쾌적 — 날씨=시계 이관, 청결=경고 편입, 탐험 횟수 표기 제거
+  const cleanLow = cd.clean < 40; // 청결은 게이지가 아니라 낮을 때만 경고로 (디렉터: "청소는 경고 형식")
+  const warnN = (state.injury ? 1 : 0) + (cd.limitMod ? 1 : 0) + (cleanLow ? 1 : 0);
+  const warnTip = [
+    state.injury ? LName(INJURIES[state.injury.type]) : '',
+    cd.limitMod ? (LLimits(sh) || '') : '',
+    cleanLow ? `${t('hud.cleanTip')} (${Math.round(cd.clean)})` : '',
+  ].filter(Boolean).join(' · ');
   const segs = [
-    `<span class="cond-seg" data-tip="${LName(W)}">${W.icon}${W.penalty ? `<b class="bad">-${Math.round(W.penalty * 100)}%</b>` : `<b>—</b>`}</span>`,
-    `<span class="cond-seg" data-tip="${[state.injury ? LName(INJURIES[state.injury.type]) : '', cd.limitMod ? (LLimits(sh) || '') : ''].filter(Boolean).join(' · ')}">${injIcon || '⚠️'}<b class="${warnN ? 'bad' : ''}">${warnN}</b>${state.buff ? ' ✨' : ''}</span>`,
+    `<span class="cond-seg" data-tip="${warnTip}">${injIcon || (cleanLow ? '🧹' : '⚠️')}<b class="${warnN ? 'bad' : ''}">${warnN}</b>${state.buff ? ' ✨' : ''}</span>`,
     `<span class="cond-seg" data-tip="${comfortTip}">😊<b>${cd.score}</b></span>`,
-    `<span class="cond-seg" data-tip="${t('hud.expTip', { n: state.expToday, max: EXP_PER_DAY })}">🎒<b>${state.expToday}/${EXP_PER_DAY}</b></span>`,
   ];
   $('hud-stat').innerHTML = segs.join('<span class="cond-div">|</span>');
   renderGauge('g-hunger', state.hunger, 'hunger', '🥫');
   renderGauge('g-thirst', state.thirst, 'thirst', '💧');
-  renderGauge('g-energy', state.energy, 'energy', '⚡');
-  renderGauge('g-clean', cd.clean, 'clean', '🧹'); // #199: 상단 필수 4계기 확정(디렉터) — 물·배고픔·에너지·청결
+  renderGauge('g-energy', state.energy, 'energy', '⚡'); // #199 5차-b(디렉터): 퍼센트 계기는 밥·물·에너지만 — 청결은 스트립 경고로
 }
 function renderGauge(id, val, gkey, emoji) {
   const g = $(id);
@@ -11274,7 +11279,7 @@ $('btn-journal').addEventListener('click', () => openJournalModal('journal'));
 $('g-hunger').addEventListener('click', eatFood);
 $('g-thirst').addEventListener('click', drinkWater);
 $('g-energy').addEventListener('click', () => promptSleep());
-$('g-clean').addEventListener('click', () => cleanShelter()); // #199: 상단 필수 4계기 — 청결도 즉시 조치 가능
+// #199 5차-b: 청결 게이지 카드 제거(디렉터 — 경고 형식으로) → 청소 진입은 액션 그리드 버튼만
 $('btn-sleep').addEventListener('click', () => promptSleep());
 $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
 // #199 우측 엣지 도킹: PDA 토글 + 일지=필드 노트 오버레이 + PDA 하드웨어 히트(에셋 버튼 자리)
