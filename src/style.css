@@ -471,6 +471,15 @@
   body.pda-app #pda-lcd .wd-row .p-eff { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
   body.pda-app #pda-lcd .wd-row .pixel-btn { flex: 0 0 auto; padding: 3px 10px; }
   body.pda-app #pda-lcd .wd-row > span:last-child:not(.p-eff) { flex: 0 0 auto; white-space: nowrap; }
+  /* li-row: [아이콘][이름][우측 힌트] 트리플 목록의 공용 한 줄 규칙 — 업적·도면 도감·기록. (셸터 카드 문법 순차 적용)
+     주의: 기본 .prep-row > span:first-child(flex 100%)와 동일 특이도로 눌러야 함 — span 명시 필수. */
+  body.pda-app #pda-lcd .li-row { flex-wrap: nowrap; padding: 4px 8px; }
+  body.pda-app #pda-lcd .li-row > span:first-child { flex: 0 0 auto; font-size: 14px; white-space: nowrap; }
+  body.pda-app #pda-lcd .li-row > .px-icon { flex: 0 0 auto; width: 18px; height: 18px; }
+  body.pda-app #pda-lcd .li-row > span:nth-child(2), body.pda-app #pda-lcd .li-row > .px-icon + span { flex: 0 0 auto; white-space: nowrap; }
+  body.pda-app #pda-lcd .li-row .p-cost { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; font-size: var(--fs-s); }
+  /* 일지 탭 4개: 3+1 랩(기록 혼자 전폭) 대신 2×2 고정 — 언어 불문 안정 */
+  body.pda-app #pda-lcd button[data-jtab] { min-width: 40%; }
   /* 이주 셸터 카드 — 좁은 LCD 정돈(디렉터): 헤더(아이콘+이름) 한 줄 + 본문 전폭 문단(들여쓰기 0) */
   body.pda-app #pda-lcd .shelter-card { padding: 7px 9px; }
   body.pda-app #pda-lcd .shelter-card .s-emoji { font-size: 20px; }

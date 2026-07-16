@@ -6003,8 +6003,8 @@ function recordTabHtml() {
   const bown = state.broadcasts || {};
   const regionKeys = { residential: 'record.regionRes', commercial: 'record.regionCom', industrial: 'record.regionInd', slum: 'record.regionSlum' };
   const memoRow = (id, tbl) => owned[id]
-    ? `<div class="prep-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>${icon('icon_rec_memo', '📄')}</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-    : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
+    ? `<div class="prep-row li-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>${icon('icon_rec_memo', '📄')}</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
   let sections = '';
   for (const rg of ['residential', 'commercial', 'industrial', 'slum']) {
     const ids = MEMOS_BY_REGION[rg];
@@ -6034,7 +6034,7 @@ function recordTabHtml() {
       sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionResearch')} (${cgot}/${MEMOS_RESEARCH.length})</div>` + MEMOS_RESEARCH.map(id => memoRow(id, MEMOS)).join('');
       // 최종장: 12종 전부 수집 시 "그날의 진실" 페이지 열람 링크 (기록 문법, data-truth 훅).
       if (cgot >= MEMOS_RESEARCH.length) {
-        sections += `<div class="prep-row" style="cursor:pointer;border-top:1px solid var(--panel-border);margin-top:4px" data-truth="1"><span>📖</span><span style="color:var(--accent)">${t('record.truthTitle')}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`;
+        sections += `<div class="prep-row li-row" style="cursor:pointer;border-top:1px solid var(--panel-border);margin-top:4px" data-truth="1"><span>📖</span><span style="color:var(--accent)">${t('record.truthTitle')}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`;
       }
     }
   }
@@ -6054,8 +6054,8 @@ function recordTabHtml() {
   sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
   // 라디오 로그
   const radioRows = Object.keys(BROADCASTS).map(id => bown[id]
-    ? `<div class="prep-row" style="cursor:pointer" data-broadcast="${id}"><span>${icon('icon_rec_radio', '📻')}</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-    : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
+    ? `<div class="prep-row li-row" style="cursor:pointer" data-broadcast="${id}"><span>${icon('icon_rec_radio', '📻')}</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
   const distant = state.distantLight?.count
     ? `<div class="report-sec"><span class="r-title">${t('record.distantTitle', { n: state.distantLight.count })}</span></div>` : '';
   // 1.3 밤하늘 스케치 — 관측소 완공 후 수집이 시작되면 섹션 노출(스포일러 방지, 벙커/지하 문법). satellite는 1.4 복선.
@@ -6063,8 +6063,8 @@ function recordTabHtml() {
   let sketchSec = '';
   if (state.observatoryDone || sketchesCollected() > 0) {
     const rows = Object.keys(SKETCHES).map(id => sown[id]
-      ? `<div class="prep-row" style="cursor:pointer" data-sketch="${id}"><span>${icon('icon_rec_sketch', '🌌')}</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-      : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
+      ? `<div class="prep-row li-row" style="cursor:pointer" data-sketch="${id}"><span>${icon('icon_rec_sketch', '🌌')}</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+      : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
     sketchSec = `<div class="report-sec"><span class="r-title">${t('record.sketchTitle', { n: sketchesCollected(), total: sketchesTotal() })}</span>${rows}</div>`;
   }
   const total = memosTotal();
@@ -6084,7 +6084,7 @@ function openJournalModal(tab = 'journal') {
   const achsHtml = ACHS.map(a => {
     const got = state.achs?.[a.id];
     const veiled = a.hidden && !got; // 암호 업적: 미해금 시 존재만 — 이름·아이콘 은닉
-    return `<div class="prep-row" style="cursor:default;${got ? '' : 'opacity:0.4'}">
+    return `<div class="prep-row li-row" style="cursor:default;${got ? '' : 'opacity:0.4'}">
       <span style="font-size:16px">${veiled ? '▫️' : a.icon}</span>
       <span>${veiled ? '???' : LName(a)}</span>
       <span class="p-cost">${LDesc(a)}${got ? ' ✓' : ''}</span>
@@ -6118,11 +6118,11 @@ function openJournalModal(tab = 'journal') {
   const bpGot = [...sigIdsAll, ...commonIds, ...soloIds].filter(id => bpOwned[id]).length;
   const bpRow = (id, got, hint) => {
     const d = DEFS[id];
-    return `<div class="prep-row" style="cursor:default;${got ? '' : 'opacity:0.6'}">
+    return `<div class="prep-row li-row" style="cursor:default;${got ? '' : 'opacity:0.6'}">
       ${furnIcon(id, 'px-lg')}<span>${LName(d)}</span>
       <span class="p-cost">${got ? '✓' : hint}</span></div>`;
   };
-  const bpVeilRow = (hint = '') => `<div class="prep-row" style="cursor:default;opacity:0.35">
+  const bpVeilRow = (hint = '') => `<div class="prep-row li-row" style="cursor:default;opacity:0.35">
       <span style="font-size:16px">▫️</span><span>???</span><span class="p-cost">${hint}</span></div>`;
   const sigBlocks = Object.entries(BAL.blueprint.regionItems).map(([rid, ids]) => {
     const visited = ((state.regionVisits || {})[rid] || 0) > 0;
@@ -6136,7 +6136,7 @@ function openJournalModal(tab = 'journal') {
   const soloRows = soloIds.map(id => bpOwned[id] ? bpRow(id, true, '') : bpVeilRow(t('col.bpLegendSrc'))).join('');
   // #195: 젤 필터북 — 도면은 아니지만 같은 전설 채널의 1회 한정 유품(#189 P3). 미보유 잠금 행으로 pull 가시화.
   const gelRow = state.lightGels
-    ? `<div class="prep-row" style="cursor:default"><span style="font-size:16px">📔</span><span>${t('col.gelBook')}</span><span class="p-cost">✓</span></div>`
+    ? `<div class="prep-row li-row" style="cursor:default"><span style="font-size:16px">📔</span><span>${t('col.gelBook')}</span><span class="p-cost">✓</span></div>`
     : bpVeilRow(t('col.bpGelSrc'));
   const colBody = `
     <div class="report-sec"><span class="r-title">${t('col.bpTitle', { n: bpGot, total: bpTotal })}</span>
