@@ -7348,11 +7348,11 @@ function buildGoldenGateScene() {
   for (let i = 0; i < 6; i++) mkCanopy(NT[0] + (srand() - 0.5) * 11, 1 + srand() * 3, NT[2] + (srand() - 0.5) * 9, 2 + srand() * 2, vegSil);
   for (let i = 0; i < 5; i++) mkCanopy(FT[0] + (srand() - 0.5) * 11, 1 + srand() * 3, FT[2] + (srand() - 0.5) * 9, 1.6 + srand() * 1.6, vegSil);
   // 전경 덤불 벽 — 하단을 잠식으로 채운다(앰버 하늘에 실루엣). 몇 포기는 키가 커 상판·난간 선을 끊는다.
-  for (let i = 0; i < 38; i++) { const bx = -74 + srand() * 158, bz = 4 + srand() * 28; mkCanopy(bx, 1.3 + srand() * 3.2, bz, 1.6 + srand() * 2.4, srand() < 0.14 ? vegRim : vegSil); }
-  for (let i = 0; i < 5; i++) { const bx = -64 + srand() * 138; mkCanopy(bx, 4.5 + srand() * 4, 8 + srand() * 14, 2 + srand() * 1.8, vegSil); }
+  for (let i = 0; i < 38; i++) { const bx = -74 + srand() * 158, bz = 4 + srand() * 28; mkCanopy(bx, 1.3 + srand() * 3.2, bz, 1.6 + srand() * 2.4, srand() < 0.3 ? vegRim : vegSil); }
+  for (let i = 0; i < 5; i++) { const bx = -64 + srand() * 138; mkCanopy(bx, 4.5 + srand() * 4, 8 + srand() * 14, 2 + srand() * 1.8, srand() < 0.4 ? vegRim : vegSil); }
   // ── 전경: 젖은 습지 둑 + 웅덩이 반사 ──
   const bank = new THREE.Mesh(new THREE.PlaneGeometry(320, 90), new THREE.MeshBasicMaterial({ color: 0x181109, fog: false })); bank.rotation.x = -Math.PI / 2; bank.position.set(-10, 0.25, 24); scene.add(bank);
-  for (let i = 0; i < 5; i++) { const pd = new THREE.Mesh(new THREE.PlaneGeometry(6 + srand() * 6, 3 + srand() * 3), new THREE.MeshBasicMaterial({ color: 0xff8a3e, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); pd.rotation.x = -Math.PI / 2; pd.position.set(-60 + srand() * 100, 0.3, 14 + srand() * 24); scene.add(pd); }
+  for (let i = 0; i < 8; i++) { const pd = new THREE.Mesh(new THREE.PlaneGeometry(6 + srand() * 6, 3 + srand() * 3), new THREE.MeshBasicMaterial({ color: 0xff8a3e, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); pd.rotation.x = -Math.PI / 2; pd.position.set(-60 + srand() * 100, 0.3, 14 + srand() * 24); scene.add(pd); }
   // ── 접근 고가 콜로네이드(좌측 프레임) — 3/4 후퇴의 최대 동인 ──
   for (let i = 0; i < 6; i++) {
     const u = i / 5, vx = -58 - u * 40, vz = -68 + u * 74, VH = 22 + u * 13;
@@ -7405,13 +7405,23 @@ function buildGoldenGateScene() {
   const refCv = document.createElement('canvas'); refCv.width = 16; refCv.height = 128; const rfg = refCv.getContext('2d');
   const rfgr = rfg.createLinearGradient(0, 0, 0, 128); rfgr.addColorStop(0, 'rgba(255,207,122,0.55)'); rfgr.addColorStop(0.6, 'rgba(210,110,44,0.2)'); rfgr.addColorStop(1, 'rgba(122,48,16,0)');
   rfg.fillStyle = rfgr; rfg.fillRect(0, 0, 16, 128);
-  const refStreak = new THREE.Mesh(new THREE.PlaneGeometry(22, 190), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(refCv), transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); refStreak.rotation.x = -Math.PI / 2; refStreak.position.set(66, 0.32, -150); scene.add(refStreak);
+  const refTex = new THREE.CanvasTexture(refCv);
+  // 2겹 가산 기둥: 좁고 진한 코어 + 넓고 옅은 브로드 — 헤이즈 밴드 위에서도 '불타는' 반사가 살아남는다
+  const mkStreak = (w2, len, op, z) => { const st = new THREE.Mesh(new THREE.PlaneGeometry(w2, len), new THREE.MeshBasicMaterial({ map: refTex, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); st.rotation.x = -Math.PI / 2; st.position.set(72, 0.32, z); scene.add(st); return st; };
+  mkStreak(26, 330, 0.72, -190); mkStreak(64, 300, 0.3, -180);
   const drawWater = (kn, t) => {
     wg.fillStyle = '#160f0a'; wg.fillRect(0, 0, 256, 256);
     const wgr = wg.createLinearGradient(0, 0, 0, 256);
     wgr.addColorStop(0, 'rgba(70,46,28,' + (0.5 + 0.3 * kn) + ')'); wgr.addColorStop(0.5, 'rgba(40,28,18,0.5)'); wgr.addColorStop(1, 'rgba(14,10,8,0.9)');
     wg.fillStyle = wgr; wg.fillRect(0, 0, 256, 256);
-    for (let i = 0; i < 46; i++) { const ry = 6 + i * 5.2, rw = 1.6 + Math.sin(i * 0.7 + t * 5) * 1.1; wg.globalAlpha = 0.55 * (1 - i / 46); wg.fillStyle = 'rgba(255,184,74,' + (0.7 * kn) + ')'; wg.fillRect(150 + Math.sin(i * 0.9 + t * 6) * 6, ry, 34 + rw * 7, 2.4); }
+    // 수평선 워터라인 — 해수면이 하늘 광휘를 되받는 밝은 띠(제목의 '불타는'을 물에 싣는다)
+    const wl = wg.createLinearGradient(0, 0, 0, 10);
+    wl.addColorStop(0, 'rgba(255,196,96,' + (0.75 * kn) + ')'); wl.addColorStop(1, 'rgba(255,150,60,0)');
+    wg.fillStyle = wl; wg.fillRect(96, 0, 150, 10);
+    // 주 글린트 기둥(해 아래) — 폭·밀도·알파 증폭 + 잔물결 지그재그
+    for (let i = 0; i < 58; i++) { const ry = 4 + i * 4.3, rw = 1.6 + Math.sin(i * 0.7 + t * 5) * 1.3; wg.globalAlpha = 0.72 * (1 - i / 62); wg.fillStyle = 'rgba(255,190,84,' + (0.8 * kn) + ')'; const jw = 42 + rw * 9; wg.fillRect(145 + Math.sin(i * 0.9 + t * 6) * 7 - jw / 2 + 21, ry, jw, 2.6); }
+    // 흩어진 파편 글린트(기둥 밖) — 해협 전체가 낱낱이 탄다
+    for (let i = 0; i < 26; i++) { const sy = 8 + ((i * 47) % 120), sx = 60 + ((i * 83) % 150); wg.globalAlpha = 0.3 * (1 - sy / 150); wg.fillStyle = 'rgba(255,170,70,' + (0.55 * kn) + ')'; wg.fillRect(sx + Math.sin(i * 2.1 + t * 4) * 4, sy, 7 + ((i * 13) % 12), 1.6); }
     wg.globalAlpha = 1; waterTex.needsUpdate = true;
   };
   // ── 재/불씨(따뜻한 금빛 재) ──
@@ -7435,7 +7445,7 @@ function buildGoldenGateScene() {
   const hazeZ = [[8, -70, 20], [7, -140, 26], [6, -250, 34]];
   for (let i = 0; i < 3; i++) { const hm = new THREE.MeshBasicMaterial({ map: hazeTex, transparent: true, opacity: [0.5, 0.44, 0.34][i], depthWrite: false, fog: false, color: hazeSpec[i][1] }); const hp = new THREE.Mesh(new THREE.PlaneGeometry(700, hazeZ[i][2]), hm); hp.position.set(70, hazeZ[i][0], hazeZ[i][1]); scene.add(hp); hazeMats.push(hm); }
   // ── 하늘 램프(6스톱, 따뜻한 앰버 — 절대 보라로 가지 않는다) ──
-  const SKY = [[0x140e09, 0x1e150e, 0.0], [0x241a12, 0x4a3524, 0.22], [0x4a3218, 0x9a5a26, 0.46], [0x6b3f1e, 0xd67f2a, 0.66], [0x844a20, 0xf0a038, 0.83], [0x9a5a28, 0xffe6a0, 1.0]]; // 상단=묵직한 역광 폭풍 천장(어둡고 따뜻하게)
+  const SKY = [[0x140e09, 0x1e130c, 0.0], [0x261810, 0x50301c, 0.22], [0x4e2a14, 0xa8481e, 0.46], [0x702e14, 0xd85c20, 0.66], [0x883818, 0xef8830, 0.83], [0x9a5a28, 0xffe6a0, 1.0]]; // 상단=묵직한 역광 폭풍 천장 — 중단을 크림슨으로(레퍼런스 '붉은' 푸시, 보라 금지 유지)
   const skyC = SKY.map(() => new THREE.Color());
 
   const update = (t) => {
@@ -7450,8 +7460,8 @@ function buildGoldenGateScene() {
     glowCore.material.opacity = 0.85 + 0.1 * Math.sin(t * 40); glowMid.material.opacity = 0.5 + 0.4 * (1 - kn); glowWide.material.opacity = 0.24 + 0.24 * (1 - kn);
     lerpC(0x2a1c12, 0x8a5a30, kn, scene.fog.color);
     lerpC(0x1a0f08, 0x6a4426, kn, steelLit.color);
-    lerpC(0x0e130a, 0x1e2814, kn, vegSil.color);   // 넝쿨 가닥도 잎과 같은 어두운 실루엣 톤으로 통일
-    lerpC(0x1e1808, 0x443a1e, kn, vegRim.color);
+    lerpC(0x0e110a, 0x1a2010, kn, vegSil.color);   // 넝쿨 가닥 — 카키 쪽으로(앰버 씬에서 녹색이 튀지 않게)
+    lerpC(0x1e1808, 0x4a3a1a, kn, vegRim.color);
     lerpC(0x0d120a, 0x1c2612, kn, leafSil.color);  // 잎 몸통 = 어두운 올리브 실루엣(빛나지 않게)
     lerpC(0x201808, 0x483a1c, kn, leafRim.color);  // 잎 상단 = warm rim(해가 뒤라 윗엣지만 달궈짐)
     lerpC(0x140b08, 0x5a2c18, kn, propRust.color);
