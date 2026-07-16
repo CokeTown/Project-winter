@@ -145,6 +145,38 @@
     position: relative; z-index: 1; font-size: 10px; line-height: 12px;
     display: block; text-align: center; text-shadow: 1px 1px 0 #0008;
   }
+  /* ── UI B-1 수첩 낱장 파일럿 (디렉터 확정 "A 하고 B로 확장") ──
+     HUD 상단 정보 존(거점 이름·기록·게이지)만 = 판자 패널에 마스킹 테이프로 붙인 생존 수첩 한 장.
+     행동 버튼 존은 불변(가독·터치 타깃). 괘선 + 좌변 노트 마진선(빨강) + 테이프. CSS-only·마크업 무수정. */
+  #hud .shelter-name {
+    background:
+      repeating-linear-gradient(180deg, transparent 0 15px, rgba(58, 50, 38, 0.10) 15px 16px),
+      linear-gradient(180deg, #ded3b9, #d6cbaf);
+    color: var(--paper-ink);
+    margin: 2px -6px 0; padding: 6px 8px 3px 20px;
+    border-radius: 2px 2px 0 0;
+    position: relative;
+    box-shadow: inset 15px 0 0 -13px rgba(168, 67, 63, 0.4); /* 노트 마진선 */
+  }
+  #hud .shelter-name::after { /* 마스킹 테이프 — 낱장을 판자에 붙였다 */
+    content: ''; position: absolute; top: -4px; left: 50%;
+    transform: translateX(-50%) rotate(-2deg); width: 52px; height: 9px;
+    background: rgba(216, 199, 154, 0.8); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  #hud .stat {
+    background: linear-gradient(180deg, #d6cbaf, #d2c6a9);
+    color: #6a5e49;
+    margin: 0 -6px 0; padding: 1px 8px 4px 20px;
+    box-shadow: inset 15px 0 0 -13px rgba(168, 67, 63, 0.4);
+  }
+  #hud #gauges {
+    background: #d2c6a9;
+    margin: 0 -6px 10px; padding: 0 8px 8px 20px;
+    border-radius: 0 0 2px 2px;
+    box-shadow: inset 15px 0 0 -13px rgba(168, 67, 63, 0.4), 0 2px 0 rgba(0, 0, 0, 0.35);
+  }
+  #hud .gauge { background: #bfb296; border-color: #8a7c62; }
+  #hud .gauge .g-label { color: #241f18; text-shadow: 0 1px 0 rgba(255, 248, 230, 0.35); }
 
   /* ── 탐험 패널 ── */
   /* 디렉터 UI 정비: 탐험 패널 = 거점 오른편으로 (튜토리얼 카드가 거점 아래로 오면서 자리 교대) */
