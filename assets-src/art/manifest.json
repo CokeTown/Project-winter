@@ -1860,6 +1860,176 @@
    "fit": "cover",
    "dest": "assets-src/art/out/icons/icon_time_dusk.png",
    "prompt": "a setting sun low over a dark horizon, deep orange-red sky band. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_inj_minor",
+   "purpose": "UI 아이콘: inj_minor",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_inj_minor.png",
+   "prompt": "a small beige adhesive bandage plaster, crossed diagonally. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_inj_deep",
+   "purpose": "UI 아이콘: inj_deep",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_inj_deep.png",
+   "prompt": "a rolled white gauze bandage with a small red stain. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_inj_sprain",
+   "purpose": "UI 아이콘: inj_sprain",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_inj_sprain.png",
+   "prompt": "a leg wrapped with a wooden splint and cloth straps. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_inj_infection",
+   "purpose": "UI 아이콘: inj_infection",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_inj_infection.png",
+   "prompt": "a medical thermometer with a warning red bulb and two germ dots. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_inj_critical",
+   "purpose": "UI 아이콘: inj_critical",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_inj_critical.png",
+   "prompt": "a first-aid satchel with a bold red cross, worn straps. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_outskirts",
+   "purpose": "UI 아이콘: district_outskirts",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_outskirts.png",
+   "prompt": "a cracked desert highway sign post on wasteland dirt. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_city",
+   "purpose": "UI 아이콘: district_city",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_city.png",
+   "prompt": "two ruined city towers with broken tops, grey concrete. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_meadow",
+   "purpose": "UI 아이콘: district_meadow",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_meadow.png",
+   "prompt": "soft green rolling hill with a few grass tufts and a tiny flower. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_forest",
+   "purpose": "UI 아이콘: district_forest",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_forest.png",
+   "prompt": "two dark pine trees on a small snowy mound. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_coast",
+   "purpose": "UI 아이콘: district_coast",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_coast.png",
+   "prompt": "a striped breakwater block by a small wave. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_harbor",
+   "purpose": "UI 아이콘: district_harbor",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_harbor.png",
+   "prompt": "a small harbor crane over a cargo crate. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_highland",
+   "purpose": "UI 아이콘: district_highland",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_highland.png",
+   "prompt": "a snowy mountain peak with a tiny cable car line. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_research",
+   "purpose": "UI 아이콘: district_research",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_research.png",
+   "prompt": "a radiation trefoil sign on a weathered metal plate. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_eastgate",
+   "purpose": "UI 아이콘: district_eastgate",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_eastgate.png",
+   "prompt": "a border checkpoint boom barrier with striped arm. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_eastbridge",
+   "purpose": "UI 아이콘: district_eastbridge",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_eastbridge.png",
+   "prompt": "a collapsed suspension bridge tower with sagging cables, sunset red tone. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_eaststation",
+   "purpose": "UI 아이콘: district_eaststation",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_eaststation.png",
+   "prompt": "a small train station facade with a round clock. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
+  },
+  {
+   "id": "icon_district_eastcore",
+   "purpose": "UI 아이콘: district_eastcore",
+   "w": 256,
+   "h": 256,
+   "genSize": "1024x1024",
+   "fit": "cover",
+   "dest": "assets-src/art/out/icons/icon_district_eastcore.png",
+   "prompt": "a tall harbor skyscraper with a container stack at its base, sunset red tone. Cozy pixel art game icon, single object centered and FILLING 88-92% of the frame with almost no empty margin, fully transparent background. Bright saturated instantly-readable colors — the object keeps its vivid real-world hues with strong value contrast so it reads at 24px on a dark UI. Bold 2px dark outline, chunky simple silhouette, soft top-left light, tiny highlight sparkle, no text, no frame, no background."
   }
  ]
 }

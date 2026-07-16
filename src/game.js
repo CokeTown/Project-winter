@@ -98,6 +98,8 @@ const WEATHER_ICON = { clear: 'icon_weather_clear', snow: 'icon_weather_snow', r
 const resIcon   = (id, cls = '') => icon(`icon_res_${id}`, RESOURCES[id]?.emoji || '', cls);
 const furnIcon  = (id, cls = '') => icon(`icon_furn_${id}`, DEFS[id]?.emoji || '', cls);
 const shIcon    = (id, cls = '') => icon(`icon_shelter_${id}`, SHELTERS[id]?.emoji || '', cls);
+const distIcon  = (id, cls = '') => icon(`icon_district_${id}`, DISTRICTS[id]?.emoji || '', cls);
+const injIconEl = (type, cls = '') => icon(`icon_inj_${type}`, INJURIES[type]?.icon || '', cls);
 const regionIcon= (id, cls = '') => icon(REGION_ICON[id] || `icon_region_${id}`, REGIONS[id]?.emoji || '', cls);
 const wxIcon    = (type, cls = '') => icon(WEATHER_ICON[type] || `icon_weather_${type}`, WEATHERS[type]?.icon || '', cls);
 
@@ -3390,7 +3392,7 @@ function openPrepModal(regionId) {
     $('modal-body').innerHTML = `
       <div class="rate-line">
         ${t('prep.rateLine', { emoji: r.emoji, pct: Math.round(p.eff * 100), lines: lines.join(' · ') })}<br>
-        ${t('prep.riskLine', { risk: LRisk(r), dur, sprain: state.injury?.type === 'sprain' ? t('prep.sprainTag') : '', mobile: SHELTERS[state.current].perk?.timeMult ? t('prep.mobileTag') : '', wicon: WEATHERS[weather.type].icon, wname: LName(WEATHERS[weather.type]), forecast: fc })}
+        ${t('prep.riskLine', { risk: LRisk(r), dur, sprain: state.injury?.type === 'sprain' ? t('prep.sprainTag') : '', mobile: SHELTERS[state.current].perk?.timeMult ? t('prep.mobileTag') : '', wicon: wxIcon(weather.type), wname: LName(WEATHERS[weather.type]), forecast: fc })}
       </div>
       <div id="prep-list">${Object.entries(PREPS).map(([id, pr]) => {
         const has = resHasAll(pr.cost);
@@ -8655,7 +8657,7 @@ function updateClock() {
   const [timeIcon, label, timeArt] = timeLabel();
   // #199 5차-b(디렉터): 날씨(+페널티)는 시계가 계기 — HUD 스트립에서 이관. 이모지 금지 → 아트 아이콘
   const wPen = WEATHERS[weather.type]?.penalty;
-  $('lcd-sub').innerHTML = `${icon(timeArt, timeIcon)} ${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:#e07050">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + INJURIES[state.injury.type].icon : ''}`;
+  $('lcd-sub').innerHTML = `${icon(timeArt, timeIcon)} ${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:#e07050">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + injIconEl(state.injury.type) : ''}`;
 }
 
 function updateHud() {
@@ -8666,9 +8668,9 @@ function updateHud() {
   const cd = comfortDetail();
   const lv = Math.min(5, Math.round(cd.score / 20));
   const bonus = Math.round(comfortExpBonus() * 100);
-  const injIcon = state.injury ? ` ${INJURIES[state.injury.type].icon}` : '';
-  const dist = DISTRICTS[districtOf(state.current)];
-  $('hud-shelter').textContent = t('hud.shelterLine', { demoji: dist.emoji, dname: LName(dist), semoji: sh.emoji, sname: LName(sh) });
+  const distId = districtOf(state.current), dist = DISTRICTS[distId];
+  // #199-b 이모지 스윕 2차: 거점 라인 아트 아이콘 (textContent→innerHTML, demoji/semoji 자리에 icon())
+  $('hud-shelter').innerHTML = t('hud.shelterLine', { demoji: distIcon(distId), dname: LName(dist), semoji: shIcon(state.current), sname: LName(sh) });
   const comfortTip = t('hud.comfortTip', {
     score: cd.score, furn: cd.furn, light: cd.light, clean: cd.cleanMod, shelter: cd.shelterMod,
     settled: cd.settled ? t('hud.comfortSettled', { n: cd.settled }) : '',
@@ -9873,7 +9875,7 @@ function renderExpPanel() {
     const canCure = resHasAll(inj.cure);
     injuryHtml = `
       <div class="injury-card">
-        ${t('injury.card', { icon: inj.icon, name: LName(inj), pen: Math.round(inj.pen * 100), time: inj.timeMult ? t('injury.card.time') : '', h: fmtGameDur(remainMin) })}
+        ${t('injury.card', { icon: injIconEl(state.injury.type), name: LName(inj), pen: Math.round(inj.pen * 100), time: inj.timeMult ? t('injury.card.time') : '', h: fmtGameDur(remainMin) })}
         <div class="btn-row">
           <button class="pixel-btn" id="btn-treat" ${canCure ? '' : 'disabled'}>${t('injury.treat', { cost: costLabel(inj.cure) })}</button>
         </div>
