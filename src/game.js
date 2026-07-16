@@ -2338,7 +2338,9 @@ function clampToRoom(item, x, z) {
 function surfaceRectOf(other) {
   const s = DEFS[other.defId].surface;
   if (!s) return null;
-  return other.rot % 2 ? { w: s.d, d: s.w, y: s.y } : { w: s.w, d: s.d, y: s.y };
+  // #196: 티어로 상판 높이가 변하는 가구(드레서 T1 종이상자)는 surfaceYByTier 실측 우선 — TIER_TOP_Y와 같은 문법
+  const sy = (DEFS[other.defId].surfaceYByTier || {})[other.tier || 3] ?? s.y;
+  return other.rot % 2 ? { w: s.d, d: s.w, y: sy } : { w: s.w, d: s.d, y: sy };
 }
 function findSupport(item, x, z) {
   if (!DEFS[item.defId].stackable) return null;

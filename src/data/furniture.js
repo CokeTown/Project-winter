@@ -171,6 +171,7 @@ const DEFS = {
   dresser: {
     name: '서랍장', nameEn: 'Dresser', emoji: '🗄️', fp: { w: 1.2, d: 0.55 },
     surface: { y: 1.13, w: 1.05, d: 0.42 },
+    surfaceYByTier: { 1: 1.10 }, // #196: T1 종이상자 top=0.92+0.18(뚜껑 날개는 가장자리 소품) — 1.13 고정이면 스택 소품 0.03 부양. T2/T3=1.13 실측 일치
     colorNames: ['내추럴', '다크브라운', '화이트', '그레이'],
     colorNamesEn: ['Natural', 'Dark Brown', 'White', 'Gray'],
     colors: [0xa9825c, 0x5f452f, 0xd4cfc2, 0x7c7f86],
