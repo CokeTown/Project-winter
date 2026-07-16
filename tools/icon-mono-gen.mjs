@@ -170,6 +170,12 @@ export const MAP = [
   ['splint', 'icon_inj_sprain'],
   ['thermo', 'icon_inj_infection'],
   ['med-cross', 'icon_inj_critical'],
+  // P3+: 툴바 화살표·줌·홈 (디렉터: "화살표도 아이콘으로")
+  ['undo', 'icon_sys_rotl'],
+  ['redo', 'icon_sys_rotr'],
+  ['zoom-in', 'icon_sys_zoomin'],
+  ['zoom-out', 'icon_sys_zoomout'],
+  ['home', 'icon_sys_camhome'],
   // P3: 가구 45 (팩 7 + 재사용 2 + 자작 36)
   ['bed', 'icon_furn_bed'],
   ['sofa', 'icon_furn_sofa'],

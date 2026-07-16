@@ -5255,9 +5255,9 @@ function openCraftModal() {
   //   data-craft 인덱스는 원본 CRAFTS 기준이라 클릭 배선 무변 — 표시만 재배열.
   const goodsRows = CRAFTS.map((c, i) => c.out.outfit ? '' : rowArr[i]).join('');
   const outfitRows = CRAFTS.map((c, i) => c.out.outfit ? rowArr[i] : '').join('');
-  const secHead = (emoji, key) => `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${emoji} ${t(key)}</div>`;
-  const rows = secHead('🪑', 'craft.catGoods') + goodsRows
-    + (outfitRows.trim() ? secHead('🧥', 'craft.catOutfit') + outfitRows : '');
+  const secHead = (ic, key) => `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${ic} ${t(key)}</div>`; // P3: 카테고리 이모지 → 모노 아트
+  const rows = secHead(icon('icon_furn_chair', '🪑'), 'craft.catGoods') + goodsRows
+    + (outfitRows.trim() ? secHead(icon('icon_act_wardrobe', '🧥'), 'craft.catOutfit') + outfitRows : '');
   // 현재 거처에 설치 가능한 개조
   const sh = SHELTERS[state.current];
   const modRows = Object.entries(SHELTER_MODS)
