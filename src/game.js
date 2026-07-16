@@ -5235,17 +5235,24 @@ function openCraftModal() {
   const rowArr = CRAFTS.map((c, i) => {
     if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
     const outLabel = c.out.res
-      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}` // '· 자원' 태그 삭제(디렉터 — 이름에 내포)
+      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])}${c.out.n > 1 ? ' ×' + c.out.n : ''}` // ×1은 생략(정보 0 — 한 줄 폭 확보)
       : c.out.outfit
-        ? `${OUTFITS[c.out.outfit].emoji} ${LName(OUTFITS[c.out.outfit])}`
+        ? `${icon('icon_act_wardrobe', '🧥')} ${LName(OUTFITS[c.out.outfit])}`
         : `${furnIcon(c.out.furn)} ${LName(DEFS[c.out.furn])}`;
+    // 다재료(2+)는 아이콘+수량만(이름은 아이콘이 대신 — 심볼릭), 단일 재료는 이름 병기. 한 줄 사수.
+    const costEnts = Object.entries(craftCost(c));
+    const costCompact = costEnts.map(([id, n]) => costEnts.length > 1
+      ? `${resIcon(id)}${n}`
+      : `${resIcon(id)}${LName(RESOURCES[id])} ${n}`).join('+');
     // #86④: 이미 옷장에 있는 의류는 재제작 불가 (영구 소유물 — 중복 소모 방지)
     const owned = c.out.outfit && (state.outfits || ['default']).includes(c.out.outfit);
     const ok = !owned && resHasAll(craftCost(c));
+    // 한 줄 압축(디렉터): 「붕대 ×1 ← 천 2 [제작]」 — 화살표=아이콘
     return `
-      <div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
-        <span>${outLabel}</span>
-        <span class="p-cost">${owned ? '' : costLabel(craftCost(c))}</span>
+      <div class="prep-row craft-row ${ok ? '' : 'no'}" style="cursor:default">
+        <span class="cr-out">${outLabel}</span>
+        ${owned ? '' : icon('icon_sys_arrowleft', '←', 'cr-arrow')}
+        <span class="p-cost">${owned ? '' : costCompact}</span>
         ${owned
           ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('craft.owned')}</span>`
           : `<button class="pixel-btn" data-craft="${i}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('craft.make')}</button>`}

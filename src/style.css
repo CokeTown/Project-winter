@@ -458,6 +458,13 @@
     background: rgba(170, 240, 185, 0.04); border: 1px solid #3f6a46; border-radius: 3px;
   }
   body.pda-app #pda-lcd .prep-row > span:first-child { flex: 1 1 100%; min-width: 0; }
+  /* 제작 행 한 줄 압축(디렉터): 「붕대 ×1 ← 천 2 [제작]」 — 이름 전폭 점유 해제 + 랩 금지 */
+  body.pda-app #pda-lcd .craft-row { flex-wrap: nowrap; padding: 4px 8px; }
+  body.pda-app #pda-lcd .craft-row > span:first-child { flex: 0 1 auto; white-space: nowrap; }
+  body.pda-app #pda-lcd .craft-row .p-cost { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; font-size: var(--fs-s); }
+  body.pda-app #pda-lcd .craft-row .p-cost .px-icon { width: 12px; height: 12px; }
+  body.pda-app #pda-lcd .craft-row .cr-arrow { width: 14px; height: 14px; flex: 0 0 auto; opacity: 0.7; }
+  body.pda-app #pda-lcd .craft-row .pixel-btn { flex: 0 0 auto; padding: 3px 10px; }
   body.pda-app #pda-lcd .prep-row .p-eff { flex: 1 1 auto; min-width: 0; }
   body.pda-app #pda-lcd .prep-row .pixel-btn { margin-left: auto !important; } /* 인라인 margin 6px보다 우선 — 버튼 우측 정렬 */
   body.pda-app #pda-lcd #modal img { max-width: 100%; }

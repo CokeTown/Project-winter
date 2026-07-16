@@ -170,6 +170,7 @@ export const MAP = [
   ['splint', 'icon_inj_sprain'],
   ['thermo', 'icon_inj_infection'],
   ['med-cross', 'icon_inj_critical'],
+  ['arrow-left', 'icon_sys_arrowleft'], // 제작 행 「결과 ← 재료」 (디렉터)
   // P3+: 툴바 화살표·줌·홈 (디렉터: "화살표도 아이콘으로")
   ['undo', 'icon_sys_rotl'],
   ['redo', 'icon_sys_rotr'],
