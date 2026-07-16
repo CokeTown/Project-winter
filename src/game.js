@@ -101,7 +101,7 @@ const shIcon    = (id, cls = '') => icon(`icon_shelter_${id}`, SHELTERS[id]?.emo
 const distIcon  = (id, cls = '') => icon(`icon_district_${id}`, DISTRICTS[id]?.emoji || '', cls);
 const injIconEl = (type, cls = '') => icon(`icon_inj_${type}`, INJURIES[type]?.icon || '', cls);
 const regionIcon= (id, cls = '') => icon(REGION_ICON[id] || `icon_region_${id}`, REGIONS[id]?.emoji || '', cls);
-const wxIcon    = (type, cls = '') => icon(WEATHER_ICON[type] || `icon_weather_${type}`, WEATHERS[type]?.icon || '', cls);
+const wxIcon    = (type, cls = '') => type === 'clear' ? '' : icon(WEATHER_ICON[type] || `icon_weather_${type}`, WEATHERS[type]?.icon || '', cls); // 맑음=무아이콘(디렉터: "해 모양은 별로야, 굳이 넣지마")
 
 /* ============================================================
    기본 설정
@@ -8657,7 +8657,8 @@ function updateClock() {
   const [timeIcon, label, timeArt] = timeLabel();
   // #199 5차-b(디렉터): 날씨(+페널티)는 시계가 계기 — HUD 스트립에서 이관. 이모지 금지 → 아트 아이콘
   const wPen = WEATHERS[weather.type]?.penalty;
-  $('lcd-sub').innerHTML = `${icon(timeArt, timeIcon)} ${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:#e07050">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + injIconEl(state.injury.type) : ''}`;
+  // 시간대 아이콘은 밤(달)만 — 새벽/낮/황혼의 해 계열은 제거(디렉터: 해 모양 금지), 라벨 텍스트가 식별자
+  $('lcd-sub').innerHTML = `${timeArt === 'icon_time_night' ? icon(timeArt, timeIcon) + ' ' : ''}${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:#e07050">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + injIconEl(state.injury.type) : ''}`;
 }
 
 function updateHud() {
@@ -8690,7 +8691,7 @@ function updateHud() {
   // 기본 이모지 금지(디렉터) — 제작 아이콘 + 이모지 폴백
   const segs = [
     `<span class="cond-seg" data-tip="${warnTip}">${icon('icon_cond_warn', '⚠️')}<b class="${warnN ? 'bad' : ''}">${warnN}</b>${state.buff ? icon('icon_cond_buff', '✨') : ''}</span>`,
-    `<span class="cond-seg" data-tip="${comfortTip}">${icon('icon_cond_comfort', '😊')}<b>${cd.score}</b></span>`,
+    `<span class="cond-seg" data-tip="${comfortTip}">😊<b>${cd.score}</b></span>`, // 웃는 얼굴=기본 이모지(디렉터: "기본 윈도우 아이콘 써도 될 것 같고")
   ];
   $('hud-stat').innerHTML = segs.join('<span class="cond-div">|</span>');
   renderGauge('g-hunger', state.hunger, 'hunger', '🥫');
