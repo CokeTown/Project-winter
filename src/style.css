@@ -440,6 +440,16 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #nt-act { left: 53.5%; top: 78%; width: 33.5%; height: 14%; display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding-right: 2%; }
   #nt-act .pixel-btn { font-size: 10px; padding: 6px 10px; }
   @media (max-width: 700px) {
+    /* ── #208 모바일 상단 UI (디렉터 신고 "허기·갈증 짤린다 → 가로로 늘리고, 대신 접을 수 있게") ──
+       원인: #hud 고정폭 250px을 3열 게이지가 나눠 가져 라벨이 min-width:0 + overflow:hidden으로 잘렸다
+       ("허기"→"허"). 폭을 화면 폭에 맞춰 늘려 근본 해소 — width는 드래그 저장(uiState는 left/top만 기록)이
+       건드리지 않으므로 이미 옮겨본 유저에게도 적용된다. 넓어진 만큼 화면을 가리니 접기(–)를 모바일에서 부활:
+       .panel.collapsed 인프라와 uiState.c 저장이 이미 있어 버튼 노출만으로 성립(구 주석의 "hud 접기 제거"는
+       250px 좁은 패널 전제 — 전제가 바뀌었다). 전역 👁 숨김은 그대로 병존. */
+    #hud { max-width: none; }  /* 폭 자체는 아래 760px 미디어쿼리가 정의(뒤쪽 규칙이 이긴다) */
+    #hud .p-min { display: block; }
+    #hud .g-name { overflow: visible; }                                    /* 폭이 생겼다 — 잘림 원인 제거 */
+    #hud .btn-row.icons { grid-template-columns: repeat(auto-fit, minmax(58px, 1fr)); } /* 액션 한 줄 흡수 */
     #edge-dock { top: 40%; } /* 모바일: 자원 패널 이관 후에도 우중단 유지(엄지 리치) */
     .dk-body { width: 72px; padding: 8px; }
     #pda { height: min(620px, calc(84vh / var(--uiz, 1)), calc(94vw / var(--uiz, 1) * 1.7315)); }
@@ -1333,7 +1343,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
 
   /* ── 모바일 ── */
   @media (max-width: 760px) {
-    #hud { width: 190px; padding: 8px; }
+    /* #208(디렉터 "허기·갈증 짤린다 → 가로로 늘리고 대신 접을 수 있게"): 구 190px 고정폭이 3열 게이지를
+       53px씩 쪼개 라벨을 죽였다("허기"→"허", 실측 g-name 8.6px). 화면 폭에 맞춰 늘린다.
+       ⚠️ 생 vw 금지 — .panel은 zoom:var(--uiz) 컨텍스트라 vw가 재해석된다(실측 96vw→190px). /var(--uiz) 상쇄가 확립 문법. */
+    #hud { width: min(calc(96vw / var(--uiz, 1)), 560px); padding: 8px; }
     #hud .shelter-name { font-size: 12px; }
     #hud .stat { font-size: 10px; }
     #hud .btn-row .pixel-btn { padding: 7px 1px; font-size: 10px; }

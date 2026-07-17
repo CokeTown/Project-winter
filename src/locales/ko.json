@@ -401,6 +401,7 @@
   "move.journeyCityNote": "🚶 국경을 넘어 {name}까지 6시간을 걸었다.",
   "move.done": "{emoji} {name}{josa} 이주했다{journey}",
   "move.journeyTag": " (여정 3시간)",
+  "move.journeyCityTag": " (여정 6시간)",
   "move.confirmFurniture": "놓아둔 가구 {n}개는 이 거처에 남는다. 이주할까?",
   "move.newShelter": "🏠 새 거처 발견 — 이주 지도를 확인하자",
   "move.badge.title": "이주할 수 있는 거처가 생겼다",

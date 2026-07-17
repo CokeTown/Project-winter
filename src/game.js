@@ -2674,7 +2674,9 @@ async function moveToShelter(id) {
   scheduleSave();
   renderResBar();
   closeModal();
-  { const sn = LName(SHELTERS[id]); toast(t('move.done', { emoji: SHELTERS[id].emoji, name: sn, josa: josa(sn, '으로/로'), journey: cross ? t('move.journeyTag') : '' })); }
+  // #208 감사 검거(P2): moveCostFor가 cross를 '구역 또는 도시'로 넓힌 뒤 시간·노트는 cityCross로 분기했는데
+  //   이 토스트만 옛 cross를 읽어 국경 이주에도 "여정 3시간"이라 말했다 — 시계는 6시간, 일지도 6시간인데 토스트만 3.
+  { const sn = LName(SHELTERS[id]); toast(t('move.done', { emoji: SHELTERS[id].emoji, name: sn, josa: josa(sn, '으로/로'), journey: cross ? t(cityCross ? 'move.journeyCityTag' : 'move.journeyTag') : '' })); }
 }
 // 이주 가능 판정: 해금 && 비현재 && 전체 비용 충족인 거처가 하나라도 있으면 true.
 // 비용은 moveCostFor(1의 칩 렌더)와 동일 소스 — 로직/표시 불일치 방지.

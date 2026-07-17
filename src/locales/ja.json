@@ -401,6 +401,7 @@
   "move.journeyCityNote": "🚶 国境を越えて{name}まで6時間歩いた。",
   "move.done": "{emoji} {name}に移住した{journey}",
   "move.journeyTag": " (旅程3時間)",
+  "move.journeyCityTag": " (旅程6時間)",
   "move.confirmFurniture": "置いてある家具{n}個はこのシェルターに残る。移住するか？",
   "move.newShelter": "🏠 新しいシェルターを発見 — 移住マップを確認しよう",
   "move.badge.title": "移住できるシェルターができた",
