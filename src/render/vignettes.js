@@ -1,9 +1,11 @@
 /* ============================================================
-   render/vignettes.js — 시네마틱 비네트 (game.js 모놀리스 분해 Tier 5)
+   render/vignettes.js — 시네마틱 비네트 (game.js 모놀리스 분해 Tier 5·6a)
    ------------------------------------------------------------
    playVignette 러너(독립 원근 씬 풀스크린 오버레이) + 4대 컷:
-   가이거(낙진 소문) · 국경 개통(eastgate) · 「콘크리트 정글의 해」(발코니) · 「불타는 해협」(금문교).
-   무너진 입구 러너·발견 컷(가구 빌더 결합)은 game.js 잔류 — vignetteActive 플래그만 공유(claim/release).
+   가이거(낙진 소문) · 국경 개통(eastgate) · 「콘크리트 정글의 해」(발코니) · 「불타는 해협」(금문교)
+   + 발견 컷(#150 디오라마 — DEFS 빌더 직결이라 데이터만 물고 이관, Tier6a).
+   무너진 입구 러너는 game.js 잔류(이벤트 시스템 결합: EVENTS·choices.run·collapseLootFx·카드 폴백) —
+   vignetteActive 플래그만 공유(claim/release). 발견 큐(queue/drain)도 게이트 로직이라 game.js 소유.
    게임 측 헬퍼(addMoodBuff·jackpotToast·scheduleSave·gameHour·disposeDeep)는 initVignettes로 주입
    (setExpeditionWeather 선례 — 단방향, 모듈은 game.js를 모른다).
    ============================================================ */
@@ -11,6 +13,8 @@ import * as THREE from 'three';
 import { seededRand } from '../lib/helpers.js';
 import { state } from '../core/state.js';
 import { BAL } from '../data/balance.js';
+import { DEFS } from '../data/furniture.js';
+import { playSfx } from '../sfx.js';
 import { t } from '../i18n.js';
 
 let addMoodBuff, jackpotToast, scheduleSave, gameHour, disposeDeep;
@@ -882,6 +886,89 @@ export function playGoldenGateVignette() {
     if (first) jackpotToast(`🌉 ${t('sight.goldenGate.first')}`, 0xff6a3a);
     scheduleSave();
   });
+}
+/* ── #150 희귀템 발견 컷: 인엔진 디오라마 (Tier6a 이관 — 원문 그대로, 로직 무변) ──
+   시그니처 도면(지역 독점 가구)을 손에 넣는 순간, 그 가구를 '실제 복셀 메시'로 페데스탈 위에 올려
+   따뜻한 스팟 + 반짝임 + 느린 카메라 푸시로 보여준다 — 도파민 루프(REWARD-LOOP ②)의 정점 연출.
+   트리거 큐(queueDiscovery/drain)는 game.js 소유 — 여기는 씬 빌더+연출만. */
+function buildDiscoveryScene(defId, colorIdx, tier) {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 200);
+  // 어두운 배경(따뜻한 하단) + 얕은 포그
+  const bgcv = document.createElement('canvas'); bgcv.width = 8; bgcv.height = 256;
+  const bgg = bgcv.getContext('2d'); const bgr = bgg.createLinearGradient(0, 0, 0, 256);
+  bgr.addColorStop(0, '#080706'); bgr.addColorStop(0.62, '#130d08'); bgr.addColorStop(1, '#20140b');
+  bgg.fillStyle = bgr; bgg.fillRect(0, 0, 8, 256);
+  const bgTex = new THREE.CanvasTexture(bgcv); bgTex.colorSpace = THREE.SRGBColorSpace; scene.background = bgTex;
+  scene.fog = new THREE.Fog(0x0a0806, 7, 24);
+  // 조명: 따뜻한 키(위-앞) + 차가운 림 + 약한 앰비언트
+  scene.add(new THREE.HemisphereLight(0x3a3122, 0x0a0806, 0.55));
+  const key = new THREE.PointLight(0xffd7a0, 26, 16, 1.8); key.position.set(1.6, 3.4, 2.8); scene.add(key);
+  const rim = new THREE.DirectionalLight(0x8ea6c8, 0.55); rim.position.set(-3.5, 2.2, -3); scene.add(rim);
+  // 돌 페데스탈
+  const pmat = new THREE.MeshStandardMaterial({ color: 0x4a443c, roughness: 0.96, metalness: 0 });
+  const ped = new THREE.Group();
+  const ptop = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.28, 0.28, 28), pmat); ptop.position.y = 0; ped.add(ptop);
+  ped.add(new THREE.Mesh(new THREE.CylinderGeometry(0.92, 1.06, 1.7, 28), pmat)).position.y = -0.99;
+  scene.add(ped);
+  // 아이템: 실제 복셀 가구 메시 (def.build 재사용). 바운딩박스로 스케일·발치 접지.
+  const holder = new THREE.Group(); scene.add(holder);
+  const def = DEFS[defId];
+  try {
+    // #192 클로즈업 등급: 컷 전용 하이디테일 빌더(def.closeup, 폴리 4~5k 허용)가 있으면 우선.
+    //   배치본과 실루엣·팔레트 동일이 규약(디렉터 오더 2026-07-16) — 없으면 배치본 그대로.
+    const item = (def.closeup || def.build)(def.colors ? def.colors[colorIdx] : 0, colorIdx || 0, null, tier || 3);
+    // #192 후속(디렉터 2026-07-17): 광원 가구는 컷에서도 빛난다 — 배치본의 def.light를 컷 씬에 재현.
+    //   (네온은 build 내장 광원이라 원래 빛남 — LED 바·랜턴·양초류처럼 buildItemGroup이 광원을 다는
+    //   def.light 계열은 컷에서 광원이 통째로 빠져 있었다. 위치는 아이템 로컬 — 스케일에 같이 접힌다.)
+    if (def.light) {
+      const L = def.light;
+      const pl = new THREE.PointLight(L.color || 0xffcf9a, L.intensity || 6, L.dist || 6, 1.6);
+      pl.position.set(L.x || 0, L.y || 1.0, L.z || 0);
+      item.add(pl);
+    }
+    holder.add(item);
+    const bb = new THREE.Box3().setFromObject(item); const sz = new THREE.Vector3(); bb.getSize(sz); const ctr = new THREE.Vector3(); bb.getCenter(ctr);
+    const sc = 1.75 / (Math.max(sz.x, sz.y, sz.z) || 1);
+    item.scale.setScalar(sc);
+    item.position.set(-ctr.x * sc, -bb.min.y * sc + 0.16, -ctr.z * sc);
+  } catch (e) { /* 빌드 실패 시 페데스탈만 */ }
+  // 바닥 따뜻한 광 웅덩이
+  const poolCv = document.createElement('canvas'); poolCv.width = poolCv.height = 128;
+  const pg = poolCv.getContext('2d'); const prg = pg.createRadialGradient(64, 64, 4, 64, 64, 64);
+  prg.addColorStop(0, 'rgba(255,192,112,0.55)'); prg.addColorStop(1, 'rgba(255,192,112,0)');
+  pg.fillStyle = prg; pg.fillRect(0, 0, 128, 128);
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(poolCv), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  pool.rotation.x = -Math.PI / 2; pool.position.y = 0.16; scene.add(pool);
+  // 반짝임(상승 먼지)
+  const spN = 70, spPos = new Float32Array(spN * 3);
+  for (let i = 0; i < spN; i++) { const a = Math.random() * 6.283, r = 0.3 + Math.random() * 1.7; spPos[i * 3] = Math.cos(a) * r; spPos[i * 3 + 1] = Math.random() * 2.6; spPos[i * 3 + 2] = Math.sin(a) * r; }
+  const spGeo = new THREE.BufferGeometry(); spGeo.setAttribute('position', new THREE.BufferAttribute(spPos, 3));
+  const sparks = new THREE.Points(spGeo, new THREE.PointsMaterial({ color: 0xffdca0, size: 0.055, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  scene.add(sparks);
+  const update = (t) => {
+    const ang = 0.55 + t * 0.5 + Math.sin(t * Math.PI) * 0.1;   // 느린 오빗
+    const dist = 6.4 - t * 1.5, cy = 2.3 - t * 0.55;             // 푸시인 + 하강
+    camera.position.set(Math.sin(ang) * dist, cy, Math.cos(ang) * dist); camera.lookAt(0, 1.0, 0);
+    holder.rotation.y = 0.3 + t * 1.1;                           // 아이템 회전
+    const pa = sparks.geometry.attributes.position;
+    for (let i = 0; i < spN; i++) { let y = pa.getY(i) + 0.005; if (y > 2.6) y = 0; pa.setY(i, y); }
+    pa.needsUpdate = true;
+    sparks.material.opacity = 0.5 + 0.4 * Math.sin(t * 9);
+    key.intensity = 26 + Math.sin(t * 7) * 3;                    // 은은한 촛불 깜빡임
+  };
+  update(0);
+  return { scene, camera, update };
+}
+export function showDiscoveryVignette(defId, colorIdx, tier, name) {
+  const cap = document.createElement('div');
+  cap.style.cssText = 'position:fixed;left:0;right:0;bottom:12%;z-index:402;text-align:center;pointer-events:none;opacity:0;transition:opacity .9s;font-family:DungGeunMo,monospace';
+  cap.innerHTML = '<div style="font-size:calc(13px*var(--uiz,1));letter-spacing:3px;color:#c9b795">' + t('discovery.rareHeader') +
+    '</div><div style="font-size:calc(26px*var(--uiz,1));color:#f2e6c8;text-shadow:0 0 22px rgba(255,190,110,.5);margin-top:6px">' + name + '</div>';
+  document.body.appendChild(cap);
+  setTimeout(() => { cap.style.opacity = '1'; }, 550);
+  try { playSfx('sting', { vol: 0.5 }); } catch (e) {}
+  playVignette(() => buildDiscoveryScene(defId, colorIdx, tier), 5200, () => { cap.style.opacity = '0'; setTimeout(() => cap.remove(), 800); });
 }
 // ── 플래그 공유 (game.js 잔류 러너: 무너진 입구·발코니 트리거가 점유 상태를 본다) ──
 export const vignetteBusy = () => vignetteActive;
