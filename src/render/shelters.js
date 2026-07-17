@@ -1178,16 +1178,27 @@ export function makeShelterBuilders(ctx) {
           const m = new THREE.Mesh(g, mat); m.position.y = topY;
           m.receiveShadow = true; if (cast) m.castShadow = true; roomGroup.add(m); return m;
         };
+        // ── 요트 높이 정본(#209 접지 감사) ──
+        //   엔진 계약: 플레이어 가구는 월드 y=0에 선다(addItem 기본값 y=0, syncTransform이 item.y를 그대로 씀).
+        //   16셸터 중 15개가 바닥 상면 정확히 0인데 요트만 살롱 마루가 0.09였다 → 그 셸터 전 가구가 9cm 파묻히고
+        //   러그 3티어(최상면 0.049~0.065)는 마루 밑으로 완전히 사라졌다. 게다가 갑판 소품 밑면이 0/0.045/0.06/0.10
+        //   네 갈래로 흩어져 있었다(실측) — 정작 이 배 자신의 캐빈 벽은 y=0에서 올라간다. 그래서 0이 정본.
+        //   ▸ 살롱 마루 상면 = 0 (실내 보행면 = 가구가 서는 면)
+        //   ▸ 갑판 상면 = DECK_Y(-0.02) (실외 보행면). 마루와 같은 평면이면 z-fighting이라 2cm 물려 둔다 —
+        //     이 2cm 단차가 밖에서는 캐빈 코밍(문턱)으로 읽혀 오히려 배답다.
+        //   ▸ 갑판 소품 밑면은 전부 DECK_Y. 아래 `DECK_Y + 높이/2` 꼴은 "밑면을 갑판에 붙인다"는 뜻이다
+        //     — 숫자를 직접 박으면 또 흩어지므로 반드시 이 꼴을 유지할 것.
+        const DECK_Y = -0.02;
         // 선체 적층: 갑판(티크) → 토프사이드(크림) → 부트스트라이프 → 선저(방오) → 킬
-        hullLayer(0, 0.16, 0.0, wallPhong({ color: deckC }), true);
+        hullLayer(0, 0.16, DECK_Y, wallPhong({ color: deckC }), true);
         // 토프사이드는 갑판보다 살짝 안쪽 inset — 갑판(inset0)과 측면이 동일 평면이 되어 가장자리에서 z-fighting(지글거림)
         //   나던 것 해소(디렉터 신고 2026-07-15). 갑판이 살짝 오버행 = 토레일 느낌으로 자연스러움.
         hullLayer(0.045, 0.62, -0.05, lamb(topsideC), true);
         hullLayer(-0.04, 0.12, -0.62, lamb(bootC));
         hullLayer(0.3, 0.78, -0.74, lamb(antifoulC));
         hullLayer(0.64, 0.5, -1.46, lamb(0x3a1e1a));
-        // 갑판 티크 널(세로 줄눈)
-        for (let i = 1; i < 12; i++) B(roomGroup, 0.025, 0.02, d + 0.5, 0x6f5636, xS + i * ((xBow - xS) / 13), 0.09, 0);
+        // 갑판 티크 널(세로 줄눈) — 갑판 위로 1cm 도드라지되(상면 -0.01), 캐빈 안에서는 마루(상면 0)에 덮여 안 보인다.
+        for (let i = 1; i < 12; i++) B(roomGroup, 0.025, 0.02, d + 0.5, 0x6f5636, xS + i * ((xBow - xS) / 13), DECK_Y, 0);
 
         // ── 선실(살롱) = 방. 갑판보다 안쪽 inset(사이드 데크 확보), 요트 살롱 창 4면 ──
         const cw = w - 0.5, cd = d - 0.5;
@@ -1206,9 +1217,14 @@ export function makeShelterBuilders(ctx) {
           { group: mkCabin(cd), pos: [-cw / 2 - 0.08, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
           { group: mkCabin(cd), pos: [cw / 2 + 0.08, 0, 0], rotY: -Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
         ]);
-        // 실내 바닥(살롱 마루) — 데코 대상, 갑판 위 살짝(자글거림 방지)
-        const sole = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.06, d - 0.3), wallPhong({ color: 0x9a7a4e }));
-        sole.position.y = 0.06; sole.receiveShadow = true; tagDecoFloor(sole); roomGroup.add(sole);
+        // 실내 바닥(살롱 마루) — 데코 대상. 상면 정확히 0 = 전 셸터 공통 계약(가구가 서는 면).
+        //   폭도 w-0.3 → w-0.1로 넓혔다: 캐빈 벽 바깥면(±3.11/±2.01)까지 덮어야 벽 밑에 틈이 안 생긴다.
+        //   갑판(-0.02)보다 2cm 솟은 이 테두리가 밖에서는 캐빈 코밍(문턱)으로 읽힌다.
+        //   널 줄눈은 지오가 아니라 텍스처로 준다(오두막·로지 바닥과 동일 관용구). 예전엔 갑판 널 지오가
+        //   마루 위로 1cm 솟아 살롱까지 가로질렀는데, 그 방식은 러그(0~0.049)를 뚫고 올라온다.
+        const sm = wallPhong({ map: floorWoodTex }); sm.userData.shared = true;
+        const sole = new THREE.Mesh(new THREE.BoxGeometry(w - 0.1, 0.06, d - 0.1), sm);
+        sole.position.y = -0.03; sole.receiveShadow = true; tagDecoFloor(sole); roomGroup.add(sole);
 
         // ── 선실 지붕(플라이브리지) — 컬링 천장 + 레이더 아치/돔 ──
         {
@@ -1222,25 +1238,28 @@ export function makeShelterBuilders(ctx) {
         }
 
         // ── 선수 갑판(+x): 펄핏 레일 + 앵커 롤러 + 클리트 + 해치 ──
+        //   #209: 밑면을 전부 보행면(0)에 앉힌다. 이전엔 스탠션 0.10 / 클리트 0.06 / 롤러·해치 0.045 /
+        //   헬름 0 네 갈래로 흩어져, 펄핏·라이프라인 기둥 17개가 갑판 위 10cm를 떠 있었다(실측).
         const fx = cw / 2 + 0.5;
-        for (const az of [-1.1, 1.1]) Cyl(roomGroup, 0.035, 0.035, 0.46, steelC, fx + 0.2, 0.33, az, 6);
-        Cyl(roomGroup, 0.035, 0.035, 0.46, steelC, xBow - 0.5, 0.33, 0, 6);
-        for (const az of [-1.1, 1.1]) B(roomGroup, (xBow - 0.5) - (fx + 0.2), 0.035, 0.035, steelC, ((fx + 0.2) + (xBow - 0.5)) / 2, 0.54, az * 0.55); // 펄핏 상단(대략 수렴)
-        B(roomGroup, 0.5, 0.13, 0.32, steelC, xBow - 0.32, 0.11, 0);                 // 앵커 롤러
-        B(roomGroup, 0.55, 0.11, 0.55, 0x8a8578, fx - 0.1, 0.1, 0);                  // 전방 해치
-        for (const cz of [-0.9, 0.9]) B(roomGroup, 0.16, 0.12, 0.32, steelC, fx - 0.1, 0.12, cz); // 클리트
+        for (const az of [-1.1, 1.1]) Cyl(roomGroup, 0.035, 0.035, 0.46, steelC, fx + 0.2, DECK_Y + 0.23, az, 6);
+        Cyl(roomGroup, 0.035, 0.035, 0.46, steelC, xBow - 0.5, DECK_Y + 0.23, 0, 6);
+        for (const az of [-1.1, 1.1]) B(roomGroup, (xBow - 0.5) - (fx + 0.2), 0.035, 0.035, steelC, ((fx + 0.2) + (xBow - 0.5)) / 2, DECK_Y + 0.44, az * 0.55); // 펄핏 상단(스탠션 top 바로 아래)
+        B(roomGroup, 0.5, 0.13, 0.32, steelC, xBow - 0.32, DECK_Y + 0.065, 0);       // 앵커 롤러
+        B(roomGroup, 0.55, 0.11, 0.55, 0x8a8578, fx - 0.1, DECK_Y + 0.055, 0);       // 전방 해치
+        for (const cz of [-0.9, 0.9]) B(roomGroup, 0.16, 0.12, 0.32, steelC, fx - 0.1, DECK_Y + 0.06, cz); // 클리트
 
         // ── 선미(-x): 스윔 플랫폼 + 조타 휠 + 콕핏 벤치 ──
         B(roomGroup, 0.7, 0.1, d - 0.5, deckC, xS - 0.33, -0.26, 0).receiveShadow = true; // 스윔 플랫폼
         const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.045, 6, 14), lamb(0x2a2824));
-        wheel.position.set(-cw / 2 - 0.28, 1.0, 0.7); wheel.rotation.y = Math.PI / 2; roomGroup.add(wheel);
-        B(roomGroup, 0.14, 1.0, 0.14, 0x2a2824, -cw / 2 - 0.28, 0.5, 0.7);                 // 헬름 스탠드
+        wheel.position.set(-cw / 2 - 0.28, DECK_Y + 1.0, 0.7); wheel.rotation.y = Math.PI / 2; roomGroup.add(wheel); // 스탠드 꼭대기
+        B(roomGroup, 0.14, 1.0, 0.14, 0x2a2824, -cw / 2 - 0.28, DECK_Y + 0.5, 0.7);        // 헬름 스탠드
 
         // ── 양현 사이드 데크 railing (스탠션 + 라이프라인 2줄) ──
+        //   스탠션 밑면 0(보행면) → top 0.44. 라이프라인 2줄은 그 상단/중단에 맞춰 0.40 / 0.24.
         for (const sz of [-1, 1]) {
           const zr = sz * (HB - 0.12), x0 = xS + 0.4, x1 = xSh + 0.2, nS = 6;
-          for (let i = 0; i <= nS; i++) Cyl(roomGroup, 0.022, 0.022, 0.44, steelC, x0 + i * ((x1 - x0) / nS), 0.32, zr, 5);
-          for (const ly of [0.5, 0.34]) B(roomGroup, x1 - x0, 0.028, 0.028, steelC, (x0 + x1) / 2, ly, zr);
+          for (let i = 0; i <= nS; i++) Cyl(roomGroup, 0.022, 0.022, 0.44, steelC, x0 + i * ((x1 - x0) / nS), DECK_Y + 0.22, zr, 5);
+          for (const ly of [0.38, 0.22]) B(roomGroup, x1 - x0, 0.028, 0.028, steelC, (x0 + x1) / 2, DECK_Y + ly, zr);
         }
 
         // ── 계류 소품: 구명튜브(부두측) + 펜더 3개(-z 부두측 현측) ──
