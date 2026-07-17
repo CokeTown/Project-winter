@@ -2178,5 +2178,13 @@
   "data.craft.customsvest.hint": "ワードローブに追加 — 税関検問所の防水コート",
   "data.craft.riggerjacket.hint": "ワードローブに追加 — 吊り橋整備工の作業ジャケット",
   "data.craft.stationcoat.hint": "ワードローブに追加 — 中央駅駅員の制服コート",
-  "data.craft.towncoat.hint": "ワードローブに追加 — デパートのショーウィンドウ最後のロングコート"
+  "data.craft.towncoat.hint": "ワードローブに追加 — デパートのショーウィンドウ最後のロングコート",
+  "data.outfit.hoodie.name": "灰色のパーカー",
+  "data.outfit.puffer.name": "レンガ色のダウン",
+  "data.outfit.poncho.name": "砂色のポンチョ",
+  "data.outfit.vest.name": "オリーブのベスト",
+  "data.craft.hoodie.hint": "ワードローブに追加 — フードを被ったシルエット",
+  "data.craft.puffer.hint": "ワードローブに追加 — 中綿でふくらんだジャンパー",
+  "data.craft.poncho.hint": "ワードローブに追加 — 毛布をまとったようなポンチョ",
+  "data.craft.vest.hint": "ワードローブに追加 — 腕が軽い作業ベスト"
 }
