@@ -2349,7 +2349,13 @@ export function makeShelterBuilders(ctx) {
         // 평지붕 콘크리트 슬래브 (#209 태양광 앵커면 신설) — 상면 h+0.02=2.72=SHELTER_MOUNTS.customs.roof.y.
         //   이전엔 지붕 메시가 아예 없어 태양광 패널이 방 정중앙 공중(2.72)에 떴다. #201 cabin 지붕 관용구.
         { const roofG = new THREE.Group(); B(roofG, w + 0.3, 0.16, d + 0.3, 0x817b70, 0, h - 0.06, 0).castShadow = true; tagCeiling(roofG, h + 0.02); roomGroup.add(roofG); }
-        setBlockers([]);
+        // #209: 붙박이 바닥 점유물 등록(이전 setBlockers([])라 플레이어 가구가 붙박이 위에 겹쳐 배치됐다).
+        setBlockers([
+          { x: 3.25, z: -0.2, w: 1.0, d: 4.4 },   // 심사 데스크(+x 벽)
+          { x: -0.9, z: 2.48, w: 4.6, d: 1.2 },   // 수하물 컨베이어+스캐너 게이트(+z 뒷벽)
+          { x: -2.6, z: -1.9, w: 1.9, d: 0.85 },  // 온기 코너 침상
+          { x: -1.4, z: -1.9, w: 0.5, d: 0.5 },   // 스토브
+        ]);
       },
       buildEnv() {
         const GY = -0.55;
@@ -2530,7 +2536,16 @@ export function makeShelterBuilders(ctx) {
         // 석조 평지붕 슬래브 (#209 태양광 앵커면 신설) — 상면 h+0.02=2.62=SHELTER_MOUNTS.bridgehouse.roof.y.
         //   이전엔 지붕 메시가 없어 태양광이 방 정중앙 공중(2.62)에 떴다. 밤하늘 조망은 -z 창밖 요소라 무손.
         { const roofG = new THREE.Group(); B(roofG, w + 0.3, 0.16, d + 0.3, 0x8a8278, 0, h - 0.06, 0).castShadow = true; tagCeiling(roofG, h + 0.02); roomGroup.add(roofG); }
-        setBlockers([]);
+        // #209: 붙박이 바닥 점유물 등록.
+        setBlockers([
+          { x: 2.9, z: -0.6, w: 0.86, d: 2.7 },   // 관리 콘솔(+x 벽)
+          { x: 2.85, z: 1.5, w: 0.5, d: 0.5 },    // 케이블 트렁크
+          { x: -2.78, z: -0.9, w: 0.7, d: 2.0 },  // 도면 테이블(-x 벽)
+          { x: -1.3, z: -1.63, w: 1.1, d: 0.9 },  // 관측석 안락의자
+          { x: -0.3, z: -2.15, w: 0.5, d: 0.5 },  // 망원경 삼각대
+          { x: 0.9, z: -1.5, w: 0.64, d: 0.64 },  // 화로
+          { x: 1.8, z: -1.3, w: 0.8, d: 0.8 },    // 케이블 드럼 스툴
+        ]);
       },
       buildEnv() {
         const GY = -0.6;
@@ -2712,7 +2727,16 @@ export function makeShelterBuilders(ctx) {
         const warmL = new THREE.PointLight(0xffb060, 0.55, 4.2, 1.9); warmL.position.set(hx + 0.6, 1.1, hz); roomGroup.add(warmL); // 유일한 실제 온광
         Cyl(roomGroup, 0.06, 0.06, 0.09, 0xd8cfb8, hx + 1.4, 0.54, hz - 0.4, 7); B(roomGroup, 0.3, 0.22, 0.24, 0x7a3b2e, hx + 1.4, 0.62, hz - 0.35); // 머그+책무더기
         for (let i = 0; i < 6; i++) { const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 5), new THREE.MeshLambertMaterial({ color: 0xffe6b0, emissive: 0xffbf66, emissiveIntensity: 1.0 })); bulb.position.set(-4.6 + i * 1.5, h - 0.5 - Math.sin(i) * 0.12, hz - 1.0); roomGroup.add(bulb); } // 스트링 라이트
-        setBlockers([]);
+        // #209: 붙박이 바닥 점유물 등록.
+        setBlockers([
+          { x: 4.88, z: -0.4, w: 1.1, d: 3.35 },  // 매표 부스(+x 벽)
+          { x: -3.6, z: 2.0, w: 2.4, d: 1.8 },    // 온기 둥지 팔레트 침상
+          { x: -2.1, z: 1.4, w: 0.5, d: 0.5 },    // 크레이트 협탁
+          { x: -2.0, z: 2.8, w: 0.5, d: 0.5 },    // 캠프 스토브
+          { x: 2.6, z: 1.2, w: 0.8, d: 0.8 },     // 빛웅덩이 나무 밑동
+          { x: -2.6, z: -1.6, w: 2.2, d: 0.5 },   // 벤치
+          { x: 0.6, z: -2.2, w: 0.6, d: 0.9 },    // 전복된 벤치
+        ]);
       },
       buildEnv() {
         const GY = -0.5;
@@ -2872,7 +2896,18 @@ export function makeShelterBuilders(ctx) {
         for (let i = 0; i < 14; i++) { const g = new THREE.Mesh(new THREE.BoxGeometry(0.24 + rand() * 0.14, 0.24 + rand() * 0.2, 0.24), (i % 4 === 0) ? new THREE.MeshLambertMaterial({ color: 0x9fd08a, emissive: 0x3c7a34, emissiveIntensity: 0.6 }) : lamb(rand() < 0.5 ? 0x3c5626 : 0x4a7a3c)); g.position.set(-4.0 + i * 0.5, 0.36, -d / 2 + 0.36); g.rotation.y = rand() * 3; roomGroup.add(g); }
         // 코너 대형 화분 + 천장 넝쿨 몇 점
         pot(-3.0, -0.3, 1.3); pot(3.2, -2.9, 1.1); pot(3.4, d / 2 - 0.5, 0.9, true);
-        setBlockers([]);
+        // #209: 붙박이 바닥 점유물 등록 — 특히 붙박이 침대 상면 0.38이 플레이어 침대 0.38과 coplanar였다.
+        setBlockers([
+          { x: 3.6, z: 0.3, w: 3.6, d: 5.9 },    // 침실 단+붙박이 침대
+          { x: -1.3, z: 0.15, w: 3.0, d: 1.2 },  // ㄱ자 소파 긴변
+          { x: -2.9, z: -0.9, w: 1.1, d: 2.0 },  // ㄱ자 소파 짧은변
+          { x: -1.3, z: -1.55, w: 1.45, d: 0.86 }, // 커피 테이블
+          { x: -0.6, z: 2.1, w: 2.3, d: 1.7 },   // 다이닝 테이블+의자4
+          { x: -1.9, z: 3.42, w: 3.3, d: 0.62 }, // 주방 카운터(+z 벽)
+          { x: -5.2, z: 1.3, w: 0.5, d: 3.6 },   // -x 서가
+          { x: -0.6, z: -3.39, w: 7.4, d: 0.42 }, // -z 창가 허브 화단
+          { x: -4.4, z: -2.9, w: 0.5, d: 0.5 },  // 망원경
+        ]);
       },
       buildEnv() {
         // 컨셉 대조 리워크: 은하수 별하늘 + 잠식된 폐허 도시(3링) + 만 + 식물 테라스 + 온실.
