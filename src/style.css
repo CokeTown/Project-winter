@@ -1,3 +1,14 @@
+/* ── #207 웹 흔적 제거 (디렉터 2026-07-17): 기본 스크롤바·커서 금지 — 테마 커스텀 ──
+   스크롤바: 다크 트랙+판자 그린 썸(각짐, 라운드 없음 — 픽셀 결). 전 스크롤 표면 공통.
+   커서: 절차 도트 24px 2종(dataURL — 외부 에셋 0). 기본=크림 화살표, 인터랙티브=그린 필. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: rgba(8, 12, 9, 0.9); }
+::-webkit-scrollbar-thumb { background: var(--panel-border, #3f6a46); border: 2px solid rgba(8, 12, 9, 0.95); }
+::-webkit-scrollbar-thumb:hover { background: #57895f; }
+::-webkit-scrollbar-corner { background: rgba(8, 12, 9, 0.9); }
+body, canvas { cursor: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAz0lEQVR4AbXBsY0DIRBA0T+IAogItgwSOqBoOiChDAIiOsAgXbCy5LN37XmPw7t5eDdRYlAmh3eTk9aH8EMGZZY/tWS2ENNkaX0IP2BQZnlSS2YLMU2W1ofwBYMyywu1ZLYQ02RpfQg3GJRZ3qgls4WYJkvrQ7jAoMzyoVoyW4hpsrQ+hA8YlFkuqiWzhZgmS+tD+IdBmeWNEBPfMCizPAkxsdWSOWt9CDcYlMnh3eSk9SEsh3eTpZbMFmJia30IFxiUCS8c3k1OWh/CDQZlDx3tRKpxtxu9AAAAAElFTkSuQmCC) 2 2, auto; }
+/* 인터랙티브 커서는 개별 규칙(button.pixel-btn 등)의 cursor:pointer보다 항상 우선해야 하는 전역 테마 속성 — important가 의도 */
+button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-item { cursor: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAzklEQVR4AbXBsY0DIRBA0T+IAogItjACYsoiJqAwAiI6wCBdsLLks3fteY/Du3l4N1FiUCaHd5OT1ofwQwZllj+pRrYcymRpfQg/YFBmeZJqZMuhTJbWh/AFgzLLC6lGthzKZGl9CDcYlFneSDWy5VAmS+tDuMCgzPKhVCNbDmWytD6EDxiUWS5KNbLlUCZL60P4h0GZ5Y0cCt8wKLM8yaGwpRo5a30INxiUyeHd5KT1ISyHd5Ml1ciWQ2FrfQgXGJQJLxzeTU5aH8INBmUPlbtFkwOsGasAAAAASUVORK5CYII=) 2 2, pointer !important; }
 @font-face {
     font-family: 'DungGeunMo';
     src: url('./assets/fonts/DungGeunMo.woff') format('woff');
