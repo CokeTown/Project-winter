@@ -410,6 +410,15 @@ const DEFS = {
     colorNamesEn: ['Red', 'Blue', 'Green', 'Beige'],
     colors: [0x9e524e, 0x54688a, 0x6a7f5b, 0xc4b295],
     tiered: true, // #157: T1 골판지 위 담요 조각 → T2 해진 러그(올 풀림) → T3 현행. 두께 유지(noCollide 평면).
+    // #209(디렉터 "러그인지 침대인지 아직도 접합 아니야"): 러그는 '바닥을 들어올린다'.
+    //   surface/stackable(테이블 상판 문법)과 별개 축 — 그 문법을 쓰면 침대를 stackable로 만들어야 하고,
+    //   그러면 침대를 테이블 위에 올릴 수 있게 된다. floorLift는 위에 오는 게 무엇이든 상면에 앉힌다.
+    //   러그끼리 겹칠 때도 위 러그가 얹혀 '동일 평면 z-fighting'(신고 스크린샷의 그것)이 사라진다.
+    floorLift: true,
+    // 티어별 실측 최고점 (B(g,w,h,d,c,x,y,z)의 y는 중심 → top = y + h/2):
+    //   T1 접힌 귀퉁이 0.04+0.025=0.065 · T2 해진 패치 0.024+0.026=0.050 · T3 안쪽 층 0.024+0.025=0.049.
+    //   최고점을 쓰는 이유: 그보다 낮게 잡으면 위에 얹힌 러그/가구가 이 돌출부를 파고든다.
+    floorTopByTier: { 1: 0.065, 2: 0.050, 3: 0.049 },
     build(c, ci, sk, tier) {
       if (tier === 1) {
         const g = new THREE.Group();

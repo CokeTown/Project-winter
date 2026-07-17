@@ -2417,16 +2417,60 @@ function findSupport(item, x, z) {
   if (!DEFS[item.defId].stackable) return null;
   const fp = footprintOf(item);
   for (const other of items) {
-    if (other === item || other.y) continue;
+    // 1단만 허용: 상판 위 소품은 지지대가 될 수 없다. #209 정정 — 판정을 `other.y`(높이)에서
+    //   `other.support`(상판 위에 있는가)로 바꾼다. 러그 바닥 올림이 생기며 테이블 y가 0이 아닐 수
+    //   있게 됐는데, 옛 판정은 그런 테이블을 지지대에서 제외해 **러그 위 테이블엔 아무것도 못 올렸다**(실측).
+    if (other === item || other.support) continue;
     const sr = surfaceRectOf(other);
     if (!sr) continue;
     // 소품 중심이 상판 안쪽에 있으면 올려놓기 (살짝 걸치는 건 허용)
     if (Math.abs(x - other.x) <= Math.max(0.02, sr.w / 2 - fp.w * 0.3) &&
-        Math.abs(z - other.z) <= Math.max(0.02, sr.d / 2 - fp.d * 0.3)) return { other, y: sr.y };
+        Math.abs(z - other.z) <= Math.max(0.02, sr.d / 2 - fp.d * 0.3)) {
+      return { other, y: sr.y + (other.y || 0) }; // #209: 상판 높이는 지지대 자신의 y(러그 위면 +) 기준
+    }
   }
   return null;
 }
 function itemsOn(support) { return items.filter(i => i.support === support); }
+/* ── #209 바닥 올림 (러그) ──
+   디렉터 신고 "러그인지 침대인지, 아직도 접합 아니야"의 구조적 원인은 두 겹이었다:
+   ① 러그는 noCollide라 겹침 가드가 전무 → 두 러그의 상면이 비트 단위로 동일 평면 = z-fighting
+   ② 러그가 스택면을 안 줘서 위에 놓은 침대가 러그 두께만큼 파묻힘
+   둘 다 "러그 위에 있는 것의 y가 0으로 고정"이 원인이라 한 축으로 푼다. surface/stackable(테이블
+   상판 문법)을 재사용하지 않는 이유: findSupport는 '올리는 쪽'이 stackable이길 요구하므로 침대를
+   stackable로 만들어야 하고, 그러면 침대를 테이블 위에 올릴 수 있게 된다(규칙 붕괴).
+   floorLift는 얹히는 쪽 조건이 없다 — 바닥이 그만큼 높아진 것으로 취급한다. */
+function floorTopOf(o) {
+  const d = DEFS[o.defId];
+  if (!d || !d.floorLift) return 0;
+  return (d.floorTopByTier || {})[o.tier || 3] || 0;
+}
+// (x,z)에 놓일 item의 바닥 높이. 러그 여러 장이 겹쳐도 (러그 자신의 y + 상면)의 최대값 = 맨 위 층.
+// ⚠️ 러그끼리는 서열이 필요하다(실측으로 검거): 서열 없이 서로를 들어올리면 재접지 루프가 A→C→B→…로
+//    물려 0.065→0.114→0.164로 폭주하고 맨 처음 러그마저 뜬다. 서열 = **배치 순서**(나중에 깐 것이 위) —
+//    items 배열 인덱스가 곧 순서이고 세이브에도 그 순서로 직렬화되므로 로드 후에도 같은 결과가 나온다.
+function floorLiftAt(item, x, z) {
+  const meRug = !!floorTopOf(item);
+  const selfIdx = items.indexOf(item); // 배치 중(아직 미등록)이면 -1 = 맨 위 취급
+  let y = 0;
+  for (let i = 0; i < items.length; i++) {
+    const other = items[i];
+    if (other === item || other.support) continue;      // 상판 위 소품은 바닥이 아니다
+    if (meRug && selfIdx >= 0 && i > selfIdx) continue; // 나보다 나중에 깔린 러그는 나를 못 올린다
+    const top = floorTopOf(other);
+    if (!top) continue;
+    const ofp = footprintOf(other);
+    // 중심이 러그 풋프린트 안일 때만 얹는다 — 가장자리에 살짝 걸친 가구가 통째로 뜨는 것 방지
+    if (Math.abs(x - other.x) <= ofp.w / 2 && Math.abs(z - other.z) <= ofp.d / 2) {
+      y = Math.max(y, (other.y || 0) + top);
+    }
+  }
+  return y;
+}
+// 배치/회전/로드 공통: 상판 지지대가 있으면 그 위, 없으면 바닥 올림(러그) 높이.
+function restingY(item, x, z) {
+  return item._support ? item._support.y : floorLiftAt(item, x, z);
+}
 function collides(item, x, z) {
   if (DEFS[item.defId].noCollide) return false;
   const sup = findSupport(item, x, z);
@@ -2617,10 +2661,14 @@ function loadShelter(id) {
     if (it.ge && restored) { restored.gel = it.ge; applyGel(restored); } // #189 P3: 조명 젤 색 복원
   }
   for (const it of items) {
-    if (!it.y) continue;
+    // #209 러그 바닥 올림: y=0 항목도 러그가 밑에 있으면 재계산 대상이다(구 세이브엔 러그 위 가구가 0으로
+    //   저장돼 있고, 직렬화가 y를 toFixed(2)로 반올림하므로 로드 시 재계산이 정본이다).
+    //   러그가 없으면 lift=0 → 기존 가드·기존 결과와 완전히 동일(회귀 없음).
+    const lift = floorLiftAt(it, it.x, it.z);
+    if (!it.y && !lift) continue;
     const sup = findSupport(it, it.x, it.z);
     if (sup) { it.support = sup.other; it.y = sup.y; }
-    else it.y = 0; // 지지대가 사라졌으면 바닥으로
+    else it.y = lift; // 지지대가 사라졌으면 러그 상면(없으면 바닥)
     syncTransform(it);
   }
   despawnCat();
@@ -6731,7 +6779,7 @@ function moveGhost(item, e) {
   const dx = x - item.x, dz = z - item.z;
   item.x = x; item.z = z;
   const bad = collides(item, x, z); // _support 계산 포함
-  item.y = item._support ? item._support.y : 0;
+  item.y = restingY(item, x, z); // #209: 상판 위 or 러그 바닥 올림
   item.support = item._support ? item._support.other : null;
   syncTransform(item);
   // 상판 위에 올려둔 소품도 함께 이동
@@ -7237,7 +7285,7 @@ function rotateActive() {
   syncTransform(item);
   if (item === placing || (dragging === item && dragStart?.moved)) {
     const bad = collides(item, item.x, item.z);
-    item.y = item._support ? item._support.y : 0;
+    item.y = restingY(item, item.x, item.z); // #209: 상판 위 or 러그 바닥 올림
     item.support = item._support ? item._support.other : null;
     syncTransform(item);
     item._valid = !bad;
