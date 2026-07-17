@@ -301,6 +301,24 @@ export function makeWildlifeSystem(ctx) {
     const a = Math.random() * Math.PI * 2, r = (band[0] + band[1]) / 2;
     return { x: Math.cos(a) * r, z: Math.sin(a) * r };
   }
+  /* ── #208 인카운터 진입점 (앰비언트 로밍과 분리) ──
+     앰비언트 동물은 밴드 바깥 exitSpot(band[1]+4 ≈ 10.5)에서 어슬렁 걸어온다 — 배경 생명감엔 맞다.
+     그러나 카드가 대기 중인 '조우'에 같은 진입점을 쓰면 개 걸음(gait 0.72)으로 5.5u = 8초짜리 빈 화면이
+     된다(하네스 실측: 9초 내내 mode 'walk', 자동 카드가 안전망으로만 발화). 사람(visitorSpots: 집 앞
+     1.9u ≈ 2.2초)과 같은 문법으로 맞춘다 — 카메라 쪽 앞마당으로 짧게 걸어 들어와 멈춘다.
+     yaw는 game.js camState.yaw. 지하철 승강장(edgeOnly/indoor)은 무대 자체가 특수해 기존 추첨을 남긴다. */
+  function encounterSpots(yaw) {
+    const band = spec.band || [3.4, 6.5];
+    let at = null;
+    if (!spec.edgeOnly && !spec.indoor && typeof yaw === 'number') {
+      let r = band[0];                                  // 밴드 안쪽 = 집에 가장 가까운 로밍 반경
+      for (let k = 0; k < 10 && findBlock(Math.cos(yaw) * r, Math.sin(yaw) * r, 0.2); k++) r += 0.4; // 돔 avoidR·마당 소품 밖으로
+      at = { x: Math.cos(yaw) * r, z: Math.sin(yaw) * r };
+    }
+    if (!at) at = roamSpot();
+    const ar = Math.hypot(at.x, at.z) || 1;             // 목표의 방사 방향 2.2u 밖 = 진입점(화면 가장자리)
+    return { at, from: { x: at.x / ar * (ar + 2.2), z: at.z / ar * (ar + 2.2) } };
+  }
   // 밴드 바깥 퇴장점 (화면 밖으로)
   function exitSpot(fromX, fromZ) {
     const band = spec.band || [3.4, 6.5];
@@ -324,7 +342,7 @@ export function makeWildlifeSystem(ctx) {
     sfx('wl_' + id);
   }
 
-  function spawnOne(speciesId, atSpot, birdLanding, idx = 0) {
+  function spawnOne(speciesId, atSpot, birdLanding, idx = 0, entry = null) {
     const sp = WILDLIFE_SPECIES[speciesId];
     if (!sp) return null;
     const built = buildMesh(sp);
@@ -344,7 +362,7 @@ export function makeWildlifeSystem(ctx) {
     if (sp.kind === 'insect') { a.g.position.set(s.x, groundY + 0.9, s.z); a.mode = 'hover'; a.center = { x: s.x, z: s.z }; a.glow = built.glow; }
     else if (sp.kind === 'web') { const by = groundY + 1.3; a.g.position.set(s.x, by, s.z); a.g.rotation.set(0, Math.atan2(-s.x, -s.z), 0); a.mode = 'web'; a.baseY = by; a.plane = built.plane; }
     else if (birdLanding || sp.kind === 'bird') { a.g.position.y = groundY + 1.6 + idx * 0.2; a.mode = 'landing'; }
-    else { const e = exitSpot(s.x, s.z); a.g.position.set(e.x, groundY, e.z); a.tgt = { x: s.x, z: s.z }; a.mode = 'walk'; }
+    else { const e = (entry && entry.from) || exitSpot(s.x, s.z); a.g.position.set(e.x, groundY, e.z); a.tgt = { x: s.x, z: s.z }; a.mode = 'walk'; } // entry=#208 인카운터 근접 진입
     animals.push(a);
     shadowDirty();
     return a;
@@ -755,7 +773,9 @@ export function makeWildlifeSystem(ctx) {
     count: () => animals.length,
     // 재현/검증용 (코디네이터): 강제 등장/발자국/퇴장 트리거
     _forceSpawn: (opening) => spawnEncounter(!!opening),
-    _spawnSpecies: (id) => spawnOne(id, roamSpot()), // #182 B1: 특정 종 강제 소환(검증/디버그)
+    _spawnSpecies: (id) => spawnOne(id, roamSpot()), // #182 B1: 특정 종 강제 소환(검증/디버그) — 앰비언트 진입점
+    // #208 인카운터 스폰(실사용): 집 앞 카메라 쪽으로 짧게 걸어 들어온다. yaw = camState.yaw.
+    _spawnEncounter: (id, yaw) => { const e = encounterSpots(yaw); return spawnOne(id, e.at, false, 0, e); },
     _forceNightPrints: () => leaveNightPrints(),
     _forceLeaveAll: () => { for (const a of animals.slice()) startLeaving(a, false); },
     _debug: () => ({ n: animals.length, prints: prints.length, next: Math.round(nextSpawnMin - (getGameMin() || 0)),

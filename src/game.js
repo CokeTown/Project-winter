@@ -216,7 +216,7 @@ const catCam = {
   targetYaw: 0,                         // ⑶ 진입 시 1회 확정하는 목표 yaw(짧은 호 ≤45° 클램프). 매 프레임 재계산 안 함.
 };
 // #181 방문자 클로즈업 상태 — 등장인물로 center 글라이드 + 줌. cur=보간 중심, center=목표(방문자 pos).
-const visitorCam = { active: false, returning: false, center: new THREE.Vector3(), cur: new THREE.Vector3(), saved: null, zoomTarget: 0.6 };
+const visitorCam = { active: false, returning: false, center: new THREE.Vector3(), cur: new THREE.Vector3(), saved: null, zoomTarget: 0.6, elevTarget: null, distTarget: null };
 // ⑶ 클로즈업 진입 회전 최소화: 고양이 facing으로 스냅하지 않고, "현재 카메라 yaw 기준 최소 회전"을 쓴다.
 //   후보 = facing+yawOffset 및 facing-yawOffset(좌우 3/4 중 가까운 쪽). 현재 yaw와의 각차를 짧은 호로 접고,
 //   ±45°(π/4)로 클램프 → 줌·센터링 위주로 얼굴을 잡되 화면이 홱 돌지 않게 한다.
@@ -254,21 +254,31 @@ function exitCatCloseup() {
   }
 }
 // #181 방문자 클로즈업 진입/복귀 — catCam과 상호배타(한 번에 하나만). center를 방문자로 글라이드+줌인.
-function enterVisitorCloseup(x, z, y) {
+// #208 cam 인자: 프레이밍 노브를 갈아끼워 동물 인카운터(BAL.wildCam)도 같은 카메라를 쓴다 — 사람보다 낮고 타이트.
+function enterVisitorCloseup(x, z, y, cam = BAL.visitorCam) {
   if (catCam.active) exitCatCloseup();
+  const cy = cam.centerY ?? BAL.visitorCam.centerY;
   if (!visitorCam.active) {
-    visitorCam.saved = { zoom: camState.zoom, tpx: camState.targetPanX, tpz: camState.targetPanZ };
-    visitorCam.cur.set(camCenter.x + camPanApplied.x, (y || 0) + BAL.visitorCam.centerY, camCenter.z + camPanApplied.z); // 현재 보던 중심에서 출발(점프 방지)
+    visitorCam.saved = { zoom: camState.zoom, tpx: camState.targetPanX, tpz: camState.targetPanZ, elev: camState.elev, dist: camState.dist };
+    visitorCam.cur.set(camCenter.x + camPanApplied.x, (y || 0) + cy, camCenter.z + camPanApplied.z); // 현재 보던 중심에서 출발(점프 방지)
   }
-  visitorCam.center.set(x, (y || 0) + BAL.visitorCam.centerY, z);
-  visitorCam.zoomTarget = BAL.visitorCam.zoom;
+  visitorCam.center.set(x, (y || 0) + cy, z);
+  visitorCam.zoomTarget = cam.zoom ?? BAL.visitorCam.zoom;
+  // #208 앙각 프로필(선택): 사람은 선 실루엣이라 기본 아이소 앙각(33°)으로 읽히지만, 네발짐승은 같은 각에서
+  //   '등'만 보여 어떤 줌에서도 갈색 덩어리가 된다(실측). catCam이 elevDeg 22로 푼 그 문제 — 값 출처도 거기다.
+  visitorCam.elevTarget = cam.elevDeg != null ? THREE.MathUtils.degToRad(cam.elevDeg) : null;
+  visitorCam.distTarget = cam.dist != null ? cam.dist : null;
   visitorCam.active = true; visitorCam.returning = false;
 }
 function exitVisitorCloseup() {
   if (!visitorCam.active) return;
   visitorCam.returning = true;                                   // center를 집으로, 줌을 원래대로 글라이드
   visitorCam.zoomTarget = visitorCam.saved ? visitorCam.saved.zoom : 0.6;
-  if (visitorCam.saved) setPanTarget(visitorCam.saved.tpx, visitorCam.saved.tpz);
+  if (visitorCam.saved) {
+    if (visitorCam.elevTarget != null) visitorCam.elevTarget = visitorCam.saved.elev; // 앙각도 원래대로 글라이드
+    if (visitorCam.distTarget != null) visitorCam.distTarget = visitorCam.saved.dist;
+    setPanTarget(visitorCam.saved.tpx, visitorCam.saved.tpz);
+  }
 }
 // 카메라 업데이트/팬/줌 → render/camera.js (Tier4 Phase1-③). 카메라 객체는 game.js 잔류, 함수만 이동.
 const { updateCamera, fitZoomForShelter, panMax, setPanTarget, panByScreenDelta } = makeCamera({
@@ -4387,7 +4397,9 @@ function presentVisitor(id) {
   scene.add(built.g);
   // #181 디렉터 피드백: "사람에게 빛나는 걸 저렇게 하면" — 몸을 감싸던 앰버 발광 스프라이트 제거.
   //   주목 유도는 카메라 자동 팬(방문자를 화면 중앙으로)이 담당한다. (필요 시 발치 바닥 표식으로 대체)
-  visitor = { ...built, mode: 'enter', tgt: stop, edge, gait: 0, evId: id, glow: null, glowBase: 0, groundY: gy, spoke: false, autoT: performance.now() + 45000 };
+  // autoT=0으로 시작: 자동 발화 예약은 **도착 시점**에 tickVisitor가 건다(#208). 구 스폰+45초 값은 도착 시
+  //   덮어써져 영영 안 쓰이는 죽은 수치라 제거 — 남겨두면 "45초 뒤 발화"라 오독된다.
+  visitor = { ...built, mode: 'enter', tgt: stop, edge, gait: 0, evId: id, glow: null, glowBase: 0, groundY: gy, spoke: false, autoT: 0 };
   // #181 밸런스 테이블에서 대사·교환 랜덤 픽 (고정 → 다양)
   const vt = VISITOR_TABLE[id];
   if (vt) {
@@ -4424,7 +4436,13 @@ function tickVisitor(t, dt) {
   if (v.mode === 'enter') {
     v._stepT = (v._stepT || 0) + dt;
     if (v._stepT > 0.42) { v._stepT = 0; if (playSfx) playSfx('steps_snow', { vol: 0.2, jitter: 0.15 }); } // #181 걸어오는 발소리 (도착하면 멎어 정적)
-    if (visitorStep(v, dt)) { v.mode = 'idle'; renderer.shadowMap.needsUpdate = true; }
+    if (visitorStep(v, dt)) {
+      v.mode = 'idle'; renderer.shadowMap.needsUpdate = true;
+      // #208(디렉터): "쟤가 오면 그냥 뜨게 해 — 굳이 터치 안 해도 화면이 인카운터로 땡겨지고 자동 메시지 출력되게".
+      //   자동 발화 시점을 '스폰 + 45초'에서 **도착 순간 기준**으로 옮긴다. 걸어오는 동안은 방해하지 않고,
+      //   멈춰서 나를 바라본 뒤 짧은 숨(autoSpeakMs)만 두고 말을 건다. 그 사이 탭하면 즉시 발화(기존 경로 그대로).
+      v.autoT = performance.now() + BAL.visitorCam.autoSpeakMs;
+    }
   } else if (v.mode === 'idle') {
     visitorStep(v, dt);
     // #181 디렉터: 대사는 '화면(카메라)'이 아니라 인게임 아바타(플레이어)를 바라보며 건넨다 — 4벽 응시 금지.
@@ -4437,7 +4455,7 @@ function tickVisitor(t, dt) {
     v.g.rotation.y += dr * Math.min(1, dt * 4);
     if (v.parts && v.parts.body && !opts.reduceMotion) v.parts.body.scale.y = 1 + Math.sin(t * 1.6) * 0.012; // 미세 숨쉬기(조각상 방지)
     if (v.glow) v.glow.material.opacity = opts.reduceMotion ? v.glowBase * 0.7 : v.glowBase * (0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 3)));
-    if (v.autoT && performance.now() > v.autoT) { v.autoT = 0; onVisitorClicked(); } // 45s 무시 → 자동 카드
+    if (v.autoT && performance.now() > v.autoT) { v.autoT = 0; onVisitorClicked(); } // 도착 후 autoSpeakMs → 자동 발화+카드
   } else if (v.mode === 'leave') {
     if (v.glow) v.glow.material.opacity = Math.max(0, v.glow.material.opacity - dt * 2);
     if (visitorStep(v, dt)) { disposeVisitor(); return; }
@@ -4459,6 +4477,9 @@ function onVisitorClicked() {
   openEventCard(id, { noImg: true, compact: true }); // 콤팩트 카드(선택지만) — 대사는 버블
 }
 function dismissVisitor(silent) {
+  // #208: 동물 인카운터 클로즈업도 같은 출구로 복귀한다 — openEventCard의 선택/내리기 핸들러가
+  //   이미 이 함수를 부르므로, 여기 한 곳에 걸면 사람·동물이 같은 경로로 카메라를 돌려준다.
+  releaseWildCam();
   if (!visitor) return;
   if (silent) { disposeVisitor(); return; }
   visitor.mode = 'leave'; visitorObj = null;                 // 걸어 나가고 카메라 복귀
@@ -4467,7 +4488,7 @@ function dismissVisitor(silent) {
 function disposeVisitor() {
   if (visitor) { scene.remove(visitor.g); disposeDeep(visitor.g); }
   visitor = null; visitorObj = null;
-  if (visitorCam.active) exitVisitorCloseup();
+  if (visitorCam.active && !wildCamEnt) exitVisitorCloseup(); // #208: 동물이 카메라 주인이면 뺏지 않는다(퇴장 겹침)
   renderer.shadowMap.needsUpdate = true;
 }
 // 방문자의 실제 대사 추출: 따옴표(" " 「」 " ")로 감싼 발화가 있으면 그것만(라디오로 나오는 "목소리"),
@@ -4511,8 +4532,16 @@ function canPresentVisitor() { return !state.exp && !!ROOM && !document.body.cla
 //   터치/클릭하면 기존 이벤트 카드로 상호작용. 지면 직접 셸터만(옥탑·지하철·요트·등대 제외 — 주변 '땅' 없음).
 //   B0=재사용 코어(스폰·픽·수거·라이프사이클). 어떤 동물이 무엇을 떨구는지는 B2에서 배선.
 // ============================================================
-let dropSpots = [];       // 활성 지면 드랍 { g, spr, hit, evId, yBase }
+let dropSpots = [];       // 활성 지면 드랍 { g, spr, hit, evId, yBase, follow, ent, settled, autoT }
+let wildCamEnt = null;    // #208 동물 클로즈업 점유 중인 엔티티(visitorCam을 사람과 공유 — 소유자 표시)
 let _sparkleTex = null;
+// #208 동물 클로즈업 해제 — 카드가 끝났거나(dismissVisitor), 동물이 떠났거나, 셸터가 바뀌면.
+//   사람이 붙어 있으면 카메라 주인은 그쪽이므로 건드리지 않는다.
+function releaseWildCam() {
+  if (!wildCamEnt) return;
+  wildCamEnt = null;
+  if (!visitor && visitorCam.active) exitVisitorCloseup();
+}
 function sparkleTexOnce() {
   if (_sparkleTex) return _sparkleTex;
   // 디렉터 레퍼런스: 부드러운 4가닥 별빛 플레어(길게 뻗다 사라지는 소프트 레이) + 밝은 코어.
@@ -4558,16 +4587,39 @@ function spawnGroundDrop(evId, opts = {}) {
   const hit = new THREE.Sprite(new THREE.SpriteMaterial({ opacity: 0, transparent: true, depthWrite: false })); // 넉넉한 터치 히트박스
   hit.scale.set(1.3, 1.3, 1); hit.position.set(0, 0.45, 0); g.add(hit);
   scene.add(g);
-  dropSpots.push({ g, spr, hit, evId, yBase: f ? 0.85 : 0.4, follow: f }); // 동행 시 몸 위에 뜨도록 상향
+  // ent(살아 있는 동물)가 있으면 #208 자동 인카운터 대상. autoT는 안전망 상한으로 먼저 걸고,
+  //   자리를 잡는 순간 tickDropSpots가 autoSpeakMs로 앞당긴다. 정적 발견물(FIND)은 ent 없음 = 기존 터치 유지.
+  // 동행 시 몸 위에 뜨도록 상향 — 상수 0.85는 #208 클로즈업(zoom 4.5)에서 개(sizeH 0.34) 머리 위 0.5u에
+  //   떠 '허공의 별'로 읽혔다. 종 덩치 기준으로: 등 바로 위. (엔티티 정보 없으면 기존 상수 유지)
+  const sh = opts.ent && opts.ent.sp ? opts.ent.sp.sizeH : 0;
+  dropSpots.push({ g, spr, hit, evId, yBase: f ? (sh ? sh + 0.18 : 0.85) : 0.4, follow: f, ent: opts.ent || null, settled: false,
+    autoT: opts.ent ? performance.now() + BAL.wildCam.maxWaitMs : 0 });
   if (playSfx) playSfx('place', { vol: 0.28, jitter: 0.2 });
   return true;
 }
+// 동물이 아직 걸어/내려오는 중인지 — 이 모드들이 '등장 이동'이다(wildlife.js spawnOne/update 기준).
+const WILD_ARRIVING = new Set(['enter', 'walk', 'landing']);
 function tickDropSpots(t) {
+  let fire = null;
   for (const d of dropSpots) {
     // 동물 동행(디렉터): 살아 있는 동안 몸을 따라다니고, 떠나면(parent 해제) 마지막 자리에 잔류
     if (d.follow) {
-      if (d.follow.parent) { d.g.position.x = d.follow.position.x; d.g.position.z = d.follow.position.z; }
-      else { d.follow = null; d.yBase = 0.4; } // 떨구고 갔다 — 지면 높이로 안착
+      // y도 따라간다: yBase가 이제 '엔티티 루트 기준'이라, 부유하는 곤충(groundY+0.9)도 몸 위에 붙는다.
+      if (d.follow.parent) { d.g.position.set(d.follow.position.x, d.follow.position.y, d.follow.position.z); }
+      else { d.follow = null; d.yBase = 0.4; d.g.position.y = visitorGroundY(); } // 떨구고 갔다 — 지면 높이로 안착
+    }
+    // #208 자동 인카운터: 카메라는 동물을 따라가고, 자리를 잡으면 한 박자 뒤 카드가 열린다.
+    if (d.ent) {
+      if (!d.ent.g.parent) { if (wildCamEnt === d.ent) releaseWildCam(); d.ent = null; d.autoT = 0; } // 이미 떠났다 → 추적/자동 종료
+      else {
+        if (wildCamEnt === d.ent && visitorCam.active && !visitor) // 사람이 동시에 있으면 tickVisitor에 양보
+          visitorCam.center.set(d.ent.g.position.x, (d.ent.groundY || 0) + BAL.wildCam.centerY, d.ent.g.position.z);
+        if (!d.settled && !WILD_ARRIVING.has(d.ent.mode)) { // 멈춰 자리 잡음 → 안전망 상한을 짧은 숨으로 당긴다
+          d.settled = true;
+          d.autoT = Math.min(d.autoT, performance.now() + BAL.wildCam.autoSpeakMs);
+        }
+        if (d.autoT && performance.now() > d.autoT && !fire) fire = d;
+      }
     }
     const k = 0.5 + 0.5 * Math.sin(t * 3.4);
     d.spr.material.opacity = 0.55 + 0.45 * k;
@@ -4575,6 +4627,7 @@ function tickDropSpots(t) {
     d.spr.material.rotation = t * 0.4;
     d.spr.position.y = d.yBase + Math.sin(t * 1.7) * 0.05; // 살짝 부유
   }
+  if (fire) collectDrop(fire); // 루프 밖에서 — collectDrop이 dropSpots를 재할당한다
 }
 function pickDrop(e) {
   if (!dropSpots.length) return null;
@@ -4589,7 +4642,7 @@ function collectDrop(d) {
   if (playSfx) playSfx('place', { vol: 0.4 });
   openEventCard(d.evId); // 기존 카드 흐름으로 상호작용
 }
-function disposeDropSpots() { for (const d of dropSpots) { scene.remove(d.g); disposeDeep(d.g); } dropSpots = []; }
+function disposeDropSpots() { releaseWildCam(); for (const d of dropSpots) { scene.remove(d.g); disposeDeep(d.g); } dropSpots = []; }
 
 // #182 B2 동물 인카운터 → 인엔진 매니페스트. 사람(A) ENCOUNTER_VISITOR와 평행:
 //   해당 인카운터가 뜰 조건이 되면 그 종을 실제로 스폰해 로밍시키고, 집 밖 땅에 드랍 반짝임을 띄운다.
@@ -4621,12 +4674,17 @@ function presentWildlife(id) {
   if (!m) { openEventCard(id); return; }
   // 종 엔티티 스폰(실제 로밍) — 실패해도 카드/드랍은 뜬다.
   let ent = null;
-  try { ent = (wildlifeSys && wildlifeSys._spawnSpecies && wildlifeSys._spawnSpecies(m.species)) || null; } catch (e) {}
+  // #208: 앰비언트 진입점(_spawnSpecies, 밴드 밖 10.5u)이 아니라 인카운터 진입점 — 집 앞 카메라 쪽으로 짧게.
+  try { ent = (wildlifeSys && wildlifeSys._spawnEncounter && wildlifeSys._spawnEncounter(m.species, camState.yaw)) || null; } catch (e) {}
   // 조망(하늘 나는 새 등): 떨군 게 없으니 지면 드랍 없이 카드 직결.
   if (m.sky) { openEventCard(id); return; }
   // 디렉터(2026-07-16): 반짝임은 동물 몸에 붙어 따라다닌다 — 땅에 따로 뜨면 개연성이 없다.
   //   동물이 떠나면 그 자리에 잔류(떨구고 갔다) — 보상 유실 없음. 정적 발견물(FIND)은 기존 지면 방식.
-  if (!spawnGroundDrop(id, { follow: ent?.g || null })) openEventCard(id);
+  if (!spawnGroundDrop(id, { follow: ent?.g || null, ent })) { openEventCard(id); return; }
+  // #208(디렉터): 사람과 대칭 — 개/동물이 "오면" 카메라가 그쪽으로 땡겨지고, 자리 잡으면 카드가 알아서 뜬다.
+  //   기존엔 팬도 자동 발화도 없어서 반짝임을 못 찾으면 인카운터가 통째로 유실됐다(사람 45초 문제의 동물판).
+  //   터치는 남긴다 — 이제 '필수'가 아니라 '앞당기기'다.
+  if (ent && ent.g) { wildCamEnt = ent; enterVisitorCloseup(ent.g.position.x, ent.g.position.z, ent.groundY, BAL.wildCam); }
 }
 
 function showEvent(id) {
@@ -7802,7 +7860,7 @@ function updateHud() {
     bonus: bonus ? t('hud.comfortBonus', { n: bonus }) : '',
   });
   // #199 5차-b 컨디션 스트립(디렉터 정정): 경고 | 쾌적 — 날씨=시계 이관, 청결=경고 편입, 탐험 횟수 표기 제거
-  const cleanLow = cd.clean < 40; // 청결은 게이지가 아니라 낮을 때만 경고로 (디렉터: "청소는 경고 형식")
+  const cleanLow = cd.clean < BAL.comfort.cleanWarnAt; // 청결은 게이지가 아니라 낮을 때만 경고로 (디렉터: "청소는 경고 형식")
   const warnN = (state.injury ? 1 : 0) + (cd.limitMod ? 1 : 0) + (cleanLow ? 1 : 0);
   const warnTip = [
     state.injury ? LName(INJURIES[state.injury.type]) : '',
@@ -11244,6 +11302,13 @@ window.__shelter = {
   endingLeaning, // 2.0-(g): 엔딩 성향 판정(검증 — 부수효과 0)
   setForceClosed, // #201: 풀셸 컬링 강제(검증)
   visitorState: () => visitor ? { mode: visitor.mode, x: +visitor.g.position.x.toFixed(2), z: +visitor.g.position.z.toFixed(2), camActive: visitorCam.active, spoke: visitor.spoke } : null,
+  // #208 QA: 동물 자동 인카운터 실측 — 팬 점유·엔티티 모드·자리 잡음·자동 발화 잔여(ms).
+  wildEncounterState: () => {
+    const d = dropSpots.find(x => x.ent) || null;
+    return { drops: dropSpots.length, camOwned: !!wildCamEnt, camActive: visitorCam.active,
+      ent: d && d.ent ? { id: d.ent.id, mode: d.ent.mode } : null,
+      settled: !!(d && d.settled), autoInMs: d && d.autoT ? Math.round(d.autoT - performance.now()) : null };
+  },
   visitorClick: () => onVisitorClicked(),
   visitorDismiss: () => dismissVisitor(),
   // #182 B0 동물 드랍 지면 반짝임 훅 (스폰/상태/수거 시뮬)
