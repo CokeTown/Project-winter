@@ -3147,8 +3147,23 @@ function eastMapBiomeDataUrl() {
     e += (1 - y / 100) * 0.55 + (x / 100) * 0.18 - Math.max(0, (y - seaLine(x)) / 14) * 2.6;
     return e;
   };
-  // 식생: 3년 잠식 — 홈 도심보다 관대(도심 억제 계수 절반). 강변·구릉 우세.
-  const vegAt = (x, y) => vnoise(x * 0.075 + 70, y * 0.075 + 20) + (vnoise(x * 0.18 + 12, y * 0.18 + 66) - 0.5) * 0.4
+  // 강 경로(색면·시가 클립이 함께 읽는다 — 정의를 위로)
+  const river = t => [16 + Math.sin(t * 5 + 2) * 3.5 + t * 4, t * 78];
+  // 시가 격자 좌표계(디렉터: 맨해튼 밀도) — 강 방향으로 -8° 기운 애비뉴×스트리트.
+  const GA = -0.14, GOX = 28, GOY = 20;
+  const gridUV = (x, y) => { const dx = x - GOX, dy = y - GOY, ca = Math.cos(GA), sa = Math.sin(GA); return [dx * ca + dy * sa, -dx * sa + dy * ca]; };
+  const uvXY = (u, v) => { const ca = Math.cos(GA), sa = Math.sin(GA); return [GOX + u * ca - v * sa, GOY + u * sa + v * ca]; };
+  const inCity = (x, y) => {
+    const [u, v] = gridUV(x, y);
+    return u > -2 && u < 66 && v > -2 && v < 46
+      && y < seaLine(x) - 2 && x > river(Math.min(1, Math.max(0, y / 78)))[0] + 3
+      && !(x < 45 && y > 60); // 컨테이너항 존은 항만 시그니처가 담당
+  };
+  const inPark = (x, y) => { const [u, v] = gridUV(x, y); return u > 30 && u < 44 && v > 6 && v < 14; }; // 도심의 허파(직사각 공원)
+  // 식생: 대도시 억제 — 시가지에선 녹지 소멸(공원 제외), 외곽 구릉·강변만 잔존.
+  const vegAt = (x, y) => (inPark(x, y) ? 2.2 : 0)
+    + vnoise(x * 0.075 + 70, y * 0.075 + 20) + (vnoise(x * 0.18 + 12, y * 0.18 + 66) - 0.5) * 0.4
+    - (inCity(x, y) ? 1.5 : 0)
     - Math.max(0, (x - 52) / 48) * Math.max(0, (38 - Math.abs(y - 34)) / 38) * 0.34;
   // 1) 색면 — 종이/식생/바다 (홈과 동일 팔레트·디더 문법)
   const paper = ['#e7e2d5', '#e0dbcd'], green = ['#b7c398', '#abb98a'], sea = ['#a8c1c5', '#9cb7bc'];
@@ -3161,17 +3176,18 @@ function eastMapBiomeDataUrl() {
       g.fillRect(cx * CELL, cy * CELL, CELL, CELL);
     }
   }
-  // 2) 등고선 (marching squares — 홈과 동일 관습, 바다 위 생략)
+  // 2) 등고선 — 대도시라 절제(디렉터: 산지 최소화): 레벨 스텝 0.4→0.9 + 시가지 내부는 평탄(생략).
   const gw = 140, gh = 100, cw = W / gw, ch = H / gh, hg = [];
   for (let j = 0; j <= gh; j++) { hg[j] = []; for (let i = 0; i <= gw; i++) hg[j][i] = hAt(i / gw * 100, j / gh * 100); }
   let k = 0;
-  for (let lv = -1.5; lv <= 2.5; lv += 0.4, k++) {
+  for (let lv = -1.5; lv <= 2.5; lv += 0.9, k++) {
     g.lineWidth = k % 2 ? 0.8 : 1.5; g.strokeStyle = k % 2 ? 'rgba(150,120,76,0.34)' : 'rgba(138,108,66,0.55)';
     g.beginPath();
     for (let j = 0; j < gh; j++) {
       for (let i = 0; i < gw; i++) {
         const px = (i + 0.5) / gw * 100, py = (j + 0.5) / gh * 100;
         if (py > seaLine(px)) continue;
+        if (inCity(px, py)) continue; // 시가지는 평탄 — 등고선 없음
         const a = hg[j][i], b = hg[j][i + 1], c = hg[j + 1][i + 1], d = hg[j + 1][i];
         const x0 = i * cw, y0 = j * ch, x1 = x0 + cw, y1 = y0 + ch, pts = [];
         if ((a > lv) !== (b > lv)) pts.push([x0 + cw * (lv - a) / (b - a), y0]);
@@ -3184,8 +3200,7 @@ function eastMapBiomeDataUrl() {
     }
     g.stroke();
   }
-  // 3) 강 — 북서에서 만으로. 하구(y~52)에 무너진 현수교: 끊긴 경간 + 낙하 잔해.
-  const river = t => [16 + Math.sin(t * 5 + 2) * 3.5 + t * 4, t * 78];
+  // 3) 강 — 북서에서 만으로(경로 정의는 상단 — 시가 클립 공용). 하구에 무너진 현수교: 끊긴 경간 + 낙하 잔해.
   g.lineCap = 'round';
   for (const [w, col] of [[9, 'rgba(140,172,178,0.9)'], [3.5, 'rgba(190,212,214,0.7)']]) {
     g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(X(river(0)[0]), 0);
@@ -3213,29 +3228,56 @@ function eastMapBiomeDataUrl() {
     }
   }
   for (const qx of [24, 33, 42]) { g.fillStyle = 'rgba(90,84,72,0.6)'; g.fillRect(X(qx), Y(75.5), 3, 26); } // 안벽 크레인 레일 말뚝
-  // 5) 건물 발자국 — 마천루 코어(중동부)는 대형·밀집, 주거단지(강변 북)는 정연, 역세권은 중간.
-  const urban = [
-    [64, 32, 13, 10, 26, 0.5],   // 마천루 코어 (대형 블록)
-    [73, 42, 9, 7, 24, 0.42],    // 백화점 지구
-    [24, 36, 8, 6, 18, 0.2],     // 강변 고급 주거(정연한 소형)
-    [48, 54, 10, 6, 20, 0.3],    // 역세권
-    [58, 64, 8, 5, 18, 0.28],    // 역 남측(아웃포스트 언저리)
-  ];
-  for (const [cxp, cyp, hwp, hhp, step, bigP] of urban) {
-    const cx = X(cxp), cy = Y(cyp), hw = hwp / 100 * W, hh = hhp / 100 * H;
-    for (let by = cy - hh; by <= cy + hh; by += step) {
-      for (let bx = cx - hw; bx <= cx + hw; bx += step) {
-        const dxn = (bx - cx) / hw, dyn = (by - cy) / hh;
-        if (dxn * dxn + dyn * dyn > 1.05) continue;
-        if (vnoise(bx * 0.05 + 300, by * 0.05 + 300) < 0.36) continue;
-        const big = rand() < bigP;
-        const bw = big ? 20 + rand() * 16 : 8 + rand() * 11, bh = big ? 14 + rand() * 13 : 6 + rand() * 9;
-        const jx = bx + (rand() - 0.5) * 6, jy = by + (rand() - 0.5) * 6;
-        g.fillStyle = 'rgba(120,112,96,0.32)'; g.fillRect(jx, jy, bw, bh);
-        g.strokeStyle = 'rgba(70,62,50,0.55)'; g.lineWidth = 1; g.strokeRect(jx, jy, bw, bh);
-        if (big && rand() < 0.5) { g.fillStyle = 'rgba(171,185,138,0.5)'; g.fillRect(jx + 2, jy + 2, 4 + rand() * 5, 3 + rand() * 4); } // 옥상 식생(3년 잠식)
+  // 5) 시가 격자 블록 (디렉터: 맨해튼 밀도) — 애비뉴(9%)×스트리트(4%) 블록을 발자국으로 빽빽하게.
+  //    타원 스프롤 폐기: 대도시는 격자가 뼈대다. 코어(마천루)는 통블록·진하게, 그 외는 1~2분할.
+  //    공터는 드물게(폭격 공백 8%) — 밀도가 "수도"를 말한다. 공원(inPark)은 도심의 허파로 비운다.
+  for (let v = 0; v < 44; v += 4) {
+    for (let u = 0; u < 64; u += 9) {
+      const [ccx, ccy] = uvXY(u + 4.5, v + 2);
+      if (!inCity(ccx, ccy) || inPark(ccx, ccy)) continue;
+      if (hash(u * 3 + 11, v * 3 + 29) < 0.08) continue; // 폭격 공백(드물게)
+      const core = Math.hypot(ccx - 64, ccy - 32) < 13;  // 마천루 코어
+      const nSplit = core ? 1 : (hash(u, v) < 0.55 ? 1 : 2);
+      for (let s = 0; s < nSplit; s++) {
+        const uu = u + 0.7 + s * (7.8 / nSplit), vv = v + 0.55;
+        const [bxp, byp] = uvXY(uu, vv);
+        const bw = (7.8 / nSplit - 0.6) / 100 * W, bh = 2.95 / 100 * H;
+        g.save(); g.translate(X(bxp), Y(byp)); g.rotate(GA);
+        g.fillStyle = core ? 'rgba(102,95,84,0.46)' : 'rgba(120,112,96,0.34)';
+        g.fillRect(0, 0, bw, bh);
+        g.strokeStyle = 'rgba(70,62,50,0.55)'; g.lineWidth = 1; g.strokeRect(0, 0, bw, bh);
+        if (!core && hash(u + 9, v + 7) < 0.16) { g.fillStyle = 'rgba(171,185,138,0.5)'; g.fillRect(2, 2, 6, 4); } // 옥상 잠식(3년)
+        g.restore();
       }
     }
+  }
+  // 5b) 격자 도로 — 애비뉴 굵게·스트리트 가늘게. 세그먼트 워크로 시가지 안에서만 긋는다(바다·강 위 유출 방지).
+  const gridLine = (u0, v0, u1, v1, w, col) => {
+    g.strokeStyle = col; g.lineWidth = w;
+    const steps = 26;
+    let open = false;
+    g.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const uu = u0 + (u1 - u0) * i / steps, vv = v0 + (v1 - v0) * i / steps;
+      const [px, py] = uvXY(uu, vv);
+      if (inCity(px, py) && !inPark(px, py)) {
+        if (!open) { g.moveTo(X(px), Y(py)); open = true; } else g.lineTo(X(px), Y(py));
+      } else open = false;
+    }
+    g.stroke();
+  };
+  for (let u = 0; u <= 64; u += 9) gridLine(u, -1, u, 45, 1.8, 'rgba(120,92,58,0.42)');   // 애비뉴
+  for (let v = 0; v <= 44; v += 4) gridLine(-1, v, 65, v, 0.9, 'rgba(120,92,58,0.3)');    // 스트리트
+  // 5c) 공원(도심의 허파) — 테두리 + 산책로 교차 (색면은 vegAt이 이미 초록으로 채움)
+  {
+    const corners = [[30, 6], [44, 6], [44, 14], [30, 14]].map(([u, v]) => uvXY(u, v));
+    g.strokeStyle = 'rgba(108,128,82,0.7)'; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(X(corners[0][0]), Y(corners[0][1]));
+    for (let i = 1; i <= 4; i++) { const c = corners[i % 4]; g.lineTo(X(c[0]), Y(c[1])); }
+    g.stroke();
+    const [pa, pb] = [uvXY(30, 10), uvXY(44, 10)];
+    g.strokeStyle = 'rgba(150,132,96,0.5)'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(X(pa[0]), Y(pa[1])); g.lineTo(X(pb[0]), Y(pb[1])); g.stroke();
   }
   // 6) 도로 — 서쪽 국경에서 들어오는 간선(홈 지도 동측 간선의 연속) + 해안로 + 코어 순환.
   const curveRoad = (pts, w, col, dash) => {
