@@ -51,7 +51,7 @@ import { hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
 import { districtOf, cityOf, rateParts, expActualRate, setExpeditionWeather, masteryTier } from './core/expedition.js'; // 탐험 판정 (Tier3) + 지역 숙련(2.0) + 도시 파생(2.0-α)
 import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
 import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEncounterEvents } from './core/encounter.js'; // 인카운터 술어 (Tier3)
-import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsAutoAvoid, falloutCleared, regionReachable } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0) + 도시 필터(2.0-b)
+import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsAutoAvoid, falloutCleared, regionReachable, regionCityOf } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0) + 도시 필터(2.0-b) + 도시뷰(2.0-f)
 import { initVignettes, playVignette, playGeigerVignette, playEastGateVignette, playJungleSunVignette, playGoldenGateVignette, buildGoldenGateScene, vignetteBusy, claimVignette, releaseVignette } from './render/vignettes.js'; // 시네마틱 비네트 (Tier5)
 initVignettes({ addMoodBuff, jackpotToast, scheduleSave, gameHour, disposeDeep }); // 함수 선언 호이스팅 전제 — 게임 측 헬퍼 단방향 주입
 
@@ -2778,17 +2778,41 @@ function buildMapCanvas() {
   }
   return mapCanvas = cv;
 }
-function openMapModal() {
+function openMapModal(viewCity) {
   if (state.exp) { $('exp-panel').classList.add('show'); renderExpPanel(); return; }
   if (isExhausted()) { toast(t('toast.exhausted')); return; }
+  // 2.0-(f) 지도 도시뷰 (§9.8.11): 뷰 도시 = 인자 또는 현 도시. 도달한 도시는 탭으로 넘겨본다 —
+  //   "왜 떠나나"의 답(§4.5 pull 가시화)이 지도 안에 있어야 이주가 도박이 아니게 된다.
+  const homeCity = cityOf(state.current);
+  const city = viewCity || homeCity;
+  const reached = Object.keys(state.citiesReached || {});
+  if (!reached.includes(homeCity)) reached.push(homeCity);
+  const cityTabs = reached.length > 1
+    ? `<div id="map-cities">${reached.map(c =>
+        `<button class="pixel-btn city-chip${c === city ? ' on' : ''}" data-city="${c}">${t('city.' + c)}${c === homeCity ? ` <span class="here">${t('map.cityHere')}</span>` : ''}</button>`).join('')}</div>`
+    : '';
   openModal(t('map.title'), `
+    ${cityTabs}
     <div id="map-wrap" class="paper"></div>
-    <div id="map-info" class="rate-line" style="margin-top:8px">${t('map.pick')}</div>`);
+    <div id="map-info" class="rate-line" style="margin-top:8px">${t('map.pick')}</div>
+    <div id="map-pull" class="rate-line"></div>`);
+  document.querySelectorAll('#map-cities .city-chip').forEach(b =>
+    b.addEventListener('click', () => { if (b.dataset.city !== city) { closeModal(); openMapModal(b.dataset.city); } }));
+  // §9.8.10 "이 도시에서만 얻는 것" — 뷰 도시의 미보유 시그니처(가구·복장) 목록. 전부 챙겼으면 완료 문구.
+  {
+    const cityRids = Object.keys(REGIONS).filter(rid => regionCityOf(rid) === city);
+    const sigAll = cityRids.flatMap(rid => BAL.blueprint.regionItems[rid] || []);
+    const unowned = sigAll.filter(id => !(state.blueprints || {})[id]);
+    const pull = $('map-pull');
+    if (pull && sigAll.length) pull.innerHTML = unowned.length
+      ? t('map.cityPull', { items: unowned.map(bpName).join(', ') })
+      : `<span style="color:var(--good)">${t('map.cityPullDone')}</span>`;
+  }
   const wrap = $('map-wrap');
   // #85 2차(디렉터 반려 → 7DTD/구판 비오메 레퍼런스): 손그림 종이는 지리가 없어 '내 위치'가 성립 안 한다.
   //   비오메 타일 지형(바다/해안·도심 회백·외곽 갈색·숲 초록·설산·봉쇄구역 해치)을 캔버스로 그려
   //   마커 좌표와 지형이 서로를 낳게 한다 — 지형이 먼저, 마커는 그 위에.
-  wrap.style.backgroundImage = `url(${mapBiomeDataUrl(cityOf(state.current))})`; // 2.0-(d): 도시 스코프 전도 — 동부에선 항구도시 백지 지도
+  wrap.style.backgroundImage = `url(${mapBiomeDataUrl(city)})`; // 2.0-(d)·(f): 뷰 도시 전도
   wrap.style.backgroundSize = '100% 100%';
   // 손그림 종이 지도 위에 4개 파밍 지역 마커를 지구 클러스터 위치에 % 절대 배치 (#47).
   // 좌표는 map_paper.png 위 집/빌딩/공장/판자촌 그림에 맞춰 하네스 스크린샷으로 조정.
@@ -2796,7 +2820,7 @@ function openMapModal() {
     const p = MAP_MARKERS[rid];
     if (!p) continue;
     if (!regionUnlocked(rid)) continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
-    if (!regionReachable(rid)) continue; // 2.0-(b): 타 도시 지역은 그 도시에서만 — 지도 자체가 도시 스코프(플래그 off면 무변화)
+    if (regionCityOf(rid) !== city) continue; // 2.0-(f): 마커는 '뷰 도시' 스코프 — 탐험 가능 여부는 아래 클릭 게이트가 판정
     const el = document.createElement('div');
     el.className = 'map-pin region';
     el.dataset.rid = rid; // 식별자 노출(테스트·자동화·트레일러 캡처가 지역별로 마커를 짚게)
@@ -2850,6 +2874,8 @@ function openMapModal() {
           if (d < bestD) { bestD = d; best = pe.dataset.rid; }
         }
       }
+      // 2.0-(f): 타 도시 뷰에서는 구경만 — 탐험은 그 도시에 살 때만(이주 유도 안내)
+      if (city !== homeCity) { toast(t('map.otherCityPin')); return; }
       closeModal(); startExpedition(best);
     });
     // 호버/선택 시 하단 정보 줄에 위험·소요·날씨 표기
@@ -2860,7 +2886,7 @@ function openMapModal() {
   //   가구 미배치=원 1겹(해금만) · 배치=원 2겹(정착) · 현 거처=강조색+펄스. 아이콘 없이 순수 원형(지역 핀보다 아래).
   for (const [sid, sp] of Object.entries(SHELTER_MAP)) {
     if (!shelterUnlocked(sid)) continue;
-    if (cityOf(sid) !== cityOf(state.current)) continue; // 2.0-(d): 셸터 점도 도시 스코프 — 좌표계가 전도별이라 교차 표시는 오배치
+    if (cityOf(sid) !== city) continue; // 2.0-(d)·(f): 셸터 점은 '뷰 도시' 스코프 — 좌표계가 전도별이라 교차 표시는 오배치
 
     const furnished = (state.layouts[sid]?.length || 0) > 0;
     const isCurrent = sid === state.current;

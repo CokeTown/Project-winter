@@ -834,6 +834,13 @@
     background: #b7a98c center / 100% 100% no-repeat; /* 로드 전 종이톤 폴백 */
     border: 2px solid var(--panel-border); border-radius: 4px;
   }
+  /* 2.0-(f) 지도 도시 탭 — 도달한 도시를 넘겨본다 */
+  #map-cities { display: flex; gap: 6px; margin-bottom: 8px; }
+  #map-cities .city-chip { font-size: 11px; padding: 4px 10px; opacity: 0.7; }
+  #map-cities .city-chip.on { opacity: 1; border-color: var(--accent); color: var(--accent); }
+  #map-cities .city-chip .here { font-size: 9px; color: var(--text-dim); }
+  #map-pull { margin-top: 4px; }
+  #map-pull:empty { display: none; }
   /* #204 타르코프식 핀(디렉터): 점 + 옆 이름 가로 배치 — 아이콘 폐기 */
   .map-pin {
     position: absolute; transform: translate(-50%, -50%);
