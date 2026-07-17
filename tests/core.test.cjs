@@ -864,7 +864,7 @@ const KNOWLEDGE_HASH = -451536973;
       const bird = S.rollOfflineGift(300);                                      // 발화(새 분기)
       const dFood = (S.state.res.food || 0) - f0;
       Math.random = or;
-      const notes = (S.state.dayLog.notes || []).filter(n => n.includes('🐈') || n.includes('🐦')).length;
+      const notes = (S.state.dayLog.notes || []).filter(n => n.includes('고양이가 문가') || n.includes('새가 다녀간')).length; // #199: 이모지 소거 후 노트 본문으로 계수
       return JSON.stringify({ none, short, cat, dCloth, bird, dFood, notes });
     `).catch(err => JSON.stringify({ error: String(err) }));
     const oj = JSON.parse(og);
