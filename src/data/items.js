@@ -124,6 +124,17 @@ export const OUTFITS = {
     pal: { coat: 0xcfc4ae, coatHem: 0xb4a98f, sleeve: 0xc4b9a2, scarf: 0x3e4a5c, beanie: 0x6a5a44 } },
   charcoal: { name: '차콜 코트',   nameEn: 'Charcoal Coat', emoji: '🧥',
     pal: { coat: 0x3a3a40, coatHem: 0x2f2f35, sleeve: 0x35353b, scarf: 0xb8862e, beanie: 0x2a2a30 } },
+  // ── 2.0-(e) 동부 시그니처 복장 4종 (GD-2.0 §6 "도심 시그니처=복장") ──
+  //   구역 서사를 입는다: 도면(bp)은 그 지역에서만 드랍(DDD-4 문법) → 제작 해금 → 옷장 착용.
+  //   팔레트는 동부 아트 디렉션(TLOU 감성+붉은 노을) — 채도 죽인 웜톤 + 노을 액센트.
+  customsvest: { name: '세관 우비',     nameEn: 'Customs Slicker',   emoji: '🧥',
+    pal: { coat: 0xb0512f, coatHem: 0x8f421f, sleeve: 0xa54a2a, scarf: 0x2e3540, beanie: 0x30281f } },
+  riggerjacket: { name: '정비공 재킷',  nameEn: 'Rigger Jacket',     emoji: '🧥',
+    pal: { coat: 0x4a5a68, coatHem: 0x3c4a56, sleeve: 0x44535f, scarf: 0xd8a13c, beanie: 0x2f3844 } },
+  stationcoat: { name: '역무원 코트',   nameEn: 'Stationmaster Coat', emoji: '🧥',
+    pal: { coat: 0x2f3850, coatHem: 0x272e42, sleeve: 0x2b3449, scarf: 0xc9963a, beanie: 0x232a3c } },
+  towncoat: { name: '마천루 롱코트',    nameEn: 'Skyline Longcoat',  emoji: '🧥',
+    pal: { coat: 0x4c3a44, coatHem: 0x3d2f38, sleeve: 0x463641, scarf: 0x9d5c4e, beanie: 0x33282f } },
 };
 
 export const CRAFTS = [
@@ -175,6 +186,11 @@ export const CRAFTS = [
   { out: { outfit: 'forest' }, cost: { cloth: 2, material: 1 }, hint: '옷장에 추가 — 수풀 위장색', hintEn: 'Added to wardrobe — thicket camo' },
   { out: { outfit: 'cream' }, cost: { cloth: 4 }, hint: '옷장에 추가 — 밝은 생지 그대로', hintEn: 'Added to wardrobe — undyed cream' },
   { out: { outfit: 'charcoal' }, cost: { cloth: 3, fuel: 1 }, hint: '옷장에 추가 — 숯검정 물들임', hintEn: 'Added to wardrobe — charcoal-dyed' },
+  // 2.0-(e) 동부 시그니처 복장 — 도면(bp)은 해당 동부 지역에서만 드랍(DDD-4 문법, balance.blueprint.regionItems)
+  { out: { outfit: 'customsvest' }, bp: 'outfit_customsvest', cost: { cloth: 3, material: 1 }, hint: '옷장에 추가 — 세관 검문대의 방수 우비', hintEn: 'Added to wardrobe — a customs checkpoint slicker' },
+  { out: { outfit: 'riggerjacket' }, bp: 'outfit_riggerjacket', cost: { cloth: 3, parts: 1 }, hint: '옷장에 추가 — 현수교 정비공의 작업 재킷', hintEn: 'Added to wardrobe — a bridge rigger\'s work jacket' },
+  { out: { outfit: 'stationcoat' }, bp: 'outfit_stationcoat', cost: { cloth: 4 }, hint: '옷장에 추가 — 중앙역 역무원의 정복 코트', hintEn: 'Added to wardrobe — a stationmaster\'s uniform coat' },
+  { out: { outfit: 'towncoat' }, bp: 'outfit_towncoat', cost: { cloth: 4, salt: 1 }, hint: '옷장에 추가 — 백화점 진열장의 마지막 롱코트', hintEn: 'Added to wardrobe — the last longcoat from a department store window' },
   // DDD-4 지역 시그니처 (REWARD-LOOP ② 2차): bp = 도면 게이트 — 그 지역 탐험에서 도면을 주워야 목록에 뜬다.
   { out: { furn: 'barrelfire' }, bp: 'barrelfire', cost: { material: 2, parts: 1, fuel: 1 }, hint: '슬럼의 밤 — 드럼통에 피운 불', hintEn: "The slum's night — a fire in a drum" },
   { out: { furn: 'graffiti' }, bp: 'graffiti', cost: { material: 1, cloth: 1 }, hint: '뜯어온 벽의 목소리', hintEn: 'A wall torn loose, still shouting' },

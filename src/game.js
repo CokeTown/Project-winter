@@ -3295,7 +3295,7 @@ function showMapInfo(rid) {
   if (sigs) {
     const unowned = sigs.filter(id => !(state.blueprints || {})[id]);
     track = unowned.length
-      ? `<br>${t('map.drops', { items: unowned.map(id => LName(DEFS[id])).join(', ') })}`
+      ? `<br>${t('map.drops', { items: unowned.map(bpName).join(', ') })}`
       : `<br><span style="color:var(--good)">${t('map.sigDone')}</span>`;
   }
   // #195: 젤 필터북 pull 가시화 — 미보유 시 상업·도심 정보줄에 1줄. 지역 pull로 설계된 기능(#189 P3)인데
@@ -3687,6 +3687,7 @@ function resolveExpedition() {
     }
     // DDD-4 시그니처 도면 (REWARD-LOOP ② 2차): 지역 독점 가구의 도면 — 도료보다 희귀한 잭팟 층.
     //   그 지역에서만, 미보유 도면 중 가중 픽(그래피티는 weights로 더 희귀 — 디렉터 2026-07-09).
+    //   2.0-(e): 동부 시그니처는 가구가 아니라 복장(outfit_*) — 이름은 bpName이 분기, 발견 컷은 가구만.
     {
       const bpPool = (BAL.blueprint.regionItems[exp.region] || []).filter(id => !(state.blueprints || {})[id]);
       if (bpPool.length && Math.random() < BAL.blueprint.dropChance) {
@@ -3696,10 +3697,10 @@ function resolveExpedition() {
         for (const id of bpPool) { r -= (w[id] ?? 1); if (r < 0) { bpId = id; break; } }
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
-        notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
-        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'legendary' });
-        jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
-        queueDiscovery(bpId, 0, 3, LName(DEFS[bpId])); // #150 희귀템 발견 컷 — 시그니처 도면=지역 독점 가구, 첫 발견 확정(고유)
+        notes.push(t('bp.foundNote', { name: bpName(bpId) }));
+        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
+        jackpotToast(`📐 ${t('bp.jackpot', { name: bpName(bpId) })}`, 0xd4b46a);
+        if (DEFS[bpId]) queueDiscovery(bpId, 0, 3, bpName(bpId)); // #150 발견 컷 — 가구 도면만(복장은 디오라마 모델 없음)
       }
     }
     // #190 커먼 도면 (「생존의 흔적」 밀도 프롭 5종): 전 지역 저확률 파밍 — 디렉터 오더(기본 배치 대신).
@@ -4182,6 +4183,11 @@ function playEventSting(id) {
 // #165 무너진 입구 보상 롤 (디렉터 2026-07-10): Yes의 값 — 치장템(도료·도면) 가중, 최희귀 고양이 루트,
 //   나머지는 잡동사니 위로. 부상 리스크는 이벤트 쪽(choices.run)에서 별도 롤 — 보상과 독립이라 "얻고도 다칠" 수 있다.
 let collapseLootFx = null; // #199 상자 개봉 연출용 전리품 메타(색·이모지) — collapseEntranceLoot가 굴릴 때 기록
+// 2.0-(e) 도면 이름 해석 — 시그니처 도면이 가구(DEFS)와 복장(outfit_*→OUTFITS) 두 종족이 됐다.
+//   드랍 노트·잭팟·전리품 라벨·지도 보급원 트래커가 공용(함수 선언 호이스팅으로 전 사용처 안전).
+function bpName(bpId) {
+  return bpId.startsWith('outfit_') ? LName(OUTFITS[bpId.slice(7)] || { name: bpId, nameEn: bpId }) : LName(DEFS[bpId]);
+}
 function collapseEntranceLoot() {
   // #193: 발동 시점에 박제한 지역 우선 — 귀환 후 표시라 state.exp는 이미 비어 있다(항상 slum 폴백이던 결함)
   const region = state.riskEventRegion || (state.exp ? state.exp.region : 'slum');
@@ -4205,8 +4211,8 @@ function collapseEntranceLoot() {
     state.blueprints = state.blueprints || {};
     state.blueprints[bpId] = 1;
     collapseLootFx = { color: 0xd4b46a, emoji: '📐' };
-    jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
-    return t('ev.collapse.rBp', { name: LName(DEFS[bpId]) });
+    jackpotToast(`📐 ${t('bp.jackpot', { name: bpName(bpId) })}`, 0xd4b46a);
+    return t('ev.collapse.rBp', { name: bpName(bpId) });
   }
   const rid = Math.random() < 0.5 ? 'cloth' : 'parts';
   resAdd(rid, 1);
@@ -4236,7 +4242,7 @@ function resolveFieldSpot(exp, mult, notes, special) {
         const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
-        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'legendary' });
+        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
       }
     }
     if (sp.loot.mood) addMoodBuff(sp.loot.mood[0], sp.loot.mood[1]);

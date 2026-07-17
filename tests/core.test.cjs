@@ -795,29 +795,35 @@ const KNOWLEDGE_HASH = -451536973;
     else check('가방/내구 플로어 (실패+보유=회수·1마모 / 미보유=0)', bagJ.gained >= 1 && bagJ.durAfter === 1 && bagJ.gained2 <= 0,
       JSON.stringify(bagJ));
 
-    // 시그니처 도면 (DDD-4): 8종 정의 무결(지역별 2~3·색 4종) + 제작 목록 도면 게이트
+    // 시그니처 도면 (DDD-4 + 2.0-(e)): 가구 8종+동부 복장 4종 정의 무결 + 제작 목록 도면 게이트
+    //   2.0-(e): 시그니처가 두 종족이 됐다 — 가구(DEFS·색 4종) / 복장(outfit_* → OUTFITS·pal). 동부 지역은 1종씩.
     const bp = await call(`
       S.simReset();
       const map = S.BAL.blueprint.regionItems;
       const ids = Object.values(map).flat();
-      const defsOk = ids.every(id => S.DEFS[id] && S.DEFS[id].colors.length === 4);
-      const perRegion = Object.values(map).every(a => a.length >= 2 && a.length <= 3);
+      const furnIds = ids.filter(id => !id.startsWith('outfit_'));
+      const outfitIds = ids.filter(id => id.startsWith('outfit_'));
+      const defsOk = furnIds.every(id => S.DEFS[id] && S.DEFS[id].colors.length === 4)
+        && outfitIds.every(id => S.OUTFITS[id.slice(7)] && S.OUTFITS[id.slice(7)].pal);
+      const perRegion = Object.values(map).every(a => a.length >= 1 && a.length <= 3);
       S.state.blueprints = {};
       S.openCraftModal();
       const h0 = document.getElementById('modal-body').innerHTML;
-      const hidden = ids.every(id => !h0.includes(S.DEFS[id].name));
-      S.state.blueprints = { neonvip: 1 };
+      const hidden = furnIds.every(id => !h0.includes(S.DEFS[id].name))
+        && outfitIds.every(id => !h0.includes(S.OUTFITS[id.slice(7)].name));
+      S.state.blueprints = { neonvip: 1, outfit_towncoat: 1 };
       S.openCraftModal();
       const h1 = document.getElementById('modal-body').innerHTML;
-      const shown = h1.includes(S.DEFS.neonvip.name) && !h1.includes(S.DEFS.suit.name);
+      const shown = h1.includes(S.DEFS.neonvip.name) && !h1.includes(S.DEFS.suit.name)
+        && h1.includes(S.OUTFITS.towncoat.name) && !h1.includes(S.OUTFITS.customsvest.name);
       document.getElementById('modal-back').style.display = 'none';
-      return JSON.stringify({ n: ids.length, defsOk, perRegion, hidden, shown });
+      return JSON.stringify({ n: ids.length, nf: furnIds.length, no: outfitIds.length, defsOk, perRegion, hidden, shown });
     `).catch(err => JSON.stringify({ error: String(err) }));
     const bpj = JSON.parse(bp);
     if (bpj.error) check('도면 (예외 없이)', false, bpj.error);
     else {
-      check('도면/8종 정의 무결 (지역별 2~3·색 4종)', bpj.n === 8 && bpj.defsOk && bpj.perRegion, JSON.stringify(bpj));
-      check('도면/제작 게이트 (미보유=비노출 → 보유만 노출)', bpj.hidden === true && bpj.shown === true, `hidden ${bpj.hidden} shown ${bpj.shown}`);
+      check('도면/12종 정의 무결 (가구 8 + 동부 복장 4)', bpj.n === 12 && bpj.nf === 8 && bpj.no === 4 && bpj.defsOk && bpj.perRegion, JSON.stringify(bpj));
+      check('도면/제작 게이트 (미보유=비노출 → 보유만 노출, 가구·복장 공통)', bpj.hidden === true && bpj.shown === true, `hidden ${bpj.hidden} shown ${bpj.shown}`);
     }
     // #190 커먼 도면 (「생존의 흔적」 밀도 프롭 5종): 정의 무결 + 레시피 bp 링크 + 게이트 + 시그니처 풀 비오염
     const cbp = await call(`

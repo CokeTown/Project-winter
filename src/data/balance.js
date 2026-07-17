@@ -411,6 +411,11 @@ export const BAL = {
       slum: ['barrelfire', 'graffiti'],
       resort: ['skis', 'skipoles', 'snowboard'],
       citycore: ['neonvip', 'neonair', 'suit'],
+      // 2.0-(e) 동부 시그니처 = 복장 도면 (GD-2.0 §6 "도심 시그니처=복장") — 구역 대표 지역에 1종씩
+      customsyard: ['outfit_customsvest'],
+      interchange: ['outfit_riggerjacket'],
+      grandplatform: ['outfit_stationcoat'],
+      deptstore: ['outfit_towncoat'],
     },
     // 도면 선택 가중 (디렉터 2026-07-09): 기본 1. 그래피티는 더 희귀하게(다른 슬럼 시그니처 대비 1/3).
     weights: { graffiti: 0.35 },

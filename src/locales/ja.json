@@ -2170,5 +2170,13 @@
   "nt.today": "今日",
   "nt.expToday": "今日の探索 {n}回",
   "nt.expNone": "今日は出かけなかった",
-  "nt.settledDays": "定住{n}日目"
+  "nt.settledDays": "定住{n}日目",
+  "data.outfit.customsvest.name": "税関のレインコート",
+  "data.outfit.riggerjacket.name": "整備工ジャケット",
+  "data.outfit.stationcoat.name": "駅員コート",
+  "data.outfit.towncoat.name": "摩天楼ロングコート",
+  "data.craft.customsvest.hint": "ワードローブに追加 — 税関検問所の防水コート",
+  "data.craft.riggerjacket.hint": "ワードローブに追加 — 吊り橋整備工の作業ジャケット",
+  "data.craft.stationcoat.hint": "ワードローブに追加 — 中央駅駅員の制服コート",
+  "data.craft.towncoat.hint": "ワードローブに追加 — デパートのショーウィンドウ最後のロングコート"
 }
