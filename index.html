@@ -85,7 +85,6 @@
     <button class="pixel-btn" id="btn-wardrobe" data-i18n-title="btn.wardrobe.title" title="옷장 — 만든 옷을 갈아입는다"><img class="act-icon" src="img/icons/icon_act_wardrobe.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('👕'))"><span class="act-lbl" data-i18n="btn.wardrobe.lbl">옷장</span></button>
     <!-- #87 스윕: 침대 그림만으로 '취침 버튼' 인지가 안 됨(디렉터) — Zzz 배지 상시 표기 -->
     <button class="pixel-btn" id="btn-sleep" data-i18n-title="btn.sleep.title" title="취침 — 내일 아침까지 자고 에너지 회복"><img class="act-icon" src="img/icons/icon_act_sleep.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('🛌'))"><span class="zzz-badge" aria-hidden="true">Zzz</span><span class="act-lbl" data-i18n="btn.sleep.lbl">취침</span></button>
-    <button class="pixel-btn" id="btn-journal" data-i18n-title="btn.journal.title" title="일지 (도감·업적·통계)"><img class="act-icon" src="img/icons/icon_act_journal.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('📖'))"><span class="act-lbl" data-i18n="btn.journal.lbl">일지</span></button>
     <!-- #87 스윕: 기존 지도+나침반 그림이 '지도 버튼'으로 오독(디렉터) — 튜토리얼은 물음표 글리프로 -->
     <button class="pixel-btn" id="btn-help" data-i18n-title="btn.help.title" title="튜토리얼"><img class="act-icon" src="img/icons/icon_act_help.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('?'))"><span class="act-lbl" data-i18n="btn.help.lbl">도움</span></button>
   </div>
@@ -100,13 +99,6 @@
   <!-- 도킹 하우징=디렉터 에셋(dock_pda.png) — 마이크로 게이지 4줄만 그린 윈도 좌표 위에 얹는다 -->
   <button id="dock-pda" data-i18n-title="pda.open" title="PDA 단말 — 계측·지도·기록">
     <span class="dk-gauges" aria-hidden="true"><i id="dkg-h"></i><i id="dkg-t"></i><i id="dkg-e"></i></span>
-  </button>
-  <button id="dock-journal" data-i18n-title="btn.journal.title" title="일지 (도감·업적·통계)">
-    <span class="dk-pull" aria-hidden="true">‹</span>
-    <span class="dk-body leather">
-      <span class="dk-label" data-i18n="btn.journal.lbl">일지</span>
-      <span class="dk-clip" aria-hidden="true"></span>
-    </span>
   </button>
 </div>
 <div id="pda-back" style="display:none">
@@ -128,24 +120,6 @@
     <button class="pda-hit dp" data-d="right" aria-label="next tab"></button>
     <button class="pda-hit dp" data-d="down" aria-label="scroll down"></button>
     <button class="pda-hit" id="pda-hit-ok" aria-label="refresh"></button>
-  </div>
-</div>
-<div id="note-back" style="display:none">
-  <!-- 일지 도킹을 당기면 펼쳐지는 「필드 노트」(디렉터 에셋) — 기록=종이. 존 좌표는 에셋 카드 위 %. -->
-  <div id="fieldnote">
-    <div class="nt-zone" id="nt-log"><div class="nt-h" data-i18n="nt.log">오늘의 기록</div><ul id="nt-log-list"></ul></div>
-    <div class="nt-zone" id="nt-memo"><div class="nt-h" data-i18n="nt.memo">메모</div><div id="nt-memo-body"></div></div>
-    <div class="nt-zone" id="nt-gain"></div>
-    <div class="nt-zone" id="nt-rb"></div>
-    <!-- #199-c 견출지 실기능화: 에셋 우측 탭 4개 위 히트 존 — ♥쾌적/📦수급/📍거점/📔도감 -->
-    <button class="nt-tab" data-ntab="comfort" aria-label="comfort"></button>
-    <button class="nt-tab" data-ntab="supply" aria-label="supply"></button>
-    <button class="nt-tab" data-ntab="base" aria-label="base"></button>
-    <button class="nt-tab" data-ntab="journal" aria-label="journal"></button>
-    <div class="nt-zone" id="nt-act">
-      <button class="pixel-btn" id="nt-journal" data-i18n="nt.openJournal">도감·업적 펼치기</button>
-      <button class="pixel-btn" id="nt-close">✕</button>
-    </div>
   </div>
 </div>
 

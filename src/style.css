@@ -180,7 +180,6 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   #hud .shelter-name .px-icon { width: 14px; height: 14px; vertical-align: -3px; }
   #hud #gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 6px; } /* 계기 3종(밥·물·에너지) — 폭 확보로 라벨 잘림 해소 */
-  #hud #btn-journal { display: none; } /* 일지 진입점은 우측 도킹 — 그리드 중복 제거(디렉터) */
   #hud .gauge {
     height: auto; display: flex; flex-direction: column; gap: 4px;
     padding: 5px 6px 6px;
@@ -248,8 +247,6 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
      주의: #edge-dock button(1-0-1)이 #dock-pda(1-0-0)를 이긴다 — 반드시 #edge-dock 프리픽스로 승격. */
   #edge-dock #dock-pda { transform: translateX(12%); }
   #edge-dock #dock-pda:hover, #edge-dock #dock-pda:focus-visible { transform: translateX(2%); }
-  #edge-dock #dock-journal { transform: translateX(30%); }
-  #edge-dock #dock-journal:hover, #edge-dock #dock-journal:focus-visible { transform: translateX(10%); }
   #edge-dock button:active { transform: translateX(0%) !important; transition-duration: 0.1s; }
   #edge-dock #dock-pda { /* 하우징=디렉터 에셋(dock_pda.png, JS 인라인) — 마이크로 게이지만 그린 윈도 위에 */
     position: relative; width: 53px; aspect-ratio: 373 / 928; /* 디렉터 2차 축소: 76px도 과대 — 추가 30% 감 */
@@ -286,11 +283,6 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
       linear-gradient(170deg, #4a3c2a, #382c1e 70%, #2c2216);
     box-shadow: inset 0 0 0 3px rgba(20, 17, 13, 0.35), inset 0 0 0 4px rgba(216, 205, 180, 0.14), inset 0 -2px 5px rgba(0, 0, 0, 0.4);
   }
-  #dock-journal .dk-label {
-    align-self: flex-start; font-size: 10px; letter-spacing: 2px; color: #3a3226;
-    background: #d8cdb4; padding: 3px 8px; border-radius: 2px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  }
   .dk-clip { /* 종이 + 클립 삐져나옴 */
     height: 12px; border-radius: 2px;
     background: linear-gradient(180deg, #e2d8bf 0 8px, transparent 8px);
@@ -314,8 +306,14 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     image-rendering: pixelated;
     filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.6));
   }
-  #pda-lcd { /* 에셋 스크린 유리 좌표(%): 콘텐츠는 이 안에서만 산다 */
-    position: absolute; left: 8.2%; top: 14.6%; width: 83.4%; height: 67.2%;
+  /* 에셋 스크린 유리 좌표(%)에서 사방 여백만큼 안쪽. 콘텐츠는 이 안에서만 산다.
+     #211(디렉터 "검정색과 진한 녹색에 margin을 둬 — 컴포넌트들이 틀을 벗어나있어"):
+       구 값(left 8.2 / w 83.4 / top 14.6 / h 67.2)은 유리 경계에 딱 붙어서 탭 4개와 게이지 바가
+       검정 베젤 위로 삐져나왔다. 좌우 2.4%p · 상하 1.8%p씩 안으로 들여 여백을 만든다.
+     패딩이 아니라 rect를 줄인 이유: 앱 모드의 #modal-back은 absolute inset:0이라 컨테이닝 블록이
+       '패딩 박스'다 — 패딩을 주면 그건 무시하고 베젤까지 덮는다. rect를 줄이면 탭·화면·앱이 함께 들어온다. */
+  #pda-lcd {
+    position: absolute; left: 10.6%; top: 16.4%; width: 78.6%; height: 63.6%;
     display: flex; flex-direction: column; overflow: hidden;
   }
   #pda-lcd::after { /* 유리 반사 + CRT 스윕 — 에셋 유리 위 은은하게 */
@@ -368,6 +366,16 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   #pda-screen .pnote { color: #7da884; font-size: 10.5px; }
   #pda-screen .pbtn-row { margin-top: 10px; display: flex; justify-content: flex-end; }
+  /* #211 필드노트 흡수 — 쾌적 4축 분해. 구 .nt-ax(종이 잉크)를 PDA 초록 LCD 문법으로 옮긴다:
+     잉크 #55492f → currentColor, 종이 배경 → 형광체 감쇠. 2열(좁은 LCD에서 4축이 세로로 길어지지 않게). */
+  #pda-screen .pax-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; }
+  #pda-screen .pax { margin: 0 0 4px; }
+  #pda-screen .pax-h { display: flex; justify-content: space-between; gap: 6px; }
+  #pda-screen .pax-h b { font-variant-numeric: tabular-nums; }
+  /* 트랙은 rgba, 채움은 형광 — 위 .pbar와 같은 문법. (트랙에 opacity를 걸면 자식 채움에 곱해져 안 보인다) */
+  #pda-screen .pax-bar { height: 4px; background: rgba(170, 240, 185, 0.1); border: 1px solid #3f6a46; margin: 2px 0 1px; overflow: hidden; }
+  #pda-screen .pax-bar i { display: block; height: 100%; background: #cfe0c8; box-shadow: 0 0 4px rgba(120, 255, 150, 0.45); }
+  #pda-screen .pax-log { opacity: 0.62; line-height: 1.4; font-size: 10px; }
   #pda-screen ul.plog { margin: 0; padding-left: 14px; }
   #pda-screen ul.plog li { margin: 2px 0; }
   .pda-flick { animation: pdaFlick 0.16s steps(2); }
@@ -396,21 +404,6 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* #199 3차(디렉터 확정): 자원 패널 → PDA 자원 탭·도킹 LED로 이관. 상단엔 필수 계기만 남는다. */
   #res-bar { display: none !important; }
   /* ── 「필드 노트」 오버레이 — 디렉터 에셋(가죽 수첩 펼침) 위 존 바인딩. 기록=종이. ── */
-  #note-back {
-    position: fixed; inset: 0; z-index: 58;
-    background: rgba(8, 9, 12, 0.5);
-    display: flex; align-items: center; justify-content: center;
-  }
-  #fieldnote {
-    position: relative; zoom: var(--uiz);
-    width: min(880px, calc(94vw / var(--uiz, 1)), calc(90vh / var(--uiz, 1) * 1.3299)); /* 1290/970 비율 잠금 */
-    aspect-ratio: 1290 / 970;
-    background: center / contain no-repeat; /* 이미지는 JS 인라인 — 위 #pda와 동일 사유 */
-    image-rendering: pixelated;
-    filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.55));
-  }
-  .nt-zone { position: absolute; color: #3a3226; font-size: 11px; line-height: 1.65; overflow: hidden; word-break: keep-all; }
-  .nt-h { font-size: 10px; letter-spacing: 1px; color: #55492f; margin: 0 0 6px 24px; min-height: 13px; } /* 에셋 회색 헤더탭 위에 정렬 — 빈 헤더도 높이 유지(2열 시작점 정렬) */
   #nt-log { left: 11%; top: 12.4%; width: 34%; height: 29%; }
   #nt-log ul { margin: 0; padding-left: 12px; list-style: none; } /* 에셋 ◆ 마커와 이중 방지 */
   #nt-log li { margin: 1px 0; }
@@ -420,23 +413,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #nt-rb { left: 53.5%; top: 78.5%; width: 33.5%; height: 13%; } /* 에셋 우하 가로 박스 */
   /* #199-c 견출지 실기능화 — 에셋 우측 탭 4개(♥쾌적·📦수급·📍거점·📔도감) 위 히트 존.
      스킨 무변경 원칙: 그림은 에셋 그대로, 활성 탭만 종이빛 베일로 "들려 보임". */
-  .nt-tab { position: absolute; left: 92.3%; width: 7.2%; background: transparent; border: none; cursor: pointer; padding: 0; }
-  .nt-tab[data-ntab="comfort"] { top: 10.2%; height: 10%; }
-  .nt-tab[data-ntab="supply"] { top: 22.8%; height: 11.3%; }
-  .nt-tab[data-ntab="base"] { top: 43.6%; height: 11.5%; }
-  .nt-tab[data-ntab="journal"] { top: 55.8%; height: 11.2%; }
-  .nt-tab:hover { background: rgba(255, 246, 220, 0.12); }
-  .nt-tab.active { background: rgba(255, 246, 220, 0.2); box-shadow: inset -2px 0 0 rgba(58, 50, 38, 0.45); }
   /* ♥ 쾌적 탭 컴팩트 축: 헤더+잉크 바+로그 2줄 (종이 위 연필 결) */
-  .nt-ax { margin: 0 0 7px; }
-  .nt-ax .ax-h { display: flex; justify-content: space-between; font-size: var(--fs-s); }
-  .nt-ax .ax-bar { height: 5px; background: rgba(58, 50, 38, 0.16); margin: 2px 0 1px; }
-  .nt-ax .ax-bar i { display: block; height: 100%; background: #55492f; }
-  .nt-ax .ax-log { font-size: var(--fs-s); color: rgba(58, 50, 38, 0.72); line-height: 1.5; }
-  .nt-col { flex: 1; min-width: 0; }
-  .nt-cell { display: flex; align-items: center; gap: 5px; padding: 1px 0; border-bottom: 1px dashed rgba(58, 50, 38, 0.25); }
-  .nt-cell b { margin-left: auto; font-variant-numeric: tabular-nums; }
-  .nt-cell.dim { color: #8a7c62; border-bottom: none; }
   #nt-act { left: 53.5%; top: 78%; width: 33.5%; height: 14%; display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding-right: 2%; }
   #nt-act .pixel-btn { font-size: 10px; padding: 6px 10px; }
   @media (max-width: 700px) {
@@ -453,7 +430,6 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     #edge-dock { top: 40%; } /* 모바일: 자원 패널 이관 후에도 우중단 유지(엄지 리치) */
     .dk-body { width: 72px; padding: 8px; }
     #pda { height: min(620px, calc(84vh / var(--uiz, 1)), calc(94vw / var(--uiz, 1) * 1.7315)); }
-    #fieldnote { width: min(calc(96vw / var(--uiz, 1)), calc(86vh / var(--uiz, 1) * 1.3299)); }
   }
   /* ── #199 5차-c: PDA 앱 모드 — 공용 모달(#modal-back)이 LCD 안으로 들어와 "기기 화면"이 된다 ── */
   body.pda-app #pda-screen, body.pda-app #pda-tabs { visibility: hidden; } /* 탭 UI는 앱 뒤로 */
@@ -520,7 +496,6 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   body.pda-app #pda-lcd .pixel-btn.primary { border-color: #ffffff; color: #ffffff; }
   body.title-mode #edge-dock, body.wallpaper-mode #edge-dock,
   body.title-mode #pda-back, body.wallpaper-mode #pda-back,
-  body.title-mode #note-back, body.wallpaper-mode #note-back { display: none !important; }
 
 
 

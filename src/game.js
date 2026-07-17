@@ -917,29 +917,6 @@ function comfortBreakdown() {
   if (darkPen) logs.mood.push({ icon: '🌑', name: t('comfort.log.dark'), v: `${darkPen}` });
   return { warmth, clean, security, mood, score: cd.score, logs };
 }
-// 일지 통계용: 4요소 막대 + 각 요소 원인 로그 (report-sec 문법 재사용)
-function comfortBreakdownHtml() {
-  const b = comfortBreakdown();
-  const axes = [
-    { key: 'warmth',   icon: '🔥', label: t('comfort.warmth'),   v: b.warmth,   col: '#c97a4a' },
-    { key: 'clean',    icon: '🧹', label: t('comfort.clean'),    v: b.clean,    col: '#5f9ac0' },
-    { key: 'security', icon: '🛡️', label: t('comfort.security'), v: b.security, col: '#8fbb7a' },
-    { key: 'mood',     icon: '🕯️', label: t('comfort.mood'),     v: b.mood,     col: '#c79a5f' },
-  ];
-  // 막대 스케일: 각 축 최대 기여 폭을 40점 기준으로 정규화 (음수는 0폭, 색만 경고)
-  const rows = axes.map(a => {
-    const pct = Math.max(0, Math.min(100, (a.v / 40) * 100));
-    const logs = (b.logs[a.key] || []).slice(0, 3).map(l =>
-      `<div style="font-size:10px;color:var(--text-dim);line-height:1.6">${l.icon} ${l.name} <span style="color:${String(l.v).startsWith('-') ? 'var(--bad)' : 'var(--good)'}">${l.v}</span></div>`).join('');
-    return `<div style="margin:7px 0">
-      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
-        <span>${a.icon} ${a.label}</span><span style="color:${a.v < 0 ? 'var(--bad)' : 'var(--accent)'}">${a.v < 0 ? '' : '+'}${Math.round(a.v)}</span></div>
-      <div style="height:8px;background:#22252d;border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${a.col};border-radius:4px"></div></div>
-      ${logs}
-    </div>`;
-  }).join('');
-  return `<div class="report-sec"><span class="r-title">${t('comfort.breakdownTitle', { score: b.score })}</span>${rows}</div>`;
-}
 // bunkerComfortBonus → core/comfort.js (import). 벙커 천장/저장고 쾌적 가산.
 // 인카운터 안정감 여운 — amt(±) 를 days 일간 부여. 같은 부호면 이어붙이지 않고 더 강한 쪽/새 것으로 갱신.
 function addMoodBuff(amt, days = 3) {
@@ -7248,9 +7225,9 @@ addEventListener('keydown', e => {
   if (awaitingRebind) { captureRebind(e); return; }
   if (titleVisible) return;
   if (e.key === 'Escape') {
-    // 우선순위: PDA/노트 닫기 > 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
+    // 우선순위: PDA 닫기 > 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
+    //   #211: 필드노트 기기 폐지로 노트 분기 삭제 — 우측 기기는 PDA 하나뿐이다.
     if (pdaVisible()) { pdaAppOn ? closeModal() : pdaClose(); } // 앱 모드면 모달 정리+원위치까지(잔류 DOM 방지)
-    else if (noteVisible()) { noteClose(); }
     else if (settingsOpen()) { closeSettings(); }
     else if (catCam.active) { exitCatCloseup(); }
     else if (placing) { cancelPlacing(); }
@@ -7750,7 +7727,7 @@ function openSlotModal(mode) {
 const { openModeModal, openWardrobeModal, openKnowledgeModal, openJournalModal } = makeModals({ openModal, toast, wallpaperUnlocked, zenUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS,
   getPaused: () => paused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud,
   // Tier6b 일지/도감 모달 의존 — 아이콘·집계 헬퍼·수첩 페이지(game.js 클로저)
-  icon, regionIcon, comfortBreakdownHtml, collectionCount,
+  icon, regionIcon, collectionCount,
   memosTotal, memosCollected, broadcastsTotal, broadcastsCollected, sketchesTotal, sketchesCollected,
   showMemoPage, showBroadcastModal, showSketchPage, showTruthPage });
 const INTRO_IDS = ['intro.0', 'intro.1', 'intro.2'];
@@ -7989,62 +7966,6 @@ function pdaAppExit() {
   document.body.appendChild($('modal-back')); // 원위치(body 직속) 복귀 — 일반 모달 경로 보전
   pdaClose();
 }
-// #199 3차: 「필드 노트」(디렉터 에셋) — 기록=종이. 일지 도킹이 연다. 조회 전용.
-// #199-c 견출지 실기능화: 우측 페이지가 탭 3태(♥쾌적/📦수급(기본)/📍거점) + 📔=도감 액션.
-const noteVisible = () => $('note-back').style.display !== 'none';
-let noteTab = 'supply';
-function noteOpen() {
-  $('note-back').style.display = '';
-  const li = s => `<li>${s}</li>`;
-  $('nt-log-list').innerHTML = (state.dayLog.notes || []).slice(-7).map(li).join('') || li(t('pda.noLog'));
-  const w = WEATHERS[state.weatherType];
-  const memo = [`${t('pda.day', { n: state.day })} · ${w ? `${wxIcon(state.weatherType)} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}`];
-  if (hasForecast()) memo.push(t('forecast.prefix', { text: forecastText() }));
-  const lacks = ['water', 'food'].filter(id => (state.res[id] || 0) === 0);
-  if (lacks.length) memo.push(lacks.map(id => `${resIcon(id)} ${LName(RESOURCES[id])} 0`).join(' · '));
-  $('nt-memo-body').innerHTML = memo.map(m => `<div>${m}</div>`).join('');
-  renderNoteRight();
-}
-function renderNoteRight() {
-  document.querySelectorAll('.nt-tab').forEach(b => b.classList.toggle('active', b.dataset.ntab === noteTab));
-  const col = (h, body) => `<div class="nt-col"><div class="nt-h">${h}</div>${body}</div>`;
-  let top = '', rb = '';
-  if (noteTab === 'supply') {
-    const cell = ([id, n], sign) => `<div class="nt-cell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><b>${sign}${n}</b></div>`;
-    const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
-    const spent = Object.entries(state.dayLog.spend || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
-    top = col(t('nt.gained'), gains.map(g => cell(g, '+')).join('') || `<div class="nt-cell dim">—</div>`)
-        + col(t('nt.spent'), spent.map(s => cell(s, '-')).join('') || `<div class="nt-cell dim">—</div>`);
-  } else if (noteTab === 'comfort') {
-    // ♥ 쾌적 상세: comfortBreakdown 4축을 2열 컴팩트로 (잉크 바 + 원인 로그 2줄)
-    const b = comfortBreakdown();
-    const ax = (label, v, logs) => `<div class="nt-ax">
-      <div class="ax-h"><span>${label}</span><b>${v < 0 ? '' : '+'}${Math.round(v)}</b></div>
-      <div class="ax-bar"><i style="width:${Math.max(0, Math.min(100, (v / 40) * 100))}%"></i></div>
-      ${(logs || []).slice(0, 2).map(l => `<div class="ax-log">${l.name} ${l.v}</div>`).join('')}
-    </div>`;
-    top = col(t('nt.comfort'), ax(t('comfort.warmth'), b.warmth, b.logs.warmth) + ax(t('comfort.clean'), b.clean, b.logs.clean))
-        + col('', ax(t('comfort.security'), b.security, b.logs.security) + ax(t('comfort.mood'), b.mood, b.logs.mood));
-    rb = t('comfort.breakdownTitle', { score: b.score });
-  } else if (noteTab === 'base') {
-    // 📍 거점: 좌=거처(셸터·구역·정착일) / 우=오늘(날씨·예보·결핍)
-    const sh = SHELTERS[state.current], w = WEATHERS[state.weatherType];
-    const line = s => `<div class="nt-cell">${s}</div>`;
-    const left = line(`${shIcon(state.current)}<span>${LName(sh)}</span>`)
-      + line(`${distIcon(districtOf(state.current))}<span>${LName(DISTRICTS[districtOf(state.current)])}</span>`)
-      + line(`<span>${t('nt.settledDays', { n: state.stayDays || 0 })}</span>`);
-    const lacks = ['water', 'food'].filter(id => (state.res[id] || 0) === 0);
-    const right = line(`${w ? wxIcon(state.weatherType) : ''}<span>${w ? LName(w) : ''}</span>`)
-      + (hasForecast() ? line(`<span>${t('forecast.prefix', { text: forecastText() })}</span>`) : '')
-      + (lacks.length ? line(lacks.map(id => `${resIcon(id)} ${LName(RESOURCES[id])} 0`).join(' · ')) : '');
-    top = col(t('nt.base'), left) + col(t('nt.today'), right);
-    rb = (state.expToday ? t('nt.expToday', { n: state.expToday }) : t('nt.expNone'))
-       + (state.expFatigue === state.day ? ' · ' + t('exp.fatigue') : '');
-  }
-  $('nt-gain').innerHTML = top;
-  $('nt-rb').textContent = rb;
-}
-function noteClose() { $('note-back').style.display = 'none'; }
 function renderPDA() {
   document.querySelectorAll('#pda-tabs .pda-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === pdaTab));
   const scr = $('pda-screen');
@@ -8066,42 +7987,67 @@ function renderPDA() {
     } else lines.push(t('pda.noInjury'));
     if (state.expFatigue === state.day) lines.push(t('exp.fatigue'));
     if (state.moodBuff && state.moodBuff.until > state.day) lines.push(t('pda.mood', { amt: state.moodBuff.amt, d: state.moodBuff.until - state.day }));
+    if (w?.penalty) lines.push(`${t('pda.weatherPen')}: -${Math.round(w.penalty * 100)}%`); // 지금 몸에 걸린 것 = 여기. 진행 계측은 기록 탭으로 이관(#211)
+    if (state.buff) lines.push(`${icon('icon_cond_buff', '✨')} ${buffLabel(state.buff)}`);
     body += `<div class="ph">${t('pda.cond')}</div>` + lines.map(l => `<div>${l}</div>`).join('');
-    // #199 2차: 상단 HUD 슬리밍으로 이관된 거점·진행 계측 (구 .stat 라인의 새 집)
-    const cd = comfortDetail();
-    const lv2 = Math.min(5, Math.round(cd.score / 20));
-    const base = [];
-    base.push(`${t('pda.comfort')}: ${cd.score} ${'★'.repeat(lv2)}<span style="opacity:.3">${'★'.repeat(5 - lv2)}</span>`); // ☆ 글리프가 픽셀 폰트에서 ★와 동일 렌더 — 감쇠로 구분
-    if (w?.penalty) base.push(`${t('pda.weatherPen')}: -${Math.round(w.penalty * 100)}%`);
-    if (state.buff) base.push(`${icon('icon_cond_buff', '✨')} ${buffLabel(state.buff)}`);
-    base.push(`${t('pda.exp')}: ${state.expToday}${state.expToday >= EXP_PER_DAY ? ` · ${t('exp.fatigue')}` : ''}`); // 상한 표기 폐지 — 과로 경고만
-    if (!isWallpaper()) base.push(`${t('pda.succ')}: ${state.successes}`);
-    if ((state.winters || 0) >= 1) base.push(`${t('pda.winters')}: ${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}`);
-    body += `<div class="ph">${t('pda.camp')}</div>` + base.map(l => `<div>${l}</div>`).join('');
+    // #211 필드노트 흡수: 쾌적 4축 분해. PDA엔 총점(★)만, '왜 이 점수인가'는 노트에만 있었다 — 한 화면으로.
+    //   구 `쾌적: 26 ★★` 라인은 삭제: 총점을 이 분해 헤더가 이미 말한다(한 화면에 점수 두 번 = 중복).
+    const cb = comfortBreakdown();
+    const ax = (label, v, logs) => `<div class="pax">
+      <div class="pax-h"><span>${label}</span><b>${v < 0 ? '' : '+'}${Math.round(v)}</b></div>
+      <div class="pax-bar"><i style="width:${Math.max(0, Math.min(100, (v / 40) * 100))}%"></i></div>
+      ${(logs || []).slice(0, 2).map(l => `<div class="pax-log">${l.name} ${l.v}</div>`).join('')}
+    </div>`;
+    // 헤더는 짧게(`쾌적 26`): comfort.breakdownTitle("쾌적함 26 — 무엇이 이 집을 살 만하게 하는가")은
+    //   좁은 LCD에서 두 줄로 접혀 화면을 먹는다(실측 45px 잘림의 최대 지분). 그 문장이 하려던 말은
+    //   아래 4축이 이미 한다. (그 카피는 넓은 화면 문법 — 일지에 있던 것을 그대로 들고 오면 안 된다.)
+    body += `<div class="ph">${t('pda.comfort')} ${cb.score}</div>`
+      + `<div class="pax-grid">`
+      + ax(t('comfort.warmth'), cb.warmth, cb.logs.warmth) + ax(t('comfort.clean'), cb.clean, cb.logs.clean)
+      + ax(t('comfort.security'), cb.security, cb.logs.security) + ax(t('comfort.mood'), cb.mood, cb.logs.mood)
+      + `</div>`;
   } else if (pdaTab === 'res') {
     const wp = isWallpaper(); // 자원 패널이 PDA로 이관됨 — 배경화면 모드 ∞ 표기도 승계
     body = `<div class="pgrid">` + Object.entries(RESOURCES).map(([id, r]) => {
       const n = state.res[id] || 0;
       return `<div class="pcell${!wp && n === 0 ? ' zero' : ''}">${resIcon(id)}<span>${LName(r)}</span><span class="pn">${wp ? '∞' : n}</span></div>`;
     }).join('') + `</div>`;
+    // #211: 오늘의 물자 흐름은 여기가 집이다 — 구 기록 탭의 '얻은 것' + 노트 supply 탭의 '쓴 것'을 합쳐
+    //   자원 탭 하나가 "지금 얼마 있고 / 오늘 얼마 들어오고 나갔나"를 다 말한다.
+    const cell = ([id, n], sign) => `<div class="pcell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><span class="pn">${sign}${n}</span></div>`;
+    const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+    const spent = Object.entries(state.dayLog.spend || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+    if (gains.length) body += `<div class="ph">${t('pda.gained')}</div><div class="pgrid">` + gains.map(g => cell(g, '+')).join('') + `</div>`;
+    if (spent.length) body += `<div class="ph">${t('nt.spent')}</div><div class="pgrid">` + spent.map(s => cell(s, '-')).join('') + `</div>`;
   } else if (pdaTab === 'map') {
     const sp = SHELTER_MAP[state.current];
     body = `<div class="pmap"><img src="${mapBiomeDataUrl(cityOf(state.current))}" alt="">`
       + (sp ? `<span class="pyou" style="left:${sp.x}%;top:${sp.y}%"></span>` : '') + `</div>`
-      + `<div class="pnote">${t('pda.here')}: ${LName(SHELTERS[state.current])}</div>`
+      + `<div class="pnote">${t('pda.here')}: ${LName(SHELTERS[state.current])} · ${LName(DISTRICTS[districtOf(state.current)])}</div>`
+      // #211: 예보는 '어디·언제'의 정보다 — 노트 base 탭에 있던 것을 지도로. (구 노트는 날씨를 3군데 중복 표기했다)
+      + (hasForecast() ? `<div class="pnote">${t('forecast.prefix', { text: forecastText() })}</div>` : '')
       + `<div class="pbtn-row"><button class="pixel-btn" id="pda-openmap">${t('pda.openMap')}</button></div>`;
   } else {
+    // #211 기록 = '지나온 것'. 거점·진행 계측(구 상태 탭)이 여기로 온다 — 상태 탭은 '지금 몸·집'만 남기고,
+    //   진행/정착 누계는 기록의 문법이다. 덕분에 네 탭 길이가 고르고 각 탭이 한 가지만 말한다.
+    const base = [];
+    base.push(`${distIcon(districtOf(state.current))} ${LName(DISTRICTS[districtOf(state.current)])} · ${t('nt.settledDays', { n: state.stayDays || 0 })}`);
+    base.push(`${t('pda.exp')}: ${state.expToday}${state.expToday >= EXP_PER_DAY ? ` · ${t('exp.fatigue')}` : ''}`); // 상한 표기 폐지 — 과로 경고만
+    if (!isWallpaper()) base.push(`${t('pda.succ')}: ${state.successes}`);
+    if ((state.winters || 0) >= 1) base.push(`${t('pda.winters')}: ${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}`);
+    body = `<div class="ph">${t('pda.camp')}</div>` + base.map(l => `<div>${l}</div>`).join('');
     const notes = state.dayLog.notes || [];
-    body = notes.length
+    body += `<div class="ph">${t('pda.tab.log')}</div>`;
+    body += notes.length
       ? `<ul class="plog">${notes.slice(-12).reverse().map(n => `<li>${n}</li>`).join('')}</ul>`
       : `<div class="pnote">${t('pda.noLog')}</div>`;
-    const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
-    if (gains.length) body += `<div class="ph">${t('pda.gained')}</div><div class="pgrid">`
-      + gains.map(([id, n]) => `<div class="pcell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><span class="pn">+${n}</span></div>`).join('') + `</div>`;
+    // #211(디렉터 "일지 그냥 PDA에 통합"): 일지·도감·업적 진입. 별도 기기가 아니라 이 단말의 앱으로 뜬다.
+    body += `<div class="pbtn-row"><button class="pixel-btn" id="pda-journal">${t('btn.journal.lbl')}</button></div>`;
   }
   scr.innerHTML = head + body;
   scr.classList.remove('pda-flick'); void scr.offsetWidth; scr.classList.add('pda-flick'); // 전자 화면 전환 플리커
   scr.querySelector('#pda-openmap')?.addEventListener('click', () => { pdaClose(); openMapModal(); });
+  scr.querySelector('#pda-journal')?.addEventListener('click', () => pdaOpenApp(() => openJournalModal('journal')));
 }
 async function cleanShelter(auto = false) {
   if (paused) { toast(t('pause.blocked')); return; }
@@ -10505,30 +10451,22 @@ $('btn-auto').addEventListener('click', () => {
 syncAutoBtn();
 $('btn-craft').addEventListener('click', () => pdaOpenApp(openCraftModal)); // #199 5차-c: 제작은 PDA 앱으로 열린다
 { const bk = $('btn-knowledge'); if (bk) bk.addEventListener('click', () => pdaOpenApp(openKnowledgeModal)); } // #199 5차-d: 지식도 PDA 앱
-$('btn-journal').addEventListener('click', () => openJournalModal('journal'));
+// #211: 그리드의 btn-journal 폐지 — #199에서 이미 display:none으로 죽여둔 문이었다(진입은 PDA 기록 탭).
 $('g-hunger').addEventListener('click', eatFood);
 $('g-thirst').addEventListener('click', drinkWater);
 $('g-energy').addEventListener('click', () => promptSleep());
 // #199 5차-b: 청결 게이지 카드 제거(디렉터 — 경고 형식으로) → 청소 진입은 액션 그리드 버튼만
 $('btn-sleep').addEventListener('click', () => promptSleep());
 $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
-// #199 우측 엣지 도킹: PDA 토글 + 일지=필드 노트 오버레이 + PDA 하드웨어 히트(에셋 버튼 자리)
+// #199 우측 엣지 도킹: PDA 토글 + PDA 하드웨어 히트(에셋 버튼 자리)
 // 에셋 하우징은 JS 인라인 — CSS url()은 번들 후 /assets/ 기준으로 풀려 file://에서 깨진다(스타일시트 709행 교훈)
+// #211(디렉터 "일지 그냥 PDA에 통합. UI 망가지고 오히려 AI 티 나더라"): 필드노트 기기 폐지.
+//   두 기기가 같은 데이터를 나눠 갖고 있었다(기록·자원·날씨·결핍 중복 + 노트의 '일지' 탭은 모달 링크였다).
+//   기기가 늘어난 게 원인이라 기기를 줄인다 — 우측 도킹은 PDA 하나.
 $('pda').style.backgroundImage = "url('img/ui/pda04.png')";
-$('fieldnote').style.backgroundImage = "url('img/ui/fieldnote.png')";
 $('dock-pda').style.backgroundImage = "url('img/ui/dock_pda.png')";
 $('dock-pda').addEventListener('click', () => pdaVisible() ? pdaClose() : pdaOpen());
-$('dock-journal').addEventListener('click', () => noteVisible() ? noteClose() : noteOpen());
 $('pda-back').addEventListener('pointerdown', e => { if (e.target.id === 'pda-back') pdaClose(); });
-$('note-back').addEventListener('pointerdown', e => { if (e.target.id === 'note-back') noteClose(); });
-$('nt-close').addEventListener('click', () => noteClose());
-$('nt-journal').addEventListener('click', () => { noteClose(); openJournalModal('journal'); });
-// #199-c 견출지: ♥쾌적/📦수급/📍거점 = 우측 페이지 전환, 📔도감 = nt-journal과 동일 액션
-document.querySelectorAll('.nt-tab').forEach(b => b.addEventListener('click', () => {
-  if (b.dataset.ntab === 'journal') { noteClose(); openJournalModal('journal'); return; }
-  noteTab = b.dataset.ntab;
-  renderNoteRight();
-}));
 document.querySelectorAll('#pda-tabs .pda-tab').forEach(b =>
   b.addEventListener('click', () => { pdaTab = b.dataset.tab; renderPDA(); }));
 // 기기 하드웨어 문법: 뒤로(⏎)=닫기, D-패드 ◀▶=탭 순환·▲▼=화면 스크롤, 확인(✓)=재조회
@@ -11215,7 +11153,7 @@ window.__shelter = {
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
-  pdaOpen, pdaClose, noteOpen, noteClose, pdaOpenApp, // #199 PDA·필드노트 도킹·앱 모드 QA 훅
+  pdaOpen, pdaClose, pdaOpenApp, pdaSetTab: (tb) => { pdaTab = tb; renderPDA(); }, // #199 PDA 도킹·앱 모드 QA 훅 (#211: 필드노트 폐지로 note* 제거)
   seasonOf, SEASONS, openMapModal, showMapInfo, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
   // Phase D (#12 · #35 · #36) QA 훅
   MEMOS, WILLS, BROADCASTS, MEMOS_BY_REGION, eventCtx, eventMatches, drawEvent, eventWeight,
