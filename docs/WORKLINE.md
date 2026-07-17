@@ -12,7 +12,7 @@
 | #73 | 엔지니어링 패스 (지속) | **Tier5 완료(716e731)**: 비네트 4종+러너 → render/vignettes.js(-863줄) — **Tier6 완료**: (a) 발견 컷→vignettes.js(-78줄, 실구동 검증) + (b) 일지/도감/업적/기록 모달→ui/modals.js(-168줄, 4탭 innerHTML 해시 동일). **Tier7 완료**: 수첩 페이지 렌더러+열람 4종→ui/notebook.js(-80줄, 4경로 해시 동일). collapse 러너·닥터 문서·라디오 버블은 결합 사유 잔류 확정. 오늘 누계 game.js -326줄 |
 | #74 | Steam Next Fest 데모 | **v1.9.5-demo 발행 완료**(재수렴 — 트렁크 UI·시스템 전량 계승, 1.9.4는 대체 표기)(exe 2종+APK — #168 텔레메트리 동봉, https://github.com/CokeTown/Project-winter/releases/tag/v1.9.4-demo) — 잔여: 디렉터 검수·depot 업로드 |
 | #75 | Steam 페이지 애셋 패키지 | depot 파이프라인 완비 — 잔여: 캡슐 세대 확정〔D〕·스크린샷 검수〔D〕 |
-| #117 | Steamworks DLC 그라운드워크 | 업적 브릿지 완료 — DLC 게이트(hasSupporterDLC) 잔여 |
+| #117 | Steamworks DLC 그라운드워크 | **게이트 그라운드워크 완결(de32ad2)**: Platform.dlc.owns/setOverride + STEAM_DLC_APPID{supporter:0 placeholder} + QA훅. 네이티브 브릿지(steam:dlc·isDlcInstalled)는 기배선. 하네스 검증 false→override→true. 잔여: #119 콘텐츠(복장 2·러시안블루)가 이 게이트 소비 |
 | #146 | 비네트 아트 바 (금문교 노을) | 연마 6회전(8ce3af4): 글린트 일렁임·차 앵커 재접지(화면 밖 60° 검거) — 지역 결선 트리거는 대기 |
 | #147 | 2.0 동부 셸터 4종 | 기초+아트 상향 완주((d)-2, #198 합류) — 잔여: 경제 캘리브(이주 비용·rate 컨펌)〔D〕 |
 | #172 | 트레일러 | 디렉터 직접 화면녹화 전환 — Fable=풋티지 품질 보증 |
