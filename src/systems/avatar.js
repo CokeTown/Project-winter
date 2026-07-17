@@ -375,6 +375,24 @@ export function makeAvatarSystem(ctx) {
     return Math.abs(x - g.position.x) < fp.w / 2 + 0.24 && Math.abs(z - g.position.z) < fp.d / 2 + 0.24;
   }
 
+  // #209 F38: 러그 상면 접지 — floorLift 가구(러그)를 밟고 선 발밑 높이(겹친 러그는 맨 위 층).
+  //   game.js floorLiftAt와 동일 계보(floorTopByTier 실측). hitBlock은 그대로 통과, 높이만 조회한다.
+  //   고양이는 CAT_PERCH_Y.rug로 러그 위에 서는데 아바타만 y=0으로 통과하던 접지 규약 균열을 봉합.
+  function floorYAt(x, z) {
+    let y = 0;
+    for (const it of items) {
+      if (it.support) continue; // 상판 위 소품은 바닥이 아니다
+      const d = DEFS[it.defId];
+      if (!d || !d.floorLift) continue;
+      const top = (d.floorTopByTier || {})[it.tier || 3] || 0;
+      if (!top) continue;
+      const fp = footprintOf(it);
+      if (fp && Math.abs(x - it.x) <= fp.w / 2 && Math.abs(z - it.z) <= fp.d / 2)
+        y = Math.max(y, (it.y || 0) + top);
+    }
+    return y;
+  }
+
   function update(t, dt) {
     if (!av) return;
     const g = av.g;
@@ -456,6 +474,8 @@ export function makeAvatarSystem(ctx) {
         } else av.blockedT = 0;
         const moved = Math.hypot(nx - oldX, nz - oldZ);
         g.position.x = nx; g.position.z = nz; av.moved = moved;
+        // #209 F38: 러그 상면 따라가기 — 발밑이 floorLift 가구면 그 상면으로 부드럽게(고양이 baseY 문법 계보).
+        g.position.y += (floorYAt(nx, nz) - g.position.y) * Math.min(1, dt * 8);
         // 회전: 실제 이동 방향을 본다(돌아갈 땐 도는 쪽으로 몸을 튼다). 안 움직이면 목표 방향 유지.
         const hx = moved > 1e-4 ? nx - oldX : dx, hz = moved > 1e-4 ? nz - oldZ : dz;
         const want = Math.atan2(hx, hz);
@@ -510,7 +530,10 @@ export function makeAvatarSystem(ctx) {
     let sx = it.x, sz = it.z, ry = (it.rot || 0) * Math.PI / 2; // 기본: 가구 정면 방향 정좌 (관례: rot0=+z)
     if (it.defId === 'bed') {
       // 침대는 걸터앉기(디렉터: "침대랑 상호작용") — 접근한 쪽 모서리에 앉아 바깥을 본다
-      const fp = footprintOf(it) || { w: 1.8, d: 2.3 };
+      // #209 F25: 걸터앉기 클램프 fp는 티어별 실측 폭이어야 한다 — DEFS.bed.fp(1.8×2.3)는 T3 프레임 외곽이라
+      //   T1/T2(실측 폭 1.05)에선 지오 밖 0.155 지점에 앉혀 허공 착석. 착석 전용 fp만 티어 실측으로 좁힌다(충돌·배치 fp는 T3 외곽 유지).
+      const seatFp = { 1: { w: 1.05, d: 2.0 }, 2: { w: 1.05, d: 2.1 } }[it.tier];
+      const fp = seatFp ? ((it.rot % 2) ? { w: seatFp.d, d: seatFp.w } : { w: seatFp.w, d: seatFp.d }) : (footprintOf(it) || { w: 1.8, d: 2.3 });
       const cl = (v, m) => Math.max(-m, Math.min(m, v));
       sx = it.x + cl((g.position.x - it.x) * 3, fp.w / 2 - 0.22);
       sz = it.z + cl((g.position.z - it.z) * 3, fp.d / 2 - 0.22);
@@ -535,10 +558,11 @@ export function makeAvatarSystem(ctx) {
   // #86④ 옷 갈아입기: 제자리 재구축 (위치/방향 보존 — 옷장에서 입는 즉시 반영)
   function refreshOutfit() {
     if (!av) return respawn();
-    const p = av.g.position.clone(), ry = av.g.rotation.y;
+    const prev = { mode: av.mode, use: av.use, exitSpot: av.exitSpot, timer: av.timer,
+                   pos: av.g.position.clone(), rot: av.g.rotation.clone() };
     respawn();
-    av.g.position.set(p.x, 0, p.z);
-    av.g.rotation.y = ry;
+    Object.assign(av, { mode: prev.mode, use: prev.use, exitSpot: prev.exitSpot, timer: prev.timer });
+    av.g.position.copy(prev.pos); av.g.rotation.copy(prev.rot);
   }
 
   return {

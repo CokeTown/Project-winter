@@ -32,6 +32,10 @@ export function makeCatSystem(ctx) {
   // #193: 침대는 티어가 곧 높이(#157) — CAT_PERCH_Y.bed(T3 실측 0.63) 고정 조회면 T1/T2 매트리스 위 공중부양.
   //   #196 일반화: 소파·방석도 티어로 좌면이 변한다(지오 실측 감사) — TIER_TOP_Y[defId][tier] 우선, 표 밖 가구만 고정표.
   const perchYOf = i => {
+    // #209 F04: 러그는 floorTopByTier(furniture.js 실측 T1 0.065·T2 0.050·T3 0.049)가 티어별 최상면 — 퍼치도 이를 따라 T1 러그 위 파묻힘/티어 변경 시 붕뜸을 없앤다.
+    //   TIER_TOP_Y에 rug를 넣지 않는 이유: avatar.js seatOf가 같은 표를 읽어 러그를 아바타 착석 대상으로 오인한다(퍼치 전용 채널로 분리).
+    const ft = DEFS[i.defId]?.floorTopByTier;
+    if (ft && CAT_PERCH_Y[i.defId] != null) return ft[i.tier || 3] ?? CAT_PERCH_Y[i.defId];
     const tt = (TIER_TOP_Y || {})[i.defId];
     return (tt && CAT_PERCH_Y[i.defId] != null) ? (tt[i.tier || 3] ?? CAT_PERCH_Y[i.defId]) : CAT_PERCH_Y[i.defId];
   };

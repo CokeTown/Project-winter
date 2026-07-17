@@ -2446,7 +2446,14 @@ function floorLiftAt(item, x, z) {
 }
 // 배치/회전/로드 공통: 상판 지지대가 있으면 그 위, 없으면 바닥 올림(러그) 높이.
 function restingY(item, x, z) {
-  return item._support ? item._support.y : floorLiftAt(item, x, z);
+  if (item._support) return item._support.y;
+  return Math.max(floorLiftAt(item, x, z), balconyLiftAt(item, x, z)); // #209 발코니 데크 상면 접지
+}
+// #209 발코니: 데크 플랭크 상면(bal.y=0.023)이 실내 바닥(0)보다 높다 — 사각형 안 허용 소품은 그 높이로 접지.
+function balconyLiftAt(item, x, z) {
+  const bal = SHELTERS[state.current]?.balcony;
+  if (!bal || !bal.y || !bal.allow.includes(item.defId)) return 0;
+  return (x >= bal.x0 && x <= bal.x1 && z >= bal.z0 && z <= bal.z1) ? bal.y : 0;
 }
 function collides(item, x, z) {
   if (DEFS[item.defId].noCollide) return false;
@@ -2641,7 +2648,7 @@ function loadShelter(id) {
     // #209 러그 바닥 올림: y=0 항목도 러그가 밑에 있으면 재계산 대상이다(구 세이브엔 러그 위 가구가 0으로
     //   저장돼 있고, 직렬화가 y를 toFixed(2)로 반올림하므로 로드 시 재계산이 정본이다).
     //   러그가 없으면 lift=0 → 기존 가드·기존 결과와 완전히 동일(회귀 없음).
-    const lift = floorLiftAt(it, it.x, it.z);
+    const lift = Math.max(floorLiftAt(it, it.x, it.z), balconyLiftAt(it, it.x, it.z)); // #209 러그 or 발코니 데크
     if (!it.y && !lift) continue;
     const sup = findSupport(it, it.x, it.z);
     if (sup) { it.support = sup.other; it.y = sup.y; }
@@ -4944,14 +4951,15 @@ const SHELTER_MODS = {
   terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '🧱', cost: { material: 4, cloth: 1 }, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
   bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '🛢️', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
 };
-// 개조가 셸터의 어느 앵커에 붙는지 선언 (ARC-01: 콘텐츠는 테이블).
+// 개조 앵커 참조표 (문서 전용 — 런타임 미소비. 디스패치는 addModProp의 id 하드코딩 분기가 직접 수행).
 // roof=지붕면 브래킷 · eave=처마 홈통+파이프+물통 · wall=외벽 덧댐 · ground=지면(마당) 배치.
-const MOD_MOUNT = {
-  solar: 'roof', raincatch: 'eave', bigraincatch: 'eave',
-  insulation: 'wall', insulationPlus: 'wall', garden: 'ground', rooftopGarden: 'ground',
-  mushroom: 'ground', // 1.2 버섯 재배칸 — 지면(승강장) 배치. subway는 SHELTER_MOUNTS.subway.eave 폴백을 쓴다.
-  onsen: 'ground',    // 1.3 온천 — 지면(로지 옆마당) 배치. lodge에 ground 앵커 없으면 addModProp 폴백(벽 밀착).
-};
+//   solar                  → roof  : mounts.roof (폴백=벽밀착 지면 경사)
+//   raincatch·bigraincatch → eave  : mounts.eave (폴백=우측 처마)
+//   insulation·insulationPlus → wall : mounts.wall (폴백=+z 벽)
+//   garden                 → ground: mounts.ground (앵커를 읽는 유일한 지면 소품)
+//   rooftopGarden → buildRooftopGarden() : mounts 미참조, SHELTERS.rooftop._slab 기준 하드코딩(y=0 접지)
+//   mushroom      → buildMushroomBed()   : mounts 미참조, 승강장 좌표 하드코딩(y=0). subway eave 폴백 없음
+//   onsen         → 로지 옆마당 하드코딩   : mounts.groundY만 사용(ground 앵커 미참조)
 // 셸터별 설치 앵커 실측 좌표 (buildRoom 지오메트리 기준).
 //  roof:  { y(지붕 상면), cx, cz(지붕 중심), hw, hd(지붕 반폭/반깊이), pitch?(경사지붕이면 +z로 내려가는 기울기 rad) }
 //  eave:  { y(처마 높이), x, z(모서리), dir(파이프가 뻗는 방향 [±1,±1]) }
@@ -5043,7 +5051,7 @@ const SHELTER_MOUNTS = {
     groundY: -0.5, ground: { x: 3.4, z: 2.6, rot: 0 },
   },
   penthouse: { // 2.0 동부: 11×7.5×2.9 최상층 + 발코니(-z 데크). 확대 리워크 (§6.0.5)
-    roof: { y: 2.92, cx: 0, cz: 0, hw: 5.2, hd: 3.6 },
+    roof: { y: 2.92, cx: 0, cz: 0, hw: 5.2, hd: 3.6, cullJoin: true }, // #209 F30: 리브 위 옥상 슬래브(buildRoom) 신설 동반 — cullJoin=부감 시 패널이 지붕과 함께 페이드
     eave: { y: 2.8, x: 5.61, z: 3.86, dir: [1, 1] },
     groundY: -0.3, ground: { x: 3.4, z: 2.8, rot: 0 },
   },
@@ -5183,7 +5191,7 @@ function extMounts(shelterId) {
   const half = SHELTERS[shelterId].room.w / 2;
   const shiftX = x => (typeof x === 'number' && Math.abs(x) >= half - 0.6) ? x + Math.sign(x) : x;
   const out = { ...m };
-  if (m.eave) out.eave = { ...m.eave, x: shiftX(m.eave.x) };
+  if (m.eave) out.eave = { ...m.eave, x: shiftX(m.eave.x), ...(m.eave.barrel ? { barrel: { ...m.eave.barrel, x: shiftX(m.eave.barrel.x) } } : {}) };
   if (m.ground) out.ground = { ...m.ground, x: shiftX(m.ground.x) };
   if (m.roof) out.roof = { ...m.roof, hw: m.roof.hw + 1 };
   if (m.wall && (m.wall.face === '+x' || m.wall.face === '-x')) out.wall = { ...m.wall, off: m.wall.off + 1 };
@@ -5192,7 +5200,6 @@ function extMounts(shelterId) {
 function addModProp(id) {
   const { w, d } = ROOM;
   const mounts = extMounts(state.current);
-  const type = MOD_MOUNT[id];
   if (id === 'solar') {
     if (mounts.roof) return buildSolarProp(mounts.roof);
     // 폴백: 벽에 최대한 밀착한 지면 경사 거치
@@ -7350,8 +7357,11 @@ function rotateActive() {
   if (!item) return;
   item.rot = (item.rot + 1) % 4;
   rotateChildren(item, 1);
+  const px = item.x, pz = item.z;
   const [x, z] = clampToRoom(item, item.x, item.z);
   item.x = x; item.z = z;
+  // #F42: 클램프 델타를 상판 위 소품에 전파 (moveGhost와 동일 — 소품 공중/벽 관통 방지)
+  if (DEFS[item.defId].surface) { const dx = item.x - px, dz = item.z - pz; if (dx || dz) for (const ch of itemsOn(item)) { ch.x += dx; ch.z += dz; syncTransform(ch); } }
   syncTransform(item);
   if (item === placing || (dragging === item && dragStart?.moved)) {
     const bad = collides(item, item.x, item.z);
@@ -7363,6 +7373,9 @@ function rotateActive() {
   } else {
     if (collides(item, item.x, item.z)) {
       item.rot = (item.rot + 3) % 4;
+      // #F42: 전파했던 클램프 델타를 먼저 되돌리고, 원래 중심(px,pz) 기준으로 자식 회전 복원 (정확한 왕복)
+      if (DEFS[item.defId].surface) { const dx = item.x - px, dz = item.z - pz; if (dx || dz) for (const ch of itemsOn(item)) { ch.x -= dx; ch.z -= dz; } }
+      item.x = px; item.z = pz;
       rotateChildren(item, -1);
       syncTransform(item);
       toast(t('rotate.noSpace'));
@@ -9336,6 +9349,8 @@ function showSelPanel(item) {
       resConsumeAll(cost);
       item.tier = next;
       recolorItem(item, item.colorIdx); // 그룹 재빌드 — 티어 복셀 교체
+      catSys.setCatSupportDirty(true); // #209 F24: 티어 손질로 상면이 올라가면 퍼치 고양이 재접지(hop 착지) 트리거 — 새 매트리스/쿠션 파묻힘 방지
+      { const sr = surfaceRectOf(item); if (sr) for (const ch of itemsOn(item)) { ch.y = sr.y + (item.y || 0); syncTransform(ch); } } // #209 F43: 티어 손질로 상판 높이(surfaceYByTier)가 바뀌면 위 소품 y 재동기화
       markCollection(item.defId, item.colorIdx);
       playSfx('craft');
       toast(t('sel.upgraded'));

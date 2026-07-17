@@ -2836,7 +2836,10 @@ export function makeShelterBuilders(ctx) {
         {
           const roofG = new THREE.Group();
           for (let i = 0; i < 7; i++) { const rib3 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.1, d - 0.6), lamb(0x352a20)); rib3.position.set(-w / 2 + 1 + i * (w - 2) / 6, h - 0.06, 0); roofG.add(rib3); }
-          tagCeiling(roofG, h - 0.05); roomGroup.add(roofG);
+          // #209 F30: 리브 위 옥상 슬래브(태양광 앵커면) 신설 — 상면 h+0.02=2.92=SHELTER_MOUNTS.penthouse.roof.y.
+          //   이전엔 슬랫 리브(상면 h-0.01)뿐이라 태양광 브래킷 다리 4개가 리브 사이 1.28m 빈틈 위 허공에 떴다(customs/bridgehouse 슬래브 관용구).
+          B(roofG, w + 0.3, 0.06, d + 0.3, 0x2e2620, 0, h - 0.01, 0).castShadow = true;
+          tagCeiling(roofG, h + 0.02); roomGroup.add(roofG);
         }
         for (let i = 0; i < 11; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.032, 5, 4), new THREE.MeshLambertMaterial({ color: 0xffe6b0, emissive: 0xffbf66, emissiveIntensity: 1.0 })); b.position.set(-4.6 + i * 0.92, h - 0.16 - Math.sin(i) * 0.05, -1.1); roomGroup.add(b); }
         for (const [vx, vz, vl] of [[-2.4, -2.7, 0.7], [1.6, -1.8, 0.6], [2.4, 1.4, 0.7]]) vine(vx, h - 0.12, vz, vl);
@@ -2907,6 +2910,7 @@ export function makeShelterBuilders(ctx) {
           { x: -5.2, z: 1.3, w: 0.5, d: 3.6 },   // -x 서가
           { x: -0.6, z: -3.39, w: 7.4, d: 0.42 }, // -z 창가 허브 화단
           { x: -4.4, z: -2.9, w: 0.5, d: 0.5 },  // 망원경
+          { x: 1.2, z: -4.5, w: 2.3, d: 1.6 },   // #209 F41: 발코니 온실 콜드프레임(buildEnv) — 방석·양초 매몰 방지
         ]);
       },
       buildEnv() {
