@@ -2187,5 +2187,6 @@
   "data.craft.hoodie.hint": "ワードローブに追加 — フードを被ったシルエット",
   "data.craft.puffer.hint": "ワードローブに追加 — 中綿でふくらんだジャンパー",
   "data.craft.poncho.hint": "ワードローブに追加 — 毛布をまとったようなポンチョ",
-  "data.craft.vest.hint": "ワードローブに追加 — 腕が軽い作業ベスト"
+  "data.craft.vest.hint": "ワードローブに追加 — 腕が軽い作業ベスト",
+  "exp.riskGain": "出来事による追加の収穫:"
 }

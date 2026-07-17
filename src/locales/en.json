@@ -2187,5 +2187,6 @@
   "data.will.will5.desc": "I left the door open. Outlive me.\nWhoever meets this one — he’s a good dog. Just easily frightened.",
   "data.will.will5.name": "A Word for the Dog",
   "data.will.will6.desc": "I got your letter. I wanted to say I missed you too — I needed to say it.\nThere’s nowhere left to send this now.",
-  "data.will.will6.name": "The Reply Never Sent"
+  "data.will.will6.name": "The Reply Never Sent",
+  "exp.riskGain": "Extra from what happened out there:"
 }
