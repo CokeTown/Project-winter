@@ -494,9 +494,14 @@ const KNOWLEDGE_HASH = -451536973;
       return JSON.stringify(out);
     `).catch(err => JSON.stringify({ error: String(err) }));
     const ej = JSON.parse(eg);
-    check('2.0-(b) 관문 사슬 (봉인→소문 노출→15회 완주→개통 플래그→동부 4셸터 개방)',
+    // 데모 dist 게이트: 동부는 데모 콘텐츠 밖 — DEMO_SHELTERS 화이트리스트가 개통 플래그보다 우선하는 게
+    //   정책 정답(15일 컷에 동부 없음). 개방 명제만 데모에선 "닫힘 유지"로 뒤집어 검증한다.
+    check(distIsDemo === 'true'
+      ? '2.0-(b) 관문 사슬 (데모: 개통 플래그가 서도 동부 4셸터는 화이트리스트 봉인 유지)'
+      : '2.0-(b) 관문 사슬 (봉인→소문 노출→15회 완주→개통 플래그→동부 4셸터 개방)',
       ej.lockedBefore === true && ej.hiddenBefore === true && ej.shownAfterRumor === true
-      && ej.invests === 15 && ej.gateOpen === true && ej.unlockedAfter === true,
+      && ej.invests === 15 && ej.gateOpen === true
+      && (distIsDemo === 'true' ? ej.unlockedAfter === false : ej.unlockedAfter === true),
       JSON.stringify(ej));
 
     // ── 2f) 2.0-(c) 동부 파밍 8종 (§6.0.5 로스터) — 데이터 정합 + 일괄 게이트 + 도시 분리 ──
@@ -537,9 +542,14 @@ const KNOWLEDGE_HASH = -451536973;
     check('2.0-(c) 동부 8지역 데이터 정합 (존재·city 태그·전리품/풀 id 실재·구역 4분할)',
       ecj.allExist === true && ecj.lootValid === true && ecj.poolValid === true && ecj.split === true,
       JSON.stringify(ecj));
-    check('2.0-(c) 동부 8지역 게이트 (개통 전 전부 잠김 → 개통 후 해금 · 도시 분리 왕복)',
-      ecj.lockedBefore === true && ecj.openAfter === true && ecj.eastSideEast === true
-      && ecj.eastSideHome === true && ecj.homeSideEast === true && ecj.mapsDiffer === true,
+    // 데모 dist 게이트: 데모 3지역 화이트리스트(setRegionsDemo)가 동부 해금을 정책상 막는다 —
+    //   개방·동부측 도달 명제만 데모에선 "닫힘 유지"로 뒤집어 검증(잠김·홈측 차단·전도 분리는 공통 유효).
+    check(distIsDemo === 'true'
+      ? '2.0-(c) 동부 8지역 게이트 (데모: 개통 후에도 화이트리스트 봉인 유지 · 전도 분리 유효)'
+      : '2.0-(c) 동부 8지역 게이트 (개통 전 전부 잠김 → 개통 후 해금 · 도시 분리 왕복)',
+      ecj.lockedBefore === true && ecj.homeSideEast === true && ecj.mapsDiffer === true
+      && ecj.eastSideEast === true && ecj.eastSideHome === true // regionReachable=도시 분리 술어(해금과 독립) — 데모 공통 유효
+      && (distIsDemo === 'true' ? ecj.openAfter === false : ecj.openAfter === true),
       JSON.stringify(ecj));
 
     // ── 2g) 동부 4셸터 렌더 스모크 — 로드 + 수 프레임 구동 무예외 ──

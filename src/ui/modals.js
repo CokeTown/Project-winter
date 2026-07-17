@@ -28,8 +28,7 @@ export function makeModals(ctx) {
     showMemoPage, showBroadcastModal, showSketchPage, showTruthPage } = ctx;
   // #90 데모 규모 은닉 게이트(1.9.5 재수렴: game.js 구판 일지 모달에서 Tier6b 이관본으로 이식) —
   //   본편 빌드는 DEMO_ED=false로 전 분기 무해. 데이터 소유는 game.js(ctx 주입, 단방향 유지).
-  const { demoMemoRegions, DEMO_BROADCASTS, DEMO_ACH_HIDE, DEMO_CRAFT_FURN } = ctx;
-  const DEMO_ED = typeof __DEMO__ !== 'undefined' && !!__DEMO__;
+  const { demoMemoRegions, DEMO_BROADCASTS, DEMO_ACH_HIDE, DEMO_CRAFT_FURN } = ctx; // DEMO_ED는 기존 ctx 것 사용
   const $ = id => document.getElementById(id);
 
   function openModeModal(n) {
