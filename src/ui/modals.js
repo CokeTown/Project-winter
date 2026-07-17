@@ -3,16 +3,33 @@
 //   t/BAL/DEFAULT_STATE/opts는 직접 import, $는 자체 정의. game.js 클로저(openModal/toast/
 //   wallpaperUnlocked/openSlotModal/slotKey/LASTSLOT_KEY/DEMO_ED/SHELTERS)만 ctx 주입.
 //   게이트: 모달 DOM 스냅샷(tests/grounding/modal-golden — mode)이 innerHTML 무손실을 검증.
-import { t, LN as LName, LD as LDesc } from '../i18n.js'; // LName/LDesc는 game.js 별칭(LN/LD) — 모듈은 직접 alias
+import { t, LN as LName, LD as LDesc, LC } from '../i18n.js'; // LName/LDesc는 game.js 별칭(LN/LD) — 모듈은 직접 alias
 import { BAL } from '../data/balance.js';
 import { state, DEFAULT_STATE, opts } from '../core/state.js';
-import { OUTFITS } from '../data/items.js';
+import { OUTFITS, THEME_SETS } from '../data/items.js';
 import { KNOWLEDGE, KNOWLEDGE_BRANCHES } from '../data/knowledge.js';
 import { hasKnowledge, knowledgePrereqMet, unlockKnowledge } from '../core/knowledge.js';
+// ── Tier6b(일지/도감 모달) 데이터·코어 의존 — 전부 단방향 하위 모듈 ──
+import { MEMOS, WILLS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, MEMOS_CITYCORE, BROADCASTS, SKETCHES } from '../data/lore.js';
+import { ACH_DEFS as ACHS } from '../data/achs.js';
+import { DEFS } from '../data/furniture.js';
+import { REGIONS } from '../data/world.js';
+import { seasonOf } from '../core/season.js';
+import { themeSetActive, activeThemeSets } from '../core/comfort.js';
+const LColor = (o, i) => LC(o, 'colorNames', i); // game.js 74행과 동일 파생 — 원문 보존
+const LN = LName; // recordTabHtml 원문의 LN 표기 보존
 
 export function makeModals(ctx) {
   const { openModal, toast, wallpaperUnlocked, zenUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS } = ctx;
   const { getPaused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud } = ctx; // 추가 모달 의존
+  // Tier6b 일지/도감 의존: 아이콘·집계·수첩 페이지는 game.js 클로저 — 주입(단방향 유지)
+  const { icon, regionIcon, comfortBreakdownHtml, collectionCount,
+    memosTotal, memosCollected, broadcastsTotal, broadcastsCollected, sketchesTotal, sketchesCollected,
+    showMemoPage, showBroadcastModal, showSketchPage, showTruthPage } = ctx;
+  // #90 데모 규모 은닉 게이트(1.9.5 재수렴: game.js 구판 일지 모달에서 Tier6b 이관본으로 이식) —
+  //   본편 빌드는 DEMO_ED=false로 전 분기 무해. 데이터 소유는 game.js(ctx 주입, 단방향 유지).
+  const { demoMemoRegions, DEMO_BROADCASTS, DEMO_ACH_HIDE, DEMO_CRAFT_FURN } = ctx;
+  const DEMO_ED = typeof __DEMO__ !== 'undefined' && !!__DEMO__;
   const $ = id => document.getElementById(id);
 
   function openModeModal(n) {
@@ -92,7 +109,7 @@ export function makeModals(ctx) {
     const sel = id === cur;
     const sw = (c) => `<span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:#${(c ?? 0x5a5648).toString(16).padStart(6, '0')};margin-right:3px;vertical-align:-1px"></span>`;
     return `
-      <div class="prep-row ${sel ? 'sel' : owned ? '' : 'no'}" style="cursor:default">
+      <div class="prep-row wd-row ${sel ? 'sel' : owned ? '' : 'no'}" style="cursor:default">
         <span>${o.emoji} ${LName(o)}</span>
         <span class="p-eff" style="font-size:10px">${sw(o.pal.coat)}${sw(o.pal.scarf ?? 0xb8862e)}${owned ? '' : t('wardrobe.locked')}</span>
         ${sel
@@ -102,9 +119,7 @@ export function makeModals(ctx) {
             : ''}
       </div>`;
   }).join('');
-  openModal(`👕 ${t('wardrobe.title')}`, `
-    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('wardrobe.hint')}</div>
-    ${rows}`);
+  openModal(t('wardrobe.title'), rows); // 인트로 힌트·타이틀 이모지 삭제(디렉터 심볼릭 원칙) — 획득 경로는 각 행에 이미 표기
   $('modal-body').querySelectorAll('button[data-wear]').forEach(b => b.addEventListener('click', () => {
     state.outfit = b.dataset.wear;
     avatarSys.refreshOutfit();
@@ -135,7 +150,7 @@ export function makeModals(ctx) {
     }).join('');
     return `<div style="margin-top:8px"><div style="font-weight:bold;font-size:12px;margin-bottom:2px">${br.emoji} ${LName(br)}</div>${rows}</div>`;
   }).join('');
-  openModal(`📚 ${t('know.title')}`, `<div style="font-size:12px;color:var(--accent);margin-bottom:6px">${t('know.books', { n: books })}</div>${sections}`);
+  openModal(t('know.title'), `<div style="font-size:12px;color:var(--accent);margin-bottom:6px">${t('know.books', { n: books })}</div>${sections}`);
   $('modal-body').querySelectorAll('button[data-know]').forEach(b =>
     b.addEventListener('click', () => {
       if (unlockKnowledge(b.dataset.know)) { playSfx('craft'); renderResBar(); updateHud(); openKnowledgeModal(); }
@@ -143,5 +158,191 @@ export function makeModals(ctx) {
     }));
   }
 
-  return { openModeModal, openWardrobeModal, openKnowledgeModal };
+  /* ── Tier6b: 일지/도감/업적/기록 모달 (game.js 6181~6348 원문 그대로 — 로직 무변) ── */
+function recordTabHtml() {
+  const owned = state.memos || {};
+  const bown = state.broadcasts || {};
+  const regionKeys = { residential: 'record.regionRes', commercial: 'record.regionCom', industrial: 'record.regionInd', slum: 'record.regionSlum' };
+  const memoRow = (id, tbl) => owned[id]
+    ? `<div class="prep-row li-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>${icon('icon_rec_memo', '📄')}</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
+  let sections = '';
+  // #90: 데모는 스코프 내 지역 섹션만 — 잠긴 지역(코지의 상업지구 등)은 존재 자체를 안 보인다
+  for (const rg of (DEMO_ED ? demoMemoRegions() : ['residential', 'commercial', 'industrial', 'slum'])) {
+    const ids = MEMOS_BY_REGION[rg];
+    const gotN = ids.filter(id => owned[id]).length;
+    sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t(regionKeys[rg])} (${gotN}/${ids.length})</div>` + ids.map(id => memoRow(id, MEMOS)).join('');
+  }
+  // #55: 벙커 하강 계단 특수 메모 — 발견 후에만 섹션 노출(스포일러 방지)
+  {
+    const bids = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'bunker');
+    const bgot = bids.filter(id => owned[id]).length;
+    if (bgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionBunker')} (${bgot}/${bids.length})</div>` + bids.map(id => memoRow(id, MEMOS)).join('');
+  }
+  // 1.2: 지하(subway) 판데믹 대피 메모 — 발견 후에만 섹션 노출 (벙커 문법 재사용)
+  {
+    const sgot = MEMOS_SUBWAY.filter(id => owned[id]).length;
+    if (sgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionSubway')} (${sgot}/${MEMOS_SUBWAY.length})</div>` + MEMOS_SUBWAY.map(id => memoRow(id, MEMOS)).join('');
+  }
+  // 1.3: 리조트(resort) 마지막 휴가객 메모 — 발견 후에만 섹션 노출 (지하 문법 재사용)
+  {
+    const rgot = MEMOS_RESORT.filter(id => owned[id]).length;
+    if (rgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionResort')} (${rgot}/${MEMOS_RESORT.length})</div>` + MEMOS_RESORT.map(id => memoRow(id, MEMOS)).join('');
+  }
+  // 1.4: 금지 구역(research) 기밀 문서 — 발견 후에만 섹션 노출. 12종 다 모으면 최종장 페이지가 열린다.
+  {
+    const cgot = MEMOS_RESEARCH.filter(id => owned[id]).length;
+    if (cgot > 0) {
+      sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionResearch')} (${cgot}/${MEMOS_RESEARCH.length})</div>` + MEMOS_RESEARCH.map(id => memoRow(id, MEMOS)).join('');
+      // 최종장: 12종 전부 수집 시 "그날의 진실" 페이지 열람 링크 (기록 문법, data-truth 훅).
+      if (cgot >= MEMOS_RESEARCH.length) {
+        sections += `<div class="prep-row li-row" style="cursor:pointer;border-top:1px solid var(--panel-border);margin-top:4px" data-truth="1"><span>📖</span><span style="color:var(--accent)">${t('record.truthTitle')}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`;
+      }
+    }
+  }
+  // 2.0 「응답」(citycore) 이관의 진실 — 발견 후에만 섹션 노출 (§9.5 검수: 미노출이면 수집해도 목록에
+  //   없는 유령 카운트가 된다 — research 문법 재사용)
+  {
+    const ngot = MEMOS_CITYCORE.filter(id => owned[id]).length;
+    if (ngot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionCitycore')} (${ngot}/${MEMOS_CITYCORE.length})</div>` + MEMOS_CITYCORE.map(id => memoRow(id, MEMOS)).join('');
+  }
+  // v1.5: 좌초 여객선(harbor) 메모 — 발견 후에만 섹션 노출 (지하/리조트 문법 재사용)
+  {
+    const hgot = MEMOS_HARBOR.filter(id => owned[id]).length;
+    if (hgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionHarbor')} (${hgot}/${MEMOS_HARBOR.length})</div>` + MEMOS_HARBOR.map(id => memoRow(id, MEMOS)).join('');
+  }
+  const willIds = Object.keys(WILLS);
+  const willGot = willIds.filter(id => owned[id]).length;
+  sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
+  // 라디오 로그 (#90: 데모는 수집 가능한 방송 슬롯만 — 본편 서사 방송은 총계에도 안 잡힌다)
+  const radioRows = Object.keys(BROADCASTS).filter(id => !DEMO_ED || DEMO_BROADCASTS.has(id)).map(id => bown[id]
+    ? `<div class="prep-row li-row" style="cursor:pointer" data-broadcast="${id}"><span>${icon('icon_rec_radio', '📻')}</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
+  const distant = state.distantLight?.count
+    ? `<div class="report-sec"><span class="r-title">${t('record.distantTitle', { n: state.distantLight.count })}</span></div>` : '';
+  // 1.3 밤하늘 스케치 — 관측소 완공 후 수집이 시작되면 섹션 노출(스포일러 방지, 벙커/지하 문법). satellite는 1.4 복선.
+  const sown = state.sketches || {};
+  let sketchSec = '';
+  if (state.observatoryDone || sketchesCollected() > 0) {
+    const rows = Object.keys(SKETCHES).map(id => sown[id]
+      ? `<div class="prep-row li-row" style="cursor:pointer" data-sketch="${id}"><span>${icon('icon_rec_sketch', '🌌')}</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+      : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
+    sketchSec = `<div class="report-sec"><span class="r-title">${t('record.sketchTitle', { n: sketchesCollected(), total: sketchesTotal() })}</span>${rows}</div>`;
+  }
+  // #90: 데모 총계는 데모 풀 기준 — "63개 중 6개" 같은 표기로 숨은 콘텐츠 규모가 새지 않게
+  const total = DEMO_ED ? demoMemoRegions().reduce((a, rg) => a + (MEMOS_BY_REGION[rg] || []).length, 0) + Object.keys(WILLS).length : memosTotal();
+  const radioTotal = DEMO_ED ? DEMO_BROADCASTS.size : broadcastsTotal();
+  // ??? 티저 (디렉터 2026-07-09): 잠긴 규모는 보여주되 내용(제목)은 은닉 — "뭐가 더 있지?"가 구매 동기가 된다
+  if (DEMO_ED) {
+    const hiddenN = (memosTotal() - total) + (broadcastsTotal() - radioTotal);
+    sections += `<div class="prep-row li-row" style="cursor:default;opacity:0.55;border-top:1px solid var(--panel-border);margin-top:6px"><span>${icon('icon_sys_locked', '🔒')}</span><span>???</span><span class="p-cost">${t('demo.moreRecords', { n: hiddenN })}</span></div>`;
+  }
+  return `
+    <div class="report-sec"><span class="r-title">${t('record.memoTitle', { n: memosCollected(), total })}</span>${sections}</div>
+    <div class="report-sec"><span class="r-title">${t('record.radioTitle', { n: broadcastsCollected(), total: radioTotal })}</span>${radioRows}</div>
+    ${sketchSec}
+    ${distant}`;
+}
+function journalTabBar(active) {
+  const tab = (id, label) => `<button class="pixel-btn ${active === id ? 'primary' : ''}" data-jtab="${id}" style="flex:1">${label}</button>`;
+  // #194: EN/ja 라벨 4개의 min-content 합이 세로폰 모달 내폭을 넘어 Records 탭이 우측 클리핑 — 래핑 허용
+  return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${tab('journal', t('journal.title'))}${tab('col', t('journal.colTab'))}${tab('ach', t('journal.achTab'))}${tab('record', t('record.tabTitle'))}</div>`;
+}
+function openJournalModal(tab = 'journal') {
+  const se = seasonOf();
+  const achsHtml = ACHS.filter(a => !DEMO_ED || !DEMO_ACH_HIDE.has(a.id)).map(a => { // #90: 엔드게임 도전과제 텍스트 비노출
+    const got = state.achs?.[a.id];
+    const veiled = a.hidden && !got; // 암호 업적: 미해금 시 존재만 — 이름·아이콘 은닉
+    // 아이콘 없음(디렉터): 업적 아이콘은 스팀 도전과제 쪽 채널 — 인게임 목록은 텍스트만
+    return `<div class="prep-row li-row" style="cursor:default;${got ? '' : 'opacity:0.4'}">
+      <span>${veiled ? '???' : LName(a)}</span>
+      <span class="p-cost">${LDesc(a)}${got ? ' ✓' : ''}</span>
+    </div>`;
+  }).join('');
+  // #90: 데모 도감은 데모에서 얻을 수 있는 가구만(화이트리스트+해금 도면+이미 수집분) — 전체 이모지 나열은 규모 누출
+  const colDefs = Object.entries(DEFS).filter(([id]) => !DEMO_ED || DEMO_CRAFT_FURN.has(id) || (state.blueprints || {})[id] || (state.collection || {})[id]);
+  const colHtml = colDefs.map(([id, def]) => {
+    const arr = state.collection?.[id] || [];
+    const sw = def.colors.map((c, i) =>
+      `<span title="${LColor(def, i)}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-left:3px;background:${arr[i] ? '#' + c.toString(16).padStart(6, '0') : '#22252d'};border:1px solid ${arr[i] ? 'var(--accent)' : '#333'}"></span>`).join('');
+    return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${def.emoji}${sw}</span>`;
+  }).join('');
+  let colTotal = colDefs.reduce((a, [, d]) => a + d.colors.length, 0);
+  // ??? 티저 (디렉터 2026-07-09): 도감에도 "미확인 N종" 실루엣 — 규모만 노출, 정체(이모지·이름)는 은닉
+  let colTeaser = '';
+  if (DEMO_ED) {
+    const hiddenFurn = Object.keys(DEFS).length - colDefs.length;
+    if (hiddenFurn > 0) colTeaser = `<div style="font-size:11px;opacity:0.55;margin-top:4px">${icon('icon_sys_locked', '🔒')} ??? — ${t('demo.moreFurn', { n: hiddenFurn })}</div>`;
+  }
+  // 테마 세트 도감 뱃지 (#13): 충족 시 강조.
+  const themeBadges = THEME_SETS.map(ts => {
+    const done = themeSetActive(ts);
+    return `<span title="${ts.items.map(id => LName(DEFS[id])).join(' + ')}" style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid ${done ? 'var(--good)' : '#333'};color:${done ? 'var(--good)' : 'var(--text-dim)'}">${done ? '🏅' : '▫️'} ${ts.emoji} ${LName(ts)}</span>`;
+  }).join('');
+  const journalBody = `
+    <div class="report-sec"><span class="r-title">${t('journal.statsTitle')}</span><br>
+      ${t('journal.statsLine', { day: state.day, sicon: se.icon, exp: state.stats.exp, succ: state.stats.success, craft: state.stats.craft || 0, stay: state.stayDays || 0 })}
+    </div>
+    ${comfortBreakdownHtml()}`;
+  // #177 도감 탭 — 위시리스트/보급원 트래커의 수집 뷰. 도면(시그니처+커먼) + 색상 도감 + 테마 세트.
+  //   시그니처: 지역별 묶음, 미수집=「{지역}에서만」(pull 표기 — 정보판 map.drops와 동일 축).
+  //   미방문 지역은 ??? 베일(#90 "조회 불가" 원칙 — showMapInfo와 같은 regionVisits 게이트).
+  const bpOwned = state.blueprints || {};
+  const sigIdsAll = Object.values(BAL.blueprint.regionItems).flat();
+  const commonIds = BAL.blueprint.commonItems || [];
+  const soloIds = ['ledbar']; // #189 P4: 초희귀 별도 채널 도면 — 도감 집계·행 포함
+  const bpTotal = sigIdsAll.length + commonIds.length + soloIds.length;
+  const bpGot = [...sigIdsAll, ...commonIds, ...soloIds].filter(id => bpOwned[id]).length;
+  const bpRow = (id, got, hint) => {
+    const d = DEFS[id];
+    return `<div class="prep-row li-row" style="cursor:default;${got ? '' : 'opacity:0.6'}">
+      <span>${LName(d)}</span>
+      <span class="p-cost">${got ? '✓' : hint}</span></div>`;
+  };
+  const bpVeilRow = (hint = '') => `<div class="prep-row li-row" style="cursor:default;opacity:0.35">
+      <span>???</span><span class="p-cost">${hint}</span></div>`;
+  const sigBlocks = Object.entries(BAL.blueprint.regionItems).map(([rid, ids]) => {
+    const visited = ((state.regionVisits || {})[rid] || 0) > 0;
+    const head = `<div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${regionIcon(rid)} ${visited ? LName(REGIONS[rid]) : '???'}</div>`;
+    const rows = ids.map(id => (visited || bpOwned[id])
+      ? bpRow(id, bpOwned[id], t('col.bpOnly', { region: LName(REGIONS[rid]) }))
+      : bpVeilRow()).join('');
+    return head + rows;
+  }).join('');
+  const commonRows = commonIds.map(id => bpOwned[id] ? bpRow(id, true, '') : bpVeilRow(t('col.bpCommonSrc'))).join('');
+  const soloRows = soloIds.map(id => bpOwned[id] ? bpRow(id, true, '') : bpVeilRow(t('col.bpLegendSrc'))).join('');
+  // #195: 젤 필터북 — 도면은 아니지만 같은 전설 채널의 1회 한정 유품(#189 P3). 미보유 잠금 행으로 pull 가시화.
+  const gelRow = state.lightGels
+    ? `<div class="prep-row li-row" style="cursor:default"><span>${t('col.gelBook')}</span><span class="p-cost">✓</span></div>`
+    : bpVeilRow(t('col.bpGelSrc'));
+  const colBody = `
+    <div class="report-sec"><span class="r-title">${t('col.bpTitle', { n: bpGot, total: bpTotal })}</span>
+      ${sigBlocks}
+      <div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${t('col.bpCommonTitle')}</div>
+      ${commonRows}
+      <div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${t('col.bpLegendTitle')}</div>
+      ${soloRows}${gelRow}
+      <div style="margin-top:6px;font-size:10px;color:var(--text-dim)">${t('col.veilHint')}</div>
+    </div>
+    <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount(), total: colTotal })}</span><br>${colHtml}${colTeaser}</div>
+    <div class="report-sec"><span class="r-title">${t('deco.themeBadgeTitle', { n: activeThemeSets().length, total: THEME_SETS.length })}</span><br>${themeBadges}</div>`;
+  // #8(피드백) 업적 전용 탭 — 총 개수·달성률 + 진행 바 + 전체 목록(달성/미달성/암호). 일지 하단에 묻혀 안 보이던 것 승격.
+  const achDone = Object.values(state.achs || {}).filter(Boolean).length, achTotal = ACHS.length;
+  const achPct = achTotal ? Math.round(achDone / achTotal * 100) : 0;
+  const achBody = `
+    <div class="report-sec"><span class="r-title">${t('journal.achTitle', { n: achDone, total: achTotal })} · ${achPct}%</span>
+      <div style="height:8px;background:#22252d;border-radius:4px;margin-top:7px;overflow:hidden;border:1px solid #333"><div style="height:100%;width:${achPct}%;background:var(--accent);transition:width .3s"></div></div>
+    </div>
+    ${achsHtml}`;
+  const jContent = tab === 'record' ? recordTabHtml() : tab === 'ach' ? achBody : tab === 'col' ? colBody : journalBody;
+  openModal(t('journal.title'), journalTabBar(tab) + jContent);
+  const body = $('modal-body');
+  body.querySelectorAll('button[data-jtab]').forEach(b => b.addEventListener('click', () => openJournalModal(b.dataset.jtab)));
+  body.querySelectorAll('[data-memo]').forEach(el => el.addEventListener('click', () => showMemoPage(el.dataset.memo, el.dataset.will === '1')));
+  body.querySelectorAll('[data-broadcast]').forEach(el => el.addEventListener('click', () => showBroadcastModal(el.dataset.broadcast)));
+  body.querySelectorAll('[data-sketch]').forEach(el => el.addEventListener('click', () => showSketchPage(el.dataset.sketch)));
+  body.querySelectorAll('[data-truth]').forEach(el => el.addEventListener('click', () => showTruthPage()));
+}
+
+  return { openModeModal, openWardrobeModal, openKnowledgeModal, openJournalModal };
 }

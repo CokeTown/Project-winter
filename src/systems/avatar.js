@@ -45,7 +45,9 @@ export function makeAvatarSystem(ctx) {
   };
   function buildMesh() {
     // #86④ 복장: 기본 팔레트 위에 착용 의류(OUTFITS[state.outfit].pal) 오버라이드 — 제작으로 획득, 옷장에서 착용
-    const ov = (OUTFITS && getOutfit && OUTFITS[getOutfit()]) ? OUTFITS[getOutfit()].pal : null;
+    const outfit = (OUTFITS && getOutfit && OUTFITS[getOutfit()]) || null;
+    const ov = outfit ? outfit.pal : null;
+    const style = outfit && outfit.style; // 스타일 복장(디렉터 2026-07-17): hoodie/puffer/poncho/vest — 실루엣 분기
     const P = ov ? { ...PAL, ...ov } : PAL;
     const g = new THREE.Group();
     const legH = LEG_H, torsoH = 30 * PX * s;
@@ -61,25 +63,78 @@ export function makeAvatarSystem(ctx) {
     const body = new THREE.Group();
     body.position.set(0, legH, 0);
     g.add(body);
-    B(body, 13 * PX * s, torsoH, 8.5 * PX * s, P.coat, 0, torsoH / 2, 0);
-    B(body, 15 * PX * s, 7 * PX * s, 10 * PX * s, P.coatHem, 0, 3.5 * PX * s, 0);
-    B(body, 1.2 * PX * s, torsoH - 8 * PX * s, 0.8 * PX * s, P.coatHem, 0, torsoH / 2 - 2 * PX * s, 4.4 * PX * s);
+    // ── 몸통 — 스타일별 실루엣 (파츠 그룹·피벗은 전 스타일 동일: 애니(gait 스윙)가 legs/arms만 참조) ──
+    if (style === 'puffer') {
+      // 패딩 점퍼: 두툼한 몸통 + 가로 퀼팅 3단 + 짧은 기장(이너 셔츠 밴드 노출) + 하이칼라
+      B(body, 12 * PX * s, 9 * PX * s, 8 * PX * s, P.coatHem, 0, 4.5 * PX * s, 0); // 기장 아래 이너
+      for (let i = 0; i < 3; i++)
+        B(body, 14.5 * PX * s, 7.5 * PX * s, 10 * PX * s, i % 2 ? P.coatHem : P.coat, 0, (12.5 + i * 7.5) * PX * s, 0);
+      B(body, 11 * PX * s, 4 * PX * s, 9.5 * PX * s, P.coat, 0, torsoH - 1 * PX * s, 0); // 하이칼라(목도리 대신)
+    } else if (style === 'poncho') {
+      // 판초: 어깨→하단으로 넓어지는 3단 사다리꼴 + 붉은 헴 스트라이프 + 이너 노출 — 팔 상부를 덮는다
+      B(body, 13 * PX * s, 8 * PX * s, 9 * PX * s, P.coat, 0, 26 * PX * s, 0);
+      B(body, 17 * PX * s, 8 * PX * s, 11 * PX * s, P.coat, 0, 18.5 * PX * s, 0);
+      B(body, 21 * PX * s, 8 * PX * s, 13 * PX * s, P.coat, 0, 11 * PX * s, 0);
+      B(body, 21.5 * PX * s, 2.2 * PX * s, 13.2 * PX * s, P.scarf, 0, 7 * PX * s, 0); // 헴 스트라이프
+      B(body, 12 * PX * s, 6 * PX * s, 8 * PX * s, P.coatHem, 0, 3 * PX * s, 0);      // 판초 아래 이너
+      B(body, 8 * PX * s, 3 * PX * s, 7 * PX * s, P.coatHem, 0, torsoH - 0.5 * PX * s, 0); // 칼라
+    } else if (style === 'vest') {
+      // 조끼: 몸판은 조끼색, 밑단에 이너 셔츠 노출 — 팔은 이너 소매(민소매 실루엣)
+      B(body, 13 * PX * s, torsoH, 8.5 * PX * s, P.coat, 0, torsoH / 2, 0);
+      B(body, 13.4 * PX * s, 6 * PX * s, 8.8 * PX * s, P.sleeve, 0, 3 * PX * s, 0); // 조끼 아래 셔츠
+      B(body, 1.2 * PX * s, torsoH - 8 * PX * s, 0.8 * PX * s, P.coatHem, 0, torsoH / 2 - 2 * PX * s, 4.4 * PX * s);
+      B(body, 11 * PX * s, 4 * PX * s, 9.5 * PX * s, P.scarf, 0, torsoH - 1 * PX * s, 0); // 목도리 밴드만
+    } else if (style === 'hoodie') {
+      // 후드티: 풀오버(지퍼선 없음) + 캥거루 포켓 + 밑단 시보리 + 끈 2가닥 — 목도리 없음
+      B(body, 13 * PX * s, torsoH, 8.5 * PX * s, P.coat, 0, torsoH / 2, 0);
+      B(body, 13.4 * PX * s, 3 * PX * s, 8.8 * PX * s, P.coatHem, 0, 1.5 * PX * s, 0);  // 시보리
+      B(body, 7.5 * PX * s, 5.5 * PX * s, 1 * PX * s, P.coatHem, 0, 8 * PX * s, 4.5 * PX * s); // 캥거루 포켓
+      for (const dx of [-2, 2])
+        B(body, 0.8 * PX * s, 5 * PX * s, 0.8 * PX * s, 0xd8d4c8, dx * PX * s, torsoH - 6 * PX * s, 4.5 * PX * s); // 끈
+      B(body, 8 * PX * s, 6 * PX * s, 2 * PX * s, P.beanie, 0, torsoH - 4 * PX * s, -5.2 * PX * s); // 등 뒤 후드 자락
+    } else {
+      // 클래식 방한 코트 (기본 + 색 복장 9종) — 기존 지오 그대로
+      B(body, 13 * PX * s, torsoH, 8.5 * PX * s, P.coat, 0, torsoH / 2, 0);
+      B(body, 15 * PX * s, 7 * PX * s, 10 * PX * s, P.coatHem, 0, 3.5 * PX * s, 0);
+      B(body, 1.2 * PX * s, torsoH - 8 * PX * s, 0.8 * PX * s, P.coatHem, 0, torsoH / 2 - 2 * PX * s, 4.4 * PX * s);
+    }
     const arms = {};
-    for (const [key, ax] of [['l', -8.2], ['r', 8.2]]) {
+    const armX = style === 'puffer' ? 8.8 : 8.2; // 패딩은 어깨도 두툼
+    for (const [key, ax] of [['l', -armX], ['r', armX]]) {
       const arm = new THREE.Group();
       arm.position.set(ax * PX * s, torsoH - 3 * PX * s, 0);
       body.add(arm); arms[key] = arm;
-      B(arm, 4.2 * PX * s, 20 * PX * s, 5.5 * PX * s, P.sleeve, 0, -10 * PX * s, 0);
-      B(arm, 3.4 * PX * s, 3.4 * PX * s, 4 * PX * s, P.skin, 0, -21 * PX * s, 0);
+      if (style === 'puffer') {
+        B(arm, 5.4 * PX * s, 18 * PX * s, 6.8 * PX * s, P.sleeve, 0, -9 * PX * s, 0); // 두툼 소매
+        B(arm, 3.4 * PX * s, 3.4 * PX * s, 4 * PX * s, P.skin, 0, -19.5 * PX * s, 0);
+      } else if (style === 'poncho') {
+        B(arm, 4.2 * PX * s, 9 * PX * s, 5.5 * PX * s, P.sleeve, 0, -15.5 * PX * s, 0); // 하완만(상완은 판초가 덮음)
+        B(arm, 3.4 * PX * s, 3.4 * PX * s, 4 * PX * s, P.skin, 0, -21 * PX * s, 0);
+      } else if (style === 'vest') {
+        B(arm, 4.2 * PX * s, 20 * PX * s, 5.5 * PX * s, P.sleeve, 0, -10 * PX * s, 0); // 이너 셔츠 소매(대비색)
+        B(arm, 5 * PX * s, 4 * PX * s, 6 * PX * s, P.coat, 0, -1.5 * PX * s, 0);       // 어깨 스트랩 캡
+        B(arm, 3.4 * PX * s, 3.4 * PX * s, 4 * PX * s, P.skin, 0, -21 * PX * s, 0);
+      } else {
+        B(arm, 4.2 * PX * s, 20 * PX * s, 5.5 * PX * s, P.sleeve, 0, -10 * PX * s, 0);
+        B(arm, 3.4 * PX * s, 3.4 * PX * s, 4 * PX * s, P.skin, 0, -21 * PX * s, 0);
+      }
     }
-    B(body, 11 * PX * s, 4 * PX * s, 9.5 * PX * s, P.scarf, 0, torsoH - 1 * PX * s, 0);
-    B(body, 3.6 * PX * s, 9 * PX * s, 1.4 * PX * s, P.scarf, 2.4 * PX * s, torsoH - 7 * PX * s, 4.6 * PX * s);
+    if (!style) {
+      B(body, 11 * PX * s, 4 * PX * s, 9.5 * PX * s, P.scarf, 0, torsoH - 1 * PX * s, 0);
+      B(body, 3.6 * PX * s, 9 * PX * s, 1.4 * PX * s, P.scarf, 2.4 * PX * s, torsoH - 7 * PX * s, 4.6 * PX * s);
+    }
     const head = new THREE.Group();
     head.position.set(0, torsoH + 1.5 * PX * s, 0);
     body.add(head);
     B(head, 9 * PX * s, 9.5 * PX * s, 8.5 * PX * s, P.skin, 0, 5 * PX * s, 0);
-    B(head, 10 * PX * s, 5 * PX * s, 9.5 * PX * s, P.beanie, 0, 9.5 * PX * s, -0.4 * PX * s);
-    B(head, 10.4 * PX * s, 2 * PX * s, 9.9 * PX * s, P.beanie, 0, 7.2 * PX * s, -0.4 * PX * s);
+    if (style === 'hoodie') {
+      // 후드 캡: 정수리+뒤통수를 감싼다 — 비니 대신
+      B(head, 10.5 * PX * s, 6.5 * PX * s, 9.8 * PX * s, P.beanie, 0, 9 * PX * s, -0.8 * PX * s);
+      B(head, 10.8 * PX * s, 8 * PX * s, 5 * PX * s, P.beanie, 0, 5.5 * PX * s, -3.5 * PX * s);
+    } else {
+      B(head, 10 * PX * s, 5 * PX * s, 9.5 * PX * s, P.beanie, 0, 9.5 * PX * s, -0.4 * PX * s);
+      B(head, 10.4 * PX * s, 2 * PX * s, 9.9 * PX * s, P.beanie, 0, 7.2 * PX * s, -0.4 * PX * s);
+    }
     for (const ex of [-2, 2])
       B(head, 1.1 * PX * s, 1.4 * PX * s, 0.5 * PX * s, P.eye, ex * PX * s, 4.6 * PX * s, 4.3 * PX * s);
     g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });

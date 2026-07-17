@@ -7,7 +7,7 @@ const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
 const SHELTER_HASH = 2079726321; // 2026-07-17 재핀: #193 벙커 유지비 라벨 '조명' 삭제(환기 전용 — 어둠 기본값 정합) (직전: 요트 리네임)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
-const MIG_HASH = -71013442; // 2026-07-09 재핀: 시그니처 도면 blueprints 편입 (직전: 내구성 가방)
+const MIG_HASH = -1042252206; // 2026-07-17 재핀: 2.0-α 4도시 가산 필드 4종(citiesReached·cityWinters·finalWinterCity·homeStay) 스냅샷 편입 (직전: 시그니처 도면)
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
 const MARKET_HASH = -1012304627;
 // 「지식」 테크트리 시그니처 해시 (branch/tier/cost/effect). 노드/비용/효과 변경 시 KNOWLEDGE_HASH(actual) 재핀.
@@ -414,12 +414,16 @@ const KNOWLEDGE_HASH = -451536973;
         survivorLights: st.survivorLights, doctorRegularSeen: st.doctorRegularSeen,
         doctorRadioRegularPending: st.doctorRadioRegularPending, questIdx: st.questIdx,
         current: st.current, bookType: typeof st.res.book, demoType: typeof st.demoEnded,
-        renovatedContainer: !!(st.renovated && st.renovated.container) };
+        renovatedContainer: !!(st.renovated && st.renovated.container),
+        // 2.0-α 4도시 가산 필드 4종 (§9.8) — 구세이브 = 첫 도시 이력으로 마이그레이션
+        citiesReached: st.citiesReached, cityWintersHome: (st.cityWinters || {}).home,
+        finalWinterCity: st.finalWinterCity, homeStayType: typeof st.homeStay };
       const sig = JSON.stringify(mig);
       let h = 0; for (let i=0;i<sig.length;i++) h=(Math.imul(h,31)+sig.charCodeAt(i))|0;
       return JSON.stringify({ day: mig.day, winters: mig.winters, canned: mig.canned, bookType: mig.bookType,
         demoType: mig.demoType, bunkerRoof: mig.bunkerRoof, hasCutter: mig.hasCutter, projects: mig.projects,
-        hazmat: mig.hazmat, mode: mig.mode, energy: mig.energy, migHash: h });
+        hazmat: mig.hazmat, mode: mig.mode, energy: mig.energy, migHash: h,
+        cReached: mig.citiesReached, cWinHome: mig.cityWintersHome, finCity: mig.finalWinterCity, hsType: mig.homeStayType });
     `).catch(err => JSON.stringify({ error: String(err) }));
     const s = JSON.parse(sv);
     if (s.error) {
@@ -436,7 +440,131 @@ const KNOWLEDGE_HASH = -451536973;
       check('마이그레이션/기본값(projects=object)', s.projects === 'object', `projects ${s.projects}`);
       check('마이그레이션/기본값(hazmat=null)', s.hazmat === null, `hazmat ${s.hazmat}`);
       check('마이그레이션 전 필드 해시 불변(save 추출 안전망)', s.migHash === MIG_HASH, `hash ${s.migHash}`);
+      // 2.0-α: 구세이브(winters 3)는 첫 도시 이력으로 — citiesReached {home}, cityWinters.home=3, finalWinterCity null(9겨울 미만)
+      check('2.0-α 마이그레이션/구세이브=첫 도시 이력', !!(s.cReached && s.cReached.home) && s.cWinHome === 3 && s.finCity === null && s.hsType === 'object',
+        JSON.stringify({ cReached: s.cReached, cWinHome: s.cWinHome, finCity: s.finCity, hsType: s.hsType }));
     }
+
+    // ── 2c) 2.0-α cityOf 파생 (§9.8.1 — 도시는 저장하지 않는다) ──
+    const cty = await call(`
+      S.state.citiesReached = {};          // 기록 초기화 — loadShelter 관문이 직접 쓰는지 본다
+      S.loadShelter(S.state.current);
+      return JSON.stringify({
+        home: S.cityOf('container'), homeHarbor: S.cityOf('tugboat'), homeHigh: S.cityOf('lodge'),
+        east: S.cityOf('customs'), eastDeep: S.cityOf('penthouse'),
+        reachedAfterLoad: (S.state.citiesReached || {}).home,
+      });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const ct = JSON.parse(cty);
+    check('2.0-α cityOf 파생 (본편 전역=home · 동부 관문 4셸터=east)',
+      ct.home === 'home' && ct.homeHarbor === 'home' && ct.homeHigh === 'home' && ct.east === 'east' && ct.eastDeep === 'east',
+      JSON.stringify(ct));
+    check('2.0-α citiesReached 기록 (loadShelter 관문)', ct.reachedAfterLoad === 1, `reached ${ct.reachedAfterLoad}`);
+
+    // ── 2d) 2.0-(b) regionReachable — 기능 플래그 격리(§9.8.3: off=현 전역 회귀·동작 변화 0) ──
+    const rr = await call(`
+      const S2 = window.__shelter;
+      const sav = S2.BAL.cities.enabled;                  // 2.0-(d) 점등 후: 기본값을 가정하지 않는다 — 명시 설정·원복
+      S2.BAL.cities.enabled = false;
+      const offAll = ['slum','residential','industrial','commercial'].every(r => S2.regionReachable(r));
+      S2.BAL.cities.enabled = true;                       // 플래그 on — 기존 10지역은 전부 home이라 여전히 전부 도달 가능
+      const onHome = ['slum','residential','resort','citycore'].every(r => S2.regionReachable(r));
+      S2.BAL.cities.enabled = sav;                        // 원복 (후속 테스트 오염 방지)
+      return JSON.stringify({ offAll, onHome });
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const rj = JSON.parse(rr);
+    check('2.0-(b) regionReachable (off=전역 true · on+home 셸터=기존 전 지역 true)', rj.offAll === true && rj.onHome === true, JSON.stringify(rj));
+
+    // ── 2e) 2.0-(b) 동부 관문 「국경 길」 — 소문 게이트 → 프로젝트 노출 → 완주 → 이주 개방 사슬 ──
+    const eg = await call(`
+      const S2 = window.__shelter;
+      S2.simReset();
+      const out = {};
+      out.lockedBefore = !S2.shelterUnlocked('customs');                  // 개통 전 세관 봉인
+      out.hiddenBefore = !S2.projectAvailable('eastgate');                // 소문 전 프로젝트 비노출
+      S2.state.eastRoadRumor = 1;                                        // 소문 도달(processDay 훅의 결과 상태)
+      out.shownAfterRumor = S2.projectAvailable('eastgate');
+      // 자재를 채우고 15회 완주 (5+5+5)
+      S2.state.res.material = 200; S2.state.res.parts = 200; S2.state.res.battery = 50; S2.state.res.fuel = 50; S2.state.res.cloth = 50;
+      let guard = 0;
+      while (!S2.projectDone('eastgate') && guard++ < 20) S2.investProject('eastgate');
+      out.invests = guard;
+      out.gateOpen = S2.state.eastGateOpen === true && S2.state.eastGatePending === true;
+      out.unlockedAfter = ['customs', 'bridgehouse', 'terminal', 'penthouse'].every(id => S2.shelterUnlocked(id));
+      return JSON.stringify(out);
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const ej = JSON.parse(eg);
+    check('2.0-(b) 관문 사슬 (봉인→소문 노출→15회 완주→개통 플래그→동부 4셸터 개방)',
+      ej.lockedBefore === true && ej.hiddenBefore === true && ej.shownAfterRumor === true
+      && ej.invests === 15 && ej.gateOpen === true && ej.unlockedAfter === true,
+      JSON.stringify(ej));
+
+    // ── 2f) 2.0-(c) 동부 파밍 8종 (§6.0.5 로스터) — 데이터 정합 + 일괄 게이트 + 도시 분리 ──
+    const EAST8 = ['customsyard', 'containerport', 'interchange', 'uptown', 'grandplatform', 'outpost', 'megamall', 'deptstore'];
+    const ec = await call(`
+      const S2 = window.__shelter;
+      S2.simReset();
+      const E = ${JSON.stringify(EAST8)};
+      const out = {};
+      // 데이터 정합: 8종 존재 · city 태그 · 전리품/가구 풀 id가 실재하는지(오타 = 런타임 undefined 드랍)
+      out.allExist = E.every(r => !!S2.REGIONS[r] && S2.REGIONS[r].city === 'east');
+      out.lootValid = E.every(r => S2.REGIONS[r].lootRes.every(([rid]) => !!S2.RESOURCES[rid]));
+      out.poolValid = E.every(r => S2.REGIONS[r].pool.every(f => !!S2.DEFS[f]));
+      // 구역 4분할: 앵커 셸터 → 구역 → 도시 파생 사슬
+      out.split = S2.districtOf('customs') === 'eastgate' && S2.districtOf('bridgehouse') === 'eastbridge'
+        && S2.districtOf('terminal') === 'eaststation' && S2.districtOf('penthouse') === 'eastcore'
+        && ['eastgate','eastbridge','eaststation','eastcore'].every(d => S2.DISTRICTS[d].city === 'east');
+      // 일괄 게이트: 개통 전 전부 잠김(지도·자동 선택이 이 술어를 공유) → 개통 후 전부 해금
+      out.lockedBefore = E.every(r => !S2.regionUnlocked(r));
+      S2.state.eastGateOpen = true;
+      out.openAfter = E.every(r => S2.regionUnlocked(r));
+      // 도시 분리(cities.enabled on): 동부 셸터에선 동부만, 홈 셸터에선 홈만 닿는다
+      const sav = S2.BAL.cities.enabled;
+      S2.BAL.cities.enabled = true;
+      S2.state.current = 'customs';
+      out.eastSideEast = E.every(r => S2.regionReachable(r));
+      out.eastSideHome = !S2.regionReachable('residential') && !S2.regionReachable('slum');
+      S2.state.current = 'container';
+      out.homeSideEast = E.every(r => !S2.regionReachable(r));
+      // 2.0-(d): 전도 자체도 도시 스코프 — 두 지도가 서로 다른 캔버스인지(백지 지도의 실체)
+      out.mapsDiffer = S2.mapBiomeDataUrl('east') !== S2.mapBiomeDataUrl('home')
+        && S2.mapBiomeDataUrl('east').length > 20000;
+      S2.BAL.cities.enabled = sav;                        // 원복 (후속 테스트 오염 방지)
+      S2.state.eastGateOpen = false;
+      return JSON.stringify(out);
+    `).catch(err => JSON.stringify({ error: String(err) }));
+    const ecj = JSON.parse(ec);
+    check('2.0-(c) 동부 8지역 데이터 정합 (존재·city 태그·전리품/풀 id 실재·구역 4분할)',
+      ecj.allExist === true && ecj.lootValid === true && ecj.poolValid === true && ecj.split === true,
+      JSON.stringify(ecj));
+    check('2.0-(c) 동부 8지역 게이트 (개통 전 전부 잠김 → 개통 후 해금 · 도시 분리 왕복)',
+      ecj.lockedBefore === true && ecj.openAfter === true && ecj.eastSideEast === true
+      && ecj.eastSideHome === true && ecj.homeSideEast === true && ecj.mapsDiffer === true,
+      JSON.stringify(ecj));
+
+    // ── 2g) 동부 4셸터 렌더 스모크 — 로드 + 수 프레임 구동 무예외 ──
+    //   동부는 unlockAt 9999 봉인이라 평시 테스트 경로가 이 코드를 안 밟는다(terminal beamTex 미호출
+    //   크래시가 기초 모델링부터 숨어 있던 이유). 로드 직후가 아니라 렌더 루프(유니폼 리프레시)에서
+    //   터지는 클래스까지 잡으려면 수 프레임을 실제로 돌려야 한다 — 이 게이트가 유일한 순찰자.
+    const smk = await evalJs(`(async () => {
+      const S = window.__shelter;
+      let err = null;
+      const h = (ev) => { err = err || String((ev.error && ev.error.message) || ev.message); };
+      window.addEventListener('error', h);
+      S.state.eastGateOpen = true;
+      for (const sid of ['customs', 'bridgehouse', 'terminal', 'penthouse']) {
+        S.loadShelter(sid);
+        await new Promise(r => setTimeout(r, 450));
+        if (err) { err = sid + ': ' + err; break; }
+      }
+      window.removeEventListener('error', h);
+      S.state.eastGateOpen = false;
+      S.simReset();
+      return JSON.stringify({ err });
+    })()`);
+    const smj = JSON.parse(smk);
+    check('2.0-(d) 동부 4셸터 렌더 스모크 (로드+수 프레임 무예외 — 봉인 코드 경로 상시 순찰)',
+      smj.err === null, JSON.stringify(smj));
 
     // ── 2b) #195 레이아웃 아이템 왕복 (감사 P2: MIG 게이트가 톱레벨만 봐 y·s·t·ge가 그물 밖이던 사각) ──
     //   저장 스키마(d/c/x/z/r/o/y/s/t/ge) → loadSave 복원 → 인메모리 아이템 필드 → flushSave 재직렬화까지
@@ -690,29 +818,35 @@ const KNOWLEDGE_HASH = -451536973;
     else check('가방/내구 플로어 (실패+보유=회수·1마모 / 미보유=0)', bagJ.gained >= 1 && bagJ.durAfter === 1 && bagJ.gained2 <= 0,
       JSON.stringify(bagJ));
 
-    // 시그니처 도면 (DDD-4): 8종 정의 무결(지역별 2~3·색 4종) + 제작 목록 도면 게이트
+    // 시그니처 도면 (DDD-4 + 2.0-(e)): 가구 8종+동부 복장 4종 정의 무결 + 제작 목록 도면 게이트
+    //   2.0-(e): 시그니처가 두 종족이 됐다 — 가구(DEFS·색 4종) / 복장(outfit_* → OUTFITS·pal). 동부 지역은 1종씩.
     const bp = await call(`
       S.simReset();
       const map = S.BAL.blueprint.regionItems;
       const ids = Object.values(map).flat();
-      const defsOk = ids.every(id => S.DEFS[id] && S.DEFS[id].colors.length === 4);
-      const perRegion = Object.values(map).every(a => a.length >= 2 && a.length <= 3);
+      const furnIds = ids.filter(id => !id.startsWith('outfit_'));
+      const outfitIds = ids.filter(id => id.startsWith('outfit_'));
+      const defsOk = furnIds.every(id => S.DEFS[id] && S.DEFS[id].colors.length === 4)
+        && outfitIds.every(id => S.OUTFITS[id.slice(7)] && S.OUTFITS[id.slice(7)].pal);
+      const perRegion = Object.values(map).every(a => a.length >= 1 && a.length <= 3);
       S.state.blueprints = {};
       S.openCraftModal();
       const h0 = document.getElementById('modal-body').innerHTML;
-      const hidden = ids.every(id => !h0.includes(S.DEFS[id].name));
-      S.state.blueprints = { neonvip: 1 };
+      const hidden = furnIds.every(id => !h0.includes(S.DEFS[id].name))
+        && outfitIds.every(id => !h0.includes(S.OUTFITS[id.slice(7)].name));
+      S.state.blueprints = { neonvip: 1, outfit_towncoat: 1 };
       S.openCraftModal();
       const h1 = document.getElementById('modal-body').innerHTML;
-      const shown = h1.includes(S.DEFS.neonvip.name) && !h1.includes(S.DEFS.suit.name);
+      const shown = h1.includes(S.DEFS.neonvip.name) && !h1.includes(S.DEFS.suit.name)
+        && h1.includes(S.OUTFITS.towncoat.name) && !h1.includes(S.OUTFITS.customsvest.name);
       document.getElementById('modal-back').style.display = 'none';
-      return JSON.stringify({ n: ids.length, defsOk, perRegion, hidden, shown });
+      return JSON.stringify({ n: ids.length, nf: furnIds.length, no: outfitIds.length, defsOk, perRegion, hidden, shown });
     `).catch(err => JSON.stringify({ error: String(err) }));
     const bpj = JSON.parse(bp);
     if (bpj.error) check('도면 (예외 없이)', false, bpj.error);
     else {
-      check('도면/8종 정의 무결 (지역별 2~3·색 4종)', bpj.n === 8 && bpj.defsOk && bpj.perRegion, JSON.stringify(bpj));
-      check('도면/제작 게이트 (미보유=비노출 → 보유만 노출)', bpj.hidden === true && bpj.shown === true, `hidden ${bpj.hidden} shown ${bpj.shown}`);
+      check('도면/12종 정의 무결 (가구 8 + 동부 복장 4)', bpj.n === 12 && bpj.nf === 8 && bpj.no === 4 && bpj.defsOk && bpj.perRegion, JSON.stringify(bpj));
+      check('도면/제작 게이트 (미보유=비노출 → 보유만 노출, 가구·복장 공통)', bpj.hidden === true && bpj.shown === true, `hidden ${bpj.hidden} shown ${bpj.shown}`);
     }
     // #190 커먼 도면 (「생존의 흔적」 밀도 프롭 5종): 정의 무결 + 레시피 bp 링크 + 게이트 + 시그니처 풀 비오염
     const cbp = await call(`
@@ -858,11 +992,12 @@ const KNOWLEDGE_HASH = -451536973;
     const lj = JSON.parse(lp);
     if (lj.error) check('#189 P1 (예외 없이)', false, lj.error);
     else {
-      check('#189 P1 폴백 게이트 (광원 0=10 → 랜턴=0 → 연료 소진=10)',
-        lj.empty.fallback === 10 && !lj.empty.hasLight && lj.lantern.fallback === 0 && lj.lantern.hasLight && lj.fuelOut.fallback === 10 && !lj.fuelOut.hasLight,
+      // 디렉터 정정(2026-07-17): 폴백은 상시 유지 + 광원 가산 — 구 어서션(광원 시 폴백 0)은 폐기
+      check('#189 P1 폴백 가산 모델 (폴백 상시 10 · 광원 레지스트리 판정 유지)',
+        lj.empty.fallback === 10 && !lj.empty.hasLight && lj.lantern.fallback === 10 && lj.lantern.hasLight && lj.fuelOut.fallback === 10 && !lj.fuelOut.hasLight,
         JSON.stringify({ e: lj.empty, l: lj.lantern, f: lj.fuelOut }));
-      check('#189 P1 조명 설비 (점등·배터리 1/일·단전 소등+노트)',
-        lj.mod.facility === true && lj.mod.fallback === 0 && lj.drain === 1 && lj.blackout.facility === false && lj.blackout.fallback === 10 && lj.outNote === true,
+      check('#189 P1 조명 설비 (점등·배터리 1/일·단전 소등+노트 — 폴백은 가산 모델로 상시)',
+        lj.mod.facility === true && lj.mod.fallback === 10 && lj.drain === 1 && lj.blackout.facility === false && lj.blackout.fallback === 10 && lj.outNote === true,
         JSON.stringify({ mod: lj.mod, drain: lj.drain, bo: lj.blackout, note: lj.outNote }));
       check('#189 P1 발전기 무료 급전 (배터리 불변·재점등)',
         lj.freePower === true && lj.backOn.facility === true,

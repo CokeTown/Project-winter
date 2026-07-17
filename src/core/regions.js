@@ -8,7 +8,7 @@
    ============================================================ */
 import { state } from './state.js';
 import { seasonOf } from './season.js';
-import { rateParts, masteryTier } from './expedition.js';
+import { rateParts, masteryTier, cityOf } from './expedition.js';
 import { REGIONS } from '../data/world.js';
 import { SHELTER_META } from '../data/shelters.js';
 import { BAL } from '../data/balance.js';
@@ -40,10 +40,23 @@ export function regionUnlocked(rid) {
   // #167 2겹화 파일럿: 뒷골목 심부는 겉(슬럼)을 아는 사람에게만 — 숙련 ★1(20회 시도)이 곧 열쇠.
   //   "다시 마주칠 때 더 보인다"(DEPTH-DESIGN)의 공간 적용. 해금 전엔 지도에 아예 없다(소문조차 없음).
   if (rid === 'slumdeep') return masteryTier('slum') >= 1;
+  // 2.0-(c): 동부 신영토 8지역 일괄 게이트 — 관문 「국경 길」 완공(eastGateOpen) 전엔 존재 자체가 없다
+  //   (지도·자동 선택·원정 전부 이 술어를 거친다). cities.enabled와 무관 — 개통은 플레이어가 번 것.
+  if (regionCityOf(rid) === 'east') return !!state.eastGateOpen;
   return true;
 }
 export function isForbiddenRegion(regionId) {
   return !!REGIONS[regionId]?.forbidden;
+}
+// 2.0-(b) (§9.8.3): 지역의 소속 도시 — REGIONS city 태그(누락=home, 기존 10지역 전부 해당).
+export function regionCityOf(rid) {
+  return REGIONS[rid]?.city || 'home';
+}
+// 2.0-(b): 현 도시에서 닿는 지역인가 — 원정 UI·자동 선택·출발 게이트 공용 술어.
+//   기능 플래그 off = 현 전역 회귀(§9.8.3 격리 원칙): 동부 콘텐츠가 열리기 전까지 동작 변화 0.
+export function regionReachable(rid) {
+  if (!BAL.cities?.enabled) return true;
+  return regionCityOf(rid) === cityOf(state.current);
 }
 export function subwayReaches(regionId) {
   return !!(state.subwayOpen && state.subwayOpen[regionId]);
@@ -69,6 +82,7 @@ export function pickAutoRegion() {
   let bestId = null, bestW = -1;
   for (const id of Object.keys(REGIONS)) {
     if (!regionUnlocked(id)) continue;      // 미해금 제외
+    if (!regionReachable(id)) continue;     // 2.0-(b): 타 도시 지역 제외 (플래그 off면 전부 통과)
     if (blizzardBlocks(id)) continue;       // 폭설 봉쇄 제외
     if (isForbiddenRegion(id)) continue;    // 금지 구역 제외(방호복·수동 전략 레버)
     if (_autoAvoid(id)) continue;           // #193 눈사태 봉쇄/예보 당일 + 하드 도심 적대 제외

@@ -81,6 +81,11 @@ export const state = {
   bagDur: 0,              // DDD-3 내구성 가방 — 남은 내구(0=미보유). 소지만 하면 자동 적용, 발동 시 1 마모
   blueprints: {},         // DDD-4 시그니처 도면 { 가구id: 1 } — 보유해야 제작 목록에 뜬다(지역 독점)
   sights: {},             // 비네트 「본 광경」 { id: 본 횟수 } — 발코니 조망 등 (2.0 동부)
+  // ── 2.0-α 4도시 그라운드워크 (§9.8 — 가산 필드 4. 복장 소유/착용은 기존 outfits/outfit 재사용) ──
+  citiesReached: {},      // 도달한 도시 { cityId: 1 } — loadShelter가 기록. 「도시를 밟았다」 마일스톤·도감 축
+  cityWinters: {},        // 도시별로 넘긴 겨울 수 { cityId: n } — passWinter 기록, 엔딩 체류 가중(§9.8.7)의 원료
+  finalWinterCity: null,  // 마지막(9번째+) 겨울을 넘긴 도시 — "어디서 끝났나"의 결정력(Wf ≫ W)
+  homeStay: {},           // 셸터별 최장 연속 체류일 { shelterId: n } — stayDays는 이주 시 리셋되므로 기록 보존용
   // ── Nine Winters 엔드게임 마일스톤 (#11) ──
   winters: 0,          // 넘긴 겨울 수 (봄으로 넘어가는 날 +1). 제목이 곧 장기 목표.
   demoEnded: false,    // #74 데모 빌드 전용: (구) 첫 겨울 통과로 데모가 끝난 세이브. 재설계 후 demoPhase 브리지로만 참조 (정식 빌드에선 항상 false)

@@ -1,19 +1,45 @@
+/* ── #207 웹 흔적 제거 (디렉터 2026-07-17): 기본 스크롤바·커서 금지 — 테마 커스텀 ──
+   스크롤바: 다크 트랙+판자 그린 썸(각짐, 라운드 없음 — 픽셀 결). 전 스크롤 표면 공통.
+   커서: 절차 도트 24px 2종(dataURL — 외부 에셋 0). 기본=크림 화살표, 인터랙티브=그린 필. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: rgba(8, 12, 9, 0.9); }
+::-webkit-scrollbar-thumb { background: var(--panel-border, #3f6a46); border: 2px solid rgba(8, 12, 9, 0.95); }
+::-webkit-scrollbar-thumb:hover { background: #57895f; }
+::-webkit-scrollbar-corner { background: rgba(8, 12, 9, 0.9); }
+body, canvas { cursor: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAz0lEQVR4AbXBsY0DIRBA0T+IAogItgwSOqBoOiChDAIiOsAgXbCy5LN37XmPw7t5eDdRYlAmh3eTk9aH8EMGZZY/tWS2ENNkaX0IP2BQZnlSS2YLMU2W1ofwBYMyywu1ZLYQ02RpfQg3GJRZ3qgls4WYJkvrQ7jAoMzyoVoyW4hpsrQ+hA8YlFkuqiWzhZgmS+tD+IdBmeWNEBPfMCizPAkxsdWSOWt9CDcYlMnh3eSk9SEsh3eTpZbMFmJia30IFxiUCS8c3k1OWh/CDQZlDx3tRKpxtxu9AAAAAElFTkSuQmCC) 2 2, auto; }
+/* 인터랙티브 커서는 개별 규칙(button.pixel-btn 등)의 cursor:pointer보다 항상 우선해야 하는 전역 테마 속성 — important가 의도 */
+button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-item { cursor: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAzklEQVR4AbXBsY0DIRBA0T+IAogItjACYsoiJqAwAiI6wCBdsLLks3fteY/Du3l4N1FiUCaHd5OT1ofwQwZllj+pRrYcymRpfQg/YFBmeZJqZMuhTJbWh/AFgzLLC6lGthzKZGl9CDcYlFneSDWy5VAmS+tDuMCgzPKhVCNbDmWytD6EDxiUWS5KNbLlUCZL60P4h0GZ5Y0cCt8wKLM8yaGwpRo5a30INxiUyeHd5KT1ISyHd5Ml1ciWQ2FrfQgXGJQJLxzeTU5aH8INBmUPlbtFkwOsGasAAAAASUVORK5CYII=) 2 2, pointer !important; }
 @font-face {
     font-family: 'DungGeunMo';
     src: url('./assets/fonts/DungGeunMo.woff') format('woff');
     font-weight: normal; font-style: normal; font-display: swap;
   }
+  /* ── UI 표면 언어 A안 (디렉터 확정 2026-07-17): "클로드 스타일" 청회 차콜 → Nine Winters 고유 재질 ──
+     잿빛(웜 차콜) 판자·강판 + 앰버(랜턴) + 종이 토큰. 레이아웃 불변 — 관상 3요소(팔레트·프레임·재질)만 교체. */
   :root {
-    --panel-bg: rgba(16, 18, 23, 0.93);
-    --panel-border: #3a3f4d;
-    --accent: #e8a86c;
-    --good: #8fbb7a;
-    --bad: #c96a5f;
-    --text: #d8d5cc;
-    --text-dim: #8a8d99;
+    --panel-bg: rgba(7, 16, 10, 0.95);      /* 웜 차콜(잿빛) — 청색기 제거 */
+    --panel-border: #3f6a46;                  /* 그을린 나무·강판 웜 그레이 */
+    --panel-edge: #0a140c;                    /* 외곽 프레임(근흑 웜) */
+    --panel-hi: rgba(140, 255, 170, 0.06);    /* 상단 하이라이트 — 랜턴 빛이 스치는 면 */
+    --accent: #f0f5ee;
+    --good: #a8e0b0;
+    --bad: #ffffff;
+    --text: #e6efe4;
+    --text-dim: #7da884;                      /* 청회 딤 → 웜 딤 */
+    --paper: #d8cdb4;                         /* 종이 토큰 (B단계 수첩 대비) */
+    --paper-ink: #3a3226;
     --uiz: 1;
     --rarity-rare: #b06ee6;   /* 희귀 = 보라 (도료·책) */
     --rarity-legend: #ffcf49; /* 전설 = 금색 (도면·네온 안료) */
+    /* ── UI 토큰 정본(docs/design/UI-TOKENS.md) — 신규 CSS는 이 밖의 리터럴 금지 ── */
+    --fs-s: 10px;   /* 캡션·태그·보조 수치 */
+    --fs-m: 12px;   /* 본문·버튼·리스트 행 */
+    --fs-l: 15px;   /* 창 제목·섹션 헤더 */
+    --fs-display: 26px; /* 계기 디스플레이(시계 숫자) */
+    --r: 3px;       /* 라운드 단일값 — 종이·LCD 내부는 0 */
+    --lcd-ink: #8cf5a6; /* PDA·필드 터미널 포스퍼 */
+    --lcd-dim: #4a8a58;
+    --bloom: 0 0 6px rgba(120, 255, 150, 0.45); /* LCD 포스퍼 블룸 1규칙 */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   /* ── 생성 아트 아이콘 (#19): 이모지 UI 교체 ── */
@@ -50,8 +76,14 @@
   #c { display: block; width: 100%; height: 100%; }
 
   .panel {
-    position: absolute; background: var(--panel-bg);
-    border: 2px solid var(--panel-border); border-radius: 4px;
+    position: absolute;
+    /* 재질: 상단 랜턴 하이라이트 + 미세 수평 그레인(판자 결) + 웜 차콜 — 플랫 사각 탈피 */
+    background:
+      linear-gradient(180deg, var(--panel-hi), transparent 22%),
+      repeating-linear-gradient(0deg, rgba(255, 236, 200, 0.016) 0 1px, transparent 1px 3px),
+      var(--panel-bg);
+    border: 2px solid var(--panel-edge); border-radius: 2px;
+    box-shadow: inset 0 0 0 1px var(--panel-border), 0 3px 10px rgba(0, 0, 0, 0.35);
     padding: 10px 12px;
     zoom: var(--uiz);
     /* P1-F: 라운드 코너 기준 내부 클리핑 — p-head의 음수 마진/줌 반올림으로 생기는
@@ -66,10 +98,12 @@
   }
   button.pixel-btn {
     font-family: inherit; font-size: 11px; color: var(--text);
-    background: #262a35; border: 2px solid var(--panel-border); border-radius: 3px;
+    background: #2b2620; border: 2px solid var(--panel-edge); border-radius: 2px;
+    box-shadow: inset 0 1px 0 rgba(255, 236, 200, 0.09), inset 0 -2px 0 rgba(0, 0, 0, 0.32); /* 픽셀 베벨 */
     padding: 6px 9px; cursor: pointer;
     white-space: nowrap; /* 좁아져도 글자가 세로로 꺾이지 않게 */
   }
+  button.pixel-btn:active { box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.32); transform: translateY(1px); }
   button.pixel-btn:hover { border-color: var(--accent); color: var(--accent); }
   button.pixel-btn.danger:hover { border-color: var(--bad); color: var(--bad); }
   button.pixel-btn.primary { border-color: #6b5a40; color: var(--accent); }
@@ -80,7 +114,7 @@
   .zzz-badge {
     position: absolute; top: -6px; right: -4px;
     padding: 1px 3px; font-size: 9px; line-height: 1; font-weight: bold;
-    background: #2c3444; color: #cfe0ff; border: 1px solid #10141c; border-radius: 4px;
+    background: #3a332a; color: #ffe2b8; border: 1px solid #10141c; border-radius: 4px;
     pointer-events: none; letter-spacing: 0.5px;
   }
   .act-glyph {
@@ -131,6 +165,354 @@
     position: relative; z-index: 1; font-size: 10px; line-height: 12px;
     display: block; text-align: center; text-shadow: 1px 1px 0 #0008;
   }
+  /* ── #199 5차 「필드 터미널」: 거점 패널 = PDA 그린 디지털 (디렉터 목업) ──
+     구성: 셸터 라인 · 게이지 카드 4(아이콘+라벨+큰 숫자+컬러 바) · 컨디션 스트립 · 액션 그리드.
+     접기(–)는 웹 문법이라 hud에선 제거 — 전역 👁 숨김이 대체. 종이 스킨(B-1)은 폐기. */
+  #hud {
+    background: linear-gradient(180deg, #0c1810, #060e08);
+    border-color: #3f6a46;
+  }
+  #hud .p-min { display: none; }
+  #hud .shelter-name {
+    display: block; color: #ffffff; font-size: var(--fs-m);
+    padding: 4px 2px 8px; /* 토큰 수렴: 블룸은 g-num 1곳만(--bloom 규칙) — 이름 글로우 제거 */
+    word-break: keep-all;
+  }
+  #hud .shelter-name .px-icon { width: 14px; height: 14px; vertical-align: -3px; }
+  #hud #gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 6px; } /* 계기 3종(밥·물·에너지) — 폭 확보로 라벨 잘림 해소 */
+  #hud #btn-journal { display: none; } /* 일지 진입점은 우측 도킹 — 그리드 중복 제거(디렉터) */
+  #hud .gauge {
+    height: auto; display: flex; flex-direction: column; gap: 4px;
+    padding: 5px 6px 6px;
+    background: #081209; border: 1px solid #3f6a46; border-radius: var(--r); /* 토큰: 인셋 섀도 제거(요소 단위 남발 금지) */
+  }
+  #hud .gauge:hover { border-color: #6fae78; }
+  #hud .g-top { display: flex; align-items: center; gap: 2px; }
+  #hud .g-top .px-icon { width: 12px; height: 12px; flex: 0 0 auto; }
+  #hud .g-name { font-size: 10px; color: #7da884; letter-spacing: 0; min-width: 0; overflow: hidden; white-space: nowrap; } /* 3열 폭 확보 — 라벨 원복 */
+  #hud .g-num {
+    margin-left: auto; font-size: var(--fs-m); color: #f0f5ee; font-weight: normal;
+    font-variant-numeric: tabular-nums; text-shadow: var(--bloom); /* 화면 유일 블룸 */
+  }
+  #hud .g-bar { position: relative; height: 5px; background: rgba(170, 240, 185, 0.1); overflow: hidden; } /* LCD 내부 = 각지게(토큰) */
+  #hud .g-fill { position: absolute; inset: 0 auto 0 0; display: block; height: 100%; width: 50%; transition: width 0.3s; } /* 전역 .g-fill(inset:0 카드 채움) 무력화 — 바 안에서만 */
+  /* 게이지 고유색(디렉터 목업: 배고픔 머스터드·수분 시안·에너지 그린) + 청결 라임 */
+  #hud #g-hunger .g-fill { background: #cfe0c8; }
+  #hud #g-thirst .g-fill { background: #cfe0c8; }
+  #hud #g-energy .g-fill { background: #cfe0c8; }
+  #hud #g-clean .g-fill { background: #cfe0c8; }
+  /* 위험색은 게이지 고유색(ID 셀렉터)보다 강하게 — #gauges ID 중첩으로 승격 */
+  #hud #gauges .g-fill.warn { background: #ffffff; }
+  #hud #gauges .g-fill.crit { background: #ffffff; animation: dkblink 1.1s steps(1) infinite; }
+  #hud .stat { /* 컨디션 스트립: 날씨 | 경고 | 탐험 */
+    display: flex; align-items: center; justify-content: space-around; gap: 4px;
+    background: #081209; border: 1px solid #3f6a46; border-radius: var(--r);
+    padding: 5px 6px; margin-bottom: 8px;
+    font-size: var(--fs-s); color: #cfe0c8;
+  }
+  #hud .stat .cond-seg { display: flex; align-items: center; gap: 4px; line-height: 1; }
+  #hud .stat .cond-seg .px-icon { width: 14px; height: 14px; flex: 0 0 auto; } /* 아트 아이콘 — 이모지 베이스라인 어긋남 해소 */
+  #hud .stat .cond-seg b { color: #f0f5ee; font-weight: normal; font-variant-numeric: tabular-nums; }
+  #hud .stat .cond-seg b.bad { color: #ffffff; }
+  #hud .stat .cond-div { color: #3f6a46; }
+  #hud .btn-row.icons { gap: 4px; }
+  #hud .btn-row.icons .pixel-btn {
+    padding: 6px 0 5px;
+    background: #0b1710; /* 토큰 수렴: 그라데이션 버튼(웹 문법)→솔리드 면 */
+    border-color: #3f6a46; border-radius: var(--r);
+  }
+  #hud .btn-row.icons .pixel-btn:hover { border-color: #6fae78; }
+  #hud .btn-row.icons .act-icon { width: 24px; height: 24px; }
+  #hud .btn-row.icons .act-lbl { color: #7da884; }
+  #hud .btn-row.icons .pixel-btn.primary {
+    border-color: #ffffff;
+    box-shadow: 0 0 6px rgba(170, 240, 185, 0.22); /* 화면당 글로우 1곳 = 주 행동(탐험) */
+  }
+  #hud .btn-row.icons .pixel-btn.primary .act-lbl { color: #ffffff; }
+  /* ── #199 UI B: 우측 엣지 도킹(접힘 보관) + PDA 계측 오버레이 ──
+     디렉터 레퍼런스: 화면 우측에 반쯤 걸친 PDA 하우징·가죽 일지. 당기면 열림.
+     하이브리드: 계측=전자(LCD 포스퍼 — 기존 #lcd 톤 계승), 기록=종이(일지=기존 저널). */
+  #edge-dock { /* 화면 측면 상주(디렉터) — 오버레이가 열려도 딤(58) 위에 남아 토글 가능 */
+    position: fixed; right: 0; top: 20%; z-index: 59;
+    display: flex; flex-direction: column; gap: 10px;
+    align-items: flex-end; /* 디렉터 신고: PDA(53px)가 일지 폭 컨테이너에서 왼쪽 정렬돼 우측 갭 발생 — 끝 정렬로 밀착 */
+    zoom: var(--uiz);
+  }
+  #edge-dock button { /* 호버=살짝 튀어나옴(디렉터 오더) — 오버슈트 커브로 반응형 팝 */
+    display: flex; align-items: center; padding: 0; cursor: pointer;
+    background: none; border: none; font-family: inherit;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(-3px 3px 4px rgba(0, 0, 0, 0.5));
+  }
+  /* PDA 에셋은 각인·계기 윈도가 몸통 중앙~우측 — 살짝만 걸치고 거의 다 보인다.
+     주의: #edge-dock button(1-0-1)이 #dock-pda(1-0-0)를 이긴다 — 반드시 #edge-dock 프리픽스로 승격. */
+  #edge-dock #dock-pda { transform: translateX(12%); }
+  #edge-dock #dock-pda:hover, #edge-dock #dock-pda:focus-visible { transform: translateX(2%); }
+  #edge-dock #dock-journal { transform: translateX(30%); }
+  #edge-dock #dock-journal:hover, #edge-dock #dock-journal:focus-visible { transform: translateX(10%); }
+  #edge-dock button:active { transform: translateX(0%) !important; transition-duration: 0.1s; }
+  #edge-dock #dock-pda { /* 하우징=디렉터 에셋(dock_pda.png, JS 인라인) — 마이크로 게이지만 그린 윈도 위에 */
+    position: relative; width: 53px; aspect-ratio: 373 / 928; /* 디렉터 2차 축소: 76px도 과대 — 추가 30% 감 */
+    background: center / contain no-repeat; /* 축소 표시 — 스무스 다운스케일이 디테일 보존(픽셀아트 확대와 반대) */
+    /* 어두운 씬에 묻히는 실루엣 분리: 밝기 리프트 + 앰버 림 */
+    filter: brightness(1.22) saturate(1.05) drop-shadow(0 0 5px rgba(170, 240, 185, 0.22)) drop-shadow(-3px 3px 4px rgba(0, 0, 0, 0.55));
+  }
+  .dk-pull { /* 일지 도킹(에셋 대기)용 풀 핸들 */
+    color: #d8cdb4; font-size: 14px; line-height: 1; padding: 10px 3px;
+    background: rgba(20, 17, 13, 0.85); border: 2px solid #4a4136; border-right: none;
+    border-radius: 4px 0 0 4px; text-shadow: 0 0 4px rgba(216, 205, 180, 0.4);
+  }
+  .dk-body { /* 일지 도킹 몸체(가죽) 베이스 — PDA 도킹(53px)과 밸런스 */
+    display: flex; flex-direction: column; gap: 4px; width: 62px; padding: 7px 8px;
+    border: 2px solid #14110d; border-radius: 8px 0 0 8px; border-right: none;
+  }
+  #dock-pda .dk-gauges { /* 에셋 그린 윈도 유리 안 LED 4줄 — 실계측 */
+    position: absolute; left: 45%; top: 46.6%; width: 26%; height: 15.2%;
+    display: flex; flex-direction: column; gap: 2px; justify-content: center;
+  }
+  .dk-gauges i {
+    display: block; height: 4px; width: 100%; border-radius: 1px;
+    background:
+      linear-gradient(90deg, #f0f5ee 0 var(--v, 50%), rgba(170, 240, 185, 0.12) var(--v, 50%) 100%);
+    box-shadow: 0 0 3px rgba(120, 255, 150, 0.35);
+  }
+  .dk-gauges i.warn { background: linear-gradient(90deg, #ffffff 0 var(--v, 50%), rgba(170, 240, 185, 0.14) var(--v, 50%) 100%); box-shadow: 0 0 3px rgba(170, 240, 185, 0.4); }
+  .dk-gauges i.crit { background: linear-gradient(90deg, #ffffff 0 var(--v, 50%), rgba(255, 255, 255, 0.16) var(--v, 50%) 100%); box-shadow: 0 0 4px rgba(255, 255, 255, 0.55); animation: dkblink 1.1s steps(1) infinite; }
+  @keyframes dkblink { 50% { opacity: 0.45; } }
+  .dk-body.leather { /* 가죽 일지: 스티치 + 견출지 라벨 + 클립 */
+    gap: 6px;
+    background:
+      radial-gradient(140% 100% at 20% 0%, rgba(255, 240, 210, 0.07), transparent 55%),
+      linear-gradient(170deg, #4a3c2a, #382c1e 70%, #2c2216);
+    box-shadow: inset 0 0 0 3px rgba(20, 17, 13, 0.35), inset 0 0 0 4px rgba(216, 205, 180, 0.14), inset 0 -2px 5px rgba(0, 0, 0, 0.4);
+  }
+  #dock-journal .dk-label {
+    align-self: flex-start; font-size: 10px; letter-spacing: 2px; color: #3a3226;
+    background: #d8cdb4; padding: 3px 8px; border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+  .dk-clip { /* 종이 + 클립 삐져나옴 */
+    height: 12px; border-radius: 2px;
+    background: linear-gradient(180deg, #e2d8bf 0 8px, transparent 8px);
+    position: relative;
+  }
+  .dk-clip::after {
+    content: ''; position: absolute; left: 8px; top: -3px; width: 8px; height: 14px;
+    border: 2px solid #9aa0a6; border-radius: 4px 4px 2px 2px; border-bottom: none;
+  }
+  /* ── PDA 오버레이 ── */
+  #pda-back {
+    position: fixed; inset: 0; z-index: 58; /* 모달(50)·tip 위, 저널(60) 아래 */
+    background: rgba(8, 9, 12, 0.5);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #pda { /* #199 3차(디렉터 에셋): PDA-04 픽셀아트가 하우징 — CSS 재현 폐기, 이미지 위에서 동작 */
+    position: relative; zoom: var(--uiz);
+    height: min(720px, calc(88vh / var(--uiz, 1)), calc(92vw / var(--uiz, 1) * 1.7315)); /* 비율 잠금 — % 히트 좌표 보전 */
+    aspect-ratio: 391 / 677; /* 트림된 에셋 비율 */
+    background: center / contain no-repeat; /* 이미지는 JS 인라인(709행 교훈: CSS url()은 번들 후 /assets/ 기준으로 깨짐) */
+    image-rendering: pixelated;
+    filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.6));
+  }
+  #pda-lcd { /* 에셋 스크린 유리 좌표(%): 콘텐츠는 이 안에서만 산다 */
+    position: absolute; left: 8.2%; top: 14.6%; width: 83.4%; height: 67.2%;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  #pda-lcd::after { /* 유리 반사 + CRT 스윕 — 에셋 유리 위 은은하게 */
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(130% 55% at 82% 0%, rgba(255, 255, 255, 0.04), transparent 42%),
+      linear-gradient(180deg, rgba(170, 240, 185, 0.06), transparent 70%);
+    background-repeat: no-repeat;
+    background-size: 100% 100%, 100% 90px;
+    animation: crtSweep 7s linear infinite;
+  }
+  @keyframes crtSweep {
+    from { background-position: 0 0, 0 -90px; }
+    to { background-position: 0 0, 0 calc(100% + 90px); }
+  }
+  .pda-boot { animation: pdaBoot 0.3s steps(3); }
+  @keyframes pdaBoot { 0% { opacity: 0.15; } 55% { opacity: 0.75; } 70% { opacity: 0.4; } 100% { opacity: 1; } }
+  #pda-screen { /* 에셋 유리가 배경 — 콘텐츠는 포스퍼 텍스트만 얹는다 */
+    flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    background: repeating-linear-gradient(180deg, rgba(170, 240, 185, 0.02) 0 2px, transparent 2px 4px);
+    padding: 2px 12px 10px; color: #f0f5ee; font-size: 11px; line-height: 1.8;
+    text-shadow: 0 0 4px rgba(120, 255, 150, 0.3); word-break: keep-all;
+  }
+  #pda-screen::-webkit-scrollbar { width: 5px; }
+  #pda-screen::-webkit-scrollbar-thumb { background: #3f5a35; border-radius: 3px; }
+  #pda-screen .ph { font-size: 10px; letter-spacing: 2px; color: #7da884; border-bottom: 1px solid rgba(125, 168, 132, 0.4); padding-bottom: 3px; margin-bottom: 6px; }
+  #pda-screen .ph:not(:first-child) { margin-top: 12px; }
+  #pda-screen .pline { display: flex; align-items: center; gap: 8px; }
+  #pda-screen .pline .pk { flex: 0 0 auto; min-width: 64px; color: #cfe0c8; }
+  #pda-screen .pline .pbar { flex: 1; height: 8px; background: rgba(170, 240, 185, 0.1); border: 1px solid #3f6a46; border-radius: 2px; overflow: hidden; }
+  #pda-screen .pline .pbar > i { display: block; height: 100%; background: #cfe0c8; box-shadow: 0 0 5px rgba(120, 255, 150, 0.5); }
+  #pda-screen .pline .pbar > i.warn { background: #cfe0c8; box-shadow: 0 0 5px rgba(170, 240, 185, 0.5); }
+  #pda-screen .pline .pbar > i.crit { background: #ffffff; box-shadow: 0 0 5px rgba(255, 255, 255, 0.6); }
+  #pda-screen .pline .pv { flex: 0 0 auto; min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+  #pda-screen .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+  #pda-screen .pcell { display: flex; align-items: center; gap: 6px; border-bottom: 1px dashed rgba(125, 168, 132, 0.3); padding: 2px 0; }
+  #pda-screen .pcell .pn { margin-left: auto; font-variant-numeric: tabular-nums; }
+  #pda-screen .pcell.zero { color: #cfe0c8; }
+  #pda-screen .pcell.zero .pn { animation: dkblink 1.1s steps(1) infinite; }
+  #pda-screen .pmap { position: relative; margin-top: 6px; border: 1px solid #3f6a46; border-radius: 3px; overflow: hidden; }
+  #pda-screen .pmap img {
+    display: block; width: 100%; image-rendering: pixelated;
+    /* 종이 지도 → 포스퍼 스캔: invert로 어두운 바탕+발광 라인 (밝은 라임 뜸 방지) */
+    filter: grayscale(1) invert(1) sepia(1) hue-rotate(60deg) saturate(2.2) brightness(0.78) contrast(1.15);
+  }
+  #pda-screen .pmap .pyou {
+    position: absolute; width: 9px; height: 9px; transform: translate(-50%, -50%); border-radius: 50%;
+    background: #f0f5ee; box-shadow: 0 0 7px rgba(120, 255, 150, 0.9), 0 0 0 2px rgba(8, 18, 10, 0.8);
+    animation: dkblink 1.4s steps(1) infinite;
+  }
+  #pda-screen .pnote { color: #7da884; font-size: 10.5px; }
+  #pda-screen .pbtn-row { margin-top: 10px; display: flex; justify-content: flex-end; }
+  #pda-screen ul.plog { margin: 0; padding-left: 14px; }
+  #pda-screen ul.plog li { margin: 2px 0; }
+  .pda-flick { animation: pdaFlick 0.16s steps(2); }
+  @keyframes pdaFlick { 0% { opacity: 0.35; } 100% { opacity: 1; } }
+  #pda-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
+  .pda-tab { /* LCD 상단 세그먼트 탭 — 화면 안에서 동작. 하드웨어 버튼과 병행, 터치 타깃 확보 */
+    flex: 1; padding: 8px 2px; cursor: pointer;
+    font-family: inherit; font-size: 10px; letter-spacing: 1px; color: #6fae78;
+    background: transparent; border: 1px solid #3f6a46; border-radius: 2px;
+    text-shadow: 0 0 4px rgba(120, 255, 150, 0.2);
+  }
+  .pda-tab.active {
+    color: #f0f5ee; background: #1c3a24; border-color: #6fae78;
+    text-shadow: 0 0 6px rgba(120, 255, 150, 0.6);
+  }
+  .pda-hit { /* 에셋에 그려진 물리 버튼 자리 위 투명 히트 영역 — 누르면 살짝 발광 */
+    position: absolute; background: transparent; border: none; cursor: pointer; border-radius: 6px;
+  }
+  .pda-hit:active { background: rgba(255, 255, 255, 0.1); }
+  #pda-hit-back { left: 23.5%; top: 85.2%; width: 12%; height: 9%; }
+  #pda-hit-ok { left: 60.5%; top: 85.2%; width: 12%; height: 9%; }
+  .pda-hit.dp[data-d="up"] { left: 45%; top: 84%; width: 10%; height: 4.6%; }
+  .pda-hit.dp[data-d="down"] { left: 45%; top: 92%; width: 10%; height: 4.6%; }
+  .pda-hit.dp[data-d="left"] { left: 38.5%; top: 87.6%; width: 6.5%; height: 5%; }
+  .pda-hit.dp[data-d="right"] { left: 55%; top: 87.6%; width: 6.5%; height: 5%; }
+  /* #199 3차(디렉터 확정): 자원 패널 → PDA 자원 탭·도킹 LED로 이관. 상단엔 필수 계기만 남는다. */
+  #res-bar { display: none !important; }
+  /* ── 「필드 노트」 오버레이 — 디렉터 에셋(가죽 수첩 펼침) 위 존 바인딩. 기록=종이. ── */
+  #note-back {
+    position: fixed; inset: 0; z-index: 58;
+    background: rgba(8, 9, 12, 0.5);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #fieldnote {
+    position: relative; zoom: var(--uiz);
+    width: min(880px, calc(94vw / var(--uiz, 1)), calc(90vh / var(--uiz, 1) * 1.3299)); /* 1290/970 비율 잠금 */
+    aspect-ratio: 1290 / 970;
+    background: center / contain no-repeat; /* 이미지는 JS 인라인 — 위 #pda와 동일 사유 */
+    image-rendering: pixelated;
+    filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.55));
+  }
+  .nt-zone { position: absolute; color: #3a3226; font-size: 11px; line-height: 1.65; overflow: hidden; word-break: keep-all; }
+  .nt-h { font-size: 10px; letter-spacing: 1px; color: #55492f; margin: 0 0 6px 24px; min-height: 13px; } /* 에셋 회색 헤더탭 위에 정렬 — 빈 헤더도 높이 유지(2열 시작점 정렬) */
+  #nt-log { left: 11%; top: 12.4%; width: 34%; height: 29%; }
+  #nt-log ul { margin: 0; padding-left: 12px; list-style: none; } /* 에셋 ◆ 마커와 이중 방지 */
+  #nt-log li { margin: 1px 0; }
+  #nt-memo { left: 11%; top: 46.8%; width: 34%; height: 21%; }
+  #nt-memo-body { margin: 8px 0 0 4px; }
+  #nt-gain { left: 53.5%; top: 13.8%; width: 33.5%; height: 31.5%; display: flex; gap: 6%; }
+  #nt-rb { left: 53.5%; top: 78.5%; width: 33.5%; height: 13%; } /* 에셋 우하 가로 박스 */
+  /* #199-c 견출지 실기능화 — 에셋 우측 탭 4개(♥쾌적·📦수급·📍거점·📔도감) 위 히트 존.
+     스킨 무변경 원칙: 그림은 에셋 그대로, 활성 탭만 종이빛 베일로 "들려 보임". */
+  .nt-tab { position: absolute; left: 92.3%; width: 7.2%; background: transparent; border: none; cursor: pointer; padding: 0; }
+  .nt-tab[data-ntab="comfort"] { top: 10.2%; height: 10%; }
+  .nt-tab[data-ntab="supply"] { top: 22.8%; height: 11.3%; }
+  .nt-tab[data-ntab="base"] { top: 43.6%; height: 11.5%; }
+  .nt-tab[data-ntab="journal"] { top: 55.8%; height: 11.2%; }
+  .nt-tab:hover { background: rgba(255, 246, 220, 0.12); }
+  .nt-tab.active { background: rgba(255, 246, 220, 0.2); box-shadow: inset -2px 0 0 rgba(58, 50, 38, 0.45); }
+  /* ♥ 쾌적 탭 컴팩트 축: 헤더+잉크 바+로그 2줄 (종이 위 연필 결) */
+  .nt-ax { margin: 0 0 7px; }
+  .nt-ax .ax-h { display: flex; justify-content: space-between; font-size: var(--fs-s); }
+  .nt-ax .ax-bar { height: 5px; background: rgba(58, 50, 38, 0.16); margin: 2px 0 1px; }
+  .nt-ax .ax-bar i { display: block; height: 100%; background: #55492f; }
+  .nt-ax .ax-log { font-size: var(--fs-s); color: rgba(58, 50, 38, 0.72); line-height: 1.5; }
+  .nt-col { flex: 1; min-width: 0; }
+  .nt-cell { display: flex; align-items: center; gap: 5px; padding: 1px 0; border-bottom: 1px dashed rgba(58, 50, 38, 0.25); }
+  .nt-cell b { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .nt-cell.dim { color: #8a7c62; border-bottom: none; }
+  #nt-act { left: 53.5%; top: 78%; width: 33.5%; height: 14%; display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding-right: 2%; }
+  #nt-act .pixel-btn { font-size: 10px; padding: 6px 10px; }
+  @media (max-width: 700px) {
+    #edge-dock { top: 40%; } /* 모바일: 자원 패널 이관 후에도 우중단 유지(엄지 리치) */
+    .dk-body { width: 72px; padding: 8px; }
+    #pda { height: min(620px, calc(84vh / var(--uiz, 1)), calc(94vw / var(--uiz, 1) * 1.7315)); }
+    #fieldnote { width: min(calc(96vw / var(--uiz, 1)), calc(86vh / var(--uiz, 1) * 1.3299)); }
+  }
+  /* ── #199 5차-c: PDA 앱 모드 — 공용 모달(#modal-back)이 LCD 안으로 들어와 "기기 화면"이 된다 ── */
+  body.pda-app #pda-screen, body.pda-app #pda-tabs { visibility: hidden; } /* 탭 UI는 앱 뒤로 */
+  body.pda-app #pda-lcd #modal-back { background: rgba(6, 10, 5, 0.55); z-index: 2; }
+  body.pda-app #pda-lcd #modal {
+    width: 100%; height: 100%; max-width: none;
+    max-height: none; margin: 0;
+    background: transparent; border: none; box-shadow: none;
+    padding: 6px 10px 8px; overflow-y: auto; overscroll-behavior: contain;
+    color: #f0f5ee; text-shadow: 0 0 4px rgba(120, 255, 150, 0.25);
+    font-size: 11px; word-break: keep-all;
+  }
+  body.pda-app #pda-lcd #modal::-webkit-scrollbar { width: 5px; }
+  body.pda-app #pda-lcd #modal::-webkit-scrollbar-thumb { background: #3f5a35; border-radius: 3px; }
+  body.pda-app #pda-lcd #modal h2 { /* 앱 헤더 — LCD 상단 세그먼트 톤 */
+    font-size: 12px; letter-spacing: 2px; color: #f0f5ee;
+    border-bottom: 1px solid rgba(125, 168, 132, 0.5); padding-bottom: 5px;
+    text-shadow: 0 0 6px rgba(120, 255, 150, 0.5);
+  }
+  body.pda-app #pda-lcd .prep-row { /* 행 = 포스퍼 리스트. 좁은 LCD 폭 정돈: 이름 한 줄 + 코스트·버튼 줄 */
+    display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px;
+    padding: 6px 8px; overflow: hidden;
+    background: rgba(170, 240, 185, 0.04); border: 1px solid #3f6a46; border-radius: 3px;
+  }
+  body.pda-app #pda-lcd .prep-row > span:first-child { flex: 1 1 100%; min-width: 0; }
+  /* 제작 행 한 줄 압축(디렉터): 「붕대 ×1 ← 천 2 [제작]」 — 이름 전폭 점유 해제 + 랩 금지 */
+  body.pda-app #pda-lcd .craft-row { flex-wrap: nowrap; padding: 4px 8px; }
+  body.pda-app #pda-lcd .craft-row > span:first-child { flex: 0 1 auto; white-space: nowrap; }
+  body.pda-app #pda-lcd .craft-row .p-cost { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; font-size: var(--fs-s); }
+  body.pda-app #pda-lcd .craft-row .p-cost .px-icon { width: 12px; height: 12px; }
+  body.pda-app #pda-lcd .craft-row .cr-arrow { width: 14px; height: 14px; flex: 0 0 auto; opacity: 0.7; }
+  body.pda-app #pda-lcd .craft-row .pixel-btn { flex: 0 0 auto; padding: 3px 10px; }
+  /* 옷장 행 한 줄 압축(디렉터 — craft-row 문법 일관 적용): 「코트 ▪▪ [입기]」 */
+  body.pda-app #pda-lcd .wd-row { flex-wrap: nowrap; padding: 4px 8px; }
+  body.pda-app #pda-lcd .wd-row > span:first-child { flex: 0 0 auto; white-space: nowrap; }
+  body.pda-app #pda-lcd .wd-row .p-eff { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+  body.pda-app #pda-lcd .wd-row .pixel-btn { flex: 0 0 auto; padding: 3px 10px; }
+  body.pda-app #pda-lcd .wd-row > span:last-child:not(.p-eff) { flex: 0 0 auto; white-space: nowrap; }
+  /* li-row: [아이콘][이름][우측 힌트] 트리플 목록의 공용 한 줄 규칙 — 업적·도면 도감·기록. (셸터 카드 문법 순차 적용)
+     주의: 기본 .prep-row > span:first-child(flex 100%)와 동일 특이도로 눌러야 함 — span 명시 필수. */
+  body.pda-app #pda-lcd .li-row { flex-wrap: nowrap; padding: 4px 8px; }
+  body.pda-app #pda-lcd .li-row > span:first-child { flex: 0 0 auto; white-space: nowrap; }
+  body.pda-app #pda-lcd .li-row > .px-icon { flex: 0 0 auto; width: 18px; height: 18px; }
+  body.pda-app #pda-lcd .li-row > span:nth-child(2):not(.p-cost), body.pda-app #pda-lcd .li-row > .px-icon + span { flex: 0 0 auto; white-space: nowrap; }
+  body.pda-app #pda-lcd .li-row .p-cost { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; font-size: var(--fs-s); }
+  /* 일지 탭 4개: 3+1 랩(기록 혼자 전폭) 대신 2×2 고정 — 언어 불문 안정 */
+  body.pda-app #pda-lcd button[data-jtab] { min-width: 40%; }
+  /* 이주 셸터 카드 — 좁은 LCD 정돈(디렉터): 헤더(아이콘+이름) 한 줄 + 본문 전폭 문단(들여쓰기 0) */
+  body.pda-app #pda-lcd .shelter-card { padding: 7px 9px; }
+  body.pda-app #pda-lcd .shelter-card .s-emoji { font-size: 20px; }
+  body.pda-app #pda-lcd .shelter-card .s-emoji .px-icon { width: 22px; height: 22px; vertical-align: -3px; }
+  body.pda-app #pda-lcd .shelter-card .s-desc { font-size: 11px; } /* 전폭 회복분만큼 본문 확대 */
+  body.pda-app #pda-lcd .shelter-card .s-body .pixel-btn { padding: 3px 12px; }
+  body.pda-app #pda-lcd .prep-row .p-eff { flex: 1 1 auto; min-width: 0; }
+  body.pda-app #pda-lcd .prep-row .pixel-btn { margin-left: auto !important; } /* 인라인 margin 6px보다 우선 — 버튼 우측 정렬 */
+  body.pda-app #pda-lcd #modal img { max-width: 100%; }
+  body.pda-app #pda-lcd .prep-row.no { opacity: 0.55; }
+  body.pda-app #pda-lcd .prep-row.sel { border-color: #6fae78; background: rgba(170, 240, 185, 0.08); }
+  body.pda-app #pda-lcd .pixel-btn {
+    background: linear-gradient(180deg, #1e3524, #0e1c12);
+    border-color: #3f6a46; color: #cfe0c8; border-radius: 3px;
+  }
+  body.pda-app #pda-lcd .pixel-btn:not([disabled]):hover { border-color: #6fae78; color: #f0f5ee; }
+  body.pda-app #pda-lcd .pixel-btn.primary { border-color: #ffffff; color: #ffffff; }
+  body.title-mode #edge-dock, body.wallpaper-mode #edge-dock,
+  body.title-mode #pda-back, body.wallpaper-mode #pda-back,
+  body.title-mode #note-back, body.wallpaper-mode #note-back { display: none !important; }
+
+
 
   /* ── 탐험 패널 ── */
   /* 디렉터 UI 정비: 탐험 패널 = 거점 오른편으로 (튜토리얼 카드가 거점 아래로 오면서 자리 교대) */
@@ -139,7 +521,7 @@
   #exp-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
   .region-card {
     border: 2px solid var(--panel-border); border-radius: 3px;
-    padding: 7px 8px; margin-bottom: 7px; background: #1c1f28;
+    padding: 7px 8px; margin-bottom: 7px; background: #201b16;
   }
   .region-card .r-head { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
   .region-card .r-rate { color: var(--good); }
@@ -183,7 +565,7 @@
   .settings-tab {
     flex: 1 1 auto; min-width: 0;
     font-family: inherit; font-size: 11px; color: var(--text-dim);
-    background: #20242e; border: 2px solid var(--panel-border); border-bottom: none;
+    background: #241f19; border: 2px solid var(--panel-border); border-bottom: none;
     border-radius: 4px 4px 0 0; padding: 6px 4px; margin-right: 2px; cursor: pointer;
     white-space: nowrap;
   }
@@ -205,7 +587,7 @@
   #settings-window input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
   #settings-window h2 { font-size: 12px; color: var(--accent); margin: 12px 0 6px; }
   #settings-window select {
-    background: #1c1f28; color: var(--text);
+    background: #201b16; color: var(--text);
     border: 2px solid var(--panel-border); border-radius: 3px;
     font-family: inherit; font-size: inherit; padding: 2px 4px;
   }
@@ -214,7 +596,7 @@
   #controls-guide .cg-key {
     flex: 0 0 auto; min-width: 62px; color: var(--accent);
     font-size: 10px; border: 1px solid var(--panel-border); border-radius: 3px;
-    padding: 1px 5px; text-align: center; background: #20242e;
+    padding: 1px 5px; text-align: center; background: #241f19;
   }
   #controls-guide .cg-desc { flex: 1 1 auto; }
   #controls-guide .cg-note { font-size: 10px; opacity: 0.7; margin-top: 10px; }
@@ -223,7 +605,7 @@
   #controls-guide button.cg-bind {
     flex: 0 0 auto; min-width: 62px; color: var(--accent);
     font-family: inherit; font-size: 10px; border: 1px solid var(--panel-border);
-    border-radius: 3px; padding: 2px 5px; text-align: center; background: #20242e;
+    border-radius: 3px; padding: 2px 5px; text-align: center; background: #241f19;
     cursor: pointer; align-self: center;
   }
   #controls-guide button.cg-bind:hover { border-color: var(--accent); }
@@ -284,7 +666,7 @@
     position: relative;
     display: flex; flex-direction: column; align-items: center; gap: 3px;
     min-width: 60px; padding: 7px 4px 5px; cursor: pointer;
-    background: #262a35; border: 2px solid var(--panel-border); border-radius: 4px;
+    background: #2b2620; border: 2px solid var(--panel-border); border-radius: 4px;
     font-size: 10px; color: var(--text);
   }
   .tool-item:hover { border-color: var(--accent); transform: translateY(-2px); }
@@ -317,7 +699,7 @@
   /* #194: 도료 보유 수량 상시 배지 — hover title이 안 뜨는 터치 환경에서도 보유량이 보이게 (.tool-item .cnt 축소판) */
   .swatch .sw-cnt {
     position: absolute; top: -7px; right: -6px;
-    background: #262a35; color: var(--text); font-size: 9px; line-height: 1;
+    background: #2b2620; color: var(--text); font-size: 9px; line-height: 1;
     padding: 1px 4px; border: 1px solid var(--panel-border); border-radius: 7px;
     pointer-events: none;
   }
@@ -362,12 +744,13 @@
   #modal-back.ev-visitor #modal { max-width: 380px; width: auto; min-width: 260px; margin-bottom: 6vh; }
   #modal-back.ev-visitor #modal h2 { text-align: center; margin-bottom: 8px; }
   .shelter-card {
-    display: flex; gap: 10px; align-items: center;
     border: 2px solid var(--panel-border); border-radius: 4px;
-    padding: 9px 10px; margin-bottom: 8px; background: #1c1f28;
+    padding: 9px 10px; margin-bottom: 8px; background: #201b16;
   }
-  .shelter-card .s-emoji { font-size: 26px; }
-  .shelter-card .s-body { flex: 1; }
+  .shelter-card .s-head { display: flex; align-items: center; gap: 8px; } /* 헤더 = 아이콘+이름 한 줄 */
+  .shelter-card .s-emoji { font-size: 26px; line-height: 1; }
+  .shelter-card .s-body { margin-top: 3px; } /* 본문 = 헤더 아래 전폭 문단 */
+  .shelter-card .s-body .pixel-btn { display: block; margin: 3px 0 0 auto; } /* 칩 바로 아래 우측 — 별도 행 갭 제거 */
   .shelter-card .s-name { font-size: 13px; }
   .shelter-card .s-desc { font-size: 10px; color: var(--text-dim); line-height: 1.5; }
   .shelter-card.current { border-color: var(--accent); }
@@ -388,7 +771,7 @@
   .loot-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
   .loot-item {
     border: 2px solid var(--panel-border); border-radius: 4px;
-    padding: 6px 10px; font-size: 12px; background: #1c1f28;
+    padding: 6px 10px; font-size: 12px; background: #201b16;
   }
   /* 정산 희귀도 테두리 (디렉터 2026-07-09): 획득 난이도별 빛나는 테두리 — 희귀=보라, 전설=금색.
      글로우 펄스는 ::after로(박스 자체 animation은 개봉 리빌 lootPop이 차지 — 충돌 방지). */
@@ -418,7 +801,7 @@
   .res-chip {
     display: flex; align-items: center; gap: 5px;
     font-size: 12px; padding: 4px 6px; border-radius: 3px;
-    background: #1c1f28; white-space: nowrap; border: 1px solid #262a35;
+    background: #201b16; white-space: nowrap; border: 1px solid #2b2620;
   }
   .res-chip .re { font-size: 14px; line-height: 1; flex: none; }
   /* min-width:0 이 없으면 flex 자식이 min-content(이름 전체폭) 밑으로 안 줄어 칩이 트랙을 넘고,
@@ -443,7 +826,7 @@
   .prep-row {
     display: flex; align-items: center; gap: 8px;
     border: 2px solid var(--panel-border); border-radius: 3px;
-    padding: 6px 8px; margin-bottom: 6px; background: #1c1f28;
+    padding: 6px 8px; margin-bottom: 6px; background: #201b16;
     cursor: pointer; font-size: 11px;
   }
   .prep-row.sel { border-color: var(--accent); }
@@ -462,19 +845,32 @@
     background: #b7a98c center / 100% 100% no-repeat; /* 로드 전 종이톤 폴백 */
     border: 2px solid var(--panel-border); border-radius: 4px;
   }
+  /* 2.0-(f) 지도 도시 탭 — 도달한 도시를 넘겨본다 */
+  #map-cities { display: flex; gap: 6px; margin-bottom: 8px; }
+  #map-cities .city-chip { font-size: 11px; padding: 4px 10px; opacity: 0.7; }
+  #map-cities .city-chip.on { opacity: 1; border-color: var(--accent); color: var(--accent); }
+  #map-cities .city-chip .here { font-size: 9px; color: var(--text-dim); }
+  #map-pull { margin-top: 4px; }
+  #map-pull:empty { display: none; }
+  /* #204 타르코프식 핀(디렉터): 점 + 옆 이름 가로 배치 — 아이콘 폐기 */
   .map-pin {
     position: absolute; transform: translate(-50%, -50%);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    display: flex; flex-direction: row; align-items: center; gap: 5px;
     cursor: pointer; pointer-events: auto; z-index: 2;
-    min-width: 44px; min-height: 48px; padding: 4px;   /* 터치 타깃 보장 (#47) */
+    min-height: 34px; padding: 6px;   /* 터치 타깃 보장 (#47) */
   }
-  .map-pin img.px-icon { width: 44px; height: 44px; image-rendering: auto;
-    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.45)); transition: transform .12s; }
-  .map-pin:hover img.px-icon { transform: scale(1.12); }
+  .map-pin .pin-dot {
+    flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+    background: #f2ead6; border: 2px solid rgba(18, 14, 9, 0.85);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5); transition: transform .12s;
+  }
+  .map-pin:hover .pin-dot { transform: scale(1.35); }
+  .map-pin.sketch .pin-dot { background: #9a917f; }
+  .map-pin.blocked .pin-dot { background: #7d8a99; }
   /* 좁은 화면(모바일 가로/세로): zoom 축소분을 상쇄해 마커를 키운다 — 터치 타깃 확보 */
   @media (max-width: 640px) {
-    .map-pin { min-width: 52px; min-height: 56px; }
-    .map-pin img.px-icon { width: 52px; height: 52px; }
+    .map-pin { min-height: 42px; }
+    .map-pin .pin-dot { width: 11px; height: 11px; }
     .map-pin .pin-rate { font-size: 12px; padding: 3px 7px; }
   }
   /* 성공률 칩 — 종이 위에서 읽히도록 반투명 배경 */
@@ -560,7 +956,7 @@
   .report-sec .r-title { color: var(--accent); font-size: 12px; }
   .report-warn { color: var(--bad); }
   .report-tip { color: var(--good); }
-  kbd { background:#262a35; border:1px solid var(--panel-border); border-radius:3px; padding:0 5px; font-family: inherit; }
+  kbd { background:#2b2620; border:1px solid var(--panel-border); border-radius:3px; padding:0 5px; font-family: inherit; }
 
   #toast {
     position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
@@ -609,7 +1005,7 @@
   .slot-card {
     display: flex; gap: 10px; align-items: center;
     border: 2px solid var(--panel-border); border-radius: 4px;
-    padding: 9px 10px; margin-bottom: 8px; background: #1c1f28; cursor: pointer;
+    padding: 9px 10px; margin-bottom: 8px; background: #201b16; cursor: pointer;
   }
   .slot-card:hover { border-color: var(--accent); }
   .slot-card.empty { opacity: 0.55; }
@@ -757,6 +1153,13 @@
   }
   #quest-card.done-flash .q-body { display: none; }
   #quest-card.done-flash .q-check { display: block; }
+  /* #202 튜토리얼 건너뛰기 — 우하단 소형(본문 흐름 우측 정렬, 카드 문법의 버튼 규칙과 동일) */
+  #quest-card .q-skip {
+    display: block; margin: 6px 0 0 auto;
+    font-size: 9px; padding: 2px 8px; opacity: 0.75;
+  }
+  #quest-card .q-skip:hover { opacity: 1; }
+  #quest-card.done-flash .q-skip { display: none; }
   @keyframes questcheck { 0% { opacity: 0; transform: scale(0.6); } 40% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
   body.title-mode #quest-card { display: none !important; }
   /* 디렉터 신고(PC 배치·퀘스트 겹침, 데모 1.6.3 포팅): top:340 고정 앵커는 lore 길이·창 높이에 따라
@@ -778,11 +1181,21 @@
   .p-head {
     display: flex; align-items: center; gap: 6px;
     margin: -10px -12px 8px; padding: 5px 8px;
-    background: #20242e; border-bottom: 2px solid var(--panel-border);
+    background: linear-gradient(180deg, #2c2620, #211c16); /* 그을린 헤더 스트립 */
+    border-bottom: 2px solid var(--panel-edge);
+    box-shadow: inset 0 -1px 0 rgba(232, 168, 108, 0.22);  /* 앰버 심 — 랜턴 불빛 한 줄 */
     border-radius: 2px 2px 0 0;
     cursor: grab; user-select: none; touch-action: none;
     font-size: 10px; color: var(--text-dim); letter-spacing: 1px;
   }
+  /* 프레임 리벳(못) — 헤더 좌우 상단 2점. 판자 게시판의 물성 한 방울 */
+  .panel::before, .panel::after {
+    content: ''; position: absolute; top: 5px; width: 4px; height: 4px;
+    background: #6a5d49; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 236, 200, 0.35);
+    z-index: 2; pointer-events: none;
+  }
+  .panel::before { left: 5px; }
+  .panel::after { right: 5px; }
   .p-head:active { cursor: grabbing; }
   /* 📌 UI 배치 고정: 드래그 잠금 상태 — 손이 못 잡는 헤더 (디렉터 2026-07-10) */
   body.ui-pinned .p-head, body.ui-pinned .p-head:active { cursor: default; }
@@ -819,18 +1232,19 @@
   /* ── 전자시계 (LCD) ── */
   #clock-panel { top: 12px; right: 210px; padding: 8px 10px; }
   #lcd {
-    background: #0c1408; border: 2px solid #1e2a18; border-radius: 3px;
+    background: #081209; border: 2px solid #3f6a46; border-radius: 3px;
     padding: 6px 12px; text-align: center; min-width: 108px;
   }
-  #lcd-day { font-size: 10px; color: #6a9a5f; letter-spacing: 2px; }
+  #lcd-day { font-size: 10px; color: var(--lcd-dim); letter-spacing: 2px; }
   #lcd-time {
-    font-size: 26px; color: #b8f0a0; letter-spacing: 3px; line-height: 1.1;
-    text-shadow: 0 0 6px rgba(140, 240, 120, 0.55), 0 0 1px #b8f0a0;
+    font-size: 26px; color: var(--lcd-ink); letter-spacing: 3px; line-height: 1.1; /* 시계=포스퍼 그린+글로우 (디렉터: 에일리언 카세트) */
+    text-shadow: 0 0 8px rgba(120, 255, 150, 0.6), 0 0 1px #8cf5a6;
     font-variant-numeric: tabular-nums;
   }
   #lcd-colon { animation: colonblink 1s steps(1) infinite; }
   @keyframes colonblink { 50% { opacity: 0.15; } }
-  #lcd-sub { font-size: 10px; color: #5f8a55; margin-top: 2px; }
+  #lcd-sub { font-size: 10px; color: #7da884; margin-top: 2px; }
+  #lcd-sub .px-icon { width: 12px; height: 12px; vertical-align: -2px; } /* #199 이모지 스윕: 시간대·날씨 아트 아이콘 정렬 */
 
   /* ── 온스크린 카메라 컨트롤 ── */
   /* 디렉터 UI 재배치: 우측 세로열 → 하단 가로 바(우측). 편집(🔧)은 좌측 분리(#btn-edit). */
@@ -1073,8 +1487,8 @@
      ① 색약 팔레트: ok/lack(초록·빨강) → 파랑·주황. 게임 3D는 불변.
      ============================================================ */
   body.cb-mode {
-    --good: #4aa3e0;  /* 초록 → 파랑 (ok / 충족) */
-    --bad:  #e08a30;  /* 빨강 → 주황 (lack / 부족) */
+    --good: #f0f5ee;  /* 초록 → 파랑 (ok / 충족) */
+    --bad:  #ffffff;  /* 빨강 → 주황 (lack / 부족) */
   }
   /* 게이지 fill: 원래 정상=녹, 경고=황, 위기=적. 색약에선 청/황/주로 재매핑. */
   body.cb-mode .gauge .g-fill { background: #3f7fb0; }

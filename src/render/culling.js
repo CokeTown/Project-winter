@@ -94,6 +94,10 @@ export function makeCulling(ctx) {
     if (cs.fade === 0 && !cs.target) { group.visible = false; shadowDirty(); } // 아웃 완료 → 실제 숨김
   }
   let lastWallMask = -1;
+  // #201 라이브 카드 스냅샷: 풀셸 강제 — 벽/천장 컬링을 전부 '보임'으로 (타이틀 closedHome과 동일 외경).
+  //   스냅샷 프레임 한정으로 켜고 즉시 끈다(instant 경유라 페이드 무접점).
+  let forceClosed = false;
+  function setForceClosed(v) { forceClosed = !!v; }
   // instant=true(셸터 로드 직후): 페이드 없이 즉시 확정 — 입장 시 벽이 서서히 나타나는 어색함 방지.
   function updateWallCulling(dt = 0, instant = false) {
     const wallList = getWallList();
@@ -101,7 +105,7 @@ export function makeCulling(ctx) {
     // 타이틀 배경은 '닫힌 집' 외경으로 보여준다 — 인게임용 투시 컬링이 타이틀에서도 벽을 열면
     // 컨테이너가 바닥+뒷벽만 남은 T자 골조로 보임(실기기 신고 재발분). 게임 진입(hideTitle) 시
     // 기존 페이드로 근벽이 스르륵 열리며 실내 진입. 지하(subway)는 보여줄 외경이 없어 제외.
-    const closedHome = getTitleVisible() && !SHELTERS[state.current]?.indoor;
+    const closedHome = forceClosed || (getTitleVisible() && !SHELTERS[state.current]?.indoor);
     // #70: 팬은 렌더 전용 오프셋 — camera.position에 더해진 팬을 되돌려 '방 중심 기준' 방향으로 판정한다.
     //   (팬해도 컬링 마스크 불변: 마당을 보려고 팬했는데 벽이 열리거나 닫히면 안 됨 — 의도된 동작)
     const dir = new THREE.Vector3(camera.position.x - camPanApplied.x - camCenter.x,
@@ -135,5 +139,5 @@ export function makeCulling(ctx) {
   }
 
   // 셸터 로드 시 마스크 캐시 무효화 — 새 셸터 마스크가 우연히 이전과 같아도 shadowDirty가 확실히 돌게.
-  return { updateWallCulling, updateCeilCulling, setCullTarget, cullFadeState, tickCullFade, applyCullFade, resetWallMask: () => { lastWallMask = -1; } };
+  return { updateWallCulling, updateCeilCulling, setCullTarget, cullFadeState, tickCullFade, applyCullFade, setForceClosed, resetWallMask: () => { lastWallMask = -1; } };
 }

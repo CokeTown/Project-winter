@@ -171,6 +171,7 @@ const DEFS = {
   dresser: {
     name: '서랍장', nameEn: 'Dresser', emoji: '🗄️', fp: { w: 1.2, d: 0.55 },
     surface: { y: 1.13, w: 1.05, d: 0.42 },
+    surfaceYByTier: { 1: 1.10 }, // #196: T1 종이상자 top=0.92+0.18(뚜껑 날개는 가장자리 소품) — 1.13 고정이면 스택 소품 0.03 부양. T2/T3=1.13 실측 일치
     colorNames: ['내추럴', '다크브라운', '화이트', '그레이'],
     colorNamesEn: ['Natural', 'Dark Brown', 'White', 'Gray'],
     colors: [0xa9825c, 0x5f452f, 0xd4cfc2, 0x7c7f86],
@@ -1157,6 +1158,32 @@ const DEFS = {
       B(g, 0.075, 0.05, 0.075, shade(c, 0.6), 0, 1.78, 0);                   // 탑 캡
       B(g, 0.05, 0.02, 0.05, 0x1c1e22, 0.09, 0.06, 0.06);                    // 전원 버튼
       return g;
+    },
+    // #192 클로즈업 — 방열 홈·LED 다이오드 열·디퓨저 레일·케이블·고무 패드. 실루엣·발광 스트립은 build 동일.
+    closeup(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.16, 0.19, 0.05, shade(c, 0.7), 0, 0.025, 0, 24);              // 베이스(고세그)
+      Cyl(g, 0.185, 0.195, 0.012, 0x1c1e22, 0, 0.006, 0, 24);                // 고무 패드
+      B(g, 0.07, 1.7, 0.07, shade(c, 0.85), 0, 0.9, 0);                      // 바디
+      for (const hx of [-0.026, 0.026]) B(g, 0.012, 1.62, 0.072, shade(c, 0.62), hx, 0.9, 0); // 방열 홈 2줄
+      for (const hy of [0.3, 0.62, 0.94, 1.26, 1.58]) B(g, 0.072, 0.014, 0.072, shade(c, 0.6), 0, hy, 0); // 분절 링
+      for (const rx of [-0.024, 0.024]) B(g, 0.012, 1.6, 0.03, shade(c, 0.5), rx, 0.92, 0.042); // 디퓨저 레일
+      const strip = B(g, 0.035, 1.6, 0.02, 0xeaf4ff, 0, 0.92, 0.045);
+      strip.material.emissive = new THREE.Color(0xdfeaff);
+      strip.material.emissiveIntensity = 1.6; strip.userData.glow = true;
+      for (let i = 0; i < 16; i++) {                                          // LED 다이오드 점열(코어 위 고휘도 점)
+        const d = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.016, 0.008),
+          new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2.2 }));
+        d.position.set(0, 0.18 + i * 0.1, 0.056); d.userData.glow = true; g.add(d);
+      }
+      B(g, 0.075, 0.05, 0.075, shade(c, 0.6), 0, 1.78, 0);                   // 탑 캡
+      B(g, 0.05, 0.03, 0.05, shade(c, 0.45), 0, 1.815, 0);                   // 캡 상단 단
+      B(g, 0.05, 0.02, 0.05, 0x1c1e22, 0.09, 0.06, 0.06);                    // 전원 버튼
+      B(g, 0.014, 0.01, 0.014, 0x8fc45a, 0.09, 0.072, 0.06);                 // 전원 파일럿 점
+      B(g, 0.05, 0.024, 0.062, 0xd8d4cc, 0, 1.42, 0.038);                    // 사양 라벨
+      const CABLE = [[0.05, 0.1, 0.05, 0.3], [0.09, 0.06, 0.08, 0.7], [0.14, 0.035, 0.1, 1.1]]; // 늘어진 전원 케이블
+      for (const [cx, cy2, cz, rz] of CABLE) B(g, 0.014, 0.07, 0.014, 0x24262a, cx, cy2, cz).rotation.z = rz;
+      return g;
     }
   },
   firstaidbox: {
@@ -1396,6 +1423,48 @@ const DEFS = {
       const t3 = B(g, 0.06, 0.16, 0.02, shade(c, 1.2), -0.12, 0.38, 0.048); t3.rotation.x = -0.09;
       const t4 = B(g, 0.05, 0.1, 0.02, shade(c, 0.85), 0.2, 0.35, 0.048); t4.rotation.x = -0.09;
       return g;
+    },
+    // #192 클로즈업 — 합판 나뭇결·뜯긴 모서리·스테이플·오버스프레이·물감 드립. 실루엣·GANG 레이아웃은 build 동일.
+    closeup(c) {
+      const g = new THREE.Group();
+      const p = new THREE.Group(); p.rotation.x = -0.09; g.add(p); // 기대 세움 틸트를 서브그룹으로 — build와 같은 각
+      const panel = B(p, 1.0, 1.1, 0.05, 0x8a7a5c, 0, 0.58, 0); panel.castShadow = true;
+      for (let i = 0; i < 6; i++) B(p, 1.0, 0.012, 0.052, shade(0x8a7a5c, i % 2 ? 0.92 : 1.06), 0, 0.13 + i * 0.18, 0); // 나뭇결 줄
+      B(p, 0.05, 0.05, 0.052, 0x6a5c42, -0.475, 1.1, 0);   // 좌상단 뜯김
+      B(p, 0.07, 0.03, 0.052, 0x6a5c42, 0.465, 0.06, 0);   // 우하단 뜯김
+      B(p, 0.04, 0.06, 0.052, 0x6a5c42, 0.48, 0.9, 0);
+      for (const [sx, sy] of [[-0.44, 0.16], [-0.42, 1.02], [0.44, 0.2], [0.42, 1.05], [0.0, 0.08]])
+        B(p, 0.022, 0.008, 0.056, 0x9a9fa0, sx, sy, 0);   // 스테이플
+      // 합판 측면 적층 줄(3겹)
+      for (const side of [-1, 1]) for (let i = 0; i < 3; i++) B(p, 0.004, 1.1, 0.014, shade(0x8a7a5c, 0.8 + i * 0.12), side * 0.5, 0.58, -0.017 + i * 0.017);
+      const VIOLET = 0x9a5ad4, NAVY = 0x2f3a55;
+      const gseg = (x, y, w, h) => {
+        B(p, w + 0.02, h + 0.02, 0.014, shade(VIOLET, 0.45), x + 0.01, y - 0.01, 0.036); // 오버스프레이 헤일로(어두운 확산)
+        B(p, w, h, 0.018, NAVY, x + 0.022, y - 0.022, 0.042);
+        B(p, w, h, 0.018, VIOLET, x, y, 0.052);
+      };
+      const CY = 0.72, H = 0.3, T = 0.05;
+      gseg(-0.36, CY, T, H); gseg(-0.29, CY + 0.125, 0.12, T); gseg(-0.29, CY - 0.125, 0.12, T); gseg(-0.24, CY - 0.06, T, 0.09); gseg(-0.27, CY - 0.01, 0.07, T);
+      gseg(-0.13, CY, T, H); gseg(-0.03, CY, T, H); gseg(-0.08, CY + 0.125, 0.1, T); gseg(-0.08, CY - 0.02, 0.1, T);
+      gseg(0.07, CY, T, H); gseg(0.17, CY, T, H); gseg(0.12, CY + 0.04, 0.06, T);
+      gseg(0.27, CY, T, H); gseg(0.34, CY + 0.125, 0.12, T); gseg(0.34, CY - 0.125, 0.12, T); gseg(0.39, CY - 0.06, T, 0.09); gseg(0.36, CY - 0.01, 0.07, T);
+      // 물감 드립 — 획 하단에서 흘러내린 가는 기둥(끝에 방울)
+      for (const [dx, dl] of [[-0.36, 0.14], [-0.13, 0.1], [0.07, 0.18], [0.27, 0.12], [0.17, 0.08]]) {
+        B(p, 0.014, dl, 0.016, shade(VIOLET, 0.85), dx, CY - H / 2 - dl / 2, 0.05);
+        B(p, 0.022, 0.022, 0.016, shade(VIOLET, 0.8), dx, CY - H / 2 - dl - 0.005, 0.05);
+      }
+      // 포인트 획(colorIdx 색 보존) + 드립
+      B(p, 0.7, 0.06, 0.02, c, 0, 0.5, 0.048);
+      B(p, 0.06, 0.16, 0.02, shade(c, 1.2), -0.12, 0.38, 0.048);
+      B(p, 0.05, 0.1, 0.02, shade(c, 0.85), 0.2, 0.35, 0.048);
+      for (const [dx, dl] of [[-0.3, 0.09], [0.08, 0.12], [0.31, 0.07]]) B(p, 0.012, dl, 0.018, shade(c, 0.9), dx, 0.47 - dl / 2, 0.049);
+      // 구석 잔태그 — 작은 X + 화살표 낙서(흰 초크 톤)
+      B(p, 0.09, 0.014, 0.016, 0xd8d4cc, -0.36, 0.2, 0.05).rotation.z = 0.6;
+      B(p, 0.09, 0.014, 0.016, 0xd8d4cc, -0.36, 0.2, 0.05).rotation.z = -0.6;
+      B(p, 0.12, 0.014, 0.016, 0xd8d4cc, 0.32, 0.16, 0.05);
+      B(p, 0.04, 0.014, 0.016, 0xd8d4cc, 0.365, 0.185, 0.05).rotation.z = -0.7;
+      B(p, 0.04, 0.014, 0.016, 0xd8d4cc, 0.365, 0.135, 0.05).rotation.z = 0.7;
+      return g;
     }
   },
   // 리조트 ① 스키 한 쌍 — 벽에 기대 교차 세운 낡은 스키
@@ -1415,6 +1484,41 @@ const DEFS = {
         g.add(ski);
       }
       return g;
+    },
+    // #192 클로즈업 — 팁 계단 라운드·금속 엣지·데크 그래픽·바인딩 디테일·스크래치. 실루엣(팔자 교차)은 build 동일.
+    closeup(c) {
+      const g = new THREE.Group();
+      const METAL = 0xb9bec6;
+      for (const side of [-1, 1]) {
+        const ski = new THREE.Group();
+        B(ski, 0.11, 1.5, 0.045, c, 0, 0.75, 0);
+        for (const ex of [-1, 1]) B(ski, 0.012, 1.5, 0.048, METAL, ex * 0.049, 0.75, 0);        // 금속 엣지 좌우
+        // 팁 계단 라운드 3단(위로 젖힘) + 테일 킥 1단
+        B(ski, 0.1, 0.07, 0.05, c, 0, 1.53, 0.014);
+        B(ski, 0.085, 0.05, 0.05, shade(c, 0.9), 0, 1.585, 0.034);
+        B(ski, 0.06, 0.035, 0.05, shade(c, 0.75), 0, 1.62, 0.058);
+        B(ski, 0.095, 0.05, 0.05, shade(c, 0.85), 0, -0.015, 0.012);
+        // 데크 그래픽 — 중앙 스트라이프 + 브랜드 블록 + 스티커
+        B(ski, 0.045, 1.1, 0.02, shade(c, 1.25), 0, 0.8, 0.026);
+        B(ski, 0.07, 0.11, 0.02, shade(c, 0.65), 0, 1.32, 0.027);
+        B(ski, 0.05, 0.04, 0.02, 0xd8d4cc, side * 0.015, 0.28, 0.028);                          // 낡은 스티커
+        B(ski, 0.04, 0.03, 0.02, shade(c, 0.55), -side * 0.02, 0.2, 0.028);
+        // 바인딩 — 토/힐 피스 + 스트랩 + 버클
+        B(ski, 0.09, 0.07, 0.075, 0x3a3d42, 0, 0.76, 0.02);                                     // 토 피스
+        B(ski, 0.09, 0.06, 0.065, shade(0x3a3d42, 1.2), 0, 0.62, 0.018);                        // 힐 피스
+        B(ski, 0.1, 0.025, 0.08, 0x24262a, 0, 0.7, 0.022);                                      // 스트랩
+        B(ski, 0.024, 0.02, 0.02, METAL, 0.035, 0.7, 0.055);                                    // 버클
+        B(ski, 0.05, 0.02, 0.06, METAL, 0, 0.79, 0.05);                                         // 토 클립
+        // 스크래치(밝은 가는 줄)·칩(어두운 노치) — 하부 위주
+        for (const [sy2, rot] of [[0.42, 0.3], [0.34, -0.2], [0.15, 0.15], [0.5, -0.35]]) {
+          const sc = B(ski, 0.008, 0.1, 0.021, shade(c, 1.45), side * 0.02, sy2, 0.026); sc.rotation.z = rot;
+        }
+        B(ski, 0.02, 0.03, 0.048, shade(c, 0.5), side * 0.045, 0.1, 0);                          // 엣지 칩
+        B(ski, 0.016, 0.024, 0.048, shade(c, 0.5), -side * 0.048, 0.98, 0);
+        ski.position.set(side * 0.11, 0, 0); ski.rotation.z = side * 0.1; ski.rotation.x = -0.12;
+        g.add(ski);
+      }
+      return g;
     }
   },
   // 리조트 ② 스키 폴대 — 바스켓 링이 남은 폴 한 쌍
@@ -1430,6 +1534,39 @@ const DEFS = {
         Cyl(pole, 0.018, 0.018, 1.15, c, 0, 0.575, 0, 6);              // 샤프트
         Cyl(pole, 0.035, 0.028, 0.09, shade(c, 0.7), 0, 1.12, 0, 8);   // 그립
         Cyl(pole, 0.075, 0.075, 0.02, 0x3a3d42, 0, 0.14, 0, 8);        // 바스켓 링
+        pole.position.set(side * 0.08, 0, 0); pole.rotation.z = side * 0.08; pole.rotation.x = -0.1;
+        g.add(pole);
+      }
+      return g;
+    },
+    // #192 클로즈업 — 그립 홈·스트랩 루프·바스켓 스포크·카바이드 팁·스티커 밴드. 실루엣은 build 동일.
+    closeup(c) {
+      const g = new THREE.Group();
+      const METAL = 0xb9bec6;
+      for (const side of [-1, 1]) {
+        const pole = new THREE.Group();
+        Cyl(pole, 0.018, 0.018, 1.15, c, 0, 0.575, 0, 14);                    // 샤프트(고세그)
+        Cyl(pole, 0.035, 0.028, 0.09, shade(c, 0.7), 0, 1.12, 0, 14);         // 그립
+        for (let i = 0; i < 3; i++) Cyl(pole, 0.0365, 0.0365, 0.01, shade(c, 0.5), 0, 1.095 + i * 0.025, 0, 14); // 손가락 홈
+        Cyl(pole, 0.03, 0.035, 0.016, shade(c, 0.55), 0, 1.165, 0, 14);       // 그립 톱캡
+        // 스트랩 루프 — 가는 박스 3개로 고리 흉내(그립 뒤로 늘어짐)
+        B(pole, 0.014, 0.16, 0.03, 0x6a5c48, side * 0.03, 1.05, -0.045);
+        B(pole, 0.014, 0.12, 0.03, shade(0x6a5c48, 0.85), side * 0.055, 1.0, -0.06);
+        B(pole, 0.05, 0.014, 0.03, 0x6a5c48, side * 0.042, 0.94, -0.052);
+        // 스티커 밴드 2 + 흠집
+        Cyl(pole, 0.019, 0.019, 0.05, 0xd8d4cc, 0, 0.86, 0, 12);
+        Cyl(pole, 0.019, 0.019, 0.03, shade(c, 1.3), 0, 0.78, 0, 12);
+        B(pole, 0.006, 0.09, 0.02, shade(c, 1.4), 0.014, 0.5, 0.008);         // 긁힘
+        B(pole, 0.006, 0.06, 0.02, shade(c, 0.55), -0.013, 0.32, -0.006);
+        // 바스켓 — 링 + 스포크 6 + 카바이드 팁
+        Cyl(pole, 0.075, 0.075, 0.018, 0x3a3d42, 0, 0.14, 0, 16);
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2;
+          const sp = B(pole, 0.055, 0.012, 0.012, shade(0x3a3d42, 1.25), Math.cos(a) * 0.038, 0.14, Math.sin(a) * 0.038);
+          sp.rotation.y = -a;
+        }
+        Cyl(pole, 0.012, 0.017, 0.1, METAL, 0, 0.06, 0, 10);                  // 팁 슬리브
+        Cyl(pole, 0.004, 0.011, 0.035, shade(METAL, 0.6), 0, 0.012, 0, 8);    // 카바이드 촉
         pole.position.set(side * 0.08, 0, 0); pole.rotation.z = side * 0.08; pole.rotation.x = -0.1;
         g.add(pole);
       }
@@ -1453,6 +1590,44 @@ const DEFS = {
       B(bd, 0.1, 0.12, 0.06, 0x3a3d42, 0, 0.5, 0.03);                  // 바인딩 아래
       bd.rotation.x = -0.12; g.add(bd);                                 // 기대 세움
       return g;
+    },
+    // #192 클로즈업 — 라운드 3단·금속 엣지·선셋 그래픽 모자이크·하이백 바인딩·스티커/스크래치. 실루엣은 build 동일.
+    closeup(c) {
+      const g = new THREE.Group();
+      const bd = new THREE.Group();
+      const METAL = 0xb9bec6, DARK = 0x24262a;
+      B(bd, 0.34, 1.3, 0.05, c, 0, 0.72, 0);
+      for (const ex of [-1, 1]) B(bd, 0.014, 1.3, 0.052, METAL, ex * 0.163, 0.72, 0);           // 금속 엣지
+      // 라운드 3단(상·하) — build의 2박스 계단을 더 잘게
+      B(bd, 0.28, 0.07, 0.05, c, 0, 1.405, 0); B(bd, 0.2, 0.05, 0.05, shade(c, 0.92), 0, 1.465, 0); B(bd, 0.12, 0.035, 0.05, shade(c, 0.8), 0, 1.507, 0);
+      B(bd, 0.28, 0.07, 0.05, c, 0, 0.035, 0); B(bd, 0.2, 0.05, 0.05, shade(c, 0.92), 0, -0.025, 0); B(bd, 0.12, 0.035, 0.05, shade(c, 0.8), 0, -0.067, 0);
+      // 데크 그래픽 — 선셋 밴드(하늘 3톤) + 산 능선 모자이크 + 해
+      B(bd, 0.3, 0.2, 0.02, shade(c, 1.25), 0, 1.0, 0.03);
+      B(bd, 0.3, 0.16, 0.02, shade(c, 1.45), 0, 0.82, 0.03);
+      B(bd, 0.3, 0.14, 0.02, shade(c, 1.1), 0, 0.67, 0.03);
+      const RIDGE = [[-0.12, 0.74, 0.06, 0.1], [-0.04, 0.72, 0.07, 0.14], [0.05, 0.73, 0.06, 0.09], [0.12, 0.71, 0.05, 0.12]];
+      for (const [rx, ry2, rw, rh] of RIDGE) B(bd, rw, rh, 0.022, shade(c, 0.45), rx, ry2, 0.031);   // 능선 실루엣
+      B(bd, 0.055, 0.055, 0.022, 0xffd487, 0.08, 0.95, 0.031);                                        // 해(비발광 — 배치본에 발광 없음)
+      B(bd, 0.3, 0.02, 0.023, shade(c, 0.5), 0, 0.6, 0.03);                                           // 그래픽 하단 마감줄
+      // 바인딩 2 — 베이스+하이백+앵클/토 스트랩+래칫
+      const bind = (by) => {
+        B(bd, 0.12, 0.13, 0.05, DARK, 0, by, 0.035);                                                  // 베이스 플레이트
+        const hb = B(bd, 0.1, 0.12, 0.03, shade(DARK, 1.3), 0, by + 0.09, 0.055); hb.rotation.x = 0.35; // 하이백
+        B(bd, 0.13, 0.028, 0.06, 0x3a3d42, 0, by + 0.03, 0.05);                                       // 앵클 스트랩
+        B(bd, 0.11, 0.024, 0.055, 0x3a3d42, 0, by - 0.04, 0.048);                                     // 토 스트랩
+        B(bd, 0.024, 0.02, 0.02, METAL, 0.055, by + 0.03, 0.075);                                     // 래칫
+        for (const dx of [-0.03, 0.03]) B(bd, 0.014, 0.014, 0.014, METAL, dx, by, 0.062);             // 디스크 볼트
+      };
+      bind(1.0); bind(0.5);
+      // 스티커·스크래치·칩
+      B(bd, 0.07, 0.05, 0.021, 0xd8d4cc, -0.09, 0.3, 0.03);
+      B(bd, 0.05, 0.04, 0.021, shade(c, 0.6), 0.1, 0.22, 0.03);
+      for (const [sy2, rot] of [[0.15, 0.4], [0.36, -0.25], [1.22, 0.2]]) {
+        const sc = B(bd, 0.008, 0.12, 0.021, shade(c, 1.5), 0.05, sy2, 0.03); sc.rotation.z = rot;
+      }
+      B(bd, 0.022, 0.03, 0.052, shade(c, 0.45), -0.165, 0.45, 0);                                     // 엣지 칩
+      bd.rotation.x = -0.12; g.add(bd);
+      return g;
     }
   },
   // 도심 ① 네온 사인 「VIP ZONE」 — 보라 계열 튜브(자기발광). 받침 프레임에 기대 세운다.
@@ -1466,13 +1641,51 @@ const DEFS = {
       const g = new THREE.Group();
       const bk = B(g, 0.9, 0.62, 0.05, 0x16141c, 0, 0.62, 0); bk.rotation.x = -0.07; bk.castShadow = true; // 검은 패널
       const neonMat = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 1.5 });
-      const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); };
+      const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); return s; };
       // V I P — 글자만 크게 (디렉터 2026-07-09: 밑줄 제거, VIP 단독)
-      seg(-0.26, 0.66, 0.045, 0.3); seg(-0.15, 0.66, 0.045, 0.3); seg(-0.205, 0.535, 0.07, 0.045); // V
+      // V = 대각 두 획 (디렉터 2026-07-17: 기둥+밑바 구성이 'U'로 읽히던 것 교정)
+      seg(-0.2325, 0.655, 0.045, 0.32).rotation.z = 0.19;
+      seg(-0.1775, 0.655, 0.045, 0.32).rotation.z = -0.19;
       seg(-0.02, 0.64, 0.045, 0.34);                                                                 // I
       seg(0.12, 0.64, 0.045, 0.34); seg(0.21, 0.755, 0.14, 0.045); seg(0.21, 0.63, 0.14, 0.045); seg(0.26, 0.695, 0.045, 0.09); // P
       // 실제 광원 (디렉터 2026-07-09): 상시 점광 — 주변 벽·바닥에 네온 빛이 번진다 (그림자 없음, 유지비 0)
       const lt = new THREE.PointLight(c, 1.1, 3.6, 1.7); lt.position.set(0, 0.66, 0.35); g.add(lt);
+      return g;
+    },
+    // #192 클로즈업 — 금속 프레임·마운트 볼트·튜브 이중층(코어+새들 클립)·늘어진 배선·트랜스박스. VIP 레이아웃 build 동일.
+    closeup(c) {
+      const g = new THREE.Group();
+      const p = new THREE.Group(); p.rotation.x = -0.07; g.add(p);
+      const METAL = 0x8a8f96;
+      const bk = B(p, 0.9, 0.62, 0.05, 0x16141c, 0, 0.62, 0); bk.castShadow = true;
+      for (const ey of [0.315, -0.315]) B(p, 0.92, 0.02, 0.055, shade(METAL, 0.7), 0, 0.62 + ey, 0);   // 상하 프레임 몰딩
+      for (const ex of [-0.46, 0.46]) B(p, 0.02, 0.66, 0.055, shade(METAL, 0.7), ex, 0.62, 0);         // 좌우 몰딩
+      for (const [bx, by] of [[-0.42, 0.9], [0.42, 0.9], [-0.42, 0.34], [0.42, 0.34]])
+        B(p, 0.024, 0.024, 0.058, shade(METAL, 1.1), bx, by, 0);                                       // 마운트 볼트 4
+      for (const [dx, dy, dw, dh] of [[-0.25, 0.44, 0.1, 0.05], [0.3, 0.82, 0.08, 0.04], [0.05, 0.38, 0.06, 0.06]])
+        B(p, dw, dh, 0.052, 0x221f28, dx, dy, 0);                                                      // 표면 얼룩(먼지·그을음)
+      const seg = (x, y, w, h, dim, rz = 0) => {
+        const sh2 = B(p, w + 0.014, h + 0.014, 0.024, shade(c, 0.35), x, y, 0.038);                    // 튜브 외피(어두운 유리)
+        if (rz) sh2.rotation.z = rz;
+        const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03),
+          new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: dim ? 0.45 : 1.6 }));
+        s.position.set(x, y, 0.05); if (rz) s.rotation.z = rz; s.userData.glow = true; p.add(s);
+        // 새들 클립 — 긴 수직 획에만(대각 획 제외)
+        if (h > 0.2 && !rz) B(p, w + 0.03, 0.016, 0.02, METAL, x, y, 0.036);
+      };
+      // V I P — build와 동일 조형(V=대각 두 획). P의 우측 세로획 하나만 반죽음(폐허의 네온 — 실루엣 불변)
+      seg(-0.2325, 0.655, 0.045, 0.32, false, 0.19); seg(-0.1775, 0.655, 0.045, 0.32, false, -0.19);
+      seg(-0.02, 0.64, 0.045, 0.34);
+      seg(0.12, 0.64, 0.045, 0.34); seg(0.21, 0.755, 0.14, 0.045); seg(0.21, 0.63, 0.14, 0.045); seg(0.26, 0.695, 0.045, 0.09, true);
+      // 배선 — 패널 하단→트랜스 박스 연속 케이블(겹침 세그먼트 — 점선처럼 끊기면 안 된다, 1차 캡처 검거)
+      for (let i = 0; i < 10; i++) {
+        const t = i / 9, x = -0.3 + 0.28 * t, y = 0.31 - 0.215 * t - Math.sin(Math.PI * t) * 0.05;
+        const w = B(p, 0.016, 0.06, 0.016, 0x24222a, x, y, 0.012 + 0.01 * Math.sin(Math.PI * t));
+        w.rotation.z = 0.9 - 0.9 * t;
+      }
+      B(p, 0.12, 0.07, 0.05, shade(METAL, 0.55), 0, 0.05, 0.02);                                       // 트랜스 박스
+      B(p, 0.02, 0.014, 0.052, 0x8fc45a, 0.035, 0.06, 0.021);                                          // 파일럿 LED(비발광 점)
+      const lt = new THREE.PointLight(c, 1.1, 3.6, 1.7); lt.position.set(0, 0.66, 0.35); g.add(lt);    // 배치본과 동일 광원
       return g;
     }
   },
@@ -1487,20 +1700,57 @@ const DEFS = {
       const g = new THREE.Group();
       const bk = B(g, 0.9, 0.5, 0.05, 0x14161c, 0, 0.56, 0); bk.rotation.x = -0.07; bk.castShadow = true;
       const neonMat = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 1.5 });
-      const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); };
+      const seg = (x, y, w, h) => { const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03), neonMat); s.position.set(x, y, 0.045); s.rotation.x = -0.07; s.userData.glow = true; g.add(s); return s; };
       // O N   A I R — 다섯 글자 전부 픽셀 튜브 (디렉터 2026-07-09: "ON"만은 금지, 무조건 ON AIR)
       const CY = 0.6, H = 0.2, T = 0.032;
       // O
       seg(-0.37, CY, T, H); seg(-0.27, CY, T, H); seg(-0.32, CY + 0.09, 0.08, T); seg(-0.32, CY - 0.09, 0.08, T);
-      // N (좌우 기둥 + 중간 사선 흉내 가로바)
-      seg(-0.19, CY, T, H); seg(-0.09, CY, T, H); seg(-0.14, CY + 0.03, 0.06, T);
+      // N (좌우 기둥 + 실제 대각 획 — 디렉터 2026-07-17: 가로바 구성이 'H'로 읽히던 것 교정)
+      seg(-0.19, CY, T, H); seg(-0.09, CY, T, H); seg(-0.14, CY, T, 0.21).rotation.z = 0.46;
       // A (좌우 기둥 + 상단·중간 바)
       seg(0.03, CY, T, H); seg(0.13, CY, T, H); seg(0.08, CY + 0.09, 0.08, T); seg(0.08, CY - 0.01, 0.08, T);
       // I
       seg(0.21, CY, T, H);
-      // R (좌기둥 + 상단·중간 바 + 우상단 기둥 + 우하단 다리)
-      seg(0.29, CY, T, H); seg(0.345, CY + 0.09, 0.09, T); seg(0.345, CY, 0.09, T); seg(0.39, CY + 0.045, T, 0.09); seg(0.39, CY - 0.055, T, 0.1);
+      // R (좌기둥 + 상단·중간 바 + 우상단 기둥 + 대각 다리 — 다리도 사선이 R답다)
+      seg(0.29, CY, T, H); seg(0.345, CY + 0.09, 0.09, T); seg(0.345, CY, 0.09, T); seg(0.39, CY + 0.045, T, 0.09); seg(0.3725, CY - 0.05, T, 0.12).rotation.z = 0.5;
       // 실제 광원 (디렉터 2026-07-09): 상시 점광 — 파란 빛이 주변에 번진다 (그림자 없음, 유지비 0)
+      const lt = new THREE.PointLight(c, 1.1, 3.6, 1.7); lt.position.set(0, 0.6, 0.35); g.add(lt);
+      return g;
+    },
+    // #192 클로즈업 — neonvip와 같은 문법(프레임·볼트·튜브 이중층·배선). ON AIR 레이아웃 build 동일, R 다리 반죽음.
+    closeup(c) {
+      const g = new THREE.Group();
+      const p = new THREE.Group(); p.rotation.x = -0.07; g.add(p);
+      const METAL = 0x8a8f96;
+      const bk = B(p, 0.9, 0.5, 0.05, 0x14161c, 0, 0.56, 0); bk.castShadow = true;
+      for (const ey of [0.26, -0.26]) B(p, 0.92, 0.02, 0.055, shade(METAL, 0.7), 0, 0.56 + ey, 0);
+      for (const ex of [-0.46, 0.46]) B(p, 0.02, 0.54, 0.055, shade(METAL, 0.7), ex, 0.56, 0);
+      for (const [bx, by] of [[-0.42, 0.78], [0.42, 0.78], [-0.42, 0.34], [0.42, 0.34]])
+        B(p, 0.024, 0.024, 0.058, shade(METAL, 1.1), bx, by, 0);
+      for (const [dx, dy, dw, dh] of [[0.28, 0.42, 0.09, 0.05], [-0.32, 0.72, 0.07, 0.04]])
+        B(p, dw, dh, 0.052, 0x1e2028, dx, dy, 0);
+      const seg = (x, y, w, h, dim, rz = 0) => {
+        const sh2 = B(p, w + 0.012, h + 0.012, 0.024, shade(c, 0.35), x, y, 0.038);
+        if (rz) sh2.rotation.z = rz;
+        const s = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.03),
+          new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: dim ? 0.45 : 1.6 }));
+        s.position.set(x, y, 0.05); if (rz) s.rotation.z = rz; s.userData.glow = true; p.add(s);
+        if (h > 0.15 && !rz) B(p, w + 0.026, 0.014, 0.02, METAL, x, y, 0.036);
+      };
+      const CY = 0.6, H = 0.2, T = 0.032;
+      seg(-0.37, CY, T, H); seg(-0.27, CY, T, H); seg(-0.32, CY + 0.09, 0.08, T); seg(-0.32, CY - 0.09, 0.08, T);
+      seg(-0.19, CY, T, H); seg(-0.09, CY, T, H); seg(-0.14, CY, T, 0.21, false, 0.46);   // N 대각(build 동일 조형)
+      seg(0.03, CY, T, H); seg(0.13, CY, T, H); seg(0.08, CY + 0.09, 0.08, T); seg(0.08, CY - 0.01, 0.08, T);
+      seg(0.21, CY, T, H);
+      seg(0.29, CY, T, H); seg(0.345, CY + 0.09, 0.09, T); seg(0.345, CY, 0.09, T); seg(0.39, CY + 0.045, T, 0.09); seg(0.3725, CY - 0.05, T, 0.12, true, 0.5); // R 대각 다리(반죽음 유지)
+      // 연속 케이블 — neonvip와 동일 문법(점선 금지)
+      for (let i = 0; i < 10; i++) {
+        const t = i / 9, x = 0.32 - 0.23 * t, y = 0.29 - 0.195 * t - Math.sin(Math.PI * t) * 0.045;
+        const w = B(p, 0.016, 0.06, 0.016, 0x22242a, x, y, 0.012 + 0.01 * Math.sin(Math.PI * t));
+        w.rotation.z = -(0.9 - 0.9 * t);
+      }
+      B(p, 0.12, 0.07, 0.05, shade(METAL, 0.55), 0.06, 0.05, 0.02);
+      B(p, 0.02, 0.014, 0.052, 0x8fc45a, 0.095, 0.06, 0.021);
       const lt = new THREE.PointLight(c, 1.1, 3.6, 1.7); lt.position.set(0, 0.6, 0.35); g.add(lt);
       return g;
     }
@@ -1525,6 +1775,46 @@ const DEFS = {
       B(g, 0.03, 0.22, 0.022, shade(c, 0.6), 0, 1.08, 0.055);          // 타이
       jk(0.09, 0.42, -0.21, 1.06, 0, shade(c, 0.9));                   // 왼팔
       jk(0.09, 0.42, 0.21, 1.06, 0, shade(c, 0.9));                    // 오른팔
+      return g;
+    },
+    // #192 클로즈업 — 라펠·단추·행커치프·소맷단·옷 주름·후크 디테일. 실루엣(스탠드+재킷)은 build 동일.
+    closeup(c) {
+      const g = new THREE.Group();
+      const METAL = 0xb0b4ba;
+      Cyl(g, 0.18, 0.18, 0.03, 0x4a4640, 0, 0.02, 0, 20);              // 받침(고세그)
+      Cyl(g, 0.19, 0.19, 0.012, shade(0x4a4640, 0.7), 0, 0.006, 0, 20);// 받침 하단 몰딩
+      Cyl(g, 0.02, 0.02, 1.5, 0x6a6660, 0, 0.75, 0, 10);               // 기둥
+      for (const cy of [0.5, 1.0]) Cyl(g, 0.028, 0.028, 0.025, shade(0x6a6660, 0.75), 0, cy, 0, 10); // 이음 칼라 2
+      B(g, 0.5, 0.025, 0.025, 0x6a6660, 0, 1.48, 0);                   // 가로 봉
+      for (const ex of [-0.25, 0.25]) B(g, 0.02, 0.035, 0.035, shade(0x6a6660, 0.7), ex, 1.48, 0); // 봉 끝 캡
+      // 옷걸이 — 어깨목 + 후크(작은 박스 체인 곡선)
+      B(g, 0.36, 0.05, 0.06, 0x8a7a5c, 0, 1.4, 0);
+      B(g, 0.016, 0.05, 0.016, METAL, 0, 1.45, 0);
+      B(g, 0.03, 0.016, 0.016, METAL, 0.012, 1.475, 0);
+      B(g, 0.016, 0.028, 0.016, METAL, 0.026, 1.463, 0);
+      const jk = (w, h, x, y, z2, col) => { const m = B(g, w, h, 0.09, col, x, y, z2); m.castShadow = true; return m; };
+      jk(0.4, 0.14, 0, 1.3, 0, c);                                     // 어깨판
+      jk(0.34, 0.5, 0, 1.02, 0, c);                                    // 몸판
+      // 라펠 — V자 어두운 패널 2 + 스티치 라인
+      const lp1 = B(g, 0.09, 0.3, 0.02, shade(c, 0.8), -0.075, 1.16, 0.052); lp1.rotation.z = 0.32;
+      const lp2 = B(g, 0.09, 0.3, 0.02, shade(c, 0.8), 0.075, 1.16, 0.052); lp2.rotation.z = -0.32;
+      B(g, 0.06, 0.34, 0.02, 0xe8e4d8, 0, 1.1, 0.05);                  // 셔츠 브이
+      for (const sx of [-0.045, 0.045]) { const cl = B(g, 0.05, 0.05, 0.022, 0xf2eee2, sx, 1.245, 0.052); cl.rotation.z = sx > 0 ? -0.5 : 0.5; } // 셔츠 칼라
+      B(g, 0.03, 0.22, 0.022, shade(c, 0.6), 0, 1.08, 0.055);          // 타이
+      B(g, 0.04, 0.035, 0.024, shade(c, 0.5), 0, 1.2, 0.056);          // 타이 노트
+      for (const ty of [1.14, 1.05]) B(g, 0.032, 0.012, 0.023, shade(c, 0.75), 0, ty, 0.0555); // 타이 사선 스트라이프
+      for (const by of [1.02, 0.94, 0.86]) B(g, 0.018, 0.018, 0.02, 0x2a2622, 0.05, by, 0.052); // 재킷 단추 3
+      B(g, 0.07, 0.045, 0.02, shade(c, 0.7), -0.1, 1.18, 0.052);       // 가슴 포켓
+      B(g, 0.05, 0.018, 0.022, 0xe8e4d8, -0.1, 1.2, 0.053);            // 행커치프
+      for (const [fx, fh] of [[-0.14, 0.4], [0.05, 0.34], [0.12, 0.42]]) B(g, 0.012, fh, 0.012, shade(c, 0.85), fx, 1.0, 0.048); // 주름 골
+      B(g, 0.012, 0.36, 0.012, shade(c, 1.12), -0.05, 1.0, 0.048);     // 주름 하이라이트
+      jk(0.09, 0.42, -0.21, 1.06, 0, shade(c, 0.9));                   // 왼팔
+      jk(0.09, 0.42, 0.21, 1.06, 0, shade(c, 0.9));                    // 오른팔
+      for (const sx of [-0.21, 0.21]) {
+        B(g, 0.095, 0.03, 0.092, shade(c, 0.7), sx, 0.87, 0);          // 소맷단
+        B(g, 0.014, 0.014, 0.02, 0x2a2622, sx + (sx > 0 ? -0.025 : 0.025), 0.88, 0.048); // 커프 단추
+      }
+      B(g, 0.09, 0.05, 0.02, 0x35322e, 0.09, 0.82, 0.046);             // 밑단 먼지 얼룩 — 재킷 천 위(0.66은 밑단 아래 허공, 캡처 검거)
       return g;
     }
   },

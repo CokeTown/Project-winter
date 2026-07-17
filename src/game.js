@@ -28,6 +28,7 @@ import { makeAvatarSystem } from './systems/avatar.js';
 import { buildVisitor, VISITOR_IDS, ENCOUNTER_VISITOR } from './systems/visitor.js';
 import { VISITOR_TABLE, VISITOR_UI } from './data/visitors.js'; // #181 방문자 교환·대사 밸런스 테이블
 import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wildlife.js';
+import { EVENT_CARD_CAMS } from './data/eventcams.js'; // #201 라이브 카드 스냅샷 카메라 프리셋
 import { lang, setLang, steamLangToGame, t, LN, LD, LF, LC, STR, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
 import { stampDataL10n } from './data/l10n-registry.js'; // #114 Phase 2: 데이터 표 _lk 스탬프(비열거) — LF/LC가 로케일 JSON 우선 조회
 stampDataL10n();
@@ -48,10 +49,15 @@ import { hasKnowledge, knowledgeUnlockable, knowledgePrereqMet, unlockKnowledge,
   knowColdDefense, knowInsulates, knowHearthAnywhere, knowWinterComfort, knowHeatFuelMul,
   knowWaterPerDay, knowGardenAnywhere, knowGardenBonus, knowSpoilMul, knowSaltCureBonus,
   knowDirtReduce, knowCraftMul, knowComfortBonus, knowExpBonus, knowForecastLead, knowsForecast, knowBroadcastBonus } from './core/knowledge.js'; // 지식 해금·효과
-import { districtOf, rateParts, expActualRate, setExpeditionWeather, masteryTier } from './core/expedition.js'; // 탐험 판정 (Tier3) + 지역 숙련(2.0)
+import { districtOf, cityOf, rateParts, expActualRate, setExpeditionWeather, masteryTier } from './core/expedition.js'; // 탐험 판정 (Tier3) + 지역 숙련(2.0) + 도시 파생(2.0-α)
 import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
 import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEncounterEvents } from './core/encounter.js'; // 인카운터 술어 (Tier3)
-import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsAutoAvoid, falloutCleared, setRegionsDemo } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0) + 데모 게이트
+import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsAutoAvoid, falloutCleared, regionReachable, regionCityOf, setRegionsDemo } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0) + 도시 필터(2.0-b) + 도시뷰(2.0-f) + 데모 게이트
+import { initVignettes, playVignette, playGeigerVignette, playEastGateVignette, playJungleSunVignette, playGoldenGateVignette, buildGoldenGateScene, showDiscoveryVignette, vignetteBusy, claimVignette, releaseVignette } from './render/vignettes.js'; // 시네마틱 비네트 (Tier5·6a — 발견 컷 포함)
+initVignettes({ addMoodBuff, jackpotToast, scheduleSave, gameHour, disposeDeep }); // 함수 선언 호이스팅 전제 — 게임 측 헬퍼 단방향 주입
+import { initNotebook, openJournalPages, openHelpModal, showMemoPage, showSketchPage, showTruthPage } from './ui/notebook.js'; // 수첩 페이지 (Tier7)
+// setJournalOpen: journalOpen(let, 아래 선언)은 렌더 루프 게이트 14곳이 읽는 잔류 전역 — 클로저는 호출 시점 참조라 TDZ 무관.
+initNotebook({ applyPaperBg, paperSfx, setJournalOpen: v => { journalOpen = v; } });
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -93,14 +99,16 @@ function icon(name, emoji = '', cls = '') {
 }
 // ID→아이콘명 매핑 (테이블 원본 대신 별도 객체). 대부분 ID가 파일명과 직결되나 예외(region slum→slums)만 명시.
 const REGION_ICON = { residential: 'icon_region_residential', commercial: 'icon_region_commercial', industrial: 'icon_region_industrial', slum: 'icon_region_slums' };
-const GAUGE_ICON = { hunger: 'icon_g_hunger', thirst: 'icon_g_thirst', energy: 'icon_g_energy' };
+const GAUGE_ICON = { hunger: 'icon_g_hunger', thirst: 'icon_g_thirst', energy: 'icon_g_energy', clean: 'icon_g_clean' };
 const WEATHER_ICON = { clear: 'icon_weather_clear', snow: 'icon_weather_snow', rain: 'icon_weather_rain', ash: 'icon_weather_ash', storm: 'icon_weather_storm' };
 // 렌더 편의 래퍼 (테이블 객체를 받아 아이콘 우선, emoji 폴백)
 const resIcon   = (id, cls = '') => icon(`icon_res_${id}`, RESOURCES[id]?.emoji || '', cls);
 const furnIcon  = (id, cls = '') => icon(`icon_furn_${id}`, DEFS[id]?.emoji || '', cls);
 const shIcon    = (id, cls = '') => icon(`icon_shelter_${id}`, SHELTERS[id]?.emoji || '', cls);
+const distIcon  = (id, cls = '') => icon(`icon_district_${id}`, DISTRICTS[id]?.emoji || '', cls);
+const injIconEl = (type, cls = '') => icon(`icon_inj_${type}`, INJURIES[type]?.icon || '', cls);
 const regionIcon= (id, cls = '') => icon(REGION_ICON[id] || `icon_region_${id}`, REGIONS[id]?.emoji || '', cls);
-const wxIcon    = (type, cls = '') => icon(WEATHER_ICON[type] || `icon_weather_${type}`, WEATHERS[type]?.icon || '', cls);
+const wxIcon    = (type, cls = '') => type === 'clear' ? '' : icon(WEATHER_ICON[type] || `icon_weather_${type}`, WEATHERS[type]?.icon || '', cls); // 맑음=무아이콘(디렉터: "해 모양은 별로야, 굳이 넣지마")
 
 /* ============================================================
    기본 설정
@@ -134,6 +142,54 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 소프트 엣지(디렉터: 더 예쁜 그림자). 하드 PCF → 부드러운 페넘브라
 renderer.shadowMap.autoUpdate = false; // 정적 씬: 변경 시에만 갱신 (이동체는 shadowDirty로 직접 신고)
 function shadowDirty() { renderer.shadowMap.needsUpdate = true; }
+
+/* ── #203 터치 픽셀 버스트 (플레이어 피드백 — 디렉터: 비주얼만, SFX 없음) ──
+   씬 캔버스를 누른 지점에서 사각 픽셀이 방사형으로 흩어진다. 도트 미학에 맞춰 2px 그리드 스냅.
+   패널·모달 위 터치는 제외(캔버스 리스너라 자연 스코프). 파티클이 살아 있는 동안만 rAF —
+   방치형 배터리 캐논 준수(평시 루프 0). reduceMotion이면 생략. */
+const tapFx = (() => {
+  const cv = document.createElement('canvas');
+  cv.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:59'; // PDA(58) 위, 저널(60) 아래
+  document.body.appendChild(cv);
+  const cx = cv.getContext('2d');
+  let parts = [], raf = 0, W = 0, H = 0;
+  const fit = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; };
+  fit(); addEventListener('resize', fit);
+  const PAL = ['#f2e9d8', '#e8c690', '#b8c4cc']; // 크림·앰버·한랭 회청 — 게임 톤
+  function loop() {
+    cx.clearRect(0, 0, W, H);
+    const now = performance.now();
+    parts = parts.filter(p => now - p.t0 < p.life);
+    for (const p of parts) {
+      const t = (now - p.t0) / p.life;
+      const d = p.dist * (1 - Math.pow(1 - t, 2.2)); // 감속 방사
+      const x = Math.round((p.x + Math.cos(p.a) * d) / 2) * 2; // 2px 그리드 스냅(도트 결)
+      const y = Math.round((p.y + Math.sin(p.a) * d + t * t * 6) / 2) * 2; // 말미 미세 낙하
+      cx.globalAlpha = 1 - t;
+      cx.fillStyle = p.c;
+      const sz = Math.max(2, Math.round(p.sz * (1 - t * 0.5)));
+      cx.fillRect(x, y, sz, sz);
+    }
+    cx.globalAlpha = 1;
+    raf = parts.length ? requestAnimationFrame(loop) : 0; // 전멸 시 루프 정지
+  }
+  function burst(x, y) {
+    if (opts.reduceMotion) return;
+    const n = 10 + (Math.random() * 4 | 0);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + Math.random() * 0.5; // 균등 방사 + 지터
+      parts.push({ x, y, a, t0: performance.now(), life: 280 + Math.random() * 160,
+        dist: 14 + Math.random() * 22, sz: 3 + (Math.random() * 3 | 0),
+        c: PAL[Math.random() * PAL.length | 0] });
+    }
+    if (!raf) raf = requestAnimationFrame(loop);
+  }
+  // #204(디렉터 정정): 버스트는 PDA 터치 한정 — 플라스틱 단말을 만지는 촉감. 씬/일반 UI엔 안 뜬다.
+  //   리스너는 지연 부착(#pda-back은 정적 DOM). 도킹 버튼(dock-pda)도 같은 기기라 포함.
+  document.getElementById('pda-back')?.addEventListener('pointerdown', e => burst(e.clientX, e.clientY));
+  document.getElementById('dock-pda')?.addEventListener('pointerdown', e => burst(e.clientX, e.clientY));
+  return { burst };
+})();
 
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x1a2233, 24, 58);
@@ -265,8 +321,10 @@ function interiorLightActive() {
 }
 function lightingFacilityOn() { return hasMod('lighting') && !state.lightingOut; }
 // 폴백/설비 광원 동기화 — 렌더 루프·로드 시 호출(전원 토글·연료 소진·설치를 전부 자동 반영).
+// 디렉터 정정(2026-07-17): 폴백 천장광은 광원이 켜져도 끄지 않는다 — "기본 안 밝은 조명 + 광원 밝기 가산".
+//   (구 #189 P1은 광원 존재 시 폴백 0의 이분법 — 촛불을 켜면 방이 되레 어두워지던 역설을 낳았다.)
 function updateLightingRig() {
-  ceilBaseInt = (state.current === 'subway' && state.subwayHidden) ? 2 : (interiorLightActive() ? 0 : 10);
+  ceilBaseInt = (state.current === 'subway' && state.subwayHidden) ? 2 : 10;
   facilityLight.intensity = lightingFacilityOn() ? 16 : 0;
 }
 
@@ -560,7 +618,9 @@ function applyTimeLighting() {
   dayness = THREE.MathUtils.clamp((hemi.intensity - 0.7) / 0.35, 0, 1);
   // #54: 지역(지구)별 무드 틴트 — 어디에 있는지가 색으로 읽히게. 낮에만 은은하게(18%×dayness).
   // 외곽=갈색 헤이즈 / 도심=차가운 회청 / 초원=옅은 초록기 / 숲=짙은 초록 / 해안=푸른 습기
-  const _dt = { outskirts: 0x9a8368, city: 0x7e8ea6, meadow: 0x93a67e, forest: 0x7a9678, coast: 0x7e9aac }[districtOf(state.current)];
+  // 2.0-(d): 동부 4구역 = 붉은 노을 팔레트(아트 디렉션 정본) — 관문이 가장 붉고 심부로 갈수록 자줏빛으로 식는다
+  const _dt = { outskirts: 0x9a8368, city: 0x7e8ea6, meadow: 0x93a67e, forest: 0x7a9678, coast: 0x7e9aac,
+    eastgate: 0xa8604a, eastbridge: 0x9e5a52, eaststation: 0x94585a, eastcore: 0x8a545e }[districtOf(state.current)];
   if (_dt && dayness > 0.01) {
     scene.fog.color.lerp(_tc.b.setHex(_dt), 0.18 * dayness);
     hemi.color.lerp(_tc.b, 0.10 * dayness);
@@ -593,15 +653,15 @@ function applyTimeLighting() {
   updateWindowSkies();
   updateSunShafts();
 }
-function timeLabel() {
+function timeLabel() { // [2]=아트 아이콘 키(#199 이모지 스윕) — 기존 [0][1] 사용처 무영향
   const h = gameHour();
-  if (h < 4.5) return ['🌙', t('time.night')];
-  if (h < 7) return ['🌄', t('time.dawn')];
-  if (h < 11) return ['🌅', t('time.morning')];
-  if (h < 16.5) return ['☀️', t('time.day')];
-  if (h < 19) return ['🌆', t('time.evening')];
-  if (h < 21) return ['🌇', t('time.dusk')];
-  return ['🌙', t('time.night')];
+  if (h < 4.5) return ['🌙', t('time.night'), 'icon_time_night'];
+  if (h < 7) return ['🌄', t('time.dawn'), 'icon_time_dawn'];
+  if (h < 11) return ['🌅', t('time.morning'), 'icon_time_dawn'];
+  if (h < 16.5) return ['☀️', t('time.day'), 'icon_time_day'];
+  if (h < 19) return ['🌆', t('time.evening'), 'icon_time_dusk'];
+  if (h < 21) return ['🌇', t('time.dusk'), 'icon_time_dusk'];
+  return ['🌙', t('time.night'), 'icon_time_night'];
 }
 function clockText() {
   const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
@@ -1625,7 +1685,8 @@ function buildOvergrowth() {
 // state / DEFAULT_STATE 는 core/state.js 로 이전 (모놀리스 분해 Phase 1). 위 import 참조.
 
 function costLabel(cost) {
-  return Object.entries(cost).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(' + ');
+  // P2 스윕: 이모지 → 모노 아트 (toast가 innerHTML로 승격돼 전 표면 HTML 안전)
+  return Object.entries(cost).map(([id, n]) => `${resIcon(id)}${LName(RESOURCES[id])} ${n}`).join(' + ');
 }
 // (B-④) 보유/필요 대조 칩 공통 렌더러 — 이주 창·프로젝트 카드·셸터 카드 전부 이 한 곳을 쓴다.
 //   [아이콘 이름 보유/필요] 형태로 자원 이름을 병기(아이콘+숫자만으론 무슨 아이템인지·무슨 수치인지 모른다는 신고).
@@ -2349,7 +2410,9 @@ function clampToRoom(item, x, z) {
 function surfaceRectOf(other) {
   const s = DEFS[other.defId].surface;
   if (!s) return null;
-  return other.rot % 2 ? { w: s.d, d: s.w, y: s.y } : { w: s.w, d: s.d, y: s.y };
+  // #196: 티어로 상판 높이가 변하는 가구(드레서 T1 종이상자)는 surfaceYByTier 실측 우선 — TIER_TOP_Y와 같은 문법
+  const sy = (DEFS[other.defId].surfaceYByTier || {})[other.tier || 3] ?? s.y;
+  return other.rot % 2 ? { w: s.d, d: s.w, y: sy } : { w: s.w, d: s.d, y: sy };
 }
 function findSupport(item, x, z) {
   if (!DEFS[item.defId].stackable) return null;
@@ -2457,6 +2520,9 @@ function addDistantSmoke() {
 function loadShelter(id) {
   cancelPlacing();
   deselect();
+  // 2.0-α (§9.8): 도시 도달 기록 — 모든 셸터 진입이 이 관문을 지난다. 「도시를 밟았다」 마일스톤·도감 축.
+  state.citiesReached = state.citiesReached || {};
+  state.citiesReached[cityOf(id)] = 1;
   // 기존 배치/방/환경 해체
   while (items.length) {
     const it = items.pop();
@@ -2581,7 +2647,8 @@ function loadShelter(id) {
 function moveCostFor(id) {
   const cost = {};
   if (!state.renovated[id]) {
-    for (const [rid, n] of Object.entries(SHELTERS[id].moveCost || {})) cost[rid] = (cost[rid] || 0) + n;
+    // #108 정비코스트 배수: 재정비 자원에 gateCostMul(하드 1.25·혹한 1.5·무한 0.85) — 여정 물자(음식·물)는 생존 상수라 제외.
+    for (const [rid, n] of Object.entries(gateCost(SHELTERS[id].moveCost || {}))) cost[rid] = (cost[rid] || 0) + n;
   }
   const cross = districtOf(id) !== districtOf(state.current);
   if (cross) { cost.food = (cost.food || 0) + BAL.economy.moveCrossFood; cost.water = (cost.water || 0) + BAL.economy.moveCrossWater; }
@@ -2601,7 +2668,7 @@ async function moveToShelter(id) {
   resConsumeAll(cost);
   if (renov) {
     state.renovated[id] = true;
-    state.dayLog.notes.push(t('move.renovNote', { name: LName(SHELTERS[id]), cost: costLabel(SHELTERS[id].moveCost || {}) || t('free') }));
+    state.dayLog.notes.push(t('move.renovNote', { name: LName(SHELTERS[id]), cost: costLabel(gateCost(SHELTERS[id].moveCost || {})) || t('free') })); // #108 표기=판정 동일 게이트 비용
   }
   if (cross) {
     state.gameMin += BAL.economy.moveCrossTimeMin; // 구역 간 여정 3시간
@@ -2725,17 +2792,41 @@ function buildMapCanvas() {
   }
   return mapCanvas = cv;
 }
-function openMapModal() {
+function openMapModal(viewCity) {
   if (state.exp) { $('exp-panel').classList.add('show'); renderExpPanel(); return; }
   if (isExhausted()) { toast(t('toast.exhausted')); return; }
+  // 2.0-(f) 지도 도시뷰 (§9.8.11): 뷰 도시 = 인자 또는 현 도시. 도달한 도시는 탭으로 넘겨본다 —
+  //   "왜 떠나나"의 답(§4.5 pull 가시화)이 지도 안에 있어야 이주가 도박이 아니게 된다.
+  const homeCity = cityOf(state.current);
+  const city = viewCity || homeCity;
+  const reached = Object.keys(state.citiesReached || {});
+  if (!reached.includes(homeCity)) reached.push(homeCity);
+  const cityTabs = reached.length > 1
+    ? `<div id="map-cities">${reached.map(c =>
+        `<button class="pixel-btn city-chip${c === city ? ' on' : ''}" data-city="${c}">${t('city.' + c)}${c === homeCity ? ` <span class="here">${t('map.cityHere')}</span>` : ''}</button>`).join('')}</div>`
+    : '';
   openModal(t('map.title'), `
+    ${cityTabs}
     <div id="map-wrap" class="paper"></div>
-    <div id="map-info" class="rate-line" style="margin-top:8px">${t('map.pick')}</div>`);
+    <div id="map-info" class="rate-line" style="margin-top:8px">${t('map.pick')}</div>
+    <div id="map-pull" class="rate-line"></div>`);
+  document.querySelectorAll('#map-cities .city-chip').forEach(b =>
+    b.addEventListener('click', () => { if (b.dataset.city !== city) { closeModal(); openMapModal(b.dataset.city); } }));
+  // §9.8.10 "이 도시에서만 얻는 것" — 뷰 도시의 미보유 시그니처(가구·복장) 목록. 전부 챙겼으면 완료 문구.
+  {
+    const cityRids = Object.keys(REGIONS).filter(rid => regionCityOf(rid) === city);
+    const sigAll = cityRids.flatMap(rid => BAL.blueprint.regionItems[rid] || []);
+    const unowned = sigAll.filter(id => !(state.blueprints || {})[id]);
+    const pull = $('map-pull');
+    if (pull && sigAll.length) pull.innerHTML = unowned.length
+      ? t('map.cityPull', { items: unowned.map(bpName).join(', ') })
+      : `<span style="color:var(--good)">${t('map.cityPullDone')}</span>`;
+  }
   const wrap = $('map-wrap');
   // #85 2차(디렉터 반려 → 7DTD/구판 비오메 레퍼런스): 손그림 종이는 지리가 없어 '내 위치'가 성립 안 한다.
   //   비오메 타일 지형(바다/해안·도심 회백·외곽 갈색·숲 초록·설산·봉쇄구역 해치)을 캔버스로 그려
   //   마커 좌표와 지형이 서로를 낳게 한다 — 지형이 먼저, 마커는 그 위에.
-  wrap.style.backgroundImage = `url(${mapBiomeDataUrl()})`;
+  wrap.style.backgroundImage = `url(${mapBiomeDataUrl(city)})`; // 2.0-(d)·(f): 뷰 도시 전도
   wrap.style.backgroundSize = '100% 100%';
   // 손그림 종이 지도 위에 4개 파밍 지역 마커를 지구 클러스터 위치에 % 절대 배치 (#47).
   // 좌표는 map_paper.png 위 집/빌딩/공장/판자촌 그림에 맞춰 하네스 스크린샷으로 조정.
@@ -2758,6 +2849,7 @@ function openMapModal() {
       }
       continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
     }
+    if (regionCityOf(rid) !== city) continue; // 2.0-(f): 마커는 '뷰 도시' 스코프 — 탐험 가능 여부는 아래 클릭 게이트가 판정
     const el = document.createElement('div');
     el.className = 'map-pin region';
     el.dataset.rid = rid; // 식별자 노출(테스트·자동화·트레일러 캡처가 지역별로 마커를 짚게)
@@ -2768,15 +2860,16 @@ function openMapModal() {
     const avBlocked = avalancheBlocks(rid); // #195: 눈사태 봉쇄도 지도에 — 클릭해야 거부당하며 알게 되던 이음매
     const blocked = blizzardBlocks(rid) || avBlocked; // 1.2: 폭설 봉쇄된 지상 지역 (개통 구간은 예외)
     if (blocked) el.classList.add('blocked');
-    // #85 그려지는 발견: 안 가본 곳은 연필 스케치(수치 없음 — 소문), 다녀오면 잉크(성공률+발자취 점).
+    // #85 그려지는 발견: 안 가본 곳은 연필 스케치(수치 없음 — 소문), 다녀오면 잉크(성공률).
     const visits = (state.regionVisits || {})[rid] || 0;
     const rate = Math.round(rateParts(rid).eff * 100);
     const cls = rate >= 50 ? 'ok' : 'lack';
-    // 2.0 지역 숙련: 티어가 생기면 발자취 점(•) 대신 지리 지식 별(★) — 단골 동네의 표식
-    const mTier = masteryTier(rid);
-    const dots = mTier > 0
-      ? `<span class="pin-visits mastery" title="${t('map.mastery', { n: mTier })}">${'★'.repeat(mTier)}</span>`
-      : visits > 0 ? `<span class="pin-visits" title="${t('map.visits', { n: visits })}">${'•'.repeat(Math.min(visits, 4))}</span>` : '';
+    // #204(디렉터): 숙련은 이름 색으로 — 첫 방문 붉은색에서 최종 티어(100%)의 초록까지 천천히.
+    //   ★/• 발자취 표식은 색 인코딩이 대체(타르코프식 점+이름 미니멀). 진행률은 툴팁으로.
+    const mProg = Math.min(1, visits / BAL.mastery.tiers[BAL.mastery.tiers.length - 1]);
+    const nameCol = visits > 0
+      ? `rgb(${Math.round(198 - 71 * mProg)},${Math.round(83 + 109 * mProg)},${Math.round(64 + 42 * mProg)})`
+      : '';
     // #164: 떠오른 자리 배지(스팟 아이콘) + 지역 컨디션 태그(풍/마름) — "오늘은 뭐가 떠 있나"가 아침의 질문이 되게.
     const spotHere = state.fieldSpot && state.fieldSpot.region === rid;
     const spotTag = spotHere
@@ -2786,14 +2879,16 @@ function openMapModal() {
       : cLv < 0 ? `<span class="pin-rate lack" title="${t('map.cond.leanTip')}">${t('map.cond.lean')}</span>` : '';
     if (spotHere) el.title += ' — ' + t('spot.' + state.fieldSpot.id);
     if (!visits && !blocked) el.classList.add('sketch');
-    // 지역명 상시 라벨 (디렉터: 아이콘만으론 주거지/슬럼 구분 불가 — 미방문 스케치 상태에서도 이름은 읽히게).
+    if (visits > 0) el.title += ` · ${t('map.masteryPct', { p: Math.round(mProg * 100) })}`;
+    // #204 타르코프식 핀(디렉터 레퍼런스): 아이콘 대신 점 + 옆 이름. 이름 색 = 숙련 그라데이션.
     //   핀의 자식이라 클릭·호버가 핀 핸들러로 버블 — 이름 자체가 터치 타깃을 겸한다.
-    const nameTag = `<span class="pin-name">${LName(r)}</span>`;
+    const nameTag = `<span class="pin-name"${nameCol ? ` style="color:${nameCol}"` : ''}>${LName(r)}</span>`;
+    const dotTag = `<span class="pin-dot"></span>`;
     el.innerHTML = blocked
-      ? `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate lack">${avBlocked ? '🏔️' : '❄️'}</span>${spotTag}`
+      ? `${dotTag}${nameTag}<span class="pin-rate lack">${avBlocked ? '🏔️' : '❄️'}</span>${spotTag}`
       : !visits
-        ? `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate sketch-q">?</span>${spotTag}`
-        : `${regionIcon(rid, 'px-lg')}${nameTag}<span class="pin-rate ${cls}">${rate}%</span>${dots}${spotTag}${condTag}`;
+        ? `${dotTag}${nameTag}<span class="pin-rate sketch-q">?</span>${spotTag}`
+        : `${dotTag}${nameTag}<span class="pin-rate ${cls}">${rate}%</span>${spotTag}${condTag}`;
     // 첫 귀환 후 처음 여는 지도: 잉크가 배어드는 연출 1회
     state.mapInked = state.mapInked || {};
     if (visits > 0 && !state.mapInked[rid]) { el.classList.add('inked-now'); state.mapInked[rid] = 1; scheduleSave(); }
@@ -2804,10 +2899,12 @@ function openMapModal() {
       if (ev.clientX || ev.clientY) {
         for (const pe of wrap.querySelectorAll('.map-pin.region')) {
           const rb = pe.getBoundingClientRect();
-          const d = Math.hypot(ev.clientX - (rb.left + rb.width / 2), ev.clientY - (rb.top + rb.height * 0.35));
+          const d = Math.hypot(ev.clientX - (rb.left + rb.width / 2), ev.clientY - (rb.top + rb.height / 2)); // #204 가로형 핀: 중심=height/2
           if (d < bestD) { bestD = d; best = pe.dataset.rid; }
         }
       }
+      // 2.0-(f): 타 도시 뷰에서는 구경만 — 탐험은 그 도시에 살 때만(이주 유도 안내)
+      if (city !== homeCity) { toast(t('map.otherCityPin')); return; }
       closeModal(); startExpedition(best);
     });
     // 호버/선택 시 하단 정보 줄에 위험·소요·날씨 표기
@@ -2818,6 +2915,8 @@ function openMapModal() {
   //   가구 미배치=원 1겹(해금만) · 배치=원 2겹(정착) · 현 거처=강조색+펄스. 아이콘 없이 순수 원형(지역 핀보다 아래).
   for (const [sid, sp] of Object.entries(SHELTER_MAP)) {
     if (!shelterUnlocked(sid)) continue;
+    if (cityOf(sid) !== city) continue; // 2.0-(d)·(f): 셸터 점은 '뷰 도시' 스코프 — 좌표계가 전도별이라 교차 표시는 오배치
+
     const furnished = (state.layouts[sid]?.length || 0) > 0;
     const isCurrent = sid === state.current;
     const el = document.createElement('div');
@@ -2873,6 +2972,15 @@ const MAP_MARKERS = {
   checkpoint:  { x: 77, y: 71 },  // 우하단 봉쇄선 검문소
   lab:         { x: 87, y: 80 },  // 검문소 안쪽 폭심지 연구동 (봉쇄선 너머 구석)
   citycore:    { x: 87, y: 62 },  // 2.0 봉쇄선 너머 수도의 심장 (동쪽 가장자리 — 낙진 걷힌 뒤에만 노출)
+  // ── 2.0-(d) 동부 8지역 — 좌표는 동부 전도(eastMapBiomeDataUrl) 공간. 지도는 도시 스코프라 겹침 없음 ──
+  customsyard:   { x: 12, y: 55 }, // 관문 남측 압류창고
+  containerport: { x: 31, y: 68 }, // 남서 스택 격자 위
+  interchange:   { x: 30, y: 26 }, // 램프 고리 북측
+  uptown:        { x: 22, y: 37 }, // 강변 주거단지
+  grandplatform: { x: 51, y: 59 }, // 역사 홀 위
+  outpost:       { x: 61, y: 66 }, // 역 남측 진지
+  megamall:      { x: 62, y: 28 }, // 마천루 코어
+  deptstore:     { x: 73, y: 40 }, // 코어 동측 백화점 지구
 };
 // 셸터 지도 좌표(% left/top) — 해금된 내 거점 점 마커용(디렉터 오더). 구역당 2셸터는 오프셋해 겹침 방지.
 //   지역 마커(MAP_MARKERS)와 안 겹치게 배치. openMapModal이 MAP_SAFE로 자동 클램프.
@@ -2884,18 +2992,20 @@ const SHELTER_MAP = {
   ship: { x: 14, y: 78 }, lighthouse: { x: 21, y: 73 },       // 잿빛 해안
   tugboat: { x: 46, y: 75 }, controltower: { x: 52, y: 72 },  // 얼어붙은 항구
   lodge: { x: 81, y: 27 },                                    // 고요한 고원
-  customs: { x: 94, y: 52 },                                  // 2.0 동부 관문 (지도 동쪽 끝 — §6.0.5)
-  bridgehouse: { x: 91, y: 43 },                              // 2.0 동부 다리 관리소 (세관 북서 — 협곡)
-  terminal: { x: 88, y: 49 },                                 // 2.0 동부 역 대합실 (도심 심부 2층위)
-  penthouse: { x: 85, y: 45 },                                // 2.0 동부 펜트하우스 (심부 종점)
+  // 2.0-(d) 동부 4앵커 — 좌표는 동부 전도 공간(홈 지도 동쪽 끝 임시 클러스터 폐기). 진행 축 서→동.
+  customs: { x: 10, y: 47 },                                  // 국경 검문소(관문 그 자체가 거처)
+  bridgehouse: { x: 19, y: 42 },                              // 무너진 현수교 옆 관리소
+  terminal: { x: 46, y: 51 },                                 // 역 대합실(아치 홀 북측)
+  penthouse: { x: 67, y: 34 },                                // 마천루 코어 종점
 };
 /* ── 지도 리워크 2차(디렉터: 타르코프 Woods식 진짜 지형도) ──
    지역별 색면 폐기. 회백 종이 전면 + 초록은 '식생'만 + 갈색 등고선(높이장 marching-squares)이
    주 텍스처 + 파랑 물 + 구불구불 곡선 도로. 지형색·설산 같은 작위적 요소 제거.
    지리(강·바다 남·봉쇄 남동)는 마커 좌표와 정합. 결정론(seed 4207 + 해시 노이즈) — 항상 같은 도시. */
-let _mapBiomeUrl = null;
-function mapBiomeDataUrl() {
-  if (_mapBiomeUrl) return _mapBiomeUrl;
+let _mapBiomeUrls = {}; // 도시별 캐시 (2.0-(d): home/east 두 전도)
+function mapBiomeDataUrl(city = 'home') {
+  if (_mapBiomeUrls[city]) return _mapBiomeUrls[city];
+  if (city === 'east') return (_mapBiomeUrls.east = eastMapBiomeDataUrl());
   const W = 1120, H = 800, CELL = 4;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const g = cv.getContext('2d');
@@ -3006,6 +3116,18 @@ function mapBiomeDataUrl() {
   for (const r of roads) curveRoad(r, 2.6, 'rgba(120,92,58,0.85)');
   curveRoad([[75, 18], [80, 15], [85, 13]], 2, 'rgba(120,92,58,0.6)', [6, 6]);   // 산길
   curveRoad([[31, 71], [24, 74], [17, 77]], 1.8, 'rgba(120,92,58,0.5)', [5, 5]); // 해안 오솔길
+  // 6b) 2.0-(b) 동측 국경 힌트 — 동부 간선이 지도 밖(두 번째 도시)으로 이어진다.
+  //     인쇄 시절부터 종이에 있던 길: 행정경계 일점쇄선 + 검문소 발자국 + 차단 표시. 문자열 0(도법 기호만).
+  const eastRoad = [[76, 31], [84, 33], [92, 35], [100, 36]];
+  curveRoad(eastRoad, 6, 'rgba(226,218,194,0.6)');
+  curveRoad(eastRoad, 2.6, 'rgba(120,92,58,0.85)');
+  g.strokeStyle = 'rgba(110,88,60,0.55)'; g.lineWidth = 1.6; g.setLineDash([14, 5, 3, 5]); // 행정경계(일점쇄선, 남북)
+  g.beginPath(); g.moveTo(X(95.6), Y(14)); g.lineTo(X(94.6), Y(30)); g.lineTo(X(95.9), Y(50)); g.lineTo(X(95.2), Y(60)); g.stroke();
+  g.setLineDash([]);
+  g.fillStyle = 'rgba(120,112,96,0.5)'; g.fillRect(X(92.6), Y(31.4), 10, 8);               // 검문소 부스 발자국(도로변)
+  g.strokeStyle = 'rgba(70,62,50,0.7)'; g.lineWidth = 1; g.strokeRect(X(92.6), Y(31.4), 10, 8);
+  g.strokeStyle = 'rgba(150,70,58,0.8)'; g.lineWidth = 2.2;                                 // 차단 표시(도로 직교 붉은 획)
+  g.beginPath(); g.moveTo(X(94.8), Y(32.6)); g.lineTo(X(94.8), Y(38.4)); g.stroke();
   g.lineCap = 'butt';
   // 7) 해안선 — 물가 파도 대시(얕게).
   g.strokeStyle = 'rgba(120,150,155,0.5)'; g.lineWidth = 1.2;
@@ -3024,8 +3146,222 @@ function mapBiomeDataUrl() {
   const vg = g.createRadialGradient(W / 2, H / 2, H * 0.32, W / 2, H / 2, H * 0.78);
   vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(44,32,18,0.16)');
   g.fillStyle = vg; g.fillRect(0, 0, W, H);
-  _mapBiomeUrl = cv.toDataURL();
-  return _mapBiomeUrl;
+  _mapBiomeUrls.home = cv.toDataURL();
+  return _mapBiomeUrls.home;
+}
+/* ── 2.0-(d) 동부 전도 「항구도시」 — 백지 지도의 설렘(§6.2) ──
+   홈 전도와 같은 지형도 문법(회백 종이·등고선·식생·곡선 도로·접힘)이되 지리는 부산형:
+   남측 만(灣) 전폭 + 남서 컨테이너항(스택 격자) + 중동부 마천루 코어(대형 발자국 밀집) +
+   서측 강과 무너진 현수교(끊긴 경간) + 역으로 모이는 철도 축 + 서쪽 가장자리 국경 일점쇄선(홈 지도의 미러).
+   3년 무인 진입지라 식생 잠식(overgrowth)을 도심 안까지 허용 — TLOU 감성의 지도 버전. 결정론 seed 8104. */
+function eastMapBiomeDataUrl() {
+  const W = 1120, H = 800, CELL = 4;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  const rand = seededRand(8104);
+  const X = p => p / 100 * W, Y = p => p / 100 * H;
+  const hash = (i, j) => { let n = Math.imul(i | 0, 374761393) + Math.imul(j | 0, 668265263); n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967296; };
+  const vnoise = (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v;
+  };
+  // 높이장: 북고남저(만으로 하강) + 북동 구릉. 해안선은 대각(남서 낮음 → 북동 높음) — 부산형 만곡.
+  const seaLine = x => 74 + Math.sin(x * 0.045 + 1.2) * 4 + (x - 50) * 0.10; // x%에서의 해안 y%
+  const hAt = (x, y) => {
+    let e = (vnoise(x * 0.05 + 9, y * 0.05 + 3) - 0.5) * 2.0
+          + (vnoise(x * 0.12 + 31, y * 0.12 + 17) - 0.5) * 0.8
+          + (vnoise(x * 0.27 + 55, y * 0.27 + 41) - 0.5) * 0.3;
+    e += (1 - y / 100) * 0.55 + (x / 100) * 0.18 - Math.max(0, (y - seaLine(x)) / 14) * 2.6;
+    return e;
+  };
+  // 강 경로(색면·시가 클립이 함께 읽는다 — 정의를 위로)
+  const river = t => [16 + Math.sin(t * 5 + 2) * 3.5 + t * 4, t * 78];
+  // 시가 격자 좌표계(디렉터: 맨해튼 밀도) — 강 방향으로 -8° 기운 애비뉴×스트리트.
+  const GA = -0.14, GOX = 28, GOY = 20;
+  const gridUV = (x, y) => { const dx = x - GOX, dy = y - GOY, ca = Math.cos(GA), sa = Math.sin(GA); return [dx * ca + dy * sa, -dx * sa + dy * ca]; };
+  const uvXY = (u, v) => { const ca = Math.cos(GA), sa = Math.sin(GA); return [GOX + u * ca - v * sa, GOY + u * sa + v * ca]; };
+  const inCity = (x, y) => {
+    const [u, v] = gridUV(x, y);
+    return u > -2 && u < 66 && v > -2 && v < 46
+      && y < seaLine(x) - 2 && x > river(Math.min(1, Math.max(0, y / 78)))[0] + 3
+      && !(x < 45 && y > 60); // 컨테이너항 존은 항만 시그니처가 담당
+  };
+  const inPark = (x, y) => { const [u, v] = gridUV(x, y); return u > 30 && u < 44 && v > 6 && v < 14; }; // 도심의 허파(직사각 공원)
+  // 식생: 대도시 억제 — 시가지에선 녹지 소멸(공원 제외), 외곽 구릉·강변만 잔존.
+  const vegAt = (x, y) => (inPark(x, y) ? 2.2 : 0)
+    + vnoise(x * 0.075 + 70, y * 0.075 + 20) + (vnoise(x * 0.18 + 12, y * 0.18 + 66) - 0.5) * 0.4
+    - (inCity(x, y) ? 1.5 : 0)
+    - Math.max(0, (x - 52) / 48) * Math.max(0, (38 - Math.abs(y - 34)) / 38) * 0.34;
+  // 1) 색면 — 종이/식생/바다 (홈과 동일 팔레트·디더 문법)
+  const paper = ['#e7e2d5', '#e0dbcd'], green = ['#b7c398', '#abb98a'], sea = ['#a8c1c5', '#9cb7bc'];
+  for (let cy = 0; cy < H / CELL; cy++) {
+    for (let cx = 0; cx < W / CELL; cx++) {
+      const px = (cx * CELL + CELL / 2) / W * 100, py = (cy * CELL + CELL / 2) / H * 100;
+      const jx = px + (rand() - 0.5) * 4.5, jy = py + (rand() - 0.5) * 4.5;
+      const pal = (jy > seaLine(jx) || hAt(jx, jy) < -1.35) ? sea : (vegAt(jx, jy) > 0.52 ? green : paper);
+      g.fillStyle = (cx + cy) % 2 ? pal[1] : pal[0];
+      g.fillRect(cx * CELL, cy * CELL, CELL, CELL);
+    }
+  }
+  // 2) 등고선 — 대도시라 절제(디렉터: 산지 최소화): 레벨 스텝 0.4→0.9 + 시가지 내부는 평탄(생략).
+  const gw = 140, gh = 100, cw = W / gw, ch = H / gh, hg = [];
+  for (let j = 0; j <= gh; j++) { hg[j] = []; for (let i = 0; i <= gw; i++) hg[j][i] = hAt(i / gw * 100, j / gh * 100); }
+  let k = 0;
+  for (let lv = -1.5; lv <= 2.5; lv += 0.9, k++) {
+    g.lineWidth = k % 2 ? 0.8 : 1.5; g.strokeStyle = k % 2 ? 'rgba(150,120,76,0.34)' : 'rgba(138,108,66,0.55)';
+    g.beginPath();
+    for (let j = 0; j < gh; j++) {
+      for (let i = 0; i < gw; i++) {
+        const px = (i + 0.5) / gw * 100, py = (j + 0.5) / gh * 100;
+        if (py > seaLine(px)) continue;
+        if (inCity(px, py)) continue; // 시가지는 평탄 — 등고선 없음
+        const a = hg[j][i], b = hg[j][i + 1], c = hg[j + 1][i + 1], d = hg[j + 1][i];
+        const x0 = i * cw, y0 = j * ch, x1 = x0 + cw, y1 = y0 + ch, pts = [];
+        if ((a > lv) !== (b > lv)) pts.push([x0 + cw * (lv - a) / (b - a), y0]);
+        if ((b > lv) !== (c > lv)) pts.push([x1, y0 + ch * (lv - b) / (c - b)]);
+        if ((c > lv) !== (d > lv)) pts.push([x1 - cw * (lv - c) / (d - c), y1]);
+        if ((d > lv) !== (a > lv)) pts.push([x0, y1 - ch * (lv - d) / (a - d)]);
+        if (pts.length >= 2) { g.moveTo(pts[0][0], pts[0][1]); g.lineTo(pts[1][0], pts[1][1]); }
+        if (pts.length === 4) { g.moveTo(pts[2][0], pts[2][1]); g.lineTo(pts[3][0], pts[3][1]); }
+      }
+    }
+    g.stroke();
+  }
+  // 3) 강 — 북서에서 만으로(경로 정의는 상단 — 시가 클립 공용). 하구에 무너진 현수교: 끊긴 경간 + 낙하 잔해.
+  g.lineCap = 'round';
+  for (const [w, col] of [[9, 'rgba(140,172,178,0.9)'], [3.5, 'rgba(190,212,214,0.7)']]) {
+    g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.moveTo(X(river(0)[0]), 0);
+    for (let t = 0; t <= 1.001; t += 0.04) { const [rx, ry] = river(t); g.lineTo(X(rx), Y(ry)); }
+    g.stroke();
+  }
+  g.lineCap = 'butt';
+  // 무너진 현수교(y 45): 서안 경간 + 동안 경간, 가운데가 없다 — 주탑 2점 + 강물 위 잔해 점
+  const bry = 45, brx = river(bry / 78)[0];
+  g.strokeStyle = 'rgba(120,92,58,0.9)'; g.lineWidth = 3.5;
+  g.beginPath(); g.moveTo(X(brx - 7), Y(bry)); g.lineTo(X(brx - 1.8), Y(bry)); g.stroke();   // 서측 경간
+  g.beginPath(); g.moveTo(X(brx + 2.2), Y(bry + 0.4)); g.lineTo(X(brx + 7), Y(bry + 0.6)); g.stroke(); // 동측 경간(어긋남)
+  g.fillStyle = 'rgba(120,92,58,0.85)';
+  g.fillRect(X(brx - 2.4) - 2, Y(bry) - 5, 4, 10); g.fillRect(X(brx + 2.6) - 2, Y(bry) - 5, 4, 10); // 주탑
+  g.fillStyle = 'rgba(100,80,55,0.5)';
+  for (let i = 0; i < 5; i++) g.fillRect(X(brx - 1.5 + rand() * 3), Y(bry + 0.5 + rand() * 1.6), 3, 2); // 강에 떨어진 경간 잔해
+  // 4) 컨테이너항(남서 물가) — 스택 격자: 작은 직사각 열(건물 발자국과 구별되는 항만 시그니처)
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 11; col++) {
+      if (rand() < 0.22) continue; // 빠진 스택(하역된 자리)
+      const sx = X(20 + col * 2.1), sy = Y(64 + row * 2.2);
+      g.fillStyle = ['rgba(150,110,90,0.5)', 'rgba(110,120,140,0.5)', 'rgba(120,130,105,0.5)'][(row + col) % 3];
+      g.fillRect(sx, sy, 16, 9);
+      g.strokeStyle = 'rgba(70,62,50,0.45)'; g.lineWidth = 0.8; g.strokeRect(sx, sy, 16, 9);
+    }
+  }
+  for (const qx of [24, 33, 42]) { g.fillStyle = 'rgba(90,84,72,0.6)'; g.fillRect(X(qx), Y(75.5), 3, 26); } // 안벽 크레인 레일 말뚝
+  // 5) 시가 격자 블록 (디렉터: 맨해튼 밀도) — 애비뉴(9%)×스트리트(4%) 블록을 발자국으로 빽빽하게.
+  //    타원 스프롤 폐기: 대도시는 격자가 뼈대다. 코어(마천루)는 통블록·진하게, 그 외는 1~2분할.
+  //    공터는 드물게(폭격 공백 8%) — 밀도가 "수도"를 말한다. 공원(inPark)은 도심의 허파로 비운다.
+  for (let v = 0; v < 44; v += 4) {
+    for (let u = 0; u < 64; u += 9) {
+      const [ccx, ccy] = uvXY(u + 4.5, v + 2);
+      if (!inCity(ccx, ccy) || inPark(ccx, ccy)) continue;
+      if (hash(u * 3 + 11, v * 3 + 29) < 0.08) continue; // 폭격 공백(드물게)
+      const core = Math.hypot(ccx - 64, ccy - 32) < 13;  // 마천루 코어
+      const nSplit = core ? 1 : (hash(u, v) < 0.55 ? 1 : 2);
+      for (let s = 0; s < nSplit; s++) {
+        const uu = u + 0.7 + s * (7.8 / nSplit), vv = v + 0.55;
+        const [bxp, byp] = uvXY(uu, vv);
+        const bw = (7.8 / nSplit - 0.6) / 100 * W, bh = 2.95 / 100 * H;
+        g.save(); g.translate(X(bxp), Y(byp)); g.rotate(GA);
+        g.fillStyle = core ? 'rgba(102,95,84,0.46)' : 'rgba(120,112,96,0.34)';
+        g.fillRect(0, 0, bw, bh);
+        g.strokeStyle = 'rgba(70,62,50,0.55)'; g.lineWidth = 1; g.strokeRect(0, 0, bw, bh);
+        if (!core && hash(u + 9, v + 7) < 0.16) { g.fillStyle = 'rgba(171,185,138,0.5)'; g.fillRect(2, 2, 6, 4); } // 옥상 잠식(3년)
+        g.restore();
+      }
+    }
+  }
+  // 5b) 격자 도로 — 애비뉴 굵게·스트리트 가늘게. 세그먼트 워크로 시가지 안에서만 긋는다(바다·강 위 유출 방지).
+  const gridLine = (u0, v0, u1, v1, w, col) => {
+    g.strokeStyle = col; g.lineWidth = w;
+    const steps = 26;
+    let open = false;
+    g.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const uu = u0 + (u1 - u0) * i / steps, vv = v0 + (v1 - v0) * i / steps;
+      const [px, py] = uvXY(uu, vv);
+      if (inCity(px, py) && !inPark(px, py)) {
+        if (!open) { g.moveTo(X(px), Y(py)); open = true; } else g.lineTo(X(px), Y(py));
+      } else open = false;
+    }
+    g.stroke();
+  };
+  for (let u = 0; u <= 64; u += 9) gridLine(u, -1, u, 45, 1.8, 'rgba(120,92,58,0.42)');   // 애비뉴
+  for (let v = 0; v <= 44; v += 4) gridLine(-1, v, 65, v, 0.9, 'rgba(120,92,58,0.3)');    // 스트리트
+  // 5c) 공원(도심의 허파) — 테두리 + 산책로 교차 (색면은 vegAt이 이미 초록으로 채움)
+  {
+    const corners = [[30, 6], [44, 6], [44, 14], [30, 14]].map(([u, v]) => uvXY(u, v));
+    g.strokeStyle = 'rgba(108,128,82,0.7)'; g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(X(corners[0][0]), Y(corners[0][1]));
+    for (let i = 1; i <= 4; i++) { const c = corners[i % 4]; g.lineTo(X(c[0]), Y(c[1])); }
+    g.stroke();
+    const [pa, pb] = [uvXY(30, 10), uvXY(44, 10)];
+    g.strokeStyle = 'rgba(150,132,96,0.5)'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(X(pa[0]), Y(pa[1])); g.lineTo(X(pb[0]), Y(pb[1])); g.stroke();
+  }
+  // 6) 도로 — 서쪽 국경에서 들어오는 간선(홈 지도 동측 간선의 연속) + 해안로 + 코어 순환.
+  const curveRoad = (pts, w, col, dash) => {
+    g.strokeStyle = col; g.lineWidth = w; g.lineJoin = 'round'; g.lineCap = 'round'; if (dash) g.setLineDash(dash);
+    const P = pts.map(([px, py]) => [X(px), Y(py)]);
+    g.beginPath(); g.moveTo(P[0][0], P[0][1]);
+    for (let i = 1; i < P.length - 1; i++) g.quadraticCurveTo(P[i][0], P[i][1], (P[i][0] + P[i + 1][0]) / 2, (P[i][1] + P[i + 1][1]) / 2);
+    g.lineTo(P[P.length - 1][0], P[P.length - 1][1]); g.stroke(); if (dash) g.setLineDash([]);
+  };
+  const roads = [
+    [[0, 47], [8, 47], [15, 46], [24, 44], [32, 40], [40, 36], [50, 33], [60, 31]],   // 국경 간선 → 코어
+    [[30, 30], [34, 26], [40, 22], [48, 20]],                                          // 인터체인지 북지선
+    [[30, 30], [28, 38], [30, 48], [34, 56], [40, 62]],                                // 인터체인지 남지선(항만)
+    [[40, 62], [50, 60], [58, 62], [66, 60]],                                          // 해안로
+    [[60, 31], [68, 34], [74, 40], [76, 48]],                                          // 코어 순환
+    [[48, 54], [56, 56], [64, 55]],                                                    // 역전로
+  ];
+  for (const r of roads) curveRoad(r, 6, 'rgba(226,218,194,0.6)');
+  for (const r of roads) curveRoad(r, 2.6, 'rgba(120,92,58,0.85)');
+  // 인터체인지 램프 고리(고가 교차 시그니처)
+  g.strokeStyle = 'rgba(120,92,58,0.7)'; g.lineWidth = 2;
+  g.beginPath(); g.arc(X(30), Y(30), 14, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.arc(X(30), Y(30), 24, 0.6, Math.PI * 1.7); g.stroke();
+  // 7) 철도 — 북동에서 역으로: 복선 + 침목 대시, 역사(대승강장) 홀 지붕
+  const rail = [[86, 14], [74, 24], [62, 36], [52, 48], [47, 55]];
+  curveRoad(rail, 4, 'rgba(110,100,86,0.55)');
+  g.strokeStyle = 'rgba(80,70,58,0.6)'; g.lineWidth = 1.2;
+  for (let t = 0; t < 1; t += 0.055) { // 침목
+    const i = Math.min(rail.length - 2, Math.floor(t * (rail.length - 1)));
+    const f = t * (rail.length - 1) - i;
+    const rx = rail[i][0] + (rail[i + 1][0] - rail[i][0]) * f, ry = rail[i][1] + (rail[i + 1][1] - rail[i][1]) * f;
+    g.beginPath(); g.moveTo(X(rx) - 4, Y(ry) - 3); g.lineTo(X(rx) + 4, Y(ry) + 3); g.stroke();
+  }
+  g.fillStyle = 'rgba(110,102,88,0.55)'; g.fillRect(X(44.5), Y(53), 52, 20);            // 역사 아치 홀 발자국
+  g.strokeStyle = 'rgba(70,62,50,0.7)'; g.lineWidth = 1.4; g.strokeRect(X(44.5), Y(53), 52, 20);
+  for (let i = 1; i < 4; i++) { g.strokeStyle = 'rgba(70,62,50,0.35)'; g.beginPath(); g.moveTo(X(44.5), Y(53) + i * 5), g.lineTo(X(44.5) + 52, Y(53) + i * 5); g.stroke(); } // 승강장 홈
+  // 8) 서쪽 국경 — 일점쇄선(홈 지도 동측의 미러) + 검문 차단 획
+  g.strokeStyle = 'rgba(110,88,60,0.55)'; g.lineWidth = 1.6; g.setLineDash([14, 5, 3, 5]);
+  g.beginPath(); g.moveTo(X(5.5), Y(16)); g.lineTo(X(6.5), Y(34)); g.lineTo(X(5.2), Y(52)); g.lineTo(X(6.0), Y(66)); g.stroke();
+  g.setLineDash([]);
+  g.strokeStyle = 'rgba(150,70,58,0.8)'; g.lineWidth = 2.2;
+  g.beginPath(); g.moveTo(X(5.8), Y(44.4)); g.lineTo(X(5.8), Y(49.6)); g.stroke();
+  // 9) 접힘 자국 + 표고점 + 그레인 + 비네트 (홈과 동일 마감)
+  const crease = (x0, y0, x1, y1) => {
+    g.strokeStyle = 'rgba(78,64,42,0.09)'; g.lineWidth = 4; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    g.strokeStyle = 'rgba(255,250,236,0.14)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x0 + 1.5, y0); g.lineTo(x1 + 1.5, y1); g.stroke();
+  };
+  crease(W / 3, 0, W / 3, H); crease(W * 2 / 3, 0, W * 2 / 3, H); crease(0, H / 2, W, H / 2);
+  g.fillStyle = 'rgba(92,70,44,0.45)'; g.font = 'italic 14px Georgia, "Times New Roman", serif';
+  for (let i = 0; i < 16; i++) { const nx = 6 + rand() * 86, ny = 10 + rand() * 60; if (ny > seaLine(nx) - 4) continue; g.fillText((1 + rand() * 38).toFixed(1), X(nx), Y(ny)); }
+  for (let i = 0; i < 2600; i++) { g.fillStyle = rand() < 0.5 ? 'rgba(70,54,34,0.04)' : 'rgba(255,250,236,0.05)'; g.fillRect(rand() * W, rand() * H, 2, 2); }
+  const vg = g.createRadialGradient(W / 2, H / 2, H * 0.32, W / 2, H / 2, H * 0.78);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(44,32,18,0.16)');
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  return cv.toDataURL();
 }
 // 항구 지역 해금 게이트: 항구 셸터(예인선)를 해금한 뒤부터 지도에 항구 구역이 뜬다.
 // 기존 4지역은 항상 해금(true). ARC-03 마커 문법 그대로, 노출 조건만 얹는다.
@@ -3056,7 +3392,7 @@ function showMapInfo(rid) {
   if (sigs) {
     const unowned = sigs.filter(id => !(state.blueprints || {})[id]);
     track = unowned.length
-      ? `<br>${t('map.drops', { items: unowned.map(id => LName(DEFS[id])).join(', ') })}`
+      ? `<br>${t('map.drops', { items: unowned.map(bpName).join(', ') })}`
       : `<br><span style="color:var(--good)">${t('map.sigDone')}</span>`;
   }
   // #195: 젤 필터북 pull 가시화 — 미보유 시 상업·도심 정보줄에 1줄. 지역 pull로 설계된 기능(#189 P3)인데
@@ -3138,8 +3474,9 @@ function startExpedition(regionId) {
   if (state.exp) return;
   if (isExhausted()) { toast(t('toast.exhausted')); return; }
   if (state.energy < BAL.exp.minEnergy) { toast(t('toast.tooTired')); return; }
-  if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); return; }
+  // #199 5차-c(디렉터): 일일 상한 차단 폐지 — 에너지가 실질 제한. 과로 회복 페널티(expFatigue)는 존치.
   if (blizzardBlocks(regionId)) { toast(t('subway.blizzardBlocked')); return; } // 1.2 폭설 봉쇄 (개통 구간은 예외)
+  if (!regionReachable(regionId)) return; // 2.0-(b): 타 도시 지역 출발 차단 — 지도에서 이미 숨겨 도달 불가 방어선(무토스트)
   // 1.4 금지 구역 진입 게이트 — 방호복 미제작/내구 소진 시 차단. "방호복 없이는 한 걸음도"의 실측 지점.
   //   2.0 낙진 시계: 겨울 셋을 넘겨 낙진이 걷히면 맨몸 개방(우회) — 대신 resolve에서 잔류 방사능 부상 롤.
   if (isForbiddenRegion(regionId) && !hazmatUsable() && !falloutCleared()) {
@@ -3208,7 +3545,7 @@ function openPrepModal(regionId) {
     $('modal-body').innerHTML = `
       <div class="rate-line">
         ${t('prep.rateLine', { emoji: r.emoji, pct: Math.round(p.eff * 100), lines: lines.join(' · ') })}<br>
-        ${t('prep.riskLine', { risk: LRisk(r), dur, sprain: state.injury?.type === 'sprain' ? t('prep.sprainTag') : '', mobile: SHELTERS[state.current].perk?.timeMult ? t('prep.mobileTag') : '', wicon: WEATHERS[weather.type].icon, wname: LName(WEATHERS[weather.type]), forecast: fc })}
+        ${t('prep.riskLine', { risk: LRisk(r), dur, sprain: state.injury?.type === 'sprain' ? t('prep.sprainTag') : '', mobile: SHELTERS[state.current].perk?.timeMult ? t('prep.mobileTag') : '', wicon: wxIcon(weather.type), wname: LName(WEATHERS[weather.type]), forecast: fc })}
       </div>
       <div id="prep-list">${Object.entries(PREPS).map(([id, pr]) => {
         const has = resHasAll(pr.cost);
@@ -3261,7 +3598,7 @@ async function departExpedition(regionId, prep, opts2 = {}) {
   // 준비 모달을 열어둔 사이 상태가 나빠졌을 수도 있다 — 출발 직전 재검사
   if (isExhausted()) { toast(t('toast.exhausted')); closeModal(); return; }
   if (state.energy < 20) { toast(t('toast.tooTired')); closeModal(); return; }
-  if (state.expToday >= EXP_PER_DAY) { toast(t('toast.expLimit', { n: EXP_PER_DAY })); closeModal(); return; }
+  // #199 5차-c(디렉터): 일일 상한 차단 폐지(출발 재검사도) — 과로 페널티(expFatigue)는 존치
   const r = REGIONS[regionId];
   const p = rateParts(regionId, prep);
   // 저성공률 출발 확인 — 수동 클릭 경로에서만 (자동진행/blackout에선 확인창 금지: 게임이 멈춘다)
@@ -3306,12 +3643,23 @@ function resolveExpedition() {
   //   자원 궤적을 미세 변화시키는 히든 커플링 실측(생존 지표는 diff-0, 경로 미규명 — 백로그 조사).
   //   시뮬엔 지도 연출이 무의미하므로 제외 — 기준선 재현성 보존.
   let masteryUp = 0; // 2.0 지역 숙련: 이번 귀환으로 지리 지식 티어가 올랐는가 (아래 notes에 인과문)
+  let masteryFull = false; // #204: 이번 귀환으로 숙련 100% 첫 도달 (정산 노트 병기)
   if (!_simRunning) {
     state.regionVisits = state.regionVisits || {};
     const _mPrev = masteryTier(exp.region);
     state.regionVisits[exp.region] = (state.regionVisits[exp.region] || 0) + 1;
     const _mNow = masteryTier(exp.region);
     if (_mNow > _mPrev) masteryUp = _mNow;
+    // #204: 숙련 100%(최종 티어) 첫 도달 — 업적식 알림 1회(세이브 플래그로 재발화 차단).
+    //   토스트는 단일 엘리먼트 덮어쓰기라 정산 전리품 토스트 러시에 묻힌다(하네스 실측) —
+    //   러시가 끝난 4초 뒤 지연 발화 + 정산 카드 노트에도 병기(놓쳐도 기록이 남게).
+    state.masteryDone = state.masteryDone || {};
+    if (_mNow >= BAL.mastery.tiers.length && !state.masteryDone[exp.region]) {
+      state.masteryDone[exp.region] = 1;
+      masteryFull = true;
+      const _mName = LName(REGIONS[exp.region]);
+      setTimeout(() => toast(t('ach.unlocked', { icon: '🧭', name: t('mastery.fullName', { name: _mName }) })), 4000);
+    }
   }
   const prep = exp.prep || [];
   const startedInjured = !!state.injury;        // 다친 몸으로 출발했는가 (인과문용)
@@ -3342,6 +3690,7 @@ function resolveExpedition() {
   if (isForbiddenRegion(exp.region)) { wearHazmat(); if (state.hazmat) notes.push(t('hazmat.wearNote', { dur: state.hazmat.dur })); }
   // 2.0 지역 숙련: 티어 상승의 순간 — 성패와 무관하게 알린다 (실패한 트립도 진행이었다는 감각).
   if (masteryUp) notes.push(t('mastery.up', { name: LName(r), stars: '★'.repeat(masteryUp) }));
+  if (masteryFull) notes.push(t('mastery.fullNote', { name: LName(r) })); // #204: 숙련 100% — 정산 카드에도 기록
   // #167 2겹화: 슬럼 ★1 도달의 그 귀환에서 심부가 열린다 — 지도에 새 핀 + 아침 보고 한 줄.
   if (masteryUp === 1 && exp.region === 'slum') {
     notes.push(t('map.deepOpen'));
@@ -3440,6 +3789,7 @@ function resolveExpedition() {
     }
     // DDD-4 시그니처 도면 (REWARD-LOOP ② 2차): 지역 독점 가구의 도면 — 도료보다 희귀한 잭팟 층.
     //   그 지역에서만, 미보유 도면 중 가중 픽(그래피티는 weights로 더 희귀 — 디렉터 2026-07-09).
+    //   2.0-(e): 동부 시그니처는 가구가 아니라 복장(outfit_*) — 이름은 bpName이 분기, 발견 컷은 가구만.
     {
       const bpPool = (BAL.blueprint.regionItems[exp.region] || []).filter(id => !(state.blueprints || {})[id]);
       if (bpPool.length && Math.random() < BAL.blueprint.dropChance * (DEMO_ED ? 1.5 : 1)) { // #149 데모 상향 — 짧은 세션 보정
@@ -3449,10 +3799,10 @@ function resolveExpedition() {
         for (const id of bpPool) { r -= (w[id] ?? 1); if (r < 0) { bpId = id; break; } }
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
-        notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
-        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'legendary' });
-        jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
-        queueDiscovery(bpId, 0, 3, LName(DEFS[bpId])); // #150 희귀템 발견 컷 — 시그니처 도면=지역 독점 가구, 첫 발견 확정(고유)
+        notes.push(t('bp.foundNote', { name: bpName(bpId) }));
+        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
+        jackpotToast(`📐 ${t('bp.jackpot', { name: bpName(bpId) })}`, 0xd4b46a);
+        if (DEFS[bpId]) queueDiscovery(bpId, 0, 3, bpName(bpId)); // #150 발견 컷 — 가구 도면만(복장은 디오라마 모델 없음)
       }
     }
     // #190 커먼 도면 (「생존의 흔적」 밀도 프롭 5종): 전 지역 저확률 파밍 — 디렉터 오더(기본 배치 대신).
@@ -3939,6 +4289,12 @@ function playEventSting(id) {
 // title/text/choice label 은 언어 전환 시점(showEvent) 에 t() 로 해석하므로 id 로 보관한다.
 // #165 무너진 입구 보상 롤 (디렉터 2026-07-10): Yes의 값 — 치장템(도료·도면) 가중, 최희귀 고양이 루트,
 //   나머지는 잡동사니 위로. 부상 리스크는 이벤트 쪽(choices.run)에서 별도 롤 — 보상과 독립이라 "얻고도 다칠" 수 있다.
+let collapseLootFx = null; // #199 상자 개봉 연출용 전리품 메타(색·이모지) — collapseEntranceLoot가 굴릴 때 기록
+// 2.0-(e) 도면 이름 해석 — 시그니처 도면이 가구(DEFS)와 복장(outfit_*→OUTFITS) 두 종족이 됐다.
+//   드랍 노트·잭팟·전리품 라벨·지도 보급원 트래커가 공용(함수 선언 호이스팅으로 전 사용처 안전).
+function bpName(bpId) {
+  return bpId.startsWith('outfit_') ? LName(OUTFITS[bpId.slice(7)] || { name: bpId, nameEn: bpId }) : LName(DEFS[bpId]);
+}
 function collapseEntranceLoot() {
   // #193: 발동 시점에 박제한 지역 우선 — 귀환 후 표시라 state.exp는 이미 비어 있다(항상 slum 폴백이던 결함)
   const region = state.riskEventRegion || (state.exp ? state.exp.region : 'slum');
@@ -3946,11 +4302,13 @@ function collapseEntranceLoot() {
   // 최희귀: 어둠 속의 야옹 — 고양이 미보유·미조우일 때만. 입양 인카운터로 연결(집 문앞 재회 플로우 그대로).
   if (!state.cat && !state.catEventSeen && r < 0.08) {
     state.pendingEvent = 'cat';
+    collapseLootFx = { color: 0xffd487, emoji: '🐾' };
     return t('ev.collapse.rCat');
   }
   if (r < 0.5) { // 도료 (지역 시그니처 계열 가중 — 기존 잭팟 층 재사용)
     const fam = rollPaintFamily(region);
     state.paints[fam] = (state.paints[fam] || 0) + 1;
+    collapseLootFx = { color: PAINT_FAMILIES[fam].swatch, emoji: '🪣' };
     jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
     return t('ev.collapse.rPaint', { name: LName(PAINT_FAMILIES[fam]) });
   }
@@ -3959,11 +4317,13 @@ function collapseEntranceLoot() {
     const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
     state.blueprints = state.blueprints || {};
     state.blueprints[bpId] = 1;
-    jackpotToast(`📐 ${t('bp.jackpot', { name: LName(DEFS[bpId]) })}`, 0xd4b46a);
-    return t('ev.collapse.rBp', { name: LName(DEFS[bpId]) });
+    collapseLootFx = { color: 0xd4b46a, emoji: '📐' };
+    jackpotToast(`📐 ${t('bp.jackpot', { name: bpName(bpId) })}`, 0xd4b46a);
+    return t('ev.collapse.rBp', { name: bpName(bpId) });
   }
   const rid = Math.random() < 0.5 ? 'cloth' : 'parts';
   resAdd(rid, 1);
+  collapseLootFx = { color: 0x9aa0a8, emoji: rid === 'cloth' ? '🧵' : '🔩' };
   return t('ev.collapse.rJunk', { name: LN(RESOURCES[rid]) });
 }
 // #164 「떠오른 자리」 회수 — 스팟 지역 탐험이 성공/부분성공으로 닿았을 때 resolveExpedition에서 호출.
@@ -3989,7 +4349,7 @@ function resolveFieldSpot(exp, mult, notes, special) {
         const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
-        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'legendary' });
+        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
       }
     }
     if (sp.loot.mood) addMoodBuff(sp.loot.mood[0], sp.loot.mood[1]);
@@ -4218,19 +4578,25 @@ function dropSpotPos() {
 }
 function spawnGroundDrop(evId, opts = {}) {
   if (!ROOM || !EVENTS[evId] || !shelterHasGround(state.current)) return false; // 지면 셸터·유효 이벤트만
-  const p = opts.pos || dropSpotPos();
+  const f = opts.follow || null; // 동물 그룹 — 반짝임이 몸에 붙어 동행(디렉터)
+  const p = f ? { x: f.position.x, z: f.position.z, y: visitorGroundY() } : (opts.pos || dropSpotPos());
   const g = new THREE.Group(); g.position.set(p.x, p.y, p.z);
   const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkleTexOnce(), color: 0xfff6e0, blending: THREE.AdditiveBlending, transparent: true, opacity: 0, depthWrite: false }));
   spr.scale.set(0.95, 0.95, 1); spr.position.set(0, 0.45, 0); g.add(spr);
   const hit = new THREE.Sprite(new THREE.SpriteMaterial({ opacity: 0, transparent: true, depthWrite: false })); // 넉넉한 터치 히트박스
   hit.scale.set(1.3, 1.3, 1); hit.position.set(0, 0.45, 0); g.add(hit);
   scene.add(g);
-  dropSpots.push({ g, spr, hit, evId, yBase: 0.4 });
+  dropSpots.push({ g, spr, hit, evId, yBase: f ? 0.85 : 0.4, follow: f }); // 동행 시 몸 위에 뜨도록 상향
   if (playSfx) playSfx('place', { vol: 0.28, jitter: 0.2 });
   return true;
 }
 function tickDropSpots(t) {
   for (const d of dropSpots) {
+    // 동물 동행(디렉터): 살아 있는 동안 몸을 따라다니고, 떠나면(parent 해제) 마지막 자리에 잔류
+    if (d.follow) {
+      if (d.follow.parent) { d.g.position.x = d.follow.position.x; d.g.position.z = d.follow.position.z; }
+      else { d.follow = null; d.yBase = 0.4; } // 떨구고 갔다 — 지면 높이로 안착
+    }
     const k = 0.5 + 0.5 * Math.sin(t * 3.4);
     d.spr.material.opacity = 0.55 + 0.45 * k;
     d.spr.scale.setScalar(0.85 + 0.22 * k);
@@ -4282,15 +4648,20 @@ function presentWildlife(id) {
   const m = ENCOUNTER_WILDLIFE[id];
   if (!m) { openEventCard(id); return; }
   // 종 엔티티 스폰(실제 로밍) — 실패해도 카드/드랍은 뜬다.
-  try { wildlifeSys && wildlifeSys._spawnSpecies && wildlifeSys._spawnSpecies(m.species); } catch (e) {}
-  // 조망(하늘 나는 새 등): 떨군 게 없으니 지면 드랍 없이 카드 직결. 그 외: 지면 반짝임 → 터치 → 카드.
+  let ent = null;
+  try { ent = (wildlifeSys && wildlifeSys._spawnSpecies && wildlifeSys._spawnSpecies(m.species)) || null; } catch (e) {}
+  // 조망(하늘 나는 새 등): 떨군 게 없으니 지면 드랍 없이 카드 직결.
   if (m.sky) { openEventCard(id); return; }
-  if (!spawnGroundDrop(id)) openEventCard(id);
+  // 디렉터(2026-07-16): 반짝임은 동물 몸에 붙어 따라다닌다 — 땅에 따로 뜨면 개연성이 없다.
+  //   동물이 떠나면 그 자리에 잔류(떨구고 갔다) — 보상 유실 없음. 정적 발견물(FIND)은 기존 지면 방식.
+  if (!spawnGroundDrop(id, { follow: ent?.g || null })) openEventCard(id);
 }
 
 function showEvent(id) {
   const ev = EVENTS[id];
   if (!ev) return;
+  // #199 무너진 입구(디렉터 2026-07-17): 사진 카드 → 인엔진 문+상자 연출 (러너 점유 시 내부에서 카드 폴백)
+  if (id === 'collapsed_entrance') { playCollapseVignette(); return; }
   playEventSting(id);
   // 걸어오는 등장인물(arrive foot/door/boat)은 인엔진 연출로 분기. 그 외는 즉시 카드.
   if (ev.arrive && ENCOUNTER_VISITOR[id] && canPresentVisitor()) { presentVisitor(id); return; }
@@ -4339,6 +4710,43 @@ function openVisitorTradeCard(id, ev, evTitle) {
   });
   tipOnce('tip.event');
 }
+// #201 라이브 카드 스냅샷 — 카드가 열리는 '지금'의 씬(내 가구·날씨·계절·고양이)을
+//   프리셋 앵글·풀셸(지붕/천장 포함)로 1프레임 렌더해 dataURL 일러로 쓴다.
+//   도트 포스트패스(rt→postScene)까지 통과시켜 인게임 픽셀룩 그대로. 실패는 조용히 null(→ PNG/텍스트 폴백).
+//   게임 상태 무접점: 카메라 위치·컬링은 함수 안에서 원복(다음 renderFrame이 정상 마스크로 갱신).
+function liveCardIllust(id) {
+  const c = EVENT_CARD_CAMS[id];
+  if (!c || titleVisible || !rt) return null;
+  const savedPos = camera.position.clone();
+  let lift = null;
+  try {
+    // 밤 노출 보정(디렉터 2026-07-17): 낮(dayness 1)은 무보정 그대로, 밤일수록 달빛 리프트를
+    //   스냅샷 프레임에만 얹는다(씬에 잠깐 넣고 finally에서 제거 — 게임 라이팅 무접점).
+    const nightK = 1 - dayness;
+    if (nightK > 0.02) {
+      lift = new THREE.HemisphereLight(0x8fa8cc, 0x4a4136, 0.5 * nightK);
+      scene.add(lift);
+    }
+    cineCam.position.set(c[0], c[1], c[2]);
+    cineCam.up.set(0, 1, 0);
+    cineCam.lookAt(c[3], c[4], c[5]);
+    cineCam.fov = c[6]; cineCam.aspect = innerWidth / innerHeight; cineCam.updateProjectionMatrix();
+    camera.position.set(c[0], c[1], c[2]); // 컬링 기준점 동기(풀셸이라 마스크 불변이지만 일관성 유지)
+    setForceClosed(true);
+    updateWallCulling(0, true); // 풀셸 즉시 확정(무페이드) — 닫힌 집 외경/천장
+    renderer.setRenderTarget(rt);
+    renderer.render(scene, cineCam);
+    renderer.setRenderTarget(null);
+    renderer.render(postScene, postCam);
+    return renderer.domElement.toDataURL('image/jpeg', 0.88);
+  } catch (e) { return null; }
+  finally {
+    if (lift) scene.remove(lift);
+    setForceClosed(false);
+    camera.position.copy(savedPos);
+    updateWallCulling(0, true); // 원래 컬링 마스크 즉시 복귀
+  }
+}
 function openEventCard(id, opts = {}) {
   const ev = EVENTS[id];
   if (!ev) return;
@@ -4357,8 +4765,11 @@ function openEventCard(id, opts = {}) {
     body = `<div style="display:flex;flex-direction:column;gap:6px">${choicesHtml}</div>`;
     kind = 'visitor';
   } else {
-    // 그 외: 기존 일러스트(미보유 id는 onerror 제거) + 서술 + 선택지.
-    const illust = opts.noImg ? '' : `<img class="ev-illust" src="img/events/ev_${id}.png" alt="" draggable="false" onerror="this.remove()">`;
+    // 그 외: 라이브 스냅샷(#201 — 지금 이 순간의 내 집) → 설치 PNG → 텍스트 카드 폴백 체인.
+    const live = opts.noImg ? null : liveCardIllust(id);
+    const illust = opts.noImg ? '' : (live
+      ? `<img class="ev-illust" src="${live}" alt="" draggable="false">`
+      : `<img class="ev-illust" src="img/events/ev_${id}.png" alt="" draggable="false" onerror="this.remove()">`);
     body = `${illust}
     <div class="modal-body" style="line-height:2">${ev.textFn ? ev.textFn() : t(ev.textId)}</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">${choicesHtml}</div>`;
@@ -5064,18 +5475,24 @@ function openCraftModal() {
     }
     if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
     const outLabel = c.out.res
-      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])} ×${c.out.n}${t('craft.resTag')}`
+      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])}${c.out.n > 1 ? ' ×' + c.out.n : ''}` // ×1은 생략(정보 0 — 한 줄 폭 확보)
       : c.out.outfit
-        ? `${OUTFITS[c.out.outfit].emoji} ${LName(OUTFITS[c.out.outfit])}`
+        ? `${icon('icon_act_wardrobe', '🧥')} ${LName(OUTFITS[c.out.outfit])}`
         : `${furnIcon(c.out.furn)} ${LName(DEFS[c.out.furn])}`;
+    // 다재료(2+)는 아이콘+수량만(이름은 아이콘이 대신 — 심볼릭), 단일 재료는 이름 병기. 한 줄 사수.
+    const costEnts = Object.entries(craftCost(c));
+    const costCompact = costEnts.map(([id, n]) => costEnts.length > 1
+      ? `${resIcon(id)}${n}`
+      : `${resIcon(id)}${LName(RESOURCES[id])} ${n}`).join('+');
     // #86④: 이미 옷장에 있는 의류는 재제작 불가 (영구 소유물 — 중복 소모 방지)
     const owned = c.out.outfit && (state.outfits || ['default']).includes(c.out.outfit);
     const ok = !owned && resHasAll(craftCost(c));
+    // 한 줄 압축(디렉터): 「붕대 ×1 ← 천 2 [제작]」 — 화살표=아이콘
     return `
-      <div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
-        <span>${outLabel}</span>
-        <span class="p-eff" style="font-size:10px">${LHint(c)}</span>
-        <span class="p-cost">${owned ? '' : costLabel(craftCost(c))}</span>
+      <div class="prep-row craft-row ${ok ? '' : 'no'}" style="cursor:default">
+        <span class="cr-out">${outLabel}</span>
+        ${owned ? '' : icon('icon_sys_arrowleft', '←', 'cr-arrow')}
+        <span class="p-cost">${owned ? '' : costCompact}</span>
         ${owned
           ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('craft.owned')}</span>`
           : `<button class="pixel-btn" data-craft="${i}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('craft.make')}</button>`}
@@ -5085,9 +5502,9 @@ function openCraftModal() {
   //   data-craft 인덱스는 원본 CRAFTS 기준이라 클릭 배선 무변 — 표시만 재배열.
   const goodsRows = CRAFTS.map((c, i) => c.out.outfit ? '' : rowArr[i]).join('');
   const outfitRows = CRAFTS.map((c, i) => c.out.outfit ? rowArr[i] : '').join('');
-  const secHead = (emoji, key) => `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${emoji} ${t(key)}</div>`;
-  const rows = secHead('🪑', 'craft.catGoods') + goodsRows
-    + (outfitRows.trim() ? secHead('🧥', 'craft.catOutfit') + outfitRows : '');
+  const secHead = (ic, key) => `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${ic} ${t(key)}</div>`; // P3: 카테고리 이모지 → 모노 아트
+  const rows = secHead(icon('icon_furn_chair', '🪑'), 'craft.catGoods') + goodsRows
+    + (outfitRows.trim() ? secHead(icon('icon_act_wardrobe', '🧥'), 'craft.catOutfit') + outfitRows : '');
   // 현재 거처에 설치 가능한 개조
   const sh = SHELTERS[state.current];
   const modRows = Object.entries(SHELTER_MODS)
@@ -5303,7 +5720,7 @@ function openCraftModal() {
     const owned = active || !def.cost || resHasAll(def.cost);
     const costTip = def.cost ? costLabel(def.cost) : t('deco.free');
     return `<button class="pixel-btn ${active ? 'primary' : ''}" data-deco="${kind}:${id}" ${owned || active ? '' : 'disabled'}
-      title="${LName(def)} · ${costTip}" style="margin:2px;padding:4px 6px;font-size:11px">${def.emoji} ${LName(def)}${active ? ' ✓' : (def.cost ? ` <span style="opacity:.6">${costTip}</span>` : '')}</button>`;
+      title="${LName(def)}" style="margin:2px;padding:4px 6px;font-size:11px">${def.emoji} ${LName(def)}${active ? ' ✓' : (def.cost ? ` <span style="opacity:.6">${costTip}</span>` : '')}</button>`;
   }).join('');
   const themeHtml = THEME_SETS.map(ts => {
     const done = themeSetActive(ts);
@@ -5321,8 +5738,7 @@ function openCraftModal() {
       : `<div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${decoSwatches('wall', WALLPAPERS, dcur.wall)}</div>`}
     <div style="font-size:11px;margin-bottom:3px">${t('deco.floor')}</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${decoSwatches('floor', FLOORINGS, dcur.floor)}</div>
     <div style="font-size:11px;color:var(--accent);margin:8px 0 4px">${t('deco.themeHeader')}</div>${themeHtml}`;
-  openModal(t('craft.title'), `
-    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${t('craft.intro')}</div>${rows}
+  openModal(t('craft.title'), `${rows}
     <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>
     <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}
     ${bunkerHtml}${rooftopHtml}${subwayHtml}${icefishHtml}${forbiddenHtml}${projHtml}${decoHtml}`);
@@ -5532,6 +5948,8 @@ function applyProjectEffect(effectKey) {
     case 'radio.broadcastAction': state.radioBaseDone = true; break;
     // 2.0 §9.6 히든 통로 개척 완공 — 사다리 등장(플래그 판정, subway buildEnv) + 그날 밤 박사 대면 예약.
     case 'subway.hiddenGate': state.hiddenGateDone = true; state.hiddenReachPending = true; break;
+    // 2.0-(b) 동부 관문 완공 — 국경이 열린다: 동부 셸터 4종 이주 개방(shelterUnlocked) + 개통 비네트 예약.
+    case 'east.gateOpen': state.eastGateOpen = true; state.eastGatePending = true; break;
     default: break; // 1.2~1.4 확장이 여기에 case를 추가한다.
   }
 }
@@ -5823,190 +6241,7 @@ function checkAchievements() {
   }
 }
 // 기록 탭 HTML (REQ-LORE-02) — 메모(지역 그룹)+라디오 로그+수집률. 미수집은 "…" 실루엣.
-function recordTabHtml() {
-  const owned = state.memos || {};
-  const bown = state.broadcasts || {};
-  const regionKeys = { residential: 'record.regionRes', commercial: 'record.regionCom', industrial: 'record.regionInd', slum: 'record.regionSlum' };
-  const memoRow = (id, tbl) => owned[id]
-    ? `<div class="prep-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>${icon('icon_rec_memo', '📄')}</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-    : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
-  let sections = '';
-  // #90: 데모는 스코프 내 지역 섹션만 — 잠긴 지역(상업지구 등)은 존재 자체를 안 보인다
-  for (const rg of (DEMO_ED ? demoMemoRegions() : ['residential', 'commercial', 'industrial', 'slum'])) {
-    const ids = MEMOS_BY_REGION[rg];
-    const gotN = ids.filter(id => owned[id]).length;
-    sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t(regionKeys[rg])} (${gotN}/${ids.length})</div>` + ids.map(id => memoRow(id, MEMOS)).join('');
-  }
-  // #55: 벙커 하강 계단 특수 메모 — 발견 후에만 섹션 노출(스포일러 방지)
-  {
-    const bids = Object.keys(MEMOS).filter(id => MEMOS[id].region === 'bunker');
-    const bgot = bids.filter(id => owned[id]).length;
-    if (bgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionBunker')} (${bgot}/${bids.length})</div>` + bids.map(id => memoRow(id, MEMOS)).join('');
-  }
-  // 1.2: 지하(subway) 판데믹 대피 메모 — 발견 후에만 섹션 노출 (벙커 문법 재사용)
-  {
-    const sgot = MEMOS_SUBWAY.filter(id => owned[id]).length;
-    if (sgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionSubway')} (${sgot}/${MEMOS_SUBWAY.length})</div>` + MEMOS_SUBWAY.map(id => memoRow(id, MEMOS)).join('');
-  }
-  // 1.3: 리조트(resort) 마지막 휴가객 메모 — 발견 후에만 섹션 노출 (지하 문법 재사용)
-  {
-    const rgot = MEMOS_RESORT.filter(id => owned[id]).length;
-    if (rgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionResort')} (${rgot}/${MEMOS_RESORT.length})</div>` + MEMOS_RESORT.map(id => memoRow(id, MEMOS)).join('');
-  }
-  // 1.4: 금지 구역(research) 기밀 문서 — 발견 후에만 섹션 노출. 12종 다 모으면 최종장 페이지가 열린다.
-  {
-    const cgot = MEMOS_RESEARCH.filter(id => owned[id]).length;
-    if (cgot > 0) {
-      sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionResearch')} (${cgot}/${MEMOS_RESEARCH.length})</div>` + MEMOS_RESEARCH.map(id => memoRow(id, MEMOS)).join('');
-      // 최종장: 12종 전부 수집 시 "그날의 진실" 페이지 열람 링크 (기록 문법, data-truth 훅).
-      if (cgot >= MEMOS_RESEARCH.length) {
-        sections += `<div class="prep-row" style="cursor:pointer;border-top:1px solid var(--panel-border);margin-top:4px" data-truth="1"><span>📖</span><span style="color:var(--accent)">${t('record.truthTitle')}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`;
-      }
-    }
-  }
-  // 2.0 「응답」(citycore) 이관의 진실 — 발견 후에만 섹션 노출 (§9.5 검수: 미노출이면 수집해도 목록에
-  //   없는 유령 카운트가 된다 — research 문법 재사용)
-  {
-    const ngot = MEMOS_CITYCORE.filter(id => owned[id]).length;
-    if (ngot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionCitycore')} (${ngot}/${MEMOS_CITYCORE.length})</div>` + MEMOS_CITYCORE.map(id => memoRow(id, MEMOS)).join('');
-  }
-  // v1.5: 좌초 여객선(harbor) 메모 — 발견 후에만 섹션 노출 (지하/리조트 문법 재사용)
-  {
-    const hgot = MEMOS_HARBOR.filter(id => owned[id]).length;
-    if (hgot > 0) sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionHarbor')} (${hgot}/${MEMOS_HARBOR.length})</div>` + MEMOS_HARBOR.map(id => memoRow(id, MEMOS)).join('');
-  }
-  const willIds = Object.keys(WILLS);
-  const willGot = willIds.filter(id => owned[id]).length;
-  sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
-  // 라디오 로그 (#90: 데모는 수집 가능한 방송 슬롯만 — 본편 서사 방송은 총계에도 안 잡힌다)
-  const radioRows = Object.keys(BROADCASTS).filter(id => !DEMO_ED || DEMO_BROADCASTS.has(id)).map(id => bown[id]
-    ? `<div class="prep-row" style="cursor:pointer" data-broadcast="${id}"><span>${icon('icon_rec_radio', '📻')}</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-    : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
-  const distant = state.distantLight?.count
-    ? `<div class="report-sec"><span class="r-title">${t('record.distantTitle', { n: state.distantLight.count })}</span></div>` : '';
-  // 1.3 밤하늘 스케치 — 관측소 완공 후 수집이 시작되면 섹션 노출(스포일러 방지, 벙커/지하 문법). satellite는 1.4 복선.
-  const sown = state.sketches || {};
-  let sketchSec = '';
-  if (state.observatoryDone || sketchesCollected() > 0) {
-    const rows = Object.keys(SKETCHES).map(id => sown[id]
-      ? `<div class="prep-row" style="cursor:pointer" data-sketch="${id}"><span>${icon('icon_rec_sketch', '🌌')}</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-      : `<div class="prep-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
-    sketchSec = `<div class="report-sec"><span class="r-title">${t('record.sketchTitle', { n: sketchesCollected(), total: sketchesTotal() })}</span>${rows}</div>`;
-  }
-  // #90: 데모 총계는 데모 풀 기준 — "63개 중 6개" 같은 표기로 숨은 콘텐츠 규모가 새지 않게
-  const total = DEMO_ED ? demoMemoRegions().reduce((a, rg) => a + (MEMOS_BY_REGION[rg] || []).length, 0) + Object.keys(WILLS).length : memosTotal();
-  const radioTotal = DEMO_ED ? DEMO_BROADCASTS.size : broadcastsTotal();
-  // ??? 티저 (디렉터 2026-07-09): 잠긴 규모는 보여주되 내용(제목)은 은닉 — "뭐가 더 있지?"가 구매 동기가 된다
-  if (DEMO_ED) {
-    const hiddenN = (memosTotal() - total) + (broadcastsTotal() - radioTotal);
-    sections += `<div class="prep-row" style="cursor:default;opacity:0.55;border-top:1px solid var(--panel-border);margin-top:6px"><span>${icon('icon_sys_locked', '🔒')}</span><span>???</span><span class="p-cost">${t('demo.moreRecords', { n: hiddenN })}</span></div>`;
-  }
-  return `
-    <div class="report-sec"><span class="r-title">${t('record.memoTitle', { n: memosCollected(), total })}</span>${sections}</div>
-    <div class="report-sec"><span class="r-title">${t('record.radioTitle', { n: broadcastsCollected(), total: radioTotal })}</span>${radioRows}</div>
-    ${sketchSec}
-    ${distant}`;
-}
-function journalTabBar(active) {
-  const tab = (id, label) => `<button class="pixel-btn ${active === id ? 'primary' : ''}" data-jtab="${id}" style="flex:1">${label}</button>`;
-  // #194: EN/ja 라벨 4개의 min-content 합이 세로폰 모달 내폭을 넘어 Records 탭이 우측 클리핑 — 래핑 허용
-  return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${tab('journal', t('journal.title'))}${tab('col', t('journal.colTab'))}${tab('ach', t('journal.achTab'))}${tab('record', t('record.tabTitle'))}</div>`;
-}
-function openJournalModal(tab = 'journal') {
-  const se = seasonOf();
-  const achsHtml = ACHS.filter(a => !DEMO_ED || !DEMO_ACH_HIDE.has(a.id)).map(a => { // #90: 엔드게임 도전과제 텍스트 비노출
-    const got = state.achs?.[a.id];
-    const veiled = a.hidden && !got; // 암호 업적: 미해금 시 존재만 — 이름·아이콘 은닉
-    return `<div class="prep-row" style="cursor:default;${got ? '' : 'opacity:0.4'}">
-      <span style="font-size:16px">${veiled ? '▫️' : a.icon}</span>
-      <span>${veiled ? '???' : LName(a)}</span>
-      <span class="p-cost">${LDesc(a)}${got ? ' ✓' : ''}</span>
-    </div>`;
-  }).join('');
-  // #90: 데모 도감은 데모에서 얻을 수 있는 가구만(화이트리스트+해금 도면+이미 수집분) — 84종 전체 이모지 나열은 규모 누출
-  const colDefs = Object.entries(DEFS).filter(([id]) => !DEMO_ED || DEMO_CRAFT_FURN.has(id) || (state.blueprints || {})[id] || (state.collection || {})[id]);
-  const colHtml = colDefs.map(([id, def]) => {
-    const arr = state.collection?.[id] || [];
-    const sw = def.colors.map((c, i) =>
-      `<span title="${LColor(def, i)}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-left:3px;background:${arr[i] ? '#' + c.toString(16).padStart(6, '0') : '#22252d'};border:1px solid ${arr[i] ? 'var(--accent)' : '#333'}"></span>`).join('');
-    return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${def.emoji}${sw}</span>`;
-  }).join('');
-  let colTotal = colDefs.reduce((a, [, d]) => a + d.colors.length, 0);
-  // ??? 티저 (디렉터 2026-07-09): 도감에도 "미확인 N종" 실루엣 — 규모만 노출, 정체(이모지·이름)는 은닉
-  let colTeaser = '';
-  if (DEMO_ED) {
-    const hiddenFurn = Object.keys(DEFS).length - colDefs.length;
-    if (hiddenFurn > 0) colTeaser = `<div style="font-size:11px;opacity:0.55;margin-top:4px">${icon('icon_sys_locked', '🔒')} ??? — ${t('demo.moreFurn', { n: hiddenFurn })}</div>`;
-  }
-  // 테마 세트 도감 뱃지 (#13): 충족 시 강조.
-  const themeBadges = THEME_SETS.map(ts => {
-    const done = themeSetActive(ts);
-    return `<span title="${ts.items.map(id => LName(DEFS[id])).join(' + ')}" style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid ${done ? 'var(--good)' : '#333'};color:${done ? 'var(--good)' : 'var(--text-dim)'}">${done ? '🏅' : '▫️'} ${ts.emoji} ${LName(ts)}</span>`;
-  }).join('');
-  const journalBody = `
-    <div class="report-sec"><span class="r-title">${t('journal.statsTitle')}</span><br>
-      ${t('journal.statsLine', { day: state.day, sicon: se.icon, exp: state.stats.exp, succ: state.stats.success, craft: state.stats.craft || 0, stay: state.stayDays || 0 })}
-    </div>
-    ${comfortBreakdownHtml()}`;
-  // #177 도감 탭 — 위시리스트/보급원 트래커의 수집 뷰. 도면(시그니처+커먼) + 색상 도감 + 테마 세트.
-  //   시그니처: 지역별 묶음, 미수집=「{지역}에서만」(pull 표기 — 정보판 map.drops와 동일 축).
-  //   미방문 지역은 ??? 베일(#90 "조회 불가" 원칙 — showMapInfo와 같은 regionVisits 게이트).
-  const bpOwned = state.blueprints || {};
-  const sigIdsAll = Object.values(BAL.blueprint.regionItems).flat();
-  const commonIds = BAL.blueprint.commonItems || [];
-  const soloIds = ['ledbar']; // #189 P4: 초희귀 별도 채널 도면 — 도감 집계·행 포함
-  const bpTotal = sigIdsAll.length + commonIds.length + soloIds.length;
-  const bpGot = [...sigIdsAll, ...commonIds, ...soloIds].filter(id => bpOwned[id]).length;
-  const bpRow = (id, got, hint) => {
-    const d = DEFS[id];
-    return `<div class="prep-row" style="cursor:default;${got ? '' : 'opacity:0.6'}">
-      <span style="font-size:16px">${d.emoji}</span><span>${LName(d)}</span>
-      <span class="p-cost">${got ? '✓' : hint}</span></div>`;
-  };
-  const bpVeilRow = (hint = '') => `<div class="prep-row" style="cursor:default;opacity:0.35">
-      <span style="font-size:16px">▫️</span><span>???</span><span class="p-cost">${hint}</span></div>`;
-  const sigBlocks = Object.entries(BAL.blueprint.regionItems).map(([rid, ids]) => {
-    const visited = ((state.regionVisits || {})[rid] || 0) > 0;
-    const head = `<div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${regionIcon(rid)} ${visited ? LName(REGIONS[rid]) : '???'}</div>`;
-    const rows = ids.map(id => (visited || bpOwned[id])
-      ? bpRow(id, bpOwned[id], t('col.bpOnly', { region: LName(REGIONS[rid]) }))
-      : bpVeilRow()).join('');
-    return head + rows;
-  }).join('');
-  const commonRows = commonIds.map(id => bpOwned[id] ? bpRow(id, true, '') : bpVeilRow(t('col.bpCommonSrc'))).join('');
-  const soloRows = soloIds.map(id => bpOwned[id] ? bpRow(id, true, '') : bpVeilRow(t('col.bpLegendSrc'))).join('');
-  // #195: 젤 필터북 — 도면은 아니지만 같은 전설 채널의 1회 한정 유품(#189 P3). 미보유 잠금 행으로 pull 가시화.
-  const gelRow = state.lightGels
-    ? `<div class="prep-row" style="cursor:default"><span style="font-size:16px">📔</span><span>${t('col.gelBook')}</span><span class="p-cost">✓</span></div>`
-    : bpVeilRow(t('col.bpGelSrc'));
-  const colBody = `
-    <div class="report-sec"><span class="r-title">${t('col.bpTitle', { n: bpGot, total: bpTotal })}</span>
-      ${sigBlocks}
-      <div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${t('col.bpCommonTitle')}</div>
-      ${commonRows}
-      <div style="margin:8px 0 2px;font-size:11px;color:var(--text-dim)">${t('col.bpLegendTitle')}</div>
-      ${soloRows}${gelRow}
-      <div style="margin-top:6px;font-size:10px;color:var(--text-dim)">${t('col.veilHint')}</div>
-    </div>
-    <div class="report-sec"><span class="r-title">${t('journal.colTitle', { n: collectionCount(), total: colTotal })}</span><br>${colHtml}</div>
-    <div class="report-sec"><span class="r-title">${t('deco.themeBadgeTitle', { n: activeThemeSets().length, total: THEME_SETS.length })}</span><br>${themeBadges}</div>`;
-  // #8(피드백) 업적 전용 탭 — 총 개수·달성률 + 진행 바 + 전체 목록(달성/미달성/암호). 일지 하단에 묻혀 안 보이던 것 승격.
-  const achDone = Object.values(state.achs || {}).filter(Boolean).length, achTotal = ACHS.length;
-  const achPct = achTotal ? Math.round(achDone / achTotal * 100) : 0;
-  const achBody = `
-    <div class="report-sec"><span class="r-title">${t('journal.achTitle', { n: achDone, total: achTotal })} · ${achPct}%</span>
-      <div style="height:8px;background:#22252d;border-radius:4px;margin-top:7px;overflow:hidden;border:1px solid #333"><div style="height:100%;width:${achPct}%;background:var(--accent);transition:width .3s"></div></div>
-    </div>
-    ${achsHtml}`;
-  const jContent = tab === 'record' ? recordTabHtml() : tab === 'ach' ? achBody : tab === 'col' ? colBody : journalBody;
-  openModal(t('journal.title'), journalTabBar(tab) + jContent);
-  const body = $('modal-body');
-  body.querySelectorAll('button[data-jtab]').forEach(b => b.addEventListener('click', () => openJournalModal(b.dataset.jtab)));
-  body.querySelectorAll('[data-memo]').forEach(el => el.addEventListener('click', () => showMemoPage(el.dataset.memo, el.dataset.will === '1')));
-  body.querySelectorAll('[data-broadcast]').forEach(el => el.addEventListener('click', () => showBroadcastModal(el.dataset.broadcast)));
-  body.querySelectorAll('[data-sketch]').forEach(el => el.addEventListener('click', () => showSketchPage(el.dataset.sketch)));
-  body.querySelectorAll('[data-truth]').forEach(el => el.addEventListener('click', () => showTruthPage()));
-}
+// (Tier6b) 일지/도감/업적/기록 모달(recordTabHtml·journalTabBar·openJournalModal)은 ui/modals.js로 이관 — makeModals ctx 주입.
 
 /* ============================================================
    부상 & 치료 (기획서 v0.2: 치료 자원 소비 루프)
@@ -6143,35 +6378,192 @@ function pickStairs(e) {
 //     게이트 미충족/첫 탭은 "눌리지만 아무 표시가 없다"(§5.1) — 히트만 소비.
 //   발견 후: 개척(hiddenGate) 완공 + 대면 유보(hiddenReached)를 마쳤다면 같은 지점 탭 = 박사의 문서.
 //   sim 결정론: 확정 게이트만, Math.random 없음(§9.7).
-/* ── 비네트 러너 (승인 스펙 2026-07-09): 독립 원근 씬 풀스크린 오버레이 — t 0→1 애니메이션, 탭 스킵 ──
-   게임 씬과 완전 분리(자체 renderer/scene/camera) — 직교 카메라 제약 무관, sim 무접점(연출 전용). */
-let vignetteActive = false;
-function playVignette(build, durMs, onDone) {
-  if (vignetteActive) return; vignetteActive = true;
+
+/* ── #199 무너진 입구 인엔진 연출 (디렉터 2026-07-17, 레퍼런스 Box.mp4 — 상자 개봉만 참조) ──
+   사진 카드 폐지: ①복셀 문 씬(문틈 안은 완전한 어둠) ②하단 선택 UI(들어간다/그냥 간다)
+   ③입장 시 상자 개봉 버스트 — 예열 흔들림 → 뚜껑 팝 + 수직 광선 부챗살(전리품 색) + 전리품 부유 + 파편 산개.
+   보상·부상·확률·문안은 기존 collapsed_entrance choices.run() 그대로 재사용 — 표시 계층만 교체(신규 문자열 0). */
+function playCollapseVignette() {
+  const ev = EVENTS.collapsed_entrance;
+  if (!ev || !claimVignette()) { openEventCard('collapsed_entrance'); return; } // 러너 점유 시 카드 폴백 (Tier5: 플래그는 vignettes.js 소유 — 원자적 점유)
+  playEventSting('collapsed_entrance');
+  const evTitle = t(ev.titleId);
   const ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;z-index:400;background:#000;opacity:0;transition:opacity .6s';
-  const cv = document.createElement('canvas'); cv.style.cssText = 'width:100%;height:100%;filter:contrast(1.15) saturate(1.16)'; ov.appendChild(cv);
-  const vf = document.createElement('div'); // 시네마틱 비네트 프레임 (모서리 감광)
-  vf.style.cssText = 'position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 46%, transparent 52%, rgba(10,4,2,0.6) 100%)';
-  ov.appendChild(vf); document.body.appendChild(ov);
-  const vr = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
-  const v = build();
-  const fit = () => { vr.setSize(innerWidth, innerHeight, false); v.camera.aspect = innerWidth / innerHeight; v.camera.updateProjectionMatrix(); };
-  fit(); addEventListener('resize', fit);
+  ov.style.cssText = 'position:fixed;inset:0;z-index:400;background:#000;opacity:0;transition:opacity .5s';
+  const cv = document.createElement('canvas'); cv.style.cssText = 'width:100%;height:100%;filter:contrast(1.14) saturate(1.1)'; ov.appendChild(cv);
+  const vf = document.createElement('div');
+  vf.style.cssText = 'position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 44%, transparent 50%, rgba(6,4,3,0.74) 100%)';
+  ov.appendChild(vf);
+  const fade = document.createElement('div'); // 문→상자 장면 전환용 암전막
+  fade.style.cssText = 'position:absolute;inset:0;pointer-events:none;background:#000;opacity:0;transition:opacity .35s';
+  ov.appendChild(fade);
+  const ui = document.createElement('div');
+  ui.style.cssText = 'position:absolute;left:50%;transform:translateX(-50%);bottom:max(26px, env(safe-area-inset-bottom, 26px));width:min(430px, 86vw);display:flex;flex-direction:column;gap:8px;z-index:2';
+  ov.appendChild(ui);
+  document.body.appendChild(ov);
   requestAnimationFrame(() => { ov.style.opacity = '1'; });
-  const t0 = performance.now(); let done = false;
-  const finish = () => {
+  const vr = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b0a0c);
+  scene.fog = new THREE.Fog(0x0b0a0c, 9, 20); // 문(카메라 ~5-6m)이 안개에 묻히지 않게 — 문틈 칠흑은 대비로 산다
+  const camera = new THREE.PerspectiveCamera(44, innerWidth / innerHeight, 0.1, 60);
+  const fit = () => { vr.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); };
+  fit(); addEventListener('resize', fit);
+  scene.add(new THREE.AmbientLight(0x8a92a4, 0.62));
+  const key = new THREE.DirectionalLight(0xbfd0e8, 0.95); key.position.set(-3, 6, 4); scene.add(key);
+  const torch = new THREE.PointLight(0xffc98a, 2.8, 10, 1.7); torch.position.set(0.3, 1.4, 2.6); scene.add(torch); // 손전등 웜 스팟 — 문짝·프레임을 핥는다
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(24, 24), new THREE.MeshLambertMaterial({ color: 0x2c2a2e }));
+  ground.rotation.x = -Math.PI / 2; scene.add(ground);
+  const M = c => new THREE.MeshLambertMaterial({ color: c });
+  const bx = (g, w, h, d, c, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); m.position.set(x, y, z); g.add(m); return m; };
+  // ── 장면 1: 무너진 입구 — 콘크리트 프레임 + 반열림 철문 + 문틈 칠흑 ──
+  const doorG = new THREE.Group(); scene.add(doorG);
+  bx(doorG, 0.52, 2.7, 0.5, 0x5a5650, -1.06, 1.35, 0);                                   // 좌 기둥
+  bx(doorG, 0.52, 2.45, 0.5, 0x545049, 1.09, 1.22, 0).rotation.z = -0.07;                // 우 기둥(기움)
+  bx(doorG, 3.0, 0.52, 0.56, 0x4f4b46, 0.06, 2.72, 0).rotation.z = 0.05;                 // 상인방(내려앉음)
+  bx(doorG, 0.5, 0.34, 0.5, 0x47433e, 1.28, 2.32, 0.06).rotation.z = 0.3;                // 상인방 파편
+  for (const [rx, ry, rs, rr] of [[-1.5, 0.14, 0.42, 0.2], [-0.6, 0.1, 0.3, -0.4], [1.5, 0.18, 0.5, 0.5], [0.8, 0.09, 0.26, 1.1], [-2.1, 0.1, 0.3, 0.8]])
+    bx(doorG, rs, rs * 0.7, rs, 0x3e3b3f, rx, ry, 1.0 + rr * 0.4).rotation.y = rr;       // 발치 잔해
+  for (const [bx2, by2, brz] of [[-0.7, 2.9, 0.5], [0.5, 3.0, -0.7], [1.3, 2.75, 1.2]]) {
+    const rb = bx(doorG, 0.035, 0.6, 0.035, 0x6a4a30, bx2, by2, 0.1); rb.rotation.z = brz; // 철근 삐침
+  }
+  const darkIn = new THREE.Mesh(new THREE.PlaneGeometry(1.72, 2.4), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+  darkIn.position.set(0, 1.2, -0.08); doorG.add(darkIn);                                  // 안 = 완전한 어둠(디렉터 스펙)
+  const doorPivot = new THREE.Group(); doorPivot.position.set(-0.78, 0, 0.12); doorG.add(doorPivot);
+  const doorPanel = bx(doorPivot, 0.82, 2.14, 0.07, 0x49505a, 0.41, 1.07, 0);             // 철문(경첩=좌변)
+  bx(doorPivot, 0.82, 0.06, 0.075, 0x3a4048, 0.41, 1.85, 0);                              // 보강 리브
+  bx(doorPivot, 0.82, 0.06, 0.075, 0x3a4048, 0.41, 0.35, 0);
+  bx(doorPivot, 0.07, 0.16, 0.08, 0x2c3138, 0.74, 1.05, 0.02);                            // 손잡이
+  doorPivot.rotation.y = 0.85;                                                            // 반쯤 열림 — 어둠이 보인다
+  // 부유 먼지
+  const dustN = 50, dustPos = new Float32Array(dustN * 3);
+  for (let i = 0; i < dustN; i++) { dustPos[i * 3] = (Math.random() - 0.5) * 5; dustPos[i * 3 + 1] = Math.random() * 2.8; dustPos[i * 3 + 2] = Math.random() * 3; }
+  const dustGeo = new THREE.BufferGeometry(); dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+  const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0xcabfa8, size: 0.03, transparent: true, opacity: 0.55, depthWrite: false }));
+  scene.add(dust);
+  // ── 장면 2: 상자 (입장 시 생성) ──
+  let chestG = null, lidPivot = null, rays = null, lootSprite = null, debris = null, glowIn = null;
+  const buildChest = () => {
+    chestG = new THREE.Group(); scene.add(chestG);
+    const body = 0x6a5a42, rim = 0x8a8f96;
+    bx(chestG, 1.12, 0.58, 0.72, body, 0, 0.29, 0);                                       // 몸통(군용 궤짝)
+    bx(chestG, 1.16, 0.05, 0.76, shade(body, 0.75), 0, 0.035, 0);                         // 하단 굽
+    for (const ex of [-0.54, 0.54]) bx(chestG, 0.05, 0.6, 0.74, shade(body, 0.82), ex, 0.3, 0); // 모서리 판
+    for (const ez of [-0.34, 0.34]) bx(chestG, 1.14, 0.05, 0.05, rim, 0, 0.56, ez);       // 상단 금속 림
+    bx(chestG, 0.16, 0.12, 0.05, rim, 0, 0.5, 0.375);                                     // 걸쇠
+    lidPivot = new THREE.Group(); lidPivot.position.set(0, 0.58, -0.36); chestG.add(lidPivot);
+    bx(lidPivot, 1.16, 0.16, 0.78, shade(body, 1.12), 0, 0.08, 0.36);                     // 뚜껑(경첩=뒷변)
+    bx(lidPivot, 1.18, 0.05, 0.06, rim, 0, 0.14, 0.7);                                    // 뚜껑 앞 림
+    const gi = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.62), new THREE.MeshBasicMaterial({
+      color: collapseLootFx?.color || 0xffcf9a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+    gi.rotation.x = -Math.PI / 2; gi.position.set(0, 0.6, 0); chestG.add(gi); glowIn = gi; // 내부 발광판
+  };
+  const spawnBurst = () => {
+    const col = collapseLootFx?.color || 0xffcf9a;
+    rays = new THREE.Group(); chestG.add(rays);                                           // 광선 부챗살(레퍼런스 f008)
+    for (const [rz, w] of [[-0.42, 0.26], [-0.2, 0.3], [0, 0.36], [0.2, 0.3], [0.42, 0.26]]) {
+      const ray = new THREE.Mesh(new THREE.PlaneGeometry(w, 5.2), new THREE.MeshBasicMaterial({
+        color: col, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      ray.position.set(rz * 0.5, 0.6, 0); ray.rotation.z = rz; ray.userData.baseOp = 0.62 - Math.abs(rz) * 0.4;
+      rays.add(ray);
+    }
+    const lc = document.createElement('canvas'); lc.width = lc.height = 128;              // 전리품 아이콘 스프라이트
+    const g2 = lc.getContext('2d'); g2.font = '96px serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle';
+    g2.shadowColor = 'rgba(0,0,0,0.6)'; g2.shadowBlur = 10; g2.fillText(collapseLootFx?.emoji || '📦', 64, 70);
+    lootSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lc), transparent: true, depthWrite: false }));
+    lootSprite.position.set(0, 0.7, 0.1); lootSprite.scale.setScalar(0.01); chestG.add(lootSprite);
+    debris = [];                                                                          // 파편 산개(레퍼런스 f010 보석 파편)
+    for (let i = 0; i < 14; i++) {
+      const d = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.07, 0.05), new THREE.MeshBasicMaterial({ color: shade(col, 0.75 + Math.random() * 0.6), transparent: true }));
+      d.position.set(0, 0.62, 0);
+      const a = Math.random() * Math.PI * 2, sp = 0.9 + Math.random() * 1.4;
+      d.userData.v = { x: Math.cos(a) * sp * 0.7, y: 1.6 + Math.random() * 1.6, z: Math.sin(a) * sp * 0.5 };
+      d.userData.rs = (Math.random() - 0.5) * 8;
+      chestG.add(d); debris.push(d);
+    }
+    playSfx('craft', { rate: 0.82, vol: 0.6 });
+  };
+  // ── 상태 머신: door → (선택) → chest → 결과 ──
+  let phase = 'door', done = false, ct0 = 0, opened = false, openT = 0;
+  const cleanup = () => {
     if (done) return; done = true;
     removeEventListener('resize', fit);
     ov.style.opacity = '0';
-    setTimeout(() => { ov.remove(); vr.dispose(); disposeDeep(v.scene); vignetteActive = false; if (onDone) onDone(); }, 650);
+    setTimeout(() => { ov.remove(); vr.dispose(); disposeDeep(scene); releaseVignette(); }, 550);
   };
-  ov.addEventListener('pointerdown', finish); // 탭 = 스킵/종료
+  const showChoice = () => {
+    ui.innerHTML = `
+      <div style="color:#e8e0d0;font-size:13px;font-weight:bold;text-shadow:0 2px 8px #000">${ev.icon} ${evTitle}</div>
+      <div style="color:#cfc6b4;font-size:11px;line-height:1.85;text-shadow:0 2px 8px #000">${ev.textFn ? ev.textFn() : ''}</div>
+      <button class="pixel-btn primary" data-cc="0">${t('ev.collapse.c0')}</button>
+      <button class="pixel-btn" data-cc="1">${t('ev.collapse.c1')}</button>`;
+    ui.querySelectorAll('button[data-cc]').forEach(b => b.addEventListener('click', () => {
+      const c = ev.choices[+b.dataset.cc];
+      const result = c.run();                                    // 보상·부상·문안 — 카드와 동일 경로
+      state.dayLog.notes.push(t('event.metNote', { icon: ev.icon, title: evTitle }));
+      scheduleSave(); renderResBar();
+      if (b.dataset.cc === '1') { toast(result); cleanup(); return; }  // 그냥 간다 — 조용히 물러난다
+      ui.innerHTML = '';
+      fade.style.opacity = '1';                                   // 문지방을 넘는다 — 암전
+      setTimeout(() => {
+        scene.remove(doorG); disposeDeep(doorG);
+        torch.position.set(0.4, 1.6, 2.2); torch.intensity = 1.2;
+        buildChest();
+        phase = 'chest'; ct0 = performance.now();
+        fade.style.opacity = '0';
+        setTimeout(() => {                                        // 결과 시트 (개봉 여운 뒤)
+          ui.innerHTML = `
+            <div style="color:#e8e0d0;font-size:12px;line-height:1.85;text-shadow:0 2px 8px #000;background:rgba(10,8,6,0.55);padding:10px 12px;border-radius:6px">${result}</div>
+            <button class="pixel-btn primary" data-cx="1">${t('modal.close')}</button>`;
+          ui.querySelector('button[data-cx]').addEventListener('click', cleanup);
+        }, 2300);
+      }, 380);
+    }));
+  };
+  showChoice();
+  const camDoor = tt => { const z = 6.4 - tt * 1.5, y = 1.75 - tt * 0.3; camera.position.set(0.4 * Math.sin(tt * 0.9), y, z); camera.lookAt(0, 1.15, 0); };
+  const t0 = performance.now();
   (function loop() {
     if (done) return;
-    const t = Math.min(1, (performance.now() - t0) / durMs);
-    v.update(t); vr.render(v.scene, v.camera);
-    if (t >= 1) { setTimeout(finish, 1100); return; } // 마지막 프레임을 잠시 머금고 닫는다
+    const now = performance.now();
+    if (phase === 'door') {
+      camDoor(Math.min(1, (now - t0) / 9000));                    // 9초 느린 푸시인 후 정지
+      doorPivot.rotation.y = 0.85 + Math.sin(now * 0.0011) * 0.012; // 바람에 삐걱이는 문
+      const dp = dust.geometry.attributes.position;
+      for (let i = 0; i < dustN; i++) { dp.array[i * 3 + 1] += 0.0016; if (dp.array[i * 3 + 1] > 2.8) dp.array[i * 3 + 1] = 0; }
+      dp.needsUpdate = true;
+    } else {
+      const ct = (now - ct0) / 1000;
+      camera.position.set(Math.sin(ct * 0.25) * 0.3, 1.6, 3.4); camera.lookAt(0, 0.95, 0);
+      if (ct < 0.55) {                                            // 예열 — 들썩이는 상자
+        chestG.rotation.z = Math.sin(ct * 52) * 0.022 * (0.55 - ct) * 2;
+        chestG.position.y = Math.abs(Math.sin(ct * 26)) * 0.035 * (0.55 - ct);
+      } else {
+        if (!opened) { opened = true; openT = ct; spawnBurst(); }
+        chestG.rotation.z = 0; chestG.position.y = 0;
+        const ot = ct - openT;
+        lidPivot.rotation.x = -Math.min(1, ot / 0.14) * 2.05;     // 뚜껑 팝
+        if (glowIn) glowIn.material.opacity = Math.min(0.85, ot * 4) * Math.max(0.35, 1 - ot * 0.25);
+        if (rays) for (const ray of rays.children) {
+          ray.scale.y = Math.min(1, ot / 0.28);
+          ray.material.opacity = ot < 1.7 ? ray.userData.baseOp * Math.min(1, ot / 0.2) : Math.max(0, ray.userData.baseOp * (1 - (ot - 1.7) / 0.8));
+        }
+        if (lootSprite) {                                          // 전리품 상승 + 팝 스케일 + 부유 (디렉터: 아이콘 축소 0.68)
+          const rt = Math.min(1, ot / 0.7), ease = 1 - Math.pow(1 - rt, 3);
+          lootSprite.position.y = 0.7 + ease * 1.05 + (ot > 0.7 ? Math.sin((ot - 0.7) * 2.4) * 0.06 : 0);
+          lootSprite.scale.setScalar(rt < 0.85 ? 0.68 * ease : 0.68 - 0.1 * Math.min(1, (rt - 0.85) / 0.15));
+        }
+        if (debris) for (const d of debris) {
+          d.userData.v.y -= 4.6 * 0.016;
+          d.position.x += d.userData.v.x * 0.016; d.position.y += d.userData.v.y * 0.016; d.position.z += d.userData.v.z * 0.016;
+          d.rotation.x += d.userData.rs * 0.016; d.rotation.z += d.userData.rs * 0.012;
+          if (d.position.y < 0.03) { d.position.y = 0.03; d.userData.v.y = 0; d.userData.v.x *= 0.9; d.userData.v.z *= 0.9; }
+          if (ot > 1.9) d.material.opacity = Math.max(0, 1 - (ot - 1.9) / 0.7);
+        }
+        if (ot > 0.05 && ot < 0.22) camera.position.y += Math.sin(ot * 90) * 0.018;       // 개봉 순간 카메라 잔떨림
+      }
+    }
+    vr.render(scene, camera);
     requestAnimationFrame(loop);
   })();
 }
@@ -6185,307 +6577,41 @@ function queueDiscovery(defId, colorIdx, tier, name) {
   discoveryQueue.push({ defId, colorIdx: colorIdx || 0, tier: tier || 3, name: name || LName(DEFS[defId]) });
 }
 function drainDiscoveryQueue() {
-  if (!discoveryQueue.length || vignetteActive || paused || titleVisible || state.exp) return;
+  // 2.0-(b) 가이거 비네트(디렉터 2026-07-17): 동쪽 소문이 닿은 아침 — 보고 모달이 닫힌 뒤 계수기 컷 1회.
+  //   "낙진이 걷혀서 열리는 길"의 물증: 바늘이 빨강에서 초록으로 내려앉는다.
+  if (state.geigerPending && !vignetteBusy() && !paused && !titleVisible && !state.exp) {
+    const mb0 = document.getElementById('modal-back');
+    if (!(mb0 && mb0.classList.contains('show'))) {
+      state.geigerPending = false;
+      playGeigerVignette();
+      scheduleSave();
+      return;
+    }
+  }
+  // 2.0-(b) 국경 개통 비네트: 「국경 길」 3단 완공 직후 — 완공 토스트·모달이 걷힌 뒤 개통 컷 1회.
+  if (state.eastGatePending && !vignetteBusy() && !paused && !titleVisible && !state.exp) {
+    const mb1 = document.getElementById('modal-back');
+    if (!(mb1 && mb1.classList.contains('show'))) {
+      state.eastGatePending = false;
+      playEastGateVignette();
+      scheduleSave();
+      return;
+    }
+  }
+  if (!discoveryQueue.length || vignetteBusy() || paused || titleVisible || state.exp) return;
   const mb = document.getElementById('modal-back'); if (mb && mb.classList.contains('show')) return; // 결산/보고 모달 닫힌 뒤 재생
   const d = discoveryQueue.shift();
   showDiscoveryVignette(d.defId, d.colorIdx, d.tier, d.name);
 }
-function buildDiscoveryScene(defId, colorIdx, tier) {
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 200);
-  // 어두운 배경(따뜻한 하단) + 얕은 포그
-  const bgcv = document.createElement('canvas'); bgcv.width = 8; bgcv.height = 256;
-  const bgg = bgcv.getContext('2d'); const bgr = bgg.createLinearGradient(0, 0, 0, 256);
-  bgr.addColorStop(0, '#080706'); bgr.addColorStop(0.62, '#130d08'); bgr.addColorStop(1, '#20140b');
-  bgg.fillStyle = bgr; bgg.fillRect(0, 0, 8, 256);
-  const bgTex = new THREE.CanvasTexture(bgcv); bgTex.colorSpace = THREE.SRGBColorSpace; scene.background = bgTex;
-  scene.fog = new THREE.Fog(0x0a0806, 7, 24);
-  // 조명: 따뜻한 키(위-앞) + 차가운 림 + 약한 앰비언트
-  scene.add(new THREE.HemisphereLight(0x3a3122, 0x0a0806, 0.55));
-  const key = new THREE.PointLight(0xffd7a0, 26, 16, 1.8); key.position.set(1.6, 3.4, 2.8); scene.add(key);
-  const rim = new THREE.DirectionalLight(0x8ea6c8, 0.55); rim.position.set(-3.5, 2.2, -3); scene.add(rim);
-  // 돌 페데스탈
-  const pmat = new THREE.MeshStandardMaterial({ color: 0x4a443c, roughness: 0.96, metalness: 0 });
-  const ped = new THREE.Group();
-  const ptop = new THREE.Mesh(new THREE.CylinderGeometry(1.18, 1.28, 0.28, 28), pmat); ptop.position.y = 0; ped.add(ptop);
-  ped.add(new THREE.Mesh(new THREE.CylinderGeometry(0.92, 1.06, 1.7, 28), pmat)).position.y = -0.99;
-  scene.add(ped);
-  // 아이템: 실제 복셀 가구 메시 (def.build 재사용). 바운딩박스로 스케일·발치 접지.
-  const holder = new THREE.Group(); scene.add(holder);
-  const def = DEFS[defId];
-  try {
-    // #192 클로즈업 등급: 컷 전용 하이디테일 빌더(def.closeup, 폴리 4~5k 허용)가 있으면 우선.
-    //   배치본과 실루엣·팔레트 동일이 규약(디렉터 오더 2026-07-16) — 없으면 배치본 그대로.
-    const item = (def.closeup || def.build)(def.colors ? def.colors[colorIdx] : 0, colorIdx || 0, null, tier || 3);
-    holder.add(item);
-    const bb = new THREE.Box3().setFromObject(item); const sz = new THREE.Vector3(); bb.getSize(sz); const ctr = new THREE.Vector3(); bb.getCenter(ctr);
-    const sc = 1.75 / (Math.max(sz.x, sz.y, sz.z) || 1);
-    item.scale.setScalar(sc);
-    item.position.set(-ctr.x * sc, -bb.min.y * sc + 0.16, -ctr.z * sc);
-  } catch (e) { /* 빌드 실패 시 페데스탈만 */ }
-  // 바닥 따뜻한 광 웅덩이
-  const poolCv = document.createElement('canvas'); poolCv.width = poolCv.height = 128;
-  const pg = poolCv.getContext('2d'); const prg = pg.createRadialGradient(64, 64, 4, 64, 64, 64);
-  prg.addColorStop(0, 'rgba(255,192,112,0.55)'); prg.addColorStop(1, 'rgba(255,192,112,0)');
-  pg.fillStyle = prg; pg.fillRect(0, 0, 128, 128);
-  const pool = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(poolCv), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-  pool.rotation.x = -Math.PI / 2; pool.position.y = 0.16; scene.add(pool);
-  // 반짝임(상승 먼지)
-  const spN = 70, spPos = new Float32Array(spN * 3);
-  for (let i = 0; i < spN; i++) { const a = Math.random() * 6.283, r = 0.3 + Math.random() * 1.7; spPos[i * 3] = Math.cos(a) * r; spPos[i * 3 + 1] = Math.random() * 2.6; spPos[i * 3 + 2] = Math.sin(a) * r; }
-  const spGeo = new THREE.BufferGeometry(); spGeo.setAttribute('position', new THREE.BufferAttribute(spPos, 3));
-  const sparks = new THREE.Points(spGeo, new THREE.PointsMaterial({ color: 0xffdca0, size: 0.055, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-  scene.add(sparks);
-  const update = (t) => {
-    const ang = 0.55 + t * 0.5 + Math.sin(t * Math.PI) * 0.1;   // 느린 오빗
-    const dist = 6.4 - t * 1.5, cy = 2.3 - t * 0.55;             // 푸시인 + 하강
-    camera.position.set(Math.sin(ang) * dist, cy, Math.cos(ang) * dist); camera.lookAt(0, 1.0, 0);
-    holder.rotation.y = 0.3 + t * 1.1;                           // 아이템 회전
-    const pa = sparks.geometry.attributes.position;
-    for (let i = 0; i < spN; i++) { let y = pa.getY(i) + 0.005; if (y > 2.6) y = 0; pa.setY(i, y); }
-    pa.needsUpdate = true;
-    sparks.material.opacity = 0.5 + 0.4 * Math.sin(t * 9);
-    key.intensity = 26 + Math.sin(t * 7) * 3;                    // 은은한 촛불 깜빡임
-  };
-  update(0);
-  return { scene, camera, update };
-}
-function showDiscoveryVignette(defId, colorIdx, tier, name) {
-  const cap = document.createElement('div');
-  cap.style.cssText = 'position:fixed;left:0;right:0;bottom:12%;z-index:402;text-align:center;pointer-events:none;opacity:0;transition:opacity .9s;font-family:DungGeunMo,monospace';
-  cap.innerHTML = '<div style="font-size:calc(13px*var(--uiz,1));letter-spacing:3px;color:#c9b795">' + t('discovery.rareHeader') +
-    '</div><div style="font-size:calc(26px*var(--uiz,1));color:#f2e6c8;text-shadow:0 0 22px rgba(255,190,110,.5);margin-top:6px">' + name + '</div>';
-  document.body.appendChild(cap);
-  setTimeout(() => { cap.style.opacity = '1'; }, 550);
-  try { playSfx('sting', { vol: 0.5 }); } catch (e) {}
-  playVignette(() => buildDiscoveryScene(defId, colorIdx, tier), 5200, () => { cap.style.opacity = '0'; setTimeout(() => cap.remove(), 800); });
-}
+// (Tier6a) 발견 컷 씬 빌더+연출은 render/vignettes.js로 이관 — 큐 게이트(위)만 잔류.
 // 「콘크리트 정글의 해」 — 펜트하우스 발코니 조망 비네트. 아침(<12시)=해돋이, 이후=해넘이.
 //   전 구간을 골든아워→어스름으로 압축(밋밋한 '낮' 없음). 실루엣은 역광으로 어둡게, 지평선만 타오른다.
-function buildJungleSunScene(rise) {
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(44, innerWidth / innerHeight, 0.1, 600);
-  camera.position.set(0, 10, 42); camera.lookAt(0, 22, -80);
-  const skyCv = document.createElement('canvas'); skyCv.width = 2; skyCv.height = 1024;
-  const skyTex = new THREE.CanvasTexture(skyCv); skyTex.colorSpace = THREE.SRGBColorSpace;
-  scene.background = skyTex;
-  scene.fog = new THREE.Fog(0x2a1626, 70, 380);
-  const _tcB = new THREE.Color();
-  const lerpC = (h1, h2, k, tgt) => tgt.setHex(h1).lerp(_tcB.setHex(h2), k);
-  const _tc1 = new THREE.Color(); const _tc2 = new THREE.Color(); const _tc3 = new THREE.Color(); const _tc4 = new THREE.Color();
-  // 태양: 서부의 이글거리는 해 — 백열 코어 + 3겹 코로나 + 수평 번 스트릭 + 틈새 광선
-  const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff0c0, fog: false });
-  const sun = new THREE.Mesh(new THREE.CircleGeometry(11.5, 48), sunMat);
-  sun.position.set(6, 4, -240); scene.add(sun);
-  const gcv = document.createElement('canvas'); gcv.width = gcv.height = 256;
-  const gg = gcv.getContext('2d'); const rg = gg.createRadialGradient(128, 128, 6, 128, 128, 127);
-  rg.addColorStop(0, 'rgba(255,168,70,0.95)'); rg.addColorStop(0.4, 'rgba(250,80,28,0.45)'); rg.addColorStop(1, 'rgba(235,50,18,0)');
-  gg.fillStyle = rg; gg.fillRect(0, 0, 256, 256);
-  const glowTex = new THREE.CanvasTexture(gcv);
-  const mkGlow = (sc) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })); sp.scale.set(sc, sc, 1); scene.add(sp); return sp; };
-  const glowCore = mkGlow(85), glowMid = mkGlow(190), glowWide = mkGlow(340);
-  const scv = document.createElement('canvas'); scv.width = 256; scv.height = 32; // 지평선이 달궈지는 수평 스트릭
-  const sg2 = scv.getContext('2d'); const sgr = sg2.createLinearGradient(0, 0, 256, 0);
-  sgr.addColorStop(0, 'rgba(250,90,30,0)'); sgr.addColorStop(0.5, 'rgba(255,170,90,0.75)'); sgr.addColorStop(1, 'rgba(250,90,30,0)');
-  sg2.fillStyle = sgr; sg2.fillRect(0, 0, 256, 32);
-  const streak = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(scv), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-  streak.scale.set(300, 12, 1); scene.add(streak);
-  const rayMat = new THREE.MeshBasicMaterial({ color: 0xff9a44, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, side: THREE.DoubleSide });
-  const rayGroup = new THREE.Group(); // 사광 — 타워 틈새로만 뻗는다(협곡 뒤 배치라 실루엣이 자연 차폐)
-  for (let i = 0; i < 7; i++) { const pv = new THREE.Group(); const rp = new THREE.Mesh(new THREE.PlaneGeometry(2.6 + (i % 3), 150), rayMat); rp.position.y = 75; pv.add(rp); pv.rotation.z = -0.9 + i * 0.3; rayGroup.add(pv); }
-  rayGroup.position.set(6, 4, -239.5); scene.add(rayGroup);
-  // 콘크리트 정글 실루엣 4겹: 원경(지평선 잔광에 물듦)→전경 옥상선(발코니에서 내려다보는 낮은 지붕들)
-  const srand = seededRand(2409);
-  const JG = [ // [zBase, n, hMin, hVar, wMin, wVar, yBase]
-    [-210, 16, 16, 26, 9, 14, -6], [-160, 13, 13, 22, 8, 13, -6],
-    [-105, 10, 9, 18, 8, 12, -6], [-58, 9, 2.5, 7, 14, 12, -6],
-  ];
-  const layers = []; const vegMats = [];
-  const glintMat = new THREE.MeshBasicMaterial({ color: 0xffc478, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
-  const wcv = document.createElement('canvas'); wcv.width = 64; wcv.height = 128; // 창문 격자 — 박스가 '건물'이 된다 (레이어 색이 곱해짐)
-  const wg2 = wcv.getContext('2d'); wg2.fillStyle = '#ded6cc'; wg2.fillRect(0, 0, 64, 128);
-  for (let r = 0; r < 18; r++) {
-    if (r % 5 === 2 && srand() < 0.3) { wg2.fillStyle = '#4a423e'; wg2.fillRect(0, 4 + r * 6.8, 64, 4.6); continue; } // 붕괴로 뚫린 층
-    for (let c = 0; c < 8; c++) {
-      const wr = srand();
-      wg2.fillStyle = wr < 0.16 ? '#55493f' : (wr < 0.55 ? '#a89c90' : '#c4bab0'); // 깨진 구멍/유리/프레임
-      wg2.fillRect(3 + c * 7.6, 4 + r * 6.8, 4.8, 4.2);
-    }
-  }
-  const winTex = new THREE.CanvasTexture(wcv); winTex.colorSpace = THREE.SRGBColorSpace;
-  const jaggedCrown = (mat, x, top, w, z) => { // 무너진 상층부 — 어긋난 계단 실루엣 + 철근
-    let cw = w * 0.9, cy = top;
-    const nj = 2 + Math.floor(srand() * 2);
-    for (let j = 0; j < nj; j++) {
-      const ch = 1.2 + srand() * 2.2; cw *= 0.55 + srand() * 0.25;
-      const cb = new THREE.Mesh(new THREE.BoxGeometry(cw, ch, 6), mat);
-      cb.position.set(x + (srand() - 0.5) * w * 0.4, cy + ch / 2, z); cb.rotation.z = (srand() - 0.5) * 0.12; scene.add(cb);
-      cy += ch * 0.7;
-    }
-    for (let j = 0; j < 2; j++) { const rb = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.6 + srand() * 1.8, 0.16), mat); rb.position.set(x + (srand() - 0.5) * w * 0.6, cy + 0.8, z); rb.rotation.z = (srand() - 0.5) * 0.7; scene.add(rb); }
-  };
-  for (let L = 0; L < 4; L++) {
-    const mat = new THREE.MeshBasicMaterial({ color: 0x1a1420, map: L < 3 ? winTex : null });
-    const vegMat = new THREE.MeshBasicMaterial({ color: 0x141a0e });
-    const [zb, n, hm, hv, wm, wv, yb] = JG[L];
-    for (let i = 0; i < n; i++) {
-      const tw4 = wm + srand() * wv, th4 = hm + srand() * hv;
-      const x4 = -150 + (i / (n - 1)) * 300 + (srand() - 0.5) * 14;
-      if (L < 3 && Math.abs(x4 - 6) < 13 + L * 3) continue; // 협곡: 해가 지는 골목을 비워둔다 (맨해튼헨지)
-      const bd4 = new THREE.Mesh(new THREE.BoxGeometry(tw4, th4, 8), mat);
-      const z4 = zb + srand() * 16;
-      bd4.position.set(x4, yb + th4 / 2, z4);
-      if (srand() < 0.3) bd4.rotation.z = (srand() - 0.5) * 0.06; // 침하로 기운 몸체
-      scene.add(bd4);
-      const topY = yb + th4;
-      if (L < 3 && srand() < 0.38) jaggedCrown(mat, x4, topY - 0.6, tw4, z4); // 붕괴 크라운
-      else if (L < 3 && srand() < 0.4) { const an3 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 4 + srand() * 4, 0.5), mat); an3.position.set(x4, topY + 2, z4); an3.rotation.z = (srand() - 0.5) * 0.3; scene.add(an3); }
-      if (L === 3 && srand() < 0.5) { const wt2 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.8, 1.6), mat); wt2.position.set(x4 + (srand() - 0.5) * tw4 * 0.6, topY + 0.9, z4); scene.add(wt2); } // 옥상 물탱크
-      if (srand() < 0.5) { // 도시를 되찾는 초목: 옥상 수관 + 외벽 넝쿨 폭포
-        const nb2 = 1 + Math.floor(srand() * 3);
-        for (let b = 0; b < nb2; b++) { const cw2 = 1.5 + srand() * 3; const cn2 = new THREE.Mesh(new THREE.BoxGeometry(cw2, 1 + srand() * 1.6, 5), vegMat); cn2.position.set(x4 + (srand() - 0.5) * tw4 * 0.8, topY + 0.5, z4); scene.add(cn2); }
-        const nSheet = 1 + (srand() < 0.4 ? 1 : 0); // 벽면을 덮는 넝쿨 시트 — 폭을 키워 '잠식'으로
-        for (let sI = 0; sI < nSheet; sI++) {
-          const ivH = th4 * (0.35 + srand() * 0.45);
-          const iv = new THREE.Mesh(new THREE.BoxGeometry(2 + srand() * tw4 * 0.4, ivH, 0.4), vegMat);
-          iv.position.set(x4 - tw4 / 2 + srand() * tw4, topY - ivH / 2 + 0.4, z4 + 4.1); scene.add(iv);
-        }
-      }
-      if (L >= 1 && L < 3 && Math.abs(x4 - 6) < 62 && srand() < 0.55) { // 지는 해가 깨진 유리에 박힌다
-        for (let gI2 = 0; gI2 < 2; gI2++) { const gq = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.8), glintMat); gq.position.set(x4 + (srand() - 0.5) * tw4 * 0.7, yb + th4 * (0.3 + srand() * 0.6), z4 + 4.15); scene.add(gq); }
-      }
-    }
-    layers.push(mat); vegMats.push(vegMat);
-  }
-  // 세트피스: 이웃에 기대 쓰러진 타워 + 전단된 그루터기 (TLOU의 그 장면)
-  const lean2 = new THREE.Mesh(new THREE.BoxGeometry(10, 30, 8), layers[1]); lean2.position.set(-96, 4, -156); lean2.rotation.z = 0.42; scene.add(lean2);
-  const stump2 = new THREE.Mesh(new THREE.BoxGeometry(11, 12, 8), layers[1]); stump2.position.set(-110, 0, -158); scene.add(stump2);
-  jaggedCrown(layers[1], -110, 5.6, 11, -158);
-  // 가로수/자생목 — 건물 사이 골목을 채우는 수관 (도시를 되찾는 숲)
-  for (let i = 0; i < 11; i++) {
-    const tx3 = -120 + srand() * 240, tz3 = -70 - srand() * 60;
-    if (Math.abs(tx3 - 6) < 14) continue;
-    const th5 = 6 + srand() * 7;
-    const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.7, th5, 0.7), vegMats[2]); trunk.position.set(tx3, -6 + th5 / 2, tz3); scene.add(trunk);
-    let cy3 = -6 + th5 - 1;
-    for (let b = 0; b < 2 + Math.floor(srand() * 2); b++) { const cw3 = 3 + srand() * 3.5; const cn3 = new THREE.Mesh(new THREE.BoxGeometry(cw3, 1.6 + srand() * 1.4, cw3 * 0.8), vegMats[2]); cn3.position.set(tx3 + (srand() - 0.5) * 1.6, cy3, tz3); scene.add(cn3); cy3 += 1.2; }
-  }
-  // 폐 트러스 연결교 — 타워 사이에 걸린 잔해, 넝쿨이 늘어진다
-  const tb2 = new THREE.Group();
-  const chT = new THREE.Mesh(new THREE.BoxGeometry(26, 0.5, 1.2), layers[2]); chT.position.y = 3.2; tb2.add(chT);
-  const chB = new THREE.Mesh(new THREE.BoxGeometry(26, 0.7, 1.4), layers[2]); tb2.add(chB);
-  for (let i = 0; i < 7; i++) { const dg2 = new THREE.Mesh(new THREE.BoxGeometry(0.35, 4.4, 0.5), layers[2]); dg2.position.set(-11 + i * 3.7, 1.6, 0); dg2.rotation.z = (i % 2 ? 0.62 : -0.62); tb2.add(dg2); }
-  tb2.position.set(-52, 15, -100); tb2.rotation.z = -0.04; scene.add(tb2);
-  for (let i = 0; i < 4; i++) { const vnH = 2 + srand() * 2.5; const vn2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, vnH, 0.4), vegMats[2]); vn2.position.set(-62 + srand() * 22, 15 - vnH / 2 + 0.3, -99.4); scene.add(vn2); }
-  // 새 떼 + 노을 구름 띠(타워 위, 아래에서 달궈진) + 황혼 별
-  const birdMat = new THREE.MeshBasicMaterial({ color: 0x0c0a10 });
-  for (let i = 0; i < 6; i++) {
-    const bx5 = -34 + srand() * 68, by5 = 30 + srand() * 16;
-    for (const s5 of [-1, 1]) { const wing = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.16, 0.3), birdMat); wing.position.set(bx5 + s5 * 0.55, by5, -120); wing.rotation.z = s5 * 0.4; scene.add(wing); }
-  }
-  const ccv = document.createElement('canvas'); ccv.width = 256; ccv.height = 64; // 소프트 구름 스트릭 (박스 금지 — 막대기로 보임)
-  const cg = ccv.getContext('2d');
-  for (const [sx, sy, sw, sh, a] of [[10, 22, 236, 18, 0.5], [40, 12, 150, 12, 0.35], [80, 36, 140, 14, 0.4]]) {
-    const lg = cg.createRadialGradient(sx + sw / 2, sy + sh / 2, 2, sx + sw / 2, sy + sh / 2, sw / 2);
-    lg.addColorStop(0, 'rgba(255,255,255,' + a + ')'); lg.addColorStop(1, 'rgba(255,255,255,0)');
-    cg.save(); cg.translate(sx + sw / 2, sy + sh / 2); cg.scale(1, sh / sw); cg.translate(-(sx + sw / 2), -(sy + sh / 2));
-    cg.fillStyle = lg; cg.beginPath(); cg.arc(sx + sw / 2, sy + sh / 2, sw / 2, 0, Math.PI * 2); cg.fill(); cg.restore();
-  }
-  const cloudTex = new THREE.CanvasTexture(ccv); cloudTex.colorSpace = THREE.SRGBColorSpace;
-  const cloudMat = new THREE.SpriteMaterial({ map: cloudTex, color: 0xd86a3c, transparent: true, opacity: 0.75, depthWrite: false, fog: false });
-  for (const [cx5, cy5, csc] of [[-58, 50, 130], [52, 62, 160], [-4, 42, 95]]) {
-    const cl2 = new THREE.Sprite(cloudMat); cl2.position.set(cx5, cy5, -236); cl2.scale.set(csc, csc * 0.22, 1); scene.add(cl2);
-  }
-  // 층간 안개 밴드 — 공기원근을 실제 매질로 (소프트 그라데이션 플레인 3장)
-  const hcv = document.createElement('canvas'); hcv.width = 32; hcv.height = 64;
-  const hg = hcv.getContext('2d'); const hgr = hg.createLinearGradient(0, 0, 0, 64);
-  hgr.addColorStop(0, 'rgba(255,255,255,0)'); hgr.addColorStop(0.5, 'rgba(255,255,255,0.85)'); hgr.addColorStop(1, 'rgba(255,255,255,0)');
-  hg.fillStyle = hgr; hg.fillRect(0, 0, 32, 64);
-  const hazeTex = new THREE.CanvasTexture(hcv);
-  const hazeMats = [];
-  for (const [hy, hz, hh, ho] of [[7, -186, 30, 0.55], [5, -130, 22, 0.45], [3, -76, 15, 0.35]]) {
-    const hm2 = new THREE.MeshBasicMaterial({ map: hazeTex, transparent: true, opacity: ho, depthWrite: false, fog: false, color: 0xc06a3a });
-    const hp = new THREE.Mesh(new THREE.PlaneGeometry(400, hh), hm2); hp.position.set(0, hy, hz); scene.add(hp); hazeMats.push(hm2);
-  }
-  // 재와 불씨 — 죽은 도시 위를 떠도는 것들
-  const emN = 54; const emArr = new Float32Array(emN * 3); const emSeed = [];
-  for (let i = 0; i < emN; i++) { emArr[i * 3] = -90 + srand() * 180; emArr[i * 3 + 1] = 4 + srand() * 44; emArr[i * 3 + 2] = -70 + srand() * 30; emSeed.push(srand() * Math.PI * 2); }
-  const emGeo = new THREE.BufferGeometry(); emGeo.setAttribute('position', new THREE.BufferAttribute(emArr, 3));
-  const emMat = new THREE.PointsMaterial({ color: 0xffb060, size: 2.2, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, sizeAttenuation: false });
-  scene.add(new THREE.Points(emGeo, emMat));
-  // 최전경: 발코니 난간 실루엣 (여기 서서 보고 있다는 시점 근거) + 난간을 타는 넝쿨
-  const railMat = new THREE.MeshBasicMaterial({ color: 0x0a080e });
-  const parapet = new THREE.Mesh(new THREE.BoxGeometry(200, 5.2, 2), railMat); parapet.position.set(0, 3.2, 20); scene.add(parapet);
-  const handrail = new THREE.Mesh(new THREE.BoxGeometry(200, 0.5, 2.4), new THREE.MeshBasicMaterial({ color: 0x2a2018 })); handrail.position.set(0, 6.1, 20); scene.add(handrail);
-  for (let i = 0; i < 9; i++) { const tf2 = new THREE.Mesh(new THREE.BoxGeometry(0.8 + srand() * 1.8, 0.6 + srand() * 1.4, 1.6), railMat); tf2.position.set(-46 + srand() * 92, 6.4 + tf2.geometry.parameters.height / 2 - 0.2, 20); scene.add(tf2); } // 파라펫 위 풀 포기
-  const stGeo = new THREE.BufferGeometry(); const stPos = [];
-  for (let i = 0; i < 240; i++) stPos.push(-260 + srand() * 520, 34 + srand() * 150, -250);
-  stGeo.setAttribute('position', new THREE.Float32BufferAttribute(stPos, 3));
-  const stMat = new THREE.PointsMaterial({ color: 0xcdd8ff, size: 1.3, transparent: true, opacity: 0, fog: false, sizeAttenuation: false });
-  scene.add(new THREE.Points(stGeo, stMat));
-  const update = (t) => {
-    const kn = rise ? t : 1 - t;                   // kn 0=어스름 1=골든아워 (해돋이는 증가, 해넘이는 감소)
-    camera.position.z = 42 - 3.5 * t; camera.lookAt(0, 22, -80); // 슬로 돌리인
-    const g2 = skyCv.getContext('2d');
-    const gr2 = g2.createLinearGradient(0, 0, 0, 1024);
-    lerpC(0x200a1a, 0xb82a1e, kn, _tc1); lerpC(0x6a1c2a, 0xe85228, kn, _tc2); lerpC(0xa03424, 0xff8434, kn, _tc4); lerpC(0xb03a20, 0xffc44e, Math.min(1, kn * 1.2), _tc3); // 하늘 전체가 탄다 (RDR 포스터)
-    gr2.addColorStop(0, '#' + _tc1.getHexString()); gr2.addColorStop(0.5, '#' + _tc2.getHexString()); gr2.addColorStop(0.78, '#' + _tc4.getHexString()); gr2.addColorStop(1, '#' + _tc3.getHexString());
-    g2.fillStyle = gr2; g2.fillRect(0, 0, 2, 1024); skyTex.needsUpdate = true;
-    const sunY = -10 + 30 * kn;                    // 협곡 사이 낮은 호 — 옥상선에 걸린 해가 골목으로 진다
-    const gy = Math.max(sunY, -2);
-    sun.position.y = sunY;
-    lerpC(0xff4a14, 0xffd23e, kn, sunMat.color);   // 지평선에선 녹은 쇳물, 떠 있을 땐 진한 골드
-    glowCore.position.set(6, gy, -239); glowMid.position.set(6, gy, -239); glowWide.position.set(6, gy, -239);
-    glowCore.material.opacity = 0.85 + 0.1 * Math.sin(t * 46);          // 이글거림 — 코어가 떨린다
-    glowMid.material.opacity = 0.5 + 0.4 * (1 - kn) + 0.05 * Math.sin(t * 33);
-    glowWide.material.opacity = 0.26 + 0.2 * (1 - kn);
-    streak.position.set(6, Math.max(sunY, -1), -239.2);
-    streak.material.opacity = 0.25 + 0.5 * (1 - kn); streak.scale.x = 300 + 6 * Math.sin(t * 21);
-    rayGroup.position.y = gy; rayGroup.rotation.z = t * 0.05;
-    rayMat.opacity = 0.015 + 0.1 * Math.pow(kn, 1.6); // 해가 잠기면 광선도 급히 죽는다
-    lerpC(0x2a0e18, 0xb85838, kn, scene.fog.color); // 붉은 먼지가 낀 대기
-    lerpC(0x38141e, 0x8a3a44, kn, layers[0].color);  // 원경 — 잔광에 익은 적갈 (창문 텍스처가 곱해짐)
-    lerpC(0x26101e, 0x5c2434, kn, layers[1].color);
-    lerpC(0x180a14, 0x3a1824, kn, layers[2].color);
-    lerpC(0x0a060a, 0x180d14, kn, layers[3].color);  // 전경 옥상선 — 거의 검게
-    lerpC(0x2a2014, 0x4a3824, kn, vegMats[0].color); // 초목 — 역광의 마른 올리브
-    lerpC(0x1e1810, 0x342818, kn, vegMats[1].color);
-    lerpC(0x141008, 0x241c10, kn, vegMats[2].color);
-    lerpC(0x0a0806, 0x141008, kn, vegMats[3].color);
-    lerpC(0x6a1c20, 0xf07034, kn, hazeMats[0].color); // 안개 밴드 — 해에 가까울수록 달궈진다
-    lerpC(0x521824, 0xd85428, kn, hazeMats[1].color);
-    lerpC(0x3a1220, 0xa84224, kn, hazeMats[2].color);
-    glintMat.opacity = 0.15 + 0.7 * kn;              // 유리 파편광은 해와 함께 죽는다
-    for (let i = 0; i < emN; i++) {                  // 불씨 부유
-      emArr[i * 3 + 1] += 0.045; emArr[i * 3] += Math.sin(t * 6 + emSeed[i]) * 0.05;
-      if (emArr[i * 3 + 1] > 52) emArr[i * 3 + 1] = 4;
-    }
-    emGeo.attributes.position.needsUpdate = true;
-    emMat.opacity = 0.28 + 0.14 * Math.sin(t * 27) * Math.sin(t * 7 + 1);
-    lerpC(0x8a2818, 0xff9a4e, kn, cloudMat.color);
-    stMat.opacity = Math.max(0, (0.22 - kn) / 0.22) * 0.9; // 어스름에만 별이 스민다
-  };
-  update(0);
-  return { scene, camera, update };
-}
-function playJungleSunVignette() {
-  const rise = gameHour() < 12;
-  playVignette(() => buildJungleSunScene(rise), 12000, () => {
-    state.sights = state.sights || {};
-    const first = !state.sights.jungleSun;
-    state.sights.jungleSun = (state.sights.jungleSun || 0) + 1;
-    addMoodBuff(2, 1);                                            // 익일 무드: "그 하늘을 생각했다"
-    state.dayLog.notes.push(t('sight.jungleSun.note'));
-    if (first) jackpotToast(`🌇 ${t('sight.jungleSun.first')}`, 0xffb04a);
-    scheduleSave();
-  });
-}
 // 발코니 조망 트리거 (디렉터 2026-07-09): 펜트하우스 발코니 데크 더블탭 → 「콘크리트 정글의 해」.
 //   시각 표시 0 — 데크 자체가 트리거(y=0 평면 히트를 balcony 사각형으로 판정, 히든 더블탭 문법).
 let balconyTapAt = 0;
 function pickBalconyView(e) {
   const bal = SHELTERS[state.current]?.balcony;
-  if (!bal || vignetteActive || paused) return false;
+  if (!bal || vignetteBusy() || paused) return false;
   pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   raycaster.setFromCamera(pointer, camera);
   const tr = -raycaster.ray.origin.y / raycaster.ray.direction.y;
@@ -6503,300 +6629,6 @@ function pickBalconyView(e) {
 // 「불타는 해협」 — 아포칼립스 금문교 노을 (#146, 디렉터 레퍼런스 대조 리워크).
 //   평면 측면 실루엣 폐기 → 3/4 후퇴 원근(다리 축을 따라 내려다봄) + 초목의 잠식 + 따뜻한 앰버 팔레트
 //   + 전경 서사(부서진 차·접근 고가·침몰선·도심 실루엣). 박스/스프라이트/캔버스 관용구만(셰이더/에셋 없음).
-function buildGoldenGateScene() {
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(54, innerWidth / innerHeight, 0.1, 1200);
-  camera.position.set(-8, 12, 40); camera.lookAt(10, 16, -150); // 3/4 다리축 조망(비대칭)
-  const srand = seededRand(7761);
-  const skyCv = document.createElement('canvas'); skyCv.width = 2; skyCv.height = 1024;
-  const skyTex = new THREE.CanvasTexture(skyCv); skyTex.colorSpace = THREE.SRGBColorSpace;
-  scene.background = skyTex;
-  scene.fog = new THREE.Fog(0x6b4a2e, 60, 440); // 따뜻한 먼지 안개 — 원경 타워/스카이라인을 녹인다
-  const _tcB = new THREE.Color();
-  const lerpC = (h1, h2, k, tgt) => tgt.setHex(h1).lerp(_tcB.setHex(h2), k);
-  const _ux = new THREE.Vector3(1, 0, 0), _dir = new THREE.Vector3();
-  // 3D 임의 방향 박스(상판·케이블·행어를 실좌표로 잇는다 → 원근이 크기 감소를 공짜로 처리)
-  const link = (mat, a, b, w, h) => {
-    const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2]; const len = Math.hypot(dx, dy, dz) || 0.01;
-    const m = new THREE.Mesh(new THREE.BoxGeometry(len, h, w), mat);
-    m.position.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2);
-    m.quaternion.setFromUnitVectors(_ux, _dir.set(dx / len, dy / len, dz / len));
-    scene.add(m); return m;
-  };
-  // ── 절차 텍스처 (역광 실루엣: 명암보다 결·얼룩·균열·이끼로 디테일. material color가 map을 곱함.
-  //   trand=텍스처 전용 시드 — srand() 시퀀스를 소비하지 않아 지오메트리 난수는 불변) ──
-  const trand = seededRand(9911);
-  const pxT = (w2, h2, draw, rep) => { const c = document.createElement('canvas'); c.width = w2; c.height = h2; draw(c.getContext('2d')); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; if (rep) t.repeat.set(rep[0], rep[1]); return t; };
-  const grain = (g, w2, h2, n, a) => { for (let i = 0; i < n; i++) { const v = 150 + ((i * 37) % 80); g.fillStyle = 'rgba(' + v + ',' + (v - 8) + ',' + (v - 18) + ',' + a + ')'; g.fillRect((i * 29) % w2, (i * 71) % h2, 1, 1); } };
-  const cracks = (g, w2, h2, n, seg) => { for (let i = 0; i < n; i++) { g.strokeStyle = 'rgba(48,42,36,0.42)'; g.lineWidth = 1; g.beginPath(); let cx = (i * 407) % w2, cy = 0; g.moveTo(cx, cy); for (let s = 0; s < seg; s++) { cx += (trand() - 0.5) * 20; cy += h2 / seg; g.lineTo(cx, cy); } g.stroke(); } };
-  // 콘크리트/타워: 밝은 베이스 + 세로 물얼룩 + 균열 + 하단 이끼
-  const concreteTex = pxT(96, 160, g => {
-    g.fillStyle = '#b8b0a4'; g.fillRect(0, 0, 96, 160); grain(g, 96, 160, 1500, 0.5);
-    for (let i = 0; i < 9; i++) { g.fillStyle = 'rgba(66,58,48,0.15)'; g.fillRect((i * 911) % 96, (i * 53) % 30, 2 + ((i * 7) % 3), 132); }
-    cracks(g, 96, 160, 5, 6);
-    const mg = g.createLinearGradient(0, 116, 0, 160); mg.addColorStop(0, 'rgba(58,78,38,0)'); mg.addColorStop(1, 'rgba(48,72,34,0.5)'); g.fillStyle = mg; g.fillRect(0, 116, 96, 44);
-  });
-  // 강철/상판: 페인트 + 세로 녹줄 + 리벳
-  const steelTex = pxT(128, 64, g => {
-    g.fillStyle = '#a89a86'; g.fillRect(0, 0, 128, 64);
-    for (let i = 0; i < 22; i++) { g.fillStyle = 'rgba(150,88,42,0.28)'; g.fillRect((i * 311) % 128, 0, 1 + ((i * 5) % 3), 64); }
-    grain(g, 128, 64, 900, 0.4);
-    for (let rx = 6; rx < 128; rx += 16) for (let ry = 8; ry < 64; ry += 22) { g.fillStyle = 'rgba(58,48,38,0.5)'; g.fillRect(rx, ry, 2, 2); }
-  });
-  // 콘크리트 소(균열)
-  const concTex = pxT(96, 96, g => { g.fillStyle = '#aca498'; g.fillRect(0, 0, 96, 96); grain(g, 96, 96, 850, 0.5); cracks(g, 96, 96, 4, 5); });
-  // 녹 (차/가드레일)
-  const rustTex = pxT(64, 64, g => { g.fillStyle = '#b09070'; g.fillRect(0, 0, 64, 64); for (let i = 0; i < 640; i++) { const r = 110 + ((i * 29) % 80); g.fillStyle = 'rgba(' + r + ',' + (r * 0.6 | 0) + ',' + (r * 0.35 | 0) + ',0.5)'; g.fillRect((i * 17) % 64, (i * 53) % 64, 1 + ((i * 3) % 2), 1 + ((i * 5) % 2)); } });
-  // 잎 클러스터 스프라이트 — 올리브(저채도) 잎덩이 + 물어뜯긴 불규칙 가장자리 + 내부 결.
-  //   역광 씬: material color를 아주 낮춰 '거의 실루엣'으로 앉힌다(빛나는 오브 금지). 상단만 warm rim.
-  const leafTex = pxT(64, 64, g => {
-    for (let b = 0; b < 16; b++) { const cx = 13 + trand() * 38, cy = 13 + trand() * 38, rr = 6 + trand() * 10; const gv = 80 + (trand() * 55 | 0); g.fillStyle = 'rgba(' + (gv * 0.72 | 0) + ',' + (gv * 0.9 | 0) + ',' + (gv * 0.5 | 0) + ',0.97)'; g.beginPath(); g.arc(cx, cy, rr, 0, 6.283); g.fill(); } // 올리브톤(녹 채도 낮춤)
-    for (let i = 0; i < 44; i++) { g.fillStyle = 'rgba(16,26,12,0.6)'; g.fillRect(6 + trand() * 52 | 0, 6 + trand() * 52 | 0, 1 + (trand() * 3 | 0), 1 + (trand() * 6 | 0)); } // 어두운 잎 갈라짐
-    for (let i = 0; i < 20; i++) { g.fillStyle = 'rgba(150,168,104,0.4)'; g.fillRect(8 + trand() * 48 | 0, 8 + trand() * 20 | 0, 1, 1); } // 상단 광엣지
-    g.globalCompositeOperation = 'destination-out'; for (let i = 0; i < 11; i++) { g.beginPath(); g.arc(4 + trand() * 56, 4 + trand() * 56, 3 + trand() * 5, 0, 6.283); g.fill(); } g.globalCompositeOperation = 'source-over'; // 가장자리 물어뜯기(원 탈피)
-  });
-  // ── 재질(해가 우측 → +x/윗면이 광면). color를 map 밝기만큼 올려 실루엣 톤 유지 ──
-  const steelMat = new THREE.MeshBasicMaterial({ color: 0x33251a, map: concreteTex });   // 원경 타워
-  const steelLit = new THREE.MeshBasicMaterial({ color: 0x52381f, map: concreteTex });   // 근경 타워 광면(kn 애니)
-  const deckMat = new THREE.MeshBasicMaterial({ color: 0x33261a, map: steelTex });       // 상판/행어
-  const cableMat = new THREE.MeshBasicMaterial({ color: 0x1c130c });
-  const vegSil = new THREE.MeshBasicMaterial({ color: 0x243218 });     // 넝쿨 가닥(박스)
-  const vegRim = new THREE.MeshBasicMaterial({ color: 0x50501f });
-  const leafSil = new THREE.SpriteMaterial({ map: leafTex, color: 0x1c2612, transparent: true, depthWrite: false });   // 역광 잎(거의 실루엣, kn 애니)
-  const leafRim = new THREE.SpriteMaterial({ map: leafTex, color: 0x483a1c, transparent: true, depthWrite: false });   // 상단 top-lit warm rim
-  const concShad = new THREE.MeshBasicMaterial({ color: 0x281d12, map: concTex });
-  const concLit = new THREE.MeshBasicMaterial({ color: 0x3e2c1a, map: concTex });
-  const propDark = new THREE.MeshBasicMaterial({ color: 0x281d14, map: rustTex });
-  const propRust = new THREE.MeshBasicMaterial({ color: 0x52301a, map: rustTex });
-  const cityMat = new THREE.MeshBasicMaterial({ color: 0x281620, transparent: true, opacity: 0.82 });
-  const hillMat = new THREE.MeshBasicMaterial({ color: 0x241a14 });
-  // ── 해: 낮게 잠기는 우측 골드 쇳덩이 + 3겹 코로나 ──
-  const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff2d8, fog: false });
-  const sun = new THREE.Mesh(new THREE.CircleGeometry(11, 48), sunMat);
-  sun.position.set(80, 4, -330); scene.add(sun);
-  const gcv = document.createElement('canvas'); gcv.width = gcv.height = 256;
-  const gg = gcv.getContext('2d'); const rgS = gg.createRadialGradient(128, 128, 6, 128, 128, 127);
-  rgS.addColorStop(0, 'rgba(255,244,214,0.95)'); rgS.addColorStop(0.35, 'rgba(255,168,70,0.55)'); rgS.addColorStop(0.7, 'rgba(240,120,40,0.18)'); rgS.addColorStop(1, 'rgba(200,90,30,0)');
-  gg.fillStyle = rgS; gg.fillRect(0, 0, 256, 256);
-  const glowTex = new THREE.CanvasTexture(gcv);
-  const mkGlow = (sc) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })); sp.scale.set(sc, sc, 1); scene.add(sp); return sp; };
-  const glowCore = mkGlow(110), glowMid = mkGlow(250), glowWide = mkGlow(460);
-  // 뜨거운 백열 코어(값 상한) — 해 원반 위에 근백색 가산 디스크
-  const coreCv = document.createElement('canvas'); coreCv.width = coreCv.height = 128;
-  const cg2 = coreCv.getContext('2d'); const crg = cg2.createRadialGradient(64, 64, 4, 64, 64, 64);
-  crg.addColorStop(0, 'rgba(255,250,232,0.98)'); crg.addColorStop(0.5, 'rgba(255,232,180,0.5)'); crg.addColorStop(1, 'rgba(255,210,140,0)');
-  cg2.fillStyle = crg; cg2.fillRect(0, 0, 128, 128);
-  const hotCore = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(coreCv), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false })); hotCore.scale.set(34, 34, 1); scene.add(hotCore);
-  // 신의 광선(수평 팬) — 두꺼운 먼지 대기
-  for (const [gy, gz, gsc] of [[6, -150, 200], [3, -210, 260]]) { const gr = new THREE.Mesh(new THREE.PlaneGeometry(gsc, gsc * 0.5), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); gr.position.set(70, gy, gz); scene.add(gr); }
-  // ── 지형: 마린 헤드랜드(원경) + 도심 스카이라인 밴드(해 밑, 무명 블록 — 콘텐츠 게이트) ──
-  const hillShape = new THREE.Shape(); hillShape.moveTo(-300, -30);
-  for (let x = -300; x <= 300; x += 11) { const hy = 12 + Math.sin(x * 0.017) * 12 + Math.sin(x * 0.05 + 1) * 6 + Math.sin(x * 0.19 + 2) * 2.4 + srand() * 5; hillShape.lineTo(x, hy); } // 고주파 항 + 잔 노이즈 → 매끈한 언덕 탈피
-  hillShape.lineTo(300, -30); hillShape.lineTo(-300, -30);
-  const hills = new THREE.Mesh(new THREE.ShapeGeometry(hillShape), hillMat); hills.position.set(20, 0, -300); scene.add(hills);
-  // 앞쪽 낮은 능선(깊이감) — 나무 실루엣 톱니
-  const ridgeShape = new THREE.Shape(); ridgeShape.moveTo(-260, -20);
-  for (let x = -260; x <= 260; x += 8) { const ry = 5 + Math.sin(x * 0.03) * 5 + Math.sin(x * 0.28 + 1) * 2 + srand() * 3.5; ridgeShape.lineTo(x, ry); }
-  ridgeShape.lineTo(260, -20); ridgeShape.lineTo(-260, -20);
-  const ridge = new THREE.Mesh(new THREE.ShapeGeometry(ridgeShape), new THREE.MeshBasicMaterial({ color: 0x1a140f })); ridge.position.set(30, 0, -276); scene.add(ridge);
-  for (let i = 0; i < 22; i++) { const bx = -14 + srand() * 96; const bh = 6 + srand() * 11 + (srand() < 0.18 ? 7 : 0); const bd = new THREE.Mesh(new THREE.BoxGeometry(5 + srand() * 4, bh, 4), cityMat); bd.position.set(bx, -1 + bh / 2, -262); scene.add(bd); }
-  // ── 금문교: 두 탑을 서로 다른 깊이에 → 원근이 far 탑을 작게 만든다(수동 축소 금지) ──
-  const NT = [-20, 0, -55], FT = [46, 0, -210], TT = 34;
-  const mkTower = (tx, tz, lit) => {
-    const g = new THREE.Group(); const bodyMat = lit ? steelLit : steelMat;
-    for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(2.6, TT + 2, 2.6), (s > 0 && lit) ? steelLit : steelMat); leg.position.set(s * 4.2, TT / 2, 0); g.add(leg); }
-    for (const by of [9, 16, 23, 29, TT - 1]) { const br = new THREE.Mesh(new THREE.BoxGeometry(11, 1.6, 2.4), bodyMat); br.position.set(0, by, 0); g.add(br); }
-    // 상단: 평평한 캡 폐기 → 어긋난 파쇄 조각 4 + 뜯긴 철근 8(랜덤 높이) → 실루엣 상단을 울퉁불퉁하게
-    for (let j = 0; j < 4; j++) { const cw = 3.4 + srand() * 3.6, chh = 0.8 + srand() * 1.7; const ch = new THREE.Mesh(new THREE.BoxGeometry(cw, chh, 2.6 + srand()), bodyMat); ch.position.set(-4 + srand() * 8, TT + 0.5 + srand() * 2.3, (srand() - 0.5) * 0.8); ch.rotation.z = (srand() - 0.5) * 0.26; g.add(ch); }
-    for (let j = 0; j < 8; j++) { const rb = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.4 + srand() * 3.6, 0.14), cableMat); rb.position.set(-5 + srand() * 10, TT + 1.6 + srand() * 2.6, (srand() - 0.5) * 2.2); rb.rotation.z = (srand() - 0.5) * 0.75; rb.rotation.x = (srand() - 0.5) * 0.5; g.add(rb); }
-    // 전면 창문 열(불규칙: ~22% 결손, 크기 편차, 30% 뻥 뚫린 구멍, 창밑 흘러내린 얼룩)
-    for (const s of [-1, 1]) { let wy = 6; while (wy < TT - 2) { wy += 2.7 + srand() * 0.7; if (srand() < 0.22) continue; const wn = new THREE.Mesh(new THREE.BoxGeometry(1.1 + srand() * 0.6, 1.2 + srand() * 1.0, srand() < 0.3 ? 0.5 : 0.12), cableMat); wn.position.set(s * 4.2, wy, 1.32); g.add(wn); if (srand() < 0.4) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.2 + srand(), 0.05), new THREE.MeshBasicMaterial({ color: 0x140d08, transparent: true, opacity: 0.5 })); st.position.set(s * 4.2 + (srand() - 0.5), wy - 1.3, 1.36); g.add(st); } } }
-    g.position.set(tx, 0, tz); return g;
-  };
-  const _ntg = mkTower(NT[0], NT[2], true); _ntg.scale.set(1.16, 1.16, 1.16); scene.add(_ntg); // 근탑을 모뉴먼트로 — 하늘을 지배
-  scene.add(mkTower(FT[0], FT[2], false));
-  const NTtop = [NT[0], TT + 1, NT[2]], FTtop = [FT[0], TT + 1, FT[2]];
-  const dW = 5.4, dH = 1.4;
-  // 접근 경간(성함): 근앵커 → 근탑 (녹강 상판 텍스처)
-  const appWP = [[-96, 9, 10], [-58, 9, -22], NT[0] && [-20, 9, -55]]; appWP[2] = [-20, 9, -55];
-  for (let i = 0; i < appWP.length - 1; i++) link(deckMat, appWP[i], appWP[i + 1], dW, dH);
-  // 접근 상판 난간(디테일) + 신축 이음새
-  for (let s = 0.06; s < 1; s += 0.12) { const x = -96 + (NT[0] + 96) * s, z = 10 + (NT[2] - 10) * s; link(cableMat, [x, 9.7, z + 2.5], [x, 10.5, z + 2.5], 0.12, 0.12); }
-  link(cableMat, [-96, 10.5, 12.5], [-20, 10.5, -52.5], 0.14, 0.14); // 상판 앞 난간 상단봉
-  // 주경간(붕괴): 근탑 → 처짐 → 물로 꺾여 잠김 + 파단부 철근
-  const sagA = [-20, 9, -55], sagB = [-6, 4.5, -74], sagC = [4, 1.6, -90];
-  link(deckMat, sagA, sagB, dW, dH); link(deckMat, sagB, sagC, dW * 0.9, dH);
-  for (let j = 0; j < 6; j++) { const rb = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2 + srand() * 2.6, 0.14), cableMat); rb.position.set(3 + srand() * 5, 1.2 + srand() * 2.5, -88 - srand() * 6); rb.rotation.z = (srand() - 0.5) * 1.4; scene.add(rb); } // 부러진 상판 철근
-  // 원경 경간(성함): 재개 → 원탑 → 원앵커
-  const farWP = [[30, 9, -176], FT[0] && [46, 9, -210], [76, 9, -250], [108, 9, -298]]; farWP[1] = [46, 9, -210];
-  for (let i = 0; i < farWP.length - 1; i++) link(deckMat, farWP[i], farWP[i + 1], dW, dH);
-  // 주케이블 + 행어 (같은 폴리라인)
-  const cApp = [[-96, 13, 10], [-58, 27, -22], NTtop];
-  for (let i = 0; i < cApp.length - 1; i++) link(cableMat, cApp[i], cApp[i + 1], 0.5, 0.5);
-  const cSag = [NTtop, [-6, 20, -74], [3, 9, -90]];
-  for (let i = 0; i < cSag.length - 1; i++) link(cableMat, cSag[i], cSag[i + 1], 0.5, 0.5);
-  link(cableMat, [3, 9, -90], [5, 3, -93], 0.4, 0.4); // 끊긴 자락
-  const cFar = [[108, 13, -298], [76, 25, -250], FTtop, [30, 18, -176], [23, 10, -168]];
-  for (let i = 0; i < cFar.length - 1; i++) link(cableMat, cFar[i], cFar[i + 1], 0.5, 0.5);
-  // 행어(성한 경간만)
-  const hangOn = (a, b, cyA, cyB, n) => { for (let i = 1; i < n; i++) { const s = i / n; const x = a[0] + (b[0] - a[0]) * s, z = a[2] + (b[2] - a[2]) * s, cy = cyA + (cyB - cyA) * s; if (cy - 9 > 1) link(cableMat, [x, 9, z], [x, cy, z], 0.2, 0.2); } };
-  hangOn([-96, 9, 10], NT, 13, 35, 8); hangOn([46, 9, -210], [108, 9, -298], 35, 13, 7);
-  // ── 초목 관용구 ──
-  const swayG = [];
-  const mkVine = (x, yTop, z, len, mat, amp) => { const g = new THREE.Group(); g.position.set(x, yTop, z); const seg = new THREE.Mesh(new THREE.BoxGeometry(0.16 + srand() * 0.18, len, 0.16), mat); seg.position.y = -len / 2; g.add(seg); scene.add(g); swayG.push({ g, seed: srand() * 6.28, amp: amp * (0.6 + srand() * 0.8) }); return g; };
-  // 캐노피/담쟁이 = 부드러운 잎 클러스터 스프라이트(큐브 아님). mat===vegRim → 광엣지 톤.
-  // 캐노피: 2~3장 겹침·넓은 스케일 편차·미러·수직 지터 → 균일한 공(orb) 탈피. rim은 가끔만(상단 광엣지 희소).
-  const mkCanopy = (x, y, z, r, mat) => { const allowRim = (mat === vegRim); const n = 2 + (srand() < 0.55 ? 1 : 0); for (let b = 0; b < n; b++) { const sp = new THREE.Sprite((allowRim && srand() < 0.5) ? leafRim : leafSil); const sc = r * (1.05 + srand() * 1.7); sp.scale.set(sc * (srand() < 0.5 ? -1 : 1), sc * (0.66 + srand() * 0.4), 1); sp.position.set(x + (srand() - 0.5) * r * 1.3, y + r * 0.32 + (srand() - 0.5) * r * 0.85, z + (srand() - 0.5) * r * 0.9); scene.add(sp); } };
-  const mkIvy = (cx, cyTop, cyBot, halfW, z, dens, allowRim) => { const rows = Math.max(2, Math.floor((cyTop - cyBot) / 1.0)); for (let r = 0; r < rows; r++) { const yy = cyBot + (r / rows) * (cyTop - cyBot); const patches = Math.max(1, Math.floor(dens * (2 + srand() * 3))); for (let p = 0; p < patches; p++) { const rim = (allowRim && yy > cyTop - 5 && srand() < 0.35); const sp = new THREE.Sprite(rim ? leafRim : leafSil); const sc = 0.9 + srand() * 1.1; sp.scale.set(sc * (srand() < 0.5 ? -1 : 1), sc * (1.1 + srand() * 0.6), 1); sp.position.set(cx + (srand() - 0.5) * halfW * 1.8, yy + (srand() - 0.5), z + 0.35 * (z < NT[2] ? 1 : -1)); scene.add(sp); } } };
-  // 히어로: 붕괴 경간 케이블에서 늘어진 넝쿨 커튼(처짐부에서 가장 길다)
-  const sagPts = [];
-  for (let i = 0; i < cSag.length - 1; i++) { for (let s = 0; s < 1; s += 0.1) { const a = cSag[i], b = cSag[i + 1]; sagPts.push([a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s, a[2] + (b[2] - a[2]) * s]); } }
-  for (const [px, py, pz] of sagPts) { const drop = 2 + srand() * 7 + Math.max(0, py - 6) * 0.35; const len = Math.min(drop, py - 0.4); if (len > 0.6) mkVine(px + (srand() - 0.5) * 1.3, py - 0.2, pz + (srand() - 0.5) * 1.3, len, srand() < 0.3 ? vegRim : vegSil, 0.05 + len * 0.004); }
-  for (let i = 0; i < 7; i++) mkVine(-14 + srand() * 18, 8.5, -58 - srand() * 6, 3 + srand() * 4, vegSil, 0.05); // 부서진 상판 립에서 늘어진 자락
-  // 근/원탑 담쟁이 + 상판 밑단 프린지
-  mkIvy(NT[0] - 4.2, 33, 2, 2.2, NT[2], 1.0, true); mkIvy(NT[0] + 4.2, 33, 2, 2.2, NT[2], 1.0, true);
-  mkIvy(FT[0] - 4.2, 32, 3, 2.0, FT[2], 0.8, false); mkIvy(FT[0] + 4.2, 32, 3, 2.0, FT[2], 0.8, false);
-  for (let s = 0; s < 1; s += 0.035) { const x = -96 + (NT[0] + 96) * s, z = 10 + (NT[2] - 10) * s; mkVine(x + (srand() - 0.5) * 2, 8.4, z + 2.7, 2 + srand() * 6, srand() < 0.25 ? vegRim : vegSil, 0.05); } // 접근 상판 앞면 넝쿨 커튼(하늘에 실루엣)
-  // 캐노피 군락: 상판 정원 / 탑 어깨 / 수변 덤불
-  for (let s = 0; s < 1; s += 0.13) { const x = -96 + (NT[0] + 96) * s, z = 10 + (NT[2] - 10) * s; if (srand() < 0.7) mkCanopy(x + (srand() - 0.5) * 3, 10.6, z, 1.6 + srand() * 1.4, srand() < 0.3 ? vegRim : vegSil); }
-  for (const by of [16, 24, 35]) mkCanopy(NT[0] + (srand() - 0.5) * 6, by, NT[2], 2 + srand(), srand() < 0.5 ? vegRim : vegSil);
-  for (let i = 0; i < 26; i++) { const tx = -42 + srand() * 96, tz = -8 - srand() * 176; mkCanopy(tx, 0.6 + srand() * 3, tz, 1.6 + srand() * 2.4, (srand() < 0.25 && tx < 0) ? vegRim : vegSil); }
-  // 중경 잎: 성한 케이블 선을 따라 잠식(레퍼런스처럼 초록이 다리 전체 깊이로 스레딩)
-  for (const cbl of [cApp, cFar]) for (let i = 0; i < cbl.length - 1; i++) for (let s = 0.15; s < 1; s += 0.3) { if (srand() < 0.45) continue; const a = cbl[i], b = cbl[i + 1]; mkCanopy(a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s - 0.3, a[2] + (b[2] - a[2]) * s, 0.8 + srand() * 0.9, vegSil); }
-  for (let i = 0; i < 6; i++) mkCanopy(NT[0] + (srand() - 0.5) * 11, 1 + srand() * 3, NT[2] + (srand() - 0.5) * 9, 2 + srand() * 2, vegSil);
-  for (let i = 0; i < 5; i++) mkCanopy(FT[0] + (srand() - 0.5) * 11, 1 + srand() * 3, FT[2] + (srand() - 0.5) * 9, 1.6 + srand() * 1.6, vegSil);
-  // 전경 덤불 벽 — 하단을 잠식으로 채운다(앰버 하늘에 실루엣). 몇 포기는 키가 커 상판·난간 선을 끊는다.
-  for (let i = 0; i < 38; i++) { const bx = -74 + srand() * 158, bz = 4 + srand() * 28; mkCanopy(bx, 1.3 + srand() * 3.2, bz, 1.6 + srand() * 2.4, srand() < 0.14 ? vegRim : vegSil); }
-  for (let i = 0; i < 5; i++) { const bx = -64 + srand() * 138; mkCanopy(bx, 4.5 + srand() * 4, 8 + srand() * 14, 2 + srand() * 1.8, vegSil); }
-  // ── 전경: 젖은 습지 둑 + 웅덩이 반사 ──
-  const bank = new THREE.Mesh(new THREE.PlaneGeometry(320, 90), new THREE.MeshBasicMaterial({ color: 0x181109, fog: false })); bank.rotation.x = -Math.PI / 2; bank.position.set(-10, 0.25, 24); scene.add(bank);
-  for (let i = 0; i < 5; i++) { const pd = new THREE.Mesh(new THREE.PlaneGeometry(6 + srand() * 6, 3 + srand() * 3), new THREE.MeshBasicMaterial({ color: 0xff8a3e, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); pd.rotation.x = -Math.PI / 2; pd.position.set(-60 + srand() * 100, 0.3, 14 + srand() * 24); scene.add(pd); }
-  // ── 접근 고가 콜로네이드(좌측 프레임) — 3/4 후퇴의 최대 동인 ──
-  for (let i = 0; i < 6; i++) {
-    const u = i / 5, vx = -58 - u * 40, vz = -68 + u * 74, VH = 22 + u * 13;
-    for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(3.2, VH, 3.2), s > 0 ? concLit : concShad); leg.position.set(vx + s * 3.5, VH / 2, vz); scene.add(leg); }
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(11, 2.4, 6.5), concShad); cap.position.set(vx, VH + 1, vz); scene.add(cap);
-    if (i < 5) { const u2 = (i + 1) / 5, vx2 = -58 - u2 * 40, vz2 = -68 + u2 * 74, VH2 = 22 + u2 * 13; link(concShad, [vx, VH + 2, vz], [vx2, VH2 + 2, vz2], 7, 2.2); }
-    const sheet = new THREE.Mesh(new THREE.BoxGeometry(2.4, VH * 0.55, 0.4), vegSil); sheet.position.set(vx, VH * 0.55 / 2 + 2, vz + 2.4); scene.add(sheet);
-    for (let h = 0; h < 5; h++) mkVine(vx + (srand() - 0.5) * 8, VH + 1.5, vz, 3 + srand() * 5, vegSil, 0.05);
-    mkCanopy(vx, 1.5, vz, 2 + srand() * 1.5, vegSil);
-  }
-  // ── 부서진 차(전경 좌하단 앵커) ──
-  const car = new THREE.Group();
-  const cB = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); car.add(m); return m; };
-  cB(9.2, 1.7, 4.2, propDark, 0, 1.35, 0); cB(3.4, 0.9, 4.0, propRust, 3.1, 2.0, 0); cB(3.0, 0.9, 4.0, propRust, -3.2, 1.95, 0); cB(4.4, 1.9, 3.8, propDark, -0.2, 2.7, 0); cB(2.4, 1.0, 4.1, propDark, 4.6, 1.0, 0); cB(2.4, 1.0, 4.1, propDark, -4.6, 1.0, 0);
-  const wsh = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.6), new THREE.MeshBasicMaterial({ color: 0xff9a4e, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); wsh.position.set(1.7, 2.9, 2.0); car.add(wsh);
-  car.position.set(-34, 1.0, 20); car.rotation.set(0, 0.55, 0.05); scene.add(car);
-  for (let i = 0; i < 4; i++) { const v = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.2 + srand() * 1.4, 2.2), vegSil); v.position.set(-34 + (srand() - 0.5) * 8, 2.4 + srand() * 1.4, 20 + (srand() - 0.5) * 3); scene.add(v); }
-  // ── 도로 표지(무명 — 콘텐츠 게이트) + 접지 W빔 가드레일 ──
-  const sPost = new THREE.Mesh(new THREE.BoxGeometry(0.4, 12, 0.4), propDark); sPost.position.set(-50, 5.5, 30); sPost.rotation.z = 0.5; scene.add(sPost);
-  const sPanel = new THREE.Mesh(new THREE.BoxGeometry(5, 3, 0.35), propRust); sPanel.position.set(-52.5, 10.5, 30); sPanel.rotation.z = 0.5; scene.add(sPanel);
-  for (let i = 0; i < 2; i++) mkVine(-52 + srand() * 3, 9.5, 30.3, 2 + srand() * 3, vegSil, 0.06);
-  const rail = new THREE.Group();
-  rail.add(new THREE.Mesh(new THREE.BoxGeometry(30, 1.1, 0.5), propDark)); const rcap = new THREE.Mesh(new THREE.BoxGeometry(30, 0.35, 0.55), propRust); rcap.position.y = 0.5; rail.add(rcap);
-  for (let i = 0; i < 7; i++) { const post = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.2, 0.5), propDark); post.position.set(-13 + i * 4.2, -1.4, 0); rail.add(post); }
-  rail.position.set(42, 2.4, 30); rail.rotation.y = -0.42; scene.add(rail);
-  const brk = new THREE.Mesh(new THREE.BoxGeometry(0.5, 4.4, 0.5), propDark); brk.position.set(30, 2.4, 30); brk.rotation.z = 0.5; scene.add(brk);
-  for (let i = 0; i < 6; i++) mkCanopy(30 + srand() * 26, 1.2, 30, 1.4 + srand() * 1.2, vegSil);
-  // ── 침몰선(우측, 원탑 옆·해 앞이라 검게) ──
-  const ship = new THREE.Group();
-  const sB = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); ship.add(m); return m; };
-  sB(24, 6, 7, propDark, 0, 0.6, 0); const bow = sB(8, 5, 5.5, propDark, 13, 1.4, 0); bow.rotation.z = 0.12; // 들린 뱃머리
-  sB(6, 4, 5, propDark, -4, 4, 0); sB(4, 3, 4, propDark, -4.4, 6.8, 0); sB(2.2, 3.6, 2.2, propRust, -1.5, 6.6, 0); // 상부구조 + 기운 굴뚝
-  const m1 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 6, 0.32), propDark); m1.position.set(2, 4, 0); m1.rotation.z = 0.5; ship.add(m1); // 꺾인 마스트(하)
-  const m2 = new THREE.Mesh(new THREE.BoxGeometry(0.26, 4.5, 0.26), propDark); m2.position.set(5.5, 5.6, 0); m2.rotation.z = 1.15; ship.add(m2); // 부러져 늘어진 상단
-  const crane = new THREE.Mesh(new THREE.BoxGeometry(0.3, 7, 0.3), propRust); crane.position.set(-6, 5, 1); crane.rotation.z = -0.7; ship.add(crane); // 기운 데릭
-  ship.position.set(95, 0, -185); ship.rotation.set(0, -0.5, 0.42); scene.add(ship); // 더 기운 리스트
-  for (let i = 0; i < 4; i++) mkCanopy(90 + srand() * 12, 2 + srand() * 3, -184 + (srand() - 0.5) * 8, 1.2 + srand(), vegSil); // 갑판 잠식(월드좌표)
-  // ── 잔해 뗏목 + 붕괴 콘크리트 파편 ──
-  for (let i = 0; i < 9; i++) { const rx = -30 + srand() * 120, rz = -30 - srand() * 115; const raft = new THREE.Mesh(new THREE.BoxGeometry(3 + srand() * 4, 0.5, 2 + srand() * 2), propDark); raft.position.set(rx, 0.3, rz); raft.rotation.y = srand() * 3; scene.add(raft); const veg = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.8, 1.5), vegSil); veg.position.set(rx, 0.6, rz); scene.add(veg); }
-  for (let i = 0; i < 5; i++) { const ch = new THREE.Mesh(new THREE.BoxGeometry(2 + srand() * 3, 1.5 + srand() * 2, 2 + srand() * 2), concShad); ch.position.set(-8 + srand() * 24, 0.6, -76 - srand() * 24); ch.rotation.set(srand(), srand() * 3, srand() * 0.4); scene.add(ch); }
-  // 잔돌·파편 스캐터 — 탑 발치·전경의 딱딱한 직선 실루엣을 부순다(작은 불규칙 박스)
-  for (const [bx, bz, br, n] of [[NT[0], NT[2], 9, 10], [-30, 20, 20, 12], [42, 30, 16, 8], [-58, -30, 14, 7]]) {
-    for (let i = 0; i < n; i++) { const rk = new THREE.Mesh(new THREE.BoxGeometry(0.5 + srand() * 1.4, 0.4 + srand() * 1.0, 0.5 + srand() * 1.2), srand() < 0.5 ? concShad : propDark); rk.position.set(bx + (srand() - 0.5) * br, 0.3 + srand() * 0.6, bz + (srand() - 0.5) * br * 0.7); rk.rotation.set(srand() * 0.5, srand() * 3, srand() * 0.4); scene.add(rk); }
-  }
-  // ── 물: 단일 골드 반사 기둥(냉색 없음) ──
-  const wcv = document.createElement('canvas'); wcv.width = 256; wcv.height = 256; const wg = wcv.getContext('2d');
-  const waterTex = new THREE.CanvasTexture(wcv); waterTex.colorSpace = THREE.SRGBColorSpace;
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(900, 520), new THREE.MeshBasicMaterial({ map: waterTex, fog: false })); water.rotation.x = -Math.PI / 2; water.position.set(20, 0, -160); scene.add(water);
-  // 해 아래 녹은 금빛 반사 기둥(하늘 광휘를 전경 값역과 잇는다)
-  const refCv = document.createElement('canvas'); refCv.width = 16; refCv.height = 128; const rfg = refCv.getContext('2d');
-  const rfgr = rfg.createLinearGradient(0, 0, 0, 128); rfgr.addColorStop(0, 'rgba(255,207,122,0.55)'); rfgr.addColorStop(0.6, 'rgba(210,110,44,0.2)'); rfgr.addColorStop(1, 'rgba(122,48,16,0)');
-  rfg.fillStyle = rfgr; rfg.fillRect(0, 0, 16, 128);
-  const refStreak = new THREE.Mesh(new THREE.PlaneGeometry(22, 190), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(refCv), transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); refStreak.rotation.x = -Math.PI / 2; refStreak.position.set(66, 0.32, -150); scene.add(refStreak);
-  const drawWater = (kn, t) => {
-    wg.fillStyle = '#160f0a'; wg.fillRect(0, 0, 256, 256);
-    const wgr = wg.createLinearGradient(0, 0, 0, 256);
-    wgr.addColorStop(0, 'rgba(70,46,28,' + (0.5 + 0.3 * kn) + ')'); wgr.addColorStop(0.5, 'rgba(40,28,18,0.5)'); wgr.addColorStop(1, 'rgba(14,10,8,0.9)');
-    wg.fillStyle = wgr; wg.fillRect(0, 0, 256, 256);
-    for (let i = 0; i < 46; i++) { const ry = 6 + i * 5.2, rw = 1.6 + Math.sin(i * 0.7 + t * 5) * 1.1; wg.globalAlpha = 0.55 * (1 - i / 46); wg.fillStyle = 'rgba(255,184,74,' + (0.7 * kn) + ')'; wg.fillRect(150 + Math.sin(i * 0.9 + t * 6) * 6, ry, 34 + rw * 7, 2.4); }
-    wg.globalAlpha = 1; waterTex.needsUpdate = true;
-  };
-  // ── 재/불씨(따뜻한 금빛 재) ──
-  const emN = 44, emArr = new Float32Array(emN * 3), emSeed = [];
-  for (let i = 0; i < emN; i++) { emArr[i * 3] = -110 + srand() * 220; emArr[i * 3 + 1] = 1 + srand() * 26; emArr[i * 3 + 2] = -80 + srand() * 60; emSeed.push(srand() * 6.28); } // 하단 온기대에만 (하늘의 별처럼 읽히지 않게)
-  const emGeo = new THREE.BufferGeometry(); emGeo.setAttribute('position', new THREE.BufferAttribute(emArr, 3));
-  const emMat = new THREE.PointsMaterial({ color: 0xffc070, size: 2.4, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, sizeAttenuation: false });
-  scene.add(new THREE.Points(emGeo, emMat));
-  // ── 구름: 상단 갈색 폭풍 덩어리(비가산) + 해 근처 금빛 가산 ──
-  const scv = document.createElement('canvas'); scv.width = 256; scv.height = 96; const scg = scv.getContext('2d');
-  for (const [sx, sy, sw2, sh, a] of [[10, 30, 236, 26, 0.6], [50, 14, 150, 18, 0.45], [80, 52, 160, 20, 0.5]]) { const lg = scg.createRadialGradient(sx + sw2 / 2, sy + sh / 2, 2, sx + sw2 / 2, sy + sh / 2, sw2 / 2); lg.addColorStop(0, 'rgba(255,255,255,' + a + ')'); lg.addColorStop(1, 'rgba(255,255,255,0)'); scg.save(); scg.translate(sx + sw2 / 2, sy + sh / 2); scg.scale(1, sh / sw2); scg.translate(-(sx + sw2 / 2), -(sy + sh / 2)); scg.fillStyle = lg; scg.beginPath(); scg.arc(sx + sw2 / 2, sy + sh / 2, sw2 / 2, 0, 6.283); scg.fill(); scg.restore(); }
-  const stormTex = new THREE.CanvasTexture(scv); stormTex.colorSpace = THREE.SRGBColorSpace;
-  const stormMat = new THREE.SpriteMaterial({ map: stormTex, color: 0x3a2c1e, transparent: true, opacity: 0.85, depthWrite: false, fog: false });
-  for (const [cx5, cy5, csc] of [[-40, 74, 220], [60, 88, 240], [10, 66, 180]]) { const cl = new THREE.Sprite(stormMat); cl.position.set(cx5, cy5, -256); cl.scale.set(csc, csc * 0.22, 1); scene.add(cl); }
-  const goldCloudMat = new THREE.SpriteMaterial({ map: stormTex, color: 0xff9a4c, transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
-  for (const [cx5, cy5, csc] of [[62, 34, 150], [46, 48, 130], [78, 40, 120]]) { const cl = new THREE.Sprite(goldCloudMat); cl.position.set(cx5, cy5, -250); cl.scale.set(csc, csc * 0.2, 1); scene.add(cl); }
-  // ── 층간 안개 밴드(깊이 이음새마다, 따뜻한색) ──
-  const zcv = document.createElement('canvas'); zcv.width = 32; zcv.height = 64; const zg = zcv.getContext('2d'); const zgr = zg.createLinearGradient(0, 0, 0, 64);
-  zgr.addColorStop(0, 'rgba(255,255,255,0)'); zgr.addColorStop(0.5, 'rgba(255,255,255,0.85)'); zgr.addColorStop(1, 'rgba(255,255,255,0)'); zg.fillStyle = zgr; zg.fillRect(0, 0, 32, 64);
-  const hazeTex = new THREE.CanvasTexture(zcv); const hazeMats = []; const hazeSpec = [[0x6a3a1e, 0xff9a4e], [0x52281a, 0xe07a34], [0x3a1c14, 0xc86028]];
-  const hazeZ = [[8, -70, 20], [7, -140, 26], [6, -250, 34]];
-  for (let i = 0; i < 3; i++) { const hm = new THREE.MeshBasicMaterial({ map: hazeTex, transparent: true, opacity: [0.5, 0.44, 0.34][i], depthWrite: false, fog: false, color: hazeSpec[i][1] }); const hp = new THREE.Mesh(new THREE.PlaneGeometry(700, hazeZ[i][2]), hm); hp.position.set(70, hazeZ[i][0], hazeZ[i][1]); scene.add(hp); hazeMats.push(hm); }
-  // ── 하늘 램프(6스톱, 따뜻한 앰버 — 절대 보라로 가지 않는다) ──
-  const SKY = [[0x140e09, 0x1e150e, 0.0], [0x241a12, 0x4a3524, 0.22], [0x4a3218, 0x9a5a26, 0.46], [0x6b3f1e, 0xd67f2a, 0.66], [0x844a20, 0xf0a038, 0.83], [0x9a5a28, 0xffe6a0, 1.0]]; // 상단=묵직한 역광 폭풍 천장(어둡고 따뜻하게)
-  const skyC = SKY.map(() => new THREE.Color());
-
-  const update = (t) => {
-    const kn = 1 - t * 0.62; // 1=만개한 노을 → 0.38 짙은 어스름
-    camera.position.set(-8 + 3 * t, 12, 40 - 8 * t); camera.up.set(Math.sin(t * 0.14) * 0.04, 1, 0); camera.lookAt(10 + 4 * t, 16 - 1.5 * t, -150);
-    const g2 = skyCv.getContext('2d'); const gr2 = g2.createLinearGradient(0, 0, 0, 1024);
-    for (let i = 0; i < SKY.length; i++) { lerpC(SKY[i][0], SKY[i][1], kn, skyC[i]); gr2.addColorStop(SKY[i][2], '#' + skyC[i].getHexString()); }
-    g2.fillStyle = gr2; g2.fillRect(0, 0, 2, 1024); skyTex.needsUpdate = true;
-    const sunY = 4 - 8 * t; sun.position.y = sunY; lerpC(0xff9a3c, 0xfff2d8, kn, sunMat.color);
-    glowCore.position.set(80, sunY, -329); glowMid.position.set(80, sunY, -329); glowWide.position.set(80, sunY, -329);
-    hotCore.position.set(80, sunY, -328); hotCore.material.opacity = 0.7 + 0.25 * kn;
-    glowCore.material.opacity = 0.85 + 0.1 * Math.sin(t * 40); glowMid.material.opacity = 0.5 + 0.4 * (1 - kn); glowWide.material.opacity = 0.24 + 0.24 * (1 - kn);
-    lerpC(0x2a1c12, 0x8a5a30, kn, scene.fog.color);
-    lerpC(0x1a0f08, 0x6a4426, kn, steelLit.color);
-    lerpC(0x0e130a, 0x1e2814, kn, vegSil.color);   // 넝쿨 가닥도 잎과 같은 어두운 실루엣 톤으로 통일
-    lerpC(0x1e1808, 0x443a1e, kn, vegRim.color);
-    lerpC(0x0d120a, 0x1c2612, kn, leafSil.color);  // 잎 몸통 = 어두운 올리브 실루엣(빛나지 않게)
-    lerpC(0x201808, 0x483a1c, kn, leafRim.color);  // 잎 상단 = warm rim(해가 뒤라 윗엣지만 달궈짐)
-    lerpC(0x140b08, 0x5a2c18, kn, propRust.color);
-    lerpC(0x1a1009, 0x4a2e1e, kn, concLit.color);
-    lerpC(0x1c0d14, 0x3a2028, kn, cityMat.color);
-    lerpC(0x180f0a, 0x2a1e16, kn, hillMat.color);
-    for (let i = 0; i < 3; i++) lerpC(hazeSpec[i][0], hazeSpec[i][1], kn, hazeMats[i].color);
-    lerpC(0x241a12, 0xff9a4c, kn, goldCloudMat.color);
-    for (let i = 0; i < emN; i++) { emArr[i * 3 + 1] += 0.05; emArr[i * 3] += Math.sin(t * 6 + emSeed[i]) * 0.06; if (emArr[i * 3 + 1] > 28) emArr[i * 3 + 1] = 1; }
-    emGeo.attributes.position.needsUpdate = true; emMat.opacity = 0.28 + 0.14 * Math.sin(t * 26) * Math.sin(t * 7 + 1);
-    for (const v of swayG) v.g.rotation.z = Math.sin(t * 1.3 + v.seed) * v.amp; // 살아 있는 초목의 흔들림
-    drawWater(kn, t);
-  };
-  update(0);
-  return { scene, camera, update };
-}
-function playGoldenGateVignette() {
-  playVignette(() => buildGoldenGateScene(), 12000, () => {
-    state.sights = state.sights || {};
-    const first = !state.sights.goldenGate;
-    state.sights.goldenGate = (state.sights.goldenGate || 0) + 1;
-    addMoodBuff(2, 1);                                              // 익일 무드: 그 다리를 생각했다
-    state.dayLog.notes.push(t('sight.goldenGate.note'));
-    if (first) jackpotToast(`🌉 ${t('sight.goldenGate.first')}`, 0xff6a3a);
-    scheduleSave();
-  });
-}
 
 let hiddenTapAt = 0;
 function pickHidden(e) {
@@ -7362,8 +7194,10 @@ addEventListener('keydown', e => {
   if (awaitingRebind) { captureRebind(e); return; }
   if (titleVisible) return;
   if (e.key === 'Escape') {
-    // 우선순위: 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
-    if (settingsOpen()) { closeSettings(); }
+    // 우선순위: PDA/노트 닫기 > 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
+    if (pdaVisible()) { pdaAppOn ? closeModal() : pdaClose(); } // 앱 모드면 모달 정리+원위치까지(잔류 DOM 방지)
+    else if (noteVisible()) { noteClose(); }
+    else if (settingsOpen()) { closeSettings(); }
     else if (catCam.active) { exitCatCloseup(); }
     else if (placing) { cancelPlacing(); }
     else if (selected) { deselect(); }
@@ -7419,7 +7253,7 @@ function rotateActive() {
 // ① 컬링 페이드 (디렉터 승인, GD-THESIS L1/L5 손맛): 벽/천장이 뚝 사라지는 대신 투명도로 부드럽게 소멸.
 //   렌더 상수(BAL 아님) — 순수 시각 튜닝값.
 // 벽/천장 투시 컬링 → render/culling.js (Tier4 Phase1-②). ctx=game.js 클로저 + 가변배열/타이틀 게터.
-const { updateWallCulling, resetWallMask } = makeCulling({
+const { updateWallCulling, resetWallMask, setForceClosed } = makeCulling({
   opts, shadowDirty, camera, camCenter, camPanApplied,
   getWallList: () => wallList, getCeilCullList: () => ceilCullList, getTitleVisible: () => titleVisible,
   SHELTERS, state,
@@ -7760,7 +7594,7 @@ function showTitle() {
     $('t-continue').style.display = '';
     $('t-continue-info').textContent = t('title.continueInfo', { slot: currentSlot, day: meta.day, sicon: meta.season.icon, semoji: meta.shelter.emoji, sname: LName(meta.shelter) })
       + (meta.winters >= 1 ? t('title.continueWinters', { n: meta.winters }) : '') // Nine Winters(#11)
-      + (meta.mode === 'hard' ? ' 🔥' : meta.mode === 'zen' ? ' ♾️' : '');
+      + (meta.mode === 'hard' ? ' 🔥' : meta.mode === 'hardcore' ? ' 💀' : meta.mode === 'zen' ? ' ♾️' : meta.mode === 'wallpaper' ? ' 🖼️' : ''); // #90: 슬롯 배지(slotModeBadge)와 4모드 표기 일치 — 혹한·꾸미기 공백 봉합
   } else {
     $('t-continue').style.display = 'none';
   }
@@ -7859,8 +7693,14 @@ function openSlotModal(mode) {
 }
 // 새 게임: 슬롯 선택 후 모드 5종(노말/하드/하드코어/무한/배경화면)을 고르는 화면 (같은 모달의 body 교체)
 // 모달 빌더 → ui/modals.js (Tier4 Phase1-⑤). t/BAL/DEFAULT_STATE/opts는 모듈이 import, game.js 클로저만 주입.
-const { openModeModal, openWardrobeModal, openKnowledgeModal } = makeModals({ openModal, toast, wallpaperUnlocked, zenUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS,
-  getPaused: () => paused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud });
+const { openModeModal, openWardrobeModal, openKnowledgeModal, openJournalModal } = makeModals({ openModal, toast, wallpaperUnlocked, zenUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS,
+  getPaused: () => paused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud,
+  // Tier6b 일지/도감 모달 의존 — 아이콘·집계 헬퍼·수첩 페이지(game.js 클로저)
+  icon, regionIcon, comfortBreakdownHtml, collectionCount,
+  memosTotal, memosCollected, broadcastsTotal, broadcastsCollected, sketchesTotal, sketchesCollected,
+  showMemoPage, showBroadcastModal, showSketchPage, showTruthPage,
+  // #90 데모 규모 은닉 게이트(1.9.5 재수렴: Tier6b 이관본에 이식) — 본편 빌드에선 DEMO_ED=false로 전부 무해
+  demoMemoRegions, DEMO_BROADCASTS, DEMO_ACH_HIDE, DEMO_CRAFT_FURN });
 // 디렉터 원복(2026-07-17): 레버4 원클릭 압축이 개막 서사를 통째로 생략 — 3장 복원.
 //   마찰 우려(레버4의 원취지)는 우상단 「건너뛰기」가 상쇄한다: 읽을 사람은 읽고, 급한 사람은 건넌다.
 const INTRO_IDS = ['intro.0', 'intro.1', 'intro.2'];
@@ -7987,10 +7827,19 @@ function runRebuildSequence() {
 //   도시 체류 가중(§9.8 4도시)은 미구현 — 그 전까지는 현존 3신호로 성향을 읽는다:
 //   탈출=박사 스파인(송출 불빛·정기 교신·일지 조각) / 신세계=진실 조각(기밀 12+이관 4) / 안식=정든 집(거주·고양이·쾌적).
 function endingLeaning() {
-  const escape = (state.survivorLights || 0) + (state.doctorRegularSeen ? 3 : 0) + (doctorFragmentsComplete() ? 2 : 0);
+  // 2.0-(g) §9.8.8 체류 가중: 동부(항만 대도시) 겨울 이력 W + 동부에서 9겨울 마무리 Wf → 탈출 성향.
+  //   홈 쪽은 무가중 — 전 세이브가 홈에서 시작·마무리하므로 홈 신호는 신호가 아니고(배터리 실측: home Wf가
+  //   진실 14조각의 newworld를 뒤집었다), rest의 이월은 homeStay가 담당한다. 동부에 발 들인 세이브만 판정이
+  //   움직인다(구세이브 엔딩 불변). 동률 순서는 기존 그대로(escape 우선). RNG 0·부수효과 0(판정 전용).
+  const cw = state.cityWinters || {}, fin = state.finalWinterCity;
+  const W = BAL.cities.endingW || 0, Wf = BAL.cities.endingWf || 0;
+  const escape = (state.survivorLights || 0) + (state.doctorRegularSeen ? 3 : 0) + (doctorFragmentsComplete() ? 2 : 0)
+    + (cw.east || 0) * W + (fin === 'east' ? Wf : 0);
   const truthN = MEMOS_RESEARCH.concat(MEMOS_CITYCORE).filter(id => (state.memos || {})[id]).length;
   const newworld = truthN >= 14 ? 6 : truthN >= 9 ? 4 : truthN >= 5 ? 2 : 0;
-  const rest = Math.min(4, Math.floor((state.stayDays || 0) / 8)) + (state.cat ? 2 : 0) + (comfortDetail().score >= 75 ? 2 : 0);
+  // 정든 정도: stayDays는 이주 시 리셋 — homeStay 고수위로 복원("오래 살던 집"이 낯선 집이 되지 않게, §9.8.6-③)
+  const settled = Math.max(state.stayDays || 0, (state.homeStay || {})[state.current] || 0);
+  const rest = Math.min(4, Math.floor(settled / 8)) + (state.cat ? 2 : 0) + (comfortDetail().score >= 75 ? 2 : 0);
   return escape >= newworld && escape >= rest ? 'escape' : newworld >= rest ? 'newworld' : 'rest';
 }
 
@@ -8068,10 +7917,14 @@ function maybeRunDemoCredits() {
 function updateClock() {
   const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
   const se = seasonOf();
-  $('lcd-day').textContent = t('clock.dayLine', { day: String(state.day).padStart(2, '0'), sicon: se.icon, sname: LName(se), sd: seasonDay(), total: SEASON_DAYS });
+  // 계절 아트 아이콘 (이모지 sicon → icon(), textContent→innerHTML — P2 스윕)
+  $('lcd-day').innerHTML = t('clock.dayLine', { day: String(state.day).padStart(2, '0'), sicon: icon(`icon_season_${se.id}`, se.icon), sname: LName(se), sd: seasonDay(), total: SEASON_DAYS });
   $('lcd-time').innerHTML = `${String(h).padStart(2, '0')}<span id="lcd-colon">:</span>${String(m).padStart(2, '0')}`;
-  const [timeIcon, label] = timeLabel();
-  $('lcd-sub').innerHTML = `${timeIcon} ${label} · ${wxIcon(weather.type)}${state.injury ? ' · ' + INJURIES[state.injury.type].icon : ''}`;
+  const [timeIcon, label, timeArt] = timeLabel();
+  // #199 5차-b(디렉터): 날씨(+페널티)는 시계가 계기 — HUD 스트립에서 이관. 이모지 금지 → 아트 아이콘
+  const wPen = WEATHERS[weather.type]?.penalty;
+  // 시간대 아이콘은 밤(달)만 — 새벽/낮/황혼의 해 계열은 제거(디렉터: 해 모양 금지), 라벨 텍스트가 식별자
+  $('lcd-sub').innerHTML = `${timeArt === 'icon_time_night' ? icon(timeArt, timeIcon) + ' ' : ''}${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:var(--bad)">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + injIconEl(state.injury.type) : ''}`;
 }
 
 function updateHud() {
@@ -8082,9 +7935,9 @@ function updateHud() {
   const cd = comfortDetail();
   const lv = Math.min(5, Math.round(cd.score / 20));
   const bonus = Math.round(comfortExpBonus() * 100);
-  const injIcon = state.injury ? ` ${INJURIES[state.injury.type].icon}` : '';
-  const dist = DISTRICTS[districtOf(state.current)];
-  $('hud-shelter').textContent = t('hud.shelterLine', { demoji: dist.emoji, dname: LName(dist), semoji: sh.emoji, sname: LName(sh) });
+  const distId = districtOf(state.current), dist = DISTRICTS[distId];
+  // #199-b 이모지 스윕 2차: 거점 라인 아트 아이콘 (textContent→innerHTML, demoji/semoji 자리에 icon())
+  $('hud-shelter').innerHTML = t('hud.shelterLine', { demoji: distIcon(distId), dname: LName(dist), semoji: shIcon(state.current), sname: LName(sh) });
   const comfortTip = t('hud.comfortTip', {
     score: cd.score, furn: cd.furn, light: cd.light, clean: cd.cleanMod, shelter: cd.shelterMod,
     settled: cd.settled ? t('hud.comfortSettled', { n: cd.settled }) : '',
@@ -8093,24 +7946,23 @@ function updateHud() {
     limit: cd.limitMod ? t('hud.comfortLimit', { n: cd.limitMod }) : '',
     bonus: bonus ? t('hud.comfortBonus', { n: bonus }) : '',
   });
-  // 아이콘 중심 상태 표시 (자세한 설명은 툴팁으로)
-  $('hud-stat').innerHTML =
-    `${W.icon}${W.penalty ? `<span style="color:var(--bad)">-${Math.round(W.penalty * 100)}%</span>` : ''}` +
-    `${injIcon ? `<span data-tip="${state.injury ? LName(INJURIES[state.injury.type]) : ''}">${injIcon}</span>` : ''}` +
-    `${cd.limitMod ? ` <span style="color:var(--bad)" data-tip="${LLimits(sh) || ''}">⚠️</span>` : ''}` +
-    `${state.buff ? ` <span style="color:var(--good)" data-tip="${buffLabel(state.buff)}">✨</span>` : ''}` +
-    ` · <span style="color:var(--accent)" data-tip="${comfortTip}">😊${cd.score} ${'★'.repeat(lv)}</span>` +
-    ` · <span data-tip="${t('hud.cleanTip')}">🧹${Math.round(cd.clean)}</span>` +
-    ` · <span data-tip="${t('hud.expTip', { n: state.expToday, max: EXP_PER_DAY })}">🎒${state.expToday}/${EXP_PER_DAY}</span>` +
-    // #195: 배경화면 모드는 successes가 셸터 해금용 치환값(탐험 봉인) — 가짜 '탐험 성공 N회' 노출 차단
-    (isWallpaper() ? '' : ` · <span data-tip="${t('hud.succTip')}">🏆${state.successes}</span>`) +
-    // Nine Winters(#11): 넘긴 겨울 배지 — 1겨울부터 노출. 9 초과는 약속을 넘어선 시간 → accent
-    ((state.winters || 0) >= 1
-      ? ` · <span class="hud-winters${state.winters > 9 ? ' beyond' : ''}" data-tip="${t('winter.badge.tip', { n: state.winters })}">❄️${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}</span>`
-      : '');
+  // #199 5차-b 컨디션 스트립(디렉터 정정): 경고 | 쾌적 — 날씨=시계 이관, 청결=경고 편입, 탐험 횟수 표기 제거
+  const cleanLow = cd.clean < 40; // 청결은 게이지가 아니라 낮을 때만 경고로 (디렉터: "청소는 경고 형식")
+  const warnN = (state.injury ? 1 : 0) + (cd.limitMod ? 1 : 0) + (cleanLow ? 1 : 0);
+  const warnTip = [
+    state.injury ? LName(INJURIES[state.injury.type]) : '',
+    cd.limitMod ? (LLimits(sh) || '') : '',
+    cleanLow ? `${t('hud.cleanTip')} (${Math.round(cd.clean)})` : '',
+  ].filter(Boolean).join(' · ');
+  // 기본 이모지 금지(디렉터) — 제작 아이콘 + 이모지 폴백
+  const segs = [
+    `<span class="cond-seg" data-tip="${warnTip}">${icon('icon_cond_warn', '⚠️')}<b class="${warnN ? 'bad' : ''}">${warnN}</b>${state.buff ? icon('icon_cond_buff', '✨') : ''}</span>`,
+    `<span class="cond-seg" data-tip="${comfortTip}">😊<b>${cd.score}</b></span>`, // 웃는 얼굴=기본 이모지(디렉터: "기본 윈도우 아이콘 써도 될 것 같고")
+  ];
+  $('hud-stat').innerHTML = segs.join('<span class="cond-div">|</span>');
   renderGauge('g-hunger', state.hunger, 'hunger', '🥫');
   renderGauge('g-thirst', state.thirst, 'thirst', '💧');
-  renderGauge('g-energy', state.energy, 'energy', '⚡');
+  renderGauge('g-energy', state.energy, 'energy', '⚡'); // #199 5차-b(디렉터): 퍼센트 계기는 밥·물·에너지만 — 청결은 스트립 경고로
 }
 function renderGauge(id, val, gkey, emoji) {
   const g = $(id);
@@ -8118,7 +7970,18 @@ function renderGauge(id, val, gkey, emoji) {
   const fill = g.querySelector('.g-fill');
   fill.style.width = Math.max(0, Math.round(val)) + '%';
   fill.className = 'g-fill' + (val < 25 ? ' crit' : val < 45 ? ' warn' : '');
-  g.querySelector('.g-label').innerHTML = `${icon(GAUGE_ICON[gkey], emoji)} ${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
+  // #199 5차 「필드 터미널」: 카드형(아이콘·라벨·큰 숫자·컬러 바) — 구형 .g-label 폴백 병행
+  const num = g.querySelector('.g-num');
+  if (num) {
+    g.querySelector('.g-ic').innerHTML = icon(GAUGE_ICON[gkey], emoji);
+    num.textContent = `${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
+  } else {
+    const lb = g.querySelector('.g-label');
+    if (lb) lb.innerHTML = `${icon(GAUGE_ICON[gkey], emoji)} ${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
+  }
+  // #199: 도킹 PDA 마이크로 게이지 동기화 — 접힘 상태에서도 보이는 상시 계측(LED 스트립)
+  const dk = $('dkg-' + gkey[0]);
+  if (dk) { dk.style.setProperty('--v', Math.max(0, Math.round(val)) + '%'); dk.className = val < 25 ? 'crit' : val < 45 ? 'warn' : ''; }
 }
 let lastResSnapshot = {};
 function renderResBar() {
@@ -8134,6 +7997,151 @@ function renderResBar() {
   }).join('');
   lastResSnapshot = { ...state.res };
   updateMoveBadge();
+}
+// ── #199 UI B: 우측 도킹 PDA — 전자 계측 오버레이 (상태/자원/지도/기록) ──
+//   하이브리드 원칙: 계측=전자(이 단말), 기록=종이(일지 도킹=기존 저널 진입점).
+//   기존 HUD는 불변 — 상단 정리 여부는 디렉터 결정 대기. 조회 전용(게임 진행 비정지).
+let pdaTab = 'status';
+const pdaVisible = () => $('pda-back').style.display !== 'none';
+function pdaOpen(tab) {
+  if (tab) pdaTab = tab;
+  $('pda-back').style.display = '';
+  renderPDA();
+  const lcd = $('pda-lcd'); // 켜질 때 LCD 부트 플리커 — 기기 핍진성
+  lcd.classList.remove('pda-boot'); void lcd.offsetWidth; lcd.classList.add('pda-boot');
+}
+function pdaClose() { $('pda-back').style.display = 'none'; }
+// #199 5차-c(디렉터 B안): HUD 메뉴 → PDA 앱 모드 — 공용 모달을 LCD 안으로 라우팅해 기존 로직 무수정 재사용.
+//   #modal-back은 absolute inset:0이라 #pda-lcd(relative)로 옮기면 그대로 화면에 맞는다. 닫으면 원위치+기기 끔.
+let pdaAppOn = false;
+function pdaOpenApp(openFn) {
+  if (paused) { toast(t('pause.blocked')); return; }
+  pdaOpen(); // 부트 플리커 포함 — 기기가 켜지며 앱이 뜬다
+  pdaAppOn = true;
+  document.body.classList.add('pda-app');
+  $('pda-lcd').appendChild($('modal-back'));
+  openFn();
+}
+function pdaAppExit() {
+  if (!pdaAppOn) return;
+  pdaAppOn = false;
+  document.body.classList.remove('pda-app');
+  document.body.appendChild($('modal-back')); // 원위치(body 직속) 복귀 — 일반 모달 경로 보전
+  pdaClose();
+}
+// #199 3차: 「필드 노트」(디렉터 에셋) — 기록=종이. 일지 도킹이 연다. 조회 전용.
+// #199-c 견출지 실기능화: 우측 페이지가 탭 3태(♥쾌적/📦수급(기본)/📍거점) + 📔=도감 액션.
+const noteVisible = () => $('note-back').style.display !== 'none';
+let noteTab = 'supply';
+function noteOpen() {
+  $('note-back').style.display = '';
+  const li = s => `<li>${s}</li>`;
+  $('nt-log-list').innerHTML = (state.dayLog.notes || []).slice(-7).map(li).join('') || li(t('pda.noLog'));
+  const w = WEATHERS[state.weatherType];
+  const memo = [`${t('pda.day', { n: state.day })} · ${w ? `${wxIcon(state.weatherType)} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}`];
+  if (hasForecast()) memo.push(t('forecast.prefix', { text: forecastText() }));
+  const lacks = ['water', 'food'].filter(id => (state.res[id] || 0) === 0);
+  if (lacks.length) memo.push(lacks.map(id => `${resIcon(id)} ${LName(RESOURCES[id])} 0`).join(' · '));
+  $('nt-memo-body').innerHTML = memo.map(m => `<div>${m}</div>`).join('');
+  renderNoteRight();
+}
+function renderNoteRight() {
+  document.querySelectorAll('.nt-tab').forEach(b => b.classList.toggle('active', b.dataset.ntab === noteTab));
+  const col = (h, body) => `<div class="nt-col"><div class="nt-h">${h}</div>${body}</div>`;
+  let top = '', rb = '';
+  if (noteTab === 'supply') {
+    const cell = ([id, n], sign) => `<div class="nt-cell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><b>${sign}${n}</b></div>`;
+    const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+    const spent = Object.entries(state.dayLog.spend || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+    top = col(t('nt.gained'), gains.map(g => cell(g, '+')).join('') || `<div class="nt-cell dim">—</div>`)
+        + col(t('nt.spent'), spent.map(s => cell(s, '-')).join('') || `<div class="nt-cell dim">—</div>`);
+  } else if (noteTab === 'comfort') {
+    // ♥ 쾌적 상세: comfortBreakdown 4축을 2열 컴팩트로 (잉크 바 + 원인 로그 2줄)
+    const b = comfortBreakdown();
+    const ax = (label, v, logs) => `<div class="nt-ax">
+      <div class="ax-h"><span>${label}</span><b>${v < 0 ? '' : '+'}${Math.round(v)}</b></div>
+      <div class="ax-bar"><i style="width:${Math.max(0, Math.min(100, (v / 40) * 100))}%"></i></div>
+      ${(logs || []).slice(0, 2).map(l => `<div class="ax-log">${l.name} ${l.v}</div>`).join('')}
+    </div>`;
+    top = col(t('nt.comfort'), ax(t('comfort.warmth'), b.warmth, b.logs.warmth) + ax(t('comfort.clean'), b.clean, b.logs.clean))
+        + col('', ax(t('comfort.security'), b.security, b.logs.security) + ax(t('comfort.mood'), b.mood, b.logs.mood));
+    rb = t('comfort.breakdownTitle', { score: b.score });
+  } else if (noteTab === 'base') {
+    // 📍 거점: 좌=거처(셸터·구역·정착일) / 우=오늘(날씨·예보·결핍)
+    const sh = SHELTERS[state.current], w = WEATHERS[state.weatherType];
+    const line = s => `<div class="nt-cell">${s}</div>`;
+    const left = line(`${shIcon(state.current)}<span>${LName(sh)}</span>`)
+      + line(`${distIcon(districtOf(state.current))}<span>${LName(DISTRICTS[districtOf(state.current)])}</span>`)
+      + line(`<span>${t('nt.settledDays', { n: state.stayDays || 0 })}</span>`);
+    const lacks = ['water', 'food'].filter(id => (state.res[id] || 0) === 0);
+    const right = line(`${w ? wxIcon(state.weatherType) : ''}<span>${w ? LName(w) : ''}</span>`)
+      + (hasForecast() ? line(`<span>${t('forecast.prefix', { text: forecastText() })}</span>`) : '')
+      + (lacks.length ? line(lacks.map(id => `${resIcon(id)} ${LName(RESOURCES[id])} 0`).join(' · ')) : '');
+    top = col(t('nt.base'), left) + col(t('nt.today'), right);
+    rb = (state.expToday ? t('nt.expToday', { n: state.expToday }) : t('nt.expNone'))
+       + (state.expFatigue === state.day ? ' · ' + t('exp.fatigue') : '');
+  }
+  $('nt-gain').innerHTML = top;
+  $('nt-rb').textContent = rb;
+}
+function noteClose() { $('note-back').style.display = 'none'; }
+function renderPDA() {
+  document.querySelectorAll('#pda-tabs .pda-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === pdaTab));
+  const scr = $('pda-screen');
+  const mm = state.gameMin % 1440, hh = String(Math.floor(mm / 60)).padStart(2, '0'), mi = String(Math.floor(mm % 60)).padStart(2, '0');
+  const w = WEATHERS[state.weatherType];
+  const head = `<div class="ph">${t('pda.day', { n: state.day })} · ${hh}:${mi} · ${w ? `${wxIcon(state.weatherType)} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}</div>`;
+  let body = '';
+  if (pdaTab === 'status') {
+    const bar = (label, v) => {
+      const cls = v < 25 ? 'crit' : v < 45 ? 'warn' : '';
+      return `<div class="pline"><span class="pk">${label}</span><span class="pbar"><i class="${cls}" style="width:${Math.max(0, Math.round(v))}%"></i></span><span class="pv">${Math.round(v)}</span></div>`;
+    };
+    body = bar(t('pda.g.hunger'), state.hunger) + bar(t('pda.g.thirst'), state.thirst)
+      + bar(t('pda.g.energy'), state.energy) + bar(t('pda.clean'), state.cleanBy?.[state.current] ?? 70);
+    const lines = [];
+    if (state.injury) {
+      const h = Math.max(0, Math.ceil((state.injury.untilMin - state.gameMin) / 60));
+      lines.push(`${LName(INJURIES[state.injury.type])} — ${t('pda.injuryLeft', { h })}`);
+    } else lines.push(t('pda.noInjury'));
+    if (state.expFatigue === state.day) lines.push(t('exp.fatigue'));
+    if (state.moodBuff && state.moodBuff.until > state.day) lines.push(t('pda.mood', { amt: state.moodBuff.amt, d: state.moodBuff.until - state.day }));
+    body += `<div class="ph">${t('pda.cond')}</div>` + lines.map(l => `<div>${l}</div>`).join('');
+    // #199 2차: 상단 HUD 슬리밍으로 이관된 거점·진행 계측 (구 .stat 라인의 새 집)
+    const cd = comfortDetail();
+    const lv2 = Math.min(5, Math.round(cd.score / 20));
+    const base = [];
+    base.push(`${t('pda.comfort')}: ${cd.score} ${'★'.repeat(lv2)}<span style="opacity:.3">${'★'.repeat(5 - lv2)}</span>`); // ☆ 글리프가 픽셀 폰트에서 ★와 동일 렌더 — 감쇠로 구분
+    if (w?.penalty) base.push(`${t('pda.weatherPen')}: -${Math.round(w.penalty * 100)}%`);
+    if (state.buff) base.push(`${icon('icon_cond_buff', '✨')} ${buffLabel(state.buff)}`);
+    base.push(`${t('pda.exp')}: ${state.expToday}${state.expToday >= EXP_PER_DAY ? ` · ${t('exp.fatigue')}` : ''}`); // 상한 표기 폐지 — 과로 경고만
+    if (!isWallpaper()) base.push(`${t('pda.succ')}: ${state.successes}`);
+    if ((state.winters || 0) >= 1) base.push(`${t('pda.winters')}: ${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}`);
+    body += `<div class="ph">${t('pda.camp')}</div>` + base.map(l => `<div>${l}</div>`).join('');
+  } else if (pdaTab === 'res') {
+    const wp = isWallpaper(); // 자원 패널이 PDA로 이관됨 — 배경화면 모드 ∞ 표기도 승계
+    body = `<div class="pgrid">` + Object.entries(RESOURCES).map(([id, r]) => {
+      const n = state.res[id] || 0;
+      return `<div class="pcell${!wp && n === 0 ? ' zero' : ''}">${resIcon(id)}<span>${LName(r)}</span><span class="pn">${wp ? '∞' : n}</span></div>`;
+    }).join('') + `</div>`;
+  } else if (pdaTab === 'map') {
+    const sp = SHELTER_MAP[state.current];
+    body = `<div class="pmap"><img src="${mapBiomeDataUrl(cityOf(state.current))}" alt="">`
+      + (sp ? `<span class="pyou" style="left:${sp.x}%;top:${sp.y}%"></span>` : '') + `</div>`
+      + `<div class="pnote">${t('pda.here')}: ${LName(SHELTERS[state.current])}</div>`
+      + `<div class="pbtn-row"><button class="pixel-btn" id="pda-openmap">${t('pda.openMap')}</button></div>`;
+  } else {
+    const notes = state.dayLog.notes || [];
+    body = notes.length
+      ? `<ul class="plog">${notes.slice(-12).reverse().map(n => `<li>${n}</li>`).join('')}</ul>`
+      : `<div class="pnote">${t('pda.noLog')}</div>`;
+    const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+    if (gains.length) body += `<div class="ph">${t('pda.gained')}</div><div class="pgrid">`
+      + gains.map(([id, n]) => `<div class="pcell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><span class="pn">+${n}</span></div>`).join('') + `</div>`;
+  }
+  scr.innerHTML = head + body;
+  scr.classList.remove('pda-flick'); void scr.offsetWidth; scr.classList.add('pda-flick'); // 전자 화면 전환 플리커
+  scr.querySelector('#pda-openmap')?.addEventListener('click', () => { pdaClose(); openMapModal(); });
 }
 async function cleanShelter(auto = false) {
   if (paused) { toast(t('pause.blocked')); return; }
@@ -8214,6 +8222,12 @@ function buildNinthWinterMilestone() {
 // 겨울을 넘겼다 — 카운터 +1, memoir 큐 적재, 9겨울이면 마일스톤. 새 스냅샷은 다음 겨울 진입 때.
 function passWinter(notes) {
   state.winters = (state.winters || 0) + 1;
+  // 2.0-α (§9.8.7): 도시별 겨울 기록 — 엔딩 체류 가중의 원료. RNG 0·sim 무접점(파생+가산뿐).
+  //   finalWinterCity는 매 겨울 덮어쓴다 — 자연히 마지막(9번째+) 겨울의 도시가 남는다("어디서 끝났나").
+  const wc = cityOf(state.current);
+  state.cityWinters = state.cityWinters || {};
+  state.cityWinters[wc] = (state.cityWinters[wc] || 0) + 1;
+  state.finalWinterCity = wc;
   buildWinterMemoir(state.winters);
   if (state.winters === 9 && !DEMO_ED) buildNinthWinterMilestone(); // #90: 9겨울 서사(박사 무전)는 데모 샌드박스서 미발화
   notes.push(t('winter.passed', { n: state.winters }));
@@ -8354,6 +8368,9 @@ function processDay() {
   }
   // 정든 집
   state.stayDays = (state.stayDays || 0) + 1;
+  // 2.0-α (§9.8.7): 셸터별 최장 연속 체류 기록 — stayDays는 이주 시 0 리셋이라 "정든 집" 이력이 증발했다.
+  state.homeStay = state.homeStay || {};
+  if (state.stayDays > (state.homeStay[state.current] || 0)) state.homeStay[state.current] = state.stayDays;
   if (state.stayDays === 3) notes.push(t('settled.3'));
   if (state.stayDays === 8) notes.push(t('settled.8'));
   // 계절 전환
@@ -8611,14 +8628,19 @@ function processDay() {
     const n = hasMod('bigraincatch') ? BAL.economy.bigRaincatchWater : 1;
     resAdd('water', n); notes.push(t(hasMod('bigraincatch') ? 'day.bigraincatch' : 'day.raincatch', { n }));
   }
+  // #108 텃밭 확률화: 하드일수록 흉작 리스크 (노말/무한/배경화면 1.0 — 기존 결정론 유지)
+  const gardenRoll = () => Math.random() < (BAL.modes.gardenChance[state.mode] ?? 1);
   if (hasMod('garden') && state.day % 2 === 0) {
     if (seasonOf().id === 'winter') notes.push(t('day.gardenBoxFrozen'));
+    else if (!gardenRoll()) notes.push(t('day.gardenMiss'));
     else { resAdd('food', 1); notes.push(t('day.gardenBox')); }
   }
   // 옥상 텃밭(#53): 매일 생산. 겨울엔 휴면(0). 생산량 = 기본 × 옥탑 퍽 gardenMult(2). 성장 단계 진행(시각).
   if (hasMod('rooftopGarden')) {
     if (seasonOf().id === 'winter') {
       notes.push(t('rooftop.gardenDormant'));
+    } else if (!gardenRoll()) {
+      notes.push(t('day.gardenMiss')); // #108 흉작일 — 수확 0 (성장 단계도 그날은 정지)
     } else {
       const n = BAL.economy.rooftopGardenFoodPerDay * (perk.gardenMult || 1);
       resAdd('food', n);
@@ -8783,6 +8805,14 @@ function processDay() {
   tryRadioBroadcast(notes);
   // 1.3 밤하늘 수집 — 관측소 완공 후 맑은 밤 하루 1회 확률로 미수집 스케치 1종.
   tryNightSky(notes);
+  // 2.0-(b) 동쪽 길 소문 (디렉터 확정 2026-07-17 — 낙진 서사 연결): 낙진이 걷히고(3겨울) 수도의 진실
+  //   메모를 하나라도 읽었다면, 어느 아침 기록 속에서 동쪽 국경 검문소를 알게 된다 — 관문 프로젝트 노출 스위치.
+  if (!state.eastRoadRumor && !isWallpaper() && falloutCleared()
+      && MEMOS_CITYCORE.some(id => (state.memos || {})[id])) {
+    state.eastRoadRumor = 1;
+    state.geigerPending = true; // 보고 모달이 닫히면 가이거 계수기 비네트 1회 (drainDiscoveryQueue가 소비)
+    notes.push(t('east.rumorNote'));
+  }
   // #164 「떠오른 자리」 + 지역 컨디션 (디렉터 2026-07-10 — 반복 타파). 배경화면 모드는 무대상.
   //   ⚠️ 난수는 공유 Math.random을 쓰지 않는다 — 시드 시뮬(하드코어 치사성 등 밴드 테스트)의 스트림을
   //   밀어버리기 때문(실측: 데모 스위트 50/51 회귀). 런 시드+일자 해시의 자체 스트림 → 시뮬 무접점
@@ -9197,7 +9227,7 @@ function renderExpPanel() {
     const canCure = resHasAll(inj.cure);
     injuryHtml = `
       <div class="injury-card">
-        ${t('injury.card', { icon: inj.icon, name: LName(inj), pen: Math.round(inj.pen * 100), time: inj.timeMult ? t('injury.card.time') : '', h: fmtGameDur(remainMin) })}
+        ${t('injury.card', { icon: injIconEl(state.injury.type), name: LName(inj), pen: Math.round(inj.pen * 100), time: inj.timeMult ? t('injury.card.time') : '', h: fmtGameDur(remainMin) })}
         <div class="btn-row">
           <button class="pixel-btn" id="btn-treat" ${canCure ? '' : 'disabled'}>${t('injury.treat', { cost: costLabel(inj.cure) })}</button>
         </div>
@@ -9432,6 +9462,7 @@ function closeModal() {
   }
   $('modal-back').classList.remove('show');
   modalKind = null;
+  pdaAppExit(); // #199: PDA 앱 모드였다면 모달 원위치 + 기기 끄기 (no-op 가드)
 }
 $('modal-close').addEventListener('click', closeModal);
 $('modal-back').addEventListener('click', e => { if (e.target === $('modal-back')) closeModal(); });
@@ -9486,6 +9517,8 @@ const DEMO_SHELTERS = new Set(['container', 'bunker', 'rooftop']);
 function shelterUnlocked(id) {
   // 데모는 화이트리스트만 (layouts OR절 무시 — 치트/구세이브로 다른 셸터가 새는 것 차단).
   if (DEMO_ED) return DEMO_SHELTERS.has(id);
+  // 2.0-(b): 동부 관문 구역은 successes가 아니라 국경 개통(eastgate 프로젝트 완공)이 열쇠 — unlockAt 9999는 폴백 봉인.
+  if (cityOf(id) === 'east') return !!state.eastGateOpen || (state.layouts[id]?.length > 0); // 2.0-(c): eastcity 4분할 후 도시 기반 판정
   return state.successes >= SHELTERS[id].unlockAt || (state.layouts[id]?.length > 0);
 }
 function openShelterModal() {
@@ -9509,25 +9542,25 @@ function openShelterModal() {
           ? `<div class="s-desc" style="color:var(--text-dim)">${t('shelter.reqLabel')}</div><div class="req-chips">${chips}</div>`
           : '';
         const ok = resHasAll(cost);
-        btn = `<button class="pixel-btn" data-shelter="${id}" ${ok ? '' : 'disabled'} title="${ok ? '' : t('shelter.noCostNeed', { cost: costLabel(cost) })}">${renov ? t('shelter.moveRefit') : t('shelter.move')}</button>`;
+        // title 제거: costLabel이 HTML(img)이 된 뒤 속성이 깨져 마크업이 텍스트로 유출되던 결함 — 부족분 대조는 req-chips가 이미 표시
+        btn = `<button class="pixel-btn" data-shelter="${id}" ${ok ? '' : 'disabled'}>${renov ? t('shelter.moveRefit') : t('shelter.move')}</button>`;
       }
       return `
       <div class="shelter-card ${cur ? 'current' : ''} ${unlocked ? '' : 'locked'}">
-        <div class="s-emoji">${unlocked ? shIcon(id, 'px-lg') : '🔒'}</div>
+        <div class="s-head"><span class="s-emoji">${unlocked ? shIcon(id, 'px-lg') : '🔒'}</span><span class="s-name">${LName(sh)} ${cur ? `<span style="color:var(--accent)">${t('current')}</span>` : ''}${unlocked && !state.renovated[id] ? t('shelter.unrefit') : ''}</span></div>
         <div class="s-body">
-          <div class="s-name">${LName(sh)} ${cur ? `<span style="color:var(--accent)">${t('current')}</span>` : ''}${unlocked && !state.renovated[id] ? t('shelter.unrefit') : ''}</div>
           <div class="s-desc">${unlocked ? LDesc(sh) : t('shelter.locked', { need: sh.unlockAt, cur: state.successes })}</div>
           ${unlocked && sh.perk ? `<div class="s-desc" style="color:var(--good)">${LLabel(sh.perk)}</div>` : ''}
           ${unlocked && sh.limits ? `<div class="s-desc" style="color:var(--bad)">${LLimits(sh)}</div>` : ''}
           ${unlocked ? `<div class="s-desc">${t('shelter.baseComfort', { n: sh.baseComfort || 0, upkeep: sh.upkeep ? LLabel(sh.upkeep) : t('upkeep.none') })}</div>` : ''}
           ${costLine}
+          ${btn}
         </div>
-        ${btn}
       </div>`;
     }).join('');
     return `
       <div style="margin:12px 0 6px;font-size:12px;color:${here ? 'var(--accent)' : 'var(--text-dim)'}">
-        ${t('shelter.districtHeader', { emoji: dist.emoji, name: LName(dist), here: here ? t('shelter.hereTag') : '', bonus: LBonus(dist), desc: LDesc(dist) })}
+        ${t('shelter.districtHeader', { emoji: distIcon(did), name: LName(dist), here: here ? t('shelter.hereTag') : '', bonus: LBonus(dist), desc: LDesc(dist) })}
       </div>${cards}`;
   }).join('');
   // 배치 D ④: 현재 셸터에 놓인 가구가 있으면 "남는 가구 N개" 안내 + 전체 수거 바로가기
@@ -9576,81 +9609,8 @@ function applyPaperBg(el, kind = 'journal') {
   if (kind !== 'tip') el.style.backgroundImage = `url(${paperTextureURL()})`;
 }
 
-let journalKeyHandler = null;
-let journalOpen = false; // 수첩이 떠 있는 동안 리포트/인카운터/다음 튜토리얼이 겹치지 않도록
-function openJournalPages(pages, opts = {}) {
-  if (!pages || !pages.length) return;
-  // #74 데모 재설계: (구) demoEnded 신규 페이퍼 봉인 제거 — 샌드박스 정상.
-  let i = 0;
-  const scr = $('journal-screen'), paper = $('journal-paper');
-  const titleEl = $('journal-title'), bodyEl = $('journal-body'), indEl = $('journal-page-ind');
-  const prevBtn = $('journal-prev'), nextBtn = $('journal-next');
-  applyPaperBg(paper);
-  paperSfx(opts);
-
-  const render = () => {
-    const p = pages[i];
-    // titleId/bodyId 는 i18n 키, title/body 는 이미 해석된 원문(메모 등 데이터 테이블 문안)
-    titleEl.innerHTML = p.titleId ? t(p.titleId, p.titleArgs) : (p.title || '');
-    bodyEl.innerHTML = p.bodyId ? t(p.bodyId, p.bodyArgs) : (p.body || '');
-    indEl.textContent = t('journalpg.indicator', { cur: i + 1, total: pages.length });
-    prevBtn.style.display = i > 0 ? '' : 'none';
-    nextBtn.textContent = i === pages.length - 1 ? t('journalpg.close') : t('journalpg.next');
-  };
-  function close() {
-    journalOpen = false;
-    scr.classList.remove('show');
-    scr.style.display = 'none';
-    prevBtn.onclick = null;
-    nextBtn.onclick = null;
-    if (journalKeyHandler) { document.removeEventListener('keydown', journalKeyHandler); journalKeyHandler = null; }
-    if (typeof opts.onClose === 'function') opts.onClose();
-  }
-  // onclick 대입: 재호출 시 이전 리스너가 겹쳐 쌓이지 않도록 (ending-next와 동일 패턴)
-  prevBtn.onclick = () => { if (i > 0) { i--; render(); } };
-  nextBtn.onclick = () => {
-    if (i < pages.length - 1) { i++; render(); }
-    else close();
-  };
-  if (journalKeyHandler) document.removeEventListener('keydown', journalKeyHandler);
-  journalKeyHandler = e => { if (e.key === 'Escape') close(); };
-  document.addEventListener('keydown', journalKeyHandler);
-
-  journalOpen = true;
-  scr.style.display = 'flex';
-  void paper.offsetWidth; // 리플로우 강제 — 진입 애니메이션이 매번 재생되도록
-  scr.classList.add('show');
-  render();
-}
-
-function openHelpModal(opts) {
-  openJournalPages([
-    { titleId: 'jnl.help.p1.title', bodyId: 'jnl.help.p1.body' },
-    { titleId: 'jnl.help.p2.title', bodyId: 'jnl.help.p2.body' },
-    { titleId: 'jnl.help.p3.title', bodyId: 'jnl.help.p3.body' },
-    { titleId: 'jnl.help.p4.title', bodyId: 'jnl.help.p4.body' },
-    { titleId: 'jnl.help.p5.title', bodyId: 'jnl.help.p5.body' },
-  ], opts);
-}
-
-// 세계관 메모/유서 열람 (쪽지 톤) — 수집 시 팝업 + 수첩 기록 탭에서 재열람 시 공용.
-function showMemoPage(id, will) {
-  const tbl = will ? WILLS : MEMOS;
-  const m = tbl[id];
-  if (!m) return;
-  const tag = will ? t('memo.tagWill') : t('memo.tagRegion.' + m.region);
-  const body = `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${tag}</div>` +
-    `<div style="white-space:pre-line;line-height:1.9">${LD(m)}</div>`;
-  openJournalPages([{ title: LN(m), body }]);
-}
-// 1.3 밤하늘 스케치 페이지 — 메모 페이지 문법 재사용. 관측소가 열어준 감상 보상.
-function showSketchPage(id) {
-  const s = SKETCHES[id];
-  if (!s) return;
-  const body = `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${t('sketch.tag')}</div>` +
-    `<div style="white-space:pre-line;line-height:1.9">${LD(s)}</div>`;
-  openJournalPages([{ title: LN(s), body }]);
-}
+let journalOpen = false; // 수첩이 떠 있는 동안 리포트/인카운터/다음 튜토리얼이 겹치지 않도록 (Tier7: 갱신은 initNotebook의 setJournalOpen 훅)
+// (Tier7) 수첩 페이지 렌더러+열람(openJournalPages·help·memo·sketch·truth)은 ui/notebook.js로 이관 — initNotebook 훅 주입.
 /* ── 도료 (REWARD-LOOP ② 1차 착지 — 디렉터 확정 2026-07-08) ──
    스와치 공짜 클릭 → 도료 게이트: 칠하려면 그 색 계열의 도료 1통이 필요하다(기본색 0번은 무료).
    드랍은 성공 탐험 저확률 + 지역 시그니처 계열 가중 — "그 색은 거기서 잘 나온다"가 pull이 된다. */
@@ -9685,16 +9645,6 @@ function jackpotToast(msg, hex = 0xffd88a) {
   document.body.appendChild(el);
   playSfx('craft', { vol: 0.5 });
   setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 600); }, 3200);
-}
-// 1.4 최종장 "그날의 진실" — 기밀 문서 12종 전부 수집 시 열리는 회고 페이지(다중 페이지, 메모 페이지 문법).
-//   조용한 발견의 톤: 극적 폭로가 아니라 흩어진 기록을 이어 붙인 한 사람의 정리. 지시조 금지.
-function showTruthPage() {
-  const pages = [1, 2, 3].map(n => ({
-    title: t('truth.title'),
-    body: `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${t('truth.tag')}</div>` +
-      `<div style="white-space:pre-line;line-height:1.9">${t('truth.p' + n)}</div>`,
-  }));
-  openJournalPages(pages);
 }
 /* ── 2.0 §9.6 히든 루트 「침묵」: 박사의 문서 + 사일로 시퀀스 ──
    문서 = 유보한 자만 여는 종이(truth 문법 2쪽) — 그들이 간 곳, 그리고 미사일이 갈 수 있는 곳.
@@ -9868,11 +9818,14 @@ function clearRadioBubble() {
   radioBubble = null;
 }
 
-/* ── 첫 3일 튜토리얼 (신규 게임 한정) ── */
+/* ── 첫날 튜토리얼 (신규 게임 한정) — #202 디렉터: 3일 루틴(매일 메모→탐험)을 하루로 압축.
+   세 메모를 Day 1 한 권으로 합본 — 탐험 1번이면 온보딩 루틴이 끝난다. */
 const TUTORIAL_PAGES = {
-  1: [{ titleId: 'jnl.tut1.title', bodyId: 'jnl.tut1.body' }],
-  2: [{ titleId: 'jnl.tut2.title', bodyId: 'jnl.tut2.body' }],
-  3: [{ titleId: 'jnl.tut3.title', bodyId: 'jnl.tut3.body' }],
+  1: [
+    { titleId: 'jnl.tut1.title', bodyId: 'jnl.tut1.body' },
+    { titleId: 'jnl.tut2.title', bodyId: 'jnl.tut2.body' },
+    { titleId: 'jnl.tut3.title', bodyId: 'jnl.tut3.body' },
+  ],
 };
 function showTutorialPage(day) {
   if (!tutorialEligible()) return; // 노말 전용 (디렉터 오더)
@@ -9890,20 +9843,18 @@ function showTutorialPage(day) {
    기존 세이브는 loadSave()에서 -1로 마이그레이션해 표시하지 않는다.
 ============================================================ */
 const QUESTS = DEMO_ED ? [
-  // #74 데모 온보딩(디렉터 2026-07-08 개정): "밥먹기 → 물 마시기 → 가구 설치 → 탐험 3번 → 잠들기."
-  //   가구 설치를 반드시 가르친다(존재 자체를 모르는 유저 방지). depart 3연속은 각 출발마다 순차 완료.
+  // #74 데모 온보딩 + #202 개정(1.9.5 재수렴): "밥먹기 → 물 마시기 → 가구 설치 → 탐험 1번 → 잠들기."
+  //   탐험 3연속은 #202 디렉터 오더("한번으로 낮추면 돼")로 1회 축소, 아이콘도 현행화(icon_g_thirst/icon_res_canned).
   //   drink가 2번째라 "제일 먼저 물부터" 원문 대신 데모 전용 lore(quest.drink2.lore).
-  { id: 'eat',    icon: '🥫', textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
-  { id: 'drink',  icon: '💧', textId: 'quest.drink.text',  loreId: 'quest.drink2.lore', doneId: 'quest.drink.done',  reward: { water: 1 } },
+  { id: 'eat',    icon: '🥫', img: 'icon_res_canned', textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
+  { id: 'drink',  icon: '💧', img: 'icon_g_thirst',   textId: 'quest.drink.text',  loreId: 'quest.drink2.lore', doneId: 'quest.drink.done',  reward: { water: 1 } },
   { id: 'place',  icon: '🔧', img: 'icon_sys_edit',    textId: 'quest.place.text',  loreId: 'quest.place.lore',  doneId: 'quest.place.done',  reward: { cloth: 1 } },
   { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart.text',  loreId: 'quest.depart.lore',  doneId: 'quest.depart.done',  reward: {} },
-  { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart2.text', loreId: 'quest.depart2.lore', doneId: 'quest.depart2.done', reward: { water: 1 } },
-  { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart3.text', loreId: 'quest.depart3.lore', doneId: 'quest.depart3.done', reward: { canned: 1 } },
   { id: 'sleep',  icon: '🛌', img: 'icon_act_sleep',   textId: 'quest.sleep.text',   loreId: 'quest.sleep.lore',   doneId: 'quest.sleep.done',   reward: { bandage: 1 } },
 ] : [
-  // icon = 이모지 폴백 · img = HUD 액션 아트 아이콘(디렉터: 튜토리얼도 거점 그리드와 동일 아이콘). drink/eat는 게이지(이모지)라 그대로.
-  { id: 'drink',  icon: '💧', textId: 'quest.drink.text',  loreId: 'quest.drink.lore',  doneId: 'quest.drink.done',  reward: { water: 1 } },
-  { id: 'eat',    icon: '🥫', textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
+  // icon = 이모지 폴백 · img = 현행 아트 아이콘(#202 디렉터: 전 단계 아이콘 현행화 — drink/eat도 게이지·자원 아이콘으로).
+  { id: 'drink',  icon: '💧', img: 'icon_g_thirst',     textId: 'quest.drink.text',  loreId: 'quest.drink.lore',  doneId: 'quest.drink.done',  reward: { water: 1 } },
+  { id: 'eat',    icon: '🥫', img: 'icon_res_canned',   textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
   { id: 'place',  icon: '🔧', img: 'icon_sys_edit',    textId: 'quest.place.text',  loreId: 'quest.place.lore',  doneId: 'quest.place.done',  reward: { cloth: 1 } },
   { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart.text', loreId: 'quest.depart.lore', doneId: 'quest.depart.done', reward: {} },
   // '결산 리포트 확인' 단계였음 — 거점 UI에 그런 화면이 없어 유저가 길을 잃었다.
@@ -9935,6 +9886,17 @@ function renderQuestCard() {
   card.classList.remove('done-flash');
   card.classList.add('show');
 }
+// #202 튜토리얼 건너뛰기 — 체인 종료 + 수첩 페이지 억제(보상 없음, 카드 즉시 퇴장)
+$('quest-skip')?.addEventListener('click', () => {
+  if (!questActive()) return;
+  state.questIdx = -1;
+  state.tutDay = 3; // 남은 수첩 튜토리얼 페이지도 표시 안 함
+  const eb = $('btn-edit');
+  if (eb) eb.classList.remove('pulse');
+  renderQuestCard();
+  toast(t('quest.skip.done'));
+  scheduleSave();
+});
 // 퀘스트 진행 훅 — 해당 id가 현재 진행 중인 퀘스트일 때만 완료 처리
 function questProgress(id) {
   if (!questActive()) return;
@@ -10048,8 +10010,8 @@ $('btn-exp').addEventListener('click', () => {
   if (state.exp || state.injury) { $('exp-panel').classList.toggle('show'); renderExpPanel(); }
   else openMapModal();
 });
-$('btn-move').addEventListener('click', openShelterModal);
-$('btn-help').addEventListener('click', openHelpModal);
+$('btn-move').addEventListener('click', () => pdaOpenApp(openShelterModal)); // #199 5차-d: 이주도 PDA 앱
+$('btn-help').addEventListener('click', () => pdaOpenApp(openHelpModal)); // #199 5차-e: 도움말도 PDA 앱
 $('btn-rotate').addEventListener('click', rotateActive);
 $('btn-delete').addEventListener('click', reclaimSelected);
 $('btn-reset').addEventListener('click', () => {
@@ -10110,7 +10072,7 @@ $('t-import').addEventListener('click', importSave);
 const toastEl = $('toast');
 let toastTimer = null;
 function toast(msg) {
-  toastEl.textContent = msg;
+  toastEl.innerHTML = msg; // P2: costLabel 등 아트 아이콘 수용 — msg는 전부 자체 로케일 문자열(외부 입력 없음)
   toastEl.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
@@ -10629,7 +10591,7 @@ renderQuestCard();
 loadLocaleOverridesWeb().then(a => { if (a) { applyStaticI18n(); updateHud(); renderResBar(); renderQuestCard(); } });
 if (state.minimizedEvent && EVENTS[state.minimizedEvent]) showEventChip(state.minimizedEvent); // 로드 후 내려둔 이벤트 칩 복원
 $('btn-clean').addEventListener('click', cleanShelter);
-$('btn-wardrobe').addEventListener('click', openWardrobeModal); // #86④
+$('btn-wardrobe').addEventListener('click', () => pdaOpenApp(openWardrobeModal)); // #86④ · #199 5차-d: 옷장도 PDA 앱
 $('btn-edit').addEventListener('click', () => toggleEditMode());
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
 // P2-b: 자동 진행 토글 버튼 (cam-ctrl) — Day 10 미만이면 잠금 토스트, 아니면 opts.autoPlay 토글 + 체크박스 양방향 동기화
@@ -10643,14 +10605,47 @@ $('btn-auto').addEventListener('click', () => {
   toast(t(opts.autoPlay ? 'auto.on' : 'auto.off'));
 });
 syncAutoBtn();
-$('btn-craft').addEventListener('click', openCraftModal);
-{ const bk = $('btn-knowledge'); if (bk) bk.addEventListener('click', openKnowledgeModal); }
+$('btn-craft').addEventListener('click', () => pdaOpenApp(openCraftModal)); // #199 5차-c: 제작은 PDA 앱으로 열린다
+{ const bk = $('btn-knowledge'); if (bk) bk.addEventListener('click', () => pdaOpenApp(openKnowledgeModal)); } // #199 5차-d: 지식도 PDA 앱
 $('btn-journal').addEventListener('click', () => openJournalModal('journal'));
 $('g-hunger').addEventListener('click', eatFood);
 $('g-thirst').addEventListener('click', drinkWater);
 $('g-energy').addEventListener('click', () => promptSleep());
+// #199 5차-b: 청결 게이지 카드 제거(디렉터 — 경고 형식으로) → 청소 진입은 액션 그리드 버튼만
 $('btn-sleep').addEventListener('click', () => promptSleep());
 $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
+// #199 우측 엣지 도킹: PDA 토글 + 일지=필드 노트 오버레이 + PDA 하드웨어 히트(에셋 버튼 자리)
+// 에셋 하우징은 JS 인라인 — CSS url()은 번들 후 /assets/ 기준으로 풀려 file://에서 깨진다(스타일시트 709행 교훈)
+$('pda').style.backgroundImage = "url('img/ui/pda04.png')";
+$('fieldnote').style.backgroundImage = "url('img/ui/fieldnote.png')";
+$('dock-pda').style.backgroundImage = "url('img/ui/dock_pda.png')";
+$('dock-pda').addEventListener('click', () => pdaVisible() ? pdaClose() : pdaOpen());
+$('dock-journal').addEventListener('click', () => noteVisible() ? noteClose() : noteOpen());
+$('pda-back').addEventListener('pointerdown', e => { if (e.target.id === 'pda-back') pdaClose(); });
+$('note-back').addEventListener('pointerdown', e => { if (e.target.id === 'note-back') noteClose(); });
+$('nt-close').addEventListener('click', () => noteClose());
+$('nt-journal').addEventListener('click', () => { noteClose(); openJournalModal('journal'); });
+// #199-c 견출지: ♥쾌적/📦수급/📍거점 = 우측 페이지 전환, 📔도감 = nt-journal과 동일 액션
+document.querySelectorAll('.nt-tab').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.ntab === 'journal') { noteClose(); openJournalModal('journal'); return; }
+  noteTab = b.dataset.ntab;
+  renderNoteRight();
+}));
+document.querySelectorAll('#pda-tabs .pda-tab').forEach(b =>
+  b.addEventListener('click', () => { pdaTab = b.dataset.tab; renderPDA(); }));
+// 기기 하드웨어 문법: 뒤로(⏎)=닫기, D-패드 ◀▶=탭 순환·▲▼=화면 스크롤, 확인(✓)=재조회
+{
+  const PDA_TABS = ['status', 'res', 'map', 'log'];
+  const step = dir => { const i = PDA_TABS.indexOf(pdaTab); pdaTab = PDA_TABS[(i + dir + 4) % 4]; renderPDA(); };
+  document.querySelectorAll('#pda .dp').forEach(b => b.addEventListener('click', () => {
+    const d = b.dataset.d;
+    if (d === 'left') step(-1);
+    else if (d === 'right') step(1);
+    else $('pda-screen').scrollBy({ top: d === 'up' ? -120 : 120, behavior: 'smooth' });
+  }));
+  $('pda-hit-back').addEventListener('click', () => pdaClose());
+  $('pda-hit-ok').addEventListener('click', () => renderPDA());
+}
 // 온스크린 카메라 컨트롤 (모바일/데스크톱 공용)
 $('cam-rotl').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw -= Math.PI / 2; }); // v1.5.1: 90° 스텝 — 정면 T자 원천 차단
 $('cam-rotr').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw += Math.PI / 2; });
@@ -10762,7 +10757,7 @@ function openQaPanel() {
       ${btn('bps', '시그니처 도면 전부')}
     </div>
     <div id="qa-status" style="font-size:11px;color:var(--good);margin-top:8px;min-height:16px"></div>`;
-  openModal('🛠️ QA 치트 패널', body);
+  openModal('QA 치트 패널', body);
   const status = m => { const el = $('qa-status'); if (el) el.textContent = m; };
   $('modal-body').querySelectorAll('[data-qa]').forEach(b => b.addEventListener('click', () => {
     markQa();
@@ -11326,6 +11321,7 @@ window.__shelter = {
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
+  pdaOpen, pdaClose, noteOpen, noteClose, pdaOpenApp, // #199 PDA·필드노트 도킹·앱 모드 QA 훅
   seasonOf, SEASONS, DEMO_ED, openMapModal, showMapInfo, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal, // DEMO_ED: 배터리가 dist의 빌드 플래그를 감지(데모 캘린더 게이트)
   // Phase D (#12 · #35 · #36) QA 훅
   MEMOS, WILLS, BROADCASTS, MEMOS_BY_REGION, eventCtx, eventMatches, drawEvent, eventWeight,
@@ -11368,6 +11364,13 @@ window.__shelter = {
   qaLightState: () => { updateLightingRig(); return { fallback: ceilBaseInt, hasLight: interiorLightActive(), facility: lightingFacilityOn() }; }, // #189 P1 프로브
   qaItems: () => items, applyGel, // #189 P3 QA: 배치 아이템 직접 접근 + 젤 적용(색 검증)
   loadShelter, // #195 QA: 레이아웃 왕복 게이트 — loadSave는 상태만 싣고 씬 복원은 부팅 절차 몫이라 직접 구동
+  cityOf, // 2.0-α QA: 도시 파생 게이트(셸터→도시 매핑·기록 필드 검증)
+  playCollapseVignette, // #199 QA: 문+상자 연출 직접 구동(캡처 검수용)
+  playGeigerVignette, // 2.0-(b) QA: 가이거 계수기 비네트 직접 구동(캡처 검수용)
+  playEastGateVignette, // 2.0-(b) QA: 국경 개통 비네트 직접 구동(캡처 검수용)
+  mapBiomeDataUrl, // 2.0-(d) QA: 도시별 전도 분기 검증(홈/동부 캔버스 상이)
+  regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
+  shelterUnlocked, // 2.0-(b) QA: 동부 관문 이주 게이트(eastGateOpen) 검증
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
   finishExpNow: () => { if (state.exp) { state.exp.end = Date.now(); tickExpeditionUI(); } },
   setHour: h => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; },
@@ -11386,9 +11389,9 @@ window.__shelter = {
   camera, THREE, CAT_POSES,
   select, deselect, positionSelPanel, // 편집 미니 카드 A안 (접지 프로브용)
   clampToRoom, // 발코니 배치 칸 (접지 프로브용)
-  playJungleSunVignette, pickBalconyView, vignetteState: () => vignetteActive, // 비네트 러너 (접지 프로브용)
+  playJungleSunVignette, pickBalconyView, vignetteState: () => vignetteBusy(), // 비네트 러너 (접지 프로브용 — Tier5: 플래그는 vignettes.js 소유)
   playGoldenGateVignette, // #146 「불타는 해협」 금문교 노을 비네트 (QA·지역 결선 전 트리거)
-  buildGoldenGateScene, // 트레일러 하네스 전용: {scene,camera,update(t)} 결정론 렌더 (오프스크린 프레임캡처)
+  buildGoldenGateScene, // 트레일러 하네스 전용: {scene,camera,update(t)} 결정론 렌더 — Tier5: vignettes.js에서 import 재수출
   showDiscoveryVignette, queueDiscovery, drainDiscoveryQueue, discoveryQueueLen: () => discoveryQueue.length, // #150 희귀템 발견 컷 (QA)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
   //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).
@@ -11450,6 +11453,9 @@ window.__shelter = {
   VISITOR_IDS,
   // #181 방문자 연출 QA 훅: 인카운터 트리거 / 상태 조회 / 클릭 시뮬 / 강제 퇴장
   debugEvent: (id) => showEvent(id),
+  cardSnapshot: (id) => liveCardIllust(id), // #201: 라이브 카드 스냅샷 직접 호출(검증)
+  endingLeaning, // 2.0-(g): 엔딩 성향 판정(검증 — 부수효과 0)
+  setForceClosed, // #201: 풀셸 컬링 강제(검증)
   visitorState: () => visitor ? { mode: visitor.mode, x: +visitor.g.position.x.toFixed(2), z: +visitor.g.position.z.toFixed(2), camActive: visitorCam.active, spoke: visitor.spoke } : null,
   visitorClick: () => onVisitorClicked(),
   visitorDismiss: () => dismissVisitor(),

@@ -124,6 +124,27 @@ export const OUTFITS = {
     pal: { coat: 0xcfc4ae, coatHem: 0xb4a98f, sleeve: 0xc4b9a2, scarf: 0x3e4a5c, beanie: 0x6a5a44 } },
   charcoal: { name: '차콜 코트',   nameEn: 'Charcoal Coat', emoji: '🧥',
     pal: { coat: 0x3a3a40, coatHem: 0x2f2f35, sleeve: 0x35353b, scarf: 0xb8862e, beanie: 0x2a2a30 } },
+  // ── 2.0-(e) 동부 시그니처 복장 4종 (GD-2.0 §6 "도심 시그니처=복장") ──
+  //   구역 서사를 입는다: 도면(bp)은 그 지역에서만 드랍(DDD-4 문법) → 제작 해금 → 옷장 착용.
+  //   팔레트는 동부 아트 디렉션(TLOU 감성+붉은 노을) — 채도 죽인 웜톤 + 노을 액센트.
+  customsvest: { name: '세관 우비',     nameEn: 'Customs Slicker',   emoji: '🧥',
+    pal: { coat: 0xb0512f, coatHem: 0x8f421f, sleeve: 0xa54a2a, scarf: 0x2e3540, beanie: 0x30281f } },
+  riggerjacket: { name: '정비공 재킷',  nameEn: 'Rigger Jacket',     emoji: '🧥',
+    pal: { coat: 0x4a5a68, coatHem: 0x3c4a56, sleeve: 0x44535f, scarf: 0xd8a13c, beanie: 0x2f3844 } },
+  stationcoat: { name: '역무원 코트',   nameEn: 'Stationmaster Coat', emoji: '🧥',
+    pal: { coat: 0x2f3850, coatHem: 0x272e42, sleeve: 0x2b3449, scarf: 0xc9963a, beanie: 0x232a3c } },
+  towncoat: { name: '마천루 롱코트',    nameEn: 'Skyline Longcoat',  emoji: '🧥',
+    pal: { coat: 0x4c3a44, coatHem: 0x3d2f38, sleeve: 0x463641, scarf: 0x9d5c4e, beanie: 0x33282f } },
+  // ── 스타일 복장 4종 (디렉터 2026-07-17: "단순 색 변경이 아니라 옷 스타일 자체 변경") ──
+  //   style 필드가 아바타 복셀 실루엣을 바꾼다(avatar.js buildMesh 분기): 후드/패딩/판초/조끼.
+  hoodie: { name: '잿빛 후드티',  nameEn: 'Ash Hoodie',   emoji: '🧥', style: 'hoodie',
+    pal: { coat: 0x6a6d72, coatHem: 0x585b60, sleeve: 0x63666b, scarf: 0x585b60, beanie: 0x5d6065 } },
+  puffer: { name: '벽돌색 패딩',  nameEn: 'Brick Puffer', emoji: '🧥', style: 'puffer',
+    pal: { coat: 0x8a4030, coatHem: 0x7a3628, sleeve: 0x84392b, scarf: 0x6e3225, beanie: 0x3a3230 } },
+  poncho: { name: '모래 판초',    nameEn: 'Sand Poncho',  emoji: '🧥', style: 'poncho',
+    pal: { coat: 0x7a5a3c, coatHem: 0x684c32, sleeve: 0x715340, scarf: 0xb84a3a, beanie: 0x4a3b2c } },
+  vest: { name: '올리브 조끼',    nameEn: 'Olive Vest',   emoji: '🧥', style: 'vest',
+    pal: { coat: 0x3f4a3a, coatHem: 0x353f31, sleeve: 0xa89478, scarf: 0x8a5a3c, beanie: 0x39322a } },
 };
 
 export const CRAFTS = [
@@ -175,6 +196,16 @@ export const CRAFTS = [
   { out: { outfit: 'forest' }, cost: { cloth: 2, material: 1 }, hint: '옷장에 추가 — 수풀 위장색', hintEn: 'Added to wardrobe — thicket camo' },
   { out: { outfit: 'cream' }, cost: { cloth: 4 }, hint: '옷장에 추가 — 밝은 생지 그대로', hintEn: 'Added to wardrobe — undyed cream' },
   { out: { outfit: 'charcoal' }, cost: { cloth: 3, fuel: 1 }, hint: '옷장에 추가 — 숯검정 물들임', hintEn: 'Added to wardrobe — charcoal-dyed' },
+  // 2.0-(e) 동부 시그니처 복장 — 도면(bp)은 해당 동부 지역에서만 드랍(DDD-4 문법, balance.blueprint.regionItems)
+  { out: { outfit: 'customsvest' }, bp: 'outfit_customsvest', cost: { cloth: 3, material: 1 }, hint: '옷장에 추가 — 세관 검문대의 방수 우비', hintEn: 'Added to wardrobe — a customs checkpoint slicker' },
+  { out: { outfit: 'riggerjacket' }, bp: 'outfit_riggerjacket', cost: { cloth: 3, parts: 1 }, hint: '옷장에 추가 — 현수교 정비공의 작업 재킷', hintEn: 'Added to wardrobe — a bridge rigger\'s work jacket' },
+  { out: { outfit: 'stationcoat' }, bp: 'outfit_stationcoat', cost: { cloth: 4 }, hint: '옷장에 추가 — 중앙역 역무원의 정복 코트', hintEn: 'Added to wardrobe — a stationmaster\'s uniform coat' },
+  { out: { outfit: 'towncoat' }, bp: 'outfit_towncoat', cost: { cloth: 4, salt: 1 }, hint: '옷장에 추가 — 백화점 진열장의 마지막 롱코트', hintEn: 'Added to wardrobe — the last longcoat from a department store window' },
+  // 스타일 복장 4종 — 실루엣이 바뀐다(후드/패딩/판초/조끼). 색 복장과 같은 무도면 제작 채널.
+  { out: { outfit: 'hoodie' }, cost: { cloth: 4 }, hint: '옷장에 추가 — 후드를 눌러쓴 실루엣', hintEn: 'Added to wardrobe — a hood-up silhouette' },
+  { out: { outfit: 'puffer' }, cost: { cloth: 5 }, hint: '옷장에 추가 — 누빔 충전재 빵빵한 점퍼', hintEn: 'Added to wardrobe — a quilted, puffed-up jacket' },
+  { out: { outfit: 'poncho' }, cost: { cloth: 4, material: 1 }, hint: '옷장에 추가 — 담요를 두른 듯한 판초', hintEn: 'Added to wardrobe — a blanket-like poncho' },
+  { out: { outfit: 'vest' }, cost: { cloth: 3, material: 1 }, hint: '옷장에 추가 — 팔이 가벼운 작업 조끼', hintEn: 'Added to wardrobe — a work vest, arms free' },
   // DDD-4 지역 시그니처 (REWARD-LOOP ② 2차): bp = 도면 게이트 — 그 지역 탐험에서 도면을 주워야 목록에 뜬다.
   { out: { furn: 'barrelfire' }, bp: 'barrelfire', cost: { material: 2, parts: 1, fuel: 1 }, hint: '슬럼의 밤 — 드럼통에 피운 불', hintEn: "The slum's night — a fire in a drum" },
   { out: { furn: 'graffiti' }, bp: 'graffiti', cost: { material: 1, cloth: 1 }, hint: '뜯어온 벽의 목소리', hintEn: 'A wall torn loose, still shouting' },

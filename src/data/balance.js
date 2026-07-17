@@ -100,6 +100,9 @@ export const BAL = {
     // 꾸미기/배경화면 해금(피드백 2026-07-15 완화): "봄 지나면" — 첫 봄(1~12일)을 넘겨 여름 진입(day≥13).
     //   가장 사랑받는 코지-꾸미기 축을 첫 세션 안에 열어 준다(구 2겨울=96일+ 게이트가 관객을 막던 문제 해소).
     wallpaperUnlockDay: 13,
+    /* #108 난이도별 깊이 — 텃밭 수확 확률(하드가 오를수록 흉작 리스크). 정착 farming이 하드에서도
+       "심으면 끝"이 되지 않게. 기대값: 옥탑 텃밭 하드 1.7/일 · 혹한 1.4/일 (노말 2.0). */
+    gardenChance: { normal: 1.0, hard: 0.85, hardcore: 0.7, zen: 1.0, wallpaper: 1.0 },
   },
 
   /* ── 성공률 pity 보정 (expActualRate / resolveExpedition) ── */
@@ -290,6 +293,18 @@ export const BAL = {
     spotWeight: 1.5,        // 스팟은 2일 만료 — 자동 위주 플레이어도 놓치지 않게 위시리스트(1.35)보다 강한 넛지
   },
 
+  // 2.0-(b) 4도시 기능 플래그 (§9.8.3 격리 원칙): off = regionReachable 항상 true(현 전역 회귀).
+  //   2.0-(d) 점등: 동부 8지역 데이터(c)+동부 전도·마커·셸터 점 도시 스코프(d)가 갖춰져 성립.
+  //   관문 개통 전엔 동부가 지역 해금 자체가 안 돼(regionUnlocked) 기존 플레이 동작 변화 0.
+  cities: {
+    enabled: true,
+    // 2.0-(g) 엔딩 체류 가중(§9.8.8): 동부(항만 대도시) 겨울 이력 → 탈출 성향 W, 동부에서 9겨울 마무리 → Wf.
+    //   홈 쪽은 무가중 — 전 세이브의 디폴트라 신호가 아니고(home Wf는 진실 축을 상시 뒤집는 걸 배터리로 실측),
+    //   rest 이월은 homeStay가 담당. ⚠️ 수치는 §9.8.13 미결 5 — 디렉터 캘리브 대상.
+    endingW: 1,   // 동부 겨울 1회당 escape 가산
+    endingWf: 3,  // 동부에서 9겨울을 끝낸 보너스(escape) — W보다 커야 완주형에게 결정력
+  },
+
   /* ── 고양이 클로즈업 카메라 (v1.2.0 디렉터 오더) ──
      비배치 모드에서 고양이 탭 → 카메라가 고양이로 글라이드 클로즈업. 드래그/ESC/빈곳 탭으로 복원.
      거리/각도는 얼굴 픽셀 텍스처 가독 기준 튜닝(화면 1/3 채움, 눈높이 살짝 위 3/4). */
@@ -384,6 +399,10 @@ export const BAL = {
     hiddenGate1: { material: 3, parts: 1 },         // 벽을 허문다 — 4회
     hiddenGate2: { parts: 2, cloth: 1, fuel: 1 },   // 버팀목과 통로 — 4회
     hiddenGate3: { parts: 1, battery: 1, fuel: 1 }, // 개통(등불·사다리) — 4회
+    // 2.0-(b) 동부 관문 「국경 길」 — 역대 최대(투입 15회·자재 총 ~100단위, 개척의 2배+). 초안 캘리브 — 디렉터 컨펌 여지.
+    eastgate1: { material: 5, parts: 2 },                       // 잔해 개통 — 5회 (35)
+    eastgate2: { parts: 3, material: 3 },                       // 검문소 복구 — 5회 (30)
+    eastgate3: { parts: 2, battery: 1, fuel: 2, cloth: 1 },     // 통행 준비 — 5회 (30)
   },
 
   /* ── 도료 (REWARD-LOOP ② 1차 착지 — 디렉터 확정 2026-07-08: 소모품 1통=1회·12계열·지역 시그니처) ──
@@ -400,6 +419,11 @@ export const BAL = {
       slum: ['barrelfire', 'graffiti'],
       resort: ['skis', 'skipoles', 'snowboard'],
       citycore: ['neonvip', 'neonair', 'suit'],
+      // 2.0-(e) 동부 시그니처 = 복장 도면 (GD-2.0 §6 "도심 시그니처=복장") — 구역 대표 지역에 1종씩
+      customsyard: ['outfit_customsvest'],
+      interchange: ['outfit_riggerjacket'],
+      grandplatform: ['outfit_stationcoat'],
+      deptstore: ['outfit_towncoat'],
     },
     // 도면 선택 가중 (디렉터 2026-07-09): 기본 1. 그래피티는 더 희귀하게(다른 슬럼 시그니처 대비 1/3).
     weights: { graffiti: 0.35 },

@@ -63,6 +63,12 @@ export function migrateLoadedState(rawState, defaults, oldVer) {
   // 2.0 대한파 프론트 (§9.4-③): 구세이브 기본값 — 미발령/비활성
   if (rawState.frontWinterKey == null) state.frontWinterKey = -1;
   if (rawState.front === undefined) state.front = null;
+  // 2.0-α 4도시 그라운드워크 (§9.8): 가산 필드 4 — 구세이브는 전부 첫 도시에서 산 이력으로 시작.
+  //   필드 유무는 rawState로 판정(winters 선례) — Object.assign 뒤 state엔 DEFAULT가 항상 있어 state 판정은 무의미.
+  if (rawState.citiesReached === undefined) state.citiesReached = { home: 1 };
+  if (rawState.cityWinters === undefined) state.cityWinters = state.winters > 0 ? { home: state.winters } : {};
+  if (rawState.finalWinterCity === undefined) state.finalWinterCity = state.winters >= 9 ? 'home' : null;
+  if (rawState.homeStay === undefined) state.homeStay = {};
   // 2.0 부상 서사화 (§9.4-④): 구세이브는 흉터 기록 없이 시작
   if (!Array.isArray(state.scars)) state.scars = [];
   // 2.0 총 (§9.3): 구세이브 미보유
