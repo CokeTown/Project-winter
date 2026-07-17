@@ -11422,6 +11422,8 @@ window.__shelter = {
   // F-1a 야생동물 QA 훅 (코디네이터 검증용): 상태 조회 + 강제 등장/발자국/퇴장 트리거
   wildlifeState: () => wildlifeSys._debug(),
   wildlifeSpawn: (opening) => wildlifeSys._forceSpawn(opening),
+  qaDlcOwns: (id) => Platform.dlc.owns(id), // #117 QA: 서포터팩 DLC 소유 판정 (오버라이드/브릿지)
+  qaDlcOverride: (id, on) => Platform.dlc.setOverride(id, on), // #117 QA: 실 DLC 없이 서포터 콘텐츠 검수 토글
   qaRoamSpot: () => wildlifeSys._roamSpot(), // #209 QA: 야생 로밍 스팟 (기단 회피·퍼치 밴드 검증)
   qaWildGroundY: () => wildlifeSys._groundY(), // #209 QA: 착지 지면 y
   wildlifeNightPrints: () => wildlifeSys._forceNightPrints(),
