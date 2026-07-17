@@ -32,6 +32,7 @@ import { lang, setLang, steamLangToGame, t, LN, LD, LF, LC, STR, applyStaticI18n
 import { stampDataL10n } from './data/l10n-registry.js'; // #114 Phase 2: 데이터 표 _lk 스탬프(비열거) — LF/LC가 로케일 JSON 우선 조회
 stampDataL10n();
 import { playSfx, setAmbience, setFire, setSfxVol, initSfx, setSeasonAmbience, seasonAmbienceName } from './sfx.js';
+import { track as tTrack, flush as tFlush, telemetryQueue, ctaVariant, STEAM_STORE_URL } from './telemetry.js'; // #168 데모 퍼널(익명·기본 no-op)
 import { Platform, bindPlatform } from './lib/platform.js';
 import { state, DEFAULT_STATE, opts, OPTS_DEFAULT, items } from './core/state.js'; // 모놀리스 분해 Phase 1: 공유 가변 상태
 import { isHard, isHardcore, isZen, isWallpaper, rescueEligible } from './core/mode.js'; // 난이도 예측자
@@ -7994,12 +7995,23 @@ function endingLeaning() {
 }
 
 let creditsActive = false; // #74 데모 첫눈 크레딧 진행 중 — 시간정지·SFX 음소거·BGM 크로스페이드를 엔딩과 공유
+// #168 위시리스트 CTA: 크레딧 마지막 카드에서만 노출. 스토어 URL 미확정(빈 값)이면 숨김 유지 — 죽은 버튼 금지.
+//   클릭 = 퍼널 계측 + 기본 브라우저로(웹=새 탭, Electron=setWindowOpenHandler가 shell.openExternal로 승격).
+function syncWishlistCta(show) {
+  const wl = $('ending-wishlist'); if (!wl) return;
+  wl.style.display = (show && STEAM_STORE_URL) ? '' : 'none';
+  if (show && STEAM_STORE_URL && !wl.dataset.wired) {
+    wl.dataset.wired = '1';
+    wl.addEventListener('click', () => { tTrack('wishlist_click'); window.open(STEAM_STORE_URL, '_blank'); });
+  }
+}
 // ── #74 데모 재설계: 첫 겨울 '첫눈' → Nine Winters 크레딧(Ending_Credits.mp3) → 4계절 무한 샌드박스 ──
 //   runEndingSequence 골격 재사용(#ending-screen·시간정지·크로스페이드). 종료 시 하드스톱이 아니라
 //   demoPhase='sandbox'로 넘겨 게임이 계속 흐른다(브레드스 잠금은 지역/이주 게이트가 담당).
 function runDemoCredits() {
   if (creditsActive || state.demoPhase !== 'credits') return; // 'credits' 단계에서만 (재개/중복 방지)
   creditsActive = true;
+  tTrack('credits_reached'); // #168 퍼널: 크레딧 실도달(완주 판정과 별개 — 재입장 소프트락 구간 이탈 측정)
   closeModal();
   // 페이퍼 레이어(종이 팁/수첩)는 크레딧보다 위에 뜰 수 있다 — 강제 정리 (showDemoEnd 선례)
   const jscr = $('journal-screen');
@@ -8016,6 +8028,7 @@ function runDemoCredits() {
     txt.style.animation = 'none'; void txt.offsetWidth; txt.style.animation = '';
     txt.innerHTML = lines[i];
     btn.textContent = i === lines.length - 1 ? t('demo.credits.close') : t('intro.next');
+    syncWishlistCta(i === lines.length - 1); // #168: 마지막 카드(출시 예고)에서만 위시리스트 CTA
   };
   btn.onclick = () => { // onclick 대입: 재실행 시 리스너 중복 방지
     i++;
@@ -8038,6 +8051,7 @@ function runDemoOverCard() {
   scr.style.display = 'flex';
   txt.innerHTML = t('demo.credits.4');
   btn.textContent = t('demo.credits.close');
+  syncWishlistCta(true); // #168: 완주 재입장 카드에도 CTA (퍼널 회수 두 번째 기회)
   btn.onclick = () => { scr.style.display = 'none'; creditsActive = false; location.reload(); };
 }
 // #74 데모: demoPhase='credits'(첫눈 감지됨·크레딧 미완)일 때, 아침 보고 등 모달이 닫혀 첫눈이 보이는 순간 크레딧을 띄운다.
@@ -8992,7 +9006,10 @@ function tickTime(dt) {
     if ((isZen() || state.day >= 10) && (!DEMO_ED || state.demoPhase === 'sandbox') && !state.autoNoticeShown) { state.autoNoticeShown = true; state.pendingAutoNotice = true; }
     // 1.7.0 데모 15일 컷: 겨울 3일차(Day 15) 아침 — 한파 한복판에서 크레딧 (디렉터: "겨울이 하드해질 때 끝").
     //   시뮬 순수성 가드(_simRunning): 밸런스 시뮬이 크레딧 단계로 오염되지 않게.
-    if (DEMO_ED && !_simRunning && state.demoPhase === 'pre-credits' && state.day >= 15) state.demoPhase = 'credits';
+    if (DEMO_ED && !_simRunning && state.demoPhase === 'pre-credits' && state.day >= 15) {
+      state.demoPhase = 'credits';
+      tTrack('demo_complete'); // #168 퍼널: 15일 컷 도달(완주) — 설치 단위 1회
+    }
     processDay();
     reportQueued = true;
     rolledOver = true;
@@ -10817,6 +10834,7 @@ if (QA_ED) {
 }
 if (sessionStorage.getItem('ps-intro')) {
   sessionStorage.removeItem('ps-intro');
+  if (DEMO_ED) { tTrack('demo_start'); tFlush(); } // #168 퍼널 시점(새 게임 인트로) — 부팅 겸 큐 재시도
   showIntro();
 } else if (sessionStorage.getItem('ps-load')) {
   sessionStorage.removeItem('ps-load');
@@ -11308,7 +11326,7 @@ window.__shelter = {
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
-  seasonOf, SEASONS, openMapModal, showMapInfo, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal,
+  seasonOf, SEASONS, DEMO_ED, openMapModal, showMapInfo, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal, // DEMO_ED: 배터리가 dist의 빌드 플래그를 감지(데모 캘린더 게이트)
   // Phase D (#12 · #35 · #36) QA 훅
   MEMOS, WILLS, BROADCASTS, MEMOS_BY_REGION, eventCtx, eventMatches, drawEvent, eventWeight,
   dropMemo, dropBroadcast, tryDropMemoOnExpedition, tryRadioBroadcast, doctorFragmentsComplete,
@@ -11356,6 +11374,7 @@ window.__shelter = {
   // v1.9
   setPaused, spawnCat, despawnCat, runEndingSequence, syncBgm, bgmContext, showTitle, hideTitle,
   catCam, // 피드백 #3 QA: 클로즈업 회전 접지 검증용 (읽기 전용 취급)
+  telemetryQueue, telemetryVariant: ctaVariant, telemetryTrack: tTrack, runDemoCredits, // #168 QA: 퍼널 큐 실측·크레딧 직접 구동
   // 생존 수첩 연출
   openJournalPages, openHelpModal, showTutorialPage, tipOnce, paperSfx, makePaperTexture,
   findSupport, itemsOn, weatherFx,

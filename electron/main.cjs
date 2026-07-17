@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, shell } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 
@@ -84,6 +84,13 @@ function createWindow() {
       sandbox: false,
       preload: path.join(__dirname, 'preload.cjs'),
     },
+  });
+
+  // #168 외부 링크(위시리스트 CTA 등)는 앱 안에서 새 창을 열지 않고 기본 브라우저로 —
+  //   http(s)만 허용, 그 외 스킴은 무시(보안: 파일·커스텀 스킴 차단).
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
   });
 
   // 개발 중엔 Vite dev 서버를, 패키징된 빌드에선 dist/index.html을 로드
