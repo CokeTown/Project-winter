@@ -2346,6 +2346,9 @@ export function makeShelterBuilders(ctx) {
         const fire = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 6), new THREE.MeshLambertMaterial({ color: 0xff6a26, emissive: 0xd83a12, emissiveIntensity: 1.3 })); fire.position.set(dx + 1.2, 0.42, dz); roomGroup.add(fire);
         const denL = new THREE.PointLight(0xffb060, 0.5, 4.0, 1.9); denL.position.set(dx + 0.4, 1.0, dz); roomGroup.add(denL);
         for (const cz of [-0.4, -0.1, -0.25]) { const cs = 0.9 + Math.abs(cz); Cyl(roomGroup, 0.035, 0.04, 0.11 * cs, 0xf2e3c2, deskX - 0.5, 1.05, cz, 7); const fl = new THREE.Mesh(new THREE.SphereGeometry(0.034, 6, 5), new THREE.MeshLambertMaterial({ color: 0xffd9a0, emissive: 0xff9a3c, emissiveIntensity: 1.4 })); fl.position.set(deskX - 0.5, 1.14, cz); roomGroup.add(fl); } // 심사 데스크 위 양초(카운터=생존자의 식탁)
+        // 평지붕 콘크리트 슬래브 (#209 태양광 앵커면 신설) — 상면 h+0.02=2.72=SHELTER_MOUNTS.customs.roof.y.
+        //   이전엔 지붕 메시가 아예 없어 태양광 패널이 방 정중앙 공중(2.72)에 떴다. #201 cabin 지붕 관용구.
+        { const roofG = new THREE.Group(); B(roofG, w + 0.3, 0.16, d + 0.3, 0x817b70, 0, h - 0.06, 0).castShadow = true; tagCeiling(roofG, h + 0.02); roomGroup.add(roofG); }
         setBlockers([]);
       },
       buildEnv() {
@@ -2524,6 +2527,9 @@ export function makeShelterBuilders(ctx) {
         const chart = [B(roomGroup, 0.012, 0.7, 0.9, 0xcfc5aa, -w / 2 + 0.06, 1.7, 0.4)];
         for (let i = 0; i < 22; i++) chart.push(B(roomGroup, 0.008, 0.03, 0.03, 0xe8e2d0, -w / 2 + 0.08, 1.42 + rand() * 0.56, 0.05 + rand() * 0.7));
         attachToWall(-1, 0, 0, ...chart);
+        // 석조 평지붕 슬래브 (#209 태양광 앵커면 신설) — 상면 h+0.02=2.62=SHELTER_MOUNTS.bridgehouse.roof.y.
+        //   이전엔 지붕 메시가 없어 태양광이 방 정중앙 공중(2.62)에 떴다. 밤하늘 조망은 -z 창밖 요소라 무손.
+        { const roofG = new THREE.Group(); B(roofG, w + 0.3, 0.16, d + 0.3, 0x8a8278, 0, h - 0.06, 0).castShadow = true; tagCeiling(roofG, h + 0.02); roomGroup.add(roofG); }
         setBlockers([]);
       },
       buildEnv() {
