@@ -852,25 +852,41 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #map-cities .city-chip .here { font-size: 9px; color: var(--text-dim); }
   #map-pull { margin-top: 4px; }
   #map-pull:empty { display: none; }
-  /* #204 타르코프식 핀(디렉터): 점 + 옆 이름 가로 배치 — 아이콘 폐기 */
+  /* #204 타르코프식 핀(디렉터): 점 + 옆 이름 가로 배치 — 아이콘 폐기
+     #208 좌표 정렬(디렉터 모바일 신고 "마커 위치랑 실 지도랑 위치 차이가 나"):
+     구 transform: translate(-50%,-50%)는 **핀 전체**(점+이름+배지)를 중심 정렬해서, 이름이 붙어 폭이 커진
+     만큼 점이 좌표에서 왼쪽으로 밀렸다(이름이 길수록 더). 좌표의 진실은 점이므로 점 중심을 좌표에 고정한다.
+     --pad/--dot로 점 중심 오프셋을 계산 — 모바일 오버라이드도 변수만 갈면 따라온다. */
   .map-pin {
-    position: absolute; transform: translate(-50%, -50%);
+    --dot: 9px; --pad: 6px;
+    position: absolute;
+    transform: translate(calc(-1 * (var(--pad) + var(--dot) / 2)), -50%);
     display: flex; flex-direction: row; align-items: center; gap: 5px;
     cursor: pointer; pointer-events: auto; z-index: 2;
-    min-height: 34px; padding: 6px;   /* 터치 타깃 보장 (#47) */
+    min-height: 34px; padding: var(--pad);   /* 터치 타깃 보장 (#47) */
+  }
+  /* 지도 우측 절반의 핀: 이름을 점 왼쪽으로 — 라벨이 지도 밖으로 삐져나가던 것(모바일 실기 신고) */
+  .map-pin.flip {
+    flex-direction: row-reverse;
+    transform: translate(calc(-100% + var(--pad) + var(--dot) / 2), -50%);
   }
   .map-pin .pin-dot {
-    flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+    flex: 0 0 auto; width: var(--dot); height: var(--dot); border-radius: 50%;
     background: #f2ead6; border: 2px solid rgba(18, 14, 9, 0.85);
     box-shadow: 0 1px 3px rgba(0,0,0,0.5); transition: transform .12s;
   }
   .map-pin:hover .pin-dot { transform: scale(1.35); }
   .map-pin.sketch .pin-dot { background: #9a917f; }
   .map-pin.blocked .pin-dot { background: #7d8a99; }
+  /* #208: 떠오른 자리(#164)는 이모지 배지 대신 점의 맥박 — 한시 스팟의 시선 유도는 유지, 이모지는 0 */
+  .map-pin.spot .pin-dot { background: #ffd88a; animation: pinPulse 1.6s ease-in-out infinite; }
+  @keyframes pinPulse {
+    0%, 100% { box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 0 0 rgba(255, 216, 138, 0.55); }
+    50%      { box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 0 7px rgba(255, 216, 138, 0); }
+  }
   /* 좁은 화면(모바일 가로/세로): zoom 축소분을 상쇄해 마커를 키운다 — 터치 타깃 확보 */
   @media (max-width: 640px) {
-    .map-pin { min-height: 42px; }
-    .map-pin .pin-dot { width: 11px; height: 11px; }
+    .map-pin { min-height: 42px; --dot: 11px; }
     .map-pin .pin-rate { font-size: 12px; padding: 3px 7px; }
   }
   /* 성공률 칩 — 종이 위에서 읽히도록 반투명 배경 */

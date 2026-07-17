@@ -2848,25 +2848,23 @@ function openMapModal(viewCity) {
     const nameCol = visits > 0
       ? `rgb(${Math.round(198 - 71 * mProg)},${Math.round(83 + 109 * mProg)},${Math.round(64 + 42 * mProg)})`
       : '';
-    // #164: 떠오른 자리 배지(스팟 아이콘) + 지역 컨디션 태그(풍/마름) — "오늘은 뭐가 떠 있나"가 아침의 질문이 되게.
+    // #208(디렉터 2026-07-17): 핀은 점+이름만 — 퍼센트 칩·컨디션 태그(풍/마름)·스팟 이모지·봉쇄 이모지 전부 제거.
+    //   "이름 색을 통한 숙련도만 표시하자" + "이모지들이 오히려 더 AI틱하게 만든다". 정보는 잃지 않는다:
+    //   성공률·컨디션·스팟·봉쇄는 title(툴팁)과 호버 정보판(showMapInfo)이 그대로 싣고, 상태는 점 색/링 CSS가 진다.
     const spotHere = state.fieldSpot && state.fieldSpot.region === rid;
-    const spotTag = spotHere
-      ? `<span class="pin-visits" title="${t('spot.' + state.fieldSpot.id)} — ${t('spot.mapHint')}">${(FIELD_SPOTS[state.fieldSpot.id] || {}).icon || '📍'}</span>` : '';
     const cLv = (state.regionCond && state.regionCond.lv && state.regionCond.lv[rid]) || 0;
-    const condTag = cLv > 0 ? `<span class="pin-rate ok" title="${t('map.cond.richTip')}">${t('map.cond.rich')}</span>`
-      : cLv < 0 ? `<span class="pin-rate lack" title="${t('map.cond.leanTip')}">${t('map.cond.lean')}</span>` : '';
-    if (spotHere) el.title += ' — ' + t('spot.' + state.fieldSpot.id);
+    if (spotHere) { el.classList.add('spot'); el.title += ' — ' + t('spot.' + state.fieldSpot.id) + ' · ' + t('spot.mapHint'); }
+    if (cLv > 0) { el.classList.add('rich'); el.title += ' · ' + t('map.cond.richTip'); }
+    else if (cLv < 0) { el.classList.add('lean'); el.title += ' · ' + t('map.cond.leanTip'); }
     if (!visits && !blocked) el.classList.add('sketch');
-    if (visits > 0) el.title += ` · ${t('map.masteryPct', { p: Math.round(mProg * 100) })}`;
-    // #204 타르코프식 핀(디렉터 레퍼런스): 아이콘 대신 점 + 옆 이름. 이름 색 = 숙련 그라데이션.
-    //   핀의 자식이라 클릭·호버가 핀 핸들러로 버블 — 이름 자체가 터치 타깃을 겸한다.
+    if (visits > 0) el.title += ` · ${t('map.rateTip', { p: rate })} · ${t('map.masteryPct', { p: Math.round(mProg * 100) })}`;
+    if (blocked) el.title += ' · ' + t(avBlocked ? 'map.blockedAvalanche' : 'map.blockedBlizzard');
+    // #204 타르코프식 핀: 점 + 옆 이름. 이름 색 = 숙련 그라데이션(붉은→초록).
+    //   #208: 점이 좌표의 진실 — 이름은 지도 우측 절반에서 왼쪽으로 뻗는다(flip). CSS가 점 기준 정렬을 맡는다.
     const nameTag = `<span class="pin-name"${nameCol ? ` style="color:${nameCol}"` : ''}>${LName(r)}</span>`;
     const dotTag = `<span class="pin-dot"></span>`;
-    el.innerHTML = blocked
-      ? `${dotTag}${nameTag}<span class="pin-rate lack">${avBlocked ? '🏔️' : '❄️'}</span>${spotTag}`
-      : !visits
-        ? `${dotTag}${nameTag}<span class="pin-rate sketch-q">?</span>${spotTag}`
-        : `${dotTag}${nameTag}<span class="pin-rate ${cls}">${rate}%</span>${spotTag}${condTag}`;
+    if (p.x > 50) el.classList.add('flip'); // 우측 절반: 이름을 점 왼쪽으로 — 지도 밖 이탈 방지(모바일 신고)
+    el.innerHTML = `${dotTag}${nameTag}`;
     // 첫 귀환 후 처음 여는 지도: 잉크가 배어드는 연출 1회
     state.mapInked = state.mapInked || {};
     if (visits > 0 && !state.mapInked[rid]) { el.classList.add('inked-now'); state.mapInked[rid] = 1; scheduleSave(); }
