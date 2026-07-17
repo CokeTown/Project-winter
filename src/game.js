@@ -11425,6 +11425,7 @@ window.__shelter = {
   openWardrobeModal, OUTFITS, // #86④ QA: 옷장
   wallProxyState: () => wallList.map(w => ({ show: w.group.visible, proxy: w.proxy ? w.proxy.visible : null })), // #97 QA
   avatarWalkTo: (x, z) => avatarSys._walkTo(x, z), // #86 QA: 경유점 라우팅 실증
+  avatarWakeBed: (rect) => avatarSys._wakePose(rect), // #209 QA: 취침 눕기 포즈 검증 (rot 0~3 머리·가슴 방향 실측)
   FIELD_SPOTS, resolveFieldSpot, // #164 QA: 떠오른 자리 데이터/회수 (프로브 결정론 검증용)
   // 침묵 모드 게이트 QA (디렉터 2026-07-10 — 생존·혹한 전용): 실탭 경로(pickHidden)를 좌표로 재현
   hiddenTapProbe: (x, y) => pickHidden({ clientX: x, clientY: y }),

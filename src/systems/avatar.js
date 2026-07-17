@@ -335,9 +335,22 @@ export function makeAvatarSystem(ctx) {
     if (!av) return;
     av.mode = 'wake'; av.wakeT = 2.6; av.tgt = null; av.use = rect;
     const g = av.g;
-    if (rect) { g.position.set(rect.x, (rect.y ?? 0.63) + 0.1, rect.z); g.rotation.y = ((rect.rot || 0) * Math.PI / 2) + Math.PI / 2; }
-    else g.position.y = 0.08;
-    g.rotation.x = -Math.PI / 2 + 0.05;
+    // #209 취침 눕기 2결함 동시 수정:
+    //   ① 오일러 순서 YXZ → rotation.y가 (Rx 뒤에 적용되는) 진짜 월드 yaw로 작동. XYZ 기본은 Ry가 롤이 돼
+    //      rot=1이면 얼굴을 매트리스에 박고 엎드렸다. roll 보정용 +π/2 오프셋도 제거.
+    //   ② 발바닥 피벗이 침대 중심이라 몸이 -z로만 뻗어 머리가 침대 밖·헤드보드 관통 → 침대 장축 방향으로
+    //      shift만큼 밀어 머리를 헤드보드 쪽 베개에 정렬. fp.d는 반드시 DEFS.bed.fp.d(원 장축 2.3) —
+    //      footprintOf는 홀수 rot에서 w↔d를 스왑해 단축이 잡히면 머리가 짧은 변으로 뻗는 새 버그가 난다.
+    if (rect) {
+      g.rotation.order = 'YXZ';
+      const yaw = (rect.rot || 0) * Math.PI / 2;
+      const shift = (((DEFS.bed && DEFS.bed.fp && DEFS.bed.fp.d) || 2.3) / 2) - 0.62; // 발치로 밀기(=0.53)
+      g.position.set(rect.x + shift * Math.sin(yaw), (rect.y ?? 0.63) + 0.1, rect.z + shift * Math.cos(yaw));
+      g.rotation.set(-Math.PI / 2 + 0.05, yaw, 0);
+    } else {
+      g.position.y = 0.08;
+      g.rotation.x = -Math.PI / 2 + 0.05;
+    }
     resetPose();
     shadowDirty(); // 침대 위 눕기 점프 — 즉시 갱신
   }
@@ -536,5 +549,12 @@ export function makeAvatarSystem(ctx) {
     _debug: () => av ? { mode: av.mode, x: +av.g.position.x.toFixed(2), z: +av.g.position.z.toFixed(2), y: +av.g.position.y.toFixed(2), vis: av.g.visible, use: av.use ? (av.use.defId || 'rect') : null, outfit: getOutfit ? getOutfit() : 'default' } : null,
     _forceNext: () => pickNext(), // QA: 행동 추첨 강제
     _walkTo: (x, z) => { if (av) { unseat(); av.g.rotation.x = 0; av.g.position.y = 0; av.mode = 'walk'; av.use = null; setTarget({ x, z }); } }, // QA: 강제 횡단 (라우팅 실증)
+    _wakePose: (rect) => { // #209 QA: wakeOnBed 후 눕기 포즈 실측 (머리방향=로컬-z, 가슴법선=코트앞면 로컬+z)
+      if (!av) return null; wakeOnBed(rect); av.g.updateMatrixWorld(true);
+      const dir = (x, y, z) => new THREE.Vector3(x, y, z).transformDirection(av.g.matrixWorld);
+      const hd = dir(0, 0, -1), cn = dir(0, 0, 1), hp = av.g.localToWorld(new THREE.Vector3(0, 1.35, 0));
+      const r = v => [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)];
+      return { headDir: r(hd), chestN: r(cn), headWorld: r(hp) };
+    },
   };
 }
