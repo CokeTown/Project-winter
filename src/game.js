@@ -11373,6 +11373,8 @@ window.__shelter = {
   // F-1a 야생동물 QA 훅 (코디네이터 검증용): 상태 조회 + 강제 등장/발자국/퇴장 트리거
   wildlifeState: () => wildlifeSys._debug(),
   wildlifeSpawn: (opening) => wildlifeSys._forceSpawn(opening),
+  qaRoamSpot: () => wildlifeSys._roamSpot(), // #209 QA: 야생 로밍 스팟 (기단 회피·퍼치 밴드 검증)
+  qaWildGroundY: () => wildlifeSys._groundY(), // #209 QA: 착지 지면 y
   wildlifeNightPrints: () => wildlifeSys._forceNightPrints(),
   wildlifeLeaveAll: () => wildlifeSys._forceLeaveAll(),
   wildlifeNudge: (i, x, z) => wildlifeSys._nudge(i, x, z), // QA: 클로즈업 검수용 (팬 카메라 부재 보완)

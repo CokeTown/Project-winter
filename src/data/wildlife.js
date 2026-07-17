@@ -121,10 +121,13 @@ export const SHELTER_WILDLIFE = {
   container:    { groundY: -0.72, band: [3.4, 6.5] },
   bunker:       { groundY: -0.82, band: [3.8, 6.5], avoidR: 4.9 }, // 돔 외피 R4.35+T0.42+여유 — 밑동 클리핑 방지
   rooftop:      { groundY: 0.0,  band: [3.2, 5.0], birdOnly: true }, // 옥상: 난간 위 새만
-  cabin:        { groundY: -0.8, band: [3.6, 7.0] },
+  cabin:        { groundY: -1.3, band: [3.6, 7.0], avoidRect: { w: 11.0, d: 9.0 } }, // #209: 숲 바닥 -1.3(GY 실측). 기단(11×9)을 avoidRect로 회피(사슴·여우 기단 위 매몰 방지)
   bus:          { groundY: -0.77, band: [3.2, 6.0] },
   subway:       { groundY: 0.0,  band: [2.6, 3.6], indoor: true, species: ['rat'], edgeOnly: true }, // 승강장 가장자리 쥐
   greenhouse:   { groundY: -0.78, band: [3.4, 6.5] },
+  // #209 B안(디렉터) 보류: 물위/탑 셸터는 새가 실표면(갑판·발코니·갤러리)에 앉아야 하나, 그 표면이 사각 방을
+  //   두른 링/둘레라 radial band로는 대각각에서 방 안(바닥 밑)에 떨어진다(실측: 폴백 지배 → 오배치). 둘레(perimeter)
+  //   배치 모드가 필요 — 별도 처리. 현행 -0.9 자리값 유지(새가 상공에 뜨는 기존 상태, 오배치보다 안전).
   ship:         { groundY: -0.9, band: [3.4, 5.5], birdOnly: true }, // 갑판/난간 새 위주
   lighthouse:   { groundY: -0.9, band: [3.4, 5.5], birdOnly: true },
   tugboat:      { groundY: -0.9, band: [3.2, 5.0], birdOnly: true },

@@ -293,11 +293,16 @@ export function makeWildlifeSystem(ctx) {
       // 지하철 승강장 가장자리: 한쪽 벽 근처 고정, x 밴드 유지 (쥐가 가장자리만)
       return { x: (Math.random() < 0.5 ? -1 : 1) * (room.d / 2 + 0.4), z: (Math.random() * 2 - 1) * (room.w / 2 - 0.3) };
     }
+    // #209: avoidRect 있으면 방 사각 대신 그 사각(기단 등)을 회피 — 오두막 기단 위 매몰 방지.
+    const avW = (spec.avoidRect ? spec.avoidRect.w : room.w) / 2 + 0.3;
+    const avD = (spec.avoidRect ? spec.avoidRect.d : room.d) / 2 + 0.3;
     for (let k = 0; k < 10; k++) {
       const a = Math.random() * Math.PI * 2, r = band[0] + Math.random() * (band[1] - band[0]);
       const x = Math.cos(a) * r, z = Math.sin(a) * r;
-      if ((Math.abs(x) > room.w / 2 + 0.3 || Math.abs(z) > room.d / 2 + 0.3) && !findBlock(x, z, 0.15)) return { x, z }; // #95: 장애물 안 목표 재추첨
+      if ((Math.abs(x) > avW || Math.abs(z) > avD) && !findBlock(x, z, 0.15)) return { x, z }; // #95: 장애물 안 목표 재추첨
     }
+    // 폴백(10회 실패): avoidRect면 기단 밖 x변으로 확정 배치(중점 추첨은 기단 대각에 걸릴 수 있어 매몰).
+    if (spec.avoidRect) return { x: (Math.random() < 0.5 ? -1 : 1) * (avW + 0.4), z: (Math.random() * 2 - 1) * avD };
     const a = Math.random() * Math.PI * 2, r = (band[0] + band[1]) / 2;
     return { x: Math.cos(a) * r, z: Math.sin(a) * r };
   }
@@ -773,6 +778,8 @@ export function makeWildlifeSystem(ctx) {
     count: () => animals.length,
     // 재현/검증용 (코디네이터): 강제 등장/발자국/퇴장 트리거
     _forceSpawn: (opening) => spawnEncounter(!!opening),
+    _roamSpot: () => roamSpot(), // #209 QA: 로밍 스팟 추첨 검증 (avoidRect·band 실측)
+    _groundY: () => (spec.groundY ?? 0), // #209 QA: 착지 지면 y (새 퍼치면 검증)
     _spawnSpecies: (id) => spawnOne(id, roamSpot()), // #182 B1: 특정 종 강제 소환(검증/디버그) — 앰비언트 진입점
     // #208 인카운터 스폰(실사용): 집 앞 카메라 쪽으로 짧게 걸어 들어온다. yaw = camState.yaw.
     _spawnEncounter: (id, yaw) => { const e = encounterSpots(yaw); return spawnOne(id, e.at, false, 0, e); },
