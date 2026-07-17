@@ -5550,6 +5550,7 @@ function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
   const rowArr = CRAFTS.map((c, i) => {
     if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
+    if (c.dlc && !Platform.dlc.owns(c.dlc)) return ''; // #119 서포터팩: DLC 소유 시에만 레시피 노출
     const outLabel = c.out.res
       ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])}${c.out.n > 1 ? ' ×' + c.out.n : ''}` // ×1은 생략(정보 0 — 한 줄 폭 확보)
       : c.out.outfit
@@ -9205,6 +9206,7 @@ function renderInventoryBar() {
     const cnt = state.inventory[id] || 0;
     // #193: 도면 게이트 가구는 도면을 줍기 전엔 툴바에서도 안 보인다 — 제작대·도감·지도와 동일 원칙(시그니처 누출 봉합)
     if (cnt <= 0 && bpGatedLocked(id)) continue;
+    if (def.dlc && !Platform.dlc.owns(def.dlc)) continue; // #119 서포터팩: 미소유 시 툴바에서도 숨김
     const el = document.createElement('div');
     el.className = 'tool-item' + (cnt <= 0 ? ' empty' : '');
     el.innerHTML = `<span class="emoji">${furnIcon(id)}</span><span>${LName(def)}</span><span class="cnt">${cnt}</span>`;

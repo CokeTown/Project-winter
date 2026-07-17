@@ -1262,6 +1262,34 @@ const DEFS = {
       return g;
     }
   },
+  // #119 서포터팩 전용 데코 — 곰인형. 순수 코스메틱(쾌적/조명 기여 0). 고양이가 위에 웅크린다(CAT_PERCH_Y.teddybear).
+  //   dlc:'supporter' → 제작 레시피·툴바 노출이 Platform.dlc.owns('supporter') 뒤에서만. 색은 플러시 4색.
+  teddybear: {
+    name: '곰인형', nameEn: 'Teddy Bear', emoji: '🧸', fp: { w: 0.5, d: 0.42 }, dlc: 'supporter', comfort: 0,
+    colorNames: ['갈색', '크림', '회색', '캐러멜'], colorNamesEn: ['Brown', 'Cream', 'Grey', 'Caramel'],
+    colors: [0x8a5a34, 0xd8c4a0, 0x9a9084, 0xb07a3e],
+    build(c) {
+      const g = new THREE.Group();
+      const belly = shade(c, 1.28), snout = shade(c, 1.22), dark = 0x241a12;
+      // 앉은 몸통 + 배 패치
+      B(g, 0.3, 0.32, 0.24, c, 0, 0.2, 0).castShadow = true;
+      B(g, 0.18, 0.2, 0.04, belly, 0, 0.2, 0.13);                        // 배 패치
+      // 다리(앞으로 뻗은)
+      for (const sx of [-1, 1]) { B(g, 0.13, 0.11, 0.24, c, sx * 0.085, 0.055, 0.06); B(g, 0.1, 0.06, 0.05, snout, sx * 0.085, 0.05, 0.19); } // 발바닥 패드
+      // 팔(몸통 옆에)
+      for (const sx of [-1, 1]) { const a = B(g, 0.09, 0.2, 0.11, c, sx * 0.19, 0.24, 0.02); a.rotation.z = sx * 0.25; }
+      // 머리 + 귀 + 주둥이 + 코 + 눈
+      B(g, 0.26, 0.24, 0.23, c, 0, 0.48, 0.01).castShadow = true;
+      for (const sx of [-1, 1]) B(g, 0.1, 0.1, 0.06, c, sx * 0.095, 0.6, 0);          // 귀
+      for (const sx of [-1, 1]) B(g, 0.05, 0.05, 0.02, dark, sx * 0.095, 0.6, 0.005); // 귀 안쪽
+      B(g, 0.13, 0.1, 0.07, snout, 0, 0.45, 0.14);                        // 주둥이
+      B(g, 0.045, 0.035, 0.03, dark, 0, 0.48, 0.185);                     // 코
+      for (const sx of [-1, 1]) B(g, 0.03, 0.035, 0.02, dark, sx * 0.06, 0.52, 0.135); // 눈
+      // 목도리(코지 액센트 — 마지막 겨울의 온기)
+      B(g, 0.28, 0.05, 0.25, 0xb84a3a, 0, 0.36, 0.01);
+      return g;
+    }
+  },
   phonograph: {
     name: '축음기', nameEn: 'Phonograph', emoji: '🎶', fp: { w: 0.6, d: 0.55 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,

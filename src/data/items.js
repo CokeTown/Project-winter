@@ -95,7 +95,7 @@ export const CAT_POSES = {
   // hop: 가구 오르내리는 점프 중 — 네 다리 웅크림 + 꼬리 들어 균형
   hop:     { by: 0.13,  brx: -0.12, hrx: -0.1, legF: -0.85, legB: -0.85, t1: 0.35 },
 };
-export const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2 };
+export const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2, teddybear: 0.2 }; // #119 곰인형: 고양이가 플러시에 웅크린다(방석과 동일 낮은 퍼치)
 // #193: 침대는 티어가 곧 높이(#157 — sofa/chair와 달리 좌면 높이가 티어 정체성)라 퍼치·착석 y도 티어를 따라야 한다.
 //   실측(furniture.js bed build): T1 매트리스 상면 0.16·담요 상면 0.22 걸침 → 중앙 0.19(#209 F26: 베개 0.245 단독 기준 폐기) / T2 싱글 매트리스 상면 0.38+0.075≈0.46 / T3 이불 상면 0.64≈0.63
 export const BED_TOP_Y = { 1: 0.19, 2: 0.46, 3: 0.63 };
@@ -188,6 +188,8 @@ export const CRAFTS = [
   { out: { res: 'canned', n: BAL.harbor.saltCureOut }, cost: { food: BAL.harbor.saltCureFood, salt: BAL.harbor.saltCureSalt }, hint: '소금으로 절인 보존식 — 여름 부패를 이긴다', hintEn: 'Salt-cured preserves — beats summer spoilage' },
   // #76 사치 가구 — 책(지식)을 재료로. 후반 잉여가 흘러든 책의 사용처(사치 건축 싱크). 응접실 세트.
   { out: { furn: 'globe' }, cost: { book: 3, material: 2 }, hint: '책으로 채운 지구본 — 가 보지 못한 곳들', hintEn: 'A globe filled by books — places never seen' },
+  // #119 서포터팩 전용 데코 — 레시피가 DLC 소유 시에만 제작대·툴바에 뜬다(dlc:'supporter'). 코스메틱, 흔한 재료로 만든다.
+  { out: { furn: 'teddybear' }, dlc: 'supporter', cost: { cloth: 2 }, hint: '목도리 두른 곰인형 — 마지막 겨울의 온기', hintEn: 'A scarfed teddy bear — the warmth of the last winter' },
   { out: { furn: 'candelabra' }, cost: { book: 2, material: 1, candle: 2 }, hint: '가지 촛대 — 사치스러운 불빛 (양초 1/일)', hintEn: 'A branched candelabra — an extravagant light (candle 1/day)' },
   { out: { furn: 'phonograph' }, cost: { book: 4, parts: 2, material: 1 }, hint: '축음기 — 폐허에 음악을', hintEn: 'A phonograph — music for the ruins' },
   // #86④ 의류 — 만들면 옷장(state.outfits)에 영구 추가, 착용은 옷장에서. 염색 재료로 개성(소금/연료=숯).
