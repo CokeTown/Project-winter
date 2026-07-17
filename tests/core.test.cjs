@@ -256,6 +256,13 @@ const KNOWLEDGE_HASH = -451536973;
     // ── 대한파 프론트 (GD-2.0 §9.4-③) — 발동/강도/규율 효과/종료/노말 분기 ──
     //   sim 제외(!_simRunning 가드)는 별도 명제가 아니라 위 경제 밴드+헤르메틱 핀이 그대로 지킨다
     //   (프론트가 sim에 새면 하드코어 사망 핀이 5%대로 붕괴 — 2026-07-08 20시드 실측으로 검거된 회귀).
+    //   ⚠️ 데모 dist 게이트(2026-07-17 검거): 데모 캘린더는 계절 4일 — 겨울 8일차(hitSeasonDay 8)가 수학적으로
+    //   부재해 프론트는 도달 불가 콘텐츠(15일 컷=겨울 3일차 종료와 사양 정합). 트렁크 day 44 하드코딩이 데모
+    //   dist에선 가을이라 미발동 → front null 대입 throw. 조용한 통과 금지 — SKIP 라벨로 명시한다.
+    const distIsDemo = await call(`return String(!!S.DEMO_ED)`).catch(() => 'false');
+    if (distIsDemo === 'true') {
+      check('대한파 프론트 — SKIP(데모 캘린더: 계절 4일, 겨울 8일차 부재 — 도달 불가 콘텐츠)', true, 'demo dist');
+    } else { // ↓ 트렁크 캘린더 전용 블록 (들여쓰기 원문 유지)
     const fr = await call(`
       // 하드: 겨울 8일차(day 44) 발동 — 강도 3, until=day+2, 규율 선택 대기(null)
       S.simReset(); S.state.mode = 'hard'; S.state.day = 44;
@@ -294,6 +301,7 @@ const KNOWLEDGE_HASH = -451536973;
         `accDisc ${fd.ended.accDisc}`);
       check('프론트/노말 강도 2 · 규율 자동 none', fd.nrm.sev === 2 && fd.nrm.disc === 'none', `sev ${fd.nrm.sev} disc ${fd.nrm.disc}`);
     }
+    } // end 데모 dist 게이트 (대한파 프론트)
 
     // ── 부상 서사화 (GD-2.0 §9.4-④) — 겨울 부상 집계 + 흉터 기록 + memoir 라인 3분기 ──
     const sc = await call(`
