@@ -54,6 +54,9 @@ import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEnc
 import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsAutoAvoid, falloutCleared, regionReachable, regionCityOf } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0) + 도시 필터(2.0-b) + 도시뷰(2.0-f)
 import { initVignettes, playVignette, playGeigerVignette, playEastGateVignette, playJungleSunVignette, playGoldenGateVignette, buildGoldenGateScene, showDiscoveryVignette, vignetteBusy, claimVignette, releaseVignette } from './render/vignettes.js'; // 시네마틱 비네트 (Tier5·6a — 발견 컷 포함)
 initVignettes({ addMoodBuff, jackpotToast, scheduleSave, gameHour, disposeDeep }); // 함수 선언 호이스팅 전제 — 게임 측 헬퍼 단방향 주입
+import { initNotebook, openJournalPages, openHelpModal, showMemoPage, showSketchPage, showTruthPage } from './ui/notebook.js'; // 수첩 페이지 (Tier7)
+// setJournalOpen: journalOpen(let, 아래 선언)은 렌더 루프 게이트 14곳이 읽는 잔류 전역 — 클로저는 호출 시점 참조라 TDZ 무관.
+initNotebook({ applyPaperBg, paperSfx, setJournalOpen: v => { journalOpen = v; } });
 
 // 데이터 테이블 표시 헬퍼 (lang==='en' && *En 있으면 영문, 아니면 원본)
 const LName = LN;                        // obj.name / obj.nameEn
@@ -9403,81 +9406,8 @@ function applyPaperBg(el, kind = 'journal') {
   if (kind !== 'tip') el.style.backgroundImage = `url(${paperTextureURL()})`;
 }
 
-let journalKeyHandler = null;
-let journalOpen = false; // 수첩이 떠 있는 동안 리포트/인카운터/다음 튜토리얼이 겹치지 않도록
-function openJournalPages(pages, opts = {}) {
-  if (!pages || !pages.length) return;
-  if (DEMO_ED && state.demoEnded) return; // #74: 데모 종료 뒤엔 신규 페이퍼 금지 (엔드 스크린 덮개 방지)
-  let i = 0;
-  const scr = $('journal-screen'), paper = $('journal-paper');
-  const titleEl = $('journal-title'), bodyEl = $('journal-body'), indEl = $('journal-page-ind');
-  const prevBtn = $('journal-prev'), nextBtn = $('journal-next');
-  applyPaperBg(paper);
-  paperSfx(opts);
-
-  const render = () => {
-    const p = pages[i];
-    // titleId/bodyId 는 i18n 키, title/body 는 이미 해석된 원문(메모 등 데이터 테이블 문안)
-    titleEl.innerHTML = p.titleId ? t(p.titleId, p.titleArgs) : (p.title || '');
-    bodyEl.innerHTML = p.bodyId ? t(p.bodyId, p.bodyArgs) : (p.body || '');
-    indEl.textContent = t('journalpg.indicator', { cur: i + 1, total: pages.length });
-    prevBtn.style.display = i > 0 ? '' : 'none';
-    nextBtn.textContent = i === pages.length - 1 ? t('journalpg.close') : t('journalpg.next');
-  };
-  function close() {
-    journalOpen = false;
-    scr.classList.remove('show');
-    scr.style.display = 'none';
-    prevBtn.onclick = null;
-    nextBtn.onclick = null;
-    if (journalKeyHandler) { document.removeEventListener('keydown', journalKeyHandler); journalKeyHandler = null; }
-    if (typeof opts.onClose === 'function') opts.onClose();
-  }
-  // onclick 대입: 재호출 시 이전 리스너가 겹쳐 쌓이지 않도록 (ending-next와 동일 패턴)
-  prevBtn.onclick = () => { if (i > 0) { i--; render(); } };
-  nextBtn.onclick = () => {
-    if (i < pages.length - 1) { i++; render(); }
-    else close();
-  };
-  if (journalKeyHandler) document.removeEventListener('keydown', journalKeyHandler);
-  journalKeyHandler = e => { if (e.key === 'Escape') close(); };
-  document.addEventListener('keydown', journalKeyHandler);
-
-  journalOpen = true;
-  scr.style.display = 'flex';
-  void paper.offsetWidth; // 리플로우 강제 — 진입 애니메이션이 매번 재생되도록
-  scr.classList.add('show');
-  render();
-}
-
-function openHelpModal(opts) {
-  openJournalPages([
-    { titleId: 'jnl.help.p1.title', bodyId: 'jnl.help.p1.body' },
-    { titleId: 'jnl.help.p2.title', bodyId: 'jnl.help.p2.body' },
-    { titleId: 'jnl.help.p3.title', bodyId: 'jnl.help.p3.body' },
-    { titleId: 'jnl.help.p4.title', bodyId: 'jnl.help.p4.body' },
-    { titleId: 'jnl.help.p5.title', bodyId: 'jnl.help.p5.body' },
-  ], opts);
-}
-
-// 세계관 메모/유서 열람 (쪽지 톤) — 수집 시 팝업 + 수첩 기록 탭에서 재열람 시 공용.
-function showMemoPage(id, will) {
-  const tbl = will ? WILLS : MEMOS;
-  const m = tbl[id];
-  if (!m) return;
-  const tag = will ? t('memo.tagWill') : t('memo.tagRegion.' + m.region);
-  const body = `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${tag}</div>` +
-    `<div style="white-space:pre-line;line-height:1.9">${LD(m)}</div>`;
-  openJournalPages([{ title: LN(m), body }]);
-}
-// 1.3 밤하늘 스케치 페이지 — 메모 페이지 문법 재사용. 관측소가 열어준 감상 보상.
-function showSketchPage(id) {
-  const s = SKETCHES[id];
-  if (!s) return;
-  const body = `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${t('sketch.tag')}</div>` +
-    `<div style="white-space:pre-line;line-height:1.9">${LD(s)}</div>`;
-  openJournalPages([{ title: LN(s), body }]);
-}
+let journalOpen = false; // 수첩이 떠 있는 동안 리포트/인카운터/다음 튜토리얼이 겹치지 않도록 (Tier7: 갱신은 initNotebook의 setJournalOpen 훅)
+// (Tier7) 수첩 페이지 렌더러+열람(openJournalPages·help·memo·sketch·truth)은 ui/notebook.js로 이관 — initNotebook 훅 주입.
 /* ── 도료 (REWARD-LOOP ② 1차 착지 — 디렉터 확정 2026-07-08) ──
    스와치 공짜 클릭 → 도료 게이트: 칠하려면 그 색 계열의 도료 1통이 필요하다(기본색 0번은 무료).
    드랍은 성공 탐험 저확률 + 지역 시그니처 계열 가중 — "그 색은 거기서 잘 나온다"가 pull이 된다. */
@@ -9512,16 +9442,6 @@ function jackpotToast(msg, hex = 0xffd88a) {
   document.body.appendChild(el);
   playSfx('craft', { vol: 0.5 });
   setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 600); }, 3200);
-}
-// 1.4 최종장 "그날의 진실" — 기밀 문서 12종 전부 수집 시 열리는 회고 페이지(다중 페이지, 메모 페이지 문법).
-//   조용한 발견의 톤: 극적 폭로가 아니라 흩어진 기록을 이어 붙인 한 사람의 정리. 지시조 금지.
-function showTruthPage() {
-  const pages = [1, 2, 3].map(n => ({
-    title: t('truth.title'),
-    body: `<div style="opacity:.7;font-size:11px;margin-bottom:10px">${t('truth.tag')}</div>` +
-      `<div style="white-space:pre-line;line-height:1.9">${t('truth.p' + n)}</div>`,
-  }));
-  openJournalPages(pages);
 }
 /* ── 2.0 §9.6 히든 루트 「침묵」: 박사의 문서 + 사일로 시퀀스 ──
    문서 = 유보한 자만 여는 종이(truth 문법 2쪽) — 그들이 간 곳, 그리고 미사일이 갈 수 있는 곳.

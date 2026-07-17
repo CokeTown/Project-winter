@@ -7,7 +7,7 @@
 
 | # | 작업 | 현재 상태 |
 |---|---|---|
-| #73 | 엔지니어링 패스 (지속) | **Tier5 완료(716e731)**: 비네트 4종+러너 → render/vignettes.js(-863줄) — **Tier6 완료**: (a) 발견 컷→vignettes.js(-78줄, 실구동 검증) + (b) 일지/도감/업적/기록 모달→ui/modals.js(-168줄, 4탭 innerHTML 해시 동일). collapse 러너·수첩 페이지는 결합/비연속 사유로 다음 티어 후보 |
+| #73 | 엔지니어링 패스 (지속) | **Tier5 완료(716e731)**: 비네트 4종+러너 → render/vignettes.js(-863줄) — **Tier6 완료**: (a) 발견 컷→vignettes.js(-78줄, 실구동 검증) + (b) 일지/도감/업적/기록 모달→ui/modals.js(-168줄, 4탭 innerHTML 해시 동일). **Tier7 완료**: 수첩 페이지 렌더러+열람 4종→ui/notebook.js(-80줄, 4경로 해시 동일). collapse 러너·닥터 문서·라디오 버블은 결합 사유 잔류 확정. 오늘 누계 game.js -326줄 |
 | #74 | Steam Next Fest 데모 | **v1.9.3-demo 발행 완료**(exe 2종+APK) — 잔여: 디렉터 검수·depot 업로드 |
 | #75 | Steam 페이지 애셋 패키지 | depot 파이프라인 완비 — 잔여: 캡슐 세대 확정〔D〕·스크린샷 검수〔D〕 |
 | #117 | Steamworks DLC 그라운드워크 | 업적 브릿지 완료 — DLC 게이트(hasSupporterDLC) 잔여 |
