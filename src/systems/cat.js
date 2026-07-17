@@ -164,6 +164,10 @@ export function makeCatSystem(ctx) {
     // 래그돌: 흰크림 바디 + 갈색 포인트(귀/얼굴 마스크/발/꼬리) + 파란 눈 (시암보다 밝은 포인트)
     ragdoll: { fur: 0xefe9dd, stripe: 0xe6dfce, belly: 0xf6f2ea, point: 0x6b4f3a, ear: 0x6b4f3a, nose: 0xcf9088,
                faceBg: '#efe9dd', faceMuzzle: '#f6f2ea', eyeDark: '#2e5074', eyeHi: '#7ab0da', mask: '#6b4f3a', mouth: '#5a4636', lid: '#4a3c2e' },
+    // #119 서포터팩 전용 — 러시안블루: 은청색 솔리드(콜러포인트·줄무늬 최소) + 앰버 눈.
+    //   품종 시그니처는 초록 눈이나 '초록 눈 금지' 캐논 준수로 앰버 채택(black 선례). 지급은 DLC 소유 시 보장(입양·귀향).
+    russianblue: { fur: 0x6d7883, stripe: 0x616b76, belly: 0x828d99, point: 0x6d7883, ear: 0x6d7883, nose: 0x50565e,
+               faceBg: '#6d7883', faceMuzzle: '#828d99', eyeDark: '#7a5a12', eyeHi: '#e0b040', mask: null, mouth: '#3a3e44', lid: '#4a4e54' },
   };
   function catCoatId() { return CAT_COLORS[state.catCoat] ? state.catCoat : 'tabby'; }
   function catPalette() { return CAT_COLORS[catCoatId()]; }

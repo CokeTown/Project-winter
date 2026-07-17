@@ -2106,6 +2106,9 @@ function loadSave() {
       // 버전 마이그레이션(v2→v3) + 신규 필드 기본값 보정(누적 가드) → core/save.js.
       //   Object.assign(state,data.state) 후 호출. rawState=data.state(필드 유무 판정), defaults=pristine 복사.
       migrateLoadedState(data.state, defaults, oldVer);
+      // #119 서포터팩 러시안블루 보장 지급(귀향): 이미 고양이가 있는 DLC 소유 세이브도 러시안블루로 승격
+      //   (입양 전 구매·다른 코트 보유 케이스). 코트 선택 UI가 없어 idempotent — DLC 없으면 무변.
+      if (state.cat && state.catCoat !== 'russianblue' && Platform.dlc.owns('supporter')) state.catCoat = 'russianblue';
       // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
       const elapsed = Math.max(0, (Date.now() - (state.savedAt || Date.now())) / 1000);
       const offlineMin = Math.min(2880, elapsed * GAME_MIN_PER_SEC * BAL.exp.idleTimeScale); // 평시 배속과 일관(자리 비운 동안도 같은 속도) — 상한 2게임일 유지
@@ -4413,6 +4416,7 @@ const EVENTS = makeEvents({
   encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도)
   PAINT_FAMILIES, buyDye, dyeCost, // dye merchant ctx (REWARD-LOOP)
   collapseEntranceLoot, // #165 탐험 리스크 인카운터 — 보상 롤 위임 (game.js 심볼 전부 여기 있음)
+  dlcOwns: (id) => Platform.dlc.owns(id), // #119 서포터팩 DLC 게이트 (러시안블루 보장)
 });
 setEncounterEvents(EVENTS); // core/encounter 술어에 EVENTS 주입 (makeEvents 산물 — 생성 직후 1회)
 // 이벤트 선택지 비용 판정/소비: food가 섞인 cost는 신선+통조림 합산으로 취급 (신선 우선 소비 후 통조림 폴백)

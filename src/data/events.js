@@ -25,6 +25,7 @@ export function makeEvents(ctx) {
     encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도 — 암시장과 캐논 공유)
     PAINT_FAMILIES, buyDye, dyeCost, // 염료 상인 (디렉터 2026-07-08 — 도료 교환 채널)
     collapseEntranceLoot, // #165 탐험 리스크 인카운터 — 보상 롤 (도료·도면·고양이·잡동사니)
+    dlcOwns, // #119 서포터팩 DLC 소유 판정 (러시안블루 보장 지급)
   } = ctx;
   const EVENTS = {
     wanderer: {
@@ -630,8 +631,9 @@ export function makeEvents(ctx) {
           state.cat = 1;
           // 코트 랜덤(입양 시 1회 확정) — spawnCat 전에 정해야 메시가 해당 코트로 빌드된다.
           //   구세이브는 catCoat 미보유 → cat.js가 'tabby'로 폴백(외형 불변).
+          // #119 서포터팩 소유 시 러시안블루 보장 지급 — 아니면 기본 4종 랜덤.
           const coats = ['tabby', 'black', 'siamese', 'ragdoll'];
-          state.catCoat = coats[Math.floor(Math.random() * coats.length)];
+          state.catCoat = (dlcOwns && dlcOwns('supporter')) ? 'russianblue' : coats[Math.floor(Math.random() * coats.length)];
           spawnCat();
           state.dayLog.notes.push(t('day.catJoined'));
           playSfx('meow1');
