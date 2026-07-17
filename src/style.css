@@ -380,7 +380,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #pda-screen ul.plog li { margin: 2px 0; }
   .pda-flick { animation: pdaFlick 0.16s steps(2); }
   @keyframes pdaFlick { 0% { opacity: 0.35; } 100% { opacity: 1; } }
-  #pda-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
+  /* #211-b(디렉터 "위에 네모 박스도 안에 넣어야지"): 탭이 LCD 폭을 꽉 채워 유리 가장자리에 딱 붙어 있었다
+     (실측 tabInsetLeft/Right = 0). 아래 #pda-screen은 좌우 12px 패딩이 있어 글자만 안쪽이었고, 탭만 튀어나왔다.
+     같은 12px으로 맞춰 탭 상자도 화면 안에 들어온다. 위쪽 6px은 유리 상단 테두리와의 숨. */
+  #pda-tabs { display: flex; gap: 4px; padding: 6px 12px 0; margin-bottom: 6px; }
   .pda-tab { /* LCD 상단 세그먼트 탭 — 화면 안에서 동작. 하드웨어 버튼과 병행, 터치 타깃 확보 */
     flex: 1; padding: 8px 2px; cursor: pointer;
     font-family: inherit; font-size: 10px; letter-spacing: 1px; color: #6fae78;
