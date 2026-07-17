@@ -6757,6 +6757,39 @@ function pickBalconyView(e) {
   return true;
 }
 
+// 발코니 조망 은근한 신호 (디렉터 2026-07-18): 더블탭 발동은 그대로(발견의 결) — 여기 조망 포인트가 있다는
+//   최소 어포던스만 얹는다. ① 데크에 희미한 앰버 글린트 펄스 ② 호버 시 커서 포인터(데스크톱). 글린트는 _golden
+//   중 숨겨(비결정 배제) 펜트하우스 골든 레퍼런스 불변 — 실플레이에서만 보인다.
+let _balHint = null, _balHover = false;
+function tickBalconyHint(t) {
+  const bal = SHELTERS[state.current] && SHELTERS[state.current].balcony;
+  if (!_balHint) {
+    _balHint = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTexOnce(), color: 0xffce94, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    _balHint.scale.set(0.5, 0.5, 0.5); _balHint.renderOrder = 4; scene.add(_balHint);
+  }
+  const show = !!bal && !_golden && !vignetteBusy() && !editMode && !paused && !titleVisible;
+  _balHint.visible = show;
+  if (show) {
+    _balHint.position.set((bal.x0 + bal.x1) / 2, 1.02, bal.z0 + 0.35);
+    _balHint.material.opacity = 0.10 + 0.07 * (0.5 + 0.5 * Math.sin(t * 1.5));
+  }
+}
+addEventListener('pointermove', e => {
+  const bal = SHELTERS[state.current] && SHELTERS[state.current].balcony;
+  let over = false;
+  if (bal && !vignetteBusy() && !editMode && !paused && !titleVisible) {
+    pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    raycaster.setFromCamera(pointer, camera);
+    const tr = -raycaster.ray.origin.y / raycaster.ray.direction.y;
+    if (tr > 0) {
+      const px = raycaster.ray.origin.x + raycaster.ray.direction.x * tr;
+      const pz = raycaster.ray.origin.z + raycaster.ray.direction.z * tr;
+      over = px >= bal.x0 && px <= bal.x1 && pz >= bal.z0 && pz <= bal.z1;
+    }
+  }
+  if (over !== _balHover) { canvas.style.cursor = over ? 'pointer' : ''; _balHover = over; }
+});
+
 // 「불타는 해협」 — 아포칼립스 금문교 노을 (#146, 디렉터 레퍼런스 대조 리워크).
 //   평면 측면 실루엣 폐기 → 3/4 후퇴 원근(다리 축을 따라 내려다봄) + 초목의 잠식 + 따뜻한 앰버 팔레트
 //   + 전경 서사(부서진 차·접근 고가·침몰선·도심 실루엣). 박스/스프라이트/캔버스 관용구만(셰이더/에셋 없음).
@@ -10976,6 +11009,7 @@ function renderFrame() {
   updateCraftFx(dt); // ④ 제작 손맛 아이콘/반짝임 연출
   tickVisitor(t, dt); // #181 방문자 걸어옴/글로우/퇴장 + 카메라 추적
   tickDropSpots(t); // #182 B0 동물 드랍 지면 반짝임 펄스
+  tickBalconyHint(t); // 2.0 발코니 조망 은근한 신호 (펜트하우스 「콘크리트 정글의 해」 어포던스)
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   positionSelPanel(); // 편집 미니 카드 재투영 — 카메라 팬/줌/드래그를 따라간다 (A안)
   // #189 P1: 광원 레지스트리 동기화(전원 토글·연료 소진·설치 자동 반영) + 폴백 형광등 점멸.
