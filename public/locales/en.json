@@ -398,6 +398,7 @@
   "move.needSupplies": "Not enough supplies to relocate — {cost}",
   "move.renovNote": "🔧 {name} refit complete ({cost})",
   "move.journeyNote": "🚶 Traveled to {name} — the journey took 3 hours.",
+  "move.journeyCityNote": "🚶 Six hours on foot, across the border to {name}.",
   "move.done": "Relocated to {emoji} {name}{journey}",
   "move.journeyTag": " (3h journey)",
   "move.confirmFurniture": "Your {n} placed furnishings will stay behind. Move anyway?",

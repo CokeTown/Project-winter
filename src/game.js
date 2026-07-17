@@ -2639,14 +2639,16 @@ function moveCostFor(id) {
     // #108 정비코스트 배수: 재정비 자원에 gateCostMul(하드 1.25·혹한 1.5·무한 0.85) — 여정 물자(음식·물)는 생존 상수라 제외.
     for (const [rid, n] of Object.entries(gateCost(SHELTERS[id].moveCost || {}))) cost[rid] = (cost[rid] || 0) + n;
   }
-  const cross = districtOf(id) !== districtOf(state.current);
-  if (cross) { cost.food = (cost.food || 0) + BAL.economy.moveCrossFood; cost.water = (cost.water || 0) + BAL.economy.moveCrossWater; }
-  return { cost, cross, renov: !state.renovated[id] };
+  const cityCross = cityOf(id) !== cityOf(state.current); // 국경(도시 간) 이주 — 구역 겹 대신 상위 겹으로
+  const cross = !cityCross && districtOf(id) !== districtOf(state.current);
+  if (cityCross) { cost.food = (cost.food || 0) + BAL.cities.moveCityFood; cost.water = (cost.water || 0) + BAL.cities.moveCityWater; }
+  else if (cross) { cost.food = (cost.food || 0) + BAL.economy.moveCrossFood; cost.water = (cost.water || 0) + BAL.economy.moveCrossWater; }
+  return { cost, cross: cross || cityCross, cityCross, renov: !state.renovated[id] };
 }
 async function moveToShelter(id) {
   if (paused) { toast(t('pause.blocked')); return; }
   if (id === state.current) { closeModal(); return; }
-  const { cost, cross, renov } = moveCostFor(id);
+  const { cost, cross, cityCross, renov } = moveCostFor(id);
   if (!resHasAll(cost)) {
     toast(t('move.needSupplies', { cost: costLabel(cost) }));
     return;
@@ -2660,8 +2662,10 @@ async function moveToShelter(id) {
     state.dayLog.notes.push(t('move.renovNote', { name: LName(SHELTERS[id]), cost: costLabel(gateCost(SHELTERS[id].moveCost || {})) || t('free') })); // #108 표기=판정 동일 게이트 비용
   }
   if (cross) {
-    state.gameMin += BAL.economy.moveCrossTimeMin; // 구역 간 여정 3시간
-    const dn = LName(DISTRICTS[districtOf(id)]); state.dayLog.notes.push(t('move.journeyNote', { name: dn, josa: josa(dn, '으로/로') }));
+    // 국경(도시 간)은 구역 간의 두 배 — 물자도 시간도(EAST-ECONOMY.md §3-④). 노트도 별도: 관문을 넘는 건 다른 사건이다.
+    state.gameMin += cityCross ? BAL.cities.moveCityTimeMin : BAL.economy.moveCrossTimeMin;
+    const dn = LName(DISTRICTS[districtOf(id)]);
+    state.dayLog.notes.push(t(cityCross ? 'move.journeyCityNote' : 'move.journeyNote', { name: dn, josa: josa(dn, '으로/로') }));
   }
   state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
   state.stayDays = 0; // 새 집은 아직 낯설다
@@ -3684,6 +3688,10 @@ function resolveExpedition() {
       let n = Math.round((min + Math.random() * (max - min)) * mult * harborMult * condMul);
       if (id === yardBoostId) n = Math.round(n * BAL.harbor.yardBoostMult); // 오늘 바다가 준 것
       if (hard) n = hardLoot(n);
+      // 동부 수확 겹(EAST-ECONOMY.md): incomeMul 위에 도심 추가 조임 — 하드·하드코어만(미표기 모드=1).
+      //   확률 반올림(hardLoot 문법)으로 소량 수확의 기대값 보존. 설비 산출은 이 파이프 밖(무페널티).
+      const em = r.city === 'east' ? (BAL.cities.eastLootMul?.[state.mode] ?? 1) : 1;
+      if (em !== 1 && n > 0) { const x = n * em, f = Math.floor(x); n = f + (Math.random() < x - f ? 1 : 0); }
       if (n > 0) { gotRes[id] = (gotRes[id] || 0) + n; resAdd(id, n); }
     }
   };
@@ -10917,10 +10925,13 @@ function expectedLoot(regionId, mult = 1) {
   // 난이도별 전리품 수급 배수(BAL.economy.incomeMul) — 실게임 rollRes는 hardLoot()로 적용하지만
   //   expectedLoot(시뮬·QA 전용)엔 누락돼 하드 sim이 뻥튀기되던 결함(#76). 기댓값이라 배수를 곱하면 정확.
   const incomeMul = BAL.economy.incomeMul[state.mode] ?? 1;
+  // 동부 수확 겹도 동일 반영 — rollRes와 이 기대값 경로가 어긋나면 sim/QA 표가 조용히 뻥튀기된다(#76 계보).
+  //   현 sim은 동부 게이트(eastGateOpen)를 못 넘어 동부를 안 돌지만, 불변식("expectedLoot는 rollRes의 거울")을 지킨다.
+  const eastMul = r.city === 'east' ? (BAL.cities.eastLootMul?.[state.mode] ?? 1) : 1;
   for (const [id, min, max, chance] of r.lootRes) {
     const c = chance != null ? chance : 1;
     // resolveExpedition: n = round((min + rand*(max-min)) * mult), n>0만 반영
-    const evN = ((min + max) / 2) * mult * incomeMul;
+    const evN = ((min + max) / 2) * mult * incomeMul * eastMul;
     const contrib = c * evN;
     if (contrib > 0) out[id] = (out[id] || 0) + contrib;
   }

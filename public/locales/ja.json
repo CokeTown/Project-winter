@@ -398,6 +398,7 @@
   "move.needSupplies": "移住の物資が足りない — {cost}",
   "move.renovNote": "🔧 {name}を整備した ({cost})",
   "move.journeyNote": "🚶 {name}まで3時間歩いた。",
+  "move.journeyCityNote": "🚶 国境を越えて{name}まで6時間歩いた。",
   "move.done": "{emoji} {name}に移住した{journey}",
   "move.journeyTag": " (旅程3時間)",
   "move.confirmFurniture": "置いてある家具{n}個はこのシェルターに残る。移住するか？",

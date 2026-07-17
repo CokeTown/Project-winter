@@ -76,6 +76,9 @@ export function rateParts(regionId, prep = []) {
   const coldPen = coldSnapNetSeverity() > 0 ? BAL.seasons.coldSnapExpPen : 0; // 한파: -10%p (방어 시 0)
   const avalanchePen = (state._avalancheDetour && regionId === 'resort') ? BAL.highland.avalancheDetourRatePen : 0; // 1.3 눈사태 우회로
   const mastery = masteryBonus(regionId); // 2.0 지역 숙련: 지리 지식 티어 가산 (시뮬은 visits 0 = 항상 0)
-  const eff = clamp(r.rate + comfort + shelter + district + gear + buff + know + mastery - weatherPen - injuryPen - hungryPen - coldPen - avalanchePen, 0.05, 0.95);
-  return { base: r.rate, comfort, shelter, district, gear, buff, know, mastery, weatherPen, injuryPen, hungryPen, coldPen, avalanchePen, eff };
+  // 동부 경제(EAST-ECONOMY.md): 하드·하드코어만 동부 지역 한 겹 더 — 코지는 무보정(등가 밴드).
+  //   sim 무접점: sim은 지역 게이트(동부=eastGateOpen)를 못 넘어 동부 지역을 돌지 않는다.
+  const eastPen = r.city === 'east' ? -(BAL.cities.eastRateAdj?.[state.mode] || 0) : 0;
+  const eff = clamp(r.rate + comfort + shelter + district + gear + buff + know + mastery - weatherPen - injuryPen - hungryPen - coldPen - avalanchePen - eastPen, 0.05, 0.95);
+  return { base: r.rate, comfort, shelter, district, gear, buff, know, mastery, weatherPen, injuryPen, hungryPen, coldPen, avalanchePen, eastPen, eff };
 }
