@@ -10900,15 +10900,25 @@ let _goldenDt = 0, _goldenAcc = 0; // 동역학 게이트: 스테핑 중에만 d
 // 트레일러 캡처(#172): 골든의 고정 dt 스테핑을 엔티티 살린 채 쓴다 — 오프스크린 캡처는 프레임당 실시간
 // ~0.2s가 흘러 애니메이션이 수 배속으로 보이므로, keepEntities 스테핑이 정속(1/30s/frame)의 유일한 경로.
 let _goldenKeep = false;
+// #212: LCG 상태 s를 모듈 변수로 승격해 언제든 시드로 되돌릴 수 있게 한다(_goldenReseed).
+//   구버전은 s가 Math.random 클로저 안에 갇혀, freeze 이후 settleCapture가 소비한 난수만큼 상태가
+//   밀린 채 stepGolden에 진입 → 누적 시작점이 로드마다 달라 d_snow/d_rain 골든이 플레이키였다.
+let _goldenSeed = 12345, _goldenS = 12345;
+function _goldenReseed() { _goldenS = _goldenSeed >>> 0; }
 function freezeForGolden(seed = 12345, keepEntities = false) {
-  let s = seed >>> 0;
-  Math.random = function () { s = (s + 0x6D2B79F5) | 0; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+  _goldenSeed = seed >>> 0; _goldenReseed();
+  Math.random = function () { let s = (_goldenS + 0x6D2B79F5) | 0; _goldenS = s; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
   windLevel = 1; _golden = true; _goldenHid = false; _goldenDt = 0; _goldenAcc = 0;
+  // #212: 날씨 누적 상태를 씬마다 초기화한다. simReset은 weather.type만 지우고 snowCover/wetness는
+  //   남겨, d_rain_wet(비)이 직전 d_snow_accum(눈)의 적설을 물려받아 결정론이 깨졌다(로드 간 70% 흔들림).
+  //   각 골든 씬은 깨끗한 날씨에서 시작해야 dt 스테핑이 순수 재현된다. (설정 씬은 이후 setSnow가 덮어씀.)
+  snowCover = 0; wetness = 0; wetApplied = -1;
   _goldenKeep = !!keepEntities; // 트레일러 캡처: 고정 dt 스테핑 + 엔티티(고양이/아바타) 유지 — 정속 애니메이션 캡처
 }
 // 동역학 게이트: renderFrame을 동기 루프로 frames번 호출(rAF 개입 없음=결정론) → 눈 누적·젖음/성에 페이드가
 //   고정 dt로 확정 진행. 캡처 전 호출해 dt구동 날씨 상태를 박제한다. 루프 후 dt=0 복귀(rAF 프레임은 정지 유지).
 function stepGolden(frames = 200, dtSec = 0.1) {
+  _goldenReseed(); // 정착이 소비한 난수 오프셋 제거 → 누적 시작점을 시드로 고정(로드 간 결정론)
   _goldenDt = dtSec;
   for (let i = 0; i < frames; i++) renderFrame();
   _goldenDt = 0;
@@ -10930,6 +10940,16 @@ function renderFrame() {
     if (!_goldenHid) { try { despawnCat(); } catch (e) {} _goldenHid = true; }
     const wg = wildlifeSys.getGroup && wildlifeSys.getGroup(); if (wg) wg.visible = false;
     const ag = avatarSys.getGroup && avatarSys.getGroup(); if (ag) ag.visible = false;
+    // #212: 낙하 날씨 파티클(눈·비)도 숨긴다. 입자 위치는 씬 간 이월돼(리셋 안 됨) 프레임/로드마다 달라
+    //   ~19% 렌더 흔들림을 냈다 — 동역학 골든의 목적은 '적설/젖음 누적'(지면 셰이더=결정론)이지 낙하 입자가
+    //   아니므로, 배회 엔티티와 같은 논리로 숨겨 결정론을 회복한다. 지면 snowCover/wetness는 그대로 캡처된다.
+    if (weather.pts) weather.pts.visible = false;
+    // 젖은 반사 오버레이(웅덩이·글린트)도 숨긴다. 반투명(depthWrite off)이라 SwiftShader 스레드 정렬이
+    //   프로세스마다 뒤집혀(빔과 동일 계열) cross-load 흔들림을 냈다. 젖음의 '누적'은 재질 톤 다크닝
+    //   (applyWetness, 결정론)이 담당하므로, 반사 오버레이만 숨겨도 동역학 골든의 취지는 보존된다.
+    if (weatherFx.puddles) for (const p of weatherFx.puddles) p.visible = false;
+    if (weatherFx.glints) for (const gl of weatherFx.glints) gl.visible = false;
+    if (dust && dust.pts) dust.pts.visible = false; // 부유 먼지(Math.random 배치·반투명)도 골든에서 숨김
   } else {
     updateCat(t, dt);
     tickCatPurr(dt);           // #93: 방석 골골 기믹 (잠든 고양이 + 방석)

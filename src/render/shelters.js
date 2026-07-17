@@ -1079,13 +1079,20 @@ export function makeShelterBuilders(ctx) {
         cap.castShadow = true;
         roomGroup.add(cap);
         const beamGroup = new THREE.Group();
+        // #212: 반투명(opacity 0.16·depthWrite off) 빔 판 4장이 램프에서 겹친다. three는 투명체를
+        //   카메라 거리로 정렬하는데 이 판들은 거리가 비겨(near-coplanar) 프레임마다 그리기 순서가 뒤집혀
+        //   램프 부근이 미세하게 깜빡였다(골든 lighthouse 플레이키의 근원 + 실인게임 시머). renderOrder를
+        //   판마다 다르게 못박아 정렬을 결정론화한다 — 실플레이 시머도 함께 사라진다.
+        let _bro = 10;
         for (const dir of [1, -1]) {
           const beam = new THREE.Mesh(new THREE.PlaneGeometry(14, 0.9),
             new THREE.MeshBasicMaterial({ color: 0xffe0a0, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }));
           beam.position.x = dir * 7.5;
+          beam.renderOrder = _bro++;
           beamGroup.add(beam);
           const beam2 = beam.clone();
           beam2.rotation.x = Math.PI / 2;
+          beam2.renderOrder = _bro++;
           beamGroup.add(beam2);
         }
         beamGroup.position.y = h + 1.0;
