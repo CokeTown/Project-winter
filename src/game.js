@@ -4303,7 +4303,16 @@ function playEventSting(id) {
 // title/text/choice label 은 언어 전환 시점(showEvent) 에 t() 로 해석하므로 id 로 보관한다.
 // #165 무너진 입구 보상 롤 (디렉터 2026-07-10): Yes의 값 — 치장템(도료·도면) 가중, 최희귀 고양이 루트,
 //   나머지는 잡동사니 위로. 부상 리스크는 이벤트 쪽(choices.run)에서 별도 롤 — 보상과 독립이라 "얻고도 다칠" 수 있다.
-let collapseLootFx = null; // #199 상자 개봉 연출용 전리품 메타(색·이모지) — collapseEntranceLoot가 굴릴 때 기록
+/* #199 상자 개봉 연출용 전리품 메타 — collapseEntranceLoot가 굴릴 때 기록.
+   #213(디렉터 "emoji 출력인데 실 모델링으로 만들자 / 아이템 등급 별로 색이 달라야해"):
+     구 형태 { color, emoji } → { kind, tier, body }.
+       kind = 복셀 모델 종류(buildLootModel의 분기). 구 emoji 자리 — 문·상자는 복셀인데 정작
+              주인공인 전리품만 96px serif 이모지 스프라이트라 극의 정점에서 톤이 깨졌다.
+       tier = 등급('common'|'rare'|'legend') → 광선·파편·내부 발광이 BAL.lootRarity에서 색을 받는다.
+       body = 물건 자신의 색(도료 깡통 몸통 = 그 계열 색). 등급색과 별도 채널 — 섞지 않는다.
+   톤 규약(디렉터 "단, 아쉽게 하찮아야해"): 모델은 작고 칙칙하고 낡게. 광선은 웅장한데 그 끝에 뜨는 건
+     실패 한 개 — 그 낙차가 이 게임의 정서다. 반짝이는 보물 금지. */
+let collapseLootFx = null;
 // 2.0-(e) 도면 이름 해석 — 시그니처 도면이 가구(DEFS)와 복장(outfit_*→OUTFITS) 두 종족이 됐다.
 //   드랍 노트·잭팟·전리품 라벨·지도 보급원 트래커가 공용(함수 선언 호이스팅으로 전 사용처 안전).
 function bpName(bpId) {
@@ -4325,13 +4334,13 @@ function collapseEntranceLoot() {
   // 최희귀: 어둠 속의 야옹 — 고양이 미보유·미조우일 때만. 입양 인카운터로 연결(집 문앞 재회 플로우 그대로).
   if (!state.cat && !state.catEventSeen && r < 0.08) {
     state.pendingEvent = 'cat';
-    collapseLootFx = { color: 0xffd487, emoji: '🐾' };
+    collapseLootFx = { kind: 'cat', tier: 'legend' }; // 어둠 속의 야옹 — 물건이 아니라 기척. 모델은 발자국 한 쌍.
     return t('ev.collapse.rCat');
   }
   if (r < 0.5) { // 도료 (지역 시그니처 계열 가중 — 기존 잭팟 층 재사용)
     const fam = rollPaintFamily(region);
     state.paints[fam] = (state.paints[fam] || 0) + 1;
-    collapseLootFx = { color: PAINT_FAMILIES[fam].swatch, emoji: '🪣' };
+    collapseLootFx = { kind: 'paint', tier: 'rare', body: PAINT_FAMILIES[fam].swatch }; // 깡통 몸통=그 계열 색, 광선=등급 보라
     jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
     riskGainPush({ icon: icon('icon_loot_paint', '🪣'), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
     return t('ev.collapse.rPaint', { name: LName(PAINT_FAMILIES[fam]) });
@@ -4341,14 +4350,14 @@ function collapseEntranceLoot() {
     const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
     state.blueprints = state.blueprints || {};
     state.blueprints[bpId] = 1;
-    collapseLootFx = { color: 0xd4b46a, emoji: '📐' };
+    collapseLootFx = { kind: 'blueprint', tier: 'legend' };
     jackpotToast(`📐 ${t('bp.jackpot', { name: bpName(bpId) })}`, 0xd4b46a);
     riskGainPush({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
     return t('ev.collapse.rBp', { name: bpName(bpId) });
   }
   const rid = Math.random() < 0.5 ? 'cloth' : 'parts';
   resAdd(rid, 1);
-  collapseLootFx = { color: 0x9aa0a8, emoji: rid === 'cloth' ? '🧵' : '🔩' };
+  collapseLootFx = { kind: rid === 'cloth' ? 'cloth' : 'parts', tier: 'common' };
   riskGainPush({ icon: icon('icon_res_' + rid, '📦'), label: LN(RESOURCES[rid]), n: 1, tier: '' });
   return t('ev.collapse.rJunk', { name: LN(RESOURCES[rid]) });
 }
@@ -6505,11 +6514,73 @@ function playCollapseVignette() {
     bx(lidPivot, 1.16, 0.16, 0.78, shade(body, 1.12), 0, 0.08, 0.36);                     // 뚜껑(경첩=뒷변)
     bx(lidPivot, 1.18, 0.05, 0.06, rim, 0, 0.14, 0.7);                                    // 뚜껑 앞 림
     const gi = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.62), new THREE.MeshBasicMaterial({
-      color: collapseLootFx?.color || 0xffcf9a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      color: BAL.lootRarity[collapseLootFx?.tier] ?? BAL.lootRarity.common, // #213: 내부 발광판도 등급 색 — 뚜껑 틈으로 새는 빛부터 등급을 말한다
+      transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
     gi.rotation.x = -Math.PI / 2; gi.position.set(0, 0.6, 0); chestG.add(gi); glowIn = gi; // 내부 발광판
   };
+  /* #213(디렉터 "실 모델링으로 만들자 / 단, 아쉽게 하찮아야해") — 상자에서 떠오르는 전리품 복셀 5종.
+     톤 규약: 폐허를 뜯어서 나온 것들이다. 작고, 칙칙하고, 낡았다. 광선 부챗살은 웅장하게 쏘는데
+       그 끝에 뜨는 건 실패 한 개 — 그 낙차가 정서다. 새 것·반짝이는 것·큰 것 금지.
+     스케일 규약: 대략 0.2~0.3u 안(상자 폭 1.12u의 1/4 이하). spawnBurst가 0.01→목표로 팝인시킨다.
+     bx(g,w,h,d,c,x,y,z)는 이 비네트의 로컬 헬퍼(6468행) — 셸터 빌더의 B()와 같은 문법(y=중심). */
+  function buildLootModel(kind, body) {
+    const outer = new THREE.Group();
+    const g = new THREE.Group(); outer.add(g);
+    /* 스케일 래퍼: 아래 치수는 0.2u 안쪽으로 쓰기 좋게 잡았지만, 그대로면 화면의 3.4%로 갈색 점이 된다(실측).
+       구 이모지는 Sprite라 scale 0.68 = 0.68u = 화면 17%였다 — 5배 차. "하찮게"는 물건의 격이지 안 보임이 아니다.
+       ×2.6 → 0.52u × 0.68 = 화면 8.8% = 이모지의 절반 존재감. 상자 폭(28%)의 1/3이라 여전히 초라하다.
+       래퍼를 쓰는 이유: 애니메이션이 최상위 scale.setScalar()로 팝인을 굴린다 — 안쪽에 재우면 안 밟힌다. */
+    g.scale.setScalar(2.6);
+    if (kind === 'paint') {
+      const can = body ?? 0x8a7f72;
+      bx(g, 0.17, 0.2, 0.17, can, 0, 0, 0);                                  // 깡통 몸통 = 그 도료 계열 색(정체 채널)
+      bx(g, 0.19, 0.02, 0.19, shade(can, 0.7), 0, -0.1, 0);                  // 바닥 테
+      bx(g, 0.19, 0.025, 0.19, shade(can, 1.25), 0, 0.085, 0);               // 상단 테
+      const lid = bx(g, 0.16, 0.02, 0.16, shade(can, 1.15), 0.12, 0.02, 0.06); // 뚜껑 — 열려서 옆에 떨어져 있다
+      lid.rotation.z = 1.1; lid.rotation.x = 0.3;
+      bx(g, 0.05, 0.11, 0.02, shade(can, 0.85), 0.075, -0.03, 0.088);        // 흘러내린 자국
+      bx(g, 0.09, 0.012, 0.02, shade(can, 0.9), 0, -0.104, 0.05);            // 바닥에 고인 자국
+    } else if (kind === 'blueprint') {
+      const paper = 0xb9ae93;
+      const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.26, 8), M(paper)); // 말린 종이 — 구겨진 두루마리
+      roll.rotation.z = Math.PI / 2; roll.rotation.y = 0.25; g.add(roll);
+      const inner = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, 0.27, 6), M(shade(paper, 0.55)));
+      inner.rotation.z = Math.PI / 2; inner.rotation.y = 0.25; g.add(inner);  // 심지 구멍(어둠)
+      const tie = bx(g, 0.02, 0.115, 0.115, 0x6a5a42, 0.02, 0, 0);            // 끈 하나 — 새 것 아님
+      tie.rotation.x = 0.2;
+      bx(g, 0.055, 0.006, 0.05, shade(paper, 0.8), -0.1, 0.03, 0.02);         // 삐져나온 귀퉁이(접힌 자국)
+    } else if (kind === 'cloth') {
+      const th = 0x8f8676;
+      const spool = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.1, 8), M(shade(th, 1.05))); // 감다 만 실뭉치
+      g.add(spool);
+      for (const fy of [-0.062, 0.062]) {                                     // 실패 양끝 판
+        const f = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.014, 8), M(0x6a5a42));
+        f.position.y = fy; g.add(f);
+      }
+      const tail = bx(g, 0.008, 0.075, 0.008, shade(th, 1.1), 0.052, -0.05, 0.03); // 삐져나온 실 끝 — 하찮음의 핵심
+      tail.rotation.z = 0.5; tail.rotation.x = -0.35;
+    } else if (kind === 'parts') {
+      const steel = 0x7c7f86;
+      const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.19, 6), M(shade(steel, 0.85))); // 녹슨 나사 하나
+      bolt.rotation.z = 0.35; g.add(bolt);
+      const head = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.032, 6), M(steel));
+      head.position.set(-0.033, 0.093, 0); head.rotation.z = 0.35; g.add(head);
+      const nut = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.028, 6), M(shade(steel, 0.7))); // 너트는 반쯤 풀려 있다
+      nut.position.set(0.02, -0.055, 0); nut.rotation.z = 0.35 + 0.4; g.add(nut);
+      bx(g, 0.03, 0.02, 0.03, 0x8a5a3a, 0.005, -0.015, 0.026);                // 녹 얼룩
+    } else { // cat — 물건이 아니라 기척. 발자국 한 쌍만 떠오른다.
+      const pad = 0xffd487;
+      for (const [px, pz] of [[-0.05, 0.03], [0.05, -0.03]]) {
+        bx(g, 0.055, 0.012, 0.045, pad, px, 0, pz);                           // 발바닥
+        for (const tx of [-0.019, 0, 0.019]) bx(g, 0.013, 0.01, 0.013, pad, px + tx, 0.001, pz - 0.036); // 발가락 3
+      }
+    }
+    return outer;
+  }
   const spawnBurst = () => {
-    const col = collapseLootFx?.color || 0xffcf9a;
+    // #213: 광선·파편·내부 발광은 **등급** 색(BAL.lootRarity). 물건 자신의 색(도료 몸통)과 별개 채널이다 —
+    //   구 동작은 도료가 제 스와치로 튀어서 파란 도료와 회색 잡템을 색으로 구분할 수 없었다.
+    const col = BAL.lootRarity[collapseLootFx?.tier] ?? BAL.lootRarity.common;
     rays = new THREE.Group(); chestG.add(rays);                                           // 광선 부챗살(레퍼런스 f008)
     for (const [rz, w] of [[-0.42, 0.26], [-0.2, 0.3], [0, 0.36], [0.2, 0.3], [0.42, 0.26]]) {
       const ray = new THREE.Mesh(new THREE.PlaneGeometry(w, 5.2), new THREE.MeshBasicMaterial({
@@ -6517,10 +6588,7 @@ function playCollapseVignette() {
       ray.position.set(rz * 0.5, 0.6, 0); ray.rotation.z = rz; ray.userData.baseOp = 0.62 - Math.abs(rz) * 0.4;
       rays.add(ray);
     }
-    const lc = document.createElement('canvas'); lc.width = lc.height = 128;              // 전리품 아이콘 스프라이트
-    const g2 = lc.getContext('2d'); g2.font = '96px serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle';
-    g2.shadowColor = 'rgba(0,0,0,0.6)'; g2.shadowBlur = 10; g2.fillText(collapseLootFx?.emoji || '📦', 64, 70);
-    lootSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lc), transparent: true, depthWrite: false }));
+    lootSprite = buildLootModel(collapseLootFx?.kind, collapseLootFx?.body);              // #213: 이모지 스프라이트 → 복셀 모델
     lootSprite.position.set(0, 0.7, 0.1); lootSprite.scale.setScalar(0.01); chestG.add(lootSprite);
     debris = [];                                                                          // 파편 산개(레퍼런스 f010 보석 파편)
     for (let i = 0; i < 14; i++) {
@@ -6602,6 +6670,10 @@ function playCollapseVignette() {
           const rt = Math.min(1, ot / 0.7), ease = 1 - Math.pow(1 - rt, 3);
           lootSprite.position.y = 0.7 + ease * 1.05 + (ot > 0.7 ? Math.sin((ot - 0.7) * 2.4) * 0.06 : 0);
           lootSprite.scale.setScalar(rt < 0.85 ? 0.68 * ease : 0.68 - 0.1 * Math.min(1, (rt - 0.85) / 0.15));
+          // #213: 복셀은 스프라이트와 달리 카메라를 향해 주지 않는다 — 느리게 돌려 입체를 보여준다.
+          //   빠르면 '전시대 위 보물'이 되고, 이건 하찮아야 한다. 반 바퀴 남짓만 천천히.
+          lootSprite.rotation.y = 0.5 + ot * 0.7;
+          lootSprite.rotation.x = 0.18; // 살짝 기울여 윗면이 보이게(정면 실루엣만이면 납작해 보인다)
         }
         if (debris) for (const d of debris) {
           d.userData.v.y -= 4.6 * 0.016;
@@ -11221,6 +11293,7 @@ window.__shelter = {
   loadShelter, // #195 QA: 레이아웃 왕복 게이트 — loadSave는 상태만 싣고 씬 복원은 부팅 절차 몫이라 직접 구동
   cityOf, // 2.0-α QA: 도시 파생 게이트(셸터→도시 매핑·기록 필드 검증)
   playCollapseVignette, // #199 QA: 문+상자 연출 직접 구동(캡처 검수용)
+  setCollapseLootFx: (fx) => { collapseLootFx = fx; }, // #213 QA: 전리품 종류·등급 강제(롤 확률 우회 — 4종 전수 캡처)
   playGeigerVignette, // 2.0-(b) QA: 가이거 계수기 비네트 직접 구동(캡처 검수용)
   playEastGateVignette, // 2.0-(b) QA: 국경 개통 비네트 직접 구동(캡처 검수용)
   mapBiomeDataUrl, // 2.0-(d) QA: 도시별 전도 분기 검증(홈/동부 캔버스 상이)
