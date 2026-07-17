@@ -7983,10 +7983,19 @@ function runRebuildSequence() {
 //   도시 체류 가중(§9.8 4도시)은 미구현 — 그 전까지는 현존 3신호로 성향을 읽는다:
 //   탈출=박사 스파인(송출 불빛·정기 교신·일지 조각) / 신세계=진실 조각(기밀 12+이관 4) / 안식=정든 집(거주·고양이·쾌적).
 function endingLeaning() {
-  const escape = (state.survivorLights || 0) + (state.doctorRegularSeen ? 3 : 0) + (doctorFragmentsComplete() ? 2 : 0);
+  // 2.0-(g) §9.8.8 체류 가중: 동부(항만 대도시) 겨울 이력 W + 동부에서 9겨울 마무리 Wf → 탈출 성향.
+  //   홈 쪽은 무가중 — 전 세이브가 홈에서 시작·마무리하므로 홈 신호는 신호가 아니고(배터리 실측: home Wf가
+  //   진실 14조각의 newworld를 뒤집었다), rest의 이월은 homeStay가 담당한다. 동부에 발 들인 세이브만 판정이
+  //   움직인다(구세이브 엔딩 불변). 동률 순서는 기존 그대로(escape 우선). RNG 0·부수효과 0(판정 전용).
+  const cw = state.cityWinters || {}, fin = state.finalWinterCity;
+  const W = BAL.cities.endingW || 0, Wf = BAL.cities.endingWf || 0;
+  const escape = (state.survivorLights || 0) + (state.doctorRegularSeen ? 3 : 0) + (doctorFragmentsComplete() ? 2 : 0)
+    + (cw.east || 0) * W + (fin === 'east' ? Wf : 0);
   const truthN = MEMOS_RESEARCH.concat(MEMOS_CITYCORE).filter(id => (state.memos || {})[id]).length;
   const newworld = truthN >= 14 ? 6 : truthN >= 9 ? 4 : truthN >= 5 ? 2 : 0;
-  const rest = Math.min(4, Math.floor((state.stayDays || 0) / 8)) + (state.cat ? 2 : 0) + (comfortDetail().score >= 75 ? 2 : 0);
+  // 정든 정도: stayDays는 이주 시 리셋 — homeStay 고수위로 복원("오래 살던 집"이 낯선 집이 되지 않게, §9.8.6-③)
+  const settled = Math.max(state.stayDays || 0, (state.homeStay || {})[state.current] || 0);
+  const rest = Math.min(4, Math.floor(settled / 8)) + (state.cat ? 2 : 0) + (comfortDetail().score >= 75 ? 2 : 0);
   return escape >= newworld && escape >= rest ? 'escape' : newworld >= rest ? 'newworld' : 'rest';
 }
 
@@ -11542,6 +11551,7 @@ window.__shelter = {
   // #181 방문자 연출 QA 훅: 인카운터 트리거 / 상태 조회 / 클릭 시뮬 / 강제 퇴장
   debugEvent: (id) => showEvent(id),
   cardSnapshot: (id) => liveCardIllust(id), // #201: 라이브 카드 스냅샷 직접 호출(검증)
+  endingLeaning, // 2.0-(g): 엔딩 성향 판정(검증 — 부수효과 0)
   setForceClosed, // #201: 풀셸 컬링 강제(검증)
   visitorState: () => visitor ? { mode: visitor.mode, x: +visitor.g.position.x.toFixed(2), z: +visitor.g.position.z.toFixed(2), camActive: visitorCam.active, spoke: visitor.spoke } : null,
   visitorClick: () => onVisitorClicked(),
