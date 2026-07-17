@@ -28,7 +28,6 @@
   "know.learned": "✓ Learned",
   "know.locked": "🔒 Prereq needed",
   "btn.sleep.title": "Sleep — rest until morning and restore energy",
-  "btn.journal.title": "Journal (collection · achievements · stats)",
   "btn.help.title": "Survivor's Journal — notes from the previous occupant",
   "btn.exp.lbl": "Explore",
   "btn.move.lbl": "Move",
@@ -1552,16 +1551,7 @@
   "pda.succ": "SUCCESSFUL RUNS",
   "pda.winters": "WINTERS SURVIVED",
   "pda.close": "Close",
-  "nt.log": "Today's log",
-  "nt.memo": "Memo",
-  "nt.gained": "Gained",
   "nt.spent": "Spent",
-  "nt.openJournal": "Open records",
-  "nt.comfort": "Comfort",
-  "nt.base": "Home",
-  "nt.today": "Today",
-  "nt.expToday": "Trips today: {n}",
-  "nt.expNone": "Stayed in today",
   "nt.settledDays": "Settled day {n}",
   "data.ach.cat.desc": "Welcome a stray cat as family",
   "data.ach.cat.name": "Cat Servant",
@@ -2197,5 +2187,6 @@
   "data.will.will5.desc": "I left the door open. Outlive me.\nWhoever meets this one — he’s a good dog. Just easily frightened.",
   "data.will.will5.name": "A Word for the Dog",
   "data.will.will6.desc": "I got your letter. I wanted to say I missed you too — I needed to say it.\nThere’s nowhere left to send this now.",
-  "data.will.will6.name": "The Reply Never Sent"
+  "data.will.will6.name": "The Reply Never Sent",
+  "exp.riskGain": "Extra from what happened out there:"
 }

@@ -28,7 +28,6 @@
   "know.learned": "✓ 익힘",
   "know.locked": "🔒 선행 필요",
   "btn.sleep.title": "취침 — 내일 아침까지 자고 에너지 회복",
-  "btn.journal.title": "일지 (도감·업적·통계)",
   "btn.help.title": "생존 수첩 — 이전 거주자의 기록",
   "btn.exp.lbl": "탐험",
   "btn.move.lbl": "이주",
@@ -1552,16 +1551,7 @@
   "pda.succ": "성공한 탐험",
   "pda.winters": "넘긴 겨울",
   "pda.close": "닫기",
-  "nt.log": "오늘의 기록",
-  "nt.memo": "메모",
-  "nt.gained": "얻은 것",
   "nt.spent": "쓴 것",
-  "nt.openJournal": "도감·업적 펼치기",
-  "nt.comfort": "쾌적",
-  "nt.base": "거처",
-  "nt.today": "오늘",
-  "nt.expToday": "오늘 탐험 {n}회",
-  "nt.expNone": "오늘은 나가지 않았다",
   "nt.settledDays": "정착 {n}일차",
   "data.ach.cat.desc": "길고양이를 가족으로 맞이하다",
   "data.ach.cat.name": "고양이 집사",
@@ -2197,5 +2187,6 @@
   "data.will.will5.desc": "문은 열어뒀다. 너는 나보다 오래 살아라.\n누구든 이 녀석을 보거든, 착한 개다. 겁이 많을 뿐이다.",
   "data.will.will5.name": "개에게 남긴 말",
   "data.will.will6.desc": "네 편지 잘 받았다. 나도 보고 싶었다고, 그 말을 꼭 하고 싶었다.\n부칠 곳이 이제 없구나.",
-  "data.will.will6.name": "전하지 못한 답장"
+  "data.will.will6.name": "전하지 못한 답장",
+  "exp.riskGain": "이벤트 발생으로 추가 획득:"
 }
