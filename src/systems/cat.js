@@ -656,17 +656,14 @@ export function makeCatSystem(ctx) {
       const shinTgt = 0; // 앉기 뒷다리 정강이 곧게(디렉터 3차): legB −1.5(수평 앞)와 합쳐 뒷다리가 지면에 곧게 뻗음. 굽히면(과거 1.3/0.4) 발끝이 말려 몸통 관통(흰 네모) → 0으로 제거.
       c._shin = (c._shin || 0) + (shinTgt - (c._shin || 0)) * Math.min(1, dt * 5);
       if (p.shin) { if (p.shin.bl) p.shin.bl.rotation.x = c._shin; if (p.shin.br) p.shin.br.rotation.x = c._shin; }
-      const bpivTgt = (c.mode === 'sit' || c.mode === 'sprawl') ? 1.6 * 0.02 : 6 * 0.02; // 앉기·엎드리기: 엉덩이 피벗 바닥 근처로 → 수평 뒷다리가 지면에 눕는다(앉기=앞, 엎드리기=뒤)
+      // 앉기·그루밍·엎드리기: 엉덩이 피벗 바닥 근처로 → 수평 뒷다리가 지면에 눕는다(앉기·그루밍=앞, 엎드리기=뒤)
+      // #208(디렉터 "엎드리기·앉기 말고 다른 한개가 다리 찐빠"): groom이 여기서만 빠져 있었다 — CAT_POSES.groom은
+      //   sit과 같은 legB −1.5(수평 뒷다리)를 쓰는데 피벗만 선 자세(0.12)로 남아 뒷다리가 공중에 뻗쳤다.
+      //   그걸 가리려고 뒷다리만 0.6배로 줄이던 땜빵이 있었고(앞다리는 1.0), 그 길이 불일치가 신고된 증상이다.
+      //   원인(피벗)을 고치면 sit과 같은 실루엣이 나오므로 축소 땜빵은 제거했다 — scale은 빌드 기본 1로 둔다.
+      const bpivTgt = (c.mode === 'sit' || c.mode === 'groom' || c.mode === 'sprawl') ? 1.6 * 0.02 : 6 * 0.02;
       c._bpiv = (c._bpiv === undefined ? 0.12 : c._bpiv) + (bpivTgt - (c._bpiv === undefined ? 0.12 : c._bpiv)) * Math.min(1, dt * 5);
       p.legs.bl.position.y = c._bpiv; p.legs.br.position.y = c._bpiv;
-    }
-    // 그루밍: 접힌 뒷다리 발끝 옆삐짐 방지 축소 (앉기는 무릎접힘으로 대체 — 그루밍만 유지)
-    {
-      const hs = c.mode === 'groom' ? 0.6 : 1;
-      const cur = p.legs.bl.scale.y;
-      const nv = cur + (hs - cur) * Math.min(1, dt * 6);
-      p.legs.bl.scale.y = nv;
-      p.legs.br.scale.y = nv;
     }
     // 앞다리 전완(팔꿈치) 굽힘 — 앞다리는 2마디(상완+전완). 기지개(stretch)만 ㄴ자로 접어 앞팔을 바닥 전방에 납작하게
     //   뻗는다(디렉터 신고 — 확대: "진짜 다리 뻗는 건 ㄴ자여야"). 그 외 포즈는 0(곧게)이라 단일 6px 다리처럼 보인다.
