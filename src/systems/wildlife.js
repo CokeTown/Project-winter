@@ -293,6 +293,28 @@ export function makeWildlifeSystem(ctx) {
       // 지하철 승강장 가장자리: 한쪽 벽 근처 고정, x 밴드 유지 (쥐가 가장자리만)
       return { x: (Math.random() < 0.5 ? -1 : 1) * (room.d / 2 + 0.4), z: (Math.random() * 2 - 1) * (room.w / 2 - 0.3) };
     }
+    // #209 B안(디렉터): 물위/탑 셸터 — 새가 실표면(갑판·발코니·갤러리)에 앉는다. 그 표면은 방을 두른 링/둘레라
+    //   radial band로는 대각각에서 방 안(바닥 밑)에 떨어진다(폴백 지배 → 오배치). 그래서 밴드가 아니라
+    //   퍼치 도형 위에 직접 배치한다. groundY = 그 표면 높이. ring=원형 갤러리(등대), 아니면 사각 데크 둘레.
+    //   sides = 선실·상부구조가 있는 변을 뺀 열린 변만(예: 여객선 갑판은 선실 -z 제외 → +x/+z). 좌표는 데크
+    //   실측(shelters.js buildRoom)에서 온 hw/hd 절대 반폭(방 증축과 무관한 고정 데크).
+    if (spec.perch) {
+      // findBlock을 쓰지 않는다: 그 안의 방 회피 사각(room.d/2+0.4)이 얕은 방(d2.9)에선 퍼치 데크(hd 1.6~1.9)를
+      //   통째로 덮어 모든 퍼치점을 거절한다(실측: 전 스팟이 폴백행). 퍼치 표면은 원래 방을 두르는(겹치는) 데크라
+      //   방 회피가 부적합 — 데크 도형 위에 바로 앉힌다.
+      const p = spec.perch;
+      if (p.ring) {
+        const a = Math.random() * Math.PI * 2;
+        return { x: Math.cos(a) * p.ring, z: Math.sin(a) * p.ring };
+      }
+      const sides = p.sides || ['+x', '-x', '+z', '-z'];
+      const side = sides[Math.floor(Math.random() * sides.length)];
+      const t = Math.random() * 2 - 1;
+      if (side === '+x') return { x: p.hw, z: t * p.hd };
+      if (side === '-x') return { x: -p.hw, z: t * p.hd };
+      if (side === '+z') return { x: t * p.hw, z: p.hd };
+      return { x: t * p.hw, z: -p.hd };
+    }
     // #209: avoidRect 있으면 방 사각 대신 그 사각(기단 등)을 회피 — 오두막 기단 위 매몰 방지.
     const avW = (spec.avoidRect ? spec.avoidRect.w : room.w) / 2 + 0.3;
     const avD = (spec.avoidRect ? spec.avoidRect.d : room.d) / 2 + 0.3;
@@ -490,7 +512,12 @@ export function makeWildlifeSystem(ctx) {
     // 플레이어 접근 → 조기 도망(체류 무관)
     for (const a of animals) {
       if (!a.leaving && a.mode !== 'landing' && a.mode !== 'enter') {
-        const d = distToCam(a);
+        // #209 퍼치: 착지면이 높은 탑(등대 갤러리 y2.92)이면 수평거리만으론 카메라 중심(원점 부근)에 shy 안으로
+        //   들어와 소환 즉시 전부 이탈한다(실측). 퍼치 새는 수직 간극도 포함한 3D 거리로 판정 — 머리 위 새는
+        //   플레이어가 못 닿으니 안 도망친다. 지상종(perch 없음)은 종전 수평거리 유지(카메라 y0.9 기준 회귀 방지).
+        const d = spec.perch
+          ? Math.hypot(a.g.position.x - camCenter.x, a.g.position.y - camCenter.y, a.g.position.z - camCenter.z)
+          : distToCam(a);
         if (d < a.sp.shy) startLeaving(a, true);
       }
       // 체류 시간 만료 → 종별 퇴장

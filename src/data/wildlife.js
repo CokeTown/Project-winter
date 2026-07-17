@@ -125,12 +125,17 @@ export const SHELTER_WILDLIFE = {
   bus:          { groundY: -0.77, band: [3.2, 6.0] },
   subway:       { groundY: 0.0,  band: [2.6, 3.6], indoor: true, species: ['rat'], edgeOnly: true }, // 승강장 가장자리 쥐
   greenhouse:   { groundY: -0.78, band: [3.4, 6.5] },
-  // #209 B안(디렉터) 보류: 물위/탑 셸터는 새가 실표면(갑판·발코니·갤러리)에 앉아야 하나, 그 표면이 사각 방을
-  //   두른 링/둘레라 radial band로는 대각각에서 방 안(바닥 밑)에 떨어진다(실측: 폴백 지배 → 오배치). 둘레(perimeter)
-  //   배치 모드가 필요 — 별도 처리. 현행 -0.9 자리값 유지(새가 상공에 뜨는 기존 상태, 오배치보다 안전).
-  ship:         { groundY: -0.9, band: [3.4, 5.5], birdOnly: true }, // 갑판/난간 새 위주
-  lighthouse:   { groundY: -0.9, band: [3.4, 5.5], birdOnly: true },
-  tugboat:      { groundY: -0.9, band: [3.2, 5.0], birdOnly: true },
-  controltower: { groundY: -0.9, band: [3.4, 5.5], birdOnly: true },
+  // #209 B안(디렉터): 물위/탑 셸터 — 새가 실표면(갑판·발코니·갤러리)에 앉는다. 그 표면은 방을 두른 링/둘레라
+  //   radial band(원형 로밍)로는 대각각에서 방 안(바닥 밑)에 떨어진다 → 밴드 대신 perch(둘레 배치, systems/wildlife.js).
+  //   groundY = 그 표면 상면 높이(실측). perch.hw/hd = 데크 반폭(절대), sides = 선실/상부구조 없는 열린 변만.
+  //   band는 새가 날아 나갈 때(exitSpot)만 쓰인다.
+  //   ▸ 여객선: 갑판 상면 0(=바닥 top). 선실 -z·간이집 -x/-z → 열린 +x/+z 갑판에 앉힌다(난간 x±3.45/z±1.7 안쪽).
+  ship:         { groundY: 0.0,   band: [3.4, 5.5], birdOnly: true, perch: { hw: 3.4, hd: 1.65, sides: ['+x', '+z'] } },
+  //   ▸ 등대: 랜턴 데크 원반(반경≤2.2, 중앙 렌즈 r0.5) 위 상면 y≈2.92(h2.4+0.4+0.125). 갤러리 링 r1.6에 앉힌다.
+  lighthouse:   { groundY: 2.92,  band: [3.4, 5.5], birdOnly: true, perch: { ring: 1.6 } },
+  //   ▸ 요트: 갑판 상면 DECK_Y(-0.02). 선실 중앙 → 평행 미드십 양현 사이드 데크(±z)에만. 선수 뾰족부는 rect 부적합이라 제외.
+  tugboat:      { groundY: -0.02, band: [3.2, 5.0], birdOnly: true, perch: { hw: 2.8, hd: 1.83, sides: ['+z', '-z'] } },
+  //   ▸ 관제탑: 유리방 밖 콘크리트 립(기단 상면 -0.2, 방 밖 0.3m 폭 둘레). 4변 모두 열림.
+  controltower: { groundY: -0.2,  band: [3.4, 5.5], birdOnly: true, perch: { hw: 3.65, hd: 1.9 } },
   lodge:        { groundY: -0.88, band: [3.8, 7.0] },
 };
