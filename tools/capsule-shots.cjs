@@ -12,9 +12,9 @@ const ORIENT = process.env.ORIENT || 'portrait';
 const PORT = ORIENT === 'portrait';
 const W = PORT ? 1200 : 2560, HGT = PORT ? 1800 : 1440;
 // 시간대: 시각 + 날씨. 노을=맑은 하늘로 골든, 야간/주간=눈(겨울 정체성).
-const TIME = { night: { h: 22, wx: 'snow' }, sunset: { h: 17, wx: 'clear' }, day: { h: 11, wx: 'snow' } };
+const TIME = { night: { h: 22, wx: 'snow' }, sunset: { h: 16, wx: 'clear' }, day: { h: 11, wx: 'snow' } };
 // 카메라 프레이밍(오리엔트별)
-const CAM = PORT ? { yaw: 0.62, pitch: 0.60, zoom: 1.2 } : { yaw: 0.62, pitch: 0.50, zoom: 1.5 };
+const CAM = PORT ? { yaw: 0.62, pitch: +(process.env.PPITCH || 0.60), zoom: +(process.env.PZOOM || 1.2), panz: process.env.PPANZ } : { yaw: 0.62, pitch: 0.50, zoom: 1.5 };
 const bgra = b => { const o = Buffer.alloc(b.length); for (let i = 0; i < b.length; i += 4) { o[i] = b[i + 2]; o[i + 1] = b[i + 1]; o[i + 2] = b[i]; o[i + 3] = 255; } return o; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const cozy = (w, d) => { const X = w / 2, Z = d / 2; const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -46,7 +46,8 @@ async function main() {
       for(const it of L.items){try{S.addItem(it.d,0,it.x,it.z,it.r||0,true,0,it.tier||3);}catch(e){}}
       try{S.state.cat=true;S.spawnCat&&S.spawnCat();}catch(e){}
       S.clearGroundDrops&&S.clearGroundDrops(); // 바닥 반짝임 얼룩 제거
-      if(L.pan&&S.setPan)S.setPan(L.pan.x,L.pan.z);
+      const panz=${CAM.panz!=null?CAM.panz:'null'};
+      if(L.pan&&S.setPan)S.setPan(L.pan.x, panz!=null?panz:L.pan.z);
       S.setYaw&&S.setYaw(${CAM.yaw});S.setPitch&&S.setPitch(${CAM.pitch});S.setZoom&&S.setZoom(${CAM.zoom});
       return {room:R};}catch(e){return {error:String(e&&e.stack||e).slice(0,180)};}})()`);
     await ev(`(()=>{let c=document.getElementById('shotcss');if(!c){c=document.createElement('style');c.id='shotcss';document.head.appendChild(c);}c.textContent='body > *:not(#c):not(#fx){display:none!important}';return 1;})()`);
