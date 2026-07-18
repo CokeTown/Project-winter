@@ -2983,6 +2983,52 @@ export function makeShelterBuilders(ctx) {
         // 대기 헤이즈 (냉청, 스태거)
         for (const [zz, op, col] of [[-40, 0.18, 0x243044], [-70, 0.26, 0x223047], [-100, 0.34, 0x1e2c44]]) { const hz = B(envRoot, 380, 60, 2, col, 0, GY + 22, zz); hz.material = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: op, depthWrite: false, fog: false }); }
         for (const [fy2, op2] of [[-16, 0.24], [-26, 0.32]]) { const fb = B(envRoot, 160, 6, 160, 0x202838, 0, fy2, 0); fb.material = new THREE.MeshBasicMaterial({ color: 0x202838, transparent: true, opacity: op2, depthWrite: false }); }
+        // ── 구름 바다 (디렉터 2026-07-17 리비전: 블록 폐기 → 소프트 텍스처 빌보드). 레퍼런스=두바이 운해(마천루가 솟은 몽실 안개층).
+        //   펜트하우스='구름 높이' 설정 → 발밑엔 바닥이 아니라 운해. 실 셸터에 심어 인게임·트레일러(실 셸터 로드) 공통.
+        //   스프라이트(THREE.Sprite)는 매 프레임 카메라를 향하므로 아이소·위성 어느 각도에서도 부드럽게 읽힘.
+        {
+          // 소프트 적운 텍스처(캔버스 메타볼 다중겹 + 상단광 볼륨셰이드 + 방사 알파 폴오프) — 외부 에셋 없이 절차 생성.
+          const mkCloudTex = (seed) => {
+            const SZ = 128, cv = document.createElement('canvas'); cv.width = cv.height = SZ;
+            const g2 = cv.getContext('2d'); const sr = seededRand(seed);
+            const nb = 12 + ((sr() * 7) | 0);
+            for (let i = 0; i < nb; i++) {
+              const cx = SZ * (0.16 + sr() * 0.68), cy = SZ * (0.24 + sr() * 0.46), r = SZ * (0.10 + sr() * 0.20), a = 0.4 + sr() * 0.5;
+              const grd = g2.createRadialGradient(cx, cy, 0, cx, cy, r);
+              grd.addColorStop(0, `rgba(255,255,255,${a})`); grd.addColorStop(0.55, `rgba(255,255,255,${a * 0.42})`); grd.addColorStop(1, 'rgba(255,255,255,0)');
+              g2.fillStyle = grd; g2.beginPath(); g2.arc(cx, cy, r, 0, 7); g2.fill();
+            }
+            const im = g2.getImageData(0, 0, SZ, SZ), d = im.data;
+            for (let y = 0; y < SZ; y++) for (let x = 0; x < SZ; x++) {
+              const k = (y * SZ + x) * 4;
+              const shade = 0.68 + 0.32 * (1 - y / SZ);                              // 빛=위에서: 정수리 밝고 밑면 그늘(볼륨감)
+              d[k] *= shade; d[k + 1] *= shade; d[k + 2] *= shade;
+              const vig = Math.max(0, 1 - Math.hypot(x / SZ - 0.5, y / SZ - 0.5) * 1.95); // 가장자리 소프트 페이드(이음매 없이 겹침)
+              d[k + 3] *= vig;
+            }
+            g2.putImageData(im, 0, 0);
+            const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
+          };
+          const cloudTex = [mkCloudTex(5001), mkCloudTex(5002), mkCloudTex(5003), mkCloudTex(5004)];
+          const cloudSea = new THREE.Group(); envRoot.add(cloudSea);
+          const CY = -1.3;                    // 운해 상면 대략치(데크 y0 바로 아래) — 발밑에 깔려 도시 밑동을 삼킴
+          const spr = (px, py, pz, w, tint, op) => {
+            const m = new THREE.SpriteMaterial({ map: cloudTex[(rand() * cloudTex.length) | 0], color: tint, transparent: true, opacity: op, depthWrite: false, fog: true });
+            const s = new THREE.Sprite(m); s.position.set(px, py, pz);
+            s.scale.set(w, w * (0.48 + rand() * 0.14), 1); cloudSea.add(s);
+          };
+          // 발밑(반경 9)부터 지평선까지 균일 그리드로 촘촘히 겹쳐 '연속 운해'(홀 없음). 링 배치는 방사 틈이 남아 폐기.
+          //   2겹: 하부 큰 블랭킷(홀 메움) + 상부 작은 뭉게(빌로우 디테일). 달빛 청백, 원경일수록 저채도(포그 흡수).
+          const step = 12;
+          for (let gx = -126; gx <= 126; gx += step) for (let gz = -126; gz <= 126; gz += step) {
+            const px = gx + (rand() - 0.5) * step * 1.1, pz = gz + (rand() - 0.5) * step * 1.1;
+            const rr = Math.hypot(px, pz); if (rr < 9 || rr > 130) continue;
+            const near = 1 - Math.min(1, rr / 120);
+            const tint = new THREE.Color().setHSL(0.60, 0.08 + near * 0.05, 0.44 + near * 0.26);   // 달빛 청백(근경 밝음)
+            spr(px, CY - 0.4 + (rand() - 0.5) * 0.8, pz, 15 + rand() * 12, tint, 0.66 + rand() * 0.2); // 하부 블랭킷
+            if (rand() < 0.7) spr(px + (rand() - 0.5) * step, CY + 0.5 + (rand() - 0.5) * 1.0, pz + (rand() - 0.5) * step, 8 + rand() * 8, tint, 0.5 + rand() * 0.24); // 상부 뭉게
+          }
+        }
         // 새 떼 (은하수 대역에 실루엣)
         for (let i = 0; i < 4; i++) { const bx3 = -10 + rand() * 24, by3 = 14 + rand() * 8, bz3 = -24 - rand() * 16; B(envRoot, 0.7, 0.1, 0.2, 0x0e0c12, bx3 - 0.3, by3, bz3, 0.35); B(envRoot, 0.7, 0.1, 0.2, 0x0e0c12, bx3 + 0.3, by3, bz3, -0.35); }
       },
