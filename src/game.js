@@ -5609,6 +5609,7 @@ function applyDeco() {
 // 가구는 파밍이 아니라 제작이 기본 (파밍은 극히 드문 행운)
 // CRAFTS(제작 레시피)는 src/data/items.js로 분리(콘텐츠 데이터 Phase 1). BAL 참조는 items.js가 balance.js를 import.
 // 「지식」 테크트리 모달(§9) — 4갈래×3티어, 책으로 해금. 노드 상태: 해금됨/해금가능/선행잠금/책부족.
+let craftCat = 'goods'; // 디렉터: 제작 상위 카테고리 탭(가구·물품/복장/공사/꾸미기) 선택 상태
 function openCraftModal() {
   if (paused) { toast(t('pause.blocked')); return; }
   const rowArr = CRAFTS.map((c, i) => {
@@ -5642,8 +5643,6 @@ function openCraftModal() {
   const goodsRows = CRAFTS.map((c, i) => c.out.outfit ? '' : rowArr[i]).join('');
   const outfitRows = CRAFTS.map((c, i) => c.out.outfit ? rowArr[i] : '').join('');
   const secHead = (ic, key) => `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${ic} ${t(key)}</div>`; // P3: 카테고리 이모지 → 모노 아트
-  const rows = secHead(icon('icon_furn_chair', '🪑'), 'craft.catGoods') + goodsRows
-    + (outfitRows.trim() ? secHead(icon('icon_act_wardrobe', '🧥'), 'craft.catOutfit') + outfitRows : '');
   // 현재 거처에 설치 가능한 개조
   const sh = SHELTERS[state.current];
   const modRows = Object.entries(SHELTER_MODS)
@@ -5873,10 +5872,28 @@ function openCraftModal() {
       : `<div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${decoSwatches('wall', WALLPAPERS, dcur.wall)}</div>`}
     <div style="font-size:11px;margin-bottom:3px">${t('deco.floor')}</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${decoSwatches('floor', FLOORINGS, dcur.floor)}</div>
     <div style="font-size:11px;color:var(--accent);margin:8px 0 4px">${t('deco.themeHeader')}</div>${themeHtml}`;
-  openModal(t('craft.title'), `${rows}
-    <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>
-    <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}
-    ${bunkerHtml}${rooftopHtml}${subwayHtml}${icefishHtml}${forbiddenHtml}${projHtml}${decoHtml}`);
+  // ── 상위 카테고리 탭 (디렉터: 「3번째 사진처럼 상위 버튼 → 선택해서 보기」) ──
+  //   가구·물품 / 복장 / 공사(개조+프로젝트) / 꾸미기. 긴 스크롤 대신 탭으로 분류.
+  const modHtml = `<div style="font-size:12px;color:var(--accent);margin:2px 0 6px">${t('craft.modHeader', { emoji: sh.emoji, name: LName(sh) })}</div>`
+    + `<div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}`;
+  const buildHtml = `${modHtml}${bunkerHtml}${rooftopHtml}${subwayHtml}${icefishHtml}${forbiddenHtml}${projHtml}`;
+  const catDefs = [
+    { id: 'goods', label: t('craft.catGoods'), html: secHead(icon('icon_furn_chair', '🪑'), 'craft.catGoods') + goodsRows },
+    ...(outfitRows.trim() ? [{ id: 'outfit', label: t('craft.catOutfit'), html: secHead(icon('icon_act_wardrobe', '🧥'), 'craft.catOutfit') + outfitRows }] : []),
+    { id: 'build', label: t('craft.catBuild'), html: buildHtml },
+    ...(decoHtml.trim() ? [{ id: 'deco', label: t('craft.catDeco'), html: decoHtml }] : []),
+  ];
+  if (!catDefs.find(c => c.id === craftCat)) craftCat = catDefs[0].id;
+  const tabBar = `<div class="craft-tabs">${catDefs.map(c => `<button class="craft-tab${c.id === craftCat ? ' active' : ''}" data-ctab="${c.id}">${c.label}</button>`).join('')}</div>`;
+  // 전 카테고리를 DOM에 렌더하고 비활성은 CSS로만 숨긴다 — 탭 전환은 재렌더 없이 즉시(스냅), 도면 게이트 검사(전 레시피 DOM 존재)와도 양립.
+  const panels = catDefs.map(c => `<div class="craft-panel" data-cpanel="${c.id}"${c.id === craftCat ? '' : ' style="display:none"'}>${c.html}</div>`).join('');
+  openModal(t('craft.title'), tabBar + panels);
+  $('modal-body').querySelectorAll('button[data-ctab]').forEach(b =>
+    b.addEventListener('click', () => {
+      craftCat = b.dataset.ctab;
+      $('modal-body').querySelectorAll('.craft-tab').forEach(el => el.classList.toggle('active', el.dataset.ctab === craftCat));
+      $('modal-body').querySelectorAll('.craft-panel').forEach(el => { el.style.display = el.dataset.cpanel === craftCat ? '' : 'none'; });
+    }));
   $('modal-body').querySelectorAll('button[data-deco]').forEach(b =>
     b.addEventListener('click', () => {
       const [kind, id] = b.dataset.deco.split(':');

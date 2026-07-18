@@ -432,6 +432,8 @@
   "craft.make": "製作",
   "craft.catGoods": "家具・物品",
   "craft.catOutfit": "服装",
+  "craft.catBuild": "工事",
+  "craft.catDeco": "模様替え",
   "sel.upgrade": "手入れして改良 (T{n})",
   "sel.upgraded": "手入れした — ずいぶんまともな品になった。",
   "sel.upgradeLack": "手入れする材料が足りない。",

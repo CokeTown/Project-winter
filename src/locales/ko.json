@@ -432,6 +432,8 @@
   "craft.make": "제작",
   "craft.catGoods": "가구·물품",
   "craft.catOutfit": "복장",
+  "craft.catBuild": "공사",
+  "craft.catDeco": "꾸미기",
   "sel.upgrade": "손질해서 개선 (T{n})",
   "sel.upgraded": "손질했다 — 한결 물건다워졌다.",
   "sel.upgradeLack": "손질할 재료가 모자라다.",

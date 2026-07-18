@@ -457,6 +457,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   body.pda-app #pda-lcd #modal p, body.pda-app #pda-lcd #modal .modal-body { font-size: 7px; line-height: 1.55; }
   /* 디렉터: 붉은 섹션 헤더(가구·물품·큰 공사·꾸미기 등) 인라인 font-size:12px가 커서 인라인 이김 → 스코프 !important로 축소 */
   body.pda-app #pda-lcd #modal div[style*="var(--accent)"] { font-size: 8px !important; margin: 6px 0 3px !important; }
+  /* 디렉터: 제작 상위 카테고리 탭바(가구·물품/복장/공사/꾸미기) — PDA 탭바 톤. 상단 고정. */
+  body.pda-app #pda-lcd #modal .craft-tabs { display: flex; gap: 3px; margin: -2px 0 6px; position: sticky; top: -6px; background: rgba(6, 10, 5, 0.92); padding: 3px 0; z-index: 4; }
+  body.pda-app #pda-lcd #modal .craft-tab { flex: 1; font-size: 8px; padding: 3px 2px; background: rgba(170, 240, 185, 0.06); border: 1px solid #3f6a46; border-radius: 3px; color: #bcd0b6; cursor: pointer; white-space: nowrap; }
+  body.pda-app #pda-lcd #modal .craft-tab.active { background: rgba(120, 255, 150, 0.16); border-color: var(--accent); color: #f0f5ee; font-weight: bold; }
   body.pda-app #pda-lcd .prep-row, body.pda-app #pda-lcd .craft-row, body.pda-app #pda-lcd .li-row { padding: 3px 7px; gap: 2px 6px; }
   body.pda-app #pda-lcd .px-icon { width: 1.2em; height: 1.2em; }
   body.pda-app #pda-lcd .prep-row { /* 행 = 포스퍼 리스트. 좁은 LCD 폭 정돈: 이름 한 줄 + 코스트·버튼 줄 */

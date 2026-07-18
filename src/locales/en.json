@@ -432,6 +432,8 @@
   "craft.make": "Craft",
   "craft.catGoods": "Furnishings & Goods",
   "craft.catOutfit": "Outfits",
+  "craft.catBuild": "Works",
+  "craft.catDeco": "Decor",
   "sel.upgrade": "Mend & Upgrade (T{n})",
   "sel.upgraded": "Mended — it looks more whole now.",
   "sel.upgradeLack": "Not enough materials to mend.",
