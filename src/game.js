@@ -17,6 +17,7 @@ import { makeCulling } from './render/culling.js'; // Tier4 렌더 추출 Phase1
 import { makeCamera } from './render/camera.js'; // Tier4 렌더 추출 Phase1-③: 카메라
 import { makeScreenFx } from './render/weatherfx.js'; // Tier4 렌더 추출 Phase1-④: 화면 2D 날씨 오버레이
 import { makeModals } from './ui/modals.js'; // Tier4 UI 추출 Phase1-⑤: 모달 빌더
+import { makeSettingsUI } from './ui/settings.js'; // #210 설정 모달 셸(1단계 추출)
 import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, MEMOS_CITYCORE, BROADCASTS, SKETCHES } from './data/lore.js';
 import { PAINT_FAMILIES, RARE_PAINTS, PAINT_ALL, paintFamilyOf, paintFamilyRequired } from './data/paints.js'; // 도료 12계열 + 희귀 안료 (REWARD-LOOP ②)
 import { makeEvents } from './data/events.js';
@@ -7165,26 +7166,10 @@ const isPcInput = matchMedia('(pointer: fine)').matches && !('ontouchstart' in w
 const isMobileEnv = ('ontouchstart' in window) || /Android|iPhone|iPad/i.test(navigator.userAgent);
 // #52: 탭형 환경설정 창 — 타이틀 ⚙️ / 인게임 ESC / 모바일 톱니 3경로가 모두 이 전용 오버레이를 개폐한다.
 // 중앙 고정 창이라 clampPanel/updateUiScale 위치 로직은 호출하지 않는다(함수 자체는 존치).
-function settingsOpen() { return $('settings-screen').classList.contains('show'); }
-function openSettings(tab) {
-  const scr = $('settings-screen');
-  scr.classList.add('show');
-  scr.style.display = 'flex';
-  if (tab) switchSettingsTab(tab);
-  renderControlsGuide();
-}
-function closeSettings() {
-  const scr = $('settings-screen');
-  scr.classList.remove('show');
-  scr.style.display = 'none';
-}
-function toggleSettingsPanel() { settingsOpen() ? closeSettings() : openSettings(); }
-// 하위 호환: 기존 gear 진입점 명칭 유지 (토글)
-function openSettingsFromGear() { toggleSettingsPanel(); }
-function switchSettingsTab(name) {
-  document.querySelectorAll('#settings-tabs .settings-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  document.querySelectorAll('#settings-tabbody .settings-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
-}
+// #210: 설정 셸(열기/닫기/토글/탭 전환)은 ui/settings.js로 이관 — renderControlsGuide(키 리바인딩 가이드)만 주입.
+//   구조 무변(로직 원문 이관). 콜사이트는 아래 구조분해로 동일 명칭 유지 → 나머지 game.js 무변.
+const _settingsUI = makeSettingsUI({ renderControlsGuide: (...a) => renderControlsGuide(...a) });
+const { settingsOpen, openSettings, closeSettings, toggleSettingsPanel, openSettingsFromGear, switchSettingsTab } = _settingsUI;
 // 컨트롤 탭 — PC = 실제 리바인딩 UI(#14), 모바일 = 제스처 안내표.
 const KEYBIND_LABEL = {
   map: 'ctrl.act.map', migrate: 'ctrl.act.migrate', craft: 'ctrl.act.craft', clean: 'ctrl.act.clean',
