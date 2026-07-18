@@ -4985,6 +4985,9 @@ const SHELTER_MODS = {
   customsSeal: { name: '창구 봉쇄', nameEn: 'Seal the Booths', emoji: '🪵', cost: { material: 3, cloth: 1 }, desc: '심사 창구를 판자로 막는다 — 외풍이 멎는다 (악천후 쾌적 하락 해소)', descEn: 'Board up the inspection booths — the draft stops (no comfort loss in bad weather)', only: ['customs'], rebuild: true },
   terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '🧱', cost: { material: 4, cloth: 1 }, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
   bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '🛢️', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
+  // 무전 기지 개조 (디렉터: "무선기지국 설치 가능한 집엔 개조 기능") — 개척 프로젝트 「무전 기지 복구」 완공(radioBaseDone) 후
+  //   지상 셸터에 실체(지붕 송신 안테나)를 세운다. gate=radioBaseDone → 프로젝트 완공과 연동. 지하(subway)는 하늘 미접근이라 제외.
+  radiostation: { name: '무전 기지', nameEn: 'Radio Base', emoji: '📡', cost: { parts: 3, material: 2 }, desc: '지붕에 송신 안테나를 세운다 — 무전 기지의 실체 (붉은 항공등이 밤을 깜빡인다)', descEn: 'Raise the transmitter antenna on the roof — the radio base made real (a red beacon blinks through the night)', not: ['subway'], gate: 'radioBaseDone' },
 };
 // 개조 앵커 참조표 (문서 전용 — 런타임 미소비. 디스패치는 addModProp의 id 하드코딩 분기가 직접 수행).
 // roof=지붕면 브래킷 · eave=처마 홈통+파이프+물통 · wall=외벽 덧댐 · ground=지면(마당) 배치.
@@ -5097,6 +5100,8 @@ function modAvailable(id, shelterId) {
   if (m.not && m.not.includes(shelterId)) return false;
   // 2단계 개조: 선행 개조(req)가 설치돼 있어야 목록에 노출
   if (m.req && !(state.mods?.[shelterId] || []).includes(m.req)) return false;
+  // 플래그 게이트(디렉터): 예) 무전 기지 = 개척 프로젝트 완공(radioBaseDone) 후에만 개조 노출·설치.
+  if (m.gate && !state[m.gate]) return false;
   return true;
 }
 // hasMod는 core/shelter.js로 이전 (분해 Phase 1). import 참조.
@@ -5232,6 +5237,29 @@ function extMounts(shelterId) {
   if (m.wall && (m.wall.face === '+x' || m.wall.face === '-x')) out.wall = { ...m.wall, off: m.wall.off + 1 };
   return out;
 }
+// 무전 기지 개조 소품 (디렉터): 지붕 위 송신 안테나 마스트 + 접시 + 십자 안테나 + 붉은 항공등(selfLit 깜빡).
+//   roof 앵커(solar와 동일 규약)를 받아 지붕면에 세운다. 폴백은 상단 모서리.
+function buildRadioStationProp(roof) {
+  const g = new THREE.Group();
+  const cx = roof.cx ?? 0, cz = roof.cz ?? 0, ry = roof.y ?? ROOM.h;
+  // 삼각대 베이스
+  for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2; const leg = B(g, 0.05, 0.55, 0.05, 0x5c6169, Math.cos(a) * 0.28, 0.26, Math.sin(a) * 0.28); leg.rotation.set(Math.sin(a) * 0.22, 0, -Math.cos(a) * 0.22); leg.castShadow = true; }
+  // 마스트
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.06, 1.7, 6), lamb(0x8a8f96)); mast.position.y = 1.35; mast.castShadow = true; g.add(mast);
+  // 접시 안테나(경사)
+  const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.05, 16), lamb(0xd8dce0)); dish.rotation.set(0, 0.5, 0.62); dish.position.set(0.28, 1.15, 0.05); dish.castShadow = true; g.add(dish);
+  const feed = B(g, 0.03, 0.25, 0.03, 0x6a6f76, 0.42, 1.24, 0.05); feed.rotation.z = 0.62;
+  // 상단 십자 안테나(다이폴)
+  B(g, 0.035, 0.55, 0.035, 0x6a6f76, 0, 2.35, 0);
+  B(g, 0.5, 0.03, 0.03, 0x7a7f86, 0, 2.5, 0);
+  B(g, 0.36, 0.03, 0.03, 0x7a7f86, 0, 2.28, 0);
+  // 붉은 항공 경고등 (selfLit — 밤에 깜빡, 무전 기지 완공의 상징)
+  const led = new THREE.Mesh(new THREE.SphereGeometry(0.055, 7, 6), new THREE.MeshBasicMaterial({ color: 0xff3524 }));
+  led.position.set(0, 2.68, 0); led.userData.selfLit = true; led.userData.beacon = true; g.add(led);
+  g.position.set(cx, ry, cz);
+  roomGroup.add(g);
+  return g;
+}
 function addModProp(id) {
   const { w, d } = ROOM;
   const mounts = extMounts(state.current);
@@ -5239,6 +5267,10 @@ function addModProp(id) {
     if (mounts.roof) return buildSolarProp(mounts.roof);
     // 폴백: 벽에 최대한 밀착한 지면 경사 거치
     return buildSolarProp({ y: 0, cx: w / 2 - 0.5, cz: 0, hw: 1.6, hd: 1.0 });
+  }
+  if (id === 'radiostation') {
+    if (mounts.roof) return buildRadioStationProp(mounts.roof);
+    return buildRadioStationProp({ y: ROOM.h, cx: w / 2 - 0.7, cz: -0.3, hw: 1.2, hd: 1.0 }); // 폴백: 지붕 없으면 상단 모서리
   }
   if (id === 'raincatch' || id === 'bigraincatch') {
     const big = id === 'bigraincatch';
