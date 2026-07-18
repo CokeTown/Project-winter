@@ -535,12 +535,15 @@ function applyMood(m) {
 ============================================================ */
 // 밤은 셸터 고유 무드를 그대로 사용, 나머지는 전역 팔레트
 const DAY_PHASES = {
-  dawn: { fog: 0x4a4238, skyH: 0x8a5f4a, skyZ: 0x2a3045, sunC: 0xffb27a, sunInt: 0.55, hemiC: 0x9a8f88, hemiG: 0x4a423a, hemiInt: 0.8, stars: 0.25 },
+  // 디렉터(2026-07-19): 해뜰녘 노을이 불분명·냉랭 → 골든아워 온기 강화. 회색이던 fog·hemi(앰비언트)를 앰버로 덥히고
+  //   지평선(skyH) 채도↑, 태양광(sunInt)↑로 실질 광원감 부여. 젠스(skyZ)는 차게 유지해 하늘 그라디언트 대비 확보.
+  dawn: { fog: 0x5e4836, skyH: 0xc06a40, skyZ: 0x2a3045, sunC: 0xffbe84, sunInt: 0.68, hemiC: 0xcaa87c, hemiG: 0x564539, hemiInt: 0.86, stars: 0.25 },
   // #54: "낮인데 낮인지 모르겠다" — 정오 광량·하늘 밝기 상향 (새벽/황혼은 유지해 하루 리듬 대비 확보.
   // 재(ash)의 뿌연 정체성은 wSun 감쇠가 담당 — 맑은 낮이 확실히 밝아야 재 날씨의 존재감도 산다)
   // 실외 을씨년(디렉터): 하늘·fog만 회색·냉랭화(아포칼립스 잿빛). hemi/sun(=실내 앰비언트 광원)은 유지해 실내 온기·가독성 보존.
   day:  { fog: 0x878d94, skyH: 0xa3acb3, skyZ: 0x69747e, sunC: 0xfff2d6, sunInt: 1.5, hemiC: 0xd6dfe8, hemiG: 0x77706a, hemiInt: 1.28, stars: 0 },
-  dusk: { fog: 0x50403c, skyH: 0xa05a38, skyZ: 0x2f2c4c, sunC: 0xff9a5a, sunInt: 0.6, hemiC: 0xa08a80, hemiG: 0x4a3f38, hemiInt: 0.8, stars: 0.2 },
+  // 디렉터(2026-07-19): 황혼도 동일 — 붉은 노을 톤으로 덥힌다(sunset이 sunrise보다 더 붉게). 핵겨울 냉기는 낮/밤이 지고, 여기선 온기.
+  dusk: { fog: 0x6b4838, skyH: 0xcf5e2e, skyZ: 0x2f2c4c, sunC: 0xff9048, sunInt: 0.72, hemiC: 0xd0925e, hemiG: 0x564138, hemiInt: 0.86, stars: 0.2 },
 };
 const DAY_KEYS = [[0, 'night'], [4.5, 'night'], [6.5, 'dawn'], [9, 'day'], [16.5, 'day'], [19, 'dusk'], [21, 'night'], [24, 'night']];
 function phaseValues(name) {
