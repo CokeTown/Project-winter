@@ -1290,6 +1290,30 @@ const DEFS = {
       return g;
     }
   },
+  // #119 서포터팩 전용 — 전구 무드등(바닥 랜턴). 따뜻한 전구가 유리 안에서 빛난다. emissive 발광이되 selfLit/comfort
+  //   플래그가 없어 조명·쾌적 메커닉엔 기여 0(순수 코스메틱 — 페이투윈 회피, 방은 여전히 실광원이 필요). 고양이가 뚜껑 위에 웅크린다.
+  moodlantern: {
+    name: '전구 무드등', nameEn: 'Fairy-Light Lantern', emoji: '🏮', fp: { w: 0.4, d: 0.4 }, dlc: 'supporter', comfort: 0,
+    colorNames: ['앰버', '로즈', '민트', '허니'], colorNamesEn: ['Amber', 'Rose', 'Mint', 'Honey'],
+    colors: [0xffcf88, 0xffb0a0, 0xb8e6c8, 0xffdf9a],
+    build(c) {
+      const g = new THREE.Group();
+      const glass = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.9, transparent: true, opacity: 0.82 });
+      const bulbMat = new THREE.MeshLambertMaterial({ color: 0xfff2c8, emissive: 0xffdf9a, emissiveIntensity: 1.4 });
+      Cyl(g, 0.15, 0.17, 0.04, 0x3a3128, 0, 0.02, 0, 12).castShadow = true;                 // 바닥 원반(황동)
+      const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.15, 0.26, 14), glass);   // 유리 항아리(발광)
+      jar.position.y = 0.17; g.add(jar);
+      for (let i = 0; i < 7; i++) {                                                          // 안쪽 전구 코일
+        const a = i * 1.4, r = 0.06 + (i % 2) * 0.03;
+        const b = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 5), bulbMat);
+        b.position.set(Math.cos(a) * r, 0.09 + i * 0.028, Math.sin(a) * r); g.add(b);
+      }
+      Cyl(g, 0.16, 0.16, 0.03, 0x2a2620, 0, 0.315, 0, 12);                                   // 황동 테두리
+      const lid = Cyl(g, 0.155, 0.155, 0.04, 0x4a4038, 0, 0.35, 0, 12); lid.castShadow = true; // 나무 뚜껑(고양이 자리)
+      Cyl(g, 0.012, 0.012, 0.05, 0x2a2620, 0, 0.4, 0, 6);                                     // 손잡이 고리 축
+      return g;
+    }
+  },
   phonograph: {
     name: '축음기', nameEn: 'Phonograph', emoji: '🎶', fp: { w: 0.6, d: 0.55 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
