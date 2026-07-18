@@ -7169,7 +7169,8 @@ const isMobileEnv = ('ontouchstart' in window) || /Android|iPhone|iPad/i.test(na
 // #210: 설정 셸(열기/닫기/토글/탭 전환)은 ui/settings.js로 이관 — renderControlsGuide(키 리바인딩 가이드)만 주입.
 //   구조 무변(로직 원문 이관). 콜사이트는 아래 구조분해로 동일 명칭 유지 → 나머지 game.js 무변.
 const _settingsUI = makeSettingsUI({ renderControlsGuide: (...a) => renderControlsGuide(...a) });
-const { settingsOpen, openSettings, closeSettings, toggleSettingsPanel, openSettingsFromGear, switchSettingsTab } = _settingsUI;
+const { settingsOpen, openSettings, closeSettings, toggleSettingsPanel, openSettingsFromGear, switchSettingsTab, resetTabToDefault: resetSettingsTabToDefault } = _settingsUI;
+// 컨트롤 배선(bindControls)은 applyOpts·bgm 등 정의 이후 아래에서 호출(TDZ 회피).
 // 컨트롤 탭 — PC = 실제 리바인딩 UI(#14), 모바일 = 제스처 안내표.
 const KEYBIND_LABEL = {
   map: 'ctrl.act.map', migrate: 'ctrl.act.migrate', craft: 'ctrl.act.craft', clean: 'ctrl.act.clean',
@@ -7243,34 +7244,7 @@ async function captureRebind(e) {
   document.getElementById('settings-screen').addEventListener('pointerdown', e => { if (e.target.id === 'settings-screen') closeSettings(); });
   document.getElementById('btn-settings-default').addEventListener('click', () => resetSettingsTabToDefault());
 }
-// 현재 활성 탭의 opts만 선언부 기본값으로 복원 (전역 리셋 아님)
-function resetSettingsTabToDefault() {
-  const active = document.querySelector('#settings-tabs .settings-tab.active')?.dataset.tab;
-  const D = OPTS_DEFAULT;
-  if (active === 'graphics') {
-    opts.pixel = D.pixel; opts.quant = D.quant; opts.dither = D.dither;
-    opts.ceil = D.ceil; opts.lowSpec = D.lowSpec; opts.fpsCap = D.fpsCap;
-    // 접근성도 그래픽 탭에 배치되므로 함께 기본값 복원
-    opts.fontScale = D.fontScale; opts.colorblind = D.colorblind; opts.reduceMotion = D.reduceMotion;
-    applyOpts(); applyLowSpec();
-  } else if (active === 'sound') {
-    opts.bgm = D.bgm; opts.bgmVol = D.bgmVol; opts.sfxVol = D.sfxVol; opts.bgIdle = D.bgIdle;
-    // 사운드 UI + 실효 반영
-    const eb = $('opt-bgm'); if (eb) eb.checked = !!opts.bgm;
-    const ev = $('opt-bgmvol'); if (ev) ev.value = Math.round(opts.bgmVol * 100);
-    const es = $('opt-sfxvol'); if (es) es.value = Math.round(opts.sfxVol * 100);
-    const ei = $('opt-bgidle'); if (ei) ei.checked = opts.bgIdle !== false;
-    setSfxVol(opts.sfxVol); syncBgm();
-  } else if (active === 'gameplay') {
-    opts.autoEat = D.autoEat; opts.lang = D.lang; opts.confirmActions = D.confirmActions;
-    // 자동 진행은 Day10 해금 상태를 존중 — 기본(off)만 복원
-    opts.autoPlay = D.autoPlay; syncAutoBtn();
-    { const cc = $('opt-confirmactions'); if (cc) cc.checked = !!opts.confirmActions; } // #2
-    applyOpts();
-  }
-  scheduleSave();
-  toast(t('settings.defaultDone'));
-}
+// resetSettingsTabToDefault → ui/settings.js resetTabToDefault (bindControls 주입 dep로 실행). 위 destructure에서 별칭 바인딩.
 /* ============================================================
    #14 키 리바인딩 (REQ-INP-01) — 액션 12종. 엔진 1곳(runAction) 경유.
    ------------------------------------------------------------
@@ -10190,38 +10164,7 @@ function applyAccessibility() {
   // 부팅 경로는 이후 onResize→updateUiScale이 fontScale까지 반영하므로 손실 없음.
   try { updateUiScale(); } catch (e) { /* 부팅 TDZ — onResize가 곧 재적용 */ }
 }
-$('opt-pixel').addEventListener('input', e => { opts.pixel = +e.target.value; applyOpts(); scheduleSave(); });
-$('opt-quant').addEventListener('change', e => { opts.quant = e.target.checked; applyOpts(); scheduleSave(); });
-$('opt-dither').addEventListener('change', e => { opts.dither = e.target.checked; applyOpts(); scheduleSave(); });
-{ const eda = $('opt-ditheramt'); if (eda) eda.addEventListener('change', e => { opts.ditherAmt = +e.target.value || 1; applyOpts(); scheduleSave(); }); }
-{ const eaa = $('opt-aa'); if (eaa) eaa.addEventListener('change', e => { opts.aa = e.target.checked; applyOpts(); scheduleSave(); }); }
-$('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; applyOpts(); scheduleSave(); });
-$('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; scheduleSave(); });
-$('opt-autoplay').addEventListener('change', e => { opts.autoPlay = e.target.checked; syncAutoBtn(); scheduleSave(); });
-{ const cc = $('opt-confirmactions'); if (cc) cc.addEventListener('change', e => { opts.confirmActions = e.target.checked; scheduleSave(); }); } // #2
-$('opt-fps').addEventListener('change', e => { opts.fpsCap = +e.target.value || 60; scheduleSave(); });
-$('opt-lowspec').addEventListener('change', e => { opts.lowSpec = e.target.checked; applyLowSpec(); scheduleSave(); });
-// 접근성 (REQ-ACC-01)
-{
-  const ef = $('opt-fontscale'); if (ef) ef.addEventListener('change', e => { opts.fontScale = +e.target.value || 1; applyAccessibility(); scheduleSave(); });
-  const ecb = $('opt-colorblind'); if (ecb) ecb.addEventListener('change', e => { opts.colorblind = e.target.checked; applyAccessibility(); scheduleSave(); });
-  const erm = $('opt-reducemotion'); if (erm) erm.addEventListener('change', e => { opts.reduceMotion = e.target.checked; applyAccessibility(); scheduleSave(); });
-}
-$('opt-bgidle').addEventListener('change', e => {
-  opts.bgIdle = e.target.checked;
-  if (!opts.bgIdle && document.hidden) { bgm.pause(); setAmbience(null); setFire(false); }
-  else if (opts.bgIdle && document.hidden) syncSfxAmbience();
-  scheduleSave();
-});
-// 언어 전환: 저장 후 재로딩 (라이브 리렌더 대신 단순하게) — veil로 암전 후 전환
-$('opt-lang').addEventListener('change', async e => {
-  const next = (e.target.value === 'en' || e.target.value === 'ja') ? e.target.value : 'ko';
-  if (next === (opts.lang || 'ko')) return;
-  if (!(await gameConfirm(t('lang.confirm'), t('confirm.change'), t('confirm.cancel')))) { e.target.value = opts.lang || 'ko'; return; }
-  opts.lang = next;
-  flushSave();               // 즉시 저장 후
-  reloadWithVeil();          // 재로딩하며 부팅 시 setLang(opts.lang) 적용
-});
+// opt-* 컨트롤 배선은 ui/settings.js bindControls로 이관. bgm/syncBgm/syncSfxAmbience 정의 이후 아래에서 _settingsUI.bindControls(...) 1회 호출(TDZ 회피).
 
 /* ============================================================
    위젯 모드 (Electron 전용) — window.nineWidget (preload contextBridge)
@@ -10473,6 +10416,8 @@ function syncSfxAmbience() {
   const fireOn = items.some(it => it.defId === 'stove' && it.on !== false);
   setFire(fireOn);
 }
+// #210 설정 컨트롤 배선: bgm/syncBgm/syncSfxAmbience 등 정의 완료 후 1회 주입(TDZ 회피).
+_settingsUI.bindControls({ applyOpts, applyLowSpec, applyAccessibility, syncAutoBtn, syncBgm, syncSfxAmbience, scheduleSave, flushSave, gameConfirm, reloadWithVeil, toast, bgm });
 // 모바일 대응: 재생은 반드시 사용자 제스처 안에서 시작 (자동재생 정책)
 $('bgm-row').style.display = 'flex';
 $('opt-bgm').checked = !!opts.bgm;
