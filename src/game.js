@@ -9249,6 +9249,11 @@ function renderInventoryBar() {
 }
 function renderExpPanel() {
   const box = $('exp-content');
+  // 디렉터(2026-07-19 "탐험 진행중 UI 없더라"): 패널은 탐험 진행 중·부상 중에만 노출한다.
+  //   유휴 "지역 탐험" 진입 클러터는 앞서 삭제(진입=상단 탐험 버튼) — 그때 인라인 display:none이 진행률 바까지
+  //   가려버린 게 근원. 이제 CSS(.show) + 상태 토글로만 제어 → 탐험 시작하면 지역·진행률·ETA가 좌측에 뜬다.
+  const panel = $('exp-panel');
+  if (panel) panel.classList.toggle('show', !!(state.exp || state.injury));
   if (state.exp) {
     const r = REGIONS[state.exp.region];
     box.innerHTML = `
