@@ -4383,7 +4383,7 @@ function collapseEntranceLoot() {
     collapseLootFx = { kind: 'cat', tier: 'legend' }; // 어둠 속의 야옹 — 물건이 아니라 기척. 모델은 발자국 한 쌍.
     return t('ev.collapse.rCat');
   }
-  if (r < 0.5) { // 도료 (지역 시그니처 계열 가중 — 기존 잭팟 층 재사용)
+  if (r < 0.30) { // 도료 (디렉터 2026-07-19: 0.5→0.3 — 「무너진 입구 보상이 다 보라 도료」 단조 완화. 지역 계열 가중)
     const fam = rollPaintFamily(region);
     state.paints[fam] = (state.paints[fam] || 0) + 1;
     collapseLootFx = { kind: 'paint', tier: 'rare', body: PAINT_FAMILIES[fam].swatch }; // 깡통 몸통=그 계열 색, 광선=등급 보라
@@ -4392,7 +4392,7 @@ function collapseEntranceLoot() {
     return t('ev.collapse.rPaint', { name: LName(PAINT_FAMILIES[fam]) });
   }
   const bpPool = (BAL.blueprint.regionItems[region] || []).filter(id => !(state.blueprints || {})[id]);
-  if (r < 0.68 && bpPool.length) { // 시그니처 도면 (미보유 한정)
+  if (r < 0.50 && bpPool.length) { // 시그니처 도면 (미보유 한정, 0.30~0.50=20%)
     const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
     state.blueprints = state.blueprints || {};
     state.blueprints[bpId] = 1;
@@ -4401,10 +4401,13 @@ function collapseEntranceLoot() {
     riskGainPush({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
     return t('ev.collapse.rBp', { name: bpName(bpId) });
   }
-  const rid = Math.random() < 0.5 ? 'cloth' : 'parts';
-  resAdd(rid, 1);
-  collapseLootFx = { kind: rid === 'cloth' ? 'cloth' : 'parts', tier: 'common' };
-  riskGainPush({ icon: icon('icon_res_' + rid, '📦'), label: LN(RESOURCES[rid]), n: 1, tier: '' });
+  // 자원 잡동사니 — 무너진 건물다운 4종으로 다양화(색·종류 단조 타파, 디렉터 2026-07-19). 등급 common(보라 아님).
+  const junkPool = ['cloth', 'parts', 'material', 'canned'];
+  const rid = junkPool[Math.floor(Math.random() * junkPool.length)];
+  const jn = 1 + (Math.random() < 0.4 ? 1 : 0); // 가끔 2개
+  resAdd(rid, jn);
+  collapseLootFx = { kind: rid === 'cloth' ? 'cloth' : 'parts', tier: 'common' }; // 모델=천/부품 프록시(그 외 자원도 상자 실루엣)
+  riskGainPush({ icon: icon('icon_res_' + rid, '📦'), label: LN(RESOURCES[rid]), n: jn, tier: '' });
   return t('ev.collapse.rJunk', { name: LN(RESOURCES[rid]) });
 }
 // #164 「떠오른 자리」 회수 — 스팟 지역 탐험이 성공/부분성공으로 닿았을 때 resolveExpedition에서 호출.
