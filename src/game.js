@@ -8049,12 +8049,15 @@ function pdaOpenApp(openFn) {
   $('pda-lcd').appendChild($('modal-back'));
   openFn();
 }
-function pdaAppExit() {
+function pdaAppExit(toHome) {
   if (!pdaAppOn) return;
   pdaAppOn = false;
   document.body.classList.remove('pda-app');
   document.body.appendChild($('modal-back')); // 원위치(body 직속) 복귀 — 일반 모달 경로 보전
-  pdaClose();
+  // #디렉터: 앱에서 뒤로 누르면 PDA를 닫지 말고 홈(상태 탭)으로 — 인벤/자원 조회 경로 확보.
+  //   그 외 경로(다른 모달 닫힘 등)는 기존대로 PDA를 끈다.
+  if (toHome) { pdaTab = 'status'; renderPDA(); }
+  else pdaClose();
 }
 function renderPDA() {
   document.querySelectorAll('#pda-tabs .pda-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === pdaTab));
@@ -10574,7 +10577,11 @@ document.querySelectorAll('#pda-tabs .pda-tab').forEach(b =>
     else if (d === 'right') step(1);
     else $('pda-screen').scrollBy({ top: d === 'up' ? -120 : 120, behavior: 'smooth' });
   }));
-  $('pda-hit-back').addEventListener('click', () => pdaClose());
+  $('pda-hit-back').addEventListener('click', () => {
+    // 앱 모드(제작·이주 등 좌측 메뉴로 진입)면 앱만 닫고 PDA 홈으로 — 인벤 조회 가능. 홈에서면 PDA 닫기.
+    if (pdaAppOn) { $('modal-back').classList.remove('show'); pdaAppExit(true); }
+    else pdaClose();
+  });
   $('pda-hit-ok').addEventListener('click', () => renderPDA());
 }
 // 온스크린 카메라 컨트롤 (모바일/데스크톱 공용)
