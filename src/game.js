@@ -587,9 +587,24 @@ function updateWindowSkies() {
   }
 }
 function gameHour() { return (state.gameMin % 1440) / 60; }
+const SUN_FIXED = new THREE.Vector3(-6, 12, -4); // 실내(지하) 고정 태양 방위 — 오르빗 미적용
+// 디렉터(2026-07-19 "실제 세상처럼"): 해가 동에서 떠 서로 진다 → 지향광(=그림자)이 하루 종일 회전.
+//   단일 지향광(moon)을 24h 대원 궤도로 굴린다: 6h=동 지평, 12h=정점, 18h=서 지평, 자정=지하(→ 저고도 클램프=달빛).
+//   연속 궤도(A=2π(h-6)/24)라 낮↔밤 경계에서 방위가 튀지 않는다. 천체 디스크도 같은 방위.
+function updateSunArc() {
+  const h = gameHour();
+  const A = 2 * Math.PI * (h - 6) / 24;            // 6h→0(동), 12h→π/2(정점), 18h→π(서), 0h→3π/2(지하)
+  const R = 11, PEAK = 12, MINY = 3.6;             // 수평 반경 / 정점 고도 / 지평 최소 고도(그림자 과신장·달빛 하한)
+  const x = Math.cos(A) * R;                       // +동 → -서
+  const y = Math.max(MINY, Math.sin(A) * PEAK + MINY * 0.35); // 밤엔 지평 아래를 저고도로 클램프
+  moon.position.set(x, y, -3.5);
+  moon.target.updateMatrixWorld();
+  if (moonMesh) moonMesh.position.copy(moon.position).normalize().multiplyScalar(115); // 해/달 디스크 방위 정합
+}
 function applyTimeLighting() {
-  // 지하 셸터: 시간대와 무관하게 고유 무드 고정
+  // 지하 셸터: 시간대와 무관하게 고유 무드 고정 (태양 오르빗도 미적용 — 고정 방위 유지)
   if (SHELTERS[state.current]?.indoor) {
+    moon.position.copy(SUN_FIXED);
     const A = phaseValues('night');
     scene.fog.color.setHex(A.fog);
     skyMat.uniforms.cHorizon.value.setHex(A.skyH);
@@ -608,6 +623,7 @@ function applyTimeLighting() {
     updateSunShafts(); // 지하: dayness=0 → 빛기둥 소등
     return;
   }
+  updateSunArc(); // 실외: 해가 동→서로 이동 (그림자 방향 회전)
   const h = gameHour();
   let i = 0;
   while (i < DAY_KEYS.length - 1 && DAY_KEYS[i + 1][0] <= h) i++;
