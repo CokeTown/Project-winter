@@ -141,7 +141,9 @@ export const state = {
 export const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
 
 // ── 런타임 설정(세이브와 별개, opts 키로 별도 저장) ──
-export const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, autoPlay: false, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko', fpsCap: 60, lowSpec: false, bgIdle: true,
+export const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, autoPlay: false, bgm: true, bgmVol: 0.15, sfxVol: 0.07,
+  // #121 itch.io 국제판(__ITCH__)만 기본 언어 영어 — 신규 설치(nw-opts 없음)의 기본값이 곧 표시 언어(setLang(opts.lang||…)). 유저 명시 선택은 nw-opts로 저장돼 이 기본을 덮는다. typeof 가드=vite 밖(테스트) 안전.
+  lang: (typeof __ITCH__ !== 'undefined' && __ITCH__) ? 'en' : 'ko', fpsCap: 60, lowSpec: false, bgIdle: true,
   // 렌더 품질: aa=MSAA 안티에일리어싱(도트 유지·엣지 매끄럽게) / ditherAmt=디더 도트 강도(0~1)
   aa: true, ditherAmt: 1,
   // 접근성 (REQ-ACC-01): 폰트 3단(1/1.12/1.25) · 색약 팔레트 · 흔들림/깜빡임 감소

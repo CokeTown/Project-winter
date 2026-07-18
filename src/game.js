@@ -10536,6 +10536,7 @@ if (!loadSave()) {
 // #34 Steam 언어 연동: 유저가 언어를 고른 적 없으면(첫 실행) Steam 클라이언트 언어 → OS 언어 순으로 추정.
 //   명시 선택(opts.lang)이 항상 우선이고, 자동값은 저장하지 않는다 — 이후 Steam 언어를 바꾸면 따라간다.
 const autoLang = (() => {
+  // #121 itch.io 국제판의 기본 영어는 opts.lang 기본값(state.js, __ITCH__)에서 처리 — 신규 설치는 opts.lang이 항상 truthy라 여기로 안 온다.
   const m = steamLangToGame(window.nineSteam && window.nineSteam.lang);
   if (m) return m;
   const os = (navigator.language || '').toLowerCase();
