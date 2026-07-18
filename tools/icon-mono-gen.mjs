@@ -81,6 +81,7 @@ const CUSTOM = {
   'f-neonvip': 'M11 4h2v2h-2V4zM9 6h6v2H9V6zM7 8h10v2H7V8zM9 10h6v2H9v-2zM11 12h2v2h-2v-2zM11 14h2v4h-2v-4zM8 18h8v2H8v-2z',
   'f-neonair': 'M9 3h6v8H9V3zM11 11h2v5h-2v-5zM8 16h8v2H8v-2zM17 4h2v2h-2V4zM19 2h2v2h-2V2z',
   'f-suit': 'M11 2h2v3h-2V2zM5 5h14v3H5V5zM6 8h12v10H6V8z',
+  'f-teddy': 'M6 3h3v3H6zM15 3h3v3H15zM7 5h10v2H7zM6 6h12v5H6zM7 11h10v2H7zM9 8v2h2v-2zM13 8v2h2v-2zM11 10v2h2v-2zM8 13h8v2H8zM7 15h10v5H7zM5 14h2v4H5zM17 14h2v4h-2zM7 19h3v3H7zM14 19h3v3h-3z', // 곰인형 (자작 — 라이브러리 부재)
   'f-radioset': 'M16 2h2v4h-2V2zM4 6h16v2H4V6zM4 8h2v10H4V8zM18 8h2v10h-2V8zM4 18h16v2H4v-2zM7 10h4v6H7v-6zM14 10h3v3h-3v-3zM14 15h3v1h-3z',
   // ── P3 자작: 지역 ──
   'd-deadtree': 'M11 6h2v14h-2V6zM7 8h4v2H7V8zM5 6h2v2H5V6zM13 10h4v2h-4v-2zM17 8h2v2h-2V8zM5 20h14v2H5v-2z',
@@ -223,6 +224,8 @@ export const MAP = [
   ['f-neonvip', 'icon_furn_neonvip'],
   ['f-neonair', 'icon_furn_neonair'],
   ['f-suit', 'icon_furn_suit'],
+  ['lightbulb', 'icon_furn_moodlantern'], // 전구 무드등 (pixelarticons MIT)
+  ['f-teddy', 'icon_furn_teddybear'],     // 곰인형 (자작 24그리드)
   // P3: 시스템·기록·전리품
   ['play', 'icon_sys_play'],
   ['clipboard', 'icon_sys_quest'],
