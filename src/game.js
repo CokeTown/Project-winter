@@ -4039,8 +4039,9 @@ function resolveExpedition() {
     ? `<div class="loot-list reveal">${got.map(id => `<div class="loot-item" style="--li:${li++}">${furnIcon(id)} ${LName(DEFS[id])}</div>`).join('')}</div>`
     : '';
   // 희귀 전리품(도료=희귀 보라 / 도면·네온 안료=전설 금색): 획득 난이도별 빛나는 테두리 박스 (디렉터 2026-07-09).
-  //   도료엔 실제 색 스와치 점을 붙여 "무슨 색을 주웠는지" 한눈에. 스태거는 가구 다음 클라이맥스로.
-  const lootRow = s => `<div class="loot-item ${s.tier}" style="--li:${li++}">${s.swatch != null ? `<span class="loot-dot" style="background:#${(s.swatch & 0xffffff).toString(16).padStart(6, '0')}"></span>` : ''}${s.icon} ${s.label}${s.n ? ` +${s.n}` : ''}</div>`;
+  //   도료엔 실제 색을 페인트통 아이콘으로(디렉터: "흐르는 액체 색으로 어떤 색인지") — 통은 회색, 흐르는 물감·표면이 도료색.
+  const paintBucket = hex => `<svg class="paint-can" viewBox="0 0 22 18" width="1.55em" height="1.28em" aria-hidden="true"><path d="M13.5 4.4 q5.4 -1.2 6.4 3.1 q-0.9 4.3 -4.4 3 q1.4 -3.1 -2 -6.1 z" fill="#${hex}"/><path d="M15.2 10.2 q1.1 2.6 -0.4 4 q-1.4 -0.5 -1 -2.4 z" fill="#${hex}" opacity="0.9"/><path d="M3 5 h8.4 a1 1 0 0 1 1 1 v6.2 a2.6 2 0 0 1 -10.4 0 v-6.2 a1 1 0 0 1 1 -1 z" fill="#e5e9ee" stroke="#7c8590" stroke-width="0.7"/><ellipse cx="7.2" cy="6" rx="4.7" ry="1.35" fill="#${hex}"/><path d="M2.6 6.1 q4.6 -4 9.2 0" fill="none" stroke="#b9bfc7" stroke-width="0.8"/></svg>`;
+  const lootRow = s => `<div class="loot-item ${s.tier}" style="--li:${li++}">${s.swatch != null ? paintBucket((s.swatch & 0xffffff).toString(16).padStart(6, '0')) : ''}${s.icon} ${s.label}${s.n ? ` +${s.n}` : ''}</div>`;
   const specialHtml = special.length ? `<div class="loot-list reveal">${special.map(lootRow).join('')}</div>` : '';
   // #208(디렉터): "탐사 최종 정산에서 「이벤트 발생으로 추가 획득:」 이런식으로 추가하고" —
   //   탐험 도중 리스크 인카운터로 번 것은 탐험 성과와 출처가 다르다. 같은 희귀도 문법으로 그리되 소제목으로 분리.
