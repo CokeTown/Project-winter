@@ -17,7 +17,8 @@ import { makeCulling } from './render/culling.js'; // Tier4 렌더 추출 Phase1
 import { makeCamera } from './render/camera.js'; // Tier4 렌더 추출 Phase1-③: 카메라
 import { makeScreenFx } from './render/weatherfx.js'; // Tier4 렌더 추출 Phase1-④: 화면 2D 날씨 오버레이
 import { makeModals } from './ui/modals.js'; // Tier4 UI 추출 Phase1-⑤: 모달 빌더
-import { makeSettingsUI } from './ui/settings.js'; // #210 설정 모달 셸(1단계 추출)
+import { makeSettingsUI } from './ui/settings.js'; // #210 설정 모달 셸+컨트롤 배선(1~2단계 추출)
+import { makeKeybindUI } from './ui/keybind.js'; // #210 컨트롤 탭 키 리바인딩(3단계 추출)
 import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, MEMOS_CITYCORE, BROADCASTS, SKETCHES } from './data/lore.js';
 import { PAINT_FAMILIES, RARE_PAINTS, PAINT_ALL, paintFamilyOf, paintFamilyRequired } from './data/paints.js'; // 도료 12계열 + 희귀 안료 (REWARD-LOOP ②)
 import { makeEvents } from './data/events.js';
@@ -7172,61 +7173,8 @@ const _settingsUI = makeSettingsUI({ renderControlsGuide: (...a) => renderContro
 const { settingsOpen, openSettings, closeSettings, toggleSettingsPanel, openSettingsFromGear, switchSettingsTab, resetTabToDefault: resetSettingsTabToDefault } = _settingsUI;
 // 컨트롤 배선(bindControls)은 applyOpts·bgm 등 정의 이후 아래에서 호출(TDZ 회피).
 // 컨트롤 탭 — PC = 실제 리바인딩 UI(#14), 모바일 = 제스처 안내표.
-const KEYBIND_LABEL = {
-  map: 'ctrl.act.map', migrate: 'ctrl.act.migrate', craft: 'ctrl.act.craft', clean: 'ctrl.act.clean',
-  sleep: 'ctrl.act.sleep', journal: 'ctrl.act.journal', pause: 'ctrl.act.pause', editMode: 'ctrl.act.editMode',
-  rotViewL: 'ctrl.act.rotViewL', rotViewR: 'ctrl.act.rotViewR', rotateItem: 'ctrl.act.rotateItem', reclaim: 'ctrl.act.reclaim',
-};
-function renderControlsGuide() {
-  const el = $('controls-guide'); if (!el) return;
-  if (isPcInput) {
-    // ESC 시스템 예약 행(리바인딩 불가) + 액션 12행(클릭→키 대기)
-    const escRow = `<div class="cg-row"><span class="cg-key cg-fixed">ESC</span><span class="cg-desc">${t('ctrl.esc')} <span class="cg-reserved">${t('ctrl.reserved')}</span></span></div>`;
-    const rows = KEYBIND_ORDER.map(a => {
-      const waiting = awaitingRebind === a;
-      const label = waiting ? t('ctrl.pressKey') : keyLabel(KEYBINDS[a]);
-      return `<div class="cg-row"><button class="cg-key cg-bind${waiting ? ' waiting' : ''}" data-rebind="${a}">${label}</button><span class="cg-desc">${t(KEYBIND_LABEL[a])}</span></div>`;
-    }).join('');
-    el.innerHTML = escRow + rows + `<div class="btn-row" style="margin-top:10px"><button class="pixel-btn" id="btn-keys-default">${t('ctrl.rebindDefault')}</button></div>`;
-    el.querySelectorAll('.cg-bind').forEach(b => b.addEventListener('click', () => startRebind(b.dataset.rebind)));
-    const bd = el.querySelector('#btn-keys-default');
-    if (bd) bd.addEventListener('click', () => { awaitingRebind = null; resetKeybinds(); renderControlsGuide(); toast(t('ctrl.rebindDone')); });
-  } else {
-    const row = (k, d) => `<div class="cg-row"><span class="cg-key cg-fixed">${k}</span><span class="cg-desc">${d}</span></div>`;
-    el.innerHTML = row(t('ctrl.tap.k'), t('ctrl.tap')) + row(t('ctrl.drag.k'), t('ctrl.drag')) + row(t('ctrl.pinch.k'), t('ctrl.pinch'))
-      + `<div class="cg-note">${t('ctrl.mobileNote')}</div>`;
-  }
-}
-function startRebind(action) {
-  awaitingRebind = action;
-  renderControlsGuide();
-}
-// 리바인딩 캡처: ESC 취소, 중복 시 스왑 확인. 성공 시 저장·재렌더.
-async function captureRebind(e) {
-  e.preventDefault();
-  const action = awaitingRebind;
-  if (e.key === 'Escape') { awaitingRebind = null; renderControlsGuide(); return; }
-  // ESC/시스템키 외 아무 키나 code로 캡처. reclaim에 Backspace도 유효.
-  const code = e.code;
-  if (!code || code === 'Escape') return;
-  // 이미 이 액션이면 그대로 유지하고 종료
-  if (KEYBINDS[action] === code) { awaitingRebind = null; renderControlsGuide(); return; }
-  // 중복 검사: 다른 액션이 이 code를 이미 쓰는가?
-  const conflict = KEYBIND_ORDER.find(a => a !== action && KEYBINDS[a] === code);
-  awaitingRebind = null; // 캡처는 여기서 종료 (확인창 동안 추가 캡처 금지)
-  if (conflict) {
-    renderControlsGuide(); // '키 입력 대기' 라벨 원복 후 확인창
-    const ok = await gameConfirm(
-      t('ctrl.swapConfirm', { key: keyLabel(code), from: t(KEYBIND_LABEL[conflict]), to: t(KEYBIND_LABEL[action]) }),
-      t('ctrl.swap'), t('confirm.cancel'));
-    if (!ok) { renderControlsGuide(); return; }
-    KEYBINDS[conflict] = KEYBINDS[action]; // 기존 액션의 키를 충돌 액션에 넘겨 스왑
-  }
-  KEYBINDS[action] = code;
-  saveKeybinds();
-  renderControlsGuide();
-  toast(t('ctrl.rebindDone'));
-}
+// KEYBIND_LABEL·renderControlsGuide·startRebind·captureRebind → ui/keybind.js로 이관(#210 Stage 3).
+// 리바인딩 대기상태(awaitingRebind)는 모듈 내부 소유. _keybindUI 생성은 KEYBINDS/KEYBIND_ORDER/keyLabel 정의 이후 아래에서.
 // 설정 진입 문법: PC = ESC / 모바일 = 우측 상단 톱니. 창은 중앙 고정.
 // ($ 헬퍼는 이 시점에 TDZ라 getElementById 직접 사용)
 {
@@ -7286,6 +7234,10 @@ function keyLabel(code) {
   const map = { Delete: 'Del', Backspace: '⌫', Space: 'Space', Enter: 'Enter', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Minus: '-', Equal: '=', Backquote: '`' };
   return map[code] || code;
 }
+// #210 Stage 3: 컨트롤 탭 키 리바인딩 UI를 ui/keybind.js로 이관. 입력 코어(KEYBINDS 등) 정의 후 생성 →
+//   deps 직접 주입(무TDZ). 위 makeSettingsUI ctx의 renderControlsGuide는 아래 destructure를 지연 참조(콜타임 해소).
+const _keybindUI = makeKeybindUI({ KEYBINDS, KEYBIND_ORDER, keyLabel, resetKeybinds, saveKeybinds, isPcInput, gameConfirm, toast });
+const { renderControlsGuide, captureRebind, isAwaitingRebind } = _keybindUI;
 // 이벤트 → 액션. reclaim은 Delete/Backspace 양쪽 허용(관례).
 function actionForEvent(e) {
   for (const a of KEYBIND_ORDER) {
@@ -7316,10 +7268,9 @@ function runAction(a) {
     case 'reclaim': if (selected && !placing) reclaimSelected(); break;
   }
 }
-let awaitingRebind = null; // 리바인딩 대기 중인 액션 (설정 창)
 addEventListener('keydown', e => {
-  // 리바인딩 캡처 모드: ESC 취소, 그 외 키는 해당 액션에 배정
-  if (awaitingRebind) { captureRebind(e); return; }
+  // 리바인딩 캡처 모드: ESC 취소, 그 외 키는 해당 액션에 배정 (대기상태·캡처는 ui/keybind.js 소유)
+  if (isAwaitingRebind()) { captureRebind(e); return; }
   if (titleVisible) return;
   if (e.key === 'Escape') {
     // 우선순위: PDA 닫기 > 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
