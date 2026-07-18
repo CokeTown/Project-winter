@@ -11437,6 +11437,8 @@ window.__shelter = {
   wildlifeNudge: (i, x, z) => wildlifeSys._nudge(i, x, z), // QA: 클로즈업 검수용 (팬 카메라 부재 보완)
   wildlifeRespawn: (id) => wildlifeSys.respawn(id || state.current),
   avatarState: () => avatarSys._debug(), // #86 QA 훅
+  avatarSys, // 스토어 캡처용: getGroup().position 직접 배치(정착 후 고정 프레임 캡처)
+  qaPlaceCat: (x, z, mode) => { const c = getCat(); if (!c) return false; c.g.position.set(x, c.baseY || 0.05, z); c.mode = mode || 'sleep'; c.timer = 99999; c.tgt = null; c.hop = null; return true; }, // 캡처용 고양이 고정 배치(웅크림)
   avatarRespawn: () => avatarSys.respawn(),
   avatarDespawn: () => avatarSys.despawn(), // #181 접지 캡처: 방문자 시트에서 아바타 제거
   // #181 방문자 복셀 접지 훅: 프리셋을 씬에 직접 스폰(연출 시스템 이전 룩 검증용)
@@ -11478,6 +11480,7 @@ window.__shelter = {
   spawnGroundDrop, shelterHasGround,
   debugDrop: (evId, ang) => spawnGroundDrop(evId || 'dog', ang != null ? { pos: (() => { const rr = Math.max(ROOM.w, ROOM.d) * 0.5, d = rr + 2.0; return { x: Math.cos(ang) * d, z: Math.sin(ang) * d, y: visitorGroundY() }; })() } : {}),
   dropState: () => dropSpots.map(d => ({ evId: d.evId, x: +d.g.position.x.toFixed(2), z: +d.g.position.z.toFixed(2) })),
+  clearGroundDrops: () => disposeDropSpots(), // 스토어 캡처용: 바닥 드랍 반짝임 전부 제거(깨끗한 씬)
   dropCollect: () => { if (dropSpots.length) { collectDrop(dropSpots[0]); return true; } return false; },
   avatarForceNext: () => avatarSys._forceNext(),          // #86② QA: 행동 추첨 강제 (상호작용 검증)
   avatarBlocks: (x, z) => avatarSys.blocksPlacement(x, z, { w: 1, d: 1 }), // #86③ QA: 설치 가드 판정
