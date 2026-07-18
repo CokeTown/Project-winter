@@ -97,6 +97,12 @@ export function makeAvatarSystem(ctx) {
       B(body, 13 * PX * s, torsoH, 8.5 * PX * s, P.coat, 0, torsoH / 2, 0);
       B(body, 15 * PX * s, 7 * PX * s, 10 * PX * s, P.coatHem, 0, 3.5 * PX * s, 0);
       B(body, 1.2 * PX * s, torsoH - 8 * PX * s, 0.8 * PX * s, P.coatHem, 0, torsoH / 2 - 2 * PX * s, 4.4 * PX * s);
+      // #119 얼룩파카: 코트 앞면에 2톤 얼룩을 살짝 도드라지게 얹는다(복셀 위장 무늬). 클래식 지오·애니 무변.
+      if (outfit && outfit.camo) {
+        const CB = [[-3, 22, 5, 4, 0], [2.6, 24, 4, 5, 1], [0, 16, 5.5, 4.5, 0], [-3.5, 12, 4, 4, 1], [3, 14, 4.5, 4, 0], [-1, 9, 5, 3.6, 1], [4, 20, 3, 3, 1], [-4.5, 26, 3, 3, 0], [1.5, 29, 3.5, 2.6, 0]];
+        for (const [bx, byc, bw, bh, ti] of CB)
+          B(body, bw * PX * s, bh * PX * s, 0.6 * PX * s, outfit.camo[ti], bx * PX * s, byc * PX * s, 4.35 * PX * s);
+      }
     }
     const arms = {};
     const armX = style === 'puffer' ? 8.8 : 8.2; // 패딩은 어깨도 두툼

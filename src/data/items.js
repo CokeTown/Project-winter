@@ -145,6 +145,14 @@ export const OUTFITS = {
     pal: { coat: 0x7a5a3c, coatHem: 0x684c32, sleeve: 0x715340, scarf: 0xb84a3a, beanie: 0x4a3b2c } },
   vest: { name: '올리브 조끼',    nameEn: 'Olive Vest',   emoji: '🧥', style: 'vest',
     pal: { coat: 0x3f4a3a, coatHem: 0x353f31, sleeve: 0xa89478, scarf: 0x8a5a3c, beanie: 0x39322a } },
+  // ── #119 서포터팩 전용 복장 2종 (dlc:'supporter') — 코스메틱. 도면·드랍 없이 DLC 소유 시 제작대에 노출.
+  //   얼룩파카: 클래식 실루엣 유지(style 미지정 → 애니·팔·목도리 그대로) + camo 필드로 코트에 2톤 얼룩 오버레이(avatar.js).
+  //   청바지: 순수 팔레트(데님 재킷+청바지) — 실루엣 손 안 댐.
+  camoparka: { name: '얼룩파카', nameEn: 'Camo Parka', emoji: '🧥', dlc: 'supporter',
+    camo: [0x3f4630, 0x746c48], // 얼룩 2톤(다크올리브·카키) — 코트 위 복셀 위장 무늬
+    pal: { coat: 0x5a5f3e, coatHem: 0x474d32, sleeve: 0x50553a, pants: 0x39392f, scarf: 0x2f3326, beanie: 0x3a3f2b } },
+  denim: { name: '청바지', nameEn: 'Denim', emoji: '👖', dlc: 'supporter',
+    pal: { coat: 0x466684, coatHem: 0x3b5670, sleeve: 0x41607c, pants: 0x33506e, boots: 0x3a2c22, scarf: 0xcabfa4, beanie: 0x6a5a44 } },
 };
 
 export const CRAFTS = [
@@ -209,6 +217,9 @@ export const CRAFTS = [
   { out: { outfit: 'puffer' }, cost: { cloth: 5 }, hint: '옷장에 추가 — 누빔 충전재 빵빵한 점퍼', hintEn: 'Added to wardrobe — a quilted, puffed-up jacket' },
   { out: { outfit: 'poncho' }, cost: { cloth: 4, material: 1 }, hint: '옷장에 추가 — 담요를 두른 듯한 판초', hintEn: 'Added to wardrobe — a blanket-like poncho' },
   { out: { outfit: 'vest' }, cost: { cloth: 3, material: 1 }, hint: '옷장에 추가 — 팔이 가벼운 작업 조끼', hintEn: 'Added to wardrobe — a work vest, arms free' },
+  // #119 서포터팩 전용 복장 — DLC 소유 시에만 제작대에 노출(dlc:'supporter'). 무도면·코스메틱.
+  { out: { outfit: 'camoparka' }, dlc: 'supporter', cost: { cloth: 4 }, hint: '옷장에 추가 — 얼룩무늬 방한 파카', hintEn: 'Added to wardrobe — a mottled-camo winter parka' },
+  { out: { outfit: 'denim' }, dlc: 'supporter', cost: { cloth: 4 }, hint: '옷장에 추가 — 데님 재킷과 청바지', hintEn: 'Added to wardrobe — a denim jacket and jeans' },
   // DDD-4 지역 시그니처 (REWARD-LOOP ② 2차): bp = 도면 게이트 — 그 지역 탐험에서 도면을 주워야 목록에 뜬다.
   { out: { furn: 'barrelfire' }, bp: 'barrelfire', cost: { material: 2, parts: 1, fuel: 1 }, hint: '슬럼의 밤 — 드럼통에 피운 불', hintEn: "The slum's night — a fire in a drum" },
   { out: { furn: 'graffiti' }, bp: 'graffiti', cost: { material: 1, cloth: 1 }, hint: '뜯어온 벽의 목소리', hintEn: 'A wall torn loose, still shouting' },
