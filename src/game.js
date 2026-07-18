@@ -10518,6 +10518,7 @@ $('opt-sfxvol').addEventListener('input', e => {
 /* ============================================================
    시작 & 메인 루프
 ============================================================ */
+let _firstLaunch = false; // 세이브·nw-opts 둘 다 없음 = 진짜 최초 실행 (언어 자동감지 대상)
 if (!loadSave()) {
   // P1-A: 세이브가 없는 첫 실행 — 타이틀에서 골랐던 전역 옵션(언어/음량)을 승계
   try {
@@ -10526,10 +10527,12 @@ if (!loadSave()) {
       Object.assign(opts, JSON.parse(raw));
       if (opts.sfxVol === 0.7) opts.sfxVol = 0.07;   // 구 기본값 하향 마이그레이션
       if (opts.bgmVol === 0.35) opts.bgmVol = 0.15;
+    } else {
+      _firstLaunch = true; // nw-opts 자체가 없음 → 언어를 고른 적 없는 최초 실행
     }
   } catch (e) { /* 손상된 nw-opts 무시 */ }
 }
-// #34 Steam 언어 연동: 유저가 언어를 고른 적 없으면(첫 실행) Steam 클라이언트 언어 → OS 언어 순으로 추정.
+// #34 Steam 언어 연동: 유저가 언어를 고른 적 없으면(첫 실행) Steam 클라이언트 언어 → OS/브라우저 언어 순으로 추정.
 //   명시 선택(opts.lang)이 항상 우선이고, 자동값은 저장하지 않는다 — 이후 Steam 언어를 바꾸면 따라간다.
 const autoLang = (() => {
   const m = steamLangToGame(window.nineSteam && window.nineSteam.lang);
@@ -10537,6 +10540,10 @@ const autoLang = (() => {
   const os = (navigator.language || '').toLowerCase();
   return os.startsWith('ko') ? 'ko' : (os.startsWith('ja') ? 'ja' : 'en');
 })();
+// #34 완결: opts.lang 기본값 'ko'가 항상 truthy라 autoLang이 fresh install에서 도달 못 하던 데드패스 상환.
+//   최초 실행에만 자동 언어 적용(웹 데모=브라우저 언어·Steam=클라이언트 언어). 복귀 유저(세이브 opts.lang)·명시 선택은 불변.
+//   __ITCH__(데모 브랜치 국제판)는 영어 강제 — 재수렴 시 안전 가드.
+if (_firstLaunch) opts.lang = (typeof __ITCH__ !== 'undefined' && __ITCH__) ? 'en' : autoLang;
 setLang(opts.lang || autoLang);   // 세이브된 언어 > Steam/OS 추정
 applyLocaleOverrides();       // 설치본 locales/*.json 유저 편집분 병합 (Electron 동기 — 렌더 전, 플래시 없음)
 applyStaticI18n();            // index.html 정적 텍스트 치환
