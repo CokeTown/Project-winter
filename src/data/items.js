@@ -153,6 +153,10 @@ export const OUTFITS = {
     pal: { coat: 0x5a5f3e, coatHem: 0x474d32, sleeve: 0x50553a, pants: 0x39392f, scarf: 0x2f3326, beanie: 0x3a3f2b } },
   denim: { name: '청바지', nameEn: 'Denim', emoji: '👖', dlc: 'supporter',
     pal: { coat: 0x466684, coatHem: 0x3b5670, sleeve: 0x41607c, pants: 0x33506e, boots: 0x3a2c22, scarf: 0xcabfa4, beanie: 0x6a5a44 } },
+  // 검정 정장: style:'suit' 분기가 재킷 위에 흰 와이셔츠 패널·칼라 + 붉은 넥타이 + 라펠을 얹는다(목도리 대신).
+  //   beanie=어두운 머리색(정장엔 니트 비니 대신 머리로 읽힘). shirt/tie는 pal 전용 키(suit 분기만 참조).
+  suit: { name: '검정 정장', nameEn: 'Black Suit', emoji: '🕴️', style: 'suit', dlc: 'supporter',
+    pal: { coat: 0x26272f, coatHem: 0x1b1c23, sleeve: 0x26272f, pants: 0x23242b, boots: 0x17140f, shirt: 0xe6e2d8, tie: 0xb23a34, beanie: 0x2b2620 } },
 };
 
 export const CRAFTS = [
@@ -220,6 +224,7 @@ export const CRAFTS = [
   // #119 서포터팩 전용 복장 — DLC 소유 시에만 제작대에 노출(dlc:'supporter'). 무도면·코스메틱.
   { out: { outfit: 'camoparka' }, dlc: 'supporter', cost: { cloth: 4 }, hint: '옷장에 추가 — 얼룩무늬 방한 파카', hintEn: 'Added to wardrobe — a mottled-camo winter parka' },
   { out: { outfit: 'denim' }, dlc: 'supporter', cost: { cloth: 4 }, hint: '옷장에 추가 — 데님 재킷과 청바지', hintEn: 'Added to wardrobe — a denim jacket and jeans' },
+  { out: { outfit: 'suit' }, dlc: 'supporter', cost: { cloth: 4 }, hint: '옷장에 추가 — 붉은 넥타이의 검정 정장', hintEn: 'Added to wardrobe — a black suit with a red tie' },
   // DDD-4 지역 시그니처 (REWARD-LOOP ② 2차): bp = 도면 게이트 — 그 지역 탐험에서 도면을 주워야 목록에 뜬다.
   { out: { furn: 'barrelfire' }, bp: 'barrelfire', cost: { material: 2, parts: 1, fuel: 1 }, hint: '슬럼의 밤 — 드럼통에 피운 불', hintEn: "The slum's night — a fire in a drum" },
   { out: { furn: 'graffiti' }, bp: 'graffiti', cost: { material: 1, cloth: 1 }, hint: '뜯어온 벽의 목소리', hintEn: 'A wall torn loose, still shouting' },

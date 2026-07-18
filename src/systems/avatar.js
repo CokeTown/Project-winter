@@ -92,6 +92,16 @@ export function makeAvatarSystem(ctx) {
       for (const dx of [-2, 2])
         B(body, 0.8 * PX * s, 5 * PX * s, 0.8 * PX * s, 0xd8d4c8, dx * PX * s, torsoH - 6 * PX * s, 4.5 * PX * s); // 끈
       B(body, 8 * PX * s, 6 * PX * s, 2 * PX * s, P.beanie, 0, torsoH - 4 * PX * s, -5.2 * PX * s); // 등 뒤 후드 자락
+    } else if (style === 'suit') {
+      // #119 검정 정장: 재킷(검정) + 가슴 흰 와이셔츠 패널·목 칼라 + 붉은 넥타이 + 라펠 라인. 목도리 없음(style 지정 → !style 스카프 블록 스킵).
+      B(body, 13 * PX * s, torsoH, 8.5 * PX * s, P.coat, 0, torsoH / 2, 0);            // 재킷 몸통
+      B(body, 13.6 * PX * s, 7 * PX * s, 9 * PX * s, P.coatHem, 0, 3.5 * PX * s, 0);   // 재킷 밑단
+      B(body, 6 * PX * s, 17 * PX * s, 0.7 * PX * s, P.shirt, 0, torsoH - 9 * PX * s, 4.3 * PX * s);      // 와이셔츠 앞판(넓게 — 넥타이 양옆 흰 노출)
+      B(body, 5.5 * PX * s, 2.4 * PX * s, 8.7 * PX * s, P.shirt, 0, torsoH - 1.6 * PX * s, 0);            // 셔츠 칼라(목)
+      for (const lx of [-3.2, 3.2])                                                   // 라펠 라인(셔츠/재킷 경계 가는 선)
+        B(body, 0.9 * PX * s, 15 * PX * s, 0.85 * PX * s, P.coatHem, lx * PX * s, torsoH - 9 * PX * s, 4.33 * PX * s);
+      B(body, 1.8 * PX * s, 2.3 * PX * s, 1 * PX * s, P.tie, 0, torsoH - 3.2 * PX * s, 4.44 * PX * s);    // 넥타이 매듭
+      B(body, 2.1 * PX * s, 10 * PX * s, 1 * PX * s, P.tie, 0, torsoH - 10 * PX * s, 4.44 * PX * s);      // 넥타이 몸
     } else {
       // 클래식 방한 코트 (기본 + 색 복장 9종) — 기존 지오 그대로
       B(body, 13 * PX * s, torsoH, 8.5 * PX * s, P.coat, 0, torsoH / 2, 0);
