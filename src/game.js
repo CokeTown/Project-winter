@@ -9904,8 +9904,10 @@ function renderQuestCard() {
   if (q.img) qi.innerHTML = `<img class="q-art" src="img/icons/${q.img}.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('${q.icon}'))">`;
   else qi.textContent = q.icon;
   const lore = $('quest-lore');
-  if (lore) lore.textContent = q.loreId ? t(q.loreId) : '';
-  $('quest-text').textContent = t(q.textId);
+  // #208(디렉터 "영어서 json열 나온다"): quest.*.text/lore는 인라인 px-icon(<img>)을 담을 수 있어 innerHTML로 렌더.
+  //   textContent였던 탓에 en/ja의 <img> 태그가 글자로 유출됐다(ko는 순수 텍스트라 무증상). 로케일=우리 통제 문자열이라 안전.
+  if (lore) lore.innerHTML = q.loreId ? t(q.loreId) : '';
+  $('quest-text').innerHTML = t(q.textId);
   // 배치 단계 동안 🔧 버튼 시선 유도 (툴바가 배치 모드 전용이 되면서 진입점을 가르쳐야 한다)
   const eb = $('btn-edit');
   if (eb) eb.classList.toggle('pulse', q.id === 'place');
