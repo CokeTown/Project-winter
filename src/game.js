@@ -8073,10 +8073,21 @@ function renderPDA() {
     };
     body = bar(t('pda.g.hunger'), state.hunger) + bar(t('pda.g.thirst'), state.thirst)
       + bar(t('pda.g.energy'), state.energy) + bar(t('pda.clean'), state.cleanBy?.[state.current] ?? 70);
+    // #디렉터: 탐험 중 PDA에 현황 표시(구 지역탐험 패널 이관) — 지역·진행률. 빈 화면 해소.
+    if (state.exp) {
+      const er = REGIONS[state.exp.region];
+      const remain = Math.max(0, state.exp.end - Date.now());
+      const total = state.exp.dur || ((er.time || 60) * 1000);
+      const pct = Math.min(100, Math.max(0, Math.round((1 - remain / total) * 100)));
+      body += `<div class="ph">${t('exp.panel.title')}</div>`
+        + `<div class="pline"><span class="pk">${er.emoji || ''} ${LName(er)}</span><span class="pbar"><i style="width:${pct}%"></i></span><span class="pv">${pct}%</span></div>`;
+    }
     const lines = [];
     if (state.injury) {
+      const inj = INJURIES[state.injury.type];
       const h = Math.max(0, Math.ceil((state.injury.untilMin - state.gameMin) / 60));
-      lines.push(`${LName(INJURIES[state.injury.type])} — ${t('pda.injuryLeft', { h })}`);
+      const canCure = resHasAll(inj.cure); // 치료 버튼 이관(구 지역탐험 패널) — 부상 카드 삭제 후 유일 치료 경로
+      lines.push(`${LName(inj)} — ${t('pda.injuryLeft', { h })} <button class="pixel-btn" id="pda-treat" ${canCure ? '' : 'disabled'} style="font-size:8px;padding:2px 7px;margin-left:4px">${t('injury.treat', { cost: costLabel(inj.cure) })}</button>`);
     } else lines.push(t('pda.noInjury'));
     if (state.expFatigue === state.day) lines.push(t('exp.fatigue'));
     if (state.moodBuff && state.moodBuff.until > state.day) lines.push(t('pda.mood', { amt: state.moodBuff.amt, d: state.moodBuff.until - state.day }));
@@ -8140,6 +8151,7 @@ function renderPDA() {
   scr.innerHTML = head + body;
   scr.classList.remove('pda-flick'); void scr.offsetWidth; scr.classList.add('pda-flick'); // 전자 화면 전환 플리커
   scr.querySelector('#pda-openmap')?.addEventListener('click', () => { pdaClose(); openMapModal(); });
+  scr.querySelector('#pda-treat')?.addEventListener('click', () => { treatInjury(); renderPDA(); }); // 부상 치료(구 지역탐험 패널 이관)
   scr.querySelector('#pda-journal')?.addEventListener('click', () => pdaOpenApp(() => openJournalModal('journal')));
 }
 async function cleanShelter(auto = false) {
@@ -9959,8 +9971,8 @@ function paperSfx(sfxOpts = {}) {
   } catch (e) { /* 오디오 컨텍스트 사용 불가 환경 — 무시 */ }
 }
 $('btn-exp').addEventListener('click', () => {
-  // 탐험 중이거나 부상 중이면 상태 패널, 아니면 바로 지도
-  if (state.exp || state.injury) { $('exp-panel').classList.toggle('show'); renderExpPanel(); }
+  // #디렉터: 지역탐험 패널 삭제 → 탐험 중이면 PDA 상태(진행률·부상 이관), 아니면 바로 지도.
+  if (state.exp) pdaOpen('status');
   else openMapModal();
 });
 $('btn-move').addEventListener('click', () => pdaOpenApp(openShelterModal)); // #199 5차-d: 이주도 PDA 앱

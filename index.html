@@ -153,7 +153,8 @@
 <div id="pad-cursor" aria-hidden="true"></div>
 <button class="pixel-btn danger" id="btn-cancel-place" data-i18n="btn.cancelPlace">✖ 배치 취소</button>
 
-<div class="panel" id="exp-panel">
+<!-- #디렉터: 「지역 탐험」 HUD 패널 삭제 — 탐험 진입은 상단 메뉴 「탐험」 버튼, 진행률·부상은 PDA로 이관. 요소는 유지(renderExpPanel 참조 안전)하되 display:none. -->
+<div class="panel" id="exp-panel" style="display:none">
   <h2 data-i18n="exp.panel.title">■ 지역 탐험</h2>
   <div id="exp-content"></div>
 </div>
