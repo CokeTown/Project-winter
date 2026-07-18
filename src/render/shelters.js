@@ -3015,6 +3015,7 @@ export function makeShelterBuilders(ctx) {
           const spr = (px, py, pz, w, tint, op) => {
             const m = new THREE.SpriteMaterial({ map: cloudTex[(rand() * cloudTex.length) | 0], color: tint, transparent: true, opacity: op, depthWrite: false, fog: true });
             const s = new THREE.Sprite(m); s.position.set(px, py, pz);
+            s.raycast = () => {}; // 장식 운해 — 픽킹 무효. Sprite.raycast는 raycaster.camera를 요구해 카메라 미설정 레이(아바타 장애물 검사·groundAt)에서 matrixWorld null 크래시(2g 스모크 플레이키 근원, 잎 클러스터와 동일 처방)
             s.scale.set(w, w * (0.48 + rand() * 0.14), 1); cloudSea.add(s);
           };
           // 발밑(반경 9)부터 지평선까지 균일 그리드로 촘촘히 겹쳐 '연속 운해'(홀 없음). 링 배치는 방사 틈이 남아 폐기.
