@@ -3014,17 +3014,19 @@ const MAP_SAFE = { x0: 8, x1: 88, y0: 12, y1: 80 };
 const MAP_MARKERS = {
   residential: { x: 20, y: 20 },  // 좌상 손그림 집 클러스터
   commercial:  { x: 74, y: 18 },  // 우상 무너진 빌딩(도심)
-  industrial:  { x: 18, y: 56 },  // 좌하 공장
-  slum:        { x: 78, y: 57 },  // 우하 판자촌
-  slumdeep:    { x: 86, y: 64 },  // #167 판자촌 안쪽 — 슬럼 핀의 대각 안깊이 (숙련 ★1 해금 전엔 비노출)
-  // #85 도시 전도: 확장 5종을 지리 서사대로 — 항구 벨트(남쪽 해안 하단), 리조트(북동 산정),
-  //   금지 구역(동남 봉쇄선 너머 — 슬럼 아래로 격리감). 남동 밀집을 풀어 마커 간 간격 확보.
-  harborYard:  { x: 38, y: 79 },  // 하단 좌중 야적장(컨테이너 부두)
-  fishMarket:  { x: 56, y: 81 },  // 하단 중앙 수산시장(선착장)
+  industrial:  { x: 18, y: 54 },  // 좌중 공장
+  slum:        { x: 78, y: 50 },  // 우중 판자촌
+  slumdeep:    { x: 86, y: 60 },  // #167 판자촌 안쪽 — 슬럼 핀의 대각 안깊이 (숙련 ★1 해금 전엔 비노출)
+  // #85 도시 전도: 확장 5종을 지리 서사대로 — 항구 벨트(남서 해안, 세로로 적층), 리조트(북동 산정),
+  //   금지 구역(동남 봉쇄선 너머). ── 디렉터 신고(2026-07-19): 수산시장 라벨이 야적장·연구동과 겹침 →
+  //   하단 밀집을 행(row)별로 분리. 라벨은 ~33% 폭이라 중앙에서 좌·우 핀 이름이 마주쳐 겹친다:
+  //   좌측 항구 2종은 남서 해안에 세로 적층(둘 다 이름 오른쪽), 우측 봉쇄 3종은 동편에 세로 적층(이름 왼쪽).
+  harborYard:  { x: 22, y: 68 },  // 남서 해안 상단 야적장(컨테이너 부두)
+  fishMarket:  { x: 26, y: 81 },  // 남서 해안 하단 수산시장(선착장) — 야적장 바로 아래
   resort:      { x: 85, y: 13 },  // 우상단 산정 리조트
-  checkpoint:  { x: 77, y: 71 },  // 우하단 봉쇄선 검문소
-  lab:         { x: 87, y: 80 },  // 검문소 안쪽 폭심지 연구동 (봉쇄선 너머 구석)
-  citycore:    { x: 87, y: 62 },  // 2.0 봉쇄선 너머 수도의 심장 (동쪽 가장자리 — 낙진 걷힌 뒤에만 노출)
+  checkpoint:  { x: 88, y: 65 },  // 우편 봉쇄선 검문소
+  lab:         { x: 90, y: 80 },  // 검문소 아래 폭심지 연구동 (봉쇄선 너머 구석)
+  citycore:    { x: 90, y: 45 },  // 2.0 봉쇄선 너머 수도의 심장 (동쪽 가장자리 상단 — 낙진 걷힌 뒤에만 노출)
   // ── 2.0-(d) 동부 8지역 — 좌표는 동부 전도(eastMapBiomeDataUrl) 공간. 지도는 도시 스코프라 겹침 없음 ──
   customsyard:   { x: 12, y: 55 }, // 관문 남측 압류창고
   containerport: { x: 31, y: 68 }, // 남서 스택 격자 위
@@ -3041,7 +3043,7 @@ const SHELTER_MAP = {
   container: { x: 10, y: 28 }, bus: { x: 15, y: 34 },         // 잿빛 외곽
   rooftop: { x: 60, y: 27 }, subway: { x: 66, y: 33 },        // 무너진 도심
   bunker: { x: 32, y: 38 }, greenhouse: { x: 38, y: 44 },     // 초원 구릉지
-  cabin: { x: 29, y: 66 },                                    // 숲과 산기슭
+  cabin: { x: 34, y: 60 },                                    // 숲과 산기슭 (야적장 라벨과 겹치지 않게 상향 — 2026-07-19)
   ship: { x: 14, y: 78 }, lighthouse: { x: 21, y: 73 },       // 잿빛 해안
   tugboat: { x: 46, y: 75 }, controltower: { x: 52, y: 72 },  // 얼어붙은 항구
   lodge: { x: 81, y: 27 },                                    // 고요한 고원
@@ -8174,10 +8176,21 @@ function renderPDA() {
     if (spent.length) body += `<div class="ph">${t('nt.spent')}</div><div class="pgrid">` + spent.map(s => cell(s, '-')).join('') + `</div>`;
   } else if (pdaTab === 'map') {
     const sp = SHELTER_MAP[state.current];
-    body = `<div class="pmap"><img src="${mapBiomeDataUrl(cityOf(state.current))}" alt="">`
-      + (sp ? `<span class="pyou" style="left:${sp.x}%;top:${sp.y}%"></span>` : '') + `</div>`
-      + `<div class="pnote">${t('pda.here')}: ${LName(SHELTERS[state.current])} · ${LName(DISTRICTS[districtOf(state.current)])}</div>`
-      // #211: 예보는 '어디·언제'의 정보다 — 노트 base 탭에 있던 것을 지도로. (구 노트는 날씨를 3군데 중복 표기했다)
+    const cityId = cityOf(state.current);
+    // 디렉터(2026-07-19): PDA 미니맵 = GPS. 내 거점(pyou) + 해금 지역만 '점'으로 마킹, 명칭 텍스트는 없다(공간 절약).
+    //   위치 이름은 title 툴팁으로만. 방문 전 지역은 흐린 점, 다녀온 곳은 밝은 점. 전도와 같은 좌표계·게이트.
+    const regionDots = Object.keys(MAP_MARKERS).filter(rid =>
+      REGIONS[rid] && regionCityOf(rid) === cityId && regionUnlocked(rid) && !isForbiddenRegion(rid)
+    ).map(rid => {
+      const p = MAP_MARKERS[rid];
+      const px = Math.min(MAP_SAFE.x1, Math.max(MAP_SAFE.x0, p.x));
+      const py = Math.min(MAP_SAFE.y1, Math.max(MAP_SAFE.y0, p.y));
+      const seen = ((state.regionVisits || {})[rid] || 0) > 0;
+      return `<span class="pregion${seen ? ' seen' : ''}" style="left:${px}%;top:${py}%" title="${LName(REGIONS[rid])}"></span>`;
+    }).join('');
+    body = `<div class="pmap"><img src="${mapBiomeDataUrl(cityId)}" alt="">${regionDots}`
+      + (sp ? `<span class="pyou" style="left:${sp.x}%;top:${sp.y}%" title="${LName(SHELTERS[state.current])}"></span>` : '') + `</div>`
+      // 디렉터: 셸터 명칭 텍스트 노트 제거 — 내 거점은 GPS 점(pyou)으로만. 예보(어디·언제)만 유지.
       + (hasForecast() ? `<div class="pnote">${t('forecast.prefix', { text: forecastText() })}</div>` : '')
       + `<div class="pbtn-row"><button class="pixel-btn" id="pda-openmap">${t('pda.openMap')}</button></div>`;
   } else {

@@ -364,6 +364,12 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     background: #f0f5ee; box-shadow: 0 0 7px rgba(120, 255, 150, 0.9), 0 0 0 2px rgba(8, 18, 10, 0.8);
     animation: dkblink 1.4s steps(1) infinite;
   }
+  /* 디렉터: PDA 미니맵 해금 지역 점 — 방문 전은 흐린 회록, 다녀오면 밝은 라임(전도 잉크 톤과 통일) */
+  #pda-screen .pmap .pregion {
+    position: absolute; width: 6px; height: 6px; transform: translate(-50%, -50%); border-radius: 50%;
+    background: #7d9a80; box-shadow: 0 0 0 1.5px rgba(8, 18, 10, 0.8); opacity: 0.72;
+  }
+  #pda-screen .pmap .pregion.seen { background: #b9f0c4; box-shadow: 0 0 5px rgba(120, 255, 150, 0.7), 0 0 0 1.5px rgba(8, 18, 10, 0.8); opacity: 1; }
   #pda-screen .pnote { color: #7da884; font-size: 10.5px; }
   #pda-screen .pbtn-row { margin-top: 10px; display: flex; justify-content: flex-end; }
   /* #211 필드노트 흡수 — 쾌적 4축 분해. 구 .nt-ax(종이 잉크)를 PDA 초록 LCD 문법으로 옮긴다:
