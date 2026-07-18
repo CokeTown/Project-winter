@@ -44,6 +44,7 @@
   "cam.zout.title": "ズームアウト",
   "cam.home.title": "視点リセット",
   "btn.pause.title": "一時停止 (P)",
+  "btn.speed.title": "ゲーム速度（エンディング後に解放）",
   "btn.gear.title": "設定",
   "pause.ind": "⏸ 一時停止",
   "btn.cancelPlace": "✖ 配置キャンセル",

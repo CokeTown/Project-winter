@@ -44,6 +44,7 @@
   "cam.zout.title": "줌 아웃",
   "cam.home.title": "시점 초기화",
   "btn.pause.title": "일시정지 (P)",
+  "btn.speed.title": "게임 배속 (엔딩 후 해금)",
   "btn.gear.title": "설정",
   "pause.ind": "⏸ 일시정지",
   "btn.cancelPlace": "✖ 배치 취소",

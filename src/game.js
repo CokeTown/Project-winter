@@ -122,6 +122,8 @@ const QA_ED = typeof __QA_EDITION__ !== 'undefined' && !!__QA_EDITION__;
 // #74 Next Fest 데모 「첫 번째 겨울」: 빌드 플래그(tools/build-demo.ps1). 노말 전용, 첫 겨울을 넘기면
 //   데모 종료(그 세이브는 열람 잠금 — 정식판 이관 안내). 세이브 네임스페이스 demo- 분리.
 const DEMO_ED = typeof __DEMO__ !== 'undefined' && !!__DEMO__;
+// 디렉터(2026-07-18): 발매 전 데모엔 QA 치트 진입점을 연다. 공개 발매(스토어 제출) 직전 false로 재봉인할 것.
+const DEMO_QA_OPEN = true;
 const KEY_NS = QA_ED ? 'qa-' : DEMO_ED ? 'demo-' : '';
 const SAVE_KEY = KEY_NS + 'project-shelter-web-v2';
 const LASTSLOT_KEY = KEY_NS + 'project-shelter' + '-lastslot'; // 이어하기 포인터도 에디션별 분리 (QA가 정식 포인터를 밀면 빈 슬롯 이어하기 오노출)
@@ -7378,8 +7380,15 @@ function updateEnvironment(t, dt) {
   const wBadNow = weather.type === 'snow' || weather.type === 'rain' || weather.type === 'storm';
   // 눈: 내리는 동안 서서히 쌓이고, 그치면 녹는다. 겨울엔 잔설이 남는다.
   const season = seasonOf();
-  const targetSnow = weather.type === 'snow' ? 1 : (season.id === 'winter' ? 0.3 : 0);
-  snowCover += (targetSnow - snowCover) * Math.min(1, dt * 0.025);
+  // 눈: 내리면 쌓이고(기존), 그치면 태양(주간)이 녹인다 — "해 뜨면 녹고" (디렉터 오더).
+  //   dayness(0밤~1낮)로 녹임 구동: 겨울은 추워 잔설이 남고(0.30, 낮에도 0.18↑ 유지),
+  //   봄 등 그 외 계절은 밤엔 옅게 남다가(0.10) 낮이면 완전히 녹는다(0).
+  const winter = season.id === 'winter';
+  const snowing = weather.type === 'snow';
+  const targetSnow = snowing ? 1 : Math.max(0, (winter ? 0.30 : 0.10) - dayness * (winter ? 0.12 : 0.30));
+  // 접근 속도: 쌓임은 기존(0.025), 녹음은 주간 태양이 가속(해가 높을수록 빨리 녹음).
+  const snowRate = snowing ? 0.025 : (0.010 + dayness * 0.045);
+  snowCover += (targetSnow - snowCover) * Math.min(1, dt * snowRate);
   // 계절 색조 × 적설 × 젖음(#96): 눈은 세상을 밝히고, 비는 어둡고 푸르게 가라앉힌다 (같은 메커니즘의 역방향)
   const wetK = 1 - wetness * 0.34;
   vcLambert.color.setRGB(
@@ -7921,6 +7930,7 @@ function updateClock() {
 }
 
 function updateHud() {
+  if (typeof updateSpeedBtn === 'function') updateSpeedBtn(); // 배속 버튼 해금 상태 동기화
   // 🖼️ 배경화면 모드: 게이지/탐험 패널을 숨긴다(CSS). 압박 UI가 없는 순수 가꾸기.
   document.body.classList.toggle('wallpaper-mode', isWallpaper());
   const sh = SHELTERS[state.current];
@@ -8934,13 +8944,18 @@ function runAutoPlay() {
     }
   }
 }
+// 배속 조정기(디렉터): 파밍·인게임 시간만 ×N(2/4). 엔딩 1회 후 해금, QA 치트 사용 시 즉시 해금.
+const SPEED_STEPS = [1, 2, 4];
+function speedUnlocked() { return !!state.endingSeen || state.endingType === 'escape' || !!state.qaUsed; }
+function activeSpeedMult() { return speedUnlocked() ? (SPEED_STEPS.includes(state.speedX) ? state.speedX : 1) : 1; }
 function tickTime(dt) {
   // #74 데모 종료 후엔 시간 동결 — 봄의 거처를 둘러볼 순 있지만 진행은 없다(잠금의 실체는 여기).
   if (DEMO_ED && state.demoEnded) return;
   // 탐험 시간 개편(디렉터 2026-07-08): 탐험 중엔 시계가 배속(×4)으로 흐른다 — "다녀오는 시간"이
   //   대기 중에 실제로 흘러 귀환 점프가 사라진다. 게이지 감소도 함께 가속(시간이 흐르는 만큼 몸도 소모).
   //   평시 배속(디렉터 2026-07-08): 비탐험도 탐험(×4)의 80%(×3.2)로 — 게이지·부패는 게임분 기준이라 게임일 밸런스 불변.
-  const gmRate = GAME_MIN_PER_SEC * (state.exp ? BAL.exp.timeScale : BAL.exp.idleTimeScale);
+  //   + 유저 배속(activeSpeedMult): 파밍·게임시계만 ×N. 렌더/애니는 그대로(게임분 기준 로직만 가속).
+  const gmRate = GAME_MIN_PER_SEC * (state.exp ? BAL.exp.timeScale : BAL.exp.idleTimeScale) * activeSpeedMult();
   state.gameMin += dt * gmRate;
   decayGauges(dt * gmRate);
   checkHelpless(); // 배치 D: 무력 상태(게이지 바닥 + 재고 0) 안전망 판정
@@ -10479,6 +10494,21 @@ $('btn-clean').addEventListener('click', cleanShelter);
 $('btn-wardrobe').addEventListener('click', () => pdaOpenApp(openWardrobeModal)); // #86④ · #199 5차-d: 옷장도 PDA 앱
 $('btn-edit').addEventListener('click', () => toggleEditMode());
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
+// 배속 조정기(디렉터): 1×→2×→4× 순환. 엔딩 1회 후(또는 QA 치트) 해금 시에만 노출·작동. 파밍·게임시계만 가속.
+function updateSpeedBtn() {
+  const b = $('btn-speed'); if (!b) return;
+  const unlocked = speedUnlocked();
+  b.style.display = unlocked ? '' : 'none';
+  if (unlocked) b.textContent = activeSpeedMult() + '×'; // ×
+}
+$('btn-speed').addEventListener('click', () => {
+  if (!speedUnlocked()) return;
+  const i = SPEED_STEPS.indexOf(SPEED_STEPS.includes(state.speedX) ? state.speedX : 1);
+  state.speedX = SPEED_STEPS[(i + 1) % SPEED_STEPS.length];
+  updateSpeedBtn();
+  toast('×' + state.speedX);
+  scheduleSave && scheduleSave();
+});
 // P2-b: 자동 진행 토글 버튼 (cam-ctrl) — Day 10 미만이면 잠금 토스트, 아니면 opts.autoPlay 토글 + 체크박스 양방향 동기화
 $('btn-auto').addEventListener('click', () => {
   if (!isZen() && state.day < 10) { toast(t('auto.locked')); return; }
@@ -10610,13 +10640,13 @@ try { if (new URLSearchParams(location.search).get('creator')) setTimeout(() => 
 let _qaTaps = [];
 $('title-ver').addEventListener('click', () => {
   if (!titleVisible) return; // 인게임/인트로에선 반응 없음
-  if (DEMO_ED) return; // #74: 소비자 대면 데모 빌드엔 치트 진입점 자체를 봉인
+  if (DEMO_ED && !DEMO_QA_OPEN) return; // #74: 소비자 대면 데모 빌드엔 봉인(발매 전 DEMO_QA_OPEN으로 허용)
   const now = Date.now();
   _qaTaps.push(now);
   _qaTaps = _qaTaps.filter(t => now - t <= 2000); // 2초 창
   if (_qaTaps.length >= 5) { _qaTaps = []; openQaPanel(); }
 });
-function markQa() { state.qaUsed = true; } // 오염 방지 플래그 — 업적 해금 무시용
+function markQa() { state.qaUsed = true; if (typeof updateSpeedBtn === 'function') updateSpeedBtn(); } // 오염 방지 플래그(업적 해금 무시) + 배속 즉시 해금
 function openQaPanel() {
   const btn = (id, label) => `<button class="pixel-btn" data-qa="${id}" style="margin:3px;font-size:11px">${label}</button>`;
   const body = `
@@ -10642,6 +10672,7 @@ function openQaPanel() {
       ${btn('paints', '도료 전 계열 +3')}
       ${btn('bps', '시그니처 도면 전부')}
       ${btn('creator', '🎬 크리에이터 모드')}
+      ${btn('speed', '⏩ 배속 해금')}
     </div>
     <div id="qa-status" style="font-size:11px;color:var(--good);margin-top:8px;min-height:16px"></div>`;
   openModal('QA 치트 패널', body);
@@ -10685,6 +10716,7 @@ function openQaPanel() {
       // 시그니처 도면 검수용 — 전 도면 해금 (제작 목록 노출 확인)
       case 'bps': { state.blueprints = state.blueprints || {}; for (const ids of Object.values(BAL.blueprint.regionItems)) for (const id of ids) state.blueprints[id] = 1; for (const id of (BAL.blueprint.commonItems || [])) state.blueprints[id] = 1; state.blueprints.ledbar = 1; status('도면 전부 해금 (시그니처 8 + 커먼 5 + LED)'); break; }
       case 'creator': closeModal(); _creatorUI.enter(); return; // 씬 저작 크리에이터 모드 진입 (모달 닫고 이탈)
+      case 'speed': status('배속 해금 — 하단 컨트롤 바에 배속 버튼 노출(1×→2×→4× 순환)'); break; // markQa가 이미 해금(updateSpeedBtn)
     }
     updateHud(); renderResBar(); if (!state.exp) renderExpPanel(); scheduleSave();
   }));
@@ -11229,6 +11261,7 @@ window.__shelter = {
 
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
+  getSnowCover: () => snowCover, getWetness: () => wetness, // 날씨 환경 스칼라 읽기(QA/골든 회귀 검증용)
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
   pdaOpen, pdaClose, pdaOpenApp, pdaSetTab: (tb) => { pdaTab = tb; renderPDA(); }, // #199 PDA 도킹·앱 모드 QA 훅 (#211: 필드노트 폐지로 note* 제거)

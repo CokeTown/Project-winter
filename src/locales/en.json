@@ -44,6 +44,7 @@
   "cam.zout.title": "Zoom out",
   "cam.home.title": "Reset view",
   "btn.pause.title": "Pause (P)",
+  "btn.speed.title": "Game speed (unlocks after an ending)",
   "btn.gear.title": "Settings",
   "pause.ind": "⏸ Paused",
   "btn.cancelPlace": "✖ Cancel placement",
