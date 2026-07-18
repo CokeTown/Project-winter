@@ -19,6 +19,7 @@ import { makeScreenFx } from './render/weatherfx.js'; // Tier4 렌더 추출 Pha
 import { makeModals } from './ui/modals.js'; // Tier4 UI 추출 Phase1-⑤: 모달 빌더
 import { makeSettingsUI } from './ui/settings.js'; // #210 설정 모달 셸+컨트롤 배선(1~2단계 추출)
 import { makeKeybindUI } from './ui/keybind.js'; // #210 컨트롤 탭 키 리바인딩(3단계 추출)
+import { makeCreatorUI } from './ui/creator.js'; // 씬 저작 크리에이터 모드 (디렉터 직접 저작 도구)
 import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, MEMOS_CITYCORE, BROADCASTS, SKETCHES } from './data/lore.js';
 import { PAINT_FAMILIES, RARE_PAINTS, PAINT_ALL, paintFamilyOf, paintFamilyRequired } from './data/paints.js'; // 도료 12계열 + 희귀 안료 (REWARD-LOOP ②)
 import { makeEvents } from './data/events.js';
@@ -10586,6 +10587,21 @@ if (window.nineWidget && window.nineWidget.available) {
 }
 // #52: 타이틀 ⚙️ — 전용 설정 오버레이 토글 (인게임과 동일 창)
 $('t-settings').addEventListener('click', () => toggleSettingsPanel());
+// 씬 저작 크리에이터 모드 — QA 패널/URL(?creator=1)로 진입. 인게임 editMode + __shelter 훅 재사용.
+const _creatorUI = makeCreatorUI({
+  setPaused, forceEditMode: (v) => toggleEditMode(v), hideTitle, loadShelter, state, SHELTERS, DEFS,
+  addItem, getItems: () => items, select, deselect, getSelected: () => selected, clampToRoom,
+  setHour: (h) => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; }, setWeather,
+  spawnCat, despawnCat, getCat,
+  qaPlaceCat: (x, z, mode) => { const c = getCat(); if (!c) return false; c.g.position.set(x, c.baseY || 0.05, z); c.mode = mode || 'sleep'; c.timer = 99999; c.tgt = null; c.hop = null; return true; },
+  camState,
+  setYaw: (rad) => { camState.yaw = camState.targetYaw = rad; },
+  setPitch: (rad) => { camState.elev = THREE.MathUtils.clamp(rad, 0.05, Math.PI / 2 - 0.05); },
+  setZoom: (z) => { camState.zoom = THREE.MathUtils.clamp(z, 0.2, 3.2); },
+  toast,
+});
+// dev 진입: ?creator=1 이면 부팅 안정 후 자동 진입(하네스/디렉터 dev 편의). 배포본 URL엔 없음.
+try { if (new URLSearchParams(location.search).get('creator')) setTimeout(() => _creatorUI.enter(), 900); } catch (e) { /* */ }
 /* ============================================================
    QA 치트 모드 (#43) — 배포본 숨은 진입점
    진입: 타이틀 버전 표기(#title-ver) 5연타(2초 내). 인게임 미노출(타이틀에서만).
@@ -10625,6 +10641,7 @@ function openQaPanel() {
       ${btn('hidden', '히든 루트 점프 (침묵)')}
       ${btn('paints', '도료 전 계열 +3')}
       ${btn('bps', '시그니처 도면 전부')}
+      ${btn('creator', '🎬 크리에이터 모드')}
     </div>
     <div id="qa-status" style="font-size:11px;color:var(--good);margin-top:8px;min-height:16px"></div>`;
   openModal('QA 치트 패널', body);
@@ -10667,6 +10684,7 @@ function openQaPanel() {
       case 'paints': for (const f of Object.keys(PAINT_ALL)) state.paints[f] = (state.paints[f] || 0) + 3; state.lightGels = 1; status('도료 12계열 + 네온 안료 +3통 + 조명 젤 필터북'); break;
       // 시그니처 도면 검수용 — 전 도면 해금 (제작 목록 노출 확인)
       case 'bps': { state.blueprints = state.blueprints || {}; for (const ids of Object.values(BAL.blueprint.regionItems)) for (const id of ids) state.blueprints[id] = 1; for (const id of (BAL.blueprint.commonItems || [])) state.blueprints[id] = 1; state.blueprints.ledbar = 1; status('도면 전부 해금 (시그니처 8 + 커먼 5 + LED)'); break; }
+      case 'creator': closeModal(); _creatorUI.enter(); return; // 씬 저작 크리에이터 모드 진입 (모달 닫고 이탈)
     }
     updateHud(); renderResBar(); if (!state.exp) renderExpPanel(); scheduleSave();
   }));
@@ -11414,6 +11432,8 @@ window.__shelter = {
   expActualRate,
   toggleEditMode,
   isEditMode: () => editMode,
+  enterCreator: () => _creatorUI.enter(), exitCreator: () => _creatorUI.exit(), // 씬 저작 크리에이터 모드 (QA/하네스 진입)
+  importScene: (obj) => _creatorUI.importSceneObj(obj),
   lastSfx: () => dbgSfx,
   resetSfx: () => { dbgSfx = null; },
   // #13 꾸미기 확장 + 사운드 QA 훅
