@@ -7332,8 +7332,8 @@ function runAction(a) {
       if (state.exp || state.injury) { $('exp-panel').classList.toggle('show'); renderExpPanel(); }
       else openMapModal();
       break;
-    case 'migrate': openShelterModal(); break;
-    case 'craft': openCraftModal(); break;
+    case 'migrate': pdaOpenApp(openShelterModal); break; // #199: 이주도 PDA 앱으로 (버튼 btn-move와 정합)
+    case 'craft': pdaOpenApp(openCraftModal); break; // #199: 제작은 PDA 앱으로 (버튼 btn-craft와 정합 — 키/패드 단축키도 동일 경로라야 탭바 스타일·폰트 일관)
     case 'clean': cleanShelter(); break;
     case 'sleep': sleepUntilMorning(); break;
     case 'journal': openJournalModal('journal'); break;
