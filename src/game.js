@@ -2552,6 +2552,27 @@ function addDistantSmoke() {
   envDyn.smoke = { pts, phase: sPhase, baseX };
 }
 
+// #2 물 반사(디렉터): 수면(envDyn.sea)에 하늘·스카이라인 반사. 셸터 로드 시 CubeCamera로 큐브맵 1회 베이크(정적 씬)
+//   → MeshStandard envMap. 골든(_golden: 반투명 정렬 결정론)·저사양(모바일 성능)은 스킵해 램버트 유지.
+let _seaCubeRT = null;
+function bakeWaterReflection() {
+  const sea = envDyn && envDyn.sea;
+  if (!sea || _golden || opts.lowSpec) return;
+  try {
+    if (_seaCubeRT) { _seaCubeRT.dispose(); _seaCubeRT = null; }
+    const rt = new THREE.WebGLCubeRenderTarget(128, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+    const cam = new THREE.CubeCamera(0.5, 1400, rt);
+    cam.position.set(0, (sea.position.y || 0) + 3, 0);      // 수면 바로 위에서 주변(하늘·타워·선실) 캡처
+    scene.add(cam);
+    const wasVis = sea.visible; sea.visible = false;        // 자기 반사 방지
+    cam.update(renderer, scene);
+    sea.visible = wasVis; scene.remove(cam);
+    _seaCubeRT = rt;
+    const col = sea.material?.color ? sea.material.color.getHex() : 0x14222e, old = sea.material;
+    sea.material = new THREE.MeshStandardMaterial({ color: col, metalness: 0.7, roughness: 0.14, envMap: rt.texture, envMapIntensity: 1.5, fog: true });
+    old?.dispose?.();
+  } catch (e) { /* 실패 시 램버트 유지 — 크래시 방지 */ }
+}
 function loadShelter(id) {
   cancelPlacing();
   deselect();
@@ -2591,6 +2612,7 @@ function loadShelter(id) {
   buildOvergrowth();
   addDistantSmoke(); // F-1a [B]: 창밖 원거리 연기 기둥(먼 생존 흔적) — 없는 셸터에만 1개
   buildModProps(); // 설치된 개조 소품
+  bakeWaterReflection(); // #2 물 반사(디렉터): 수면에 하늘·스카이라인 반사 큐브맵 1회 베이크
   applyDeco();     // 꾸미기(#13): 벽지/바닥재 재질 적용 (셸터 원본 map 위에 오버레이)
   scatterDust();   // 실내 먼지 모트 재배치
   applyMood(sh.mood);
