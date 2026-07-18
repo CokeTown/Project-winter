@@ -10758,7 +10758,9 @@ function openQaPanel() {
     markQa();
     const k = b.dataset.qa;
     switch (k) {
-      case 'res100': for (const id of Object.keys(RESOURCES)) state.res[id] = (state.res[id] || 0) + 100; status('자원 전종 +100'); break;
+      // 디렉터: "모든 아이템 100개"에 드랍템인 특수 도구(절단기·총)도 포함. 이들은 RESOURCES가 아니라 플래그라 자원 루프가 못 준다.
+      //   절단기=벙커 뒷문 게이트, 총=하드코어 방어. 방호복은 자원으로 제작 가능하므로 여기서 안 준다.
+      case 'res100': for (const id of Object.keys(RESOURCES)) state.res[id] = (state.res[id] || 0) + 100; state.hasCutter = true; if (!state.gun) state.gun = { dur: BAL.hostile.gunDur }; status('자원 전종 +100 · 절단기 · 총 지급 (책 포함)'); break;
       case 'gauges': state.hunger = state.thirst = state.energy = 100; if (state.injury) state.injury = null; status('게이지 풀 + 부상 치료'); break;
       case 'unlockAll': { const maxUnlock = Math.max(...Object.values(SHELTERS).map(s => s.unlockAt || 0)); state.successes = Math.max(state.successes, maxUnlock); status('전 셸터 해금 (successes=' + state.successes + ')'); break; }
       case 'day1': state.day += 1; state.gameMin += 1440; status('Day → ' + state.day); break;
@@ -10821,6 +10823,7 @@ if (QA_ED) {
     for (const id of Object.keys(RESOURCES)) if ((state.res[id] || 0) < 500) { state.res[id] = 999; dirty = true; }
     if (state.hunger < 100 || state.thirst < 100 || state.energy < 100) { state.hunger = state.thirst = state.energy = 100; dirty = true; }
     if ((state.successes || 0) < maxUnlock) { state.successes = maxUnlock; dirty = true; }
+    if (!state.hasCutter) { state.hasCutter = true; dirty = true; } // 드랍템 특수 도구도 상주 지급(자원 루프 사각 — 벙커 뒷문 게이트)
     if (dirty && !titleVisible) { updateHud(); renderResBar(); }
   }, 2000);
 }
