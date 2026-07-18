@@ -5631,7 +5631,6 @@ function openCraftModal() {
     return `
       <div class="prep-row craft-row ${ok ? '' : 'no'}" style="cursor:default">
         <span class="cr-out">${outLabel}</span>
-        ${owned ? '' : icon('icon_sys_arrowleft', '←', 'cr-arrow')}
         <span class="p-cost">${owned ? '' : costCompact}</span>
         ${owned
           ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('craft.owned')}</span>`

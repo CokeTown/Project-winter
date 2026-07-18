@@ -334,12 +334,12 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #pda-screen { /* 에셋 유리가 배경 — 콘텐츠는 포스퍼 텍스트만 얹는다 */
     flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
     background: repeating-linear-gradient(180deg, rgba(170, 240, 185, 0.02) 0 2px, transparent 2px 4px);
-    padding: 2px 11px 10px; color: #f0f5ee; font-size: 9.5px; line-height: 1.65;   /* 디렉터: PDA 내부 폰트 축소(현 크기=상한) */
+    padding: 2px 11px 10px; color: #f0f5ee; font-size: 7.5px; line-height: 1.6;   /* 디렉터 3차: PDA 상태탭 폰트 ~4pt 추가 축소 */
     text-shadow: 0 0 4px rgba(120, 255, 150, 0.3); word-break: keep-all;
   }
   #pda-screen::-webkit-scrollbar { width: 5px; }
   #pda-screen::-webkit-scrollbar-thumb { background: #3f5a35; border-radius: 3px; }
-  #pda-screen .ph { font-size: 9px; letter-spacing: 1.5px; color: #7da884; border-bottom: 1px solid rgba(125, 168, 132, 0.4); padding-bottom: 3px; margin-bottom: 5px; }
+  #pda-screen .ph { font-size: 7.5px; letter-spacing: 1px; color: #7da884; border-bottom: 1px solid rgba(125, 168, 132, 0.4); padding-bottom: 3px; margin-bottom: 5px; }
   #pda-screen .ph:not(:first-child) { margin-top: 12px; }
   #pda-screen .pline { display: flex; align-items: center; gap: 8px; }
   #pda-screen .pline .pk { flex: 0 0 auto; min-width: 64px; color: #cfe0c8; }
@@ -443,18 +443,20 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     background: transparent; border: none; box-shadow: none;
     padding: 6px 9px 8px; overflow-y: auto; overscroll-behavior: contain;
     color: #f0f5ee; text-shadow: 0 0 4px rgba(120, 255, 150, 0.25);
-    font-size: 9px; word-break: keep-all; line-height: 1.5;   /* 디렉터: PDA 앱 폰트 축소(현 크기=상한) — 좁은 LCD 클리핑 해소 */
+    font-size: 7px; word-break: keep-all; line-height: 1.5;   /* 디렉터 3차: PDA 앱 폰트 ~4pt 추가 축소 */
   }
   body.pda-app #pda-lcd #modal::-webkit-scrollbar { width: 5px; }
   body.pda-app #pda-lcd #modal::-webkit-scrollbar-thumb { background: #3f5a35; border-radius: 3px; }
   body.pda-app #pda-lcd #modal h2 { /* 앱 헤더 — LCD 상단 세그먼트 톤 */
-    font-size: 11px; letter-spacing: 1.5px; color: #f0f5ee;
-    border-bottom: 1px solid rgba(125, 168, 132, 0.5); padding-bottom: 5px;
+    font-size: 8.5px; letter-spacing: 1px; color: #f0f5ee;
+    border-bottom: 1px solid rgba(125, 168, 132, 0.5); padding-bottom: 4px;
     text-shadow: 0 0 6px rgba(120, 255, 150, 0.5);
   }
   /* 디렉터: 좁은 LCD에서 본문·버튼·수치도 함께 축소. 프로젝트 카드·제작·이주 공통 압축. */
-  body.pda-app #pda-lcd #modal .pixel-btn { font-size: 9px; padding: 3px 8px; }
-  body.pda-app #pda-lcd #modal p, body.pda-app #pda-lcd #modal .modal-body { font-size: 9px; line-height: 1.55; }
+  body.pda-app #pda-lcd #modal .pixel-btn { font-size: 7px; padding: 2px 6px; }
+  body.pda-app #pda-lcd #modal p, body.pda-app #pda-lcd #modal .modal-body { font-size: 7px; line-height: 1.55; }
+  /* 디렉터: 붉은 섹션 헤더(가구·물품·큰 공사·꾸미기 등) 인라인 font-size:12px가 커서 인라인 이김 → 스코프 !important로 축소 */
+  body.pda-app #pda-lcd #modal div[style*="var(--accent)"] { font-size: 8px !important; margin: 6px 0 3px !important; }
   body.pda-app #pda-lcd .prep-row, body.pda-app #pda-lcd .craft-row, body.pda-app #pda-lcd .li-row { padding: 3px 7px; gap: 2px 6px; }
   body.pda-app #pda-lcd .px-icon { width: 1.2em; height: 1.2em; }
   body.pda-app #pda-lcd .prep-row { /* 행 = 포스퍼 리스트. 좁은 LCD 폭 정돈: 이름 한 줄 + 코스트·버튼 줄 */
