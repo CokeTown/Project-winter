@@ -48,7 +48,7 @@ export function migrateLoadedState(rawState, defaults, oldVer) {
   if (state.hunger == null) state.hunger = 80;
   if (state.thirst == null) state.thirst = 80;
   if (state.energy == null) state.energy = 100;
-  if (state.catCoat == null || !['tabby', 'black', 'siamese', 'ragdoll'].includes(state.catCoat)) state.catCoat = 'tabby'; // 배E-1: 구세이브 코트 폴백
+  if (state.catCoat == null || !['tabby', 'black', 'siamese', 'ragdoll', 'russianblue'].includes(state.catCoat)) state.catCoat = 'tabby'; // 배E-1: 구세이브 코트 폴백 (#119 russianblue 편입)
   if (state.expToday == null) state.expToday = 0;
   state.expFailStreak = state.expFailStreak ?? 0; // 구세이브 마이그레이션
   if (state.tutDay == null) state.tutDay = 0;

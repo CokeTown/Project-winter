@@ -231,7 +231,7 @@ export const SHELTER_META = {
     room: { w: 11, d: 7.5, h: 2.9 },
     baseComfort: 8,
     // 발코니 배치 칸 (디렉터): 조망면(-z) 밖 데크 — 방석·양초·촛대만 놓을 수 있다 (clampToRoom 확장)
-    balcony: { x0: -3.6, x1: 3.6, z0: -5.75, z1: -4.1, allow: ['cushion', 'candle', 'candelabra'] },
+    balcony: { x0: -3.6, x1: 3.6, z0: -5.75, z1: -4.1, y: 0.023, allow: ['cushion', 'candle', 'candelabra'] },
     mood: { fog: 0x1a1622, fogNear: 26, fogFar: 78, skyH: 0x2c2338, skyZ: 0x0b0a14, hemiSky: 0x9a92b8, hemiGround: 0x3a3630, hemiInt: 0.7, moonC: 0xccd4ec, moonInt: 0.9, stars: 0.9 },
     weatherPool: ['clear', 'clear', 'snow', 'rain'],
     perk: { label: '🏙️ 첨탑들의 왕좌 — 도시 전체가 창밖에 있다', labelEn: '🏙️ A throne among spires — the whole city hangs in the window' },

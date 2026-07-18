@@ -23,7 +23,7 @@ export function makeModals(ctx) {
   const { openModal, toast, wallpaperUnlocked, zenUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS } = ctx;
   const { getPaused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud } = ctx; // 추가 모달 의존
   // Tier6b 일지/도감 의존: 아이콘·집계·수첩 페이지는 game.js 클로저 — 주입(단방향 유지)
-  const { icon, regionIcon, comfortBreakdownHtml, collectionCount,
+  const { icon, regionIcon, collectionCount,
     memosTotal, memosCollected, broadcastsTotal, broadcastsCollected, sketchesTotal, sketchesCollected,
     showMemoPage, showBroadcastModal, showSketchPage, showTruthPage } = ctx;
   // #90 데모 규모 은닉 게이트(1.9.5 재수렴: game.js 구판 일지 모달에서 Tier6b 이관본으로 이식) —
@@ -278,11 +278,13 @@ function openJournalModal(tab = 'journal') {
     const done = themeSetActive(ts);
     return `<span title="${ts.items.map(id => LName(DEFS[id])).join(' + ')}" style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid ${done ? 'var(--good)' : '#333'};color:${done ? 'var(--good)' : 'var(--text-dim)'}">${done ? '🏅' : '▫️'} ${ts.emoji} ${LName(ts)}</span>`;
   }).join('');
+  // #211: 쾌적 4축 분해는 PDA 상태 탭이 유일한 집이다(2클릭). 여기 있던 comfortBreakdownHtml()은 제거 —
+  //   같은 것을 두 화면에 두는 게 "기기·화면이 서로를 베끼는" 그 문제고, 일지는 '지나온 기록'이지
+  //   '지금 내 집 상태'가 아니다. 일지 = 통계(누계) + 도감 + 업적 + 기록.
   const journalBody = `
     <div class="report-sec"><span class="r-title">${t('journal.statsTitle')}</span><br>
       ${t('journal.statsLine', { day: state.day, sicon: se.icon, exp: state.stats.exp, succ: state.stats.success, craft: state.stats.craft || 0, stay: state.stayDays || 0 })}
-    </div>
-    ${comfortBreakdownHtml()}`;
+    </div>`;
   // #177 도감 탭 — 위시리스트/보급원 트래커의 수집 뷰. 도면(시그니처+커먼) + 색상 도감 + 테마 세트.
   //   시그니처: 지역별 묶음, 미수집=「{지역}에서만」(pull 표기 — 정보판 map.drops와 동일 축).
   //   미방문 지역은 ??? 베일(#90 "조회 불가" 원칙 — showMapInfo와 같은 regionVisits 게이트).

@@ -293,13 +293,58 @@ export function makeWildlifeSystem(ctx) {
       // 지하철 승강장 가장자리: 한쪽 벽 근처 고정, x 밴드 유지 (쥐가 가장자리만)
       return { x: (Math.random() < 0.5 ? -1 : 1) * (room.d / 2 + 0.4), z: (Math.random() * 2 - 1) * (room.w / 2 - 0.3) };
     }
+    // #209 B안(디렉터): 물위/탑 셸터 — 새가 실표면(갑판·발코니·갤러리)에 앉는다. 그 표면은 방을 두른 링/둘레라
+    //   radial band로는 대각각에서 방 안(바닥 밑)에 떨어진다(폴백 지배 → 오배치). 그래서 밴드가 아니라
+    //   퍼치 도형 위에 직접 배치한다. groundY = 그 표면 높이. ring=원형 갤러리(등대), 아니면 사각 데크 둘레.
+    //   sides = 선실·상부구조가 있는 변을 뺀 열린 변만(예: 여객선 갑판은 선실 -z 제외 → +x/+z). 좌표는 데크
+    //   실측(shelters.js buildRoom)에서 온 hw/hd 절대 반폭(방 증축과 무관한 고정 데크).
+    if (spec.perch) {
+      // findBlock을 쓰지 않는다: 그 안의 방 회피 사각(room.d/2+0.4)이 얕은 방(d2.9)에선 퍼치 데크(hd 1.6~1.9)를
+      //   통째로 덮어 모든 퍼치점을 거절한다(실측: 전 스팟이 폴백행). 퍼치 표면은 원래 방을 두르는(겹치는) 데크라
+      //   방 회피가 부적합 — 데크 도형 위에 바로 앉힌다.
+      const p = spec.perch;
+      if (p.ring) {
+        const a = Math.random() * Math.PI * 2;
+        return { x: Math.cos(a) * p.ring, z: Math.sin(a) * p.ring };
+      }
+      const sides = p.sides || ['+x', '-x', '+z', '-z'];
+      const side = sides[Math.floor(Math.random() * sides.length)];
+      const t = Math.random() * 2 - 1;
+      if (side === '+x') return { x: p.hw, z: t * p.hd };
+      if (side === '-x') return { x: -p.hw, z: t * p.hd };
+      if (side === '+z') return { x: t * p.hw, z: p.hd };
+      return { x: t * p.hw, z: -p.hd };
+    }
+    // #209: avoidRect 있으면 방 사각 대신 그 사각(기단 등)을 회피 — 오두막 기단 위 매몰 방지.
+    const avW = (spec.avoidRect ? spec.avoidRect.w : room.w) / 2 + 0.3;
+    const avD = (spec.avoidRect ? spec.avoidRect.d : room.d) / 2 + 0.3;
     for (let k = 0; k < 10; k++) {
       const a = Math.random() * Math.PI * 2, r = band[0] + Math.random() * (band[1] - band[0]);
       const x = Math.cos(a) * r, z = Math.sin(a) * r;
-      if ((Math.abs(x) > room.w / 2 + 0.3 || Math.abs(z) > room.d / 2 + 0.3) && !findBlock(x, z, 0.15)) return { x, z }; // #95: 장애물 안 목표 재추첨
+      if ((Math.abs(x) > avW || Math.abs(z) > avD) && !findBlock(x, z, 0.15)) return { x, z }; // #95: 장애물 안 목표 재추첨
     }
+    // 폴백(10회 실패): avoidRect면 기단 밖 x변으로 확정 배치(중점 추첨은 기단 대각에 걸릴 수 있어 매몰).
+    if (spec.avoidRect) return { x: (Math.random() < 0.5 ? -1 : 1) * (avW + 0.4), z: (Math.random() * 2 - 1) * avD };
     const a = Math.random() * Math.PI * 2, r = (band[0] + band[1]) / 2;
     return { x: Math.cos(a) * r, z: Math.sin(a) * r };
+  }
+  /* ── #208 인카운터 진입점 (앰비언트 로밍과 분리) ──
+     앰비언트 동물은 밴드 바깥 exitSpot(band[1]+4 ≈ 10.5)에서 어슬렁 걸어온다 — 배경 생명감엔 맞다.
+     그러나 카드가 대기 중인 '조우'에 같은 진입점을 쓰면 개 걸음(gait 0.72)으로 5.5u = 8초짜리 빈 화면이
+     된다(하네스 실측: 9초 내내 mode 'walk', 자동 카드가 안전망으로만 발화). 사람(visitorSpots: 집 앞
+     1.9u ≈ 2.2초)과 같은 문법으로 맞춘다 — 카메라 쪽 앞마당으로 짧게 걸어 들어와 멈춘다.
+     yaw는 game.js camState.yaw. 지하철 승강장(edgeOnly/indoor)은 무대 자체가 특수해 기존 추첨을 남긴다. */
+  function encounterSpots(yaw) {
+    const band = spec.band || [3.4, 6.5];
+    let at = null;
+    if (!spec.edgeOnly && !spec.indoor && typeof yaw === 'number') {
+      let r = band[0];                                  // 밴드 안쪽 = 집에 가장 가까운 로밍 반경
+      for (let k = 0; k < 10 && findBlock(Math.cos(yaw) * r, Math.sin(yaw) * r, 0.2); k++) r += 0.4; // 돔 avoidR·마당 소품 밖으로
+      at = { x: Math.cos(yaw) * r, z: Math.sin(yaw) * r };
+    }
+    if (!at) at = roamSpot();
+    const ar = Math.hypot(at.x, at.z) || 1;             // 목표의 방사 방향 2.2u 밖 = 진입점(화면 가장자리)
+    return { at, from: { x: at.x / ar * (ar + 2.2), z: at.z / ar * (ar + 2.2) } };
   }
   // 밴드 바깥 퇴장점 (화면 밖으로)
   function exitSpot(fromX, fromZ) {
@@ -324,7 +369,7 @@ export function makeWildlifeSystem(ctx) {
     sfx('wl_' + id);
   }
 
-  function spawnOne(speciesId, atSpot, birdLanding, idx = 0) {
+  function spawnOne(speciesId, atSpot, birdLanding, idx = 0, entry = null) {
     const sp = WILDLIFE_SPECIES[speciesId];
     if (!sp) return null;
     const built = buildMesh(sp);
@@ -344,7 +389,7 @@ export function makeWildlifeSystem(ctx) {
     if (sp.kind === 'insect') { a.g.position.set(s.x, groundY + 0.9, s.z); a.mode = 'hover'; a.center = { x: s.x, z: s.z }; a.glow = built.glow; }
     else if (sp.kind === 'web') { const by = groundY + 1.3; a.g.position.set(s.x, by, s.z); a.g.rotation.set(0, Math.atan2(-s.x, -s.z), 0); a.mode = 'web'; a.baseY = by; a.plane = built.plane; }
     else if (birdLanding || sp.kind === 'bird') { a.g.position.y = groundY + 1.6 + idx * 0.2; a.mode = 'landing'; }
-    else { const e = exitSpot(s.x, s.z); a.g.position.set(e.x, groundY, e.z); a.tgt = { x: s.x, z: s.z }; a.mode = 'walk'; }
+    else { const e = (entry && entry.from) || exitSpot(s.x, s.z); a.g.position.set(e.x, groundY, e.z); a.tgt = { x: s.x, z: s.z }; a.mode = 'walk'; } // entry=#208 인카운터 근접 진입
     animals.push(a);
     shadowDirty();
     return a;
@@ -467,7 +512,12 @@ export function makeWildlifeSystem(ctx) {
     // 플레이어 접근 → 조기 도망(체류 무관)
     for (const a of animals) {
       if (!a.leaving && a.mode !== 'landing' && a.mode !== 'enter') {
-        const d = distToCam(a);
+        // #209 퍼치: 착지면이 높은 탑(등대 갤러리 y2.92)이면 수평거리만으론 카메라 중심(원점 부근)에 shy 안으로
+        //   들어와 소환 즉시 전부 이탈한다(실측). 퍼치 새는 수직 간극도 포함한 3D 거리로 판정 — 머리 위 새는
+        //   플레이어가 못 닿으니 안 도망친다. 지상종(perch 없음)은 종전 수평거리 유지(카메라 y0.9 기준 회귀 방지).
+        const d = spec.perch
+          ? Math.hypot(a.g.position.x - camCenter.x, a.g.position.y - camCenter.y, a.g.position.z - camCenter.z)
+          : distToCam(a);
         if (d < a.sp.shy) startLeaving(a, true);
       }
       // 체류 시간 만료 → 종별 퇴장
@@ -755,7 +805,11 @@ export function makeWildlifeSystem(ctx) {
     count: () => animals.length,
     // 재현/검증용 (코디네이터): 강제 등장/발자국/퇴장 트리거
     _forceSpawn: (opening) => spawnEncounter(!!opening),
-    _spawnSpecies: (id) => spawnOne(id, roamSpot()), // #182 B1: 특정 종 강제 소환(검증/디버그)
+    _roamSpot: () => roamSpot(), // #209 QA: 로밍 스팟 추첨 검증 (avoidRect·band 실측)
+    _groundY: () => (spec.groundY ?? 0), // #209 QA: 착지 지면 y (새 퍼치면 검증)
+    _spawnSpecies: (id) => spawnOne(id, roamSpot()), // #182 B1: 특정 종 강제 소환(검증/디버그) — 앰비언트 진입점
+    // #208 인카운터 스폰(실사용): 집 앞 카메라 쪽으로 짧게 걸어 들어온다. yaw = camState.yaw.
+    _spawnEncounter: (id, yaw) => { const e = encounterSpots(yaw); return spawnOne(id, e.at, false, 0, e); },
     _forceNightPrints: () => leaveNightPrints(),
     _forceLeaveAll: () => { for (const a of animals.slice()) startLeaving(a, false); },
     _debug: () => ({ n: animals.length, prints: prints.length, next: Math.round(nextSpawnMin - (getGameMin() || 0)),

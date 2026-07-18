@@ -85,7 +85,7 @@ export const CAT_POSES = {
   //   (v1.5.1: 뒷다리 뒤로 뻗기(양수)는 발바닥이 위로 노출돼 '뒤집힘'으로 읽힘(디렉터 실기기) → 몸 아래 접힘으로.)
   sprawl:  { by: 0.02,  brx: 0,     hrx: -0.3,  legF: -1.5,  legB: 1.5,   t1: -0.1 }, // 디렉터(2026-07): 진짜 superman — 앞다리 앞으로/뒷다리 뒤로 '수평 곧게' 쭉(뭉치지 않게). 어깨·엉덩이 피벗 바닥근처(cat.js)로 눕힘
   // groom: sit과 같은 앉음 실루엣 위에 오버레이(updateCat의 headRX 사인파/앞발 들기)가 얹힌다 (sit 재수술에 맞춰 완화)
-  groom:   { by: 0.06,  brx: -0.40, hrx: 0.30, legF: -0.3,  legB: -1.5,  t1: -0.65 }, // sit 실루엣 공유 — v1.5 측면 수술 동반 갱신
+  groom:   { by: 0.03,  brx: -0.40, hrx: 0.30, legF: -0.3,  legB: -1.5,  t1: -0.65 }, // sit 실루엣 공유 — v1.5 측면 수술 동반 갱신. #208: by 0.06→0.03(sit과 동일) — 엉덩이 피벗을 sit처럼 내리고 나면(cat.js) 몸통이 3cm 높은 채라 뒷다리가 떴다
   // stretch: 다운독 — brx=+0.6, by=0.17 → 가슴쪽(z=0.24) 바닥 코너 y=0(접지), 엉덩이쪽 y≈0.14(번쩍 들림)
   //   앞다리는 앞으로 쭉 뻗고(legF 음수, 접힘 부호를 반대로 써 전방으로 펴짐), 뒷다리는 곧게 편 채 지지(legB≈0)
   stretch: { by: 0.17,  brx: 0.6,   hrx: -0.6, legF: -0.15, legB: 0.1,   t1: 0.35 }, // 디렉터(2026-07): ㄴ자 앞팔 접지(cat.js _fore/_fpiv) + 얼굴 조금 들기(hrx −0.4→−0.6, 턱 파묻힘 방지·앞발 틈. −1.0은 과해서 하향)
@@ -95,10 +95,10 @@ export const CAT_POSES = {
   // hop: 가구 오르내리는 점프 중 — 네 다리 웅크림 + 꼬리 들어 균형
   hop:     { by: 0.13,  brx: -0.12, hrx: -0.1, legF: -0.85, legB: -0.85, t1: 0.35 },
 };
-export const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2 };
+export const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2, teddybear: 0.2, moodlantern: 0.37 }; // #119 곰인형·무드등: 고양이가 웅크린다(무드등=나무 뚜껑 위, 온기를 쬔다)
 // #193: 침대는 티어가 곧 높이(#157 — sofa/chair와 달리 좌면 높이가 티어 정체성)라 퍼치·착석 y도 티어를 따라야 한다.
-//   실측(furniture.js bed build): T1 바닥 매트리스 상면 0.16+베개·담요 ≈0.25 / T2 싱글 매트리스 상면 0.38+0.075≈0.46 / T3 현행 0.63
-export const BED_TOP_Y = { 1: 0.25, 2: 0.46, 3: 0.63 };
+//   실측(furniture.js bed build): T1 매트리스 상면 0.16·담요 상면 0.22 걸침 → 중앙 0.19(#209 F26: 베개 0.245 단독 기준 폐기) / T2 싱글 매트리스 상면 0.38+0.075≈0.46 / T3 이불 상면 0.64≈0.63
+export const BED_TOP_Y = { 1: 0.19, 2: 0.46, 3: 0.63 };
 // #196(디렉터 신고 확대 감사): 침대와 같은 부류 — 티어로 좌면이 변하는 가구의 착석·퍼치 앵커 표.
 //   값 = 지오 실측(furniture.js 각 build 티어 분기) 기반, 현행 T3 침하 연출 오프셋 유지(소파 -0.07·방석 -0.015·의자 -0.045).
 //   소파 T1 0.51~0.55 / T2 0.57~0.59 / T3 0.63 · 방석 T1 0.18 / T2 0.11(납작 디자인) / T3 0.215 · 의자 T1 0.46 / T2·T3 0.495
@@ -145,6 +145,18 @@ export const OUTFITS = {
     pal: { coat: 0x7a5a3c, coatHem: 0x684c32, sleeve: 0x715340, scarf: 0xb84a3a, beanie: 0x4a3b2c } },
   vest: { name: '올리브 조끼',    nameEn: 'Olive Vest',   emoji: '🧥', style: 'vest',
     pal: { coat: 0x3f4a3a, coatHem: 0x353f31, sleeve: 0xa89478, scarf: 0x8a5a3c, beanie: 0x39322a } },
+  // ── #119 서포터팩 전용 복장 2종 (dlc:'supporter') — 코스메틱. 도면·드랍 없이 DLC 소유 시 제작대에 노출.
+  //   얼룩파카: 클래식 실루엣 유지(style 미지정 → 애니·팔·목도리 그대로) + camo 필드로 코트에 2톤 얼룩 오버레이(avatar.js).
+  //   청바지: 순수 팔레트(데님 재킷+청바지) — 실루엣 손 안 댐.
+  camoparka: { name: '얼룩파카', nameEn: 'Camo Parka', emoji: '🧥', dlc: 'supporter',
+    camo: [0x3f4630, 0x746c48], // 얼룩 2톤(다크올리브·카키) — 코트 위 복셀 위장 무늬
+    pal: { coat: 0x5a5f3e, coatHem: 0x474d32, sleeve: 0x50553a, pants: 0x39392f, scarf: 0x2f3326, beanie: 0x3a3f2b } },
+  denim: { name: '청바지', nameEn: 'Denim', emoji: '👖', dlc: 'supporter',
+    pal: { coat: 0x466684, coatHem: 0x3b5670, sleeve: 0x41607c, pants: 0x33506e, boots: 0x3a2c22, scarf: 0xcabfa4, beanie: 0x6a5a44 } },
+  // 검정 정장: style:'suit' 분기가 재킷 위에 흰 와이셔츠 패널·칼라 + 붉은 넥타이 + 라펠을 얹는다(목도리 대신).
+  //   beanie=어두운 머리색(정장엔 니트 비니 대신 머리로 읽힘). shirt/tie는 pal 전용 키(suit 분기만 참조).
+  suit: { name: '검정 정장', nameEn: 'Black Suit', emoji: '🕴️', style: 'suit', dlc: 'supporter',
+    pal: { coat: 0x26272f, coatHem: 0x1b1c23, sleeve: 0x26272f, pants: 0x23242b, boots: 0x17140f, shirt: 0xe6e2d8, tie: 0xb23a34, beanie: 0x2b2620 } },
 };
 
 export const CRAFTS = [
@@ -188,6 +200,9 @@ export const CRAFTS = [
   { out: { res: 'canned', n: BAL.harbor.saltCureOut }, cost: { food: BAL.harbor.saltCureFood, salt: BAL.harbor.saltCureSalt }, hint: '소금으로 절인 보존식 — 여름 부패를 이긴다', hintEn: 'Salt-cured preserves — beats summer spoilage' },
   // #76 사치 가구 — 책(지식)을 재료로. 후반 잉여가 흘러든 책의 사용처(사치 건축 싱크). 응접실 세트.
   { out: { furn: 'globe' }, cost: { book: 3, material: 2 }, hint: '책으로 채운 지구본 — 가 보지 못한 곳들', hintEn: 'A globe filled by books — places never seen' },
+  // #119 서포터팩 전용 데코 — 레시피가 DLC 소유 시에만 제작대·툴바에 뜬다(dlc:'supporter'). 코스메틱, 흔한 재료로 만든다.
+  { out: { furn: 'teddybear' }, dlc: 'supporter', cost: { cloth: 2 }, hint: '목도리 두른 곰인형 — 마지막 겨울의 온기', hintEn: 'A scarfed teddy bear — the warmth of the last winter' },
+  { out: { furn: 'moodlantern' }, dlc: 'supporter', cost: { parts: 1, cloth: 1 }, hint: '전구를 담은 무드등 — 고양이가 온기 위에 웅크린다', hintEn: 'A fairy-light lantern — the cat curls on its warmth' },
   { out: { furn: 'candelabra' }, cost: { book: 2, material: 1, candle: 2 }, hint: '가지 촛대 — 사치스러운 불빛 (양초 1/일)', hintEn: 'A branched candelabra — an extravagant light (candle 1/day)' },
   { out: { furn: 'phonograph' }, cost: { book: 4, parts: 2, material: 1 }, hint: '축음기 — 폐허에 음악을', hintEn: 'A phonograph — music for the ruins' },
   // #86④ 의류 — 만들면 옷장(state.outfits)에 영구 추가, 착용은 옷장에서. 염색 재료로 개성(소금/연료=숯).
@@ -206,6 +221,10 @@ export const CRAFTS = [
   { out: { outfit: 'puffer' }, cost: { cloth: 5 }, hint: '옷장에 추가 — 누빔 충전재 빵빵한 점퍼', hintEn: 'Added to wardrobe — a quilted, puffed-up jacket' },
   { out: { outfit: 'poncho' }, cost: { cloth: 4, material: 1 }, hint: '옷장에 추가 — 담요를 두른 듯한 판초', hintEn: 'Added to wardrobe — a blanket-like poncho' },
   { out: { outfit: 'vest' }, cost: { cloth: 3, material: 1 }, hint: '옷장에 추가 — 팔이 가벼운 작업 조끼', hintEn: 'Added to wardrobe — a work vest, arms free' },
+  // #119 서포터팩 전용 복장 — DLC 소유 시에만 제작대에 노출(dlc:'supporter'). 무도면·코스메틱.
+  { out: { outfit: 'camoparka' }, dlc: 'supporter', cost: { cloth: 4 }, hint: '옷장에 추가 — 얼룩무늬 방한 파카', hintEn: 'Added to wardrobe — a mottled-camo winter parka' },
+  { out: { outfit: 'denim' }, dlc: 'supporter', cost: { cloth: 4 }, hint: '옷장에 추가 — 데님 재킷과 청바지', hintEn: 'Added to wardrobe — a denim jacket and jeans' },
+  { out: { outfit: 'suit' }, dlc: 'supporter', cost: { cloth: 4 }, hint: '옷장에 추가 — 붉은 넥타이의 검정 정장', hintEn: 'Added to wardrobe — a black suit with a red tie' },
   // DDD-4 지역 시그니처 (REWARD-LOOP ② 2차): bp = 도면 게이트 — 그 지역 탐험에서 도면을 주워야 목록에 뜬다.
   { out: { furn: 'barrelfire' }, bp: 'barrelfire', cost: { material: 2, parts: 1, fuel: 1 }, hint: '슬럼의 밤 — 드럼통에 피운 불', hintEn: "The slum's night — a fire in a drum" },
   { out: { furn: 'graffiti' }, bp: 'graffiti', cost: { material: 1, cloth: 1 }, hint: '뜯어온 벽의 목소리', hintEn: 'A wall torn loose, still shouting' },

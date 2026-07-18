@@ -58,8 +58,14 @@ export function makeCamera(ctx) {
       visitorCam.cur.z += (tgt.z - visitorCam.cur.z) * L;
       center = visitorCam.cur;
       camState.zoom += (visitorCam.zoomTarget - camState.zoom) * L;
+      // #208 앙각/거리 프로필(동물 인카운터만 — 사람은 null이라 기본 아이소 유지). catCam과 같은 3/4 각으로
+      //   내려야 네발짐승이 '등짝'이 아니라 실루엣으로 읽힌다. 복귀 시엔 저장값을 향해 같은 계수로 글라이드.
+      if (visitorCam.elevTarget != null) { elev = camState.elev + (visitorCam.elevTarget - camState.elev) * L; camState.elev = elev; }
+      if (visitorCam.distTarget != null) { dist = camState.dist + (visitorCam.distTarget - camState.dist) * L; camState.dist = dist; }
       if (visitorCam.returning && Math.abs(camState.zoom - visitorCam.zoomTarget) < 0.02 && visitorCam.cur.distanceTo(camCenter) < 0.06) {
+        if (visitorCam.elevTarget != null) camState.elev = visitorCam.elevTarget; // 잔여 오차 스냅 후 프로필 해제
         visitorCam.active = false; visitorCam.returning = false; visitorCam.saved = null; // 복귀 완료 → 일반 카메라
+        visitorCam.elevTarget = null; visitorCam.distTarget = null;
       }
     } else if (camState.dist !== 24) {
       // 복원: 클로즈업에서 빠져나오면 기본 거리/앙각으로 서서히 되돌린다

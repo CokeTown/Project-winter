@@ -17,6 +17,9 @@ import { makeCulling } from './render/culling.js'; // Tier4 렌더 추출 Phase1
 import { makeCamera } from './render/camera.js'; // Tier4 렌더 추출 Phase1-③: 카메라
 import { makeScreenFx } from './render/weatherfx.js'; // Tier4 렌더 추출 Phase1-④: 화면 2D 날씨 오버레이
 import { makeModals } from './ui/modals.js'; // Tier4 UI 추출 Phase1-⑤: 모달 빌더
+import { makeSettingsUI } from './ui/settings.js'; // #210 설정 모달 셸+컨트롤 배선(1~2단계 추출)
+import { makeKeybindUI } from './ui/keybind.js'; // #210 컨트롤 탭 키 리바인딩(3단계 추출)
+import { makeCreatorUI } from './ui/creator.js'; // 씬 저작 크리에이터 모드 (디렉터 직접 저작 도구)
 import { MEMOS, WILLS, MEMO_REGIONS, MEMOS_BY_REGION, MEMOS_SUBWAY, MEMOS_RESORT, MEMOS_RESEARCH, MEMOS_HARBOR, MEMOS_CITYCORE, BROADCASTS, SKETCHES } from './data/lore.js';
 import { PAINT_FAMILIES, RARE_PAINTS, PAINT_ALL, paintFamilyOf, paintFamilyRequired } from './data/paints.js'; // 도료 12계열 + 희귀 안료 (REWARD-LOOP ②)
 import { makeEvents } from './data/events.js';
@@ -120,6 +123,8 @@ const QA_ED = typeof __QA_EDITION__ !== 'undefined' && !!__QA_EDITION__;
 // #74 Next Fest 데모 「첫 번째 겨울」: 빌드 플래그(tools/build-demo.ps1). 노말 전용, 첫 겨울을 넘기면
 //   데모 종료(그 세이브는 열람 잠금 — 정식판 이관 안내). 세이브 네임스페이스 demo- 분리.
 const DEMO_ED = typeof __DEMO__ !== 'undefined' && !!__DEMO__;
+// 디렉터(2026-07-18): 발매 전 데모엔 QA 치트 진입점을 연다. 공개 발매(스토어 제출) 직전 false로 재봉인할 것.
+const DEMO_QA_OPEN = true;
 const KEY_NS = QA_ED ? 'qa-' : DEMO_ED ? 'demo-' : '';
 const SAVE_KEY = KEY_NS + 'project-shelter-web-v2';
 const LASTSLOT_KEY = KEY_NS + 'project-shelter' + '-lastslot'; // 이어하기 포인터도 에디션별 분리 (QA가 정식 포인터를 밀면 빈 슬롯 이어하기 오노출)
@@ -224,7 +229,7 @@ const catCam = {
   targetYaw: 0,                         // ⑶ 진입 시 1회 확정하는 목표 yaw(짧은 호 ≤45° 클램프). 매 프레임 재계산 안 함.
 };
 // #181 방문자 클로즈업 상태 — 등장인물로 center 글라이드 + 줌. cur=보간 중심, center=목표(방문자 pos).
-const visitorCam = { active: false, returning: false, center: new THREE.Vector3(), cur: new THREE.Vector3(), saved: null, zoomTarget: 0.6 };
+const visitorCam = { active: false, returning: false, center: new THREE.Vector3(), cur: new THREE.Vector3(), saved: null, zoomTarget: 0.6, elevTarget: null, distTarget: null };
 // ⑶ 클로즈업 진입 회전 최소화: 고양이 facing으로 스냅하지 않고, "현재 카메라 yaw 기준 최소 회전"을 쓴다.
 //   후보 = facing+yawOffset 및 facing-yawOffset(좌우 3/4 중 가까운 쪽). 현재 yaw와의 각차를 짧은 호로 접고,
 //   ±45°(π/4)로 클램프 → 줌·센터링 위주로 얼굴을 잡되 화면이 홱 돌지 않게 한다.
@@ -262,21 +267,31 @@ function exitCatCloseup() {
   }
 }
 // #181 방문자 클로즈업 진입/복귀 — catCam과 상호배타(한 번에 하나만). center를 방문자로 글라이드+줌인.
-function enterVisitorCloseup(x, z, y) {
+// #208 cam 인자: 프레이밍 노브를 갈아끼워 동물 인카운터(BAL.wildCam)도 같은 카메라를 쓴다 — 사람보다 낮고 타이트.
+function enterVisitorCloseup(x, z, y, cam = BAL.visitorCam) {
   if (catCam.active) exitCatCloseup();
+  const cy = cam.centerY ?? BAL.visitorCam.centerY;
   if (!visitorCam.active) {
-    visitorCam.saved = { zoom: camState.zoom, tpx: camState.targetPanX, tpz: camState.targetPanZ };
-    visitorCam.cur.set(camCenter.x + camPanApplied.x, (y || 0) + BAL.visitorCam.centerY, camCenter.z + camPanApplied.z); // 현재 보던 중심에서 출발(점프 방지)
+    visitorCam.saved = { zoom: camState.zoom, tpx: camState.targetPanX, tpz: camState.targetPanZ, elev: camState.elev, dist: camState.dist };
+    visitorCam.cur.set(camCenter.x + camPanApplied.x, (y || 0) + cy, camCenter.z + camPanApplied.z); // 현재 보던 중심에서 출발(점프 방지)
   }
-  visitorCam.center.set(x, (y || 0) + BAL.visitorCam.centerY, z);
-  visitorCam.zoomTarget = BAL.visitorCam.zoom;
+  visitorCam.center.set(x, (y || 0) + cy, z);
+  visitorCam.zoomTarget = cam.zoom ?? BAL.visitorCam.zoom;
+  // #208 앙각 프로필(선택): 사람은 선 실루엣이라 기본 아이소 앙각(33°)으로 읽히지만, 네발짐승은 같은 각에서
+  //   '등'만 보여 어떤 줌에서도 갈색 덩어리가 된다(실측). catCam이 elevDeg 22로 푼 그 문제 — 값 출처도 거기다.
+  visitorCam.elevTarget = cam.elevDeg != null ? THREE.MathUtils.degToRad(cam.elevDeg) : null;
+  visitorCam.distTarget = cam.dist != null ? cam.dist : null;
   visitorCam.active = true; visitorCam.returning = false;
 }
 function exitVisitorCloseup() {
   if (!visitorCam.active) return;
   visitorCam.returning = true;                                   // center를 집으로, 줌을 원래대로 글라이드
   visitorCam.zoomTarget = visitorCam.saved ? visitorCam.saved.zoom : 0.6;
-  if (visitorCam.saved) setPanTarget(visitorCam.saved.tpx, visitorCam.saved.tpz);
+  if (visitorCam.saved) {
+    if (visitorCam.elevTarget != null) visitorCam.elevTarget = visitorCam.saved.elev; // 앙각도 원래대로 글라이드
+    if (visitorCam.distTarget != null) visitorCam.distTarget = visitorCam.saved.dist;
+    setPanTarget(visitorCam.saved.tpx, visitorCam.saved.tpz);
+  }
 }
 // 카메라 업데이트/팬/줌 → render/camera.js (Tier4 Phase1-③). 카메라 객체는 game.js 잔류, 함수만 이동.
 const { updateCamera, fitZoomForShelter, panMax, setPanTarget, panByScreenDelta } = makeCamera({
@@ -915,29 +930,6 @@ function comfortBreakdown() {
   if (cd.themeMod) for (const ts of activeThemeSets()) logs.mood.push({ icon: ts.emoji, name: LName(ts), v: `+${DECO_THEME_COMFORT}` });
   if (darkPen) logs.mood.push({ icon: '🌑', name: t('comfort.log.dark'), v: `${darkPen}` });
   return { warmth, clean, security, mood, score: cd.score, logs };
-}
-// 일지 통계용: 4요소 막대 + 각 요소 원인 로그 (report-sec 문법 재사용)
-function comfortBreakdownHtml() {
-  const b = comfortBreakdown();
-  const axes = [
-    { key: 'warmth',   icon: '🔥', label: t('comfort.warmth'),   v: b.warmth,   col: '#c97a4a' },
-    { key: 'clean',    icon: '🧹', label: t('comfort.clean'),    v: b.clean,    col: '#5f9ac0' },
-    { key: 'security', icon: '🛡️', label: t('comfort.security'), v: b.security, col: '#8fbb7a' },
-    { key: 'mood',     icon: '🕯️', label: t('comfort.mood'),     v: b.mood,     col: '#c79a5f' },
-  ];
-  // 막대 스케일: 각 축 최대 기여 폭을 40점 기준으로 정규화 (음수는 0폭, 색만 경고)
-  const rows = axes.map(a => {
-    const pct = Math.max(0, Math.min(100, (a.v / 40) * 100));
-    const logs = (b.logs[a.key] || []).slice(0, 3).map(l =>
-      `<div style="font-size:10px;color:var(--text-dim);line-height:1.6">${l.icon} ${l.name} <span style="color:${String(l.v).startsWith('-') ? 'var(--bad)' : 'var(--good)'}">${l.v}</span></div>`).join('');
-    return `<div style="margin:7px 0">
-      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
-        <span>${a.icon} ${a.label}</span><span style="color:${a.v < 0 ? 'var(--bad)' : 'var(--accent)'}">${a.v < 0 ? '' : '+'}${Math.round(a.v)}</span></div>
-      <div style="height:8px;background:#22252d;border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${a.col};border-radius:4px"></div></div>
-      ${logs}
-    </div>`;
-  }).join('');
-  return `<div class="report-sec"><span class="r-title">${t('comfort.breakdownTitle', { score: b.score })}</span>${rows}</div>`;
 }
 // bunkerComfortBonus → core/comfort.js (import). 벙커 천장/저장고 쾌적 가산.
 // 인카운터 안정감 여운 — amt(±) 를 days 일간 부여. 같은 부호면 이어붙이지 않고 더 강한 쪽/새 것으로 갱신.
@@ -2130,6 +2122,9 @@ function loadSave() {
       // 버전 마이그레이션(v2→v3) + 신규 필드 기본값 보정(누적 가드) → core/save.js.
       //   Object.assign(state,data.state) 후 호출. rawState=data.state(필드 유무 판정), defaults=pristine 복사.
       migrateLoadedState(data.state, defaults, oldVer);
+      // #119 서포터팩 러시안블루 보장 지급(귀향): 이미 고양이가 있는 DLC 소유 세이브도 러시안블루로 승격
+      //   (입양 전 구매·다른 코트 보유 케이스). 코트 선택 UI가 없어 idempotent — DLC 없으면 무변.
+      if (state.cat && state.catCoat !== 'russianblue' && Platform.dlc.owns('supporter')) state.catCoat = 'russianblue';
       // 오프라인 시간 진행 (최대 2일) + 그동안의 허기/갈증
       const elapsed = Math.max(0, (Date.now() - (state.savedAt || Date.now())) / 1000);
       const offlineMin = Math.min(2880, elapsed * GAME_MIN_PER_SEC * BAL.exp.idleTimeScale); // 평시 배속과 일관(자리 비운 동안도 같은 속도) — 상한 2게임일 유지
@@ -2418,16 +2413,67 @@ function findSupport(item, x, z) {
   if (!DEFS[item.defId].stackable) return null;
   const fp = footprintOf(item);
   for (const other of items) {
-    if (other === item || other.y) continue;
+    // 1단만 허용: 상판 위 소품은 지지대가 될 수 없다. #209 정정 — 판정을 `other.y`(높이)에서
+    //   `other.support`(상판 위에 있는가)로 바꾼다. 러그 바닥 올림이 생기며 테이블 y가 0이 아닐 수
+    //   있게 됐는데, 옛 판정은 그런 테이블을 지지대에서 제외해 **러그 위 테이블엔 아무것도 못 올렸다**(실측).
+    if (other === item || other.support) continue;
     const sr = surfaceRectOf(other);
     if (!sr) continue;
     // 소품 중심이 상판 안쪽에 있으면 올려놓기 (살짝 걸치는 건 허용)
     if (Math.abs(x - other.x) <= Math.max(0.02, sr.w / 2 - fp.w * 0.3) &&
-        Math.abs(z - other.z) <= Math.max(0.02, sr.d / 2 - fp.d * 0.3)) return { other, y: sr.y };
+        Math.abs(z - other.z) <= Math.max(0.02, sr.d / 2 - fp.d * 0.3)) {
+      return { other, y: sr.y + (other.y || 0) }; // #209: 상판 높이는 지지대 자신의 y(러그 위면 +) 기준
+    }
   }
   return null;
 }
 function itemsOn(support) { return items.filter(i => i.support === support); }
+/* ── #209 바닥 올림 (러그) ──
+   디렉터 신고 "러그인지 침대인지, 아직도 접합 아니야"의 구조적 원인은 두 겹이었다:
+   ① 러그는 noCollide라 겹침 가드가 전무 → 두 러그의 상면이 비트 단위로 동일 평면 = z-fighting
+   ② 러그가 스택면을 안 줘서 위에 놓은 침대가 러그 두께만큼 파묻힘
+   둘 다 "러그 위에 있는 것의 y가 0으로 고정"이 원인이라 한 축으로 푼다. surface/stackable(테이블
+   상판 문법)을 재사용하지 않는 이유: findSupport는 '올리는 쪽'이 stackable이길 요구하므로 침대를
+   stackable로 만들어야 하고, 그러면 침대를 테이블 위에 올릴 수 있게 된다(규칙 붕괴).
+   floorLift는 얹히는 쪽 조건이 없다 — 바닥이 그만큼 높아진 것으로 취급한다. */
+function floorTopOf(o) {
+  const d = DEFS[o.defId];
+  if (!d || !d.floorLift) return 0;
+  return (d.floorTopByTier || {})[o.tier || 3] || 0;
+}
+// (x,z)에 놓일 item의 바닥 높이. 러그 여러 장이 겹쳐도 (러그 자신의 y + 상면)의 최대값 = 맨 위 층.
+// ⚠️ 러그끼리는 서열이 필요하다(실측으로 검거): 서열 없이 서로를 들어올리면 재접지 루프가 A→C→B→…로
+//    물려 0.065→0.114→0.164로 폭주하고 맨 처음 러그마저 뜬다. 서열 = **배치 순서**(나중에 깐 것이 위) —
+//    items 배열 인덱스가 곧 순서이고 세이브에도 그 순서로 직렬화되므로 로드 후에도 같은 결과가 나온다.
+function floorLiftAt(item, x, z) {
+  const meRug = !!floorTopOf(item);
+  const selfIdx = items.indexOf(item); // 배치 중(아직 미등록)이면 -1 = 맨 위 취급
+  let y = 0;
+  for (let i = 0; i < items.length; i++) {
+    const other = items[i];
+    if (other === item || other.support) continue;      // 상판 위 소품은 바닥이 아니다
+    if (meRug && selfIdx >= 0 && i > selfIdx) continue; // 나보다 나중에 깔린 러그는 나를 못 올린다
+    const top = floorTopOf(other);
+    if (!top) continue;
+    const ofp = footprintOf(other);
+    // 중심이 러그 풋프린트 안일 때만 얹는다 — 가장자리에 살짝 걸친 가구가 통째로 뜨는 것 방지
+    if (Math.abs(x - other.x) <= ofp.w / 2 && Math.abs(z - other.z) <= ofp.d / 2) {
+      y = Math.max(y, (other.y || 0) + top);
+    }
+  }
+  return y;
+}
+// 배치/회전/로드 공통: 상판 지지대가 있으면 그 위, 없으면 바닥 올림(러그) 높이.
+function restingY(item, x, z) {
+  if (item._support) return item._support.y;
+  return Math.max(floorLiftAt(item, x, z), balconyLiftAt(item, x, z)); // #209 발코니 데크 상면 접지
+}
+// #209 발코니: 데크 플랭크 상면(bal.y=0.023)이 실내 바닥(0)보다 높다 — 사각형 안 허용 소품은 그 높이로 접지.
+function balconyLiftAt(item, x, z) {
+  const bal = SHELTERS[state.current]?.balcony;
+  if (!bal || !bal.y || !bal.allow.includes(item.defId)) return 0;
+  return (x >= bal.x0 && x <= bal.x1 && z >= bal.z0 && z <= bal.z1) ? bal.y : 0;
+}
 function collides(item, x, z) {
   if (DEFS[item.defId].noCollide) return false;
   const sup = findSupport(item, x, z);
@@ -2517,6 +2563,27 @@ function addDistantSmoke() {
   envDyn.smoke = { pts, phase: sPhase, baseX };
 }
 
+// #2 물 반사(디렉터): 수면(envDyn.sea)에 하늘·스카이라인 반사. 셸터 로드 시 CubeCamera로 큐브맵 1회 베이크(정적 씬)
+//   → MeshStandard envMap. 골든(_golden: 반투명 정렬 결정론)·저사양(모바일 성능)은 스킵해 램버트 유지.
+let _seaCubeRT = null;
+function bakeWaterReflection() {
+  const sea = envDyn && envDyn.sea;
+  if (!sea || _golden || opts.lowSpec) return;
+  try {
+    if (_seaCubeRT) { _seaCubeRT.dispose(); _seaCubeRT = null; }
+    const rt = new THREE.WebGLCubeRenderTarget(128, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
+    const cam = new THREE.CubeCamera(0.5, 1400, rt);
+    cam.position.set(0, (sea.position.y || 0) + 3, 0);      // 수면 바로 위에서 주변(하늘·타워·선실) 캡처
+    scene.add(cam);
+    const wasVis = sea.visible; sea.visible = false;        // 자기 반사 방지
+    cam.update(renderer, scene);
+    sea.visible = wasVis; scene.remove(cam);
+    _seaCubeRT = rt;
+    const col = sea.material?.color ? sea.material.color.getHex() : 0x14222e, old = sea.material;
+    sea.material = new THREE.MeshStandardMaterial({ color: col, metalness: 0.7, roughness: 0.14, envMap: rt.texture, envMapIntensity: 1.5, fog: true });
+    old?.dispose?.();
+  } catch (e) { /* 실패 시 램버트 유지 — 크래시 방지 */ }
+}
 function loadShelter(id) {
   cancelPlacing();
   deselect();
@@ -2556,6 +2623,7 @@ function loadShelter(id) {
   buildOvergrowth();
   addDistantSmoke(); // F-1a [B]: 창밖 원거리 연기 기둥(먼 생존 흔적) — 없는 셸터에만 1개
   buildModProps(); // 설치된 개조 소품
+  bakeWaterReflection(); // #2 물 반사(디렉터): 수면에 하늘·스카이라인 반사 큐브맵 1회 베이크
   applyDeco();     // 꾸미기(#13): 벽지/바닥재 재질 적용 (셸터 원본 map 위에 오버레이)
   scatterDust();   // 실내 먼지 모트 재배치
   applyMood(sh.mood);
@@ -2618,10 +2686,14 @@ function loadShelter(id) {
     if (it.ge && restored) { restored.gel = it.ge; applyGel(restored); } // #189 P3: 조명 젤 색 복원
   }
   for (const it of items) {
-    if (!it.y) continue;
+    // #209 러그 바닥 올림: y=0 항목도 러그가 밑에 있으면 재계산 대상이다(구 세이브엔 러그 위 가구가 0으로
+    //   저장돼 있고, 직렬화가 y를 toFixed(2)로 반올림하므로 로드 시 재계산이 정본이다).
+    //   러그가 없으면 lift=0 → 기존 가드·기존 결과와 완전히 동일(회귀 없음).
+    const lift = Math.max(floorLiftAt(it, it.x, it.z), balconyLiftAt(it, it.x, it.z)); // #209 러그 or 발코니 데크
+    if (!it.y && !lift) continue;
     const sup = findSupport(it, it.x, it.z);
     if (sup) { it.support = sup.other; it.y = sup.y; }
-    else it.y = 0; // 지지대가 사라졌으면 바닥으로
+    else it.y = lift; // 지지대가 사라졌으면 러그 상면(없으면 바닥)
     syncTransform(it);
   }
   despawnCat();
@@ -2650,14 +2722,16 @@ function moveCostFor(id) {
     // #108 정비코스트 배수: 재정비 자원에 gateCostMul(하드 1.25·혹한 1.5·무한 0.85) — 여정 물자(음식·물)는 생존 상수라 제외.
     for (const [rid, n] of Object.entries(gateCost(SHELTERS[id].moveCost || {}))) cost[rid] = (cost[rid] || 0) + n;
   }
-  const cross = districtOf(id) !== districtOf(state.current);
-  if (cross) { cost.food = (cost.food || 0) + BAL.economy.moveCrossFood; cost.water = (cost.water || 0) + BAL.economy.moveCrossWater; }
-  return { cost, cross, renov: !state.renovated[id] };
+  const cityCross = cityOf(id) !== cityOf(state.current); // 국경(도시 간) 이주 — 구역 겹 대신 상위 겹으로
+  const cross = !cityCross && districtOf(id) !== districtOf(state.current);
+  if (cityCross) { cost.food = (cost.food || 0) + BAL.cities.moveCityFood; cost.water = (cost.water || 0) + BAL.cities.moveCityWater; }
+  else if (cross) { cost.food = (cost.food || 0) + BAL.economy.moveCrossFood; cost.water = (cost.water || 0) + BAL.economy.moveCrossWater; }
+  return { cost, cross: cross || cityCross, cityCross, renov: !state.renovated[id] };
 }
 async function moveToShelter(id) {
   if (paused) { toast(t('pause.blocked')); return; }
   if (id === state.current) { closeModal(); return; }
-  const { cost, cross, renov } = moveCostFor(id);
+  const { cost, cross, cityCross, renov } = moveCostFor(id);
   if (!resHasAll(cost)) {
     toast(t('move.needSupplies', { cost: costLabel(cost) }));
     return;
@@ -2671,8 +2745,10 @@ async function moveToShelter(id) {
     state.dayLog.notes.push(t('move.renovNote', { name: LName(SHELTERS[id]), cost: costLabel(gateCost(SHELTERS[id].moveCost || {})) || t('free') })); // #108 표기=판정 동일 게이트 비용
   }
   if (cross) {
-    state.gameMin += BAL.economy.moveCrossTimeMin; // 구역 간 여정 3시간
-    const dn = LName(DISTRICTS[districtOf(id)]); state.dayLog.notes.push(t('move.journeyNote', { name: dn, josa: josa(dn, '으로/로') }));
+    // 국경(도시 간)은 구역 간의 두 배 — 물자도 시간도(EAST-ECONOMY.md §3-④). 노트도 별도: 관문을 넘는 건 다른 사건이다.
+    state.gameMin += cityCross ? BAL.cities.moveCityTimeMin : BAL.economy.moveCrossTimeMin;
+    const dn = LName(DISTRICTS[districtOf(id)]);
+    state.dayLog.notes.push(t(cityCross ? 'move.journeyCityNote' : 'move.journeyNote', { name: dn, josa: josa(dn, '으로/로') }));
   }
   state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
   state.stayDays = 0; // 새 집은 아직 낯설다
@@ -2681,7 +2757,9 @@ async function moveToShelter(id) {
   scheduleSave();
   renderResBar();
   closeModal();
-  { const sn = LName(SHELTERS[id]); toast(t('move.done', { emoji: SHELTERS[id].emoji, name: sn, josa: josa(sn, '으로/로'), journey: cross ? t('move.journeyTag') : '' })); }
+  // #208 감사 검거(P2): moveCostFor가 cross를 '구역 또는 도시'로 넓힌 뒤 시간·노트는 cityCross로 분기했는데
+  //   이 토스트만 옛 cross를 읽어 국경 이주에도 "여정 3시간"이라 말했다 — 시계는 6시간, 일지도 6시간인데 토스트만 3.
+  { const sn = LName(SHELTERS[id]); toast(t('move.done', { emoji: SHELTERS[id].emoji, name: sn, josa: josa(sn, '으로/로'), journey: cross ? t(cityCross ? 'move.journeyCityTag' : 'move.journeyTag') : '' })); }
 }
 // 이주 가능 판정: 해금 && 비현재 && 전체 비용 충족인 거처가 하나라도 있으면 true.
 // 비용은 moveCostFor(1의 칩 렌더)와 동일 소스 — 로직/표시 불일치 방지.
@@ -2870,25 +2948,23 @@ function openMapModal(viewCity) {
     const nameCol = visits > 0
       ? `rgb(${Math.round(198 - 71 * mProg)},${Math.round(83 + 109 * mProg)},${Math.round(64 + 42 * mProg)})`
       : '';
-    // #164: 떠오른 자리 배지(스팟 아이콘) + 지역 컨디션 태그(풍/마름) — "오늘은 뭐가 떠 있나"가 아침의 질문이 되게.
+    // #208(디렉터 2026-07-17): 핀은 점+이름만 — 퍼센트 칩·컨디션 태그(풍/마름)·스팟 이모지·봉쇄 이모지 전부 제거.
+    //   "이름 색을 통한 숙련도만 표시하자" + "이모지들이 오히려 더 AI틱하게 만든다". 정보는 잃지 않는다:
+    //   성공률·컨디션·스팟·봉쇄는 title(툴팁)과 호버 정보판(showMapInfo)이 그대로 싣고, 상태는 점 색/링 CSS가 진다.
     const spotHere = state.fieldSpot && state.fieldSpot.region === rid;
-    const spotTag = spotHere
-      ? `<span class="pin-visits" title="${t('spot.' + state.fieldSpot.id)} — ${t('spot.mapHint')}">${(FIELD_SPOTS[state.fieldSpot.id] || {}).icon || '📍'}</span>` : '';
     const cLv = (state.regionCond && state.regionCond.lv && state.regionCond.lv[rid]) || 0;
-    const condTag = cLv > 0 ? `<span class="pin-rate ok" title="${t('map.cond.richTip')}">${t('map.cond.rich')}</span>`
-      : cLv < 0 ? `<span class="pin-rate lack" title="${t('map.cond.leanTip')}">${t('map.cond.lean')}</span>` : '';
-    if (spotHere) el.title += ' — ' + t('spot.' + state.fieldSpot.id);
+    if (spotHere) { el.classList.add('spot'); el.title += ' — ' + t('spot.' + state.fieldSpot.id) + ' · ' + t('spot.mapHint'); }
+    if (cLv > 0) { el.classList.add('rich'); el.title += ' · ' + t('map.cond.richTip'); }
+    else if (cLv < 0) { el.classList.add('lean'); el.title += ' · ' + t('map.cond.leanTip'); }
     if (!visits && !blocked) el.classList.add('sketch');
-    if (visits > 0) el.title += ` · ${t('map.masteryPct', { p: Math.round(mProg * 100) })}`;
-    // #204 타르코프식 핀(디렉터 레퍼런스): 아이콘 대신 점 + 옆 이름. 이름 색 = 숙련 그라데이션.
-    //   핀의 자식이라 클릭·호버가 핀 핸들러로 버블 — 이름 자체가 터치 타깃을 겸한다.
+    if (visits > 0) el.title += ` · ${t('map.rateTip', { p: rate })} · ${t('map.masteryPct', { p: Math.round(mProg * 100) })}`;
+    if (blocked) el.title += ' · ' + t(avBlocked ? 'map.blockedAvalanche' : 'map.blockedBlizzard');
+    // #204 타르코프식 핀: 점 + 옆 이름. 이름 색 = 숙련 그라데이션(붉은→초록).
+    //   #208: 점이 좌표의 진실 — 이름은 지도 우측 절반에서 왼쪽으로 뻗는다(flip). CSS가 점 기준 정렬을 맡는다.
     const nameTag = `<span class="pin-name"${nameCol ? ` style="color:${nameCol}"` : ''}>${LName(r)}</span>`;
     const dotTag = `<span class="pin-dot"></span>`;
-    el.innerHTML = blocked
-      ? `${dotTag}${nameTag}<span class="pin-rate lack">${avBlocked ? '🏔️' : '❄️'}</span>${spotTag}`
-      : !visits
-        ? `${dotTag}${nameTag}<span class="pin-rate sketch-q">?</span>${spotTag}`
-        : `${dotTag}${nameTag}<span class="pin-rate ${cls}">${rate}%</span>${spotTag}${condTag}`;
+    if (p.x > 50) el.classList.add('flip'); // 우측 절반: 이름을 점 왼쪽으로 — 지도 밖 이탈 방지(모바일 신고)
+    el.innerHTML = `${dotTag}${nameTag}`;
     // 첫 귀환 후 처음 여는 지도: 잉크가 배어드는 연출 1회
     state.mapInked = state.mapInked || {};
     if (visits > 0 && !state.mapInked[rid]) { el.classList.add('inked-now'); state.mapInked[rid] = 1; scheduleSave(); }
@@ -3710,6 +3786,10 @@ function resolveExpedition() {
       let n = Math.round((min + Math.random() * (max - min)) * mult * harborMult * condMul);
       if (id === yardBoostId) n = Math.round(n * BAL.harbor.yardBoostMult); // 오늘 바다가 준 것
       if (hard) n = hardLoot(n);
+      // 동부 수확 겹(EAST-ECONOMY.md): incomeMul 위에 도심 추가 조임 — 하드·하드코어만(미표기 모드=1).
+      //   확률 반올림(hardLoot 문법)으로 소량 수확의 기대값 보존. 설비 산출은 이 파이프 밖(무페널티).
+      const em = r.city === 'east' ? (BAL.cities.eastLootMul?.[state.mode] ?? 1) : 1;
+      if (em !== 1 && n > 0) { const x = n * em, f = Math.floor(x); n = f + (Math.random() < x - f ? 1 : 0); }
       if (n > 0) { gotRes[id] = (gotRes[id] || 0) + n; resAdd(id, n); }
     }
   };
@@ -3988,16 +4068,23 @@ function resolveExpedition() {
     : '';
   // 희귀 전리품(도료=희귀 보라 / 도면·네온 안료=전설 금색): 획득 난이도별 빛나는 테두리 박스 (디렉터 2026-07-09).
   //   도료엔 실제 색 스와치 점을 붙여 "무슨 색을 주웠는지" 한눈에. 스태거는 가구 다음 클라이맥스로.
-  const specialHtml = special.length
-    ? `<div class="loot-list reveal">${special.map(s => `<div class="loot-item ${s.tier}" style="--li:${li++}">${s.swatch != null ? `<span class="loot-dot" style="background:#${(s.swatch & 0xffffff).toString(16).padStart(6, '0')}"></span>` : ''}${s.icon} ${s.label}${s.n ? ` +${s.n}` : ''}</div>`).join('')}</div>`
+  const lootRow = s => `<div class="loot-item ${s.tier}" style="--li:${li++}">${s.swatch != null ? `<span class="loot-dot" style="background:#${(s.swatch & 0xffffff).toString(16).padStart(6, '0')}"></span>` : ''}${s.icon} ${s.label}${s.n ? ` +${s.n}` : ''}</div>`;
+  const specialHtml = special.length ? `<div class="loot-list reveal">${special.map(lootRow).join('')}</div>` : '';
+  // #208(디렉터): "탐사 최종 정산에서 「이벤트 발생으로 추가 획득:」 이런식으로 추가하고" —
+  //   탐험 도중 리스크 인카운터로 번 것은 탐험 성과와 출처가 다르다. 같은 희귀도 문법으로 그리되 소제목으로 분리.
+  const riskGain = state.riskEventGain || [];
+  const riskHtml = riskGain.length
+    ? `<div class="note-reveal" style="--li:${li};font-size:10px;color:var(--text-dim);margin-top:8px">${t('exp.riskGain')}</div>`
+      + `<div class="loot-list reveal">${riskGain.map(lootRow).join('')}</div>`
     : '';
+  state.riskEventGain = null; // 이번 정산에서 소진 — 다음 탐험으로 새지 않게
   const prepHtml = prep.length
     ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">${t('exp.usedPrep', { list: prep.map(p => `${PREPS[p].emoji}${LName(PREPS[p])}`).join(', ') })}</div>`
     : '';
   const noteHtml = notes.length
     ? `<div class="note-reveal" style="--li:${li};font-size:11px;line-height:1.7;margin-top:8px">${notes.join('<br>')}</div>`
     : '';
-  openModal(title, `${body}${resHtml}${lootHtml}${specialHtml}${noteHtml}${prepHtml}${unlockMsg}`);
+  openModal(title, `${body}${resHtml}${lootHtml}${specialHtml}${riskHtml}${noteHtml}${prepHtml}${unlockMsg}`);
   // 개봉 스킵: 본문 아무 데나 탭하면 남은 행 즉시 전부 공개 (기다림 강요 금지 — 코지 안전선)
   { const mb = $('modal-body'); if (mb) { mb.classList.remove('reveal-skip'); mb.addEventListener('click', () => mb.classList.add('reveal-skip'), { once: true }); } }
   scheduleSave();
@@ -4289,27 +4376,46 @@ function playEventSting(id) {
 // title/text/choice label 은 언어 전환 시점(showEvent) 에 t() 로 해석하므로 id 로 보관한다.
 // #165 무너진 입구 보상 롤 (디렉터 2026-07-10): Yes의 값 — 치장템(도료·도면) 가중, 최희귀 고양이 루트,
 //   나머지는 잡동사니 위로. 부상 리스크는 이벤트 쪽(choices.run)에서 별도 롤 — 보상과 독립이라 "얻고도 다칠" 수 있다.
-let collapseLootFx = null; // #199 상자 개봉 연출용 전리품 메타(색·이모지) — collapseEntranceLoot가 굴릴 때 기록
+/* #199 상자 개봉 연출용 전리품 메타 — collapseEntranceLoot가 굴릴 때 기록.
+   #213(디렉터 "emoji 출력인데 실 모델링으로 만들자 / 아이템 등급 별로 색이 달라야해"):
+     구 형태 { color, emoji } → { kind, tier, body }.
+       kind = 복셀 모델 종류(buildLootModel의 분기). 구 emoji 자리 — 문·상자는 복셀인데 정작
+              주인공인 전리품만 96px serif 이모지 스프라이트라 극의 정점에서 톤이 깨졌다.
+       tier = 등급('common'|'rare'|'legend') → 광선·파편·내부 발광이 BAL.lootRarity에서 색을 받는다.
+       body = 물건 자신의 색(도료 깡통 몸통 = 그 계열 색). 등급색과 별도 채널 — 섞지 않는다.
+   톤 규약(디렉터 "단, 아쉽게 하찮아야해"): 모델은 작고 칙칙하고 낡게. 광선은 웅장한데 그 끝에 뜨는 건
+     실패 한 개 — 그 낙차가 이 게임의 정서다. 반짝이는 보물 금지. */
+let collapseLootFx = null;
 // 2.0-(e) 도면 이름 해석 — 시그니처 도면이 가구(DEFS)와 복장(outfit_*→OUTFITS) 두 종족이 됐다.
 //   드랍 노트·잭팟·전리품 라벨·지도 보급원 트래커가 공용(함수 선언 호이스팅으로 전 사용처 안전).
 function bpName(bpId) {
   return bpId.startsWith('outfit_') ? LName(OUTFITS[bpId.slice(7)] || { name: bpId, nameEn: bpId }) : LName(DEFS[bpId]);
 }
+/* #208(디렉터 "탐사 결과 나오고 나서 하는게 아니라 탐사 도중에 나오는게 좋을 것 같아"):
+   탐험 '도중'에 떠야 하는 인카운터 목록. 무너진 입구는 내가 그 자리에 서서 들어갈지 고르는 사건이라
+   귀환 후 회상으로 뜨면 개연성이 없다 — 발동 자체가 이미 진행률 35% 지점 롤이었는데(9124행),
+   소비 게이트의 `!state.exp` 때문에 귀환까지 대기하던 것. 나머지 인카운터는 집에서 겪는 것이라 기존 게이트 유지. */
+const DURING_EXP_EVENTS = new Set(['collapsed_entrance']);
+function duringExpEvent(id) { return DURING_EXP_EVENTS.has(id); }
+// #208: 리스크 인카운터로 번 것을 정산이 "이벤트 발생으로 추가 획득:"으로 따로 세울 수 있게 적어둔다.
+//   탐험 정산의 special[] 문법(희귀도 테두리)을 그대로 쓴다 — 신규 표시 계층 0.
+function riskGainPush(entry) { (state.riskEventGain = state.riskEventGain || []).push(entry); }
 function collapseEntranceLoot() {
-  // #193: 발동 시점에 박제한 지역 우선 — 귀환 후 표시라 state.exp는 이미 비어 있다(항상 slum 폴백이던 결함)
+  // #193: 발동 시점에 박제한 지역 우선 — (#208 이전엔 귀환 후 표시라 state.exp가 비어 항상 slum 폴백이던 결함)
   const region = state.riskEventRegion || (state.exp ? state.exp.region : 'slum');
   const r = Math.random();
   // 최희귀: 어둠 속의 야옹 — 고양이 미보유·미조우일 때만. 입양 인카운터로 연결(집 문앞 재회 플로우 그대로).
   if (!state.cat && !state.catEventSeen && r < 0.08) {
     state.pendingEvent = 'cat';
-    collapseLootFx = { color: 0xffd487, emoji: '🐾' };
+    collapseLootFx = { kind: 'cat', tier: 'legend' }; // 어둠 속의 야옹 — 물건이 아니라 기척. 모델은 발자국 한 쌍.
     return t('ev.collapse.rCat');
   }
   if (r < 0.5) { // 도료 (지역 시그니처 계열 가중 — 기존 잭팟 층 재사용)
     const fam = rollPaintFamily(region);
     state.paints[fam] = (state.paints[fam] || 0) + 1;
-    collapseLootFx = { color: PAINT_FAMILIES[fam].swatch, emoji: '🪣' };
+    collapseLootFx = { kind: 'paint', tier: 'rare', body: PAINT_FAMILIES[fam].swatch }; // 깡통 몸통=그 계열 색, 광선=등급 보라
     jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
+    riskGainPush({ icon: icon('icon_loot_paint', '🪣'), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
     return t('ev.collapse.rPaint', { name: LName(PAINT_FAMILIES[fam]) });
   }
   const bpPool = (BAL.blueprint.regionItems[region] || []).filter(id => !(state.blueprints || {})[id]);
@@ -4317,13 +4423,15 @@ function collapseEntranceLoot() {
     const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
     state.blueprints = state.blueprints || {};
     state.blueprints[bpId] = 1;
-    collapseLootFx = { color: 0xd4b46a, emoji: '📐' };
+    collapseLootFx = { kind: 'blueprint', tier: 'legend' };
     jackpotToast(`📐 ${t('bp.jackpot', { name: bpName(bpId) })}`, 0xd4b46a);
+    riskGainPush({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
     return t('ev.collapse.rBp', { name: bpName(bpId) });
   }
   const rid = Math.random() < 0.5 ? 'cloth' : 'parts';
   resAdd(rid, 1);
-  collapseLootFx = { color: 0x9aa0a8, emoji: rid === 'cloth' ? '🧵' : '🔩' };
+  collapseLootFx = { kind: rid === 'cloth' ? 'cloth' : 'parts', tier: 'common' };
+  riskGainPush({ icon: icon('icon_res_' + rid, '📦'), label: LN(RESOURCES[rid]), n: 1, tier: '' });
   return t('ev.collapse.rJunk', { name: LN(RESOURCES[rid]) });
 }
 // #164 「떠오른 자리」 회수 — 스팟 지역 탐험이 성공/부분성공으로 닿았을 때 resolveExpedition에서 호출.
@@ -4371,6 +4479,7 @@ const EVENTS = makeEvents({
   encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도)
   PAINT_FAMILIES, buyDye, dyeCost, // dye merchant ctx (REWARD-LOOP)
   collapseEntranceLoot, // #165 탐험 리스크 인카운터 — 보상 롤 위임 (game.js 심볼 전부 여기 있음)
+  dlcOwns: (id) => Platform.dlc.owns(id), // #119 서포터팩 DLC 게이트 (러시안블루 보장)
 });
 setEncounterEvents(EVENTS); // core/encounter 술어에 EVENTS 주입 (makeEvents 산물 — 생성 직후 1회)
 // 이벤트 선택지 비용 판정/소비: food가 섞인 cost는 신선+통조림 합산으로 취급 (신선 우선 소비 후 통조림 폴백)
@@ -4415,7 +4524,9 @@ function presentVisitor(id) {
   scene.add(built.g);
   // #181 디렉터 피드백: "사람에게 빛나는 걸 저렇게 하면" — 몸을 감싸던 앰버 발광 스프라이트 제거.
   //   주목 유도는 카메라 자동 팬(방문자를 화면 중앙으로)이 담당한다. (필요 시 발치 바닥 표식으로 대체)
-  visitor = { ...built, mode: 'enter', tgt: stop, edge, gait: 0, evId: id, glow: null, glowBase: 0, groundY: gy, spoke: false, autoT: performance.now() + 45000 };
+  // autoT=0으로 시작: 자동 발화 예약은 **도착 시점**에 tickVisitor가 건다(#208). 구 스폰+45초 값은 도착 시
+  //   덮어써져 영영 안 쓰이는 죽은 수치라 제거 — 남겨두면 "45초 뒤 발화"라 오독된다.
+  visitor = { ...built, mode: 'enter', tgt: stop, edge, gait: 0, evId: id, glow: null, glowBase: 0, groundY: gy, spoke: false, autoT: 0 };
   // #181 밸런스 테이블에서 대사·교환 랜덤 픽 (고정 → 다양)
   const vt = VISITOR_TABLE[id];
   if (vt) {
@@ -4452,7 +4563,13 @@ function tickVisitor(t, dt) {
   if (v.mode === 'enter') {
     v._stepT = (v._stepT || 0) + dt;
     if (v._stepT > 0.42) { v._stepT = 0; if (playSfx) playSfx('steps_snow', { vol: 0.2, jitter: 0.15 }); } // #181 걸어오는 발소리 (도착하면 멎어 정적)
-    if (visitorStep(v, dt)) { v.mode = 'idle'; renderer.shadowMap.needsUpdate = true; }
+    if (visitorStep(v, dt)) {
+      v.mode = 'idle'; renderer.shadowMap.needsUpdate = true;
+      // #208(디렉터): "쟤가 오면 그냥 뜨게 해 — 굳이 터치 안 해도 화면이 인카운터로 땡겨지고 자동 메시지 출력되게".
+      //   자동 발화 시점을 '스폰 + 45초'에서 **도착 순간 기준**으로 옮긴다. 걸어오는 동안은 방해하지 않고,
+      //   멈춰서 나를 바라본 뒤 짧은 숨(autoSpeakMs)만 두고 말을 건다. 그 사이 탭하면 즉시 발화(기존 경로 그대로).
+      v.autoT = performance.now() + BAL.visitorCam.autoSpeakMs;
+    }
   } else if (v.mode === 'idle') {
     visitorStep(v, dt);
     // #181 디렉터: 대사는 '화면(카메라)'이 아니라 인게임 아바타(플레이어)를 바라보며 건넨다 — 4벽 응시 금지.
@@ -4465,7 +4582,7 @@ function tickVisitor(t, dt) {
     v.g.rotation.y += dr * Math.min(1, dt * 4);
     if (v.parts && v.parts.body && !opts.reduceMotion) v.parts.body.scale.y = 1 + Math.sin(t * 1.6) * 0.012; // 미세 숨쉬기(조각상 방지)
     if (v.glow) v.glow.material.opacity = opts.reduceMotion ? v.glowBase * 0.7 : v.glowBase * (0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 3)));
-    if (v.autoT && performance.now() > v.autoT) { v.autoT = 0; onVisitorClicked(); } // 45s 무시 → 자동 카드
+    if (v.autoT && performance.now() > v.autoT) { v.autoT = 0; onVisitorClicked(); } // 도착 후 autoSpeakMs → 자동 발화+카드
   } else if (v.mode === 'leave') {
     if (v.glow) v.glow.material.opacity = Math.max(0, v.glow.material.opacity - dt * 2);
     if (visitorStep(v, dt)) { disposeVisitor(); return; }
@@ -4487,6 +4604,9 @@ function onVisitorClicked() {
   openEventCard(id, { noImg: true, compact: true }); // 콤팩트 카드(선택지만) — 대사는 버블
 }
 function dismissVisitor(silent) {
+  // #208: 동물 인카운터 클로즈업도 같은 출구로 복귀한다 — openEventCard의 선택/내리기 핸들러가
+  //   이미 이 함수를 부르므로, 여기 한 곳에 걸면 사람·동물이 같은 경로로 카메라를 돌려준다.
+  releaseWildCam();
   if (!visitor) return;
   if (silent) { disposeVisitor(); return; }
   visitor.mode = 'leave'; visitorObj = null;                 // 걸어 나가고 카메라 복귀
@@ -4495,7 +4615,7 @@ function dismissVisitor(silent) {
 function disposeVisitor() {
   if (visitor) { scene.remove(visitor.g); disposeDeep(visitor.g); }
   visitor = null; visitorObj = null;
-  if (visitorCam.active) exitVisitorCloseup();
+  if (visitorCam.active && !wildCamEnt) exitVisitorCloseup(); // #208: 동물이 카메라 주인이면 뺏지 않는다(퇴장 겹침)
   renderer.shadowMap.needsUpdate = true;
 }
 // 방문자의 실제 대사 추출: 따옴표(" " 「」 " ")로 감싼 발화가 있으면 그것만(라디오로 나오는 "목소리"),
@@ -4539,8 +4659,16 @@ function canPresentVisitor() { return !state.exp && !!ROOM && !document.body.cla
 //   터치/클릭하면 기존 이벤트 카드로 상호작용. 지면 직접 셸터만(옥탑·지하철·요트·등대 제외 — 주변 '땅' 없음).
 //   B0=재사용 코어(스폰·픽·수거·라이프사이클). 어떤 동물이 무엇을 떨구는지는 B2에서 배선.
 // ============================================================
-let dropSpots = [];       // 활성 지면 드랍 { g, spr, hit, evId, yBase }
+let dropSpots = [];       // 활성 지면 드랍 { g, spr, hit, evId, yBase, follow, ent, settled, autoT }
+let wildCamEnt = null;    // #208 동물 클로즈업 점유 중인 엔티티(visitorCam을 사람과 공유 — 소유자 표시)
 let _sparkleTex = null;
+// #208 동물 클로즈업 해제 — 카드가 끝났거나(dismissVisitor), 동물이 떠났거나, 셸터가 바뀌면.
+//   사람이 붙어 있으면 카메라 주인은 그쪽이므로 건드리지 않는다.
+function releaseWildCam() {
+  if (!wildCamEnt) return;
+  wildCamEnt = null;
+  if (!visitor && visitorCam.active) exitVisitorCloseup();
+}
 function sparkleTexOnce() {
   if (_sparkleTex) return _sparkleTex;
   // 디렉터 레퍼런스: 부드러운 4가닥 별빛 플레어(길게 뻗다 사라지는 소프트 레이) + 밝은 코어.
@@ -4586,16 +4714,39 @@ function spawnGroundDrop(evId, opts = {}) {
   const hit = new THREE.Sprite(new THREE.SpriteMaterial({ opacity: 0, transparent: true, depthWrite: false })); // 넉넉한 터치 히트박스
   hit.scale.set(1.3, 1.3, 1); hit.position.set(0, 0.45, 0); g.add(hit);
   scene.add(g);
-  dropSpots.push({ g, spr, hit, evId, yBase: f ? 0.85 : 0.4, follow: f }); // 동행 시 몸 위에 뜨도록 상향
+  // ent(살아 있는 동물)가 있으면 #208 자동 인카운터 대상. autoT는 안전망 상한으로 먼저 걸고,
+  //   자리를 잡는 순간 tickDropSpots가 autoSpeakMs로 앞당긴다. 정적 발견물(FIND)은 ent 없음 = 기존 터치 유지.
+  // 동행 시 몸 위에 뜨도록 상향 — 상수 0.85는 #208 클로즈업(zoom 4.5)에서 개(sizeH 0.34) 머리 위 0.5u에
+  //   떠 '허공의 별'로 읽혔다. 종 덩치 기준으로: 등 바로 위. (엔티티 정보 없으면 기존 상수 유지)
+  const sh = opts.ent && opts.ent.sp ? opts.ent.sp.sizeH : 0;
+  dropSpots.push({ g, spr, hit, evId, yBase: f ? (sh ? sh + 0.18 : 0.85) : 0.4, follow: f, ent: opts.ent || null, settled: false,
+    autoT: opts.ent ? performance.now() + BAL.wildCam.maxWaitMs : 0 });
   if (playSfx) playSfx('place', { vol: 0.28, jitter: 0.2 });
   return true;
 }
+// 동물이 아직 걸어/내려오는 중인지 — 이 모드들이 '등장 이동'이다(wildlife.js spawnOne/update 기준).
+const WILD_ARRIVING = new Set(['enter', 'walk', 'landing']);
 function tickDropSpots(t) {
+  let fire = null;
   for (const d of dropSpots) {
     // 동물 동행(디렉터): 살아 있는 동안 몸을 따라다니고, 떠나면(parent 해제) 마지막 자리에 잔류
     if (d.follow) {
-      if (d.follow.parent) { d.g.position.x = d.follow.position.x; d.g.position.z = d.follow.position.z; }
-      else { d.follow = null; d.yBase = 0.4; } // 떨구고 갔다 — 지면 높이로 안착
+      // y도 따라간다: yBase가 이제 '엔티티 루트 기준'이라, 부유하는 곤충(groundY+0.9)도 몸 위에 붙는다.
+      if (d.follow.parent) { d.g.position.set(d.follow.position.x, d.follow.position.y, d.follow.position.z); }
+      else { d.follow = null; d.yBase = 0.4; d.g.position.y = visitorGroundY(); } // 떨구고 갔다 — 지면 높이로 안착
+    }
+    // #208 자동 인카운터: 카메라는 동물을 따라가고, 자리를 잡으면 한 박자 뒤 카드가 열린다.
+    if (d.ent) {
+      if (!d.ent.g.parent) { if (wildCamEnt === d.ent) releaseWildCam(); d.ent = null; d.autoT = 0; } // 이미 떠났다 → 추적/자동 종료
+      else {
+        if (wildCamEnt === d.ent && visitorCam.active && !visitor) // 사람이 동시에 있으면 tickVisitor에 양보
+          visitorCam.center.set(d.ent.g.position.x, (d.ent.groundY || 0) + BAL.wildCam.centerY, d.ent.g.position.z);
+        if (!d.settled && !WILD_ARRIVING.has(d.ent.mode)) { // 멈춰 자리 잡음 → 안전망 상한을 짧은 숨으로 당긴다
+          d.settled = true;
+          d.autoT = Math.min(d.autoT, performance.now() + BAL.wildCam.autoSpeakMs);
+        }
+        if (d.autoT && performance.now() > d.autoT && !fire) fire = d;
+      }
     }
     const k = 0.5 + 0.5 * Math.sin(t * 3.4);
     d.spr.material.opacity = 0.55 + 0.45 * k;
@@ -4603,6 +4754,7 @@ function tickDropSpots(t) {
     d.spr.material.rotation = t * 0.4;
     d.spr.position.y = d.yBase + Math.sin(t * 1.7) * 0.05; // 살짝 부유
   }
+  if (fire) collectDrop(fire); // 루프 밖에서 — collectDrop이 dropSpots를 재할당한다
 }
 function pickDrop(e) {
   if (!dropSpots.length) return null;
@@ -4617,7 +4769,7 @@ function collectDrop(d) {
   if (playSfx) playSfx('place', { vol: 0.4 });
   openEventCard(d.evId); // 기존 카드 흐름으로 상호작용
 }
-function disposeDropSpots() { for (const d of dropSpots) { scene.remove(d.g); disposeDeep(d.g); } dropSpots = []; }
+function disposeDropSpots() { releaseWildCam(); for (const d of dropSpots) { scene.remove(d.g); disposeDeep(d.g); } dropSpots = []; }
 
 // #182 B2 동물 인카운터 → 인엔진 매니페스트. 사람(A) ENCOUNTER_VISITOR와 평행:
 //   해당 인카운터가 뜰 조건이 되면 그 종을 실제로 스폰해 로밍시키고, 집 밖 땅에 드랍 반짝임을 띄운다.
@@ -4649,12 +4801,17 @@ function presentWildlife(id) {
   if (!m) { openEventCard(id); return; }
   // 종 엔티티 스폰(실제 로밍) — 실패해도 카드/드랍은 뜬다.
   let ent = null;
-  try { ent = (wildlifeSys && wildlifeSys._spawnSpecies && wildlifeSys._spawnSpecies(m.species)) || null; } catch (e) {}
+  // #208: 앰비언트 진입점(_spawnSpecies, 밴드 밖 10.5u)이 아니라 인카운터 진입점 — 집 앞 카메라 쪽으로 짧게.
+  try { ent = (wildlifeSys && wildlifeSys._spawnEncounter && wildlifeSys._spawnEncounter(m.species, camState.yaw)) || null; } catch (e) {}
   // 조망(하늘 나는 새 등): 떨군 게 없으니 지면 드랍 없이 카드 직결.
   if (m.sky) { openEventCard(id); return; }
   // 디렉터(2026-07-16): 반짝임은 동물 몸에 붙어 따라다닌다 — 땅에 따로 뜨면 개연성이 없다.
   //   동물이 떠나면 그 자리에 잔류(떨구고 갔다) — 보상 유실 없음. 정적 발견물(FIND)은 기존 지면 방식.
-  if (!spawnGroundDrop(id, { follow: ent?.g || null })) openEventCard(id);
+  if (!spawnGroundDrop(id, { follow: ent?.g || null, ent })) { openEventCard(id); return; }
+  // #208(디렉터): 사람과 대칭 — 개/동물이 "오면" 카메라가 그쪽으로 땡겨지고, 자리 잡으면 카드가 알아서 뜬다.
+  //   기존엔 팬도 자동 발화도 없어서 반짝임을 못 찾으면 인카운터가 통째로 유실됐다(사람 45초 문제의 동물판).
+  //   터치는 남긴다 — 이제 '필수'가 아니라 '앞당기기'다.
+  if (ent && ent.g) { wildCamEnt = ent; enterVisitorCloseup(ent.g.position.x, ent.g.position.z, ent.groundY, BAL.wildCam); }
 }
 
 function showEvent(id) {
@@ -4861,14 +5018,15 @@ const SHELTER_MODS = {
   terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '🧱', cost: { material: 4, cloth: 1 }, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
   bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '🛢️', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
 };
-// 개조가 셸터의 어느 앵커에 붙는지 선언 (ARC-01: 콘텐츠는 테이블).
+// 개조 앵커 참조표 (문서 전용 — 런타임 미소비. 디스패치는 addModProp의 id 하드코딩 분기가 직접 수행).
 // roof=지붕면 브래킷 · eave=처마 홈통+파이프+물통 · wall=외벽 덧댐 · ground=지면(마당) 배치.
-const MOD_MOUNT = {
-  solar: 'roof', raincatch: 'eave', bigraincatch: 'eave',
-  insulation: 'wall', insulationPlus: 'wall', garden: 'ground', rooftopGarden: 'ground',
-  mushroom: 'ground', // 1.2 버섯 재배칸 — 지면(승강장) 배치. subway는 SHELTER_MOUNTS.subway.eave 폴백을 쓴다.
-  onsen: 'ground',    // 1.3 온천 — 지면(로지 옆마당) 배치. lodge에 ground 앵커 없으면 addModProp 폴백(벽 밀착).
-};
+//   solar                  → roof  : mounts.roof (폴백=벽밀착 지면 경사)
+//   raincatch·bigraincatch → eave  : mounts.eave (폴백=우측 처마)
+//   insulation·insulationPlus → wall : mounts.wall (폴백=+z 벽)
+//   garden                 → ground: mounts.ground (앵커를 읽는 유일한 지면 소품)
+//   rooftopGarden → buildRooftopGarden() : mounts 미참조, SHELTERS.rooftop._slab 기준 하드코딩(y=0 접지)
+//   mushroom      → buildMushroomBed()   : mounts 미참조, 승강장 좌표 하드코딩(y=0). subway eave 폴백 없음
+//   onsen         → 로지 옆마당 하드코딩   : mounts.groundY만 사용(ground 앵커 미참조)
 // 셸터별 설치 앵커 실측 좌표 (buildRoom 지오메트리 기준).
 //  roof:  { y(지붕 상면), cx, cz(지붕 중심), hw, hd(지붕 반폭/반깊이), pitch?(경사지붕이면 +z로 내려가는 기울기 rad) }
 //  eave:  { y(처마 높이), x, z(모서리), dir(파이프가 뻗는 방향 [±1,±1]) }
@@ -4943,22 +5101,24 @@ const SHELTER_MOUNTS = {
     groundY: -0.88, ground: { x: 5.5, z: 1.7, rot: Math.PI / 2 },
   },
   customs: { // 2.0 동부: 7.6×6.2×2.7 평지붕 콘크리트 청사. 마당 아스팔트 -0.55 (§6.0.5 기초 모델링)
-    roof: { y: 2.72, cx: 0, cz: 0, hw: 3.6, hd: 2.9 },
+    roof: { y: 2.72, cx: 0, cz: 0, hw: 3.6, hd: 2.9, cullJoin: true }, // #209: 지붕 슬래브 신설(buildRoom) 동반 — 부감 시 패널 함께 페이드
     eave: { y: 2.6, x: 3.91, z: 2.6, dir: [1, 1] },
     groundY: -0.55, ground: { x: 2.8, z: 2.4, rot: 0 },
   },
   bridgehouse: { // 2.0 동부: 6.8×5.6×2.6 석조 평지붕. 협곡 절벽 위 마당 -0.6 (§6.0.5 기초 모델링)
-    roof: { y: 2.62, cx: 0, cz: 0, hw: 3.2, hd: 2.6 },
+    roof: { y: 2.62, cx: 0, cz: 0, hw: 3.2, hd: 2.6, cullJoin: true }, // #209: 석조 지붕 슬래브 신설(buildRoom) 동반
     eave: { y: 2.5, x: 3.51, z: 2.3, dir: [1, 1] },
     groundY: -0.6, ground: { x: 2.4, z: 2.0, rot: 0 },
   },
-  terminal: { // 2.0 동부: 11×7×3.4 대합실 홀. 역전 광장 -0.5 (§6.0.5 기초 모델링)
-    roof: { y: 3.42, cx: 0, cz: 0, hw: 5.2, hd: 3.3 },
+  terminal: { // 2.0 동부: 11×7×3.4 대합실 홀 — 배럴 볼트 천장(크라운 4.7). 역전 광장 -0.5 (§6.0.5 기초 모델링)
+    // #209: 평지붕 공식 y=h+0.02=3.42는 볼트가 솟는 홀 내부라 태양광이 홀 한가운데 갇혀 떴다.
+    //   앵커를 크라운(4.7) 위 4.72로 올린다(볼트가 이미 지붕 — 슬래브 신설 불요). cullJoin=볼트 tagCeiling(4.5)과 동반 페이드.
+    roof: { y: 4.72, cx: 0, cz: 0, hw: 2.6, hd: 3.3, cullJoin: true },
     eave: { y: 3.3, x: 5.61, z: 3.0, dir: [1, 1] },
     groundY: -0.5, ground: { x: 3.4, z: 2.6, rot: 0 },
   },
   penthouse: { // 2.0 동부: 11×7.5×2.9 최상층 + 발코니(-z 데크). 확대 리워크 (§6.0.5)
-    roof: { y: 2.92, cx: 0, cz: 0, hw: 5.2, hd: 3.6 },
+    roof: { y: 2.92, cx: 0, cz: 0, hw: 5.2, hd: 3.6, cullJoin: true }, // #209 F30: 리브 위 옥상 슬래브(buildRoom) 신설 동반 — cullJoin=부감 시 패널이 지붕과 함께 페이드
     eave: { y: 2.8, x: 5.61, z: 3.86, dir: [1, 1] },
     groundY: -0.3, ground: { x: 3.4, z: 2.8, rot: 0 },
   },
@@ -5098,7 +5258,7 @@ function extMounts(shelterId) {
   const half = SHELTERS[shelterId].room.w / 2;
   const shiftX = x => (typeof x === 'number' && Math.abs(x) >= half - 0.6) ? x + Math.sign(x) : x;
   const out = { ...m };
-  if (m.eave) out.eave = { ...m.eave, x: shiftX(m.eave.x) };
+  if (m.eave) out.eave = { ...m.eave, x: shiftX(m.eave.x), ...(m.eave.barrel ? { barrel: { ...m.eave.barrel, x: shiftX(m.eave.barrel.x) } } : {}) };
   if (m.ground) out.ground = { ...m.ground, x: shiftX(m.ground.x) };
   if (m.roof) out.roof = { ...m.roof, hw: m.roof.hw + 1 };
   if (m.wall && (m.wall.face === '+x' || m.wall.face === '-x')) out.wall = { ...m.wall, off: m.wall.off + 1 };
@@ -5107,7 +5267,6 @@ function extMounts(shelterId) {
 function addModProp(id) {
   const { w, d } = ROOM;
   const mounts = extMounts(state.current);
-  const type = MOD_MOUNT[id];
   if (id === 'solar') {
     if (mounts.roof) return buildSolarProp(mounts.roof);
     // 폴백: 벽에 최대한 밀착한 지면 경사 거치
@@ -5474,6 +5633,7 @@ function openCraftModal() {
       </div>`;
     }
     if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
+    if (c.dlc && !Platform.dlc.owns(c.dlc)) return ''; // #119 서포터팩: DLC 소유 시에만 레시피 노출
     const outLabel = c.out.res
       ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])}${c.out.n > 1 ? ' ×' + c.out.n : ''}` // ×1은 생략(정보 0 — 한 줄 폭 확보)
       : c.out.outfit
@@ -6455,11 +6615,73 @@ function playCollapseVignette() {
     bx(lidPivot, 1.16, 0.16, 0.78, shade(body, 1.12), 0, 0.08, 0.36);                     // 뚜껑(경첩=뒷변)
     bx(lidPivot, 1.18, 0.05, 0.06, rim, 0, 0.14, 0.7);                                    // 뚜껑 앞 림
     const gi = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.62), new THREE.MeshBasicMaterial({
-      color: collapseLootFx?.color || 0xffcf9a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      color: BAL.lootRarity[collapseLootFx?.tier] ?? BAL.lootRarity.common, // #213: 내부 발광판도 등급 색 — 뚜껑 틈으로 새는 빛부터 등급을 말한다
+      transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
     gi.rotation.x = -Math.PI / 2; gi.position.set(0, 0.6, 0); chestG.add(gi); glowIn = gi; // 내부 발광판
   };
+  /* #213(디렉터 "실 모델링으로 만들자 / 단, 아쉽게 하찮아야해") — 상자에서 떠오르는 전리품 복셀 5종.
+     톤 규약: 폐허를 뜯어서 나온 것들이다. 작고, 칙칙하고, 낡았다. 광선 부챗살은 웅장하게 쏘는데
+       그 끝에 뜨는 건 실패 한 개 — 그 낙차가 정서다. 새 것·반짝이는 것·큰 것 금지.
+     스케일 규약: 대략 0.2~0.3u 안(상자 폭 1.12u의 1/4 이하). spawnBurst가 0.01→목표로 팝인시킨다.
+     bx(g,w,h,d,c,x,y,z)는 이 비네트의 로컬 헬퍼(6468행) — 셸터 빌더의 B()와 같은 문법(y=중심). */
+  function buildLootModel(kind, body) {
+    const outer = new THREE.Group();
+    const g = new THREE.Group(); outer.add(g);
+    /* 스케일 래퍼: 아래 치수는 0.2u 안쪽으로 쓰기 좋게 잡았지만, 그대로면 화면의 3.4%로 갈색 점이 된다(실측).
+       구 이모지는 Sprite라 scale 0.68 = 0.68u = 화면 17%였다 — 5배 차. "하찮게"는 물건의 격이지 안 보임이 아니다.
+       ×2.6 → 0.52u × 0.68 = 화면 8.8% = 이모지의 절반 존재감. 상자 폭(28%)의 1/3이라 여전히 초라하다.
+       래퍼를 쓰는 이유: 애니메이션이 최상위 scale.setScalar()로 팝인을 굴린다 — 안쪽에 재우면 안 밟힌다. */
+    g.scale.setScalar(2.6);
+    if (kind === 'paint') {
+      const can = body ?? 0x8a7f72;
+      bx(g, 0.17, 0.2, 0.17, can, 0, 0, 0);                                  // 깡통 몸통 = 그 도료 계열 색(정체 채널)
+      bx(g, 0.19, 0.02, 0.19, shade(can, 0.7), 0, -0.1, 0);                  // 바닥 테
+      bx(g, 0.19, 0.025, 0.19, shade(can, 1.25), 0, 0.085, 0);               // 상단 테
+      const lid = bx(g, 0.16, 0.02, 0.16, shade(can, 1.15), 0.12, 0.02, 0.06); // 뚜껑 — 열려서 옆에 떨어져 있다
+      lid.rotation.z = 1.1; lid.rotation.x = 0.3;
+      bx(g, 0.05, 0.11, 0.02, shade(can, 0.85), 0.075, -0.03, 0.088);        // 흘러내린 자국
+      bx(g, 0.09, 0.012, 0.02, shade(can, 0.9), 0, -0.104, 0.05);            // 바닥에 고인 자국
+    } else if (kind === 'blueprint') {
+      const paper = 0xb9ae93;
+      const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.26, 8), M(paper)); // 말린 종이 — 구겨진 두루마리
+      roll.rotation.z = Math.PI / 2; roll.rotation.y = 0.25; g.add(roll);
+      const inner = new THREE.Mesh(new THREE.CylinderGeometry(0.021, 0.021, 0.27, 6), M(shade(paper, 0.55)));
+      inner.rotation.z = Math.PI / 2; inner.rotation.y = 0.25; g.add(inner);  // 심지 구멍(어둠)
+      const tie = bx(g, 0.02, 0.115, 0.115, 0x6a5a42, 0.02, 0, 0);            // 끈 하나 — 새 것 아님
+      tie.rotation.x = 0.2;
+      bx(g, 0.055, 0.006, 0.05, shade(paper, 0.8), -0.1, 0.03, 0.02);         // 삐져나온 귀퉁이(접힌 자국)
+    } else if (kind === 'cloth') {
+      const th = 0x8f8676;
+      const spool = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.1, 8), M(shade(th, 1.05))); // 감다 만 실뭉치
+      g.add(spool);
+      for (const fy of [-0.062, 0.062]) {                                     // 실패 양끝 판
+        const f = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.014, 8), M(0x6a5a42));
+        f.position.y = fy; g.add(f);
+      }
+      const tail = bx(g, 0.008, 0.075, 0.008, shade(th, 1.1), 0.052, -0.05, 0.03); // 삐져나온 실 끝 — 하찮음의 핵심
+      tail.rotation.z = 0.5; tail.rotation.x = -0.35;
+    } else if (kind === 'parts') {
+      const steel = 0x7c7f86;
+      const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.19, 6), M(shade(steel, 0.85))); // 녹슨 나사 하나
+      bolt.rotation.z = 0.35; g.add(bolt);
+      const head = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.032, 6), M(steel));
+      head.position.set(-0.033, 0.093, 0); head.rotation.z = 0.35; g.add(head);
+      const nut = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.028, 6), M(shade(steel, 0.7))); // 너트는 반쯤 풀려 있다
+      nut.position.set(0.02, -0.055, 0); nut.rotation.z = 0.35 + 0.4; g.add(nut);
+      bx(g, 0.03, 0.02, 0.03, 0x8a5a3a, 0.005, -0.015, 0.026);                // 녹 얼룩
+    } else { // cat — 물건이 아니라 기척. 발자국 한 쌍만 떠오른다.
+      const pad = 0xffd487;
+      for (const [px, pz] of [[-0.05, 0.03], [0.05, -0.03]]) {
+        bx(g, 0.055, 0.012, 0.045, pad, px, 0, pz);                           // 발바닥
+        for (const tx of [-0.019, 0, 0.019]) bx(g, 0.013, 0.01, 0.013, pad, px + tx, 0.001, pz - 0.036); // 발가락 3
+      }
+    }
+    return outer;
+  }
   const spawnBurst = () => {
-    const col = collapseLootFx?.color || 0xffcf9a;
+    // #213: 광선·파편·내부 발광은 **등급** 색(BAL.lootRarity). 물건 자신의 색(도료 몸통)과 별개 채널이다 —
+    //   구 동작은 도료가 제 스와치로 튀어서 파란 도료와 회색 잡템을 색으로 구분할 수 없었다.
+    const col = BAL.lootRarity[collapseLootFx?.tier] ?? BAL.lootRarity.common;
     rays = new THREE.Group(); chestG.add(rays);                                           // 광선 부챗살(레퍼런스 f008)
     for (const [rz, w] of [[-0.42, 0.26], [-0.2, 0.3], [0, 0.36], [0.2, 0.3], [0.42, 0.26]]) {
       const ray = new THREE.Mesh(new THREE.PlaneGeometry(w, 5.2), new THREE.MeshBasicMaterial({
@@ -6467,10 +6689,7 @@ function playCollapseVignette() {
       ray.position.set(rz * 0.5, 0.6, 0); ray.rotation.z = rz; ray.userData.baseOp = 0.62 - Math.abs(rz) * 0.4;
       rays.add(ray);
     }
-    const lc = document.createElement('canvas'); lc.width = lc.height = 128;              // 전리품 아이콘 스프라이트
-    const g2 = lc.getContext('2d'); g2.font = '96px serif'; g2.textAlign = 'center'; g2.textBaseline = 'middle';
-    g2.shadowColor = 'rgba(0,0,0,0.6)'; g2.shadowBlur = 10; g2.fillText(collapseLootFx?.emoji || '📦', 64, 70);
-    lootSprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lc), transparent: true, depthWrite: false }));
+    lootSprite = buildLootModel(collapseLootFx?.kind, collapseLootFx?.body);              // #213: 이모지 스프라이트 → 복셀 모델
     lootSprite.position.set(0, 0.7, 0.1); lootSprite.scale.setScalar(0.01); chestG.add(lootSprite);
     debris = [];                                                                          // 파편 산개(레퍼런스 f010 보석 파편)
     for (let i = 0; i < 14; i++) {
@@ -6552,6 +6771,10 @@ function playCollapseVignette() {
           const rt = Math.min(1, ot / 0.7), ease = 1 - Math.pow(1 - rt, 3);
           lootSprite.position.y = 0.7 + ease * 1.05 + (ot > 0.7 ? Math.sin((ot - 0.7) * 2.4) * 0.06 : 0);
           lootSprite.scale.setScalar(rt < 0.85 ? 0.68 * ease : 0.68 - 0.1 * Math.min(1, (rt - 0.85) / 0.15));
+          // #213: 복셀은 스프라이트와 달리 카메라를 향해 주지 않는다 — 느리게 돌려 입체를 보여준다.
+          //   빠르면 '전시대 위 보물'이 되고, 이건 하찮아야 한다. 반 바퀴 남짓만 천천히.
+          lootSprite.rotation.y = 0.5 + ot * 0.7;
+          lootSprite.rotation.x = 0.18; // 살짝 기울여 윗면이 보이게(정면 실루엣만이면 납작해 보인다)
         }
         if (debris) for (const d of debris) {
           d.userData.v.y -= 4.6 * 0.016;
@@ -6625,6 +6848,39 @@ function pickBalconyView(e) {
   playJungleSunVignette();
   return true;
 }
+
+// 발코니 조망 은근한 신호 (디렉터 2026-07-18): 더블탭 발동은 그대로(발견의 결) — 여기 조망 포인트가 있다는
+//   최소 어포던스만 얹는다. ① 데크에 희미한 앰버 글린트 펄스 ② 호버 시 커서 포인터(데스크톱). 글린트는 _golden
+//   중 숨겨(비결정 배제) 펜트하우스 골든 레퍼런스 불변 — 실플레이에서만 보인다.
+let _balHint = null, _balHover = false;
+function tickBalconyHint(t) {
+  const bal = SHELTERS[state.current] && SHELTERS[state.current].balcony;
+  if (!_balHint) {
+    _balHint = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTexOnce(), color: 0xffce94, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    _balHint.scale.set(0.5, 0.5, 0.5); _balHint.renderOrder = 4; scene.add(_balHint);
+  }
+  const show = !!bal && !_golden && !vignetteBusy() && !editMode && !paused && !titleVisible;
+  _balHint.visible = show;
+  if (show) {
+    _balHint.position.set((bal.x0 + bal.x1) / 2, 1.02, bal.z0 + 0.35);
+    _balHint.material.opacity = 0.10 + 0.07 * (0.5 + 0.5 * Math.sin(t * 1.5));
+  }
+}
+addEventListener('pointermove', e => {
+  const bal = SHELTERS[state.current] && SHELTERS[state.current].balcony;
+  let over = false;
+  if (bal && !vignetteBusy() && !editMode && !paused && !titleVisible) {
+    pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    raycaster.setFromCamera(pointer, camera);
+    const tr = -raycaster.ray.origin.y / raycaster.ray.direction.y;
+    if (tr > 0) {
+      const px = raycaster.ray.origin.x + raycaster.ray.direction.x * tr;
+      const pz = raycaster.ray.origin.z + raycaster.ray.direction.z * tr;
+      over = px >= bal.x0 && px <= bal.x1 && pz >= bal.z0 && pz <= bal.z1;
+    }
+  }
+  if (over !== _balHover) { canvas.style.cursor = over ? 'pointer' : ''; _balHover = over; }
+});
 
 // 「불타는 해협」 — 아포칼립스 금문교 노을 (#146, 디렉터 레퍼런스 대조 리워크).
 //   평면 측면 실루엣 폐기 → 3/4 후퇴 원근(다리 축을 따라 내려다봄) + 초목의 잠식 + 따뜻한 앰버 팔레트
@@ -6725,7 +6981,7 @@ function moveGhost(item, e) {
   const dx = x - item.x, dz = z - item.z;
   item.x = x; item.z = z;
   const bad = collides(item, x, z); // _support 계산 포함
-  item.y = item._support ? item._support.y : 0;
+  item.y = restingY(item, x, z); // #209: 상판 위 or 러그 바닥 올림
   item.support = item._support ? item._support.other : null;
   syncTransform(item);
   // 상판 위에 올려둔 소품도 함께 이동
@@ -6996,82 +7252,14 @@ const isPcInput = matchMedia('(pointer: fine)').matches && !('ontouchstart' in w
 const isMobileEnv = ('ontouchstart' in window) || /Android|iPhone|iPad/i.test(navigator.userAgent);
 // #52: 탭형 환경설정 창 — 타이틀 ⚙️ / 인게임 ESC / 모바일 톱니 3경로가 모두 이 전용 오버레이를 개폐한다.
 // 중앙 고정 창이라 clampPanel/updateUiScale 위치 로직은 호출하지 않는다(함수 자체는 존치).
-function settingsOpen() { return $('settings-screen').classList.contains('show'); }
-function openSettings(tab) {
-  const scr = $('settings-screen');
-  scr.classList.add('show');
-  scr.style.display = 'flex';
-  if (tab) switchSettingsTab(tab);
-  renderControlsGuide();
-}
-function closeSettings() {
-  const scr = $('settings-screen');
-  scr.classList.remove('show');
-  scr.style.display = 'none';
-}
-function toggleSettingsPanel() { settingsOpen() ? closeSettings() : openSettings(); }
-// 하위 호환: 기존 gear 진입점 명칭 유지 (토글)
-function openSettingsFromGear() { toggleSettingsPanel(); }
-function switchSettingsTab(name) {
-  document.querySelectorAll('#settings-tabs .settings-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  document.querySelectorAll('#settings-tabbody .settings-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
-}
+// #210: 설정 셸(열기/닫기/토글/탭 전환)은 ui/settings.js로 이관 — renderControlsGuide(키 리바인딩 가이드)만 주입.
+//   구조 무변(로직 원문 이관). 콜사이트는 아래 구조분해로 동일 명칭 유지 → 나머지 game.js 무변.
+const _settingsUI = makeSettingsUI({ renderControlsGuide: (...a) => renderControlsGuide(...a) });
+const { settingsOpen, openSettings, closeSettings, toggleSettingsPanel, openSettingsFromGear, switchSettingsTab, resetTabToDefault: resetSettingsTabToDefault } = _settingsUI;
+// 컨트롤 배선(bindControls)은 applyOpts·bgm 등 정의 이후 아래에서 호출(TDZ 회피).
 // 컨트롤 탭 — PC = 실제 리바인딩 UI(#14), 모바일 = 제스처 안내표.
-const KEYBIND_LABEL = {
-  map: 'ctrl.act.map', migrate: 'ctrl.act.migrate', craft: 'ctrl.act.craft', clean: 'ctrl.act.clean',
-  sleep: 'ctrl.act.sleep', journal: 'ctrl.act.journal', pause: 'ctrl.act.pause', editMode: 'ctrl.act.editMode',
-  rotViewL: 'ctrl.act.rotViewL', rotViewR: 'ctrl.act.rotViewR', rotateItem: 'ctrl.act.rotateItem', reclaim: 'ctrl.act.reclaim',
-};
-function renderControlsGuide() {
-  const el = $('controls-guide'); if (!el) return;
-  if (isPcInput) {
-    // ESC 시스템 예약 행(리바인딩 불가) + 액션 12행(클릭→키 대기)
-    const escRow = `<div class="cg-row"><span class="cg-key cg-fixed">ESC</span><span class="cg-desc">${t('ctrl.esc')} <span class="cg-reserved">${t('ctrl.reserved')}</span></span></div>`;
-    const rows = KEYBIND_ORDER.map(a => {
-      const waiting = awaitingRebind === a;
-      const label = waiting ? t('ctrl.pressKey') : keyLabel(KEYBINDS[a]);
-      return `<div class="cg-row"><button class="cg-key cg-bind${waiting ? ' waiting' : ''}" data-rebind="${a}">${label}</button><span class="cg-desc">${t(KEYBIND_LABEL[a])}</span></div>`;
-    }).join('');
-    el.innerHTML = escRow + rows + `<div class="btn-row" style="margin-top:10px"><button class="pixel-btn" id="btn-keys-default">${t('ctrl.rebindDefault')}</button></div>`;
-    el.querySelectorAll('.cg-bind').forEach(b => b.addEventListener('click', () => startRebind(b.dataset.rebind)));
-    const bd = el.querySelector('#btn-keys-default');
-    if (bd) bd.addEventListener('click', () => { awaitingRebind = null; resetKeybinds(); renderControlsGuide(); toast(t('ctrl.rebindDone')); });
-  } else {
-    const row = (k, d) => `<div class="cg-row"><span class="cg-key cg-fixed">${k}</span><span class="cg-desc">${d}</span></div>`;
-    el.innerHTML = row(t('ctrl.tap.k'), t('ctrl.tap')) + row(t('ctrl.drag.k'), t('ctrl.drag')) + row(t('ctrl.pinch.k'), t('ctrl.pinch'))
-      + `<div class="cg-note">${t('ctrl.mobileNote')}</div>`;
-  }
-}
-function startRebind(action) {
-  awaitingRebind = action;
-  renderControlsGuide();
-}
-// 리바인딩 캡처: ESC 취소, 중복 시 스왑 확인. 성공 시 저장·재렌더.
-async function captureRebind(e) {
-  e.preventDefault();
-  const action = awaitingRebind;
-  if (e.key === 'Escape') { awaitingRebind = null; renderControlsGuide(); return; }
-  // ESC/시스템키 외 아무 키나 code로 캡처. reclaim에 Backspace도 유효.
-  const code = e.code;
-  if (!code || code === 'Escape') return;
-  // 이미 이 액션이면 그대로 유지하고 종료
-  if (KEYBINDS[action] === code) { awaitingRebind = null; renderControlsGuide(); return; }
-  // 중복 검사: 다른 액션이 이 code를 이미 쓰는가?
-  const conflict = KEYBIND_ORDER.find(a => a !== action && KEYBINDS[a] === code);
-  awaitingRebind = null; // 캡처는 여기서 종료 (확인창 동안 추가 캡처 금지)
-  if (conflict) {
-    renderControlsGuide(); // '키 입력 대기' 라벨 원복 후 확인창
-    const ok = await gameConfirm(
-      t('ctrl.swapConfirm', { key: keyLabel(code), from: t(KEYBIND_LABEL[conflict]), to: t(KEYBIND_LABEL[action]) }),
-      t('ctrl.swap'), t('confirm.cancel'));
-    if (!ok) { renderControlsGuide(); return; }
-    KEYBINDS[conflict] = KEYBINDS[action]; // 기존 액션의 키를 충돌 액션에 넘겨 스왑
-  }
-  KEYBINDS[action] = code;
-  saveKeybinds();
-  renderControlsGuide();
-  toast(t('ctrl.rebindDone'));
-}
+// KEYBIND_LABEL·renderControlsGuide·startRebind·captureRebind → ui/keybind.js로 이관(#210 Stage 3).
+// 리바인딩 대기상태(awaitingRebind)는 모듈 내부 소유. _keybindUI 생성은 KEYBINDS/KEYBIND_ORDER/keyLabel 정의 이후 아래에서.
 // 설정 진입 문법: PC = ESC / 모바일 = 우측 상단 톱니. 창은 중앙 고정.
 // ($ 헬퍼는 이 시점에 TDZ라 getElementById 직접 사용)
 {
@@ -7089,34 +7277,7 @@ async function captureRebind(e) {
   document.getElementById('settings-screen').addEventListener('pointerdown', e => { if (e.target.id === 'settings-screen') closeSettings(); });
   document.getElementById('btn-settings-default').addEventListener('click', () => resetSettingsTabToDefault());
 }
-// 현재 활성 탭의 opts만 선언부 기본값으로 복원 (전역 리셋 아님)
-function resetSettingsTabToDefault() {
-  const active = document.querySelector('#settings-tabs .settings-tab.active')?.dataset.tab;
-  const D = OPTS_DEFAULT;
-  if (active === 'graphics') {
-    opts.pixel = D.pixel; opts.quant = D.quant; opts.dither = D.dither;
-    opts.ceil = D.ceil; opts.lowSpec = D.lowSpec; opts.fpsCap = D.fpsCap;
-    // 접근성도 그래픽 탭에 배치되므로 함께 기본값 복원
-    opts.fontScale = D.fontScale; opts.colorblind = D.colorblind; opts.reduceMotion = D.reduceMotion;
-    applyOpts(); applyLowSpec();
-  } else if (active === 'sound') {
-    opts.bgm = D.bgm; opts.bgmVol = D.bgmVol; opts.sfxVol = D.sfxVol; opts.bgIdle = D.bgIdle;
-    // 사운드 UI + 실효 반영
-    const eb = $('opt-bgm'); if (eb) eb.checked = !!opts.bgm;
-    const ev = $('opt-bgmvol'); if (ev) ev.value = Math.round(opts.bgmVol * 100);
-    const es = $('opt-sfxvol'); if (es) es.value = Math.round(opts.sfxVol * 100);
-    const ei = $('opt-bgidle'); if (ei) ei.checked = opts.bgIdle !== false;
-    setSfxVol(opts.sfxVol); syncBgm();
-  } else if (active === 'gameplay') {
-    opts.autoEat = D.autoEat; opts.lang = D.lang; opts.confirmActions = D.confirmActions;
-    // 자동 진행은 Day10 해금 상태를 존중 — 기본(off)만 복원
-    opts.autoPlay = D.autoPlay; syncAutoBtn();
-    { const cc = $('opt-confirmactions'); if (cc) cc.checked = !!opts.confirmActions; } // #2
-    applyOpts();
-  }
-  scheduleSave();
-  toast(t('settings.defaultDone'));
-}
+// resetSettingsTabToDefault → ui/settings.js resetTabToDefault (bindControls 주입 dep로 실행). 위 destructure에서 별칭 바인딩.
 /* ============================================================
    #14 키 리바인딩 (REQ-INP-01) — 액션 12종. 엔진 1곳(runAction) 경유.
    ------------------------------------------------------------
@@ -7158,6 +7319,10 @@ function keyLabel(code) {
   const map = { Delete: 'Del', Backspace: '⌫', Space: 'Space', Enter: 'Enter', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Minus: '-', Equal: '=', Backquote: '`' };
   return map[code] || code;
 }
+// #210 Stage 3: 컨트롤 탭 키 리바인딩 UI를 ui/keybind.js로 이관. 입력 코어(KEYBINDS 등) 정의 후 생성 →
+//   deps 직접 주입(무TDZ). 위 makeSettingsUI ctx의 renderControlsGuide는 아래 destructure를 지연 참조(콜타임 해소).
+const _keybindUI = makeKeybindUI({ KEYBINDS, KEYBIND_ORDER, keyLabel, resetKeybinds, saveKeybinds, isPcInput, gameConfirm, toast });
+const { renderControlsGuide, captureRebind, isAwaitingRebind } = _keybindUI;
 // 이벤트 → 액션. reclaim은 Delete/Backspace 양쪽 허용(관례).
 function actionForEvent(e) {
   for (const a of KEYBIND_ORDER) {
@@ -7188,15 +7353,14 @@ function runAction(a) {
     case 'reclaim': if (selected && !placing) reclaimSelected(); break;
   }
 }
-let awaitingRebind = null; // 리바인딩 대기 중인 액션 (설정 창)
 addEventListener('keydown', e => {
-  // 리바인딩 캡처 모드: ESC 취소, 그 외 키는 해당 액션에 배정
-  if (awaitingRebind) { captureRebind(e); return; }
+  // 리바인딩 캡처 모드: ESC 취소, 그 외 키는 해당 액션에 배정 (대기상태·캡처는 ui/keybind.js 소유)
+  if (isAwaitingRebind()) { captureRebind(e); return; }
   if (titleVisible) return;
   if (e.key === 'Escape') {
-    // 우선순위: PDA/노트 닫기 > 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
+    // 우선순위: PDA 닫기 > 설정 창 닫기 > 고양이 클로즈업 해제 > 배치 중 취소 > 선택 해제 > 모달 닫기 > (PC) 설정 창 열기
+    //   #211: 필드노트 기기 폐지로 노트 분기 삭제 — 우측 기기는 PDA 하나뿐이다.
     if (pdaVisible()) { pdaAppOn ? closeModal() : pdaClose(); } // 앱 모드면 모달 정리+원위치까지(잔류 DOM 방지)
-    else if (noteVisible()) { noteClose(); }
     else if (settingsOpen()) { closeSettings(); }
     else if (catCam.active) { exitCatCloseup(); }
     else if (placing) { cancelPlacing(); }
@@ -7226,12 +7390,15 @@ function rotateActive() {
   if (!item) return;
   item.rot = (item.rot + 1) % 4;
   rotateChildren(item, 1);
+  const px = item.x, pz = item.z;
   const [x, z] = clampToRoom(item, item.x, item.z);
   item.x = x; item.z = z;
+  // #F42: 클램프 델타를 상판 위 소품에 전파 (moveGhost와 동일 — 소품 공중/벽 관통 방지)
+  if (DEFS[item.defId].surface) { const dx = item.x - px, dz = item.z - pz; if (dx || dz) for (const ch of itemsOn(item)) { ch.x += dx; ch.z += dz; syncTransform(ch); } }
   syncTransform(item);
   if (item === placing || (dragging === item && dragStart?.moved)) {
     const bad = collides(item, item.x, item.z);
-    item.y = item._support ? item._support.y : 0;
+    item.y = restingY(item, item.x, item.z); // #209: 상판 위 or 러그 바닥 올림
     item.support = item._support ? item._support.other : null;
     syncTransform(item);
     item._valid = !bad;
@@ -7239,6 +7406,9 @@ function rotateActive() {
   } else {
     if (collides(item, item.x, item.z)) {
       item.rot = (item.rot + 3) % 4;
+      // #F42: 전파했던 클램프 델타를 먼저 되돌리고, 원래 중심(px,pz) 기준으로 자식 회전 복원 (정확한 왕복)
+      if (DEFS[item.defId].surface) { const dx = item.x - px, dz = item.z - pz; if (dx || dz) for (const ch of itemsOn(item)) { ch.x -= dx; ch.z -= dz; } }
+      item.x = px; item.z = pz;
       rotateChildren(item, -1);
       syncTransform(item);
       toast(t('rotate.noSpace'));
@@ -7292,8 +7462,15 @@ function updateEnvironment(t, dt) {
   const wBadNow = weather.type === 'snow' || weather.type === 'rain' || weather.type === 'storm';
   // 눈: 내리는 동안 서서히 쌓이고, 그치면 녹는다. 겨울엔 잔설이 남는다.
   const season = seasonOf();
-  const targetSnow = weather.type === 'snow' ? 1 : (season.id === 'winter' ? 0.3 : 0);
-  snowCover += (targetSnow - snowCover) * Math.min(1, dt * 0.025);
+  // 눈: 내리면 쌓이고(기존), 그치면 태양(주간)이 녹인다 — "해 뜨면 녹고" (디렉터 오더).
+  //   dayness(0밤~1낮)로 녹임 구동: 겨울은 추워 잔설이 남고(0.30, 낮에도 0.18↑ 유지),
+  //   봄 등 그 외 계절은 밤엔 옅게 남다가(0.10) 낮이면 완전히 녹는다(0).
+  const winter = season.id === 'winter';
+  const snowing = weather.type === 'snow';
+  const targetSnow = snowing ? 1 : Math.max(0, (winter ? 0.30 : 0.10) - dayness * (winter ? 0.12 : 0.30));
+  // 접근 속도: 쌓임은 기존(0.025), 녹음은 주간 태양이 가속(해가 높을수록 빨리 녹음).
+  const snowRate = snowing ? 0.025 : (0.010 + dayness * 0.045);
+  snowCover += (targetSnow - snowCover) * Math.min(1, dt * snowRate);
   // 계절 색조 × 적설 × 젖음(#96): 눈은 세상을 밝히고, 비는 어둡고 푸르게 가라앉힌다 (같은 메커니즘의 역방향)
   const wetK = 1 - wetness * 0.34;
   vcLambert.color.setRGB(
@@ -7696,7 +7873,7 @@ function openSlotModal(mode) {
 const { openModeModal, openWardrobeModal, openKnowledgeModal, openJournalModal } = makeModals({ openModal, toast, wallpaperUnlocked, zenUnlocked, openSlotModal, slotKey, LASTSLOT_KEY, DEMO_ED, SHELTERS,
   getPaused: () => paused, playSfx, scheduleSave, avatarSys, renderResBar, updateHud,
   // Tier6b 일지/도감 모달 의존 — 아이콘·집계 헬퍼·수첩 페이지(game.js 클로저)
-  icon, regionIcon, comfortBreakdownHtml, collectionCount,
+  icon, regionIcon, collectionCount,
   memosTotal, memosCollected, broadcastsTotal, broadcastsCollected, sketchesTotal, sketchesCollected,
   showMemoPage, showBroadcastModal, showSketchPage, showTruthPage,
   // #90 데모 규모 은닉 게이트(1.9.5 재수렴: Tier6b 이관본에 이식) — 본편 빌드에선 DEMO_ED=false로 전부 무해
@@ -7928,6 +8105,7 @@ function updateClock() {
 }
 
 function updateHud() {
+  if (typeof updateSpeedBtn === 'function') updateSpeedBtn(); // 배속 버튼 해금 상태 동기화
   // 🖼️ 배경화면 모드: 게이지/탐험 패널을 숨긴다(CSS). 압박 UI가 없는 순수 가꾸기.
   document.body.classList.toggle('wallpaper-mode', isWallpaper());
   const sh = SHELTERS[state.current];
@@ -7947,7 +8125,7 @@ function updateHud() {
     bonus: bonus ? t('hud.comfortBonus', { n: bonus }) : '',
   });
   // #199 5차-b 컨디션 스트립(디렉터 정정): 경고 | 쾌적 — 날씨=시계 이관, 청결=경고 편입, 탐험 횟수 표기 제거
-  const cleanLow = cd.clean < 40; // 청결은 게이지가 아니라 낮을 때만 경고로 (디렉터: "청소는 경고 형식")
+  const cleanLow = cd.clean < BAL.comfort.cleanWarnAt; // 청결은 게이지가 아니라 낮을 때만 경고로 (디렉터: "청소는 경고 형식")
   const warnN = (state.injury ? 1 : 0) + (cd.limitMod ? 1 : 0) + (cleanLow ? 1 : 0);
   const warnTip = [
     state.injury ? LName(INJURIES[state.injury.type]) : '',
@@ -8029,62 +8207,6 @@ function pdaAppExit() {
   document.body.appendChild($('modal-back')); // 원위치(body 직속) 복귀 — 일반 모달 경로 보전
   pdaClose();
 }
-// #199 3차: 「필드 노트」(디렉터 에셋) — 기록=종이. 일지 도킹이 연다. 조회 전용.
-// #199-c 견출지 실기능화: 우측 페이지가 탭 3태(♥쾌적/📦수급(기본)/📍거점) + 📔=도감 액션.
-const noteVisible = () => $('note-back').style.display !== 'none';
-let noteTab = 'supply';
-function noteOpen() {
-  $('note-back').style.display = '';
-  const li = s => `<li>${s}</li>`;
-  $('nt-log-list').innerHTML = (state.dayLog.notes || []).slice(-7).map(li).join('') || li(t('pda.noLog'));
-  const w = WEATHERS[state.weatherType];
-  const memo = [`${t('pda.day', { n: state.day })} · ${w ? `${wxIcon(state.weatherType)} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}`];
-  if (hasForecast()) memo.push(t('forecast.prefix', { text: forecastText() }));
-  const lacks = ['water', 'food'].filter(id => (state.res[id] || 0) === 0);
-  if (lacks.length) memo.push(lacks.map(id => `${resIcon(id)} ${LName(RESOURCES[id])} 0`).join(' · '));
-  $('nt-memo-body').innerHTML = memo.map(m => `<div>${m}</div>`).join('');
-  renderNoteRight();
-}
-function renderNoteRight() {
-  document.querySelectorAll('.nt-tab').forEach(b => b.classList.toggle('active', b.dataset.ntab === noteTab));
-  const col = (h, body) => `<div class="nt-col"><div class="nt-h">${h}</div>${body}</div>`;
-  let top = '', rb = '';
-  if (noteTab === 'supply') {
-    const cell = ([id, n], sign) => `<div class="nt-cell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><b>${sign}${n}</b></div>`;
-    const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
-    const spent = Object.entries(state.dayLog.spend || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
-    top = col(t('nt.gained'), gains.map(g => cell(g, '+')).join('') || `<div class="nt-cell dim">—</div>`)
-        + col(t('nt.spent'), spent.map(s => cell(s, '-')).join('') || `<div class="nt-cell dim">—</div>`);
-  } else if (noteTab === 'comfort') {
-    // ♥ 쾌적 상세: comfortBreakdown 4축을 2열 컴팩트로 (잉크 바 + 원인 로그 2줄)
-    const b = comfortBreakdown();
-    const ax = (label, v, logs) => `<div class="nt-ax">
-      <div class="ax-h"><span>${label}</span><b>${v < 0 ? '' : '+'}${Math.round(v)}</b></div>
-      <div class="ax-bar"><i style="width:${Math.max(0, Math.min(100, (v / 40) * 100))}%"></i></div>
-      ${(logs || []).slice(0, 2).map(l => `<div class="ax-log">${l.name} ${l.v}</div>`).join('')}
-    </div>`;
-    top = col(t('nt.comfort'), ax(t('comfort.warmth'), b.warmth, b.logs.warmth) + ax(t('comfort.clean'), b.clean, b.logs.clean))
-        + col('', ax(t('comfort.security'), b.security, b.logs.security) + ax(t('comfort.mood'), b.mood, b.logs.mood));
-    rb = t('comfort.breakdownTitle', { score: b.score });
-  } else if (noteTab === 'base') {
-    // 📍 거점: 좌=거처(셸터·구역·정착일) / 우=오늘(날씨·예보·결핍)
-    const sh = SHELTERS[state.current], w = WEATHERS[state.weatherType];
-    const line = s => `<div class="nt-cell">${s}</div>`;
-    const left = line(`${shIcon(state.current)}<span>${LName(sh)}</span>`)
-      + line(`${distIcon(districtOf(state.current))}<span>${LName(DISTRICTS[districtOf(state.current)])}</span>`)
-      + line(`<span>${t('nt.settledDays', { n: state.stayDays || 0 })}</span>`);
-    const lacks = ['water', 'food'].filter(id => (state.res[id] || 0) === 0);
-    const right = line(`${w ? wxIcon(state.weatherType) : ''}<span>${w ? LName(w) : ''}</span>`)
-      + (hasForecast() ? line(`<span>${t('forecast.prefix', { text: forecastText() })}</span>`) : '')
-      + (lacks.length ? line(lacks.map(id => `${resIcon(id)} ${LName(RESOURCES[id])} 0`).join(' · ')) : '');
-    top = col(t('nt.base'), left) + col(t('nt.today'), right);
-    rb = (state.expToday ? t('nt.expToday', { n: state.expToday }) : t('nt.expNone'))
-       + (state.expFatigue === state.day ? ' · ' + t('exp.fatigue') : '');
-  }
-  $('nt-gain').innerHTML = top;
-  $('nt-rb').textContent = rb;
-}
-function noteClose() { $('note-back').style.display = 'none'; }
 function renderPDA() {
   document.querySelectorAll('#pda-tabs .pda-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === pdaTab));
   const scr = $('pda-screen');
@@ -8106,42 +8228,67 @@ function renderPDA() {
     } else lines.push(t('pda.noInjury'));
     if (state.expFatigue === state.day) lines.push(t('exp.fatigue'));
     if (state.moodBuff && state.moodBuff.until > state.day) lines.push(t('pda.mood', { amt: state.moodBuff.amt, d: state.moodBuff.until - state.day }));
+    if (w?.penalty) lines.push(`${t('pda.weatherPen')}: -${Math.round(w.penalty * 100)}%`); // 지금 몸에 걸린 것 = 여기. 진행 계측은 기록 탭으로 이관(#211)
+    if (state.buff) lines.push(`${icon('icon_cond_buff', '✨')} ${buffLabel(state.buff)}`);
     body += `<div class="ph">${t('pda.cond')}</div>` + lines.map(l => `<div>${l}</div>`).join('');
-    // #199 2차: 상단 HUD 슬리밍으로 이관된 거점·진행 계측 (구 .stat 라인의 새 집)
-    const cd = comfortDetail();
-    const lv2 = Math.min(5, Math.round(cd.score / 20));
-    const base = [];
-    base.push(`${t('pda.comfort')}: ${cd.score} ${'★'.repeat(lv2)}<span style="opacity:.3">${'★'.repeat(5 - lv2)}</span>`); // ☆ 글리프가 픽셀 폰트에서 ★와 동일 렌더 — 감쇠로 구분
-    if (w?.penalty) base.push(`${t('pda.weatherPen')}: -${Math.round(w.penalty * 100)}%`);
-    if (state.buff) base.push(`${icon('icon_cond_buff', '✨')} ${buffLabel(state.buff)}`);
-    base.push(`${t('pda.exp')}: ${state.expToday}${state.expToday >= EXP_PER_DAY ? ` · ${t('exp.fatigue')}` : ''}`); // 상한 표기 폐지 — 과로 경고만
-    if (!isWallpaper()) base.push(`${t('pda.succ')}: ${state.successes}`);
-    if ((state.winters || 0) >= 1) base.push(`${t('pda.winters')}: ${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}`);
-    body += `<div class="ph">${t('pda.camp')}</div>` + base.map(l => `<div>${l}</div>`).join('');
+    // #211 필드노트 흡수: 쾌적 4축 분해. PDA엔 총점(★)만, '왜 이 점수인가'는 노트에만 있었다 — 한 화면으로.
+    //   구 `쾌적: 26 ★★` 라인은 삭제: 총점을 이 분해 헤더가 이미 말한다(한 화면에 점수 두 번 = 중복).
+    const cb = comfortBreakdown();
+    const ax = (label, v, logs) => `<div class="pax">
+      <div class="pax-h"><span>${label}</span><b>${v < 0 ? '' : '+'}${Math.round(v)}</b></div>
+      <div class="pax-bar"><i style="width:${Math.max(0, Math.min(100, (v / 40) * 100))}%"></i></div>
+      ${(logs || []).slice(0, 2).map(l => `<div class="pax-log">${l.name} ${l.v}</div>`).join('')}
+    </div>`;
+    // 헤더는 짧게(`쾌적 26`): comfort.breakdownTitle("쾌적함 26 — 무엇이 이 집을 살 만하게 하는가")은
+    //   좁은 LCD에서 두 줄로 접혀 화면을 먹는다(실측 45px 잘림의 최대 지분). 그 문장이 하려던 말은
+    //   아래 4축이 이미 한다. (그 카피는 넓은 화면 문법 — 일지에 있던 것을 그대로 들고 오면 안 된다.)
+    body += `<div class="ph">${t('pda.comfort')} ${cb.score}</div>`
+      + `<div class="pax-grid">`
+      + ax(t('comfort.warmth'), cb.warmth, cb.logs.warmth) + ax(t('comfort.clean'), cb.clean, cb.logs.clean)
+      + ax(t('comfort.security'), cb.security, cb.logs.security) + ax(t('comfort.mood'), cb.mood, cb.logs.mood)
+      + `</div>`;
   } else if (pdaTab === 'res') {
     const wp = isWallpaper(); // 자원 패널이 PDA로 이관됨 — 배경화면 모드 ∞ 표기도 승계
     body = `<div class="pgrid">` + Object.entries(RESOURCES).map(([id, r]) => {
       const n = state.res[id] || 0;
       return `<div class="pcell${!wp && n === 0 ? ' zero' : ''}">${resIcon(id)}<span>${LName(r)}</span><span class="pn">${wp ? '∞' : n}</span></div>`;
     }).join('') + `</div>`;
+    // #211: 오늘의 물자 흐름은 여기가 집이다 — 구 기록 탭의 '얻은 것' + 노트 supply 탭의 '쓴 것'을 합쳐
+    //   자원 탭 하나가 "지금 얼마 있고 / 오늘 얼마 들어오고 나갔나"를 다 말한다.
+    const cell = ([id, n], sign) => `<div class="pcell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><span class="pn">${sign}${n}</span></div>`;
+    const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+    const spent = Object.entries(state.dayLog.spend || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
+    if (gains.length) body += `<div class="ph">${t('pda.gained')}</div><div class="pgrid">` + gains.map(g => cell(g, '+')).join('') + `</div>`;
+    if (spent.length) body += `<div class="ph">${t('nt.spent')}</div><div class="pgrid">` + spent.map(s => cell(s, '-')).join('') + `</div>`;
   } else if (pdaTab === 'map') {
     const sp = SHELTER_MAP[state.current];
     body = `<div class="pmap"><img src="${mapBiomeDataUrl(cityOf(state.current))}" alt="">`
       + (sp ? `<span class="pyou" style="left:${sp.x}%;top:${sp.y}%"></span>` : '') + `</div>`
-      + `<div class="pnote">${t('pda.here')}: ${LName(SHELTERS[state.current])}</div>`
+      + `<div class="pnote">${t('pda.here')}: ${LName(SHELTERS[state.current])} · ${LName(DISTRICTS[districtOf(state.current)])}</div>`
+      // #211: 예보는 '어디·언제'의 정보다 — 노트 base 탭에 있던 것을 지도로. (구 노트는 날씨를 3군데 중복 표기했다)
+      + (hasForecast() ? `<div class="pnote">${t('forecast.prefix', { text: forecastText() })}</div>` : '')
       + `<div class="pbtn-row"><button class="pixel-btn" id="pda-openmap">${t('pda.openMap')}</button></div>`;
   } else {
+    // #211 기록 = '지나온 것'. 거점·진행 계측(구 상태 탭)이 여기로 온다 — 상태 탭은 '지금 몸·집'만 남기고,
+    //   진행/정착 누계는 기록의 문법이다. 덕분에 네 탭 길이가 고르고 각 탭이 한 가지만 말한다.
+    const base = [];
+    base.push(`${distIcon(districtOf(state.current))} ${LName(DISTRICTS[districtOf(state.current)])} · ${t('nt.settledDays', { n: state.stayDays || 0 })}`);
+    base.push(`${t('pda.exp')}: ${state.expToday}${state.expToday >= EXP_PER_DAY ? ` · ${t('exp.fatigue')}` : ''}`); // 상한 표기 폐지 — 과로 경고만
+    if (!isWallpaper()) base.push(`${t('pda.succ')}: ${state.successes}`);
+    if ((state.winters || 0) >= 1) base.push(`${t('pda.winters')}: ${state.winters}${(isZen() || isWallpaper()) ? '' : '/9'}`);
+    body = `<div class="ph">${t('pda.camp')}</div>` + base.map(l => `<div>${l}</div>`).join('');
     const notes = state.dayLog.notes || [];
-    body = notes.length
+    body += `<div class="ph">${t('pda.tab.log')}</div>`;
+    body += notes.length
       ? `<ul class="plog">${notes.slice(-12).reverse().map(n => `<li>${n}</li>`).join('')}</ul>`
       : `<div class="pnote">${t('pda.noLog')}</div>`;
-    const gains = Object.entries(state.dayLog.gain || {}).filter(([id, n]) => RESOURCES[id] && n > 0);
-    if (gains.length) body += `<div class="ph">${t('pda.gained')}</div><div class="pgrid">`
-      + gains.map(([id, n]) => `<div class="pcell">${resIcon(id)}<span>${LName(RESOURCES[id])}</span><span class="pn">+${n}</span></div>`).join('') + `</div>`;
+    // #211(디렉터 "일지 그냥 PDA에 통합"): 일지·도감·업적 진입. 별도 기기가 아니라 이 단말의 앱으로 뜬다.
+    body += `<div class="pbtn-row"><button class="pixel-btn" id="pda-journal">${t('btn.journal.lbl')}</button></div>`;
   }
   scr.innerHTML = head + body;
   scr.classList.remove('pda-flick'); void scr.offsetWidth; scr.classList.add('pda-flick'); // 전자 화면 전환 플리커
   scr.querySelector('#pda-openmap')?.addEventListener('click', () => { pdaClose(); openMapModal(); });
+  scr.querySelector('#pda-journal')?.addEventListener('click', () => pdaOpenApp(() => openJournalModal('journal')));
 }
 async function cleanShelter(auto = false) {
   if (paused) { toast(t('pause.blocked')); return; }
@@ -9007,12 +9154,17 @@ function runAutoPlay() {
     }
   }
 }
+// 배속 조정기(디렉터): 파밍·인게임 시간만 ×N(2/4). 엔딩 1회 후 해금, QA 치트 사용 시 즉시 해금.
+const SPEED_STEPS = [1, 2, 4];
+function speedUnlocked() { return !!state.endingSeen || state.endingType === 'escape' || !!state.qaUsed; }
+function activeSpeedMult() { return speedUnlocked() ? (SPEED_STEPS.includes(state.speedX) ? state.speedX : 1) : 1; }
 function tickTime(dt) {
   // #74 데모 재설계: (구) demoEnded tickTime 동결 제거 — 크레딧 후 4계절 무한 샌드박스는 시간이 흐른다.
   // 탐험 시간 개편(디렉터 2026-07-08): 탐험 중엔 시계가 배속(×4)으로 흐른다 — "다녀오는 시간"이
   //   대기 중에 실제로 흘러 귀환 점프가 사라진다. 게이지 감소도 함께 가속(시간이 흐르는 만큼 몸도 소모).
   //   평시 배속(디렉터 2026-07-08): 비탐험도 탐험(×4)의 80%(×3.2)로 — 게이지·부패는 게임분 기준이라 게임일 밸런스 불변.
-  const gmRate = GAME_MIN_PER_SEC * (state.exp ? BAL.exp.timeScale : BAL.exp.idleTimeScale);
+  //   + 유저 배속(activeSpeedMult): 파밍·게임시계만 ×N. 렌더/애니는 그대로(게임분 기준 로직만 가속).
+  const gmRate = GAME_MIN_PER_SEC * (state.exp ? BAL.exp.timeScale : BAL.exp.idleTimeScale) * activeSpeedMult();
   state.gameMin += dt * gmRate;
   decayGauges(dt * gmRate);
   checkHelpless(); // 배치 D: 무력 상태(게이지 바닥 + 재고 0) 안전망 판정
@@ -9105,8 +9257,9 @@ function tickTime(dt) {
     scheduleSave();
     renderResBar();
     renderExpPanel();
-  } else if (state.pendingEvent && !state.minimizedEvent && !reportQueued && !state.exp && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
+  } else if (state.pendingEvent && !state.minimizedEvent && !reportQueued && (!state.exp || duringExpEvent(state.pendingEvent)) && !blackoutActive && !journalOpen && !$('modal-back').classList.contains('show') && !titleVisible) {
     // 리포트를 닫은 다음에 인카운터 등장 (탐험 부재/암전 중, 내려둔 이벤트가 있으면 보류)
+    //   #208(디렉터): 무너진 입구만 예외 — 탐험 '도중'에 뜬다(duringExpEvent). 아래 주석 참조.
     const ev = state.pendingEvent;
     state.pendingEvent = null;
     showEvent(ev);
@@ -9197,6 +9350,7 @@ function renderInventoryBar() {
     if (DEMO_ED && cnt <= 0 && !DEMO_CRAFT_FURN.has(id) && !(state.blueprints || {})[id]) continue;
     // #193: 도면 게이트 가구는 도면을 줍기 전엔 툴바에서도 안 보인다 — 제작대·도감·지도와 동일 원칙(시그니처 누출 봉합)
     if (cnt <= 0 && bpGatedLocked(id)) continue;
+    if (def.dlc && !Platform.dlc.owns(def.dlc)) continue; // #119 서포터팩: 미소유 시 툴바에서도 숨김
     const el = document.createElement('div');
     el.className = 'tool-item' + (cnt <= 0 ? ' empty' : '');
     el.innerHTML = `<span class="emoji">${furnIcon(id)}</span><span>${LName(def)}</span><span class="cnt">${cnt}</span>`;
@@ -9271,7 +9425,10 @@ function tickExpeditionUI() {
         drawEvent();
       }
     }
-    if (remain <= 0) { resolveExpedition(); return; }
+    // #208: 리스크 인카운터가 '탐험 도중'으로 옮겨지며 생긴 새 겹침 — 비네트(무너진 입구 문/상자)가 떠 있는데
+    //   그 사이 탐험이 끝나면 정산 모달이 비네트 **뒤에서** 열려 플레이어가 통째로 놓친다(실캡처로 검거).
+    //   비네트가 끝날 때까지 정산을 미룬다. 탐험 종료 판정은 end 시각 기준이라 늦춰도 결과는 불변.
+    if (remain <= 0) { if (!vignetteBusy()) resolveExpedition(); return; }
     const bar = $('exp-bar'), eta = $('exp-eta');
     if (bar) {
       // 디렉터 2026-07-08: 게이지는 30게임분 단위 계단으로 차고, 남은 시간도 같은 단위로 올림 표기
@@ -9375,6 +9532,8 @@ function showSelPanel(item) {
       resConsumeAll(cost);
       item.tier = next;
       recolorItem(item, item.colorIdx); // 그룹 재빌드 — 티어 복셀 교체
+      catSys.setCatSupportDirty(true); // #209 F24: 티어 손질로 상면이 올라가면 퍼치 고양이 재접지(hop 착지) 트리거 — 새 매트리스/쿠션 파묻힘 방지
+      { const sr = surfaceRectOf(item); if (sr) for (const ch of itemsOn(item)) { ch.y = sr.y + (item.y || 0); syncTransform(ch); } } // #209 F43: 티어 손질로 상판 높이(surfaceYByTier)가 바뀌면 위 소품 y 재동기화
       markCollection(item.defId, item.colorIdx);
       playSfx('craft');
       toast(t('sel.upgraded'));
@@ -10207,38 +10366,7 @@ function applyAccessibility() {
   // 부팅 경로는 이후 onResize→updateUiScale이 fontScale까지 반영하므로 손실 없음.
   try { updateUiScale(); } catch (e) { /* 부팅 TDZ — onResize가 곧 재적용 */ }
 }
-$('opt-pixel').addEventListener('input', e => { opts.pixel = +e.target.value; applyOpts(); scheduleSave(); });
-$('opt-quant').addEventListener('change', e => { opts.quant = e.target.checked; applyOpts(); scheduleSave(); });
-$('opt-dither').addEventListener('change', e => { opts.dither = e.target.checked; applyOpts(); scheduleSave(); });
-{ const eda = $('opt-ditheramt'); if (eda) eda.addEventListener('change', e => { opts.ditherAmt = +e.target.value || 1; applyOpts(); scheduleSave(); }); }
-{ const eaa = $('opt-aa'); if (eaa) eaa.addEventListener('change', e => { opts.aa = e.target.checked; applyOpts(); scheduleSave(); }); }
-$('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; applyOpts(); scheduleSave(); });
-$('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; scheduleSave(); });
-$('opt-autoplay').addEventListener('change', e => { opts.autoPlay = e.target.checked; syncAutoBtn(); scheduleSave(); });
-{ const cc = $('opt-confirmactions'); if (cc) cc.addEventListener('change', e => { opts.confirmActions = e.target.checked; scheduleSave(); }); } // #2
-$('opt-fps').addEventListener('change', e => { opts.fpsCap = +e.target.value || 60; scheduleSave(); });
-$('opt-lowspec').addEventListener('change', e => { opts.lowSpec = e.target.checked; applyLowSpec(); scheduleSave(); });
-// 접근성 (REQ-ACC-01)
-{
-  const ef = $('opt-fontscale'); if (ef) ef.addEventListener('change', e => { opts.fontScale = +e.target.value || 1; applyAccessibility(); scheduleSave(); });
-  const ecb = $('opt-colorblind'); if (ecb) ecb.addEventListener('change', e => { opts.colorblind = e.target.checked; applyAccessibility(); scheduleSave(); });
-  const erm = $('opt-reducemotion'); if (erm) erm.addEventListener('change', e => { opts.reduceMotion = e.target.checked; applyAccessibility(); scheduleSave(); });
-}
-$('opt-bgidle').addEventListener('change', e => {
-  opts.bgIdle = e.target.checked;
-  if (!opts.bgIdle && document.hidden) { bgm.pause(); setAmbience(null); setFire(false); }
-  else if (opts.bgIdle && document.hidden) syncSfxAmbience();
-  scheduleSave();
-});
-// 언어 전환: 저장 후 재로딩 (라이브 리렌더 대신 단순하게) — veil로 암전 후 전환
-$('opt-lang').addEventListener('change', async e => {
-  const next = (e.target.value === 'en' || e.target.value === 'ja') ? e.target.value : 'ko';
-  if (next === (opts.lang || 'ko')) return;
-  if (!(await gameConfirm(t('lang.confirm'), t('confirm.change'), t('confirm.cancel')))) { e.target.value = opts.lang || 'ko'; return; }
-  opts.lang = next;
-  flushSave();               // 즉시 저장 후
-  reloadWithVeil();          // 재로딩하며 부팅 시 setLang(opts.lang) 적용
-});
+// opt-* 컨트롤 배선은 ui/settings.js bindControls로 이관. bgm/syncBgm/syncSfxAmbience 정의 이후 아래에서 _settingsUI.bindControls(...) 1회 호출(TDZ 회피).
 
 /* ============================================================
    위젯 모드 (Electron 전용) — window.nineWidget (preload contextBridge)
@@ -10492,6 +10620,8 @@ function syncSfxAmbience() {
   const fireOn = items.some(it => it.defId === 'stove' && it.on !== false);
   setFire(fireOn);
 }
+// #210 설정 컨트롤 배선: bgm/syncBgm/syncSfxAmbience 등 정의 완료 후 1회 주입(TDZ 회피).
+_settingsUI.bindControls({ applyOpts, applyLowSpec, applyAccessibility, syncAutoBtn, syncBgm, syncSfxAmbience, scheduleSave, flushSave, gameConfirm, reloadWithVeil, toast, bgm });
 // 모바일 대응: 재생은 반드시 사용자 제스처 안에서 시작 (자동재생 정책)
 $('bgm-row').style.display = 'flex';
 $('opt-bgm').checked = !!opts.bgm;
@@ -10544,8 +10674,9 @@ const autoLang = (() => {
   const os = (navigator.language || '').toLowerCase();
   return os.startsWith('ko') ? 'ko' : (os.startsWith('ja') ? 'ja' : 'en');
 })();
-// #34 완결: opts.lang 기본 'ko'가 항상 truthy라 autoLang이 fresh install에서 도달 못 하던 데드패스 상환.
-//   최초 실행에만 자동 언어(Steam 데모=클라이언트/OS 언어). __ITCH__(국제판)는 영어 강제.
+// #34 완결: opts.lang 기본값 'ko'가 항상 truthy라 autoLang이 fresh install에서 도달 못 하던 데드패스 상환.
+//   최초 실행에만 자동 언어 적용(웹 데모=브라우저 언어·Steam=클라이언트 언어). 복귀 유저(세이브 opts.lang)·명시 선택은 불변.
+//   __ITCH__(데모 브랜치 국제판)는 영어 강제 — 재수렴 시 안전 가드.
 if (_firstLaunch) opts.lang = (typeof __ITCH__ !== 'undefined' && __ITCH__) ? 'en' : autoLang;
 setLang(opts.lang || autoLang);   // 세이브된 언어 > Steam/OS 추정
 applyLocaleOverrides();       // 설치본 locales/*.json 유저 편집분 병합 (Electron 동기 — 렌더 전, 플래시 없음)
@@ -10600,6 +10731,21 @@ $('btn-clean').addEventListener('click', cleanShelter);
 $('btn-wardrobe').addEventListener('click', () => pdaOpenApp(openWardrobeModal)); // #86④ · #199 5차-d: 옷장도 PDA 앱
 $('btn-edit').addEventListener('click', () => toggleEditMode());
 $('btn-pause').addEventListener('click', () => setPaused(!paused));
+// 배속 조정기(디렉터): 1×→2×→4× 순환. 엔딩 1회 후(또는 QA 치트) 해금 시에만 노출·작동. 파밍·게임시계만 가속.
+function updateSpeedBtn() {
+  const b = $('btn-speed'); if (!b) return;
+  const unlocked = speedUnlocked();
+  b.style.display = unlocked ? '' : 'none';
+  if (unlocked) b.textContent = activeSpeedMult() + '×'; // ×
+}
+$('btn-speed').addEventListener('click', () => {
+  if (!speedUnlocked()) return;
+  const i = SPEED_STEPS.indexOf(SPEED_STEPS.includes(state.speedX) ? state.speedX : 1);
+  state.speedX = SPEED_STEPS[(i + 1) % SPEED_STEPS.length];
+  updateSpeedBtn();
+  toast('×' + state.speedX);
+  scheduleSave && scheduleSave();
+});
 // P2-b: 자동 진행 토글 버튼 (cam-ctrl) — Day 10 미만이면 잠금 토스트, 아니면 opts.autoPlay 토글 + 체크박스 양방향 동기화
 $('btn-auto').addEventListener('click', () => {
   if (DEMO_ED && state.demoPhase !== 'sandbox') { toast(t('demo.autoLocked')); return; } // 데모: 잠금 사유를 정직하게(크레딧 이후)
@@ -10613,30 +10759,22 @@ $('btn-auto').addEventListener('click', () => {
 syncAutoBtn();
 $('btn-craft').addEventListener('click', () => pdaOpenApp(openCraftModal)); // #199 5차-c: 제작은 PDA 앱으로 열린다
 { const bk = $('btn-knowledge'); if (bk) bk.addEventListener('click', () => pdaOpenApp(openKnowledgeModal)); } // #199 5차-d: 지식도 PDA 앱
-$('btn-journal').addEventListener('click', () => openJournalModal('journal'));
+// #211: 그리드의 btn-journal 폐지 — #199에서 이미 display:none으로 죽여둔 문이었다(진입은 PDA 기록 탭).
 $('g-hunger').addEventListener('click', eatFood);
 $('g-thirst').addEventListener('click', drinkWater);
 $('g-energy').addEventListener('click', () => promptSleep());
 // #199 5차-b: 청결 게이지 카드 제거(디렉터 — 경고 형식으로) → 청소 진입은 액션 그리드 버튼만
 $('btn-sleep').addEventListener('click', () => promptSleep());
 $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
-// #199 우측 엣지 도킹: PDA 토글 + 일지=필드 노트 오버레이 + PDA 하드웨어 히트(에셋 버튼 자리)
+// #199 우측 엣지 도킹: PDA 토글 + PDA 하드웨어 히트(에셋 버튼 자리)
 // 에셋 하우징은 JS 인라인 — CSS url()은 번들 후 /assets/ 기준으로 풀려 file://에서 깨진다(스타일시트 709행 교훈)
+// #211(디렉터 "일지 그냥 PDA에 통합. UI 망가지고 오히려 AI 티 나더라"): 필드노트 기기 폐지.
+//   두 기기가 같은 데이터를 나눠 갖고 있었다(기록·자원·날씨·결핍 중복 + 노트의 '일지' 탭은 모달 링크였다).
+//   기기가 늘어난 게 원인이라 기기를 줄인다 — 우측 도킹은 PDA 하나.
 $('pda').style.backgroundImage = "url('img/ui/pda04.png')";
-$('fieldnote').style.backgroundImage = "url('img/ui/fieldnote.png')";
 $('dock-pda').style.backgroundImage = "url('img/ui/dock_pda.png')";
 $('dock-pda').addEventListener('click', () => pdaVisible() ? pdaClose() : pdaOpen());
-$('dock-journal').addEventListener('click', () => noteVisible() ? noteClose() : noteOpen());
 $('pda-back').addEventListener('pointerdown', e => { if (e.target.id === 'pda-back') pdaClose(); });
-$('note-back').addEventListener('pointerdown', e => { if (e.target.id === 'note-back') noteClose(); });
-$('nt-close').addEventListener('click', () => noteClose());
-$('nt-journal').addEventListener('click', () => { noteClose(); openJournalModal('journal'); });
-// #199-c 견출지: ♥쾌적/📦수급/📍거점 = 우측 페이지 전환, 📔도감 = nt-journal과 동일 액션
-document.querySelectorAll('.nt-tab').forEach(b => b.addEventListener('click', () => {
-  if (b.dataset.ntab === 'journal') { noteClose(); openJournalModal('journal'); return; }
-  noteTab = b.dataset.ntab;
-  renderNoteRight();
-}));
 document.querySelectorAll('#pda-tabs .pda-tab').forEach(b =>
   b.addEventListener('click', () => { pdaTab = b.dataset.tab; renderPDA(); }));
 // 기기 하드웨어 문법: 뒤로(⏎)=닫기, D-패드 ◀▶=탭 순환·▲▼=화면 스크롤, 확인(✓)=재조회
@@ -10722,6 +10860,21 @@ if (window.nineWidget && window.nineWidget.available) {
 }
 // #52: 타이틀 ⚙️ — 전용 설정 오버레이 토글 (인게임과 동일 창)
 $('t-settings').addEventListener('click', () => toggleSettingsPanel());
+// 씬 저작 크리에이터 모드 — QA 패널/URL(?creator=1)로 진입. 인게임 editMode + __shelter 훅 재사용.
+const _creatorUI = makeCreatorUI({
+  setPaused, forceEditMode: (v) => toggleEditMode(v), hideTitle, loadShelter, state, SHELTERS, DEFS,
+  addItem, getItems: () => items, select, deselect, getSelected: () => selected, clampToRoom,
+  setHour: (h) => { state.gameMin = Math.floor(state.gameMin / 1440) * 1440 + h * 60; }, setWeather,
+  spawnCat, despawnCat, getCat,
+  qaPlaceCat: (x, z, mode) => { const c = getCat(); if (!c) return false; c.g.position.set(x, c.baseY || 0.05, z); c.mode = mode || 'sleep'; c.timer = 99999; c.tgt = null; c.hop = null; return true; },
+  camState,
+  setYaw: (rad) => { camState.yaw = camState.targetYaw = rad; },
+  setPitch: (rad) => { camState.elev = THREE.MathUtils.clamp(rad, 0.05, Math.PI / 2 - 0.05); },
+  setZoom: (z) => { camState.zoom = THREE.MathUtils.clamp(z, 0.2, 3.2); },
+  toast,
+});
+// dev 진입: ?creator=1 이면 부팅 안정 후 자동 진입(하네스/디렉터 dev 편의). 배포본 URL엔 없음.
+try { if (new URLSearchParams(location.search).get('creator')) setTimeout(() => _creatorUI.enter(), 900); } catch (e) { /* */ }
 /* ============================================================
    QA 치트 모드 (#43) — 배포본 숨은 진입점
    진입: 타이틀 버전 표기(#title-ver) 5연타(2초 내). 인게임 미노출(타이틀에서만).
@@ -10730,13 +10883,13 @@ $('t-settings').addEventListener('click', () => toggleSettingsPanel());
 let _qaTaps = [];
 $('title-ver').addEventListener('click', () => {
   if (!titleVisible) return; // 인게임/인트로에선 반응 없음
-  if (DEMO_ED) return; // #74: 소비자 대면 데모 빌드엔 치트 진입점 자체를 봉인
+  if (DEMO_ED && !DEMO_QA_OPEN) return; // #74: 소비자 대면 데모 빌드엔 봉인(발매 전 DEMO_QA_OPEN으로 허용)
   const now = Date.now();
   _qaTaps.push(now);
   _qaTaps = _qaTaps.filter(t => now - t <= 2000); // 2초 창
   if (_qaTaps.length >= 5) { _qaTaps = []; openQaPanel(); }
 });
-function markQa() { state.qaUsed = true; } // 오염 방지 플래그 — 업적 해금 무시용
+function markQa() { state.qaUsed = true; if (typeof updateSpeedBtn === 'function') updateSpeedBtn(); } // 오염 방지 플래그(업적 해금 무시) + 배속 즉시 해금
 function openQaPanel() {
   const btn = (id, label) => `<button class="pixel-btn" data-qa="${id}" style="margin:3px;font-size:11px">${label}</button>`;
   const body = `
@@ -10761,6 +10914,8 @@ function openQaPanel() {
       ${btn('hidden', '히든 루트 점프 (침묵)')}
       ${btn('paints', '도료 전 계열 +3')}
       ${btn('bps', '시그니처 도면 전부')}
+      ${btn('creator', '🎬 크리에이터 모드')}
+      ${btn('speed', '⏩ 배속 해금')}
     </div>
     <div id="qa-status" style="font-size:11px;color:var(--good);margin-top:8px;min-height:16px"></div>`;
   openModal('QA 치트 패널', body);
@@ -10803,6 +10958,8 @@ function openQaPanel() {
       case 'paints': for (const f of Object.keys(PAINT_ALL)) state.paints[f] = (state.paints[f] || 0) + 3; state.lightGels = 1; status('도료 12계열 + 네온 안료 +3통 + 조명 젤 필터북'); break;
       // 시그니처 도면 검수용 — 전 도면 해금 (제작 목록 노출 확인)
       case 'bps': { state.blueprints = state.blueprints || {}; for (const ids of Object.values(BAL.blueprint.regionItems)) for (const id of ids) state.blueprints[id] = 1; for (const id of (BAL.blueprint.commonItems || [])) state.blueprints[id] = 1; state.blueprints.ledbar = 1; status('도면 전부 해금 (시그니처 8 + 커먼 5 + LED)'); break; }
+      case 'creator': closeModal(); _creatorUI.enter(); return; // 씬 저작 크리에이터 모드 진입 (모달 닫고 이탈)
+      case 'speed': status('배속 해금 — 하단 컨트롤 바에 배속 버튼 노출(1×→2×→4× 순환)'); break; // markQa가 이미 해금(updateSpeedBtn)
     }
     updateHud(); renderResBar(); if (!state.exp) renderExpPanel(); scheduleSave();
   }));
@@ -10981,15 +11138,25 @@ let _goldenDt = 0, _goldenAcc = 0; // 동역학 게이트: 스테핑 중에만 d
 // 트레일러 캡처(#172): 골든의 고정 dt 스테핑을 엔티티 살린 채 쓴다 — 오프스크린 캡처는 프레임당 실시간
 // ~0.2s가 흘러 애니메이션이 수 배속으로 보이므로, keepEntities 스테핑이 정속(1/30s/frame)의 유일한 경로.
 let _goldenKeep = false;
+// #212: LCG 상태 s를 모듈 변수로 승격해 언제든 시드로 되돌릴 수 있게 한다(_goldenReseed).
+//   구버전은 s가 Math.random 클로저 안에 갇혀, freeze 이후 settleCapture가 소비한 난수만큼 상태가
+//   밀린 채 stepGolden에 진입 → 누적 시작점이 로드마다 달라 d_snow/d_rain 골든이 플레이키였다.
+let _goldenSeed = 12345, _goldenS = 12345;
+function _goldenReseed() { _goldenS = _goldenSeed >>> 0; }
 function freezeForGolden(seed = 12345, keepEntities = false) {
-  let s = seed >>> 0;
-  Math.random = function () { s = (s + 0x6D2B79F5) | 0; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+  _goldenSeed = seed >>> 0; _goldenReseed();
+  Math.random = function () { let s = (_goldenS + 0x6D2B79F5) | 0; _goldenS = s; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
   windLevel = 1; _golden = true; _goldenHid = false; _goldenDt = 0; _goldenAcc = 0;
+  // #212: 날씨 누적 상태를 씬마다 초기화한다. simReset은 weather.type만 지우고 snowCover/wetness는
+  //   남겨, d_rain_wet(비)이 직전 d_snow_accum(눈)의 적설을 물려받아 결정론이 깨졌다(로드 간 70% 흔들림).
+  //   각 골든 씬은 깨끗한 날씨에서 시작해야 dt 스테핑이 순수 재현된다. (설정 씬은 이후 setSnow가 덮어씀.)
+  snowCover = 0; wetness = 0; wetApplied = -1;
   _goldenKeep = !!keepEntities; // 트레일러 캡처: 고정 dt 스테핑 + 엔티티(고양이/아바타) 유지 — 정속 애니메이션 캡처
 }
 // 동역학 게이트: renderFrame을 동기 루프로 frames번 호출(rAF 개입 없음=결정론) → 눈 누적·젖음/성에 페이드가
 //   고정 dt로 확정 진행. 캡처 전 호출해 dt구동 날씨 상태를 박제한다. 루프 후 dt=0 복귀(rAF 프레임은 정지 유지).
 function stepGolden(frames = 200, dtSec = 0.1) {
+  _goldenReseed(); // 정착이 소비한 난수 오프셋 제거 → 누적 시작점을 시드로 고정(로드 간 결정론)
   _goldenDt = dtSec;
   for (let i = 0; i < frames; i++) renderFrame();
   _goldenDt = 0;
@@ -11012,6 +11179,16 @@ function renderFrame() {
     if (!_goldenHid) { try { despawnCat(); } catch (e) {} _goldenHid = true; }
     const wg = wildlifeSys.getGroup && wildlifeSys.getGroup(); if (wg) wg.visible = false;
     const ag = avatarSys.getGroup && avatarSys.getGroup(); if (ag) ag.visible = false;
+    // #212: 낙하 날씨 파티클(눈·비)도 숨긴다. 입자 위치는 씬 간 이월돼(리셋 안 됨) 프레임/로드마다 달라
+    //   ~19% 렌더 흔들림을 냈다 — 동역학 골든의 목적은 '적설/젖음 누적'(지면 셰이더=결정론)이지 낙하 입자가
+    //   아니므로, 배회 엔티티와 같은 논리로 숨겨 결정론을 회복한다. 지면 snowCover/wetness는 그대로 캡처된다.
+    if (weather.pts) weather.pts.visible = false;
+    // 젖은 반사 오버레이(웅덩이·글린트)도 숨긴다. 반투명(depthWrite off)이라 SwiftShader 스레드 정렬이
+    //   프로세스마다 뒤집혀(빔과 동일 계열) cross-load 흔들림을 냈다. 젖음의 '누적'은 재질 톤 다크닝
+    //   (applyWetness, 결정론)이 담당하므로, 반사 오버레이만 숨겨도 동역학 골든의 취지는 보존된다.
+    if (weatherFx.puddles) for (const p of weatherFx.puddles) p.visible = false;
+    if (weatherFx.glints) for (const gl of weatherFx.glints) gl.visible = false;
+    if (dust && dust.pts) dust.pts.visible = false; // 부유 먼지(Math.random 배치·반투명)도 골든에서 숨김
   } else {
     updateCat(t, dt);
     tickCatPurr(dt);           // #93: 방석 골골 기믹 (잠든 고양이 + 방석)
@@ -11021,6 +11198,7 @@ function renderFrame() {
   updateCraftFx(dt); // ④ 제작 손맛 아이콘/반짝임 연출
   tickVisitor(t, dt); // #181 방문자 걸어옴/글로우/퇴장 + 카메라 추적
   tickDropSpots(t); // #182 B0 동물 드랍 지면 반짝임 펄스
+  tickBalconyHint(t); // 2.0 발코니 조망 은근한 신호 (펜트하우스 「콘크리트 정글의 해」 어포던스)
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   positionSelPanel(); // 편집 미니 카드 재투영 — 카메라 팬/줌/드래그를 따라간다 (A안)
   // #189 P1: 광원 레지스트리 동기화(전원 토글·연료 소진·설치 자동 반영) + 폴백 형광등 점멸.
@@ -11146,10 +11324,13 @@ function expectedLoot(regionId, mult = 1) {
   // 난이도별 전리품 수급 배수(BAL.economy.incomeMul) — 실게임 rollRes는 hardLoot()로 적용하지만
   //   expectedLoot(시뮬·QA 전용)엔 누락돼 하드 sim이 뻥튀기되던 결함(#76). 기댓값이라 배수를 곱하면 정확.
   const incomeMul = BAL.economy.incomeMul[state.mode] ?? 1;
+  // 동부 수확 겹도 동일 반영 — rollRes와 이 기대값 경로가 어긋나면 sim/QA 표가 조용히 뻥튀기된다(#76 계보).
+  //   현 sim은 동부 게이트(eastGateOpen)를 못 넘어 동부를 안 돌지만, 불변식("expectedLoot는 rollRes의 거울")을 지킨다.
+  const eastMul = r.city === 'east' ? (BAL.cities.eastLootMul?.[state.mode] ?? 1) : 1;
   for (const [id, min, max, chance] of r.lootRes) {
     const c = chance != null ? chance : 1;
     // resolveExpedition: n = round((min + rand*(max-min)) * mult), n>0만 반영
-    const evN = ((min + max) / 2) * mult * incomeMul;
+    const evN = ((min + max) / 2) * mult * incomeMul * eastMul;
     const contrib = c * evN;
     if (contrib > 0) out[id] = (out[id] || 0) + contrib;
   }
@@ -11325,9 +11506,10 @@ window.__shelter = {
 
   addItem, removeItem, loadShelter, moveToShelter, setItemPower,
   startExpedition, departExpedition, resolveExpedition, setWeather, transitionWeather, weatherTransState: () => ({ prev: weather.transPrev, k: weather.transK, birds: !!weather.transBirds }), rateParts,
+  getSnowCover: () => snowCover, getWetness: () => wetness, // 날씨 환경 스칼라 읽기(QA/골든 회귀 검증용)
   comfortDetail, comfortBreakdown, comfortExpBonus, applyInjury, treatInjury, processDay, showDayReport, cleanShelter,
   slotMeta, updateHud, checkAchievements, renderResBar, renderInventoryBar, // Nine Winters(#11) QA
-  pdaOpen, pdaClose, noteOpen, noteClose, pdaOpenApp, // #199 PDA·필드노트 도킹·앱 모드 QA 훅
+  pdaOpen, pdaClose, pdaOpenApp, pdaSetTab: (tb) => { pdaTab = tb; renderPDA(); }, // #199 PDA 도킹·앱 모드 QA 훅 (#211: 필드노트 폐지로 note* 제거)
   seasonOf, SEASONS, DEMO_ED, openMapModal, showMapInfo, eatFood, drinkWater, EVENTS, showEvent, SHELTER_MODS, hasMod, openCraftModal, // DEMO_ED: 배터리가 dist의 빌드 플래그를 감지(데모 캘린더 게이트)
   // Phase D (#12 · #35 · #36) QA 훅
   MEMOS, WILLS, BROADCASTS, MEMOS_BY_REGION, eventCtx, eventMatches, drawEvent, eventWeight,
@@ -11372,6 +11554,7 @@ window.__shelter = {
   loadShelter, // #195 QA: 레이아웃 왕복 게이트 — loadSave는 상태만 싣고 씬 복원은 부팅 절차 몫이라 직접 구동
   cityOf, // 2.0-α QA: 도시 파생 게이트(셸터→도시 매핑·기록 필드 검증)
   playCollapseVignette, // #199 QA: 문+상자 연출 직접 구동(캡처 검수용)
+  setCollapseLootFx: (fx) => { collapseLootFx = fx; }, // #213 QA: 전리품 종류·등급 강제(롤 확률 우회 — 4종 전수 캡처)
   playGeigerVignette, // 2.0-(b) QA: 가이거 계수기 비네트 직접 구동(캡처 검수용)
   playEastGateVignette, // 2.0-(b) QA: 국경 개통 비네트 직접 구동(캡처 검수용)
   mapBiomeDataUrl, // 2.0-(d) QA: 도시별 전도 분기 검증(홈/동부 캔버스 상이)
@@ -11430,11 +11613,17 @@ window.__shelter = {
   // F-1a 야생동물 QA 훅 (코디네이터 검증용): 상태 조회 + 강제 등장/발자국/퇴장 트리거
   wildlifeState: () => wildlifeSys._debug(),
   wildlifeSpawn: (opening) => wildlifeSys._forceSpawn(opening),
+  qaDlcOwns: (id) => Platform.dlc.owns(id), // #117 QA: 서포터팩 DLC 소유 판정 (오버라이드/브릿지)
+  qaDlcOverride: (id, on) => Platform.dlc.setOverride(id, on), // #117 QA: 실 DLC 없이 서포터 콘텐츠 검수 토글
+  qaRoamSpot: () => wildlifeSys._roamSpot(), // #209 QA: 야생 로밍 스팟 (기단 회피·퍼치 밴드 검증)
+  qaWildGroundY: () => wildlifeSys._groundY(), // #209 QA: 착지 지면 y
   wildlifeNightPrints: () => wildlifeSys._forceNightPrints(),
   wildlifeLeaveAll: () => wildlifeSys._forceLeaveAll(),
   wildlifeNudge: (i, x, z) => wildlifeSys._nudge(i, x, z), // QA: 클로즈업 검수용 (팬 카메라 부재 보완)
   wildlifeRespawn: (id) => wildlifeSys.respawn(id || state.current),
   avatarState: () => avatarSys._debug(), // #86 QA 훅
+  avatarSys, // 스토어 캡처용: getGroup().position 직접 배치(정착 후 고정 프레임 캡처)
+  qaPlaceCat: (x, z, mode) => { const c = getCat(); if (!c) return false; c.g.position.set(x, c.baseY || 0.05, z); c.mode = mode || 'sleep'; c.timer = 99999; c.tgt = null; c.hop = null; return true; }, // 캡처용 고양이 고정 배치(웅크림)
   avatarRespawn: () => avatarSys.respawn(),
   avatarDespawn: () => avatarSys.despawn(), // #181 접지 캡처: 방문자 시트에서 아바타 제거
   // #181 방문자 복셀 접지 훅: 프리셋을 씬에 직접 스폰(연출 시스템 이전 룩 검증용)
@@ -11463,18 +11652,29 @@ window.__shelter = {
   endingLeaning, // 2.0-(g): 엔딩 성향 판정(검증 — 부수효과 0)
   setForceClosed, // #201: 풀셸 컬링 강제(검증)
   visitorState: () => visitor ? { mode: visitor.mode, x: +visitor.g.position.x.toFixed(2), z: +visitor.g.position.z.toFixed(2), camActive: visitorCam.active, spoke: visitor.spoke } : null,
+  // #208 QA: 동물 자동 인카운터 실측 — 팬 점유·엔티티 모드·자리 잡음·자동 발화 잔여(ms).
+  wildEncounterState: () => {
+    const d = dropSpots.find(x => x.ent) || null;
+    return { drops: dropSpots.length, camOwned: !!wildCamEnt, camActive: visitorCam.active,
+      ent: d && d.ent ? { id: d.ent.id, mode: d.ent.mode } : null,
+      settled: !!(d && d.settled), autoInMs: d && d.autoT ? Math.round(d.autoT - performance.now()) : null };
+  },
   visitorClick: () => onVisitorClicked(),
   visitorDismiss: () => dismissVisitor(),
   // #182 B0 동물 드랍 지면 반짝임 훅 (스폰/상태/수거 시뮬)
   spawnGroundDrop, shelterHasGround,
   debugDrop: (evId, ang) => spawnGroundDrop(evId || 'dog', ang != null ? { pos: (() => { const rr = Math.max(ROOM.w, ROOM.d) * 0.5, d = rr + 2.0; return { x: Math.cos(ang) * d, z: Math.sin(ang) * d, y: visitorGroundY() }; })() } : {}),
   dropState: () => dropSpots.map(d => ({ evId: d.evId, x: +d.g.position.x.toFixed(2), z: +d.g.position.z.toFixed(2) })),
+  clearGroundDrops: () => disposeDropSpots(), // 스토어 캡처용: 바닥 드랍 반짝임 전부 제거(깨끗한 씬)
   dropCollect: () => { if (dropSpots.length) { collectDrop(dropSpots[0]); return true; } return false; },
   avatarForceNext: () => avatarSys._forceNext(),          // #86② QA: 행동 추첨 강제 (상호작용 검증)
   avatarBlocks: (x, z) => avatarSys.blocksPlacement(x, z, { w: 1, d: 1 }), // #86③ QA: 설치 가드 판정
   openWardrobeModal, OUTFITS, // #86④ QA: 옷장
   wallProxyState: () => wallList.map(w => ({ show: w.group.visible, proxy: w.proxy ? w.proxy.visible : null })), // #97 QA
   avatarWalkTo: (x, z) => avatarSys._walkTo(x, z), // #86 QA: 경유점 라우팅 실증
+  avatarWakeBed: (rect) => avatarSys._wakePose(rect), // #209 QA: 취침 눕기 포즈 검증 (rot 0~3 머리·가슴 방향 실측)
+  qaBlockers: () => blockers.map(b => ({ ...b })), // #209 QA: 붙박이 가구 봉쇄 사각 조회 (동부 셸터 blockers 검증)
+  qaCollides: (defId, x, z, tier = 0) => collides({ defId, x: 0, z: 0, rot: 0, tier, support: null }, x, z), // #209 QA: 배치 충돌 판정
   FIELD_SPOTS, resolveFieldSpot, // #164 QA: 떠오른 자리 데이터/회수 (프로브 결정론 검증용)
   // 침묵 모드 게이트 QA (디렉터 2026-07-10 — 생존·혹한 전용): 실탭 경로(pickHidden)를 좌표로 재현
   hiddenTapProbe: (x, y) => pickHidden({ clientX: x, clientY: y }),
@@ -11511,6 +11711,8 @@ window.__shelter = {
   expActualRate,
   toggleEditMode,
   isEditMode: () => editMode,
+  enterCreator: () => _creatorUI.enter(), exitCreator: () => _creatorUI.exit(), // 씬 저작 크리에이터 모드 (QA/하네스 진입)
+  importScene: (obj) => _creatorUI.importSceneObj(obj),
   lastSfx: () => dbgSfx,
   resetSfx: () => { dbgSfx = null; },
   // #13 꾸미기 확장 + 사운드 QA 훅

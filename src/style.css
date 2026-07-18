@@ -180,7 +180,6 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   #hud .shelter-name .px-icon { width: 14px; height: 14px; vertical-align: -3px; }
   #hud #gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 6px; } /* 계기 3종(밥·물·에너지) — 폭 확보로 라벨 잘림 해소 */
-  #hud #btn-journal { display: none; } /* 일지 진입점은 우측 도킹 — 그리드 중복 제거(디렉터) */
   #hud .gauge {
     height: auto; display: flex; flex-direction: column; gap: 4px;
     padding: 5px 6px 6px;
@@ -248,8 +247,6 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
      주의: #edge-dock button(1-0-1)이 #dock-pda(1-0-0)를 이긴다 — 반드시 #edge-dock 프리픽스로 승격. */
   #edge-dock #dock-pda { transform: translateX(12%); }
   #edge-dock #dock-pda:hover, #edge-dock #dock-pda:focus-visible { transform: translateX(2%); }
-  #edge-dock #dock-journal { transform: translateX(30%); }
-  #edge-dock #dock-journal:hover, #edge-dock #dock-journal:focus-visible { transform: translateX(10%); }
   #edge-dock button:active { transform: translateX(0%) !important; transition-duration: 0.1s; }
   #edge-dock #dock-pda { /* 하우징=디렉터 에셋(dock_pda.png, JS 인라인) — 마이크로 게이지만 그린 윈도 위에 */
     position: relative; width: 53px; aspect-ratio: 373 / 928; /* 디렉터 2차 축소: 76px도 과대 — 추가 30% 감 */
@@ -286,11 +283,6 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
       linear-gradient(170deg, #4a3c2a, #382c1e 70%, #2c2216);
     box-shadow: inset 0 0 0 3px rgba(20, 17, 13, 0.35), inset 0 0 0 4px rgba(216, 205, 180, 0.14), inset 0 -2px 5px rgba(0, 0, 0, 0.4);
   }
-  #dock-journal .dk-label {
-    align-self: flex-start; font-size: 10px; letter-spacing: 2px; color: #3a3226;
-    background: #d8cdb4; padding: 3px 8px; border-radius: 2px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  }
   .dk-clip { /* 종이 + 클립 삐져나옴 */
     height: 12px; border-radius: 2px;
     background: linear-gradient(180deg, #e2d8bf 0 8px, transparent 8px);
@@ -314,8 +306,14 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     image-rendering: pixelated;
     filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.6));
   }
-  #pda-lcd { /* 에셋 스크린 유리 좌표(%): 콘텐츠는 이 안에서만 산다 */
-    position: absolute; left: 8.2%; top: 14.6%; width: 83.4%; height: 67.2%;
+  /* 에셋 스크린 유리 좌표(%)에서 사방 여백만큼 안쪽. 콘텐츠는 이 안에서만 산다.
+     #211(디렉터 "검정색과 진한 녹색에 margin을 둬 — 컴포넌트들이 틀을 벗어나있어"):
+       구 값(left 8.2 / w 83.4 / top 14.6 / h 67.2)은 유리 경계에 딱 붙어서 탭 4개와 게이지 바가
+       검정 베젤 위로 삐져나왔다. 좌우 2.4%p · 상하 1.8%p씩 안으로 들여 여백을 만든다.
+     패딩이 아니라 rect를 줄인 이유: 앱 모드의 #modal-back은 absolute inset:0이라 컨테이닝 블록이
+       '패딩 박스'다 — 패딩을 주면 그건 무시하고 베젤까지 덮는다. rect를 줄이면 탭·화면·앱이 함께 들어온다. */
+  #pda-lcd {
+    position: absolute; left: 10.6%; top: 16.4%; width: 78.6%; height: 63.6%;
     display: flex; flex-direction: column; overflow: hidden;
   }
   #pda-lcd::after { /* 유리 반사 + CRT 스윕 — 에셋 유리 위 은은하게 */
@@ -368,11 +366,24 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   #pda-screen .pnote { color: #7da884; font-size: 10.5px; }
   #pda-screen .pbtn-row { margin-top: 10px; display: flex; justify-content: flex-end; }
+  /* #211 필드노트 흡수 — 쾌적 4축 분해. 구 .nt-ax(종이 잉크)를 PDA 초록 LCD 문법으로 옮긴다:
+     잉크 #55492f → currentColor, 종이 배경 → 형광체 감쇠. 2열(좁은 LCD에서 4축이 세로로 길어지지 않게). */
+  #pda-screen .pax-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; }
+  #pda-screen .pax { margin: 0 0 4px; }
+  #pda-screen .pax-h { display: flex; justify-content: space-between; gap: 6px; }
+  #pda-screen .pax-h b { font-variant-numeric: tabular-nums; }
+  /* 트랙은 rgba, 채움은 형광 — 위 .pbar와 같은 문법. (트랙에 opacity를 걸면 자식 채움에 곱해져 안 보인다) */
+  #pda-screen .pax-bar { height: 4px; background: rgba(170, 240, 185, 0.1); border: 1px solid #3f6a46; margin: 2px 0 1px; overflow: hidden; }
+  #pda-screen .pax-bar i { display: block; height: 100%; background: #cfe0c8; box-shadow: 0 0 4px rgba(120, 255, 150, 0.45); }
+  #pda-screen .pax-log { opacity: 0.62; line-height: 1.4; font-size: 10px; }
   #pda-screen ul.plog { margin: 0; padding-left: 14px; }
   #pda-screen ul.plog li { margin: 2px 0; }
   .pda-flick { animation: pdaFlick 0.16s steps(2); }
   @keyframes pdaFlick { 0% { opacity: 0.35; } 100% { opacity: 1; } }
-  #pda-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
+  /* #211-b(디렉터 "위에 네모 박스도 안에 넣어야지"): 탭이 LCD 폭을 꽉 채워 유리 가장자리에 딱 붙어 있었다
+     (실측 tabInsetLeft/Right = 0). 아래 #pda-screen은 좌우 12px 패딩이 있어 글자만 안쪽이었고, 탭만 튀어나왔다.
+     같은 12px으로 맞춰 탭 상자도 화면 안에 들어온다. 위쪽 6px은 유리 상단 테두리와의 숨. */
+  #pda-tabs { display: flex; gap: 4px; padding: 6px 12px 0; margin-bottom: 6px; }
   .pda-tab { /* LCD 상단 세그먼트 탭 — 화면 안에서 동작. 하드웨어 버튼과 병행, 터치 타깃 확보 */
     flex: 1; padding: 8px 2px; cursor: pointer;
     font-family: inherit; font-size: 10px; letter-spacing: 1px; color: #6fae78;
@@ -396,21 +407,6 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* #199 3차(디렉터 확정): 자원 패널 → PDA 자원 탭·도킹 LED로 이관. 상단엔 필수 계기만 남는다. */
   #res-bar { display: none !important; }
   /* ── 「필드 노트」 오버레이 — 디렉터 에셋(가죽 수첩 펼침) 위 존 바인딩. 기록=종이. ── */
-  #note-back {
-    position: fixed; inset: 0; z-index: 58;
-    background: rgba(8, 9, 12, 0.5);
-    display: flex; align-items: center; justify-content: center;
-  }
-  #fieldnote {
-    position: relative; zoom: var(--uiz);
-    width: min(880px, calc(94vw / var(--uiz, 1)), calc(90vh / var(--uiz, 1) * 1.3299)); /* 1290/970 비율 잠금 */
-    aspect-ratio: 1290 / 970;
-    background: center / contain no-repeat; /* 이미지는 JS 인라인 — 위 #pda와 동일 사유 */
-    image-rendering: pixelated;
-    filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.55));
-  }
-  .nt-zone { position: absolute; color: #3a3226; font-size: 11px; line-height: 1.65; overflow: hidden; word-break: keep-all; }
-  .nt-h { font-size: 10px; letter-spacing: 1px; color: #55492f; margin: 0 0 6px 24px; min-height: 13px; } /* 에셋 회색 헤더탭 위에 정렬 — 빈 헤더도 높이 유지(2열 시작점 정렬) */
   #nt-log { left: 11%; top: 12.4%; width: 34%; height: 29%; }
   #nt-log ul { margin: 0; padding-left: 12px; list-style: none; } /* 에셋 ◆ 마커와 이중 방지 */
   #nt-log li { margin: 1px 0; }
@@ -420,30 +416,23 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #nt-rb { left: 53.5%; top: 78.5%; width: 33.5%; height: 13%; } /* 에셋 우하 가로 박스 */
   /* #199-c 견출지 실기능화 — 에셋 우측 탭 4개(♥쾌적·📦수급·📍거점·📔도감) 위 히트 존.
      스킨 무변경 원칙: 그림은 에셋 그대로, 활성 탭만 종이빛 베일로 "들려 보임". */
-  .nt-tab { position: absolute; left: 92.3%; width: 7.2%; background: transparent; border: none; cursor: pointer; padding: 0; }
-  .nt-tab[data-ntab="comfort"] { top: 10.2%; height: 10%; }
-  .nt-tab[data-ntab="supply"] { top: 22.8%; height: 11.3%; }
-  .nt-tab[data-ntab="base"] { top: 43.6%; height: 11.5%; }
-  .nt-tab[data-ntab="journal"] { top: 55.8%; height: 11.2%; }
-  .nt-tab:hover { background: rgba(255, 246, 220, 0.12); }
-  .nt-tab.active { background: rgba(255, 246, 220, 0.2); box-shadow: inset -2px 0 0 rgba(58, 50, 38, 0.45); }
   /* ♥ 쾌적 탭 컴팩트 축: 헤더+잉크 바+로그 2줄 (종이 위 연필 결) */
-  .nt-ax { margin: 0 0 7px; }
-  .nt-ax .ax-h { display: flex; justify-content: space-between; font-size: var(--fs-s); }
-  .nt-ax .ax-bar { height: 5px; background: rgba(58, 50, 38, 0.16); margin: 2px 0 1px; }
-  .nt-ax .ax-bar i { display: block; height: 100%; background: #55492f; }
-  .nt-ax .ax-log { font-size: var(--fs-s); color: rgba(58, 50, 38, 0.72); line-height: 1.5; }
-  .nt-col { flex: 1; min-width: 0; }
-  .nt-cell { display: flex; align-items: center; gap: 5px; padding: 1px 0; border-bottom: 1px dashed rgba(58, 50, 38, 0.25); }
-  .nt-cell b { margin-left: auto; font-variant-numeric: tabular-nums; }
-  .nt-cell.dim { color: #8a7c62; border-bottom: none; }
   #nt-act { left: 53.5%; top: 78%; width: 33.5%; height: 14%; display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding-right: 2%; }
   #nt-act .pixel-btn { font-size: 10px; padding: 6px 10px; }
   @media (max-width: 700px) {
+    /* ── #208 모바일 상단 UI (디렉터 신고 "허기·갈증 짤린다 → 가로로 늘리고, 대신 접을 수 있게") ──
+       원인: #hud 고정폭 250px을 3열 게이지가 나눠 가져 라벨이 min-width:0 + overflow:hidden으로 잘렸다
+       ("허기"→"허"). 폭을 화면 폭에 맞춰 늘려 근본 해소 — width는 드래그 저장(uiState는 left/top만 기록)이
+       건드리지 않으므로 이미 옮겨본 유저에게도 적용된다. 넓어진 만큼 화면을 가리니 접기(–)를 모바일에서 부활:
+       .panel.collapsed 인프라와 uiState.c 저장이 이미 있어 버튼 노출만으로 성립(구 주석의 "hud 접기 제거"는
+       250px 좁은 패널 전제 — 전제가 바뀌었다). 전역 👁 숨김은 그대로 병존. */
+    #hud { max-width: none; }  /* 폭 자체는 아래 760px 미디어쿼리가 정의(뒤쪽 규칙이 이긴다) */
+    #hud .p-min { display: block; }
+    #hud .g-name { overflow: visible; }                                    /* 폭이 생겼다 — 잘림 원인 제거 */
+    #hud .btn-row.icons { grid-template-columns: repeat(auto-fit, minmax(58px, 1fr)); } /* 액션 한 줄 흡수 */
     #edge-dock { top: 40%; } /* 모바일: 자원 패널 이관 후에도 우중단 유지(엄지 리치) */
     .dk-body { width: 72px; padding: 8px; }
     #pda { height: min(620px, calc(84vh / var(--uiz, 1)), calc(94vw / var(--uiz, 1) * 1.7315)); }
-    #fieldnote { width: min(calc(96vw / var(--uiz, 1)), calc(86vh / var(--uiz, 1) * 1.3299)); }
   }
   /* ── #199 5차-c: PDA 앱 모드 — 공용 모달(#modal-back)이 LCD 안으로 들어와 "기기 화면"이 된다 ── */
   body.pda-app #pda-screen, body.pda-app #pda-tabs { visibility: hidden; } /* 탭 UI는 앱 뒤로 */
@@ -510,7 +499,6 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   body.pda-app #pda-lcd .pixel-btn.primary { border-color: #ffffff; color: #ffffff; }
   body.title-mode #edge-dock, body.wallpaper-mode #edge-dock,
   body.title-mode #pda-back, body.wallpaper-mode #pda-back,
-  body.title-mode #note-back, body.wallpaper-mode #note-back { display: none !important; }
 
 
 
@@ -852,25 +840,41 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #map-cities .city-chip .here { font-size: 9px; color: var(--text-dim); }
   #map-pull { margin-top: 4px; }
   #map-pull:empty { display: none; }
-  /* #204 타르코프식 핀(디렉터): 점 + 옆 이름 가로 배치 — 아이콘 폐기 */
+  /* #204 타르코프식 핀(디렉터): 점 + 옆 이름 가로 배치 — 아이콘 폐기
+     #208 좌표 정렬(디렉터 모바일 신고 "마커 위치랑 실 지도랑 위치 차이가 나"):
+     구 transform: translate(-50%,-50%)는 **핀 전체**(점+이름+배지)를 중심 정렬해서, 이름이 붙어 폭이 커진
+     만큼 점이 좌표에서 왼쪽으로 밀렸다(이름이 길수록 더). 좌표의 진실은 점이므로 점 중심을 좌표에 고정한다.
+     --pad/--dot로 점 중심 오프셋을 계산 — 모바일 오버라이드도 변수만 갈면 따라온다. */
   .map-pin {
-    position: absolute; transform: translate(-50%, -50%);
+    --dot: 9px; --pad: 6px;
+    position: absolute;
+    transform: translate(calc(-1 * (var(--pad) + var(--dot) / 2)), -50%);
     display: flex; flex-direction: row; align-items: center; gap: 5px;
     cursor: pointer; pointer-events: auto; z-index: 2;
-    min-height: 34px; padding: 6px;   /* 터치 타깃 보장 (#47) */
+    min-height: 34px; padding: var(--pad);   /* 터치 타깃 보장 (#47) */
+  }
+  /* 지도 우측 절반의 핀: 이름을 점 왼쪽으로 — 라벨이 지도 밖으로 삐져나가던 것(모바일 실기 신고) */
+  .map-pin.flip {
+    flex-direction: row-reverse;
+    transform: translate(calc(-100% + var(--pad) + var(--dot) / 2), -50%);
   }
   .map-pin .pin-dot {
-    flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+    flex: 0 0 auto; width: var(--dot); height: var(--dot); border-radius: 50%;
     background: #f2ead6; border: 2px solid rgba(18, 14, 9, 0.85);
     box-shadow: 0 1px 3px rgba(0,0,0,0.5); transition: transform .12s;
   }
   .map-pin:hover .pin-dot { transform: scale(1.35); }
   .map-pin.sketch .pin-dot { background: #9a917f; }
   .map-pin.blocked .pin-dot { background: #7d8a99; }
+  /* #208: 떠오른 자리(#164)는 이모지 배지 대신 점의 맥박 — 한시 스팟의 시선 유도는 유지, 이모지는 0 */
+  .map-pin.spot .pin-dot { background: #ffd88a; animation: pinPulse 1.6s ease-in-out infinite; }
+  @keyframes pinPulse {
+    0%, 100% { box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 0 0 rgba(255, 216, 138, 0.55); }
+    50%      { box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 0 0 7px rgba(255, 216, 138, 0); }
+  }
   /* 좁은 화면(모바일 가로/세로): zoom 축소분을 상쇄해 마커를 키운다 — 터치 타깃 확보 */
   @media (max-width: 640px) {
-    .map-pin { min-height: 42px; }
-    .map-pin .pin-dot { width: 11px; height: 11px; }
+    .map-pin { min-height: 42px; --dot: 11px; }
     .map-pin .pin-rate { font-size: 12px; padding: 3px 7px; }
   }
   /* 성공률 칩 — 종이 위에서 읽히도록 반투명 배경 */
@@ -1324,7 +1328,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
 
   /* ── 모바일 ── */
   @media (max-width: 760px) {
-    #hud { width: 190px; padding: 8px; }
+    /* #208(디렉터 "허기·갈증 짤린다 → 가로로 늘리고 대신 접을 수 있게"): 구 190px 고정폭이 3열 게이지를
+       53px씩 쪼개 라벨을 죽였다("허기"→"허", 실측 g-name 8.6px). 화면 폭에 맞춰 늘린다.
+       ⚠️ 생 vw 금지 — .panel은 zoom:var(--uiz) 컨텍스트라 vw가 재해석된다(실측 96vw→190px). /var(--uiz) 상쇄가 확립 문법. */
+    #hud { width: min(calc(96vw / var(--uiz, 1)), 560px); padding: 8px; }
     #hud .shelter-name { font-size: 12px; }
     #hud .stat { font-size: 10px; }
     #hud .btn-row .pixel-btn { padding: 7px 1px; font-size: 10px; }

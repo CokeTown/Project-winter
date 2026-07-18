@@ -32,6 +32,10 @@ export function makeCatSystem(ctx) {
   // #193: 침대는 티어가 곧 높이(#157) — CAT_PERCH_Y.bed(T3 실측 0.63) 고정 조회면 T1/T2 매트리스 위 공중부양.
   //   #196 일반화: 소파·방석도 티어로 좌면이 변한다(지오 실측 감사) — TIER_TOP_Y[defId][tier] 우선, 표 밖 가구만 고정표.
   const perchYOf = i => {
+    // #209 F04: 러그는 floorTopByTier(furniture.js 실측 T1 0.065·T2 0.050·T3 0.049)가 티어별 최상면 — 퍼치도 이를 따라 T1 러그 위 파묻힘/티어 변경 시 붕뜸을 없앤다.
+    //   TIER_TOP_Y에 rug를 넣지 않는 이유: avatar.js seatOf가 같은 표를 읽어 러그를 아바타 착석 대상으로 오인한다(퍼치 전용 채널로 분리).
+    const ft = DEFS[i.defId]?.floorTopByTier;
+    if (ft && CAT_PERCH_Y[i.defId] != null) return ft[i.tier || 3] ?? CAT_PERCH_Y[i.defId];
     const tt = (TIER_TOP_Y || {})[i.defId];
     return (tt && CAT_PERCH_Y[i.defId] != null) ? (tt[i.tier || 3] ?? CAT_PERCH_Y[i.defId]) : CAT_PERCH_Y[i.defId];
   };
@@ -160,6 +164,10 @@ export function makeCatSystem(ctx) {
     // 래그돌: 흰크림 바디 + 갈색 포인트(귀/얼굴 마스크/발/꼬리) + 파란 눈 (시암보다 밝은 포인트)
     ragdoll: { fur: 0xefe9dd, stripe: 0xe6dfce, belly: 0xf6f2ea, point: 0x6b4f3a, ear: 0x6b4f3a, nose: 0xcf9088,
                faceBg: '#efe9dd', faceMuzzle: '#f6f2ea', eyeDark: '#2e5074', eyeHi: '#7ab0da', mask: '#6b4f3a', mouth: '#5a4636', lid: '#4a3c2e' },
+    // #119 서포터팩 전용 — 러시안블루: 은청색 솔리드(콜러포인트·줄무늬 최소) + 앰버 눈.
+    //   품종 시그니처는 초록 눈이나 '초록 눈 금지' 캐논 준수로 앰버 채택(black 선례). 지급은 DLC 소유 시 보장(입양·귀향).
+    russianblue: { fur: 0x6d7883, stripe: 0x616b76, belly: 0x828d99, point: 0x6d7883, ear: 0x6d7883, nose: 0x50565e,
+               faceBg: '#6d7883', faceMuzzle: '#828d99', eyeDark: '#7a5a12', eyeHi: '#e0b040', mask: null, mouth: '#3a3e44', lid: '#4a4e54' },
   };
   function catCoatId() { return CAT_COLORS[state.catCoat] ? state.catCoat : 'tabby'; }
   function catPalette() { return CAT_COLORS[catCoatId()]; }
@@ -656,17 +664,14 @@ export function makeCatSystem(ctx) {
       const shinTgt = 0; // 앉기 뒷다리 정강이 곧게(디렉터 3차): legB −1.5(수평 앞)와 합쳐 뒷다리가 지면에 곧게 뻗음. 굽히면(과거 1.3/0.4) 발끝이 말려 몸통 관통(흰 네모) → 0으로 제거.
       c._shin = (c._shin || 0) + (shinTgt - (c._shin || 0)) * Math.min(1, dt * 5);
       if (p.shin) { if (p.shin.bl) p.shin.bl.rotation.x = c._shin; if (p.shin.br) p.shin.br.rotation.x = c._shin; }
-      const bpivTgt = (c.mode === 'sit' || c.mode === 'sprawl') ? 1.6 * 0.02 : 6 * 0.02; // 앉기·엎드리기: 엉덩이 피벗 바닥 근처로 → 수평 뒷다리가 지면에 눕는다(앉기=앞, 엎드리기=뒤)
+      // 앉기·그루밍·엎드리기: 엉덩이 피벗 바닥 근처로 → 수평 뒷다리가 지면에 눕는다(앉기·그루밍=앞, 엎드리기=뒤)
+      // #208(디렉터 "엎드리기·앉기 말고 다른 한개가 다리 찐빠"): groom이 여기서만 빠져 있었다 — CAT_POSES.groom은
+      //   sit과 같은 legB −1.5(수평 뒷다리)를 쓰는데 피벗만 선 자세(0.12)로 남아 뒷다리가 공중에 뻗쳤다.
+      //   그걸 가리려고 뒷다리만 0.6배로 줄이던 땜빵이 있었고(앞다리는 1.0), 그 길이 불일치가 신고된 증상이다.
+      //   원인(피벗)을 고치면 sit과 같은 실루엣이 나오므로 축소 땜빵은 제거했다 — scale은 빌드 기본 1로 둔다.
+      const bpivTgt = (c.mode === 'sit' || c.mode === 'groom' || c.mode === 'sprawl') ? 1.6 * 0.02 : 6 * 0.02;
       c._bpiv = (c._bpiv === undefined ? 0.12 : c._bpiv) + (bpivTgt - (c._bpiv === undefined ? 0.12 : c._bpiv)) * Math.min(1, dt * 5);
       p.legs.bl.position.y = c._bpiv; p.legs.br.position.y = c._bpiv;
-    }
-    // 그루밍: 접힌 뒷다리 발끝 옆삐짐 방지 축소 (앉기는 무릎접힘으로 대체 — 그루밍만 유지)
-    {
-      const hs = c.mode === 'groom' ? 0.6 : 1;
-      const cur = p.legs.bl.scale.y;
-      const nv = cur + (hs - cur) * Math.min(1, dt * 6);
-      p.legs.bl.scale.y = nv;
-      p.legs.br.scale.y = nv;
     }
     // 앞다리 전완(팔꿈치) 굽힘 — 앞다리는 2마디(상완+전완). 기지개(stretch)만 ㄴ자로 접어 앞팔을 바닥 전방에 납작하게
     //   뻗는다(디렉터 신고 — 확대: "진짜 다리 뻗는 건 ㄴ자여야"). 그 외 포즈는 0(곧게)이라 단일 6px 다리처럼 보인다.

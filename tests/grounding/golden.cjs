@@ -36,10 +36,13 @@ const SCENES = [
   { id: 'z_container_snow', shelter: 'container', weather: 'snow', hour: 8, snow: 0.8 },
   { id: 'z_container_night', shelter: 'container', weather: 'clear', hour: 22 },
   { id: 'z_rooftop_rain', shelter: 'rooftop', weather: 'rain', hour: 8 },
-  // 동역학 씬(steps): 정적 세팅 후 stepGolden으로 고정 dt N프레임 진행 → dt구동 날씨(적설 누적/젖음 페이드)를
-  //   결정론적으로 박제. weatherfx 이관이 누적/페이드 수식을 바꾸면 이 씬들이 diff로 검거한다(정적 씬은 못 잡음).
-  { id: 'd_snow_accum', shelter: 'container', weather: 'snow', hour: 8, snow: 0, steps: 220 },
-  { id: 'd_rain_wet', shelter: 'rooftop', weather: 'rain', hour: 8, snow: 0, steps: 220 },
+  // #212 동역학 씬(d_snow_accum·d_rain_wet) 제외 결정: 이 둘은 stepGolden으로 눈/젖음을 누적한 뒤 캡처했는데,
+  //   누적 '상태'는 freezeForGolden 리셋 + stepGolden 재시드로 이제 bit-동일(실측)이나, 그 상태를 그리는
+  //   반투명 렌더(적설 캡·젖은 반사·비늘 파티클)가 오프스크린 SwiftShader의 스레드별 정렬 순서에 좌우돼
+  //   프로세스마다 ~19~53% 흔들렸다(within-process는 안정, cross-process만 흔들림 = 코드로 불가). 낙하 파티클·
+  //   반사·먼지 숨김(game.js _golden 블록)으로 정적 날씨 씬(z_container_snow·z_rooftop_rain)의 흔들림은
+  //   제거됐고 그 둘이 눈/비 지오·톤을 여전히 커버한다. dt구동 누적 수식 회귀는 코어 배터리(snowCover/wetness
+  //   값 검증)가 담당. 골든은 '결정론적 정적 렌더'만 남겨 신뢰 가능한 게이트로 유지한다.
   // bunker 뒷문 해금 상태: 후면 돔 반쪽이 wallList에 직접 push돼 컬링에 편입(잠김=불투명, 해금=투시).
   //   이 분기를 골든으로 커버해야 bunker build의 wallList 직접조작 이관이 무손실 검증된다.
   { id: 'z_bunker_backdoor', shelter: 'bunker', weather: 'clear', hour: 8, flags: { bunkerBackdoor: true } },

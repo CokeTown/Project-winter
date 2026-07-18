@@ -92,11 +92,27 @@ export function makeAvatarSystem(ctx) {
       for (const dx of [-2, 2])
         B(body, 0.8 * PX * s, 5 * PX * s, 0.8 * PX * s, 0xd8d4c8, dx * PX * s, torsoH - 6 * PX * s, 4.5 * PX * s); // 끈
       B(body, 8 * PX * s, 6 * PX * s, 2 * PX * s, P.beanie, 0, torsoH - 4 * PX * s, -5.2 * PX * s); // 등 뒤 후드 자락
+    } else if (style === 'suit') {
+      // #119 검정 정장: 재킷(검정) + 가슴 흰 와이셔츠 패널·목 칼라 + 붉은 넥타이 + 라펠 라인. 목도리 없음(style 지정 → !style 스카프 블록 스킵).
+      B(body, 13 * PX * s, torsoH, 8.5 * PX * s, P.coat, 0, torsoH / 2, 0);            // 재킷 몸통
+      B(body, 13.6 * PX * s, 7 * PX * s, 9 * PX * s, P.coatHem, 0, 3.5 * PX * s, 0);   // 재킷 밑단
+      B(body, 6 * PX * s, 17 * PX * s, 0.7 * PX * s, P.shirt, 0, torsoH - 9 * PX * s, 4.3 * PX * s);      // 와이셔츠 앞판(넓게 — 넥타이 양옆 흰 노출)
+      B(body, 5.5 * PX * s, 2.4 * PX * s, 8.7 * PX * s, P.shirt, 0, torsoH - 1.6 * PX * s, 0);            // 셔츠 칼라(목)
+      for (const lx of [-3.2, 3.2])                                                   // 라펠 라인(셔츠/재킷 경계 가는 선)
+        B(body, 0.9 * PX * s, 15 * PX * s, 0.85 * PX * s, P.coatHem, lx * PX * s, torsoH - 9 * PX * s, 4.33 * PX * s);
+      B(body, 1.8 * PX * s, 2.3 * PX * s, 1 * PX * s, P.tie, 0, torsoH - 3.2 * PX * s, 4.44 * PX * s);    // 넥타이 매듭
+      B(body, 2.1 * PX * s, 10 * PX * s, 1 * PX * s, P.tie, 0, torsoH - 10 * PX * s, 4.44 * PX * s);      // 넥타이 몸
     } else {
       // 클래식 방한 코트 (기본 + 색 복장 9종) — 기존 지오 그대로
       B(body, 13 * PX * s, torsoH, 8.5 * PX * s, P.coat, 0, torsoH / 2, 0);
       B(body, 15 * PX * s, 7 * PX * s, 10 * PX * s, P.coatHem, 0, 3.5 * PX * s, 0);
       B(body, 1.2 * PX * s, torsoH - 8 * PX * s, 0.8 * PX * s, P.coatHem, 0, torsoH / 2 - 2 * PX * s, 4.4 * PX * s);
+      // #119 얼룩파카: 코트 앞면에 2톤 얼룩을 살짝 도드라지게 얹는다(복셀 위장 무늬). 클래식 지오·애니 무변.
+      if (outfit && outfit.camo) {
+        const CB = [[-3, 22, 5, 4, 0], [2.6, 24, 4, 5, 1], [0, 16, 5.5, 4.5, 0], [-3.5, 12, 4, 4, 1], [3, 14, 4.5, 4, 0], [-1, 9, 5, 3.6, 1], [4, 20, 3, 3, 1], [-4.5, 26, 3, 3, 0], [1.5, 29, 3.5, 2.6, 0]];
+        for (const [bx, byc, bw, bh, ti] of CB)
+          B(body, bw * PX * s, bh * PX * s, 0.6 * PX * s, outfit.camo[ti], bx * PX * s, byc * PX * s, 4.35 * PX * s);
+      }
     }
     const arms = {};
     const armX = style === 'puffer' ? 8.8 : 8.2; // 패딩은 어깨도 두툼
@@ -335,9 +351,22 @@ export function makeAvatarSystem(ctx) {
     if (!av) return;
     av.mode = 'wake'; av.wakeT = 2.6; av.tgt = null; av.use = rect;
     const g = av.g;
-    if (rect) { g.position.set(rect.x, (rect.y ?? 0.63) + 0.1, rect.z); g.rotation.y = ((rect.rot || 0) * Math.PI / 2) + Math.PI / 2; }
-    else g.position.y = 0.08;
-    g.rotation.x = -Math.PI / 2 + 0.05;
+    // #209 취침 눕기 2결함 동시 수정:
+    //   ① 오일러 순서 YXZ → rotation.y가 (Rx 뒤에 적용되는) 진짜 월드 yaw로 작동. XYZ 기본은 Ry가 롤이 돼
+    //      rot=1이면 얼굴을 매트리스에 박고 엎드렸다. roll 보정용 +π/2 오프셋도 제거.
+    //   ② 발바닥 피벗이 침대 중심이라 몸이 -z로만 뻗어 머리가 침대 밖·헤드보드 관통 → 침대 장축 방향으로
+    //      shift만큼 밀어 머리를 헤드보드 쪽 베개에 정렬. fp.d는 반드시 DEFS.bed.fp.d(원 장축 2.3) —
+    //      footprintOf는 홀수 rot에서 w↔d를 스왑해 단축이 잡히면 머리가 짧은 변으로 뻗는 새 버그가 난다.
+    if (rect) {
+      g.rotation.order = 'YXZ';
+      const yaw = (rect.rot || 0) * Math.PI / 2;
+      const shift = (((DEFS.bed && DEFS.bed.fp && DEFS.bed.fp.d) || 2.3) / 2) - 0.62; // 발치로 밀기(=0.53)
+      g.position.set(rect.x + shift * Math.sin(yaw), (rect.y ?? 0.63) + 0.1, rect.z + shift * Math.cos(yaw));
+      g.rotation.set(-Math.PI / 2 + 0.05, yaw, 0);
+    } else {
+      g.position.y = 0.08;
+      g.rotation.x = -Math.PI / 2 + 0.05;
+    }
     resetPose();
     shadowDirty(); // 침대 위 눕기 점프 — 즉시 갱신
   }
@@ -360,6 +389,24 @@ export function makeAvatarSystem(ctx) {
       av.mode = 'walk'; av.use = null; setTarget(sp);
     }
     return Math.abs(x - g.position.x) < fp.w / 2 + 0.24 && Math.abs(z - g.position.z) < fp.d / 2 + 0.24;
+  }
+
+  // #209 F38: 러그 상면 접지 — floorLift 가구(러그)를 밟고 선 발밑 높이(겹친 러그는 맨 위 층).
+  //   game.js floorLiftAt와 동일 계보(floorTopByTier 실측). hitBlock은 그대로 통과, 높이만 조회한다.
+  //   고양이는 CAT_PERCH_Y.rug로 러그 위에 서는데 아바타만 y=0으로 통과하던 접지 규약 균열을 봉합.
+  function floorYAt(x, z) {
+    let y = 0;
+    for (const it of items) {
+      if (it.support) continue; // 상판 위 소품은 바닥이 아니다
+      const d = DEFS[it.defId];
+      if (!d || !d.floorLift) continue;
+      const top = (d.floorTopByTier || {})[it.tier || 3] || 0;
+      if (!top) continue;
+      const fp = footprintOf(it);
+      if (fp && Math.abs(x - it.x) <= fp.w / 2 && Math.abs(z - it.z) <= fp.d / 2)
+        y = Math.max(y, (it.y || 0) + top);
+    }
+    return y;
   }
 
   function update(t, dt) {
@@ -443,6 +490,8 @@ export function makeAvatarSystem(ctx) {
         } else av.blockedT = 0;
         const moved = Math.hypot(nx - oldX, nz - oldZ);
         g.position.x = nx; g.position.z = nz; av.moved = moved;
+        // #209 F38: 러그 상면 따라가기 — 발밑이 floorLift 가구면 그 상면으로 부드럽게(고양이 baseY 문법 계보).
+        g.position.y += (floorYAt(nx, nz) - g.position.y) * Math.min(1, dt * 8);
         // 회전: 실제 이동 방향을 본다(돌아갈 땐 도는 쪽으로 몸을 튼다). 안 움직이면 목표 방향 유지.
         const hx = moved > 1e-4 ? nx - oldX : dx, hz = moved > 1e-4 ? nz - oldZ : dz;
         const want = Math.atan2(hx, hz);
@@ -497,7 +546,10 @@ export function makeAvatarSystem(ctx) {
     let sx = it.x, sz = it.z, ry = (it.rot || 0) * Math.PI / 2; // 기본: 가구 정면 방향 정좌 (관례: rot0=+z)
     if (it.defId === 'bed') {
       // 침대는 걸터앉기(디렉터: "침대랑 상호작용") — 접근한 쪽 모서리에 앉아 바깥을 본다
-      const fp = footprintOf(it) || { w: 1.8, d: 2.3 };
+      // #209 F25: 걸터앉기 클램프 fp는 티어별 실측 폭이어야 한다 — DEFS.bed.fp(1.8×2.3)는 T3 프레임 외곽이라
+      //   T1/T2(실측 폭 1.05)에선 지오 밖 0.155 지점에 앉혀 허공 착석. 착석 전용 fp만 티어 실측으로 좁힌다(충돌·배치 fp는 T3 외곽 유지).
+      const seatFp = { 1: { w: 1.05, d: 2.0 }, 2: { w: 1.05, d: 2.1 } }[it.tier];
+      const fp = seatFp ? ((it.rot % 2) ? { w: seatFp.d, d: seatFp.w } : { w: seatFp.w, d: seatFp.d }) : (footprintOf(it) || { w: 1.8, d: 2.3 });
       const cl = (v, m) => Math.max(-m, Math.min(m, v));
       sx = it.x + cl((g.position.x - it.x) * 3, fp.w / 2 - 0.22);
       sz = it.z + cl((g.position.z - it.z) * 3, fp.d / 2 - 0.22);
@@ -522,10 +574,11 @@ export function makeAvatarSystem(ctx) {
   // #86④ 옷 갈아입기: 제자리 재구축 (위치/방향 보존 — 옷장에서 입는 즉시 반영)
   function refreshOutfit() {
     if (!av) return respawn();
-    const p = av.g.position.clone(), ry = av.g.rotation.y;
+    const prev = { mode: av.mode, use: av.use, exitSpot: av.exitSpot, timer: av.timer,
+                   pos: av.g.position.clone(), rot: av.g.rotation.clone() };
     respawn();
-    av.g.position.set(p.x, 0, p.z);
-    av.g.rotation.y = ry;
+    Object.assign(av, { mode: prev.mode, use: prev.use, exitSpot: prev.exitSpot, timer: prev.timer });
+    av.g.position.copy(prev.pos); av.g.rotation.copy(prev.rot);
   }
 
   return {
@@ -536,5 +589,12 @@ export function makeAvatarSystem(ctx) {
     _debug: () => av ? { mode: av.mode, x: +av.g.position.x.toFixed(2), z: +av.g.position.z.toFixed(2), y: +av.g.position.y.toFixed(2), vis: av.g.visible, use: av.use ? (av.use.defId || 'rect') : null, outfit: getOutfit ? getOutfit() : 'default' } : null,
     _forceNext: () => pickNext(), // QA: 행동 추첨 강제
     _walkTo: (x, z) => { if (av) { unseat(); av.g.rotation.x = 0; av.g.position.y = 0; av.mode = 'walk'; av.use = null; setTarget({ x, z }); } }, // QA: 강제 횡단 (라우팅 실증)
+    _wakePose: (rect) => { // #209 QA: wakeOnBed 후 눕기 포즈 실측 (머리방향=로컬-z, 가슴법선=코트앞면 로컬+z)
+      if (!av) return null; wakeOnBed(rect); av.g.updateMatrixWorld(true);
+      const dir = (x, y, z) => new THREE.Vector3(x, y, z).transformDirection(av.g.matrixWorld);
+      const hd = dir(0, 0, -1), cn = dir(0, 0, 1), hp = av.g.localToWorld(new THREE.Vector3(0, 1.35, 0));
+      const r = v => [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)];
+      return { headDir: r(hd), chestN: r(cn), headWorld: r(hp) };
+    },
   };
 }

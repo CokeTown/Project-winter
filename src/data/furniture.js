@@ -19,7 +19,7 @@ const DEFS = {
         // T1 크루드: 바닥 직치 1인 매트리스 — 꺼짐·얼룩·눌린 베개. 프레임 없음.
         const mat = 0xb0a894;
         B(g, 1.05, 0.16, 2.0, mat, 0, 0.08, 0);                       // 꺼진 매트리스
-        B(g, 1.05, 0.05, 2.0, shade(mat, 0.72), 0, 0.025, 0);         // 밑단 때 탄 띠
+        B(g, 1.06, 0.05, 2.01, shade(mat, 0.72), 0, 0.025, 0);         // 밑단 때 탄 띠
         B(g, 0.46, 0.022, 0.6, shade(mat, 0.62), -0.18, 0.172, 0.42); // 얼룩 ①
         B(g, 0.34, 0.022, 0.42, shade(mat, 0.7), 0.26, 0.172, -0.32); // 얼룩 ②
         B(g, 0.5, 0.09, 0.32, 0xcfc8b6, 0, 0.2, -0.76);               // 눌린 베개
@@ -63,7 +63,7 @@ const DEFS = {
       if (tier === 1) {
         const g = new THREE.Group();
         const tape = 0xb4b6ba, pallet = 0x8a7550;
-        B(g, 1.9, 0.14, 0.85, pallet, 0, 0.1, 0);                            // 팔레트 받침
+        B(g, 1.9, 0.17, 0.85, pallet, 0, 0.085, 0);                          // #209: 받침 밑면 0.03 부유 — 좌면(TIER_TOP_Y 0.46) 유지 위해 받침 상단(0.17) 고정하고 밑으로만 늘려 접지(h 0.14→0.17·중심 0.1→0.085)
         for (const z of [-0.36, 0, 0.36]) B(g, 1.86, 0.05, 0.16, shade(pallet, 0.85), 0, 0.19, z);
         B(g, 0.9, 0.3, 0.75, shade(c, 0.6), -0.45, 0.4, 0);                  // 찢어진 시트 쿠션 ①(꺼짐)
         const cu2 = B(g, 0.9, 0.26, 0.75, shade(c, 0.55), 0.46, 0.38, 0.02); // 쿠션 ②(더 꺼짐·어긋남)
@@ -109,9 +109,10 @@ const DEFS = {
       if (tier === 1) {
         const g = new THREE.Group();
         const crate = 0x8a7550;
-        B(g, 0.48, 0.06, 0.48, crate, 0, 0.43, 0);                           // 윗면(앉는 데)
-        for (const s of [-0.21, 0, 0.21]) B(g, 0.48, 0.34, 0.05, shade(crate, 0.85), 0, 0.22, s); // 세로 널
-        B(g, 0.05, 0.34, 0.48, shade(crate, 0.8), -0.21, 0.22, 0); B(g, 0.05, 0.34, 0.48, shade(crate, 0.82), 0.21, 0.22, 0);
+        B(g, 0.48, 0.06, 0.48, crate, 0, 0.43, 0);                           // 윗면(앉는 데) — 좌면(TIER_TOP_Y 0.415)이라 고정
+        // #209: 널 밑면이 0.05 부유 — 좌면을 못 내리니(퍼치·착석 앵커) 널만 아래로 늘려 T3와 같은 -0.005 접지(상단 0.39 유지, h 0.34→0.395·중심 0.22→0.1925).
+        for (const s of [-0.21, 0, 0.21]) B(g, 0.48, 0.395, 0.05, shade(crate, 0.85), 0, 0.1925, s); // 세로 널
+        B(g, 0.05, 0.395, 0.48, shade(crate, 0.8), -0.21, 0.1925, 0); B(g, 0.05, 0.395, 0.48, shade(crate, 0.82), 0.21, 0.1925, 0);
         B(g, 0.2, 0.012, 0.2, shade(crate, 0.6), 0.08, 0.462, 0.05);         // 얼룩
         return g;
       }
@@ -146,7 +147,7 @@ const DEFS = {
           B(g, 0.34, 0.24, 0.24, brick, -0.5, 0.12, z); B(g, 0.34, 0.24, 0.24, shade(brick, 0.85), -0.5, 0.36, z);
           B(g, 0.34, 0.24, 0.24, shade(brick, 0.9), 0.5, 0.12, z); B(g, 0.34, 0.24, 0.24, brick, 0.5, 0.36, z);
         }
-        B(g, 0.34, 0.2, 0.72, shade(brick, 0.8), -0.5, 0.58, 0); B(g, 0.34, 0.2, 0.72, shade(brick, 0.82), 0.5, 0.58, 0);
+        B(g, 0.34, 0.235, 0.72, shade(brick, 0.8), -0.5, 0.5975, 0); B(g, 0.34, 0.235, 0.72, shade(brick, 0.82), 0.5, 0.5975, 0);
         const top = B(g, 1.4, 0.05, 0.8, ply, 0, 0.74, 0);                   // 합판 한 장(얇음)
         top.rotation.y = 0.02;                                               // 삐뚤게 얹힘
         B(g, 0.4, 0.012, 0.3, shade(ply, 0.7), 0.3, 0.77, 0.15);             // 얼룩
@@ -246,6 +247,7 @@ const DEFS = {
         }
         const lean = B(g, 0.06, 0.3, 0.2, bookColors[0], 0.24, 0.72, 0.01);  // 기대 쓰러진 책
         lean.rotation.z = -0.5;
+        for (const m of g.children) m.position.y -= 0.025; // #209: 바닥 판자 밑면이 0.025 부유 → 전체 2.5cm 하강해 T3(0)와 접지 일치(퍼치/스택 앵커 없음)
         return g;
       }
       if (tier === 2) {
@@ -271,6 +273,7 @@ const DEFS = {
             x += bw + 0.012;
           }
         }
+        for (const m of g.children) m.position.y += 0.011; // #209: z-기울기(0.022)로 왼쪽 기둥 바깥밑동이 0.011 매몰 → 전체 1.1cm 상승해 T3(0)와 접지 일치
         return g;
       }
       const g = new THREE.Group();
@@ -339,6 +342,7 @@ const DEFS = {
       crate(0.22, 0.2, -0.16, 0.4, shade(c, 0.85)); // 옆 상자
       crate(-0.12, 0.63, 0.06, 0.4, shade(c, 1.12)); // 위 상자(열림)
       B(g, 0.1, 0.14, 0.1, 0xb84a3a, -0.22, 0.74, 0.05); B(g, 0.09, 0.13, 0.09, 0xa8b0b8, -0.08, 0.74, 0.11); B(g, 0.09, 0.17, 0.09, 0xc89a4a, -0.02, 0.75, -0.02); // 열린 상자 안 보급품
+      for (const m of g.children) m.position.y -= 0.035; // #209: crate() y=중심이라 하단 상자 밑면이 0.035 부유 → 전체 3.5cm 하강 접지
       return g;
     }
   },
@@ -410,6 +414,15 @@ const DEFS = {
     colorNamesEn: ['Red', 'Blue', 'Green', 'Beige'],
     colors: [0x9e524e, 0x54688a, 0x6a7f5b, 0xc4b295],
     tiered: true, // #157: T1 골판지 위 담요 조각 → T2 해진 러그(올 풀림) → T3 현행. 두께 유지(noCollide 평면).
+    // #209(디렉터 "러그인지 침대인지 아직도 접합 아니야"): 러그는 '바닥을 들어올린다'.
+    //   surface/stackable(테이블 상판 문법)과 별개 축 — 그 문법을 쓰면 침대를 stackable로 만들어야 하고,
+    //   그러면 침대를 테이블 위에 올릴 수 있게 된다. floorLift는 위에 오는 게 무엇이든 상면에 앉힌다.
+    //   러그끼리 겹칠 때도 위 러그가 얹혀 '동일 평면 z-fighting'(신고 스크린샷의 그것)이 사라진다.
+    floorLift: true,
+    // 티어별 실측 최고점 (B(g,w,h,d,c,x,y,z)의 y는 중심 → top = y + h/2):
+    //   T1 접힌 귀퉁이 0.04+0.025=0.065 · T2 해진 패치 0.024+0.026=0.050 · T3 안쪽 층 0.024+0.025=0.049.
+    //   최고점을 쓰는 이유: 그보다 낮게 잡으면 위에 얹힌 러그/가구가 이 돌출부를 파고든다.
+    floorTopByTier: { 1: 0.065, 2: 0.050, 3: 0.049 },
     build(c, ci, sk, tier) {
       if (tier === 1) {
         const g = new THREE.Group();
@@ -429,7 +442,7 @@ const DEFS = {
         B(g, 1.9, 0.045, 1.2, shade(c, 0.75), 0, 0.022, 0);
         B(g, 1.3, 0.05, 0.7, shade(c, 0.9), 0, 0.024, 0);
         m1.castShadow = false;
-        B(g, 0.4, 0.052, 0.3, shade(c, 0.5), -0.45, 0.024, 0.3);             // 해진 얼룩 패치
+        B(g, 0.4, 0.052, 0.3, shade(c, 0.5), -0.42, 0.024, 0.3);             // 해진 얼룩 패치
         B(g, 0.25, 0.052, 0.2, shade(c, 0.55), 0.55, 0.024, -0.35);
         for (const [x, z, r] of [[-1.05, 0.5, 0.4], [-1.02, -0.3, -0.3], [1.04, 0.15, 0.5]]) {
           const th = B(g, 0.14, 0.02, 0.03, shade(c, 0.8), x, 0.02, z);      // 올 풀림(가장자리 실)
@@ -730,7 +743,7 @@ const DEFS = {
         B(g, 0.42, 0.05, 0.04, 0xb4b6ba, 0, 0.66, 0.16);           // 테이프 밴드 2
         B(g, 0.04, 0.2, 0.42, 0xb4b6ba, 0.17, 0.95, 0);
         Cyl(g, 0.05, 0.05, 0.12, 0x3f3a33, 0.2, 0.6, 0.14, 6).rotation.z = Math.PI / 2;
-        B(g, 0.16, 0.12, 0.16, shade(0xd4cfc2, 0.8), 0.24, 0.31, 0.14); // 찌든 컵
+        B(g, 0.16, 0.12, 0.16, shade(0xd4cfc2, 0.8), 0.2, 0.56, 0.14); // #209: 찌든 컵도 T3와 동일 — 상면 위·급수구 아래로(0.24,0.31→0.2,0.56)
         Cyl(g, 0.12, 0.14, 0.08, shade(0x3f3a33, 0.85), 0, 1.16, 0, 8);
         return g;
       }
@@ -741,7 +754,7 @@ const DEFS = {
       wat.material.emissive = new THREE.Color(0x2a4a66);
       wat.material.emissiveIntensity = 0.4; wat.userData.glow = true;
       Cyl(g, 0.05, 0.05, 0.12, 0x3f3a33, 0.2, 0.6, 0.14, 6).rotation.z = Math.PI / 2;
-      B(g, 0.16, 0.12, 0.16, 0xd4cfc2, 0.24, 0.31, 0.14);         // 컵
+      B(g, 0.16, 0.12, 0.16, 0xd4cfc2, 0.2, 0.56, 0.14);         // #209: 컵이 캐비닛(상면0.5) 속 매몰+측면 돌출이라 상면 위·급수구(y0.557~) 아래로 올림(0.24,0.31→0.2,0.56)
       Cyl(g, 0.12, 0.14, 0.08, 0x3f3a33, 0, 1.16, 0, 8);          // 뚜껑
       return g;
     }
@@ -764,6 +777,7 @@ const DEFS = {
       const ind = B(g, 0.07, 0.05, 0.02, 0xffcc66, -0.3, 0.52, 0.29);
       ind.material.emissive = new THREE.Color(0xcc8822);
       ind.material.emissiveIntensity = 1; ind.userData.glow = true;
+      for (const m of g.children) m.position.y -= 0.04; // #209: 프레임 받침 밑면이 0.04 부유 → 전체 4cm 하강 접지
       return g;
     }
   },
@@ -866,6 +880,7 @@ const DEFS = {
         B(g, 0.05, 0.22, 0.5, shade(crate, 0.8), -0.34, 0.13, 0); B(g, 0.05, 0.22, 0.5, shade(crate, 0.82), 0.34, 0.13, 0);
         B(g, 0.24, 0.015, 0.2, shade(crate, 0.6), 0.18, 0.305, 0.08);        // 얼룩
         Cyl(g, 0.04, 0.03, 0.05, 0x8a8f96, -0.15, 0.33, -0.05, 8);           // 양철 컵 하나
+        for (const m of g.children) m.position.y -= 0.02; // #209: 옆 널 밑면이 0.02 부유 → 전체 2cm 하강해 T2/T3(0)와 접지 일치(퍼치/스택 앵커 없음)
         return g;
       }
       if (tier === 2) {
@@ -873,7 +888,7 @@ const DEFS = {
         const topW = B(g, 0.9, 0.06, 0.55, shade(c, 0.78), 0, 0.3, 0);       // 바랜 상판(기움)
         topW.rotation.z = 0.02;
         for (const [i, [x, z]] of [[-0.38, -0.2], [0.38, -0.2], [-0.38, 0.2], [0.38, 0.2]].entries())
-          B(g, 0.06, i === 3 ? 0.24 : 0.28, 0.06, shade(c, 0.68), x, i === 3 ? 0.12 : 0.14, z); // 다리 하나 짧음
+          B(g, 0.06, i === 3 ? 0.24 : 0.28, 0.06, shade(c, 0.68), x, i === 3 ? 0.158 : 0.14, z); // 다리 하나 짧음(#209: 밑동을 3.8cm 띄우고 상판 밑면 0.2776에 접합해 덜컹거리는 그림)
         const ring = Cyl(g, 0.05, 0.05, 0.005, shade(c, 0.5), -0.2, 0.335, 0.05, 10); // 컵자국 링 2
         ring.rotation.y = 0.2;
         Cyl(g, 0.04, 0.04, 0.005, shade(c, 0.55), 0.18, 0.335, -0.1, 10);
@@ -1027,8 +1042,8 @@ const DEFS = {
       // 이중 급수구
       Cyl(g, 0.045, 0.045, 0.14, 0x3f3a33, 0.2, 0.66, 0.16, 6).rotation.z = Math.PI / 2;
       Cyl(g, 0.045, 0.045, 0.14, 0x3f3a33, -0.2, 0.66, 0.16, 6).rotation.z = Math.PI / 2;
-      B(g, 0.16, 0.1, 0.14, 0xd4cfc2, 0.24, 0.4, 0.16);            // 컵1
-      B(g, 0.16, 0.1, 0.14, 0xd4cfc2, -0.24, 0.4, 0.16);           // 컵2
+      B(g, 0.16, 0.1, 0.14, 0xd4cfc2, 0.2, 0.65, 0.16);            // 컵1
+      B(g, 0.16, 0.1, 0.14, 0xd4cfc2, -0.2, 0.65, 0.16);           // 컵2
       const ind = B(g, 0.06, 0.04, 0.02, 0x88ccff, 0, 0.5, 0.28);
       ind.material.emissive = new THREE.Color(0x4499dd);
       ind.material.emissiveIntensity = 1; ind.userData.glow = true;
@@ -1066,7 +1081,9 @@ const DEFS = {
         B(g, 0.34, 0.06, 0.02, pal[1], 0, 0.47, 0.021);    // 언덕
         B(g, 0.34, 0.04, 0.02, pal[2], 0, 0.42, 0.021);    // 땅
       }
-      const easel = B(g, 0.06, 0.24, 0.06, shade(c, 0.8), 0, 0.14, -0.05); // 뒷받침
+      // #209: 이젤을 늘려(h 0.24→0.40, 중심 0.14→0.20) 밑동을 바닥(0)에 접지 + 상단(≈0.40)이 액자 하단(0.34)에
+      //   물리게 한다. 이전엔 이젤이 1.65cm 뜨고 액자 본체와 7.65cm 끊겨 있었다(회전 x-0.3 포함 실측).
+      const easel = B(g, 0.06, 0.40, 0.06, shade(c, 0.8), 0, 0.20, -0.06); // 뒷받침
       easel.rotation.x = -0.3;
       return g;
     }
@@ -1194,11 +1211,12 @@ const DEFS = {
     colors: [0xd8d4cc, 0xa8433f, 0x6a7047, 0x8a8f96],
     build(c) {
       const g = new THREE.Group();
-      B(g, 0.44, 0.3, 0.3, c, 0, 0.2, 0);                        // 본체
-      B(g, 0.46, 0.06, 0.32, shade(c, 0.85), 0, 0.36, 0);        // 뚜껑 테두리
-      B(g, 0.12, 0.02, 0.02, 0xa8433f, 0, 0.24, 0.16);          // 적십자 (가로)
-      B(g, 0.02, 0.12, 0.02, 0xa8433f, 0, 0.24, 0.16);          // 적십자 (세로)
-      B(g, 0.14, 0.05, 0.04, shade(c, 0.7), 0, 0.37, 0);        // 손잡이
+      // #209: 전체 5cm 부유였다(본체 밑면 0.05) → 전 메시 −0.05로 밑면 0 접지(선반 위에서도 상판에 밀착).
+      B(g, 0.44, 0.3, 0.3, c, 0, 0.15, 0);                       // 본체
+      B(g, 0.46, 0.06, 0.32, shade(c, 0.85), 0, 0.31, 0);        // 뚜껑 테두리
+      B(g, 0.12, 0.02, 0.02, 0xa8433f, 0, 0.19, 0.16);          // 적십자 (가로)
+      B(g, 0.02, 0.12, 0.02, 0xa8433f, 0, 0.19, 0.16);          // 적십자 (세로)
+      B(g, 0.14, 0.05, 0.04, shade(c, 0.7), 0, 0.32, 0);        // 손잡이
       return g;
     }
   },
@@ -1213,8 +1231,9 @@ const DEFS = {
       glass.material.emissiveIntensity = 0.35; glass.userData.glow = true;
       // 반사 하이라이트 (사선 밴드)
       const hi = B(g, 0.06, 1.0, 0.01, 0xdfe6ea, -0.05, 0.85, 0.041); hi.rotation.z = 0.12;
-      // 받침 다리
-      for (const sx of [-0.16, 0.16]) { const leg = B(g, 0.05, 0.3, 0.16, shade(c, 0.8), sx, 0.06, 0); leg.rotation.x = 0.2; }
+      // 받침 다리 — #209: 회전(x0.2) 포함 실측 최저코너가 -0.163이라 다리 밑이 10.3cm 매몰이었다.
+      //   중심 y를 0.163으로 올려 다리 밑동을 바닥(0)에 접지(프레임은 발 위 3cm = '발 달린 거울'로 자연).
+      for (const sx of [-0.16, 0.16]) { const leg = B(g, 0.05, 0.3, 0.16, shade(c, 0.8), sx, 0.163, 0); leg.rotation.x = 0.2; }
       return g;
     }
   },
@@ -1243,6 +1262,58 @@ const DEFS = {
       return g;
     }
   },
+  // #119 서포터팩 전용 데코 — 곰인형. 순수 코스메틱(쾌적/조명 기여 0). 고양이가 위에 웅크린다(CAT_PERCH_Y.teddybear).
+  //   dlc:'supporter' → 제작 레시피·툴바 노출이 Platform.dlc.owns('supporter') 뒤에서만. 색은 플러시 4색.
+  teddybear: {
+    name: '곰인형', nameEn: 'Teddy Bear', emoji: '🧸', fp: { w: 0.5, d: 0.42 }, dlc: 'supporter', comfort: 0,
+    colorNames: ['갈색', '크림', '회색', '캐러멜'], colorNamesEn: ['Brown', 'Cream', 'Grey', 'Caramel'],
+    colors: [0x8a5a34, 0xd8c4a0, 0x9a9084, 0xb07a3e],
+    build(c) {
+      const g = new THREE.Group();
+      const belly = shade(c, 1.28), snout = shade(c, 1.22), dark = 0x241a12;
+      // 앉은 몸통 + 배 패치
+      B(g, 0.3, 0.32, 0.24, c, 0, 0.2, 0).castShadow = true;
+      B(g, 0.18, 0.2, 0.04, belly, 0, 0.2, 0.13);                        // 배 패치
+      // 다리(앞으로 뻗은)
+      for (const sx of [-1, 1]) { B(g, 0.13, 0.11, 0.24, c, sx * 0.085, 0.055, 0.06); B(g, 0.1, 0.06, 0.05, snout, sx * 0.085, 0.05, 0.19); } // 발바닥 패드
+      // 팔(몸통 옆에)
+      for (const sx of [-1, 1]) { const a = B(g, 0.09, 0.2, 0.11, c, sx * 0.19, 0.24, 0.02); a.rotation.z = sx * 0.25; }
+      // 머리 + 귀 + 주둥이 + 코 + 눈
+      B(g, 0.26, 0.24, 0.23, c, 0, 0.48, 0.01).castShadow = true;
+      for (const sx of [-1, 1]) B(g, 0.1, 0.1, 0.06, c, sx * 0.095, 0.6, 0);          // 귀
+      for (const sx of [-1, 1]) B(g, 0.05, 0.05, 0.02, dark, sx * 0.095, 0.6, 0.005); // 귀 안쪽
+      B(g, 0.13, 0.1, 0.07, snout, 0, 0.45, 0.14);                        // 주둥이
+      B(g, 0.045, 0.035, 0.03, dark, 0, 0.48, 0.185);                     // 코
+      for (const sx of [-1, 1]) B(g, 0.03, 0.035, 0.02, dark, sx * 0.06, 0.52, 0.135); // 눈
+      // 목도리(코지 액센트 — 마지막 겨울의 온기)
+      B(g, 0.28, 0.05, 0.25, 0xb84a3a, 0, 0.36, 0.01);
+      return g;
+    }
+  },
+  // #119 서포터팩 전용 — 전구 무드등(바닥 랜턴). 따뜻한 전구가 유리 안에서 빛난다. emissive 발광이되 selfLit/comfort
+  //   플래그가 없어 조명·쾌적 메커닉엔 기여 0(순수 코스메틱 — 페이투윈 회피, 방은 여전히 실광원이 필요). 고양이가 뚜껑 위에 웅크린다.
+  moodlantern: {
+    name: '전구 무드등', nameEn: 'Fairy-Light Lantern', emoji: '🏮', fp: { w: 0.4, d: 0.4 }, dlc: 'supporter', comfort: 0,
+    colorNames: ['앰버', '로즈', '민트', '허니'], colorNamesEn: ['Amber', 'Rose', 'Mint', 'Honey'],
+    colors: [0xffcf88, 0xffb0a0, 0xb8e6c8, 0xffdf9a],
+    build(c) {
+      const g = new THREE.Group();
+      const glass = new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.9, transparent: true, opacity: 0.82 });
+      const bulbMat = new THREE.MeshLambertMaterial({ color: 0xfff2c8, emissive: 0xffdf9a, emissiveIntensity: 1.4 });
+      Cyl(g, 0.15, 0.17, 0.04, 0x3a3128, 0, 0.02, 0, 12).castShadow = true;                 // 바닥 원반(황동)
+      const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.15, 0.26, 14), glass);   // 유리 항아리(발광)
+      jar.position.y = 0.17; g.add(jar);
+      for (let i = 0; i < 7; i++) {                                                          // 안쪽 전구 코일
+        const a = i * 1.4, r = 0.06 + (i % 2) * 0.03;
+        const b = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 5), bulbMat);
+        b.position.set(Math.cos(a) * r, 0.09 + i * 0.028, Math.sin(a) * r); g.add(b);
+      }
+      Cyl(g, 0.16, 0.16, 0.03, 0x2a2620, 0, 0.315, 0, 12);                                   // 황동 테두리
+      const lid = Cyl(g, 0.155, 0.155, 0.04, 0x4a4038, 0, 0.35, 0, 12); lid.castShadow = true; // 나무 뚜껑(고양이 자리)
+      Cyl(g, 0.012, 0.012, 0.05, 0x2a2620, 0, 0.4, 0, 6);                                     // 손잡이 고리 축
+      return g;
+    }
+  },
   phonograph: {
     name: '축음기', nameEn: 'Phonograph', emoji: '🎶', fp: { w: 0.6, d: 0.55 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
@@ -1260,6 +1331,7 @@ const DEFS = {
       horn.position.set(0.14, 0.78, 0.05); horn.rotation.z = -0.7; horn.rotation.x = -0.35; horn.castShadow = true; g.add(horn);
       Cyl(g, 0.02, 0.02, 0.16, 0xb08a3a, 0.03, 0.64, 0.02, 6).rotation.z = 0.7;  // 나팔 연결관
       const crank = Cyl(g, 0.015, 0.015, 0.12, 0x3a3530, 0.27, 0.36, 0, 6); crank.rotation.z = Math.PI / 2; // 크랭크
+      for (const m of g.children) m.position.y -= 0.02; // #209: 다리 밑면이 0.02 부유 → 전체 2cm 하강 접지
       return g;
     }
   },
@@ -1291,7 +1363,8 @@ const DEFS = {
         Cyl(g, 0.03, 0.03, 0.14, c, side * 0.38, 1.18, 0, 6);          // 팔 끝 수직 올림대
         cup(side * 0.38, 1.26);                                         // 좌우 초 (중앙보다 낮게)
       }
-      Cyl(g, 0.03, 0.03, 0.18, c, 0, 1.16, 0, 8);                       // 중앙 올림대
+      // #209: 중앙 올림대 상단(1.25)과 초 접시 하단(1.305) 사이 5.5cm 공중 갭 — h 0.18→0.24·중심 1.16→1.19로 상단 1.31이 접시를 0.005 물게(cup 좌표 불변).
+      Cyl(g, 0.03, 0.03, 0.24, c, 0, 1.19, 0, 8);                       // 중앙 올림대
       cup(0, 1.32);                                                      // 중앙 초 (가장 높이)
       return g;
     }
@@ -1422,6 +1495,7 @@ const DEFS = {
       const und = B(g, 0.7, 0.06, 0.02, c, 0, 0.5, 0.048); und.rotation.x = -0.09;
       const t3 = B(g, 0.06, 0.16, 0.02, shade(c, 1.2), -0.12, 0.38, 0.048); t3.rotation.x = -0.09;
       const t4 = B(g, 0.05, 0.1, 0.02, shade(c, 0.85), 0.2, 0.35, 0.048); t4.rotation.x = -0.09;
+      for (const m of g.children) m.position.y -= 0.03; // #209: 기대 세운 합판 밑변(틸트 -0.09 실측 최저 0.03)이 부유 → 전체 3cm 하강 접지(closeup 별건)
       return g;
     },
     // #192 클로즈업 — 합판 나뭇결·뜯긴 모서리·스테이플·오버스프레이·물감 드립. 실루엣·GANG 레이아웃은 build 동일.

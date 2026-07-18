@@ -18,6 +18,12 @@
    정본 표: docs/steam/ACHIEVEMENTS-SUBMIT.md
    ============================================================ */
 
+// 서포터팩 DLC id → Steam DLC AppID. 콘솔 실등록 후 디렉터가 실 AppID로 교체(현재 placeholder 0 = 미소유 판정).
+//   정본: docs/design/ROADMAP-RELEASE-2.0.md #117. AppID 0이면 owns()는 항상 false(브릿지 게이트가 falsy).
+export const STEAM_DLC_APPID = {
+  supporter: 0, // TODO 디렉터: Steamworks 서포터팩 DLC AppID 등록 후 이 값 교체
+};
+
 // ACHS.id → Steam API Name(콘솔 실등록명). electron/Steamworks 구현이 이 표로 unlock을 중계한다.
 export const STEAM_ACH_MAP = {
   first: 'NEW_ACHIEVEMENT_1_0',
@@ -84,6 +90,23 @@ export const Platform = {
     },
     load(k) {
       try { return localStorage.getItem(k); } catch (e) { return null; }
+    },
+  },
+
+  // DLC 소유 판정 (#117 서포터팩 게이트). Steam 브릿지가 있으면 isDlcInstalled, 없으면 로컬 오버라이드(QA/개발) 또는 false.
+  //   #119 서포터 콘텐츠(복장·러시안블루)는 owns('supporter') 뒤에서만 해금·노출된다.
+  dlc: {
+    owns(id) {
+      // QA/개발 오버라이드: 실 DLC 없이 서포터 콘텐츠를 켜서 검수(QA 에디션·캡처·개발). 실 결제 우회가 아니라 로컬 표시 토글.
+      try { if (localStorage.getItem('nine_dlc_' + id) === '1') return true; } catch (e) { /* no-op */ }
+      const br = steamBridge();
+      const appId = STEAM_DLC_APPID[id];
+      if (br && appId) { try { return !!br.isDlcInstalled(appId); } catch (e) { return false; } }
+      return false;
+    },
+    // QA/개발 강제 토글(localStorage). game.js QA 훅이 중계.
+    setOverride(id, on) {
+      try { if (on) localStorage.setItem('nine_dlc_' + id, '1'); else localStorage.removeItem('nine_dlc_' + id); } catch (e) { /* no-op */ }
     },
   },
 
