@@ -1970,6 +1970,7 @@ function sleepUntilMorning(auto = false, opt = {}) {
     const wakeToday = dayStart + WAKE_HOUR * 60;
     state.gameMin = state.gameMin < wakeToday ? wakeToday : dayStart + 1440 + WAKE_HOUR * 60;
     state.energy = energy;
+    reportQueued = true; // 디렉터: 하루 요약은 취침 시에만 — 잠들면 기상(다음 틱)에 요약을 띄운다(자정 롤오버 자체는 큐잉 안 함)
     state.expFatigue = null; // #88: 잠들면 탐험 피로 해소
     const e = Math.round(state.energy);
     // 05시 쓰러짐은 전용 문구 — 자발적 취침과 톤을 구분한다.
@@ -9099,7 +9100,8 @@ function tickTime(dt) {
     // 노말/하드: Day 10 도달 시 해금 안내. 무한(zen): 이미 첫날부터 열려 있으므로 첫 아침 롤오버에 안내.
     if ((isZen() || state.day >= 10) && !state.autoNoticeShown) { state.autoNoticeShown = true; state.pendingAutoNotice = true; }
     processDay();
-    reportQueued = true;
+    // 디렉터: 하루 요약은 '의도적 취침 시에만'. 자정 롤오버 자체는 요약을 큐잉하지 않는다(깨어 있으면 그냥 넘어감).
+    //   요약 큐잉은 (a) sleepUntilMorning(취침) (b) 오프라인/백그라운드 복귀 정산(아래) 두 경로에서만.
     rolledOver = true;
   }
   // #175 데모 정본 단일화(프리즈+가드, 디렉터 2026-07-12): 데모-엔드 로직은 데모 정본 브랜치
@@ -9107,8 +9109,9 @@ function tickTime(dt) {
   //   구 Day-37 게이트(seasonOf 반환 객체를 계절 문자열과 직접 비교)는 항상 false였던 죽은 코드 → 제거.
   //   데모 빌드는 tools/build-demo.ps1 가드가 정본 브랜치에서만 허용한다(리뷰 rank-1 봉인).
   // 자정을 자연 경과(취침이 아님)로 넘긴 경우의 처리.
-  // v1.2.0: 자정 강제 취침 폐지. 셸터 안에서 깨어 있으면 시간이 계속 흐르고(01시부터 회복 페널티 누적),
-  // 05시에 쓰러지듯 자동 취침한다(아래 별도 트리거). 탐험/오프라인 경로만 여기서 아침으로 점프.
+  // v1.2.0: 자정 강제 취침 폐지 + 디렉터(2026-07-20): 05시 collapse 강제 취침도 폐지.
+  // 셸터 안에서 깨어 있으면 시간이 계속 흐르고(01시부터 회복 페널티 누적) 재우지 않는다 — 취침은 오직 취침 버튼.
+  // 탐험/오프라인 경로만 여기서 아침으로 점프(오프라인은 요약 큐잉).
   if (rolledOver) {
     const morning8 = (state.day - 1) * 1440 + 8 * 60;
     if (state.exp) {
@@ -9127,19 +9130,16 @@ function tickTime(dt) {
       // 아직 아침 이전이면 다음 아침으로 점프(자연스러운 기상). 이미 아침 이후면 시간은 그대로 두고 회복만.
       if (state.gameMin < morning8) state.gameMin = morning8;
       state.dayLog.notes.push(t('day.napMorning', { e }));
+      reportQueued = true; // 오프라인/백그라운드 복귀 정산은 요약을 띄운다(DDD-5 복귀 리포트 — 취침과 동급의 '넘어감')
     }
     // else(셸터 안에서 깨어 자정 경과): 아무 것도 하지 않는다 — 시간을 계속 흐르게 두고,
     //   결산은 아침(WAKE_HOUR 이후)까지 미룬다(아래 reportQueued 게이트의 시각 조건).
   }
-  // 05시 자동 취침: 셸터 안에서 깨어 있고 새벽 collapseHour에 도달하면 쓰러지듯 잠든다.
-  // (탐험 중·오프라인 정산·백그라운드·암전 중·타이틀·일시정지 제외 — 실제(가시) 플레이 세션에서만)
+  // 디렉터: 05시 강제 취침(collapse) 제거 — 의도적으로 자지 않는 한 게임은 플레이어를 재우지 않는다.
+  //   깨어 있으면 시간은 계속 흐르고 에너지만 소모된다(유기적 압박). 취침은 오직 취침 버튼(sleepUntilMorning)으로.
+  //   (atCollapseHour는 아래 '백그라운드 절전 회복' 분기에서만 쓰인다 — 눈에 보이지 않는 방치 회복이라 유지.)
   const atCollapseHour = Math.floor(gameHour()) >= BAL.rest.collapseHour
     && (state.gameMin % 1440) < BAL.rest.collapseHour * 60 + 60;
-  if (!state.exp && !settlingOffline && !document.hidden && !blackoutActive && !titleVisible && !paused
-      && atCollapseHour) {
-    sleepUntilMorning(true, { collapse: true });
-    return; // 이번 틱은 취침 처리로 종결 (아침 결산은 기상 후 다음 틱)
-  }
   // 백그라운드 절전 틱이 자정을 넘기지 않고 05시(collapseHour)에 도달한 경우(같은 밤 방치):
   //   "방치는 벌 받지 않는다" — collapse 페널티 대신 정상 취침으로 회복하고 아침으로 점프한다.
   //   (자정을 넘긴 경우는 위 rolledOver 블록이 이미 처리했다.)
