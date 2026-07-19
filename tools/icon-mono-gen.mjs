@@ -133,6 +133,8 @@ export const MAP = [
   ['drop', 'icon_g_thirst'],
   ['zap', 'icon_g_energy'],
   ['alert', 'icon_cond_warn'],
+  ['smile', 'icon_cond_comfort'],   // 쾌적 (pixelarticons MIT — 구 컬러 스마일 대체)
+  ['sparkle', 'icon_cond_buff'],    // 버프 (pixelarticons MIT — 구 컬러 반짝임 대체)
   ['moon', 'icon_time_night'],
   ['weather-snow', 'icon_weather_snow'],
   ['weather-rain', 'icon_weather_rain'],

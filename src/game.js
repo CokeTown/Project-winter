@@ -8065,7 +8065,7 @@ function updateHud() {
   // 기본 이모지 금지(디렉터) — 제작 아이콘 + 이모지 폴백
   const segs = [
     `<span class="cond-seg" data-tip="${warnTip}">${icon('icon_cond_warn', '⚠️')}<b class="${warnN ? 'bad' : ''}">${warnN}</b>${state.buff ? icon('icon_cond_buff', '✨') : ''}</span>`,
-    `<span class="cond-seg" data-tip="${comfortTip}">😊<b>${cd.score}</b></span>`, // 웃는 얼굴=기본 이모지(디렉터: "기본 윈도우 아이콘 써도 될 것 같고")
+    `<span class="cond-seg" data-tip="${comfortTip}">${icon('icon_cond_comfort', '')}<b>${cd.score}</b></span>`, // 쾌적=단색 스마일 아이콘(디렉터: raw 이모지 금지, 아이콘팩 차용)
   ];
   $('hud-stat').innerHTML = segs.join('<span class="cond-div">|</span>');
   renderGauge('g-hunger', state.hunger, 'hunger', '🥫');
@@ -9617,7 +9617,7 @@ function openShelterModal() {
       }
       return `
       <div class="shelter-card ${cur ? 'current' : ''} ${unlocked ? '' : 'locked'}">
-        <div class="s-head"><span class="s-emoji">${unlocked ? shIcon(id, 'px-lg') : '🔒'}</span><span class="s-name">${LName(sh)} ${cur ? `<span style="color:var(--accent)">${t('current')}</span>` : ''}${unlocked && !state.renovated[id] ? t('shelter.unrefit') : ''}</span></div>
+        <div class="s-head"><span class="s-emoji">${unlocked ? shIcon(id, 'px-lg') : icon('icon_sys_locked', '', 'px-lg')}</span><span class="s-name">${LName(sh)} ${cur ? `<span style="color:var(--accent)">${t('current')}</span>` : ''}${unlocked && !state.renovated[id] ? t('shelter.unrefit') : ''}</span></div>
         <div class="s-body">
           <div class="s-desc">${unlocked ? LDesc(sh) : t('shelter.locked', { need: sh.unlockAt, cur: state.successes })}</div>
           ${unlocked && sh.perk ? `<div class="s-desc" style="color:var(--good)">${LLabel(sh.perk)}</div>` : ''}
