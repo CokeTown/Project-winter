@@ -6,6 +6,7 @@ import { makeCanvasTex, floorWoodTex, wallWoodTex, metalTex, plywoodTex, brickTe
 import { DEFS } from './data/furniture.js';
 import { BAL } from './data/balance.js';
 import { PROJECTS } from './data/projects.js';
+import { PALETTE_FLAT } from './data/palette.js'; // 픽셀 마스터 팔레트 (포스트 셰이더 LUT 스냅)
 // 콘텐츠 데이터 분리 Phase 1 (순수 테이블 추출) — 로직은 game.js에 그대로.
 import { RESOURCES, INJURIES, PREPS, THEME_SETS, CAT_POSES, CAT_PERCH_Y, BED_TOP_Y, TIER_TOP_Y, CRAFTS, OUTFITS } from './data/items.js'; // #193·#196: 티어별 좌면 실높이 표(퍼치·착석·기상 공용)
 import { DISTRICTS, REGIONS, WEATHERS } from './data/world.js';
@@ -10155,23 +10156,47 @@ function makeRT() {
 }
 const postScene = new THREE.Scene();
 const postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const PAL_N = PALETTE_FLAT.length; // 마스터 팔레트 색 수 (컴파일 타임 상수로 셰이더에 주입 → 상수 루프 경계)
 const postMat = new THREE.ShaderMaterial({
   uniforms: {
     tex: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
     uLevels: { value: 8.0 }, uQuant: { value: 1.0 }, uDither: { value: 1.0 }, uDitherAmt: { value: 1.0 },
+    uPalOn: { value: 0.0 },
+    uPal: { value: PALETTE_FLAT.map(c => new THREE.Vector3(c[0] / 255, c[1] / 255, c[2] / 255)) },
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
   fragmentShader: `
     precision highp float;
+    #define PAL_N ${PAL_N}
     varying vec2 vUv;
     uniform sampler2D tex; uniform vec2 uRes;
-    uniform float uLevels, uQuant, uDither, uDitherAmt;
+    uniform float uLevels, uQuant, uDither, uDitherAmt, uPalOn;
+    uniform vec3 uPal[PAL_N];
     float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
     float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+    // 큐레이션 팔레트 최근접 스냅 — 휘도(녹 가중) + 온도(r-b) + 녹도 인지 거리로
+    //   따뜻한 하이라이트가 차가운 스와치로 새지 않게 한다(오프라인 파일럿에서 검거한 오매핑 방지).
+    vec3 snapPal(vec3 c){
+      float wp = c.r - c.b, gp = c.g - (c.r + c.b) * 0.5;
+      float bd = 1e9; vec3 best = c;
+      for (int i = 0; i < PAL_N; i++){
+        vec3 P = uPal[i];
+        float dr = c.r - P.r, dg = c.g - P.g, db = c.b - P.b;
+        float dw = wp - (P.r - P.b), dgn = gp - (P.g - (P.r + P.b) * 0.5);
+        float dist = dr*dr*0.5 + dg*dg*0.7 + db*db*0.4 + dw*dw*1.2 + dgn*dgn*1.0;
+        if (dist < bd){ bd = dist; best = P; }
+      }
+      return best;
+    }
     void main(){
       vec3 col = texture2D(tex, vUv).rgb;
       col = pow(col, vec3(1.0 / 2.2));
-      if (uQuant > 0.5) {
+      if (uPalOn > 0.5) {
+        // 그라데이션이 두 스와치 사이에서 매끄럽게 넘어가도록 스냅 전에 약한 오더드 디더만.
+        vec2 pc = floor(vUv * uRes);
+        float d = uDither > 0.5 ? (bayer4(pc) - 0.5) * 0.05 * uDitherAmt : 0.0;
+        col = snapPal(clamp(col + d, 0.0, 1.0));
+      } else if (uQuant > 0.5) {
         vec2 pc = floor(vUv * uRes);
         float d = uDither > 0.5 ? (bayer4(pc) - 0.5) * 0.55 * uDitherAmt / uLevels : 0.0;
         col = clamp(col + d, 0.0, 1.0);
@@ -10255,6 +10280,7 @@ function applyOpts() {
   postMat.uniforms.uQuant.value = opts.quant ? 1 : 0;
   postMat.uniforms.uDither.value = opts.dither ? 1 : 0;
   postMat.uniforms.uDitherAmt.value = (opts.ditherAmt != null ? opts.ditherAmt : 1);
+  postMat.uniforms.uPalOn.value = (opts.palette !== false) ? 1 : 0; // 마스터 팔레트 스냅 토글
   ceilLight.visible = opts.ceil;
   shadowDirty();
   makeRT();

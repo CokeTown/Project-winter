@@ -141,7 +141,7 @@ export const DEFAULT_STATE = JSON.parse(JSON.stringify(state));
 // ── 런타임 설정(세이브와 별개, opts 키로 별도 저장) ──
 export const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: true, autoPlay: false, bgm: true, bgmVol: 0.15, sfxVol: 0.07, lang: 'ko', fpsCap: 60, lowSpec: false, bgIdle: true,
   // 렌더 품질: aa=MSAA 안티에일리어싱(도트 유지·엣지 매끄럽게) / ditherAmt=디더 도트 강도(0~1)
-  aa: true, ditherAmt: 1,
+  aa: true, ditherAmt: 1, palette: false, // palette: 큐레이션 마스터 팔레트 스냅(균일 양자화 대체) — 라이브 검증 후 기본 on 전환 예정
   // 접근성 (REQ-ACC-01): 폰트 3단(1/1.12/1.25) · 색약 팔레트 · 흔들림/깜빡임 감소
   fontScale: 1, colorblind: false, reduceMotion: false,
   // 피드백 #2: 즉시 행동(먹기·마시기·청소) 확인창 — 기본 off(코지 무마찰 유지). 확인창 안에서 "다음부터 묻지 않기"로 끔.
