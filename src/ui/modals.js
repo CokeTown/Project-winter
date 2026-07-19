@@ -36,7 +36,7 @@ export function makeModals(ctx) {
       return `
     <div class="slot-card mode-card ${lock ? 'locked' : ''}" data-mode="${mode}" data-locked="${lock ? 1 : 0}">
       <div class="sl-body">
-        <div class="mc-title">${lock ? '🔒 ' : ''}${t(titleId)}</div>
+        <div class="mc-title">${lock ? '<img class="px-icon" src="img/icons/icon_sys_locked.png" alt="" draggable="false"> ' : ''}${t(titleId)}</div>
         <div class="mc-tag">${t(tagId)}</div>
         <div class="sl-meta">${lock ? t('mode.' + mode + '.lock', { n: opt.lockN }) : t(descId)}</div>
       </div>

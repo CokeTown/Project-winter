@@ -95,7 +95,7 @@ const _iconEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(
 const _iconMissing = new Set();
 if (typeof window !== 'undefined') window.__iconFail = (n) => _iconMissing.add(n);
 function icon(name, emoji = '', cls = '') {
-  const fb = _iconEsc(emoji);
+  const fb = ''; // 디렉터: 이모지 폴백 전면 제거 — 아이콘 PNG 부재 시 공란(라벨이 의미 전달). emoji 인자는 하위호환용, _iconEsc 무용.
   if (_iconMissing.has(name)) return `<span class="px-icon${cls ? ' ' + cls : ''}">${fb}</span>`;
   return `<img class="px-icon${cls ? ' ' + cls : ''}" src="img/icons/${name}.png" alt="" draggable="false"`
     + ` onerror="window.__iconFail&&window.__iconFail('${name}');this.replaceWith(document.createTextNode('${fb}'))">`;
@@ -5647,16 +5647,15 @@ function openCraftModal() {
   const rowArr = CRAFTS.map((c, i) => {
     if (c.bp && !(state.blueprints || {})[c.bp]) return ''; // DDD-4 시그니처: 도면을 줍기 전엔 목록에 없다 (지역 독점의 실체)
     if (c.dlc && !Platform.dlc.owns(c.dlc)) return ''; // #119 서포터팩: DLC 소유 시에만 레시피 노출
+    // 디렉터: 제작(goods) 목록에서 아이콘 제거 — 아이콘이 오히려 행 레이아웃을 망친다. 이름(+수량)만.
     const outLabel = c.out.res
-      ? `${resIcon(c.out.res)} ${LName(RESOURCES[c.out.res])}${c.out.n > 1 ? ' ×' + c.out.n : ''}` // ×1은 생략(정보 0 — 한 줄 폭 확보)
+      ? `${LName(RESOURCES[c.out.res])}${c.out.n > 1 ? ' ×' + c.out.n : ''}` // ×1은 생략(정보 0 — 한 줄 폭 확보)
       : c.out.outfit
-        ? `${icon('icon_act_wardrobe', '🧥')} ${LName(OUTFITS[c.out.outfit])}`
-        : `${furnIcon(c.out.furn)} ${LName(DEFS[c.out.furn])}`;
-    // 다재료(2+)는 아이콘+수량만(이름은 아이콘이 대신 — 심볼릭), 단일 재료는 이름 병기. 한 줄 사수.
+        ? `${LName(OUTFITS[c.out.outfit])}`
+        : `${LName(DEFS[c.out.furn])}`;
+    // 재료도 아이콘 없이 이름+수량(아이콘 정렬 붕괴 방지). 예: 「천 2 + 테이프 1」
     const costEnts = Object.entries(craftCost(c));
-    const costCompact = costEnts.map(([id, n]) => costEnts.length > 1
-      ? `${resIcon(id)}${n}`
-      : `${resIcon(id)}${LName(RESOURCES[id])} ${n}`).join('+');
+    const costCompact = costEnts.map(([id, n]) => `${LName(RESOURCES[id])} ${n}`).join(' + ');
     // #86④: 이미 옷장에 있는 의류는 재제작 불가 (영구 소유물 — 중복 소모 방지)
     const owned = c.out.outfit && (state.outfits || ['default']).includes(c.out.outfit);
     const ok = !owned && resHasAll(craftCost(c));
@@ -8065,25 +8064,20 @@ function updateHud() {
     `<span class="cond-seg" data-tip="${comfortTip}">${icon('icon_cond_comfort', '')}<b>${cd.score}</b></span>`, // 쾌적=단색 스마일 아이콘(디렉터: raw 이모지 금지, 아이콘팩 차용)
   ];
   $('hud-stat').innerHTML = segs.join('<span class="cond-div">|</span>');
-  renderGauge('g-hunger', state.hunger, 'hunger', '🥫');
-  renderGauge('g-thirst', state.thirst, 'thirst', '💧');
-  renderGauge('g-energy', state.energy, 'energy', '⚡'); // #199 5차-b(디렉터): 퍼센트 계기는 밥·물·에너지만 — 청결은 스트립 경고로
+  renderGauge('g-hunger', state.hunger, 'hunger');
+  renderGauge('g-thirst', state.thirst, 'thirst');
+  renderGauge('g-energy', state.energy, 'energy'); // 디렉터: 게이지 = 영어 라벨 + 게이지별 컬러 바만(아이콘·세부 수치 제거). 수치는 PDA 전용
 }
-function renderGauge(id, val, gkey, emoji) {
+function renderGauge(id, val, gkey) {
   const g = $(id);
   if (!g) return;
   const fill = g.querySelector('.g-fill');
   fill.style.width = Math.max(0, Math.round(val)) + '%';
   fill.className = 'g-fill' + (val < 25 ? ' crit' : val < 45 ? ' warn' : '');
-  // #199 5차 「필드 터미널」: 카드형(아이콘·라벨·큰 숫자·컬러 바) — 구형 .g-label 폴백 병행
-  const num = g.querySelector('.g-num');
-  if (num) {
-    g.querySelector('.g-ic').innerHTML = icon(GAUGE_ICON[gkey], emoji);
-    num.textContent = `${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
-  } else {
-    const lb = g.querySelector('.g-label');
-    if (lb) lb.innerHTML = `${icon(GAUGE_ICON[gkey], emoji)} ${Math.round(val)}${val <= 0 ? t('gauge.exhausted') : ''}`;
-  }
+  // 디렉터: HUD 게이지 = 라벨(영어 단어) + 게이지별 컬러 바만. 아이콘·세부 수치 제거 — 수치는 PDA 전용.
+  //   (구형 .g-ic/.g-num/.g-label 마크업 제거됨. 스테일 DOM 대비 방어적 정리.)
+  const exNum = g.querySelector('.g-num'); if (exNum) exNum.remove();
+  const exIc = g.querySelector('.g-ic'); if (exIc) exIc.remove();
   // #199: 도킹 PDA 마이크로 게이지 동기화 — 접힘 상태에서도 보이는 상시 계측(LED 스트립)
   const dk = $('dkg-' + gkey[0]);
   if (dk) { dk.style.setProperty('--v', Math.max(0, Math.round(val)) + '%'); dk.className = val < 25 ? 'crit' : val < 45 ? 'warn' : ''; }
@@ -8136,7 +8130,7 @@ function pdaAppExit(toHome) {
   if (toHome) { pdaTab = 'status'; renderPDA(); }
   else pdaClose();
 }
-function renderPDA() {
+function renderPDA(quiet) {
   document.querySelectorAll('#pda-tabs .pda-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === pdaTab));
   const scr = $('pda-screen');
   const mm = state.gameMin % 1440, hh = String(Math.floor(mm / 60)).padStart(2, '0'), mi = String(Math.floor(mm % 60)).padStart(2, '0');
@@ -8144,12 +8138,13 @@ function renderPDA() {
   const head = `<div class="ph">${t('pda.day', { n: state.day })} · ${hh}:${mi} · ${w ? `${wxIcon(state.weatherType)} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}</div>`;
   let body = '';
   if (pdaTab === 'status') {
-    const bar = (label, v) => {
+    // 디렉터: PDA 게이지 progress bar도 게이지별 색 구분(허기 머스터드·수분 시안·에너지 그린·청결 라임).
+    const bar = (label, v, key) => {
       const cls = v < 25 ? 'crit' : v < 45 ? 'warn' : '';
-      return `<div class="pline"><span class="pk">${label}</span><span class="pbar"><i class="${cls}" style="width:${Math.max(0, Math.round(v))}%"></i></span><span class="pv">${Math.round(v)}</span></div>`;
+      return `<div class="pline"><span class="pk">${label}</span><span class="pbar ${key}"><i class="${cls}" style="width:${Math.max(0, Math.round(v))}%"></i></span><span class="pv">${Math.round(v)}</span></div>`;
     };
-    body = bar(t('pda.g.hunger'), state.hunger) + bar(t('pda.g.thirst'), state.thirst)
-      + bar(t('pda.g.energy'), state.energy) + bar(t('pda.clean'), state.cleanBy?.[state.current] ?? 70);
+    body = bar(t('pda.g.hunger'), state.hunger, 'hunger') + bar(t('pda.g.thirst'), state.thirst, 'thirst')
+      + bar(t('pda.g.energy'), state.energy, 'energy') + bar(t('pda.clean'), state.cleanBy?.[state.current] ?? 70, 'clean');
     // #디렉터: 탐험 중 PDA에 현황 표시(구 지역탐험 패널 이관) — 지역·진행률. 빈 화면 해소.
     if (state.exp) {
       const er = REGIONS[state.exp.region];
@@ -8214,7 +8209,7 @@ function renderPDA() {
       const seen = ((state.regionVisits || {})[rid] || 0) > 0;
       return `<span class="pregion${seen ? ' seen' : ''}" style="left:${px}%;top:${py}%" title="${LName(REGIONS[rid])}"></span>`;
     }).join('');
-    body = `<div class="pmap"><img src="${mapBiomeDataUrl(cityId)}" alt="">${regionDots}`
+    body = `<div class="pmap"><img src="${mapBiomeDataUrl(cityId)}" alt="" draggable="false">${regionDots}`
       + (sp ? `<span class="pyou" style="left:${sp.x}%;top:${sp.y}%" title="${LName(SHELTERS[state.current])}"></span>` : '') + `</div>`
       // 디렉터: 셸터 명칭 텍스트 노트 제거 — 내 거점은 GPS 점(pyou)으로만. 예보(어디·언제)만 유지.
       + (hasForecast() ? `<div class="pnote">${t('forecast.prefix', { text: forecastText() })}</div>` : '')
@@ -8237,7 +8232,7 @@ function renderPDA() {
     body += `<div class="pbtn-row"><button class="pixel-btn" id="pda-journal">${t('btn.journal.lbl')}</button></div>`;
   }
   scr.innerHTML = head + body;
-  scr.classList.remove('pda-flick'); void scr.offsetWidth; scr.classList.add('pda-flick'); // 전자 화면 전환 플리커
+  if (!quiet) { scr.classList.remove('pda-flick'); void scr.offsetWidth; scr.classList.add('pda-flick'); } // 전자 화면 전환 플리커(실시간 갱신 시 생략)
   scr.querySelector('#pda-openmap')?.addEventListener('click', () => { pdaClose(); openMapModal(); });
   scr.querySelector('#pda-treat')?.addEventListener('click', () => { treatInjury(); renderPDA(); }); // 부상 치료(구 지역탐험 패널 이관)
   scr.querySelector('#pda-journal')?.addEventListener('click', () => pdaOpenApp(() => openJournalModal('journal')));
@@ -11183,7 +11178,7 @@ function renderFrame() {
     p.position.y = 0.03 * Math.sin(t * 0.4 + p.userData.phase);
     p.position.x = 0.02 * Math.sin(t * 0.23 + p.userData.phase * 1.7);
   }
-  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); syncBgm(); syncSfxAmbience(); drainDiscoveryQueue(); }
+  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); if (pdaVisible() && pdaTab === 'status') renderPDA(true); syncBgm(); syncSfxAmbience(); drainDiscoveryQueue(); } // 디렉터: PDA 상태탭도 0.5s 실시간 갱신(탐험 진행바·게이지) — quiet=플리커 생략, 지도/자원탭은 이벤트 갱신(맵 재생성 비용 회피)
   renderer.setRenderTarget(rt);
   renderer.render(scene, _cine ? cineCam : camera);
   renderer.setRenderTarget(null);

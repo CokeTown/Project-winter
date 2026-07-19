@@ -74,6 +74,8 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #0e1014; }
   body { font-family: 'DungGeunMo', 'Malgun Gothic', sans-serif; color: var(--text); user-select: none; }
+  /* 디렉터: 게임 UI에서 웹 특유의 이미지 드래그 고스트·롱프레스 콜아웃 전면 제거(게임이지 웹이 아님). */
+  img { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: none; user-drag: none; -webkit-touch-callout: none; }
   /* ja 조판: DungGeunMo(한글 픽셀 폰트)엔 가나/한자 글리프가 없어 시스템 일본어 폰트로 폴백.
      keep-all은 한국어 어절 단위 줄바꿈 규칙 — 일본어(무공백)엔 줄바꿈 자체를 막아 오버플로를 만들므로
      전역 해제하고 금칙처리(line-break: strict)를 적용한다. applyStaticI18n이 <html lang>을 스탬프. */
@@ -206,11 +208,11 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* 세그먼트 갭 — 채움 위에 어두운 세로 틈을 얹어 칸칸이 (디지털 계기 느낌, 디렉터 요청) */
   #hud .g-bar::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; background: repeating-linear-gradient(90deg, transparent 0 5px, #060d0a 5px 7px); }
   #hud .g-fill { position: absolute; inset: 0 auto 0 0; display: block; height: 100%; width: 50%; transition: width 0.3s; box-shadow: 0 0 6px rgba(140, 245, 166, 0.5); } /* 인광 글로우. 전역 .g-fill(inset:0) 무력화 — 바 안에서만 */
-  /* 게이지 고유색(디렉터 목업: 배고픔 머스터드·수분 시안·에너지 그린) + 청결 라임 */
-  #hud #g-hunger .g-fill { background: #8cf5a6; }
-  #hud #g-thirst .g-fill { background: #8cf5a6; }
-  #hud #g-energy .g-fill { background: #8cf5a6; }
-  #hud #g-clean .g-fill { background: #8cf5a6; }
+  /* 게이지 고유색(디렉터 목업 실현: 배고픔 머스터드·수분 시안·에너지 그린·청결 라임) — 게이지별 색 구분 */
+  #hud #g-hunger .g-fill { background: #d9b34a; box-shadow: 0 0 6px rgba(217, 179, 74, 0.5); }
+  #hud #g-thirst .g-fill { background: #5cc4dd; box-shadow: 0 0 6px rgba(92, 196, 221, 0.5); }
+  #hud #g-energy .g-fill { background: #8cf5a6; box-shadow: 0 0 6px rgba(140, 245, 166, 0.5); }
+  #hud #g-clean .g-fill { background: #b6e05a; box-shadow: 0 0 6px rgba(182, 224, 90, 0.5); }
   /* 위험색은 게이지 고유색(ID 셀렉터)보다 강하게 — #gauges ID 중첩으로 승격 */
   #hud #gauges .g-fill.warn { background: #ffc24a; box-shadow: 0 0 6px rgba(255, 194, 74, 0.55); }
   #hud #gauges .g-fill.crit { background: #ff5f4d; box-shadow: 0 0 8px rgba(255, 95, 77, 0.7); animation: dkblink 0.85s steps(2) infinite; }
@@ -356,8 +358,13 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #pda-screen .pline .pk { flex: 0 0 auto; min-width: 64px; color: #cfe0c8; }
   #pda-screen .pline .pbar { flex: 1; height: 8px; background: rgba(170, 240, 185, 0.1); border: 1px solid #3f6a46; border-radius: 2px; overflow: hidden; }
   #pda-screen .pline .pbar > i { display: block; height: 100%; background: #cfe0c8; box-shadow: 0 0 5px rgba(120, 255, 150, 0.5); }
-  #pda-screen .pline .pbar > i.warn { background: #cfe0c8; box-shadow: 0 0 5px rgba(170, 240, 185, 0.5); }
-  #pda-screen .pline .pbar > i.crit { background: #ffffff; box-shadow: 0 0 5px rgba(255, 255, 255, 0.6); }
+  /* 디렉터: PDA 게이지도 게이지별 색 (HUD와 동일 스킴). 아래 warn/crit이 뒤에 와서 위험 상태를 덮어씀. */
+  #pda-screen .pline .pbar.hunger > i { background: #d9b34a; box-shadow: 0 0 5px rgba(217, 179, 74, 0.5); }
+  #pda-screen .pline .pbar.thirst > i { background: #5cc4dd; box-shadow: 0 0 5px rgba(92, 196, 221, 0.5); }
+  #pda-screen .pline .pbar.energy > i { background: #8cf5a6; box-shadow: 0 0 5px rgba(140, 245, 166, 0.5); }
+  #pda-screen .pline .pbar.clean > i { background: #b6e05a; box-shadow: 0 0 5px rgba(182, 224, 90, 0.5); }
+  #pda-screen .pline .pbar > i.warn { background: #ffc24a; box-shadow: 0 0 5px rgba(255, 194, 74, 0.5); }
+  #pda-screen .pline .pbar > i.crit { background: #ff5f4d; box-shadow: 0 0 5px rgba(255, 95, 77, 0.6); animation: dkblink 0.85s steps(2) infinite; }
   #pda-screen .pline .pv { flex: 0 0 auto; min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
   #pda-screen .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
   #pda-screen .pcell { display: flex; align-items: center; gap: 6px; border-bottom: 1px dashed rgba(125, 168, 132, 0.3); padding: 2px 0; }
@@ -474,6 +481,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   body.pda-app #pda-lcd #modal p, body.pda-app #pda-lcd #modal .modal-body { font-size: 7px; line-height: 1.55; }
   /* 디렉터: 붉은 섹션 헤더(가구·물품·큰 공사·꾸미기 등) 인라인 font-size:12px가 커서 인라인 이김 → 스코프 !important로 축소 */
   body.pda-app #pda-lcd #modal div[style*="var(--accent)"] { font-size: 8px !important; margin: 6px 0 3px !important; }
+  /* 디렉터: 저널/도감/업적 모달이 좁은 LCD에 도킹될 때 .report-sec가 축소 규칙에서 누락돼 박스를 넘쳤다. */
+  body.pda-app #pda-lcd #modal .report-sec { font-size: 8px; line-height: 1.5; }
+  body.pda-app #pda-lcd #modal .report-sec .r-title { font-size: 9px; }
   /* 디렉터: 제작 상위 카테고리 탭바(가구·물품/복장/공사/꾸미기) — PDA 탭바 톤. 상단 고정. */
   body.pda-app #pda-lcd #modal .craft-tabs { display: flex; gap: 3px; margin: -2px 0 6px; position: sticky; top: -6px; background: rgba(6, 10, 5, 0.92); padding: 3px 0; z-index: 4; }
   body.pda-app #pda-lcd #modal .craft-tab { flex: 1; font-size: 8px; padding: 3px 2px; background: rgba(170, 240, 185, 0.06); border: 1px solid #3f6a46; border-radius: 3px; color: #bcd0b6; cursor: pointer; white-space: nowrap; }
@@ -711,7 +721,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
   /* 도료 게이트 (REWARD-LOOP ②): 그 계열 도료가 없으면 잠금 — 어둡게 + 자물쇠 */
   .swatch.locked { opacity: 0.45; cursor: not-allowed; }
-  .swatch.locked::after { content: '🔒'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  .swatch.locked::after { content: ''; position: absolute; inset: 0; background: rgba(6, 10, 5, 0.55); } /* 디렉터: 이모지 🔒 제거 — 잠금은 딤 오버레이로 표현 */
   /* #194: 도료 보유 수량 상시 배지 — hover title이 안 뜨는 터치 환경에서도 보유량이 보이게 (.tool-item .cnt 축소판) */
   .swatch .sw-cnt {
     position: absolute; top: -7px; right: -6px;
@@ -1118,8 +1128,8 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     zoom: var(--uiz);
   }
   #journal-screen.show #journal-paper { transform: translateY(0) rotate(-1deg); opacity: 1; }
-  #journal-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; letter-spacing: 1px; }
-  #journal-body { font-size: 12px; line-height: 1.9; min-height: 90px; word-break: keep-all; overflow-wrap: break-word; }
+  #journal-title { font-size: 13px; font-weight: bold; margin-bottom: 10px; letter-spacing: 1px; } /* 디렉터: 저널 폰트 축소 */
+  #journal-body { font-size: 10px; line-height: 1.55; min-height: 90px; word-break: keep-all; overflow-wrap: break-word; } /* 디렉터: 12→10px·행간 1.9→1.55 (박스 넘침 방지) */
   #journal-body kbd { background: rgba(58,48,38,0.12); border: 1px solid rgba(58,48,38,0.4); border-radius: 3px; padding: 0 5px; font-family: inherit; color: #3a3026; }
   #journal-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
   #journal-page-ind { font-size: 11px; color: rgba(58,48,38,0.65); letter-spacing: 1px; }
