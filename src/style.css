@@ -40,26 +40,32 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     --lcd-ink: #8cf5a6; /* PDA·필드 터미널 포스퍼 */
     --lcd-dim: #4a8a58;
     --bloom: 0 0 6px rgba(120, 255, 150, 0.45); /* LCD 포스퍼 블룸 1규칙 */
+    /* ── 아이콘 텍셀 스케일 (UI-PIXEL-UNITY §1) — em/px 난립 대체. 24-그리드 소스 기준 클린 4단.
+       신규 아이콘은 이 토큰만 사용. 밀집 레이아웃(HUD·PDA) 개별 px 수렴은 실화면 2차. */
+    --icon-sm: 16px;   /* 밀집 인라인 */
+    --icon-md: 20px;   /* 기본 인라인 아이콘 (.px-icon) */
+    --icon-lg: 24px;   /* 강조·카드 (24-그리드 1:1) */
+    --icon-xl: 28px;   /* HUD 액션 버튼 (.act-icon) */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   /* ── 생성 아트 아이콘 (#19): 이모지 UI 교체 ── */
   .px-icon {
-    width: 1.3em; height: 1.3em; vertical-align: -0.25em;
+    width: var(--icon-md); height: var(--icon-md); vertical-align: -0.25em;
     image-rendering: pixelated; object-fit: contain; display: inline-block;
   }
-  .px-icon.px-lg { width: 1.8em; height: 1.8em; vertical-align: -0.4em; }
+  .px-icon.px-lg { width: var(--icon-lg); height: var(--icon-lg); vertical-align: -0.4em; }
   /* HUD 행동 버튼 아이콘 — 버튼을 ~85% 채운다 ("칸에 비해 그림이 작다" 피드백) */
   .act-icon {
-    width: 28px; height: 28px; display: inline-block; vertical-align: middle;
+    width: var(--icon-xl); height: var(--icon-xl); display: inline-block; vertical-align: middle;
     image-rendering: pixelated; object-fit: contain; pointer-events: none;
   }
   /* (B-③) 시스템 버튼 아이콘 (편집/일시정지/자동진행/설정/퀘스트) — 아트 있으면 표시, 없으면 이모지 폴백.
      cam-btn·타이틀 버튼·퀘스트 카드 공용. 아트 미생성 동안은 emoji가 이 크기 근처로 렌더된다. */
   .sys-icon {
-    width: 1.15em; height: 1.15em; display: inline-block; vertical-align: -0.2em;
+    width: var(--icon-sm); height: var(--icon-sm); display: inline-block; vertical-align: -0.2em;
     image-rendering: pixelated; object-fit: contain; pointer-events: none;
   }
-  .q-check .sys-icon { width: 1.3em; height: 1.3em; }
+  .q-check .sys-icon { width: var(--icon-md); height: var(--icon-md); }
   /* 이벤트 일러스트 파일럿 — 640x360, 모바일에서도 뷰포트 안 */
   .ev-illust {
     display: block; width: 100%; max-width: 100%; max-height: 40vh;
@@ -334,12 +340,12 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #pda-screen { /* 에셋 유리가 배경 — 콘텐츠는 포스퍼 텍스트만 얹는다 */
     flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
     background: repeating-linear-gradient(180deg, rgba(170, 240, 185, 0.02) 0 2px, transparent 2px 4px);
-    padding: 2px 11px 10px; color: #f0f5ee; font-size: 7.5px; line-height: 1.6;   /* 디렉터 3차: PDA 상태탭 폰트 ~4pt 추가 축소 */
-    text-shadow: 0 0 4px rgba(120, 255, 150, 0.3); word-break: keep-all;
+    padding: 2px 11px 10px; color: #f0f5ee; font-size: 9px; line-height: 1.55;   /* 피드백: 7.5px는 너무 작아 blurry — 가독 우선 상향(넘치면 스크롤). 실화면 튜닝 대기 */
+    text-shadow: 0 0 2px rgba(120, 255, 150, 0.28); word-break: keep-all;         /* 포스퍼 글로우 축소 = 번짐↓ 크리스프↑ */
   }
   #pda-screen::-webkit-scrollbar { width: 5px; }
   #pda-screen::-webkit-scrollbar-thumb { background: #3f5a35; border-radius: 3px; }
-  #pda-screen .ph { font-size: 7.5px; letter-spacing: 1px; color: #7da884; border-bottom: 1px solid rgba(125, 168, 132, 0.4); padding-bottom: 3px; margin-bottom: 5px; }
+  #pda-screen .ph { font-size: 9px; letter-spacing: 1px; color: #7da884; border-bottom: 1px solid rgba(125, 168, 132, 0.4); padding-bottom: 3px; margin-bottom: 5px; }
   #pda-screen .ph:not(:first-child) { margin-top: 12px; }
   #pda-screen .pline { display: flex; align-items: center; gap: 8px; }
   #pda-screen .pline .pk { flex: 0 0 auto; min-width: 64px; color: #cfe0c8; }
@@ -367,9 +373,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* 디렉터: PDA 미니맵 해금 지역 점 — 방문 전은 흐린 회록, 다녀오면 밝은 라임(전도 잉크 톤과 통일) */
   #pda-screen .pmap .pregion {
     position: absolute; width: 6px; height: 6px; transform: translate(-50%, -50%); border-radius: 50%;
-    background: #7d9a80; box-shadow: 0 0 0 1.5px rgba(8, 18, 10, 0.8); opacity: 0.72;
+    background: #7d9a80; box-shadow: 0 0 0 1px rgba(8, 18, 10, 0.8); opacity: 0.72; /* 서브픽셀 1.5px→1px(AA 제거) */
   }
-  #pda-screen .pmap .pregion.seen { background: #b9f0c4; box-shadow: 0 0 5px rgba(120, 255, 150, 0.7), 0 0 0 1.5px rgba(8, 18, 10, 0.8); opacity: 1; }
+  #pda-screen .pmap .pregion.seen { background: #b9f0c4; box-shadow: 0 0 5px rgba(120, 255, 150, 0.7), 0 0 0 1px rgba(8, 18, 10, 0.8); opacity: 1; }
   #pda-screen .pnote { color: #7da884; font-size: 10.5px; }
   #pda-screen .pbtn-row { margin-top: 10px; display: flex; justify-content: flex-end; }
   /* #211 필드노트 흡수 — 쾌적 4축 분해. 구 .nt-ax(종이 잉크)를 PDA 초록 LCD 문법으로 옮긴다:
@@ -705,7 +711,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .swatch .sw-cnt {
     position: absolute; top: -7px; right: -6px;
     background: #2b2620; color: var(--text); font-size: 9px; line-height: 1;
-    padding: 1px 4px; border: 1px solid var(--panel-border); border-radius: 7px;
+    padding: 1px 4px; border: 1px solid var(--panel-border); border-radius: var(--r); /* 과한 7px→토큰(웹앱풍 완화) */
     pointer-events: none;
   }
   #sel-panel .btn-row { display: flex; gap: 5px; }
@@ -935,7 +941,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   /* 정착(가구 배치) — 이중 원 */
   .map-shelter.furnished .dot::after {
-    content: ""; position: absolute; inset: 2px; border: 1.5px solid #4a3524; border-radius: 50%;
+    content: ""; position: absolute; inset: 2px; border: 2px solid #4a3524; border-radius: 50%; /* 서브픽셀 1.5px→2px */
   }
   /* 현 거처 — 채운 강조색 + 펄스 링 + 라벨 */
   .map-shelter.current .dot { border-color: #7a3b1e; background: #c65a2e; }
@@ -1023,6 +1029,13 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   .slot-card:hover { border-color: var(--accent); }
   .slot-card.empty { opacity: 0.55; }
+  /* 난이도/모드 = 슬롯카드 테두리색 (디렉터: 이모지 배지 폐지, 색으로 구분 — 쉬움 초록→어려움 빨강). */
+  .slot-card[data-mode="cozy"], .slot-card[data-mode="normal"] { border-color: #6fae78; }                     /* 코지 — 초록 */
+  .slot-card[data-mode="hard"] { border-color: #e0a53a; box-shadow: 0 0 0 1px rgba(224, 165, 58, 0.25); }     /* 생존 — 앰버 */
+  .slot-card[data-mode="hardcore"] { border-color: #e0574a; box-shadow: 0 0 0 1px rgba(224, 87, 74, 0.3); }   /* 혹한 — 적색 */
+  .slot-card[data-mode="zen"] { border-color: #5aa0d0; }                                                       /* 무한 — 청록 */
+  .slot-card[data-mode="wallpaper"] { border-color: #b06ee6; }                                                 /* 꾸미기 — 보라 */
+  .slot-card[data-mode]:hover { border-color: var(--accent); }  /* 호버 강조 복원 — 특이도(0,3,0) > data-mode(0,2,0) */
   .slot-card .sl-no { font-size: 18px; color: var(--accent); }
   .slot-card .sl-body { flex: 1; font-size: 11px; line-height: 1.6; }
   .slot-card .sl-meta { color: var(--text-dim); font-size: 10px; }
@@ -1158,7 +1171,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #quest-card.done-flash .q-lore { display: none; }
   #quest-card .q-body { display: flex; align-items: center; gap: 8px; }
   #quest-card .q-icon { font-size: 20px; line-height: 1; }
-  #quest-card .q-icon .q-art { width: 26px; height: 26px; image-rendering: auto; display: block; }
+  #quest-card .q-icon .q-art { width: 26px; height: 26px; image-rendering: pixelated; display: block; } /* 픽셀아트 아이콘 — 스무스(auto)→하드 엣지 */
   #quest-card .q-text { flex: 1; font-size: 11px; line-height: 1.4; }
   #quest-card .q-prog { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
   #quest-card .q-check {
@@ -1300,7 +1313,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     max-width: 260px; padding: 7px 10px;
     background: rgba(8, 12, 9, 0.86); border: 1px solid rgba(127, 214, 127, 0.5); border-radius: 4px;
     color: #7fd67f; font-size: 12px; line-height: 1.55;
-    font-family: 'DungGeunMo', 'Galmuri11', monospace; letter-spacing: 0.2px;
+    font-family: 'DungGeunMo', 'Malgun Gothic', sans-serif; letter-spacing: 0.2px; /* 폴백 통일: 미로드 Galmuri11+monospace → body와 동일 스택 */
     word-break: keep-all; overflow-wrap: break-word;
     box-shadow: 0 3px 14px rgba(0,0,0,0.5), 0 0 8px rgba(127,214,127,0.12) inset;
     text-shadow: 0 0 4px rgba(127,214,127,0.35);

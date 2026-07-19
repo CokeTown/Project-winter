@@ -3632,7 +3632,7 @@ function openPrepModal(regionId) {
       <div id="prep-list">${Object.entries(PREPS).map(([id, pr]) => {
         const has = resHasAll(pr.cost);
         return `<div class="prep-row ${selected.has(id) ? 'sel' : ''} ${has ? '' : 'no'}" data-prep="${id}">
-          <span>${pr.emoji} ${LName(pr)}</span>
+          <span>${icon('icon_prep_' + id, pr.emoji)} ${LName(pr)}</span>
           <span class="p-eff">${LEff(pr)}</span>
           <span class="p-cost">${costLabel(pr.cost)}</span>
         </div>`;
@@ -4841,7 +4841,7 @@ function openVisitorTradeCard(id, ev, evTitle) {
     <button class="pixel-btn" data-vtrade="0">${vLang(VISITOR_UI.decline)}</button>
     <button class="pixel-btn" id="event-minimize" data-i18n="event.minimize">${t('event.minimize')}</button>
   </div>`;
-  openModal(`${ev.icon} ${evTitle}`, body, 'visitor');
+  openModal(`${icon('icon_ev_' + id, ev.icon)} ${evTitle}`, body, 'visitor');
   $('modal-body').querySelectorAll('button[data-vtrade]').forEach(b => b.addEventListener('click', () => {
     let result;
     if (b.dataset.vtrade === '1') {
@@ -4857,7 +4857,7 @@ function openVisitorTradeCard(id, ev, evTitle) {
     state.activeEvent = null; state.minimizedEvent = null;
     hideEventChip();
     dismissVisitor(); // 퇴장 + 카메라 복귀
-    openModal(`${ev.icon} ${evTitle}`, `<div style="line-height:2">${result}</div>`);
+    openModal(`${icon('icon_ev_' + id, ev.icon)} ${evTitle}`, `<div style="line-height:2">${result}</div>`);
     scheduleSave(); renderResBar(); updateHud();
   }));
   const minBtn = document.getElementById('event-minimize');
@@ -4931,7 +4931,7 @@ function openEventCard(id, opts = {}) {
     <div class="modal-body" style="line-height:2">${ev.textFn ? ev.textFn() : t(ev.textId)}</div>
     <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">${choicesHtml}</div>`;
   }
-  openModal(`${ev.icon} ${evTitle}`, body, kind);
+  openModal(`${icon('icon_ev_' + id, ev.icon)} ${evTitle}`, body, kind);
   $('modal-body').querySelectorAll('button[data-ch]').forEach(b =>
     b.addEventListener('click', () => {
       const c = ev.choices[+b.dataset.ch];
@@ -4943,7 +4943,7 @@ function openEventCard(id, opts = {}) {
       state.minimizedEvent = null; // 선택 완료 → 내려둔 상태도 해제
       hideEventChip();
       dismissVisitor(); // #181 선택 완료 → 방문자 퇴장 + 카메라 복귀
-      openModal(`${ev.icon} ${evTitle}`, `<div style="line-height:2">${result}</div>`);
+      openModal(`${icon('icon_ev_' + id, ev.icon)} ${evTitle}`, `<div style="line-height:2">${result}</div>`);
       scheduleSave();
       renderResBar();
       updateHud();
@@ -4972,7 +4972,7 @@ function showEventChip(id) {
     document.body.appendChild(chip);
   }
   chip.title = t('event.chip.title');
-  chip.innerHTML = `${ev.icon} ${t(ev.titleId)} <span class="ev-bang">!</span>`;
+  chip.innerHTML = `${icon('icon_ev_' + id, ev.icon)} ${t(ev.titleId)} <span class="ev-bang">!</span>`;
   chip.style.display = '';
   chip.onclick = () => {
     hideEventChip();
@@ -5684,7 +5684,7 @@ function openCraftModal() {
       const ok = resHasAll(m.cost);
       return `
       <div class="prep-row ${built ? 'sel' : ok ? '' : 'no'}" style="cursor:default">
-        <span>${m.emoji} ${LName(m)}</span>
+        <span>${icon('icon_mod_' + id, m.emoji)} ${LName(m)}</span>
         <span class="p-eff" style="font-size:10px">${LDesc(m)}</span>
         <span class="p-cost">${built ? '' : costLabel(m.cost)}</span>
         ${built
@@ -5702,25 +5702,25 @@ function openCraftModal() {
       const next = roofState === 'hole' ? { btn: 'bunker.roofStage1Btn', cost: BAL.economy.bunkerRoofStage1, act: 'roof1' } : { btn: 'bunker.roofStage2Btn', cost: BAL.economy.bunkerRoofStage2, act: 'roof2' };
       const ok = resHasAll(next.cost);
       projRows.push(`<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
-        <span>🛖 ${t('bunker.roofTitle')}</span>
+        <span>${t('bunker.roofTitle')}</span>
         <span class="p-eff" style="font-size:10px">${stageLabel}</span>
         <span class="p-cost">${costLabel(next.cost)}</span>
         <button class="pixel-btn" data-bproj="${next.act}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t(next.btn)}</button>
       </div>`);
     } else {
-      projRows.push(`<div class="prep-row sel" style="cursor:default"><span>🛖 ${t('bunker.roofTitle')}</span><span class="p-eff" style="font-size:10px">${stageLabel}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`);
+      projRows.push(`<div class="prep-row sel" style="cursor:default"><span>${t('bunker.roofTitle')}</span><span class="p-eff" style="font-size:10px">${stageLabel}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`);
     }
     if (state.hasCutter && !state.bunkerBackdoor) {
       const bdOk = resHasAll(BAL.economy.bunkerBackdoorCost);
       projRows.push(`<div class="prep-row ${bdOk ? '' : 'no'}" style="cursor:default">
-        <span>🔩 ${t('bunker.backdoorFound')}</span>
+        <span>${t('bunker.backdoorFound')}</span>
         <span class="p-cost">${costLabel(BAL.economy.bunkerBackdoorCost)}</span>
         <button class="pixel-btn" data-bproj="backdoor" ${bdOk ? '' : 'disabled'} style="margin-left:6px">${t('bunker.backdoorBtn')}</button>
       </div>`);
     } else if (state.bunkerBackdoor) {
-      projRows.push(`<div class="prep-row sel" style="cursor:default"><span>🔩 ${t('bunker.backdoorBtn')}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`);
+      projRows.push(`<div class="prep-row sel" style="cursor:default"><span>${t('bunker.backdoorBtn')}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`);
     }
-    bunkerHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🛖 ${LName(SHELTERS.bunker)}</div>${projRows.join('')}`;
+    bunkerHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${LName(SHELTERS.bunker)}</div>${projRows.join('')}`;
   }
   // 대형 프로젝트 (1.1 ARC-02) — 현재 조건을 만족하는 프로젝트 카드. 진행 게이지(투입/필요) + 남은 자재 req-chip.
   let projHtml = '';
@@ -5736,7 +5736,7 @@ function openCraftModal() {
       const pct = Math.round((investedTotal / totalNeed) * 100);
       if (done) {
         return `<div class="prep-row sel" style="cursor:default">
-          <span>${p.icon} ${t('proj.' + pid + '.name')}</span>
+          <span>${icon('icon_proj_' + pid, p.icon)} ${t('proj.' + pid + '.name')}</span>
           <span class="p-eff" style="font-size:10px">${t('proj.done')}</span>
           <span style="color:var(--good);font-size:11px">${t('craft.installed')}</span>
         </div>`;
@@ -5748,14 +5748,14 @@ function openCraftModal() {
       const chips = reqChips(cost);
       const ok = resHasAll(cost);
       return `<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default;flex-wrap:wrap">
-        <span>${p.icon} ${t('proj.' + pid + '.name')}</span>
+        <span>${icon('icon_proj_' + pid, p.icon)} ${t('proj.' + pid + '.name')}</span>
         <span class="p-eff" style="font-size:10px;flex:1">${t('proj.stageOf', { cur: rec.stage + 1, total: nStages })} · ${t('proj.progress', { pct, inv: investedTotal, need: totalNeed })}</span>
         <span class="req-chips" style="display:inline-flex;gap:4px">${chips}</span>
         <button class="pixel-btn" data-proj="${pid}" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('proj.workBtn')}</button>
         <div style="flex-basis:100%;font-size:10px;color:var(--text-dim);margin-top:2px">${t('proj.' + pid + '.stage' + (rec.stage + 1))} <span style="opacity:.7">(${t('proj.stageRemain', { n: remaining })})</span></div>
       </div>`;
     }).join('');
-    projHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🏗️ ${t('proj.header')}</div><div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${t('proj.intro')}</div>${cards}`;
+    projHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('proj.header')}</div><div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${t('proj.intro')}</div>${cards}`;
   }
   // 옥탑 슬레이트 보수 프로젝트 (#53) — 옥탑에서만. 빠진 슬레이트 2장 채우기(건축재 1). 벙커 천장과 동일 문법.
   let rooftopHtml = '';
@@ -5765,15 +5765,15 @@ function openCraftModal() {
     if (slate !== 'full') {
       const ok = resHasAll(BAL.economy.rooftopSlateCost);
       projRows.push(`<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
-        <span>🪨 ${t('rooftop.slateTitle')}</span>
+        <span>${t('rooftop.slateTitle')}</span>
         <span class="p-eff" style="font-size:10px">${t('rooftop.slateGapped')}</span>
         <span class="p-cost">${costLabel(BAL.economy.rooftopSlateCost)}</span>
         <button class="pixel-btn" data-rproj="slate" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('rooftop.slateBtn')}</button>
       </div>`);
     } else {
-      projRows.push(`<div class="prep-row sel" style="cursor:default"><span>🪨 ${t('rooftop.slateTitle')}</span><span class="p-eff" style="font-size:10px">${t('rooftop.slateFull')}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`);
+      projRows.push(`<div class="prep-row sel" style="cursor:default"><span>${t('rooftop.slateTitle')}</span><span class="p-eff" style="font-size:10px">${t('rooftop.slateFull')}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`);
     }
-    rooftopHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🏙️ ${LName(SHELTERS.rooftop)}</div>${projRows.join('')}`;
+    rooftopHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${LName(SHELTERS.rooftop)}</div>${projRows.join('')}`;
   }
   // 1.2 지하철 허브 — 승격(핸드카·노선도 복원) → 선로 복구·암시장 개방. subway에서만 노출.
   let subwayHtml = '';
@@ -5783,18 +5783,18 @@ function openCraftModal() {
       // 허브 승격 카드
       const hubOk = resHasAll(gateCost(BAL.subway.hubCost));
       rows += `<div class="prep-row ${hubOk ? '' : 'no'}" style="cursor:default">
-        <span>🚇 ${t('subway.hubTitle')}</span>
+        <span>${t('subway.hubTitle')}</span>
         <span class="p-eff" style="font-size:10px;flex:1">${t('subway.hubDesc')}</span>
         <span class="p-cost">${costLabel(gateCost(BAL.subway.hubCost))}</span>
         <button class="pixel-btn" data-subway="hub" ${hubOk ? '' : 'disabled'} style="margin-left:6px">${t('subway.hubBtn')}</button>
       </div>`;
     } else {
-      rows += `<div class="prep-row sel" style="cursor:default"><span>🚇 ${t('subway.hubTitle')}</span><span class="p-eff" style="font-size:10px">${t('subway.hubDone')}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`;
+      rows += `<div class="prep-row sel" style="cursor:default"><span>${t('subway.hubTitle')}</span><span class="p-eff" style="font-size:10px">${t('subway.hubDone')}</span><span style="color:var(--good);font-size:11px">${t('craft.installed')}</span></div>`;
       // 암시장 교환대 (승격 후) — 얼굴 없는 교환대. 슬롯/레이트는 개통 구간 수로 개선.
       const left = marketSlotsLeft();
       const total = marketSlots();
       const segN = subwayOpenCount();
-      rows += `<div style="font-size:11px;color:var(--accent);margin:10px 0 3px">🕳️ ${t('subway.marketTitle')} <span style="color:var(--text-dim)">${t('subway.marketSlots', { left, total })}</span></div>`;
+      rows += `<div style="font-size:11px;color:var(--accent);margin:10px 0 3px">${t('subway.marketTitle')} <span style="color:var(--text-dim)">${t('subway.marketSlots', { left, total })}</span></div>`;
       rows += `<div style="font-size:10px;color:var(--text-dim);margin-bottom:5px">${t('subway.marketIntro')}${segN > 0 ? ' ' + t('subway.marketRateNote', { n: segN }) : ''}</div>`;
       for (const offer of BAL.subway.marketOffers) {
         const cost = marketOfferCost(offer);
@@ -5807,7 +5807,7 @@ function openCraftModal() {
         </div>`;
       }
     }
-    subwayHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🚇 ${LName(SHELTERS.subway)}</div>${rows}`;
+    subwayHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${LName(SHELTERS.subway)}</div>${rows}`;
   }
   // 1.1 얼음낚시 — 겨울 한정, 물가 셸터(예인선/여객선/등대). 겨울이 처음으로 '받는 계절'이 되는 장치.
   let icefishHtml = '';
@@ -5818,9 +5818,9 @@ function openCraftModal() {
     const left = Math.max(0, spots - used);
     const canEnergy = state.energy >= H.icefishEnergy && !isExhausted();
     const ok = left > 0 && canEnergy;
-    icefishHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🎣 ${t('icefish.title')}</div>
+    icefishHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${t('icefish.title')}</div>
       <div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
-        <span>🎣 ${t('icefish.action')}</span>
+        <span>${t('icefish.action')}</span>
         <span class="p-eff" style="font-size:10px;flex:1">${t('icefish.hint', { e: H.icefishEnergy, spots, left })}</span>
         <button class="pixel-btn" id="btn-icefish" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('icefish.go')}</button>
       </div>`;
@@ -5835,7 +5835,7 @@ function openCraftModal() {
     if (!state.hazmat) {
       const ok = resHasAll(gateCost(F.hazmatCost));
       rows2.push(`<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
-        <span>🥽 ${t('hazmat.name')}</span>
+        <span>${t('hazmat.name')}</span>
         <span class="p-eff" style="font-size:10px;flex:1">${t('hazmat.craftHint', { dur: F.hazmatDur })}</span>
         <span class="p-cost">${costLabel(gateCost(F.hazmatCost))}</span>
         <button class="pixel-btn" data-hazmat="craft" ${ok ? '' : 'disabled'} style="margin-left:6px">${t('hazmat.craftBtn')}</button>
@@ -5844,7 +5844,7 @@ function openCraftModal() {
       const full = state.hazmat.dur >= F.hazmatDur;
       const ok = resHasAll(gateCost(F.hazmatRepairCost));
       rows2.push(`<div class="prep-row ${full ? 'sel' : ''}" style="cursor:default">
-        <span>🥽 ${t('hazmat.name')}</span>
+        <span>${t('hazmat.name')}</span>
         <span class="p-eff" style="font-size:10px;flex:1">${t('hazmat.durLine', { dur: state.hazmat.dur, max: F.hazmatDur })}</span>
         ${full
           ? `<span style="color:var(--good);font-size:11px">${t('hazmat.ready')}</span>`
@@ -5857,7 +5857,7 @@ function openCraftModal() {
       const gFull = state.gun.dur >= H.gunDur;
       const gOk = resHasAll(gateCost(H.gunRepairCost));
       rows2.push(`<div class="prep-row ${gFull ? 'sel' : ''}" style="cursor:default">
-        <span>🔫 ${t('gun.name')}</span>
+        <span>${t('gun.name')}</span>
         <span class="p-eff" style="font-size:10px;flex:1">${t('gun.durLine', { dur: state.gun.dur, max: H.gunDur })}</span>
         ${gFull
           ? `<span style="color:var(--good);font-size:11px">${t('gun.ready')}</span>`
@@ -5872,12 +5872,12 @@ function openCraftModal() {
       const canEnergy = state.energy >= F.broadcastEnergy && !isExhausted();
       const ok = !allSent && total > 0 && canEnergy;
       rows2.push(`<div class="prep-row ${ok ? '' : 'no'}" style="cursor:default">
-        <span>📡 ${t('radio.broadcastName')}</span>
+        <span>${t('radio.broadcastName')}</span>
         <span class="p-eff" style="font-size:10px;flex:1">${t('radio.broadcastHint', { e: F.broadcastEnergy, sent, total, lit: state.survivorLights || 0 })}</span>
         <button class="pixel-btn" id="btn-broadcast" ${ok ? '' : 'disabled'} style="margin-left:6px">${allSent ? t('radio.allSentBtn') : t('radio.broadcastBtn')}</button>
       </div>`);
     }
-    forbiddenHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">☢️ ${LName(DISTRICTS.research)}</div><div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${t('forbidden.intro')}</div>${rows2.join('')}`;
+    forbiddenHtml = `<div style="font-size:12px;color:var(--accent);margin:12px 0 6px">${LName(DISTRICTS.research)}</div><div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">${t('forbidden.intro')}</div>${rows2.join('')}`;
   }
   // 꾸미기(#13): 벽지/바닥재 스와치. 현재 셸터의 벽/바닥 재질을 교체 (셸터 지오메트리 불변).
   const dcur = currentDeco();
@@ -5886,12 +5886,12 @@ function openCraftModal() {
     const owned = active || !def.cost || resHasAll(def.cost);
     const costTip = def.cost ? costLabel(def.cost) : t('deco.free');
     return `<button class="pixel-btn ${active ? 'primary' : ''}" data-deco="${kind}:${id}" ${owned || active ? '' : 'disabled'}
-      title="${LName(def)}" style="margin:2px;padding:4px 6px;font-size:11px">${def.emoji} ${LName(def)}${active ? ' ✓' : (def.cost ? ` <span style="opacity:.6">${costTip}</span>` : '')}</button>`;
+      title="${LName(def)}" style="margin:2px;padding:4px 6px;font-size:11px">${icon('icon_' + kind + '_' + id, def.emoji)} ${LName(def)}${active ? ' ✓' : (def.cost ? ` <span style="opacity:.6">${costTip}</span>` : '')}</button>`;
   }).join('');
   const themeHtml = THEME_SETS.map(ts => {
     const done = themeSetActive(ts);
     return `<div class="prep-row ${done ? 'sel' : ''}" style="cursor:default">
-      <span>${ts.emoji} ${LName(ts)}</span>
+      <span>${icon('icon_theme_' + ts.id, ts.emoji)} ${LName(ts)}</span>
       <span class="p-eff" style="font-size:10px">${ts.items.map(id => DEFS[id].emoji).join('')} → ${t('deco.themeBonus', { n: DECO_THEME_COMFORT })}</span>
       <span style="color:${done ? 'var(--good)' : 'var(--text-dim)'};font-size:11px;margin-left:6px">${done ? t('deco.themeDone') : t('deco.themeTodo')}</span>
     </div>`;
@@ -6736,7 +6736,7 @@ function playCollapseVignette() {
   };
   const showChoice = () => {
     ui.innerHTML = `
-      <div style="color:#e8e0d0;font-size:13px;font-weight:bold;text-shadow:0 2px 8px #000">${ev.icon} ${evTitle}</div>
+      <div style="color:#e8e0d0;font-size:13px;font-weight:bold;text-shadow:0 2px 8px #000">${icon('icon_ev_collapsed_entrance', ev.icon)} ${evTitle}</div>
       <div style="color:#cfc6b4;font-size:11px;line-height:1.85;text-shadow:0 2px 8px #000">${ev.textFn ? ev.textFn() : ''}</div>
       <button class="pixel-btn primary" data-cc="0">${t('ev.collapse.c0')}</button>
       <button class="pixel-btn" data-cc="1">${t('ev.collapse.c1')}</button>`;
@@ -7693,7 +7693,7 @@ function makeDraggablePanel(el, key, title) {
     el.classList.add('collapsed'); // 작은 창 기본: 설정·자원 접힘 (겹침 방지)
   }
   const minBtn = head.querySelector('.p-min');
-  const syncMin = () => { minBtn.textContent = el.classList.contains('collapsed') ? '□' : '–'; };
+  const syncMin = () => { minBtn.textContent = el.classList.contains('collapsed') ? '+' : '-'; }; // 웹폰트 누수 봉합: □·en-dash(픽셀폰트 미보유→Malgun 폴백) → DungGeunMo 보유 ASCII +/-
   syncMin();
   minBtn.addEventListener('click', ev => {
     ev.stopPropagation();
@@ -7795,7 +7795,7 @@ function showTitle() {
     $('t-continue').style.display = '';
     $('t-continue-info').textContent = t('title.continueInfo', { slot: currentSlot, day: meta.day, sicon: meta.season.icon, semoji: meta.shelter.emoji, sname: LName(meta.shelter) })
       + (meta.winters >= 1 ? t('title.continueWinters', { n: meta.winters }) : '') // Nine Winters(#11)
-      + (meta.mode === 'hard' ? ' 🔥' : meta.mode === 'hardcore' ? ' 💀' : meta.mode === 'zen' ? ' ♾️' : meta.mode === 'wallpaper' ? ' 🖼️' : ''); // #90: 슬롯 배지(slotModeBadge)와 4모드 표기 일치 — 혹한·꾸미기 공백 봉합
+      + ''; // 난이도/모드 표기 = 슬롯카드 테두리색으로 이관 (디렉터: 이모지 배지 폐지)
   } else {
     $('t-continue').style.display = 'none';
   }
@@ -7842,11 +7842,7 @@ function showDemoEnd() {
 }
 // 슬롯 모드 배지 (하드/무한/하드코어/배경화면) — icon() 폴백 문법 대신 이모지 배지 유지
 function slotModeBadge(mode) {
-  if (mode === 'hard') return `<span class="sl-mode-hard" title="${t('slot.hardBadge.title')}">🔥</span>`;
-  if (mode === 'hardcore') return `<span class="sl-mode-hard" title="${t('slot.hardcoreBadge.title')}">💀</span>`;
-  if (mode === 'zen') return `<span class="sl-mode-zen" title="${t('slot.zenBadge.title')}">♾️</span>`;
-  if (mode === 'wallpaper') return `<span class="sl-mode-zen" title="${t('slot.wallpaperBadge.title')}">🖼️</span>`;
-  return '';
+  return ''; // 난이도/모드 = 슬롯카드 테두리색(data-mode)으로 이관 (디렉터: 이모지 🔥💀♾️🖼️ 배지 폐지)
 }
 function openSlotModal(mode) {
   const cards = [];
@@ -7855,12 +7851,12 @@ function openSlotModal(mode) {
     const m = slotMeta(n);
     const ended = m && m.runEnded; // 끝난 기록(회고만)
     cards.push(`
-      <div class="slot-card ${m ? '' : 'empty'} ${ended ? 'ended' : ''}" data-slot="${n}" data-has="${m ? 1 : 0}" data-ended="${ended ? 1 : 0}">
+      <div class="slot-card ${m ? '' : 'empty'} ${ended ? 'ended' : ''}" data-slot="${n}" data-has="${m ? 1 : 0}" data-ended="${ended ? 1 : 0}" data-mode="${m && m.mode ? m.mode : 'cozy'}">
         ${m ? slotModeBadge(m.mode) : ''}
         ${m && m.qaUsed ? `<span class="sl-qa" title="QA 치트 사용됨" style="position:absolute;top:4px;left:4px;font-size:9px;background:#6b5a40;color:#1a1408;padding:1px 4px;border-radius:3px;font-weight:bold">QA</span>` : ''}
         <span class="sl-no">${n}</span>
         <div class="sl-body">${m
-          ? `${m.shelter.emoji} ${LName(m.shelter)} — Day ${m.day} ${m.season.icon}${m.winters >= 1 ? ` <span class="sl-winters">❄️${m.winters}${m.mode === 'zen' ? '' : '/9'}</span>` : ''}${ended ? ` <span class="sl-ended">${t('slot.endedTag')}</span>` : ''}<br><span class="sl-meta">${m.mode === 'wallpaper' ? t('slot.metaWp', { saved: m.saved }) : t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
+          ? `${LName(m.shelter)} — Day ${m.day}${m.winters >= 1 ? ` <span class="sl-winters">${m.winters}${m.mode === 'zen' ? '' : '/9'}</span>` : ''}${ended ? ` <span class="sl-ended">${t('slot.endedTag')}</span>` : ''}<br><span class="sl-meta">${m.mode === 'wallpaper' ? t('slot.metaWp', { saved: m.saved }) : t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
           : t('slot.empty')}</div>
         ${m ? `<button class="sl-del" data-del="${n}" title="${t('slot.del.title')}">🗑</button>` : ''}
       </div>`);
@@ -8032,7 +8028,7 @@ function updateClock() {
   // #199 5차-b(디렉터): 날씨(+페널티)는 시계가 계기 — HUD 스트립에서 이관. 이모지 금지 → 아트 아이콘
   const wPen = WEATHERS[weather.type]?.penalty;
   // 시간대 아이콘은 밤(달)만 — 새벽/낮/황혼의 해 계열은 제거(디렉터: 해 모양 금지), 라벨 텍스트가 식별자
-  $('lcd-sub').innerHTML = `${timeArt === 'icon_time_night' ? icon(timeArt, timeIcon) + ' ' : ''}${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:var(--bad)">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + injIconEl(state.injury.type) : ''}`;
+  $('lcd-sub').innerHTML = `${label} · ${wxIcon(weather.type)}${wPen ? `<span style="color:var(--bad)">-${Math.round(wPen * 100)}%</span>` : ''}${state.injury ? ' · ' + injIconEl(state.injury.type) : ''}`;
 }
 
 function updateHud() {
@@ -8291,7 +8287,7 @@ function buildWinterMemoir(n) {
     : (acc.injuries === 1 && INJURIES[acc.lastInjury]) ? t('winter.memoir.hurt.once', { name: LName(INJURIES[acc.lastInjury]) })
     : (state.scars || []).length ? t('winter.memoir.unhurt') : '';
   const page = {
-    titleId, titleArgs: { n },
+    titleId, titleArgs: { n }, lang, // i18n 누수 봉합: 언어 스탬프 — cat/closing이 해석문자열이라 전환 시 부팅에서 옛 언어 pending 페이지 드롭
     bodyId,
     bodyArgs: {
       days, cold: acc.coldSnaps, defended: acc.defended, exp: expWon, fuel: acc.fuel,
@@ -8308,7 +8304,7 @@ function buildWinterMemoir(n) {
 function buildNinthWinterMilestone() {
   const st = state.stats || {};
   const page = {
-    titleId: 'winter.ninth.title',
+    titleId: 'winter.ninth.title', lang, // i18n: 언어 스탬프(bodyArgs.cat 해석문자열)
     bodyId: 'winter.ninth.body',
     bodyArgs: {
       day: state.day, exp: st.success || 0, craft: st.craft || 0,
@@ -8996,7 +8992,7 @@ function showDayReport() {
     ${warns.length ? `<div class="report-sec report-warn">${t('report.warn', { list: warns.map(id => RESOURCES[id].emoji + LName(RESOURCES[id])).join(', ') })}</div>` : ''}
     ${tips.length ? `<div class="report-sec report-tip">💡 ${tips.slice(0, 2).join('<br>💡 ')}</div>` : ''}
   `, 'report');
-  state.dayLog = { gain: {}, spend: {}, notes: [] };
+  state.dayLog = { gain: {}, spend: {}, notes: [], lang }; // lang 스탬프: 언어 바뀌면 옛 로그 비우기 근거(부팅 대조)
   playSfx('pen');
   // 자원(물/음식) 고갈 경고음 — 하루 1회 제한
   if ((warns.includes('water') || warns.includes('food')) && state.lastAlarmDay !== state.day) {
@@ -9387,7 +9383,7 @@ function positionSelPanel() {
 }
 function showSelPanel(item) {
   const def = DEFS[item.defId];
-  $('sel-name').innerHTML = `${def.emoji} ${LName(def)}`;
+  $('sel-name').innerHTML = `${furnIcon(item.defId)} ${LName(def)}`;
   const sw = $('sel-swatches');
   sw.innerHTML = '';
   def.colors.forEach((c, i) => {
@@ -10284,8 +10280,33 @@ function applyOpts() {
   ceilLight.visible = opts.ceil;
   shadowDirty();
   makeRT();
+  applyPdaTex(); // PDA 하우징 텍스처를 새 픽셀 설정에 재연동 (디렉터 2026-07-19)
   applyLowSpec();
   applyAccessibility();
+}
+// ── PDA 텍스처 픽셀화 연동 (디렉터: "PDA도 게임 픽셀 설정 따라, 옵션값보다 조금 더 강하게") ──
+//   게임은 innerWidth/opts.pixel로 렌더(텍셀=opts.pixel px). PDA 하우징도 같은 배수(+부스트)로
+//   다운샘플·40색 양자화(액센트 보존)한 프리베이크 픽셀본을 물려 도트 크기를 세계와 일치시킨다.
+//   #pda는 image-rendering:pixelated라 저해상 픽셀본을 CSS가 크리스프하게 확대한다. (도크는 표시크기 맞춤 필요 — 후속)
+function pdaTexUrl(base) {
+  const BOOST = 2;                 // PDA는 옵션보다 이만큼 더 강하게 (최대치에서도 안 뭉개짐 실측)
+  const px = (opts.pixel | 0);
+  if (opts.quant === false || px <= 1) return `img/ui/${base}.png`; // 픽셀화 off → 원본 트루컬러
+  const f = Math.max(3, Math.min(8, px + BOOST));                   // 프리베이크 범위 px3~px8
+  return `img/ui/${base}_px${f}.png`;
+}
+function applyPdaTex() {
+  const px = (opts.pixel | 0);
+  const pixed = !(opts.quant === false || px <= 1); // 픽셀화 활성 여부
+  const p = $('pda'); if (p) p.style.backgroundImage = `url('${pdaTexUrl('pda04')}')`;
+  const d = $('dock-pda');
+  if (d) {
+    // 도크는 53px 초소형 → 세계 텍셀 크기(opts.pixel px)를 그대로 맞추면 소스가 ~18px로 뭉갠다.
+    //   대신 표시크기에 맞는 고정 픽셀본(px8, 47w)을 pixelated로 살짝 업스케일해 "크리스프 도트"만 확보
+    //   (스무스 트루컬러의 AI티 제거 = 색상수 40 + 하드 엣지). 원본은 스무스 다운스케일 유지.
+    d.style.backgroundImage = `url('img/ui/${pixed ? 'dock_pda_px8' : 'dock_pda'}.png')`;
+    d.style.imageRendering = pixed ? 'pixelated' : 'auto';
+  }
 }
 // 접근성 body 클래스 + 폰트 배율 반영 (REQ-ACC-01). 게임 3D는 불변 — CSS 오버라이드/폰트만.
 function applyAccessibility() {
@@ -10606,6 +10627,14 @@ const autoLang = (() => {
 //   __ITCH__(데모 브랜치 국제판)는 영어 강제 — 재수렴 시 안전 가드.
 if (_firstLaunch) opts.lang = (typeof __ITCH__ !== 'undefined' && __ITCH__) ? 'en' : autoLang;
 setLang(opts.lang || autoLang);   // 세이브된 언어 > Steam/OS 추정
+// i18n 누수 봉합(디렉터 신고 2026-07-19): dayLog.notes는 t() 해석 결과 '문자열'이라 세이브에 굳는다
+//   → 언어 바꿔 리로드하면 옛 언어 노트가 그대로 뜬다(예: EN 모드인데 로그만 한국어). 당일 로그는
+//   휘발성(매 아침 리셋)이라, 로드된 로그의 작성 언어(dayLog.lang)가 현재와 다르면 비워 새 언어로 다시 쌓는다.
+if (state.dayLog && state.dayLog.lang && state.dayLog.lang !== lang) state.dayLog.notes = [];
+if (state.dayLog) state.dayLog.lang = lang;
+// 같은 원인의 memoir 소누수: pending 페이지의 cat/closing도 해석문자열. pending은 봄 첫 아침 1회 표시라,
+//   작성 언어(page.lang)가 다른 페이지는 드롭한다(다음 겨울 페이지부터 새 언어로 정상 생성).
+if (Array.isArray(state.pendingWinterMemoir)) state.pendingWinterMemoir = state.pendingWinterMemoir.filter(p => !(p && p.lang && p.lang !== lang));
 applyLocaleOverrides();       // 설치본 locales/*.json 유저 편집분 병합 (Electron 동기 — 렌더 전, 플래시 없음)
 applyStaticI18n();            // index.html 정적 텍스트 치환
 // 카메라 열 버튼: 브라우저 네이티브 툴팁(title) 대신 게임 스타일 좌측 라벨(::before, data-label).
@@ -10697,8 +10726,7 @@ $('btn-cancel-place').addEventListener('click', () => cancelPlacing());
 // #211(디렉터 "일지 그냥 PDA에 통합. UI 망가지고 오히려 AI 티 나더라"): 필드노트 기기 폐지.
 //   두 기기가 같은 데이터를 나눠 갖고 있었다(기록·자원·날씨·결핍 중복 + 노트의 '일지' 탭은 모달 링크였다).
 //   기기가 늘어난 게 원인이라 기기를 줄인다 — 우측 도킹은 PDA 하나.
-$('pda').style.backgroundImage = "url('img/ui/pda04.png')";
-$('dock-pda').style.backgroundImage = "url('img/ui/dock_pda.png')";
+applyPdaTex(); // #pda·도크 하우징 = 픽셀 설정 연동 (pdaTexUrl — applyOpts에서도 재호출)
 $('dock-pda').addEventListener('click', () => pdaVisible() ? pdaClose() : pdaOpen());
 $('pda-back').addEventListener('pointerdown', e => { if (e.target.id === 'pda-back') pdaClose(); });
 document.querySelectorAll('#pda-tabs .pda-tab').forEach(b =>
