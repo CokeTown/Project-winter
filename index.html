@@ -26,19 +26,19 @@
   <div id="title-inner">
     <div id="title-logo"><img src="img/logo_wordmark.png" alt="NINE WINTERS" draggable="false"></div>
     <div id="title-menu">
-      <button class="pixel-btn primary" id="t-continue" style="display:none"><span data-i18n="title.continue">▶ 이어하기</span><br><span id="t-continue-info" style="font-size:9px;color:var(--text-dim)"></span></button>
-      <button class="pixel-btn" id="t-new" data-i18n="title.new">✚ 새 게임</button>
-      <button class="pixel-btn" id="t-load" data-i18n="title.load">💾 불러오기</button>
-      <button class="pixel-btn" id="t-help" data-i18n="title.help">❓ 살아남는 법</button>
-      <button class="pixel-btn" id="t-quit" data-i18n="title.quit" style="display:none">✖ 게임 종료</button>
+      <button class="pixel-btn primary" id="t-continue" style="display:none"><span data-i18n="title.continue">이어하기</span><br><span id="t-continue-info" style="font-size:9px;color:var(--text-dim)"></span></button>
+      <button class="pixel-btn" id="t-new" data-i18n="title.new">새 게임</button>
+      <button class="pixel-btn" id="t-load" data-i18n="title.load">불러오기</button>
+      <button class="pixel-btn" id="t-help" data-i18n="title.help">살아남는 법</button>
+      <button class="pixel-btn" id="t-quit" data-i18n="title.quit" style="display:none">게임 종료</button>
       <div id="title-lang">
         <button class="pixel-btn lang-btn" id="lang-ko">한국어</button>
         <button class="pixel-btn lang-btn" id="lang-en">English</button>
         <button class="pixel-btn lang-btn" id="lang-ja">日本語</button>
       </div>
       <div id="title-tools">
-        <button class="pixel-btn" id="t-export" data-i18n-title="title.tools.export" title="세이브 내보내기">💾</button>
-        <button class="pixel-btn" id="t-import" data-i18n-title="title.tools.import" title="세이브 가져오기">📂</button>
+        <button class="pixel-btn" id="t-export" data-i18n-title="title.tools.export" title="세이브 내보내기"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_save.svg');mask-image:url('img/glyphs/icon_sys_save.svg')"></span></button>
+        <button class="pixel-btn" id="t-import" data-i18n-title="title.tools.import" title="세이브 가져오기"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_import.svg');mask-image:url('img/glyphs/icon_sys_import.svg')"></span></button>
         <button class="pixel-btn" id="t-settings" data-i18n-title="title.tools.settings" title="설정"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_settings.svg');mask-image:url('img/glyphs/icon_sys_settings.svg')"></span></button>
       </div>
     </div>
@@ -57,7 +57,7 @@
 </div>
 
 <div class="panel" id="hud">
-  <div class="shelter-name" id="hud-shelter" data-i18n="hud.shelter">🏚️ 셸터</div>
+  <div class="shelter-name" id="hud-shelter" data-i18n="hud.shelter">셸터</div>
   <div class="stat" id="hud-stat" data-i18n="hud.stat">성공한 탐험 0회</div>
   <!-- #199 5차 「필드 터미널」(디렉터 목업): 게이지 = 카드형(아이콘+라벨+큰 숫자+컬러 바) -->
   <div id="gauges">
@@ -127,7 +127,7 @@
   <div id="lcd">
     <div id="lcd-day">DAY 01</div>
     <div id="lcd-time">08<span id="lcd-colon">:</span>00</div>
-    <div id="lcd-sub">🌅 아침 · 🌤️</div>
+    <div id="lcd-sub"></div>
   </div>
 </div>
 
@@ -151,7 +151,7 @@
 <div id="pause-ind" data-i18n="pause.ind">⏸ 일시정지</div>
 <!-- #14 게임패드 가상 커서 — 패드 입력 시에만 표시(마우스 이동 시 숨김) -->
 <div id="pad-cursor" aria-hidden="true"></div>
-<button class="pixel-btn danger" id="btn-cancel-place" data-i18n="btn.cancelPlace">✖ 배치 취소</button>
+<button class="pixel-btn danger" id="btn-cancel-place" data-i18n="btn.cancelPlace">배치 취소</button>
 
 <!-- #디렉터: 「지역 탐험」 HUD 패널 삭제 — 탐험 진입은 상단 메뉴 「탐험」 버튼, 진행률·부상은 PDA로 이관. 요소는 유지(renderExpPanel 참조 안전)하되 display:none. -->
 <div class="panel" id="exp-panel">
@@ -164,7 +164,7 @@
   <div class="panel" id="settings-window">
     <div id="settings-head">
       <h2 data-i18n="settings.title">■ 설정</h2>
-      <button id="settings-x" aria-label="close">✕</button>
+      <button id="settings-x" aria-label="close">X</button>
     </div>
     <div id="settings-tabs">
       <button class="settings-tab active" data-tab="graphics" data-i18n="settings.tab.graphics">그래픽</button>
@@ -187,7 +187,7 @@
         <label><span data-i18n="opt.ceil">실내 조명</span> <input type="checkbox" id="opt-ceil" checked></label>
         <label><span data-i18n="opt.lowspec">저사양 모드</span> <input type="checkbox" id="opt-lowspec"></label>
         <label><span data-i18n="opt.fps">FPS 제한</span> <select id="opt-fps"><option value="60">60</option><option value="30">30</option></select></label>
-        <h2 data-i18n="acc.title">♿ 접근성</h2>
+        <h2 data-i18n="acc.title">접근성</h2>
         <label><span data-i18n="opt.fontscale">글자 크기</span> <select id="opt-fontscale">
           <option value="1" data-i18n="acc.font.normal">보통</option>
           <option value="1.12" data-i18n="acc.font.large">크게</option>
@@ -196,17 +196,17 @@
         <label data-i18n-title="opt.colorblind.title" title="게이지와 요구 표시의 초록/빨강을 파랑/주황으로 바꿉니다"><span data-i18n="opt.colorblind">색약 팔레트</span> <input type="checkbox" id="opt-colorblind"></label>
         <label data-i18n-title="opt.reducemotion.title" title="게이지 깜빡임·배지 흔들림 등 반복 애니메이션을 멈춥니다"><span data-i18n="opt.reducemotion">흔들림 · 깜빡임 감소</span> <input type="checkbox" id="opt-reducemotion"></label>
         <div id="display-section" style="display:none">
-          <h2 data-i18n="display.title">🖥️ 디스플레이</h2>
+          <h2 data-i18n="display.title">디스플레이</h2>
           <label><span data-i18n="opt.dispmode">화면 모드</span> <select id="opt-dispmode">
             <option value="windowed" data-i18n="disp.windowed">창 화면</option>
             <option value="fullscreen" data-i18n="disp.fullscreen">전체화면</option>
             <option value="borderless" data-i18n="disp.borderless">창없는 전체화면</option>
           </select></label>
           <label id="dispres-row"><span data-i18n="opt.dispres">해상도</span> <select id="opt-dispres"></select></label>
-          <div class="btn-row"><button class="pixel-btn primary" id="btn-disp-apply" data-i18n="disp.apply">✓ 적용</button></div>
+          <div class="btn-row"><button class="pixel-btn primary" id="btn-disp-apply" data-i18n="disp.apply">적용</button></div>
         </div>
         <div id="widget-section" style="display:none">
-          <h2 data-i18n="widget.title">🪟 위젯 모드</h2>
+          <h2 data-i18n="widget.title">위젯 모드</h2>
           <label><span data-i18n="widget.opacity">투명도</span> <input type="range" id="opt-widget-opacity" min="30" max="100" step="5" value="100"></label>
           <label><span data-i18n="widget.alwaysontop">항상 위</span> <input type="checkbox" id="opt-widget-aot"></label>
           <label><span data-i18n="widget.mini">미니 창</span> <input type="checkbox" id="opt-widget-mini"></label>
@@ -216,8 +216,8 @@
       <!-- ② 사운드 -->
       <div class="settings-pane" data-pane="sound">
         <label id="bgm-row" style="display:none"><span data-i18n="opt.bgm">BGM</span> <input type="checkbox" id="opt-bgm"></label>
-        <label id="bgmvol-row"><span data-i18n="opt.bgmvol">🔊 음량</span> <input type="range" id="opt-bgmvol" min="0" max="100" step="5" value="15"></label>
-        <label id="sfxvol-row"><span data-i18n="opt.sfxvol">🔔 효과음</span> <input type="range" id="opt-sfxvol" min="0" max="100" step="5" value="70"></label>
+        <label id="bgmvol-row"><span data-i18n="opt.bgmvol">음량</span> <input type="range" id="opt-bgmvol" min="0" max="100" step="5" value="15"></label>
+        <label id="sfxvol-row"><span data-i18n="opt.sfxvol">효과음</span> <input type="range" id="opt-sfxvol" min="0" max="100" step="5" value="70"></label>
         <label id="bgidle-row"><span data-i18n="opt.bgidle">백그라운드 소리</span> <input type="checkbox" id="opt-bgidle" checked></label>
       </div>
       <!-- ③ 게임 플레이 -->
@@ -233,9 +233,9 @@
       </div>
     </div>
     <div id="settings-foot">
-      <button class="pixel-btn" id="btn-save-now" data-i18n="btn.saveNow" data-i18n-title="btn.saveNow.title" title="지금 저장">💾 저장</button>
+      <button class="pixel-btn" id="btn-save-now" data-i18n="btn.saveNow" data-i18n-title="btn.saveNow.title" title="지금 저장">저장</button>
       <button class="pixel-btn" id="btn-settings-default" data-i18n="settings.default">기본값</button>
-      <button class="pixel-btn" id="btn-reset" data-i18n="btn.reset">🚪 타이틀로</button>
+      <button class="pixel-btn" id="btn-reset" data-i18n="btn.reset">타이틀로</button>
       <button class="pixel-btn primary" id="btn-settings-close" data-i18n="settings.close">닫기</button>
     </div>
   </div>

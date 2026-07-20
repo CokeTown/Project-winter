@@ -702,11 +702,6 @@ function timeLabel() { // [2]=아트 아이콘 키(#199 이모지 스윕) — �
   if (h < 21) return ['🌇', t('time.dusk'), 'icon_time_dusk'];
   return ['🌙', t('time.night'), 'icon_time_night'];
 }
-function clockText() {
-  const h = Math.floor(gameHour()), m = Math.floor(state.gameMin % 60);
-  const [icon, label] = timeLabel();
-  return `Day ${state.day} · ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${icon} ${label}`;
-}
 
 /* ============================================================
    계절 (기획서: 4계절 순환 — 12게임일 = 1계절)
@@ -933,25 +928,25 @@ function comfortBreakdown() {
   // ── 원인 로그 (각 축 2~3줄) ──
   const logs = { warmth: [], clean: [], security: [], mood: [] };
   // 온기
-  for (const s of warmSrc) logs.warmth.push({ icon: DEFS[s.id].emoji, name: LName(DEFS[s.id]), v: `+${Math.round(s.v * (rawSum ? (cd.light / rawSum) : 1))}` });
-  if (cd.heatMod) logs.warmth.push({ icon: '♨️', name: t('comfort.log.heater'), v: `+${cd.heatMod}` });
-  if (cd.catMod) logs.warmth.push({ icon: '🐈', name: t('comfort.log.cat'), v: `+${cd.catMod}` });
-  if (warmthLimit < 0) logs.warmth.push({ icon: coldSnapNetSeverity() > 0 ? '🥶' : '❄️', name: coldSnapNetSeverity() > 0 ? t('comfort.log.coldsnap') : t('comfort.log.cold'), v: `${warmthLimit}` });
+  for (const s of warmSrc) logs.warmth.push({ name: LName(DEFS[s.id]), v: `+${Math.round(s.v * (rawSum ? (cd.light / rawSum) : 1))}` });
+  if (cd.heatMod) logs.warmth.push({ name: t('comfort.log.heater'), v: `+${cd.heatMod}` });
+  if (cd.catMod) logs.warmth.push({ name: t('comfort.log.cat'), v: `+${cd.catMod}` });
+  if (warmthLimit < 0) logs.warmth.push({ name: coldSnapNetSeverity() > 0 ? t('comfort.log.coldsnap') : t('comfort.log.cold'), v: `${warmthLimit}` });
   // 청결
-  if (cd.cleanMod) logs.clean.push({ icon: '🧹', name: t('comfort.log.cleanState', { n: Math.round(cd.clean) }), v: `${cd.cleanMod > 0 ? '+' : ''}${cd.cleanMod}` });
+  if (cd.cleanMod) logs.clean.push({ name: t('comfort.log.cleanState', { n: Math.round(cd.clean) }), v: `${cd.cleanMod > 0 ? '+' : ''}${cd.cleanMod}` });
   // 안정감
-  logs.security.push({ icon: '🏠', name: t('comfort.log.base'), v: '+18' });
-  if (cd.shelterMod) logs.security.push({ icon: sh.emoji, name: t('comfort.log.shelter'), v: `+${cd.shelterMod}` });
-  if (cd.settled) logs.security.push({ icon: '🪺', name: t('comfort.log.settled', { n: cd.settled }), v: `+${cd.settled}` });
-  if (cd.injuryMod) logs.security.push({ icon: '🩹', name: t('comfort.log.injury'), v: `${cd.injuryMod}` });
-  if (cd.bunkerMod) logs.security.push({ icon: '🛖', name: t('comfort.log.bunkerRoof'), v: `+${cd.bunkerMod}` });
-  if (cd.knowMod) logs.security.push({ icon: '📖', name: t('comfort.log.knowledge'), v: `+${cd.knowMod}` });
-  if (cd.moodMod) logs.security.push({ icon: cd.moodMod > 0 ? '🫧' : '💭', name: t('comfort.log.mood'), v: `${cd.moodMod > 0 ? '+' : ''}${cd.moodMod}` });
+  logs.security.push({ name: t('comfort.log.base'), v: '+18' });
+  if (cd.shelterMod) logs.security.push({ name: t('comfort.log.shelter'), v: `+${cd.shelterMod}` });
+  if (cd.settled) logs.security.push({ name: t('comfort.log.settled', { n: cd.settled }), v: `+${cd.settled}` });
+  if (cd.injuryMod) logs.security.push({ name: t('comfort.log.injury'), v: `${cd.injuryMod}` });
+  if (cd.bunkerMod) logs.security.push({ name: t('comfort.log.bunkerRoof'), v: `+${cd.bunkerMod}` });
+  if (cd.knowMod) logs.security.push({ name: t('comfort.log.knowledge'), v: `+${cd.knowMod}` });
+  if (cd.moodMod) logs.security.push({ name: t('comfort.log.mood'), v: `${cd.moodMod > 0 ? '+' : ''}${cd.moodMod}` });
   // 분위기
-  if (cd.furn) logs.mood.push({ icon: '🪑', name: t('comfort.log.furn'), v: `+${cd.furn}` });
-  for (const s of moodSrc) logs.mood.push({ icon: DEFS[s.id].emoji, name: LName(DEFS[s.id]), v: `+${Math.round(s.v * (rawSum ? (cd.light / rawSum) : 1))}` });
-  if (cd.themeMod) for (const ts of activeThemeSets()) logs.mood.push({ icon: ts.emoji, name: LName(ts), v: `+${DECO_THEME_COMFORT}` });
-  if (darkPen) logs.mood.push({ icon: '🌑', name: t('comfort.log.dark'), v: `${darkPen}` });
+  if (cd.furn) logs.mood.push({ name: t('comfort.log.furn'), v: `+${cd.furn}` });
+  for (const s of moodSrc) logs.mood.push({ name: LName(DEFS[s.id]), v: `+${Math.round(s.v * (rawSum ? (cd.light / rawSum) : 1))}` });
+  if (cd.themeMod) for (const ts of activeThemeSets()) logs.mood.push({ name: LName(ts), v: `+${DECO_THEME_COMFORT}` });
+  if (darkPen) logs.mood.push({ name: t('comfort.log.dark'), v: `${darkPen}` });
   return { warmth, clean, security, mood, score: cd.score, logs };
 }
 // bunkerComfortBonus → core/comfort.js (import). 벙커 천장/저장고 쾌적 가산.
@@ -3864,15 +3859,15 @@ function resolveExpedition() {
       state.paints[fam] = (state.paints[fam] || 0) + 1;
       notes.push(t('paint.foundNote', { name: LName(PAINT_FAMILIES[fam]) }));
       special.push({ icon: icon('icon_loot_paint', '🪣'), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
-      jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
+      jackpotToast(t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) }), PAINT_FAMILIES[fam].swatch);
     }
     // 네온 안료 (디렉터 2026-07-09): 도심 전용 최희귀 도료 — 일반 도료 풀과 무관한 별도 저확률 롤.
     //   네온 시그니처 가구(VIP·ON AIR) 색은 이걸로만 칠한다 → "그 색은 도심에서만".
     if (exp.region === 'citycore' && Math.random() < BAL.paint.neonDropChance) {
       state.paints.neonPigment = (state.paints.neonPigment || 0) + 1;
       notes.push(t('paint.neonNote'));
-      special.push({ icon: '🌈', label: LName(RARE_PAINTS.neonPigment), n: 1, tier: 'legendary', swatch: RARE_PAINTS.neonPigment.swatch });
-      jackpotToast(`🌈 ${t('paint.neonJackpot')}`, RARE_PAINTS.neonPigment.swatch);
+      special.push({ icon: icon('icon_loot_paint', ''), label: LName(RARE_PAINTS.neonPigment), n: 1, tier: 'legendary', swatch: RARE_PAINTS.neonPigment.swatch });
+      jackpotToast(t('paint.neonJackpot'), RARE_PAINTS.neonPigment.swatch);
     }
     // DDD-4 시그니처 도면 (REWARD-LOOP ② 2차): 지역 독점 가구의 도면 — 도료보다 희귀한 잭팟 층.
     //   그 지역에서만, 미보유 도면 중 가중 픽(그래피티는 weights로 더 희귀 — 디렉터 2026-07-09).
@@ -3888,7 +3883,7 @@ function resolveExpedition() {
         state.blueprints[bpId] = 1;
         notes.push(t('bp.foundNote', { name: bpName(bpId) }));
         special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
-        jackpotToast(`📐 ${t('bp.jackpot', { name: bpName(bpId) })}`, 0xd4b46a);
+        jackpotToast(t('bp.jackpot', { name: bpName(bpId) }), 0xd4b46a);
         if (DEFS[bpId]) queueDiscovery(bpId, 0, 3, bpName(bpId)); // #150 발견 컷 — 가구 도면만(복장은 디오라마 모델 없음)
       }
     }
@@ -3911,7 +3906,7 @@ function resolveExpedition() {
         state.blueprints.ledbar = 1;
         notes.push(t('bp.foundNote', { name: LName(DEFS.ledbar) }));
         special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS.ledbar) }), tier: 'legendary' });
-        jackpotToast(`💠 ${t('bp.jackpot', { name: LName(DEFS.ledbar) })}`, 0xdfeaff);
+        jackpotToast(t('bp.jackpot', { name: LName(DEFS.ledbar) }), 0xdfeaff);
         queueDiscovery('ledbar', 0, 3, LName(DEFS.ledbar));
       }
     }
@@ -4417,7 +4412,7 @@ function collapseEntranceLoot() {
     const fam = rollPaintFamily(region);
     state.paints[fam] = (state.paints[fam] || 0) + 1;
     collapseLootFx = { kind: 'paint', tier: 'rare', body: PAINT_FAMILIES[fam].swatch }; // 깡통 몸통=그 계열 색, 광선=등급 보라
-    jackpotToast(`🪣 ${t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) })}`, PAINT_FAMILIES[fam].swatch);
+    jackpotToast(t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) }), PAINT_FAMILIES[fam].swatch);
     riskGainPush({ icon: icon('icon_loot_paint', '🪣'), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
     return t('ev.collapse.rPaint', { name: LName(PAINT_FAMILIES[fam]) });
   }
@@ -4427,7 +4422,7 @@ function collapseEntranceLoot() {
     state.blueprints = state.blueprints || {};
     state.blueprints[bpId] = 1;
     collapseLootFx = { kind: 'blueprint', tier: 'legend' };
-    jackpotToast(`📐 ${t('bp.jackpot', { name: bpName(bpId) })}`, 0xd4b46a);
+    jackpotToast(t('bp.jackpot', { name: bpName(bpId) }), 0xd4b46a);
     riskGainPush({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
     return t('ev.collapse.rBp', { name: bpName(bpId) });
   }
@@ -7798,9 +7793,10 @@ function showTitle() {
   const meta = slotMeta(currentSlot);
   if (meta) {
     $('t-continue').style.display = '';
-    $('t-continue-info').textContent = t('title.continueInfo', { slot: currentSlot, day: meta.day, sicon: meta.season.icon, semoji: meta.shelter.emoji, sname: LName(meta.shelter) })
+    // 이모지 스트립 3/N: sicon=계절 글리프(innerHTML 전환), semoji=소거(셸터 이름이 식별자)
+    $('t-continue-info').innerHTML = (t('title.continueInfo', { slot: currentSlot, day: meta.day, sicon: icon(`icon_season_${meta.season.id}`, ''), semoji: '', sname: LName(meta.shelter) })
       + (meta.winters >= 1 ? t('title.continueWinters', { n: meta.winters }) : '') // Nine Winters(#11)
-      + ''; // 난이도/모드 표기 = 슬롯카드 테두리색으로 이관 (디렉터: 이모지 배지 폐지)
+      ).replace(/ {2,}/g, ' '); // semoji 소거로 남는 이중 공백 정리 (난이도/모드 표기 = 슬롯카드 테두리색 이관)
   } else {
     $('t-continue').style.display = 'none';
   }
@@ -7837,7 +7833,7 @@ function showDemoEnd() {
   journalOpen = false;
   const body = `
     <div class="demo-end">
-      <div class="de-mark">🌱 ❄️ ❄️ ❄️ ❄️ ❄️ ❄️ ❄️ ❄️</div>
+      <div class="de-mark">${icon('icon_season_spring', '')} ${Array(8).fill(icon('icon_season_winter', '')).join(' ')}</div>
       <p class="de-body">${t('demo.end.body', { d: state.day })}</p>
       <p class="de-sub">${t('demo.end.sub')}</p>
       <button class="pixel-btn primary" id="demo-end-title">${t('demo.end.back')}</button>
@@ -8990,8 +8986,8 @@ function showDayReport() {
     <div class="report-sec"><span class="r-title">${t('report.spend')}</span><br>${Object.keys(log.spend).length ? fmt(log.spend) : t('none')}</div>
     ${log.notes.length ? `<div class="report-sec"><span class="r-title">${t('report.notes')}</span><br>${log.notes.join('<br>')}</div>` : ''}
     ${prepHtml}
-    ${warns.length ? `<div class="report-sec report-warn">${t('report.warn', { list: warns.map(id => RESOURCES[id].emoji + LName(RESOURCES[id])).join(', ') })}</div>` : ''}
-    ${tips.length ? `<div class="report-sec report-tip">💡 ${tips.slice(0, 2).join('<br>💡 ')}</div>` : ''}
+    ${warns.length ? `<div class="report-sec report-warn">${t('report.warn', { list: warns.map(id => `${resIcon(id)} ${LName(RESOURCES[id])}`).join(', ') })}</div>` : ''}
+    ${tips.length ? `<div class="report-sec report-tip">${tips.slice(0, 2).join('<br>')}</div>` : ''}
   `, 'report');
   state.dayLog = { gain: {}, spend: {}, notes: [], lang }; // lang 스탬프: 언어 바뀌면 옛 로그 비우기 근거(부팅 대조)
   playSfx('pen');
@@ -10298,13 +10294,15 @@ function pdaTexUrl(base) {
 function applyPdaTex() {
   const px = (opts.pixel | 0);
   const pixed = !(opts.quant === false || px <= 1); // 픽셀화 활성 여부
-  const p = $('pda'); if (p) p.style.backgroundImage = `url('${pdaTexUrl('pda04')}')`;
+  // §5.6 잔여 ①: 하우징은 듀오톤 프리베이크(pda04m*/dock_pdam*, tools/pda-mono.mjs)만 사용 —
+  //   리얼컬러 하우징은 "혼자 붕 뜸" 피드백으로 퇴역(07-20). LCD DOM은 무접촉.
+  const p = $('pda'); if (p) p.style.backgroundImage = `url('${pdaTexUrl('pda04m')}')`;
   const d = $('dock-pda');
   if (d) {
     // 도크는 53px 초소형 → 세계 텍셀 크기(opts.pixel px)를 그대로 맞추면 소스가 ~18px로 뭉갠다.
     //   대신 표시크기에 맞는 고정 픽셀본(px8, 47w)을 pixelated로 살짝 업스케일해 "크리스프 도트"만 확보
     //   (스무스 트루컬러의 AI티 제거 = 색상수 40 + 하드 엣지). 원본은 스무스 다운스케일 유지.
-    d.style.backgroundImage = `url('img/ui/${pixed ? 'dock_pda_px8' : 'dock_pda'}.png')`;
+    d.style.backgroundImage = `url('img/ui/${pixed ? 'dock_pdam_px8' : 'dock_pdam'}.png')`;
     d.style.imageRendering = pixed ? 'pixelated' : 'auto';
   }
 }

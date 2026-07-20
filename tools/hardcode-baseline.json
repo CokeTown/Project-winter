@@ -1,7 +1,7 @@
 [
-  "808: if (cd.cleanMod) logs.clean.push({ icon: '🧹', name: t('comfort.log.cleanState', { n: Math",
-  "810: logs.security.push({ icon: '🏠', name: t('comfort.log.base'), v: '+18' });",
-  "816: if (cd.moodMod) logs.security.push({ icon: cd.moodMod > 0 ? '🫧' : '💭', name: t('comfort.",
+  "936: if (cd.cleanMod) logs.clean.push({ name: t('comfort.log.cleanState', { n: Math.round(cd.cl",
+  "938: logs.security.push({ name: t('comfort.log.base'), v: '+18' });",
+  "944: if (cd.moodMod) logs.security.push({ name: t('comfort.log.mood'), v: `${cd.moodMod > 0 ? '",
   "3061: if (p.comfort) lines.push(`<span style=\"color:var(--good)\">${t('prep.comfort', { pct: Math",
   "3126: if (state.energy < 20) { toast(t('toast.tooTired')); closeModal(); return; }",
   "3138: state.hunger = Math.max(0, state.hunger - 4 * expMul);",

@@ -33,10 +33,10 @@ const G = {
   // ── 액션 (act) ──
   icon_act_explore: `<circle cx="12" cy="12" r="8.5"/><path d="M8.5,15.5 L10.5,10.5 L15.5,8.5 L13.5,13.5 Z" ${F}/>`,
   icon_act_move: '<path d="M4,11 L11,4 L18,11"/><path d="M6,10 V19 H16 V10"/><line x1="12" y1="15" x2="21" y2="15"/><path d="M18.5,12.5 L21.5,15 L18.5,17.5"/>',
-  icon_act_craft: '<rect x="4" y="4" width="10" height="6"/><line x1="9" y1="10" x2="17" y2="21"/>',
+  icon_act_craft: '<rect x="4" y="5" width="16" height="5"/><line x1="12" y1="10" x2="12" y2="21"/>',
   icon_act_knowledge: '<path d="M12,6.5 C10,4.5 6.5,4.5 4,5.5 V18.5 C6.5,17.5 10,17.5 12,19 C14,17.5 17.5,17.5 20,18.5 V5.5 C17.5,4.5 14,4.5 12,6.5 Z"/><line x1="12" y1="6.5" x2="12" y2="19"/>',
-  icon_act_clean: '<line x1="15" y1="3" x2="9" y2="12"/><path d="M9,12 L13,15 L9,21 L4,17 Z"/>',
-  icon_act_sleep: '<path d="M14,3 A9,9 0 1,0 14,21 A7.2,7.2 0 1,1 14,3 Z"/>',
+  icon_act_clean: '<line x1="19" y1="3.5" x2="11.5" y2="11"/><path d="M11.5,11 L15,14.5 L9.5,20.5 L4.5,15.5 Z"/><line x1="7.5" y1="18" x2="10" y2="15.5"/>',
+  icon_act_sleep: `<path d="M15,3.5 A8.8,8.8 0 1,0 15,20.5 A6.2,6.2 0 1,1 15,3.5 Z" ${F}/>`,
   icon_act_wardrobe: '<path d="M8,4 L4.5,7.5 L7,10.5 L9,9 V20 H15 V9 L17,10.5 L19.5,7.5 L16,4 C14.8,5.8 13.4,6.5 12,6.5 C10.6,6.5 9.2,5.8 8,4 Z"/>',
   icon_act_journal: '<rect x="6" y="4" width="12" height="16"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/>',
   icon_act_help: `<path d="M8.5,8.5 A3.5,3.5 0 1,1 12,12 V14.5"/><circle cx="12" cy="18.5" r="1.4" ${F}/>`,
@@ -58,6 +58,8 @@ const G = {
   icon_sys_uihide: '<path d="M2.5,12 C6.5,6 17.5,6 21.5,12 C17.5,18 6.5,18 2.5,12 Z"/><circle cx="12" cy="12" r="2.6"/>',
   icon_sys_collect: '<line x1="12" y1="3.5" x2="12" y2="13"/><path d="M8,9.5 L12,13.5 L16,9.5"/><path d="M4.5,15.5 V20.5 H19.5 V15.5"/>',
   icon_sys_arrowleft: '<line x1="20" y1="12" x2="5" y2="12"/><path d="M11,5.5 L4.5,12 L11,18.5"/>',
+  icon_sys_save: '<path d="M4,4 H16 L20,8 V20 H4 Z"/><rect x="8" y="4" width="7" height="5"/><rect x="7" y="13" width="10" height="7"/>',
+  icon_sys_import: '<path d="M3,6 H9 L11,8.5 H21 V19 H3 Z"/><line x1="12" y1="10.5" x2="12" y2="16"/><path d="M9.5,13.5 L12,16 L14.5,13.5"/>',
   // ── 상태 (cond) ──
   icon_cond_buff: '<line x1="12" y1="20.5" x2="12" y2="5"/><path d="M6,10.5 L12,4.5 L18,10.5"/>',
   icon_cond_comfort: '<path d="M6,10 H18 V20 H6 Z"/><path d="M18,12 H21 V16 H18"/><line x1="9.5" y1="7" x2="9.5" y2="4"/><line x1="14.5" y1="7" x2="14.5" y2="4"/>',
