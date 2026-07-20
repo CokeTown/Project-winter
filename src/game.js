@@ -8070,19 +8070,29 @@ function updateHud() {
   renderGauge('g-thirst', state.thirst, 'thirst');
   renderGauge('g-energy', state.energy, 'energy'); // 디렉터: 게이지 = 영어 라벨 + 게이지별 컬러 바만(아이콘·세부 수치 제거). 수치는 PDA 전용
 }
+// HUD-SPEC-RECON §1.1 (기획서 8.5·HUD-A02·ACC-04): 색=심각도 + 수치 병기 + 상태 문자.
+//   임계 = 스펙 준수(0~25 위험 / 26~50 주의 / 51~ 정상). 구 "수치=PDA 전용" 오더는 본 스펙이 대체.
+function gaugeSev(v) { return v <= 25 ? 'crit' : v <= 50 ? 'warn' : ''; }
 function renderGauge(id, val, gkey) {
   const g = $(id);
   if (!g) return;
+  const v = Math.max(0, Math.round(val));
+  const sev = gaugeSev(v);
   const fill = g.querySelector('.g-fill');
-  fill.style.width = Math.max(0, Math.round(val)) + '%';
-  fill.className = 'g-fill' + (val < 25 ? ' crit' : val < 45 ? ' warn' : '');
-  // 디렉터: HUD 게이지 = 라벨(영어 단어) + 게이지별 컬러 바만. 아이콘·세부 수치 제거 — 수치는 PDA 전용.
-  //   (구형 .g-ic/.g-num/.g-label 마크업 제거됨. 스테일 DOM 대비 방어적 정리.)
-  const exNum = g.querySelector('.g-num'); if (exNum) exNum.remove();
-  const exIc = g.querySelector('.g-ic'); if (exIc) exIc.remove();
+  fill.style.width = v + '%';
+  fill.className = 'g-fill' + (sev ? ' ' + sev : '');
+  const top = g.querySelector('.g-top');
+  let st = g.querySelector('.g-state');
+  if (!st) { st = document.createElement('span'); st.className = 'g-state'; top.appendChild(st); }
+  st.textContent = sev ? t(sev === 'crit' ? 'g.state.crit' : 'g.state.warn') : '';
+  st.className = 'g-state' + (sev ? ' ' + sev : '');
+  let num = g.querySelector('.g-num');
+  if (!num) { num = document.createElement('b'); num.className = 'g-num'; g.appendChild(num); } // 행 레이아웃: 라벨|바|수치 순 — 수치는 게이지 루트 끝
+  num.textContent = v;
+  const exIc = g.querySelector('.g-ic'); if (exIc) exIc.remove(); // 구형 아이콘 마크업 방어적 정리
   // #199: 도킹 PDA 마이크로 게이지 동기화 — 접힘 상태에서도 보이는 상시 계측(LED 스트립)
   const dk = $('dkg-' + gkey[0]);
-  if (dk) { dk.style.setProperty('--v', Math.max(0, Math.round(val)) + '%'); dk.className = val < 25 ? 'crit' : val < 45 ? 'warn' : ''; }
+  if (dk) { dk.style.setProperty('--v', v + '%'); dk.className = sev; }
 }
 let lastResSnapshot = {};
 function renderResBar() {
@@ -8140,9 +8150,9 @@ function renderPDA(quiet) {
   const head = `<div class="ph">${t('pda.day', { n: state.day })} · ${hh}:${mi} · ${w ? `${wxIcon(state.weatherType)} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}</div>`;
   let body = '';
   if (pdaTab === 'status') {
-    // 디렉터: PDA 게이지 progress bar도 게이지별 색 구분(허기 머스터드·수분 시안·에너지 그린·청결 라임).
+    // HUD-SPEC-RECON §1.1: PDA 게이지도 HUD와 동일 토큰(NFR-004) — 색=심각도, 임계 25/50.
     const bar = (label, v, key) => {
-      const cls = v < 25 ? 'crit' : v < 45 ? 'warn' : '';
+      const cls = gaugeSev(v);
       return `<div class="pline"><span class="pk">${label}</span><span class="pbar ${key}"><i class="${cls}" style="width:${Math.max(0, Math.round(v))}%"></i></span><span class="pv">${Math.round(v)}</span></div>`;
     };
     body = bar(t('pda.g.hunger'), state.hunger, 'hunger') + bar(t('pda.g.thirst'), state.thirst, 'thirst')

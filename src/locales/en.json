@@ -12,6 +12,8 @@
   "intro.next": "Continue",
   "loading": "SHELTER LOADING . . .",
   "hud.shelter": "Shelter",
+  "g.state.warn": "LOW",
+  "g.state.crit": "CRIT",
   "hud.stat": "0 successful expeditions",
   "g.hunger.title": "Hunger — click to eat food",
   "g.thirst.title": "Thirst — click to drink water",

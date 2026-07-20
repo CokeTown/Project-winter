@@ -12,6 +12,8 @@
   "intro.next": "次へ",
   "loading": "SHELTER LOADING . . .",
   "hud.shelter": "シェルター",
+  "g.state.warn": "注意",
+  "g.state.crit": "危険",
   "hud.stat": "探索成功 0回",
   "g.hunger.title": "空腹 — クリックで食べる",
   "g.thirst.title": "渇き — クリックで飲む",

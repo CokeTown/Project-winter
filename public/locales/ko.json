@@ -12,6 +12,8 @@
   "intro.next": "계속",
   "loading": "SHELTER LOADING . . .",
   "hud.shelter": "셸터",
+  "g.state.warn": "주의",
+  "g.state.crit": "위험",
   "hud.stat": "성공한 탐험 0회",
   "g.hunger.title": "배고픔 — 클릭해서 먹기",
   "g.thirst.title": "갈증 — 클릭해서 마시기",

@@ -74,20 +74,23 @@
       <div class="g-bar"><i class="g-fill"></i></div>
     </div>
   </div>
-  <div class="btn-row icons">
-    <button class="pixel-btn primary" id="btn-exp" data-i18n-title="btn.exp.title" title="탐험 (지도)"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_explore.svg');mask-image:url('img/glyphs/icon_act_explore.svg')"></span><span class="act-lbl" data-i18n="btn.exp.lbl">탐험</span></button>
-    <button class="pixel-btn" id="btn-move" data-i18n-title="btn.move.title" title="이주"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_move.svg');mask-image:url('img/glyphs/icon_act_move.svg')"></span><span class="btn-badge" id="move-badge" data-i18n-title="move.badge.title" title="이주 가능한 거처가 있습니다" style="display:none">!</span><span class="act-lbl" data-i18n="btn.move.lbl">이주</span></button>
-    <button class="pixel-btn" id="btn-craft" data-i18n-title="btn.craft.title" title="제작대"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_craft.svg');mask-image:url('img/glyphs/icon_act_craft.svg')"></span><span class="act-lbl" data-i18n="btn.craft.lbl">제작</span></button>
-    <button class="pixel-btn" id="btn-knowledge" data-i18n-title="btn.knowledge.title" title="지식 (테크트리)"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_knowledge.svg');mask-image:url('img/glyphs/icon_act_knowledge.svg')"></span><span class="act-lbl" data-i18n="btn.knowledge.lbl">지식</span></button>
-    <button class="pixel-btn" id="btn-clean" data-i18n-title="btn.clean.title" title="청소 (물 1 → 청결 +20)"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_clean.svg');mask-image:url('img/glyphs/icon_act_clean.svg')"></span><span class="act-lbl" data-i18n="btn.clean.lbl">청소</span></button>
-    <!-- #86④ 옷장 (디렉터 지목 UI 파트): 제작한 의류 갈아입기 — 아바타 탭으로도 열림 -->
-    <!-- icon_act_wardrobe.png 미생성 → 계속 이모지 폴백이라 28px 아트와 정렬 어긋남(디렉터). 지식/도움처럼 act-glyph로 통일. -->
-    <button class="pixel-btn" id="btn-wardrobe" data-i18n-title="btn.wardrobe.title" title="옷장 — 만든 옷을 갈아입는다"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_wardrobe.svg');mask-image:url('img/glyphs/icon_act_wardrobe.svg')"></span><span class="act-lbl" data-i18n="btn.wardrobe.lbl">옷장</span></button>
-    <!-- #87 스윕: 침대 그림만으로 '취침 버튼' 인지가 안 됨(디렉터) — Zzz 배지 상시 표기 -->
-    <button class="pixel-btn" id="btn-sleep" data-i18n-title="btn.sleep.title" title="취침 — 내일 아침까지 자고 에너지 회복"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_sleep.svg');mask-image:url('img/glyphs/icon_act_sleep.svg')"></span><span class="zzz-badge" aria-hidden="true">Zzz</span><span class="act-lbl" data-i18n="btn.sleep.lbl">취침</span></button>
-    <!-- #87 스윕: 기존 지도+나침반 그림이 '지도 버튼'으로 오독(디렉터) — 튜토리얼은 물음표 글리프로 -->
-    <button class="pixel-btn" id="btn-help" data-i18n-title="btn.help.title" title="튜토리얼"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_help.svg');mask-image:url('img/glyphs/icon_act_help.svg')"></span><span class="act-lbl" data-i18n="btn.help.lbl">도움</span></button>
-  </div>
+</div>
+
+<!-- HUD-SPEC-RECON §1.1 (기획서 1.2·6.5 E-바): 2×4 앱런처 그리드 → 하단 중앙 명령 바.
+     주 명령 5(탐험·제작·취침·청소·이주) + 보조 3(지식·옷장·도움, .sec 축소). 버튼 id/배선 불변. -->
+<div id="action-bar">
+  <button class="pixel-btn primary" id="btn-exp" data-i18n-title="btn.exp.title" title="탐험 (지도)"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_explore.svg');mask-image:url('img/glyphs/icon_act_explore.svg')"></span><span class="act-lbl" data-i18n="btn.exp.lbl">탐험</span></button>
+  <button class="pixel-btn" id="btn-craft" data-i18n-title="btn.craft.title" title="제작대"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_craft.svg');mask-image:url('img/glyphs/icon_act_craft.svg')"></span><span class="act-lbl" data-i18n="btn.craft.lbl">제작</span></button>
+  <!-- #87 스윕: 침대 그림만으로 '취침 버튼' 인지가 안 됨(디렉터) — Zzz 배지 상시 표기 -->
+  <button class="pixel-btn" id="btn-sleep" data-i18n-title="btn.sleep.title" title="취침 — 내일 아침까지 자고 에너지 회복"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_sleep.svg');mask-image:url('img/glyphs/icon_act_sleep.svg')"></span><span class="zzz-badge" aria-hidden="true">Zzz</span><span class="act-lbl" data-i18n="btn.sleep.lbl">취침</span></button>
+  <button class="pixel-btn" id="btn-clean" data-i18n-title="btn.clean.title" title="청소 (물 1 → 청결 +20)"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_clean.svg');mask-image:url('img/glyphs/icon_act_clean.svg')"></span><span class="act-lbl" data-i18n="btn.clean.lbl">청소</span></button>
+  <button class="pixel-btn" id="btn-move" data-i18n-title="btn.move.title" title="이주"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_move.svg');mask-image:url('img/glyphs/icon_act_move.svg')"></span><span class="btn-badge" id="move-badge" data-i18n-title="move.badge.title" title="이주 가능한 거처가 있습니다" style="display:none">!</span><span class="act-lbl" data-i18n="btn.move.lbl">이주</span></button>
+  <span class="ab-div" aria-hidden="true"></span>
+  <button class="pixel-btn sec" id="btn-knowledge" data-i18n-title="btn.knowledge.title" title="지식 (테크트리)"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_knowledge.svg');mask-image:url('img/glyphs/icon_act_knowledge.svg')"></span><span class="act-lbl" data-i18n="btn.knowledge.lbl">지식</span></button>
+  <!-- #86④ 옷장 (디렉터 지목 UI 파트): 제작한 의류 갈아입기 — 아바타 탭으로도 열림 -->
+  <button class="pixel-btn sec" id="btn-wardrobe" data-i18n-title="btn.wardrobe.title" title="옷장 — 만든 옷을 갈아입는다"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_wardrobe.svg');mask-image:url('img/glyphs/icon_act_wardrobe.svg')"></span><span class="act-lbl" data-i18n="btn.wardrobe.lbl">옷장</span></button>
+  <!-- #87 스윕: 기존 지도+나침반 그림이 '지도 버튼'으로 오독(디렉터) — 튜토리얼은 물음표 글리프로 -->
+  <button class="pixel-btn sec" id="btn-help" data-i18n-title="btn.help.title" title="튜토리얼"><span class="act-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_help.svg');mask-image:url('img/glyphs/icon_act_help.svg')"></span><span class="act-lbl" data-i18n="btn.help.lbl">도움</span></button>
 </div>
 
 <div class="panel" id="res-bar"><div id="res-chips"></div></div>
