@@ -33,6 +33,7 @@ import { buildVisitor, VISITOR_IDS, ENCOUNTER_VISITOR } from './systems/visitor.
 import { VISITOR_TABLE, VISITOR_UI } from './data/visitors.js'; // #181 방문자 교환·대사 밸런스 테이블
 import { WILDLIFE_SPECIES, DISTRICT_WILDLIFE, SHELTER_WILDLIFE } from './data/wildlife.js';
 import { EVENT_CARD_CAMS } from './data/eventcams.js'; // #201 라이브 카드 스냅샷 카메라 프리셋
+import { GLYPH_NAMES } from './data/glyphs.gen.js'; // 세미오틱 글리프 명단 (UI-PIXEL-UNITY §5, icon-semiotic.mjs 산출)
 import { lang, setLang, steamLangToGame, t, LN, LD, LF, LC, STR, applyStaticI18n, applyLocaleOverrides, loadLocaleOverridesWeb } from './i18n.js';
 import { stampDataL10n } from './data/l10n-registry.js'; // #114 Phase 2: 데이터 표 _lk 스탬프(비열거) — LF/LC가 로케일 JSON 우선 조회
 stampDataL10n();
@@ -94,7 +95,11 @@ const _iconEsc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(
 // 재발화해 "깜빡임"으로 보인다(디렉터 신고: 책). 실패한 이름을 캐시해 이후엔 <img> 없이 이모지로 바로 폴백.
 const _iconMissing = new Set();
 if (typeof window !== 'undefined') window.__iconFail = (n) => _iconMissing.add(n);
+// UI-PIXEL-UNITY §5: UI 크롬 아이콘은 도트 PNG 대신 세미오틱 글리프(SVG mask + currentColor).
+// 색은 부모 텍스트색이 결정 — 인광 그린/경고 앰버/위급 적색이 CSS 상속으로 공짜.
+const _glyphSet = new Set(GLYPH_NAMES);
 function icon(name, emoji = '', cls = '') {
+  if (_glyphSet.has(name)) return `<span class="px-icon glyph${cls ? ' ' + cls : ''}" style="-webkit-mask-image:url('img/glyphs/${name}.svg');mask-image:url('img/glyphs/${name}.svg')"></span>`;
   const fb = ''; // 디렉터: 이모지 폴백 전면 제거 — 아이콘 PNG 부재 시 공란(라벨이 의미 전달). emoji 인자는 하위호환용, _iconEsc 무용.
   if (_iconMissing.has(name)) return `<span class="px-icon${cls ? ' ' + cls : ''}">${fb}</span>`;
   return `<img class="px-icon${cls ? ' ' + cls : ''}" src="img/icons/${name}.png" alt="" draggable="false"`

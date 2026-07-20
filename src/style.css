@@ -66,6 +66,18 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     image-rendering: pixelated; object-fit: contain; pointer-events: none;
   }
   .q-check .sys-icon { width: var(--icon-md); height: var(--icon-md); }
+  /* ── 세미오틱 글리프 (UI-PIXEL-UNITY §5) — SVG mask + currentColor.
+     도트 PNG 대체: 색은 부모 텍스트색 상속(인광 그린 / warn 앰버 / crit 적색), 어떤 uiz에서도 crisp.
+     기존 크기 토큰(.px-icon/.sys-icon/.act-icon)을 그대로 탄다 — 크기 축은 §1 유지. */
+  .glyph {
+    background: currentColor;
+    /* mask-image는 인라인 style로 지정한다(문서 기준 상대경로 해석).
+       var(--g) 경유 금지 — 커스텀 프로퍼티의 상대 url은 소비 스타일시트(dist/assets/*.css) 기준으로
+       풀려 dist에서 404→전면 투명이 된다(하네스 프로브로 검거). 여기는 롱핸드만. */
+    -webkit-mask-size: contain; -webkit-mask-position: center; -webkit-mask-repeat: no-repeat;
+    mask-size: contain; mask-position: center; mask-repeat: no-repeat;
+    image-rendering: auto; /* 벡터 — pixelated 상속 무효화 */
+  }
   /* 이벤트 일러스트 파일럿 — 640x360, 모바일에서도 뷰포트 안 */
   .ev-illust {
     display: block; width: 100%; max-width: 100%; max-height: 40vh;
