@@ -45,10 +45,15 @@ export function makeAerialProto() {
   // 날씨 룩 스왑용 버퍼 (건물 지붕 적설 — 인스턴스 컬러 2벌 사전 계산)
   let bld = null, bldDry = null, bldSnow = null, winMat = null, firePt = null, fireCone = null;
   let snowPts = null, beacons = [], groundMat = null, roadMat = null;
+  let ogMesh = null, ogInfo = { years: 0, winter: false, count: 0, parts: 0, lots: 0 }; // 잠식 QA 훅
   const hemi = new THREE.HemisphereLight(0x3a4256, 0x14161e, 0.9);
   const sun = new THREE.DirectionalLight(0xd8d2c4, 0.8);
 
-  function build() {
+  // env = { day, winter } — 잠식 연차·계절 팔레트의 입력. 씬 생성 시점에 한 번 굳는다(#71과 동일 규약:
+  //   하루가 넘어가도 즉시 갱신하지 않고 다음 로드에 반영. 결정론 유지).
+  function build(env = {}) {
+    const ctxYears = () => env.day || 1;
+    const ctxWinter = () => !!env.winter;
     scene.fog = new THREE.FogExp2(0x40485a, 0.0052);
     scene.add(hemi); scene.add(sun); sun.position.set(60, 80, 40);
     // ── 지면 + 도로 격자 ──
@@ -63,36 +68,141 @@ export function makeAerialProto() {
       const v = new THREE.Mesh(roadG, roadMat); v.rotation.x = -Math.PI / 2;
       v.scale.set(4.2, 320, 1); v.position.set(i * 24 - 6, 0.0, 0); scene.add(v);
     }
-    // ── 건물 인스턴싱 (~340×2) — 도심 코어는 높게, 외곽은 낮게. 노드 권역은 비워 드레싱 자리 확보 ──
+    // ── 폐허 건물 (디렉터 오더: "네모로 퉁치지 말 것 — 폭격으로 부서진 디테일") ──
+    //   한 '부지(lot)'가 손상 원형(archetype)에 따라 박스 1~6개를 뱉는다. 전부 같은 InstancedMesh라
+    //   드로우콜은 그대로(2) — 인스턴스만 늘어난다. 실루엣이 부서지는 게 목적.
     const boxG = new THREE.BoxGeometry(1, 1, 1); boxG.translate(0, 0.5, 0);
-    const mkBld = (n, tall) => {
-      const m = new THREE.InstancedMesh(boxG, new THREE.MeshLambertMaterial({ color: 0xffffff }), n);
-      const M = new THREE.Matrix4(), C = new THREE.Color();
-      const dry = new Float32Array(n * 3), snow = new Float32Array(n * 3);
-      let i = 0, guard = 0;
-      while (i < n && guard++ < n * 30) {
+    const placements = []; // 창문 부착용 — 성한 벽면만 등록(붕괴부엔 창이 없다)
+    const lots = [];       // 잠식·잔해가 참조할 부지 정보
+    const parts = [];      // {x,y,z,w,h,d,ry,rz,tone} — 최종 인스턴스 큐
+    const pushPart = (p) => { parts.push(p); return p; };
+
+    { let made = 0, guard = 0;
+      while (made < 300 && guard++ < 300 * 30) {
         const x = (rand() - 0.5) * 300, z = (rand() - 0.5) * 300;
         const inRoadX = Math.abs(((x + 6 + 3600) % 24) - 12) > 9.2, inRoadZ = Math.abs(((z - 6 + 3600) % 24) - 12) > 9.2;
-        if (inRoadX || inRoadZ) continue; // 도로 위 회피
-        let bad = false; // 노드 권역 회피
-        for (const nd of Object.values(NODES)) if (Math.hypot(x - nd.x, z - nd.z) < 20) { bad = true; break; }
+        if (inRoadX || inRoadZ) continue;
+        let bad = false;
+        // 회피 반경 11 — 20은 focus(dist 30) 시야를 통째로 빈 공터로 만들었다(실측 검거).
+        //   폐허를 보여주는 뷰인데 폐허를 치워두면 안 된다: 노드는 '잔해에 둘러싸인 빈터'여야 한다.
+        for (const nd of Object.values(NODES)) if (Math.hypot(x - nd.x, z - nd.z) < 11) { bad = true; break; }
         if (bad) continue;
         const dc = Math.hypot(x, z);
-        const h = tall ? (dc < 70 ? 12 + rand() * 16 : 6 + rand() * 8) : 2.2 + rand() * 4.5;
+        const tall = dc < 70 || rand() < 0.35;
+        const H = tall ? (dc < 70 ? 12 + rand() * 16 : 6 + rand() * 8) : 2.2 + rand() * 4.5;
         const w = 4.5 + rand() * 5.5, d = 4.5 + rand() * 5.5;
-        M.makeScale(w, h, d).setPosition(x, 0, z); m.setMatrixAt(i, M);
-        const g = 0.27 + rand() * 0.18; C.setRGB(g * 0.92, g, g * 1.14); // 잿빛(한기 블루 시프트) — 1·3차 캡처 과암전 2회 교정
-        m.setColorAt(i, C); dry.set([C.r, C.g, C.b], i * 3);
-        const s = 0.42 + rand() * 0.1; snow.set([s * 0.94, s * 0.97, s * 1.05], i * 3); // 적설 지붕 톤
-        placements.push({ x, z, w, h, d });
-        i++;
+        const tone = 0.27 + rand() * 0.18; // 잿빛 기준 밝기
+        const a = rand();
+        // 손상 원형 5종 — 온전한 건물은 소수(폐허 도시의 규칙: 성한 게 예외)
+        if (a < 0.16) {                                   // ① 온전 (드묾)
+          pushPart({ x, y: 0, z, w, h: H, d, tone });
+          placements.push({ x, z, w, h: H, d });
+        } else if (a < 0.42) {                            // ② 상층 전단 — 위층이 무너져 반쪽만 남음
+          const cut = H * (0.45 + rand() * 0.25);
+          pushPart({ x, y: 0, z, w, h: cut, d, tone });
+          const sw = w * (0.35 + rand() * 0.3), sd = d * (0.35 + rand() * 0.3);
+          pushPart({ x: x + (rand() - 0.5) * (w - sw), y: cut, z: z + (rand() - 0.5) * (d - sd),
+                     w: sw, h: (H - cut) * (0.4 + rand() * 0.5), d: sd, ry: (rand() - 0.5) * 0.3, tone: tone * 0.92 });
+          placements.push({ x, z, w, h: cut, d });
+        } else if (a < 0.60) {                            // ③ 외벽만 — 내부 소실, 파사드 두 장이 서 있다
+          const t = 0.7 + rand() * 0.5;
+          pushPart({ x, y: 0, z: z - d / 2 + t / 2, w, h: H * (0.6 + rand() * 0.35), d: t, tone });
+          pushPart({ x: x - w / 2 + t / 2, y: 0, z, w: t, h: H * (0.5 + rand() * 0.4), d, tone: tone * 0.95 });
+          placements.push({ x, z: z - d / 2 + t / 2, w, h: H * 0.6, d: t });
+        } else if (a < 0.76) {                            // ④ 층 붕괴 — 바닥 슬래브가 공중에 남고 사이가 비었다
+          const lv = 2 + Math.floor(rand() * 2);
+          for (let k = 0; k < lv; k++) {
+            const y = (H / lv) * k, hh = (H / lv) * (0.18 + rand() * 0.22);
+            const sw = w * (0.7 + rand() * 0.3), sd = d * (0.7 + rand() * 0.3);
+            pushPart({ x: x + (rand() - 0.5) * 0.8, y, z: z + (rand() - 0.5) * 0.8, w: sw, h: hh, d: sd, tone: tone * (1 - k * 0.05) });
+          }
+          pushPart({ x: x - w * 0.3, y: 0, z, w: 0.9, h: H * (0.7 + rand() * 0.3), d: 0.9, tone: tone * 0.85 }); // 남은 기둥
+        } else if (a < 0.90) {                            // ⑤ 기울어 무너짐
+          pushPart({ x, y: 0, z, w, h: H * (0.55 + rand() * 0.3), d,
+                     rz: (rand() - 0.5) * 0.34, ry: (rand() - 0.5) * 0.5, tone: tone * 0.9 });
+        } else {                                          // ⑥ 전소 그루터기 — 잔해 더미만
+          pushPart({ x, y: 0, z, w: w * 0.9, h: 1.0 + rand() * 1.4, d: d * 0.9, tone: tone * 0.75 });
+        }
+        // 잔해 스커트: 부서진 건물 밑에는 반드시 파편이 깔린다
+        if (a >= 0.16) {
+          const rn = 2 + Math.floor(rand() * 4);
+          for (let k = 0; k < rn; k++) {
+            const ang = rand() * 6.28, rr = (w + d) * 0.25 + rand() * 3;
+            pushPart({ x: x + Math.cos(ang) * rr, y: 0, z: z + Math.sin(ang) * rr,
+                       w: 0.8 + rand() * 2.0, h: 0.25 + rand() * 0.7, d: 0.8 + rand() * 2.0,
+                       ry: rand() * 1.5, tone: tone * 0.8 });
+          }
+        }
+        lots.push({ x, z, w, d, H, ruined: a >= 0.16 });
+        made++;
       }
-      m.count = i; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true;
-      scene.add(m); return { mesh: m, dry, snow };
-    };
-    const placements = []; // 창문 부착용 — 실제 건물 표면 좌표 (1차 캡처 검거: 랜덤 산포 창문이 공중 부유)
-    const b1 = mkBld(340, true), b2 = mkBld(340, false);
-    bld = [b1.mesh, b2.mesh]; bldDry = [b1.dry, b2.dry]; bldSnow = [b1.snow, b2.snow];
+    }
+    // parts → InstancedMesh 2벌(도색 스왑 단위 유지: 짝수/홀수로 분할해 기존 dry/snow 배열 구조 계승)
+    { const half = Math.ceil(parts.length / 2);
+      const mk = (arr) => {
+        const n = arr.length;
+        const m = new THREE.InstancedMesh(boxG, new THREE.MeshLambertMaterial({ color: 0xffffff }), n);
+        const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), S = new THREE.Vector3(), P = new THREE.Vector3(), C = new THREE.Color();
+        const dry = new Float32Array(n * 3), snow = new Float32Array(n * 3);
+        arr.forEach((p, i) => {
+          E.set(p.rz || 0, p.ry || 0, 0); Q.setFromEuler(E);
+          S.set(p.w, p.h, p.d); P.set(p.x, p.y || 0, p.z);
+          M.compose(P, Q, S); m.setMatrixAt(i, M);
+          const g = p.tone; C.setRGB(g * 0.92, g, g * 1.14);
+          m.setColorAt(i, C); dry.set([C.r, C.g, C.b], i * 3);
+          const s = 0.42 + (g - 0.27) * 0.4; snow.set([s * 0.94, s * 0.97, s * 1.05], i * 3);
+        });
+        m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true;
+        scene.add(m); return { mesh: m, dry, snow };
+      };
+      const b1 = mk(parts.slice(0, half)), b2 = mk(parts.slice(half));
+      bld = [b1.mesh, b2.mesh]; bldDry = [b1.dry, b2.dry]; bldSnow = [b1.snow, b2.snow];
+    }
+
+    // ── 잠식(Overgrowth) — #71 규약 이식: years = min(3, day/360), 겨울=마른 톤+밀도 0.6 ──
+    //   항공 거리에서 개별 식물은 안 보인다 → 지붕 위 초록 덩어리·벽면 담쟁이 띠·지면 수풀 패치로 읽히게.
+    {
+      const years = Math.min(3, (ctxYears() || 1) / 360);
+      const winter = ctxWinter();
+      const PAL = winter ? [0x6a5f45, 0x5d5340, 0x746a4e, 0x66603f]   // #71과 동일 팔레트(겨울 마른 톤)
+                         : [0x3e5230, 0x46603a, 0x2f4527, 0x4a5c3c];
+      const dens = (winter ? 0.6 : 1) * (years / 3);
+      const og = [];
+      for (const lot of lots) {
+        if (rand() > dens * 0.85) continue;
+        // 지붕/최상단 잠식 — 무너진 건물일수록 잘 먹힌다(열린 지붕으로 씨가 든다)
+        const rf = lot.ruined ? 1 : 0.5;
+        if (rand() < 0.75 * rf) {
+          og.push({ x: lot.x + (rand() - 0.5) * lot.w * 0.5, y: lot.H * (lot.ruined ? 0.45 : 1) ,
+                    z: lot.z + (rand() - 0.5) * lot.d * 0.5,
+                    w: lot.w * (0.4 + rand() * 0.5), h: 0.5 + rand() * 1.4 * years, d: lot.d * (0.4 + rand() * 0.5) });
+        }
+        // 벽면 담쟁이 띠 — 아래에서 위로 자란다(연차만큼 높이)
+        if (rand() < 0.5) {
+          const hh = Math.min(lot.H, (1.5 + rand() * 3) * years);
+          og.push({ x: lot.x + lot.w / 2 * 0.95, y: 0, z: lot.z + (rand() - 0.5) * lot.d * 0.7,
+                    w: 0.5, h: hh, d: lot.d * (0.2 + rand() * 0.4) });
+        }
+        // 지면 수풀 — 잔해 틈
+        const gn = Math.floor(rand() * 3 * dens);
+        for (let k = 0; k < gn; k++) {
+          const ang = rand() * 6.28, rr = (lot.w + lot.d) * 0.3 + rand() * 4;
+          og.push({ x: lot.x + Math.cos(ang) * rr, y: 0, z: lot.z + Math.sin(ang) * rr,
+                    w: 1.2 + rand() * 2.4, h: 0.4 + rand() * 1.0 * years, d: 1.2 + rand() * 2.4 });
+        }
+      }
+      if (og.length) {
+        ogMesh = new THREE.InstancedMesh(boxG, new THREE.MeshLambertMaterial({ color: 0xffffff }), og.length);
+        const M = new THREE.Matrix4(), C = new THREE.Color();
+        og.forEach((p, i) => {
+          M.makeScale(p.w, p.h, p.d).setPosition(p.x, p.y, p.z); ogMesh.setMatrixAt(i, M);
+          C.setHex(PAL[Math.floor(rand() * PAL.length)]); ogMesh.setColorAt(i, C);
+        });
+        ogMesh.instanceMatrix.needsUpdate = true; if (ogMesh.instanceColor) ogMesh.instanceColor.needsUpdate = true;
+        scene.add(ogMesh);
+      }
+      ogInfo = { years: +years.toFixed(2), winter, count: og.length, parts: parts.length, lots: lots.length };
+    }
     // ── 밤 창문 불빛 + 옥상 적색 비컨 (생존자의 흔적 — 세계관: 응답하는 불빛) ──
     winMat = new THREE.MeshBasicMaterial({ color: 0xffc060, transparent: true, opacity: 0 });
     const winG = new THREE.PlaneGeometry(1.1, 1.4);
@@ -128,8 +238,8 @@ export function makeAerialProto() {
     { // 슬럼(slum): 판자촌 난립 + 드럼통 화톳불(밤의 오렌지 — 유일한 온기)
       const g = new THREE.Group(); const nd = NODES.slum;
       for (let k = 0; k < 26; k++) {
-        const sh = new THREE.Mesh(boxG, new THREE.MeshLambertMaterial({ color: 0x4a4438 }));
-        const a = rand() * 6.28, rr = 4.5 + rand() * 10.5; // 최소 반경 4.5 — 근접 카메라 전경 검은 덩어리 회피(2차 캡처)
+        const sh = new THREE.Mesh(boxG, new THREE.MeshLambertMaterial({ color: [0x6a6250, 0x5c5445, 0x746952][k % 3] }));
+        const a = rand() * 6.28, rr = 3.5 + rand() * 6.5; // 최소 반경 3.5 — 근접 카메라 전경 검은 덩어리 회피(2차 캡처)
         sh.scale.set(1.6 + rand() * 1.6, 1.0 + rand() * 1.3, 1.5 + rand() * 1.5);
         sh.position.set(nd.x + Math.cos(a) * rr, 0, nd.z + Math.sin(a) * rr);
         sh.rotation.y = rand() * 0.8; g.add(sh);
@@ -195,7 +305,9 @@ export function makeAerialProto() {
     const L = lightAt(ctx.hour % 24);
     const snowy = ctx.weather === 'snow' || ctx.weather === 'storm';
     scene.background = L.sky;
-    scene.fog.color.copy(L.fog); scene.fog.density = snowy ? 0.0085 : 0.0052;
+    // 안개는 뷰 거리에 반비례 — overview(165)에 focus용 밀도를 쓰면 도시 전체가 뿌옇게 씻긴다(실측).
+    const fogK = rig.cur ? THREE.MathUtils.clamp(38 / rig.cur.dist, 0.28, 1) : 1;
+    scene.fog.color.copy(L.fog); scene.fog.density = (snowy ? 0.0085 : 0.0052) * fogK;
     hemi.color.copy(L.hemiSky); hemi.groundColor.copy(L.hemiGround); hemi.intensity = (snowy ? 1.05 : 0.9) + L.night * 0.5; // 밤 가중 — 비조명면 전멸 방지
     sun.color.copy(L.sunColor); sun.intensity = L.sunInt * (snowy ? 0.45 : 1);
     const el = THREE.MathUtils.degToRad(Math.max(2, L.sunElev));
@@ -222,7 +334,7 @@ export function makeAerialProto() {
     scene, camera, update,
     get active() { return active; },
     open(o = {}) {
-      if (!built) { build(); built = true; }
+      if (!built) { build({ day: o.day, winter: o.winter }); built = true; }
       active = true;
       rig.cur = null; goto(shot(new THREE.Vector3(0, 0, 8), 165, 0.92), 0.01);
       if (o.focus && NODES[o.focus]) this.focus(o.focus);
@@ -231,5 +343,6 @@ export function makeAerialProto() {
     overview() { goto(shot(new THREE.Vector3(0, 0, 8), 165, 0.92)); },
     focus(id) { const nd = NODES[id]; if (nd) goto(shot(new THREE.Vector3(nd.x, 0, nd.z), 30, 0.62)); },
     nodes: Object.keys(NODES),
+    ogState: () => ({ ...ogInfo }), // QA: 잠식 연차·인스턴스 수 (#71 overgrowthState 대응)
   };
 }

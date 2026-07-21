@@ -11209,9 +11209,17 @@ function renderFrame() {
   renderer.render(postScene, postCam);
   updateScreenFx(dt, t);
 }
-// 항공뷰 S1 프로토 — 지연 생성(첫 open 전 비용 0), QA/하네스에서만 접근
+// 항공뷰 S1 프로토 — 지연 생성(첫 open 전 비용 0), QA/하네스에서만 접근.
+//   open()에 경과일·계절을 주입해 잠식(#71 규약: years=min(3,day/360), 겨울=마른 톤)이 실제 진행도를 탄다.
+//   rebuild()는 연차 비교 캡처용 — 씬을 버리고 다른 day로 다시 짓는다(정식판은 loadShelter 시점 재생성).
 let _aerial = null;
-function aerialProto() { return _aerial || (_aerial = makeAerialProto()); }
+function aerialProto() {
+  if (!_aerial) _aerial = makeAerialProto();
+  const openRaw = _aerial.open.bind(_aerial);
+  _aerial.open = (o = {}) => openRaw({ day: o.day ?? state.day, winter: o.winter ?? (seasonOf().id === 'winter'), ...o });
+  _aerial.rebuild = (o = {}) => { _aerial = makeAerialProto(); return aerialProto().open(o); };
+  return _aerial;
+}
 // v2.4: 숨김(document.hidden) 상태에서는 3D 렌더/카메라/환경/FX를 전부 건너뛰고
 // 로직(시간 진행 + BGM 상태 동기화)만 1초 간격으로 처리한다 (배터리/CPU 절약).
 function logicTick() {
