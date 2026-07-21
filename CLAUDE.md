@@ -1,10 +1,12 @@
 ## 세션 시동 (이 프로젝트 전용 — 최우선)
 
-**모든 세션은 `docs/MASTER.md`를 가장 먼저 읽는다.** 거기 §1 현재 좌표 + §2 최신 인계 블록에 "지금 어디이고 다음이 무엇인지"가 있다.
-그다음 `docs/WORKLINE.md`(작업 원장)에서 다음 작업을 고르고, 규칙이 헷갈리면 `docs/OPERATIONS.md`를 본다.
+아래 `@` 임포트로 **인계 정본이 매 세션 자동 로드된다**(읽을지 말지 고르는 게 아니라 이미 컨텍스트에 있다).
+이 폴더를 처음 여는 세션도 예외 없이 현재 좌표·직전 세션 인계를 갖고 시작한다.
 
-**세션 마감**: 일지(`docs/worklog/YYYY-MM-DD-요일.md`) → WORKLINE 갱신 → **MASTER §1 좌표 갱신 + §2 인계 블록 추가** → 프로세스 스윕 → push.
-문서 지도(어디에 뭐가 있나)는 MASTER §3. 로드맵 정본은 `docs/MILESTONES.md` 하나다.
+@docs/MASTER.md
+
+**세션 마감 (필수)**: 일지(`docs/worklog/YYYY-MM-DD-요일.md`) → `docs/WORKLINE.md` 갱신 → **위 MASTER의 §1 좌표 갱신 + §2 인계 로그 맨 위에 블록 추가** → 프로세스 스윕 → push.
+이 갱신을 빼먹으면 다음 세션의 자동 로드가 낡은 좌표를 실어 나른다 — 마감 루틴에서 가장 중요한 한 줄이다.
 
 <!-- FABLIZE:BEGIN — run Opus like Fable (always-on router). Verified procedures only. Source: github.com/fivetaku/fablize (setup/fablize-block.md). Plugin at C:/Users/mhdmj/.fablize/plugin. NOTE: this machine has no real Python (python3 is the MS Store stub), so the plugin's Python hooks + goals.py ledger are NOT wired — the discipline below runs as self-enforced context rules. -->
 ## Operating mode (always on — auto-route by task signal)
