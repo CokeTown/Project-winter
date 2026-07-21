@@ -1,7 +1,7 @@
 # Nine Winters — 1.0 기획서 (v0.9.5 → 정식 출시)
 
 > 목적: "1.0이란 무엇이 완성된 상태인가"를 측정 가능하게 정의한다.
-> 상위 문서: ROADMAP.md(순서) · DESIGN-REVIEW.md(진단) · #35 세계관 캐논 · korean-copy-style(문체).
+> 상위 문서: ../MILESTONES.md(로드맵 정본) · DESIGN-REVIEW.md(레벨 디자인·적대적 리뷰) · #35 세계관 캐논 · korean-copy-style(문체).
 > 가격 게이트: EA $7.89(Phase E 통과 시) → 1.0 $11.49(본 문서 전체 충족 시).
 
 ## 0. 1.0의 정의 (한 문장)

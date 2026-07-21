@@ -5,10 +5,11 @@
 
 ## 0. 세션 시동 절차 (순서 고정)
 
-1. `docs/WORKLINE.md` — 작업 번호 원장(진행/대기/디렉터 몫). **여기서 다음 작업을 고른다.**
-2. `docs/HANDOFF.md` + `docs/MILESTONES.md` — 현재 좌표와 크리티컬 패스.
-3. 해당 작업의 스펙 문서(WORKLINE에 포인터 있음. 예: 이음매 수정 → `docs/reports/SEAM-AUDIT-2026-07-16.md`).
-4. 작업 후 종료 루틴: **일지**(`docs/worklog/YYYY-MM-DD-요일.md`, 별도 커밋) → **WORKLINE 갱신** → 프로세스 스윕(§6) → push.
+1. **`docs/MASTER.md`** — 진입점. §1 현재 좌표 + §2 최신 인계 블록으로 "지금 어디·다음 무엇"이 끝난다.
+2. `docs/WORKLINE.md` — 작업 번호 원장(진행/대기/디렉터 몫). **여기서 다음 작업을 고른다.**
+3. `docs/MILESTONES.md` — 로드맵 정본(크리티컬 패스). ※ 구 ROADMAP 3종·HANDOFF는 2026-07-21 통합으로 폐지.
+4. 해당 작업의 스펙 문서(MASTER §3 문서 지도 / WORKLINE 포인터. 예: 이음매 수정 → `docs/reports/SEAM-AUDIT-2026-07-16.md`).
+5. 작업 후 종료 루틴: **일지**(`docs/worklog/YYYY-MM-DD-요일.md`, 별도 커밋) → **WORKLINE 갱신** → **MASTER §1·§2 갱신** → 프로세스 스윕(§6) → push.
 
 ## 1. 불변 규칙 (어기면 롤백 대상)
 
@@ -88,7 +89,7 @@ powershell -ExecutionPolicy Bypass -File tools\build-demo-apk.ps1    # APK (JDK2
 # 게임 구동(하네스·빌드) 후 잔류 프로세스 스윕 — 상시 프로토콜
 Get-CimInstance Win32_Process | Where-Object { ($_.Name -match 'electron|node|java') -and $_.CommandLine -match 'Project_winter|pw-demo|gradle' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
 ```
-+ 일지 커밋(별도) + WORKLINE 갱신 + push.
++ 일지 커밋(별도) + WORKLINE 갱신 + **MASTER §1 좌표·§2 인계 블록** + push.
 
 ## 7. 현재 작업 큐 (2026-07-17 기준 — WORKLINE이 항상 최신)
 
