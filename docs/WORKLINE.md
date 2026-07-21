@@ -79,3 +79,4 @@
 - 스토어 페이지 제출(최상류) · 가격 입력 · 캡슐 세대 확정 · 스크린샷 v3 검수 · 트레일러 촬영
 - Steamworks: 데모 앱 생성+AppID 기입 · steamcmd 설치 · **업적 2종 추가 등록(ACH_MODDER·ACH_PAST_FIRST_WINTER)** · 도전과제 현지화 VDF 업로드(전달됨) · **서포터팩 DLC AppID 발급 후 platform.js STEAM_DLC_APPID.supporter 기입 + DLC 가격 책정(콘텐츠 6종 반영 상향)**
 - 결정: #168 텔레메트리 방식 · ja 픽셀 폰트 · 고양이 조기화 · CTA A/B · 2.0 미결 16건 · **UI 아이콘 언어(세미오틱 글리프 GO/NO — UI-PIXEL-UNITY §5)**
+- **리팩터 가이드 신설 (07-21)**: `design/eng/REFACTOR-GUIDE.md` — 실측 기준선(game.js 11,701줄·422함수·모듈 let 91·state 직접접근 1,002·_golden 관통 20·최장 processDay 488줄) + 개선 포인트 P1~P5. **P1=렌더 컨텍스트 객체**(플래그 관통→Parameter Object/Strategy, 미해결 lodge 플레이키의 근원 치료 후보) · P2=매직넘버 외부화(후보 25→BAL, comfort의 `<25`와 gaugeSev 25 이중 리터럴 수렴) · P3=긴 함수 파이프라인화 · P4=쓰기 통로 지정 · P5=뷰 빌더 seam. 구현 미착수, 별도 브랜치 필수.

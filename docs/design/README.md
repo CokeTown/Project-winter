@@ -46,7 +46,8 @@
 |---|---|
 | [SAVE-SCHEMA.md](./eng/SAVE-SCHEMA.md) | 세이브 스키마 |
 | [PORTING.md](./eng/PORTING.md) | 포팅·모듈화 계획 |
-| [REFACTOR-LOG.md](./eng/REFACTOR-LOG.md) | 리팩터 이력 |
+| [REFACTOR-GUIDE.md](./eng/REFACTOR-GUIDE.md) | ★ **리팩터 가이드** — 실측 기준선 + 개선 포인트 P1~P5(패턴·처방·검증). 착수 전 필독 |
+| [REFACTOR-LOG.md](./eng/REFACTOR-LOG.md) | 리팩터 이력 (무엇을 했나) |
 | [REQUIREMENTS-1.0.md](./eng/REQUIREMENTS-1.0.md) | 1.0 요구사항 |
 | [L10N-JA.md](./eng/L10N-JA.md) | 일본어 조판 규약 (용어집·시트 규격은 `../l10n/L10N-GUIDE.md`) |
 | [STRATEGY-NEXTFEST.md](../steam/STRATEGY-NEXTFEST.md) | Next Fest 전략 |
