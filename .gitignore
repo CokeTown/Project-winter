@@ -14,3 +14,14 @@ scratchpad/
 release-qa/
 release-demo/
 tools/steam/steamcmd/
+
+# 트레일러 렌더 산출물 — 루트에 수 GB 누적(2026-07-21 기준 release-trailer 2.6G · release-r 1.4G).
+# 정본 트레일러 문서는 docs/steam/trailer/, 완성본은 GitHub Release로만 배포한다.
+release-trailer*/
+release-r/
+builds/
+
+# 세션 검증 덤프 (하네스 출력) — 재생성 가능, 커밋 대상 아님
+*-verify.txt
+demo-build-out.txt
+Pixel_Fixed_Capsule/

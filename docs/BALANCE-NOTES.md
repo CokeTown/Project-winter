@@ -164,7 +164,7 @@
 
 ## NFR-SAVE-01 — 표준 세이브 코퍼스 + 로드 왕복 매트릭스
 
-`docs/qa/saves/` 신설. 현 버전(ver 3) 표준 4종 생성 + `loadSave()` 왕복 무손실.
+`tests/fixtures/qa-saves/` (구 `docs/qa/saves/`, 2026-07-21 이동). 현 버전(ver 3) 표준 4종 생성 + `loadSave()` 왕복 무손실.
 
 | 세이브 | Day | loadSave 왕복 | deco 보존 | mods 보존 | 도감 색상 | 판정 |
 |---|---|---|---|---|---|---|

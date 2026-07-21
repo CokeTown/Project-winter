@@ -71,7 +71,8 @@
 docs/
 ├── MASTER.md            ★ 이 문서 — 진입점·현재 좌표·세션 인계 로그
 ├── WORKLINE.md          ★ 작업 번호 원장 (진행/대기/완료) — 다음 작업 선택
-├── OPERATIONS.md        ★ 운영 플레이북 (검증 명령·릴리스 파이프·결정 경계·트러블슈팅)
+├── OPERATIONS.md        ★ 운영 플레이북 — **어떻게 실행하나** (검증 명령·릴리스 파이프·결정 경계·트러블슈팅)
+├── RELEASE-CYCLE.md     ★ 버전업 게이트 계약 — **무엇이 통과해야 하나** (12게이트, 구 qa/)
 ├── MILESTONES.md        ★ 로드맵 정본 (M0 출시 → M1 부채 → M2~M4 2.0) + 발매 이력 + 상점용 로드맵 카피
 ├── PROJECT.md           기술 개요 (스택·코드 지도·BGM 규칙·빌드 명령)
 ├── PATCHNOTES.md        버전별 변경 이력 (플레이어용 문체)
@@ -81,7 +82,7 @@ docs/
 ├── QA-REPORT.md         QA 현황
 ├── COPY-REVIEW.md       카피 전수 검토
 ├── worklog/             날짜별 일지 (통합하지 않음 — 상세 기록)
-├── design/              설계 정본
+├── design/              설계 정본 — **분류 색인은 design/README.md** (평면 유지 결정)
 │   ├── GD-2.0.md              2.0 「응답」 정본 기획
 │   ├── GD-THESIS.md / WORLDVIEW.md   서사 테제 · 세계관 정본
 │   ├── DEPTH-DESIGN.md        깊이 설계 (숙련·대한파·부상 서사)
@@ -99,11 +100,14 @@ docs/
 │   ├── SCENARIO-FLOWS.md · SAVE-SCHEMA.md · PORTING.md · REQUIREMENTS-1.0.md
 │   ├── L10N-JA.md             현지화 규약 (ja 포함)
 │   └── (기타 도메인 스펙: LIGHTING-UPDATE · EAST-ECONOMY · FURNITURE-TIERS · ENCOUNTER-SEASONS · ICON-WORKLIST · AI-ART-ANTISLOP …)
-├── steam/               스토어 (STORE-SUBMIT · PAGE-COPY · SKU-PLAN · DEPOT · ACHIEVEMENTS-SUBMIT · trailer/)
-├── reports/             시점 감사 리포트 (SEAM/MODE/LIGHTING/GROUNDING …) — 과거 스냅샷, 참조용
-├── qa/ · l10n/ · feedback/ · marketing/
-└── (구판은 삭제하고 정본에 흡수 — 로드맵 3종·HANDOFF 등)
+├── steam/               스토어 (STORE-SUBMIT · PAGE-COPY · SKU-PLAN · DEPOT · ACHIEVEMENTS-SUBMIT)
+│   └── trailer/         트레일러 전량 (정본/계보는 trailer/README.md)
+├── reports/             시점 감사 리포트 (SEAM/MODE/LIGHTING/GROUNDING/AUDIT-1.4 …) — 날짜 스냅샷, 설계 정본 아님
+├── l10n/ · feedback/
+└── (구판은 삭제하고 정본에 흡수 — 로드맵 3종·HANDOFF·COMMS-KIT 등)
 ```
+
+**2026-07-21 구조 재편**: `docs/qa/` 해소(감사→`reports/`, 게이트 계약→`RELEASE-CYCLE.md`, 세이브 픽스처→`tests/fixtures/qa-saves/`) · `docs/marketing/` 해소(문구→`MARKETING.md`, 트레일러 스크립트→`steam/trailer/`) · 루트 트레일러 렌더 산출물 4GB를 `.gitignore`로 격리.
 
 ---
 
