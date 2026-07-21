@@ -34,8 +34,8 @@
 
 **지금의 큰 줄기 3개**
 - **출시 트랙(최우선)** — 상점 제출·캡슐·트레일러·데모 재수렴. 상세 `MILESTONES.md` M0.
-- **UI 리워크(진행 중)** — 세미오틱 글리프 + HUD 기획서 반영. 상세 `design/UI-PIXEL-UNITY.md` §5, `design/HUD-SPEC-RECON.md`.
-- **2.0 「응답」(비축)** — 출시 블로커 없을 때만 소비. 상세 `design/GD-2.0.md`.
+- **UI 리워크(진행 중)** — 세미오틱 글리프 + HUD 기획서 반영. 상세 `design/ui/UI-PIXEL-UNITY.md` §5, `design/ui/HUD-SPEC-RECON.md`.
+- **2.0 「응답」(비축)** — 출시 블로커 없을 때만 소비. 상세 `design/canon/GD-2.0.md`.
 
 ---
 
@@ -44,7 +44,7 @@
 > 최신이 위. 한 세션 = 한 블록. **다음 세션은 맨 위 블록만 읽으면 인계가 끝나야 한다.**
 
 ### 2026-07-21 (화) · HUD 기획서 반영 + 문서 통합
-- **한 일**: ①GPT HUD 기획서 v0.1 ↔ 현 게임 **상충안** 작성(`design/HUD-SPEC-RECON.md`) — 스펙 승 4/게임 승 3 판정 ②`ui-hud` 브랜치 1차 구현: 명령 바를 좌상단 2×4 그리드 → **상단 밴드**로 이동, 게이지 **색=심각도**(정상 초록/주의 앰버/위험 적) + 수치 + 상태 문자, 행 스택 재조판 ③v1.9.12 범프·릴리스 3종 발행 ④**문서 통합**(이 문서 신설, 로드맵 4→1 등).
+- **한 일**: ①GPT HUD 기획서 v0.1 ↔ 현 게임 **상충안** 작성(`design/ui/HUD-SPEC-RECON.md`) — 스펙 승 4/게임 승 3 판정 ②`ui-hud` 브랜치 1차 구현: 명령 바를 좌상단 2×4 그리드 → **상단 밴드**로 이동, 게이지 **색=심각도**(정상 초록/주의 앰버/위험 적) + 수치 + 상태 문자, 행 스택 재조판 ③v1.9.12 범프·릴리스 3종 발행 ④**문서 통합**(이 문서 신설, 로드맵 4→1 등).
 - **산출**: 커밋 `8748665`(HUD 1차) `b0d0bc5`(상단 이동) `358b9af`(범프) · 릴리스 v1.9.12-dc(exe 2종+APK).
 - **검증**: 배터리 102/102 · 모달 DOM 7/7 · i18n 2196 무결 · 1280/1920 rect 겹침 0.
 - **다음 한 수**: HUD 스펙 2차 — Tab 정보 확장 · **알림 큐 + 시스템 로그**(우선 추천: 데이터 이미 존재, 토스트 증발 문제 동시 해결) · PDA 사용 중 HUD 축소.
@@ -82,32 +82,20 @@ docs/
 ├── QA-REPORT.md         QA 현황
 ├── COPY-REVIEW.md       카피 전수 검토
 ├── worklog/             날짜별 일지 (통합하지 않음 — 상세 기록)
-├── design/              설계 정본 — **분류 색인은 design/README.md** (평면 유지 결정)
-│   ├── GD-2.0.md              2.0 「응답」 정본 기획
-│   ├── GD-THESIS.md / WORLDVIEW.md   서사 테제 · 세계관 정본
-│   ├── DEPTH-DESIGN.md        깊이 설계 (숙련·대한파·부상 서사)
-│   ├── REWARD-LOOP.md         리워드 루프
-│   ├── STRATEGY-NEXTFEST.md   넥페 전략
-│   ├── UI-PIXEL-UNITY.md      ★ UI 픽셀/글리프 정본 (§5 세미오틱 글리프)
-│   ├── HUD-SPEC-RECON.md      ★ HUD 기획서 v0.1 상충안 (채택/기각 매트릭스)
-│   ├── UI-REWORK-REVIEW.md    UI 시안 검토 (조판 채택·데이터 모델 기각)
-│   ├── UI-TOKENS.md           UI 토큰
-│   ├── DESIGN-REVIEW.md       레벨 디자인 평가 + 적대적 리뷰
-│   ├── GAME-REVIEW.md         재미·시장성 리뷰
-│   ├── QUALITY-UP.md          퀄업 보드 + 디렉터 결정
-│   ├── DEMO-REDESIGN.md       데모 설계
-│   ├── ENDINGS-REV3.md        엔딩 정본
-│   ├── SCENARIO-FLOWS.md · SAVE-SCHEMA.md · PORTING.md · REQUIREMENTS-1.0.md
-│   ├── L10N-JA.md             현지화 규약 (ja 포함)
-│   └── (기타 도메인 스펙: LIGHTING-UPDATE · EAST-ECONOMY · FURNITURE-TIERS · ENCOUNTER-SEASONS · ICON-WORKLIST · AI-ART-ANTISLOP …)
-├── steam/               스토어 (STORE-SUBMIT · PAGE-COPY · SKU-PLAN · DEPOT · ACHIEVEMENTS-SUBMIT)
+├── design/              설계 정본 — **색인 design/README.md**. 5개 주제 폴더:
+│   ├── canon/           서사·세계관 (GD-THESIS · WORLDVIEW · GD-1.0/2.0 · ENDINGS-REV3 · SCENARIO-FLOWS · VISITOR-VOICES)
+│   ├── systems/         게임 시스템 (DEPTH-DESIGN · REWARD-LOOP · DEMO-REDESIGN · 인카운터/가구/동부/라이팅)
+│   ├── ui/              UI·아트 (★UI-PIXEL-UNITY · ★HUD-SPEC-RECON · UI-REWORK-REVIEW · UI-TOKENS · ICON-WORKLIST · AI-ART-ANTISLOP)
+│   ├── review/          리뷰·이력 (DESIGN-REVIEW · GAME-REVIEW · QUALITY-UP · DESIGN-HISTORY)
+│   └── eng/             기술·규약 (SAVE-SCHEMA · PORTING · REFACTOR-LOG · REQUIREMENTS-1.0 · L10N-JA)
+├── steam/               스토어 (STORE-SUBMIT · PAGE-COPY · SKU-PLAN · DEPOT · ACHIEVEMENTS-SUBMIT · STRATEGY-NEXTFEST)
 │   └── trailer/         트레일러 전량 (정본/계보는 trailer/README.md)
 ├── reports/             시점 감사 리포트 (SEAM/MODE/LIGHTING/GROUNDING/AUDIT-1.4 …) — 날짜 스냅샷, 설계 정본 아님
 ├── l10n/ · feedback/
 └── (구판은 삭제하고 정본에 흡수 — 로드맵 3종·HANDOFF·COMMS-KIT 등)
 ```
 
-**2026-07-21 구조 재편**: `docs/qa/` 해소(감사→`reports/`, 게이트 계약→`RELEASE-CYCLE.md`, 세이브 픽스처→`tests/fixtures/qa-saves/`) · `docs/marketing/` 해소(문구→`MARKETING.md`, 트레일러 스크립트→`steam/trailer/`) · 루트 트레일러 렌더 산출물 4GB를 `.gitignore`로 격리.
+**2026-07-21 구조 재편**: `design/` 평면 33개 → **5개 주제 폴더**(링크 스크립트 재계산, 깨진 링크 0) · `docs/qa/` 해소(감사→`reports/`, 게이트 계약→`RELEASE-CYCLE.md`, 세이브 픽스처→`tests/fixtures/qa-saves/`) · `docs/marketing/` 해소(문구→`MARKETING.md`, 트레일러 스크립트→`steam/trailer/`) · `docs/localization/` 빈 껍데기 제거 · 루트 트레일러 렌더 산출물 4GB를 `.gitignore`로 격리.
 
 ---
 
@@ -139,9 +127,9 @@ docs/
 
 | 건 | 문서 |
 |---|---|
-| 게이지 색=심각도 / 수치 병기 — 구오더 대체 승인 | `design/HUD-SPEC-RECON.md` §3 |
-| UI 리워크 착수 범위·시점 (P0~P3) | `design/UI-REWORK-REVIEW.md` §5 |
-| 잔류 도트 아이콘 154장 처분(가구·지도 마커) | `design/UI-PIXEL-UNITY.md` §5.4 |
+| 게이지 색=심각도 / 수치 병기 — 구오더 대체 승인 | `design/ui/HUD-SPEC-RECON.md` §3 |
+| UI 리워크 착수 범위·시점 (P0~P3) | `design/ui/UI-REWORK-REVIEW.md` §5 |
+| 잔류 도트 아이콘 154장 처분(가구·지도 마커) | `design/ui/UI-PIXEL-UNITY.md` §5.4 |
 | 상점 페이지 제출 · 캡슐 확정 · 트레일러 촬영 | `steam/STORE-SUBMIT.md` · `MILESTONES.md` M0 |
 | Steamworks: 데모 AppID · 업적 2종 등록 · DLC AppID·가격 | `steam/DEPOT.md` · `steam/SKU-PLAN.md` |
-| ja 픽셀 폰트 · #168 텔레메트리 방식 | `design/L10N-JA.md` · `MILESTONES.md` |
+| ja 픽셀 폰트 · #168 텔레메트리 방식 | `design/eng/L10N-JA.md` · `MILESTONES.md` |
