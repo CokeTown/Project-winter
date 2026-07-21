@@ -1,7 +1,29 @@
 # 항공뷰 지도 — 설계서 (AERIAL-MAP)
 
 > **오더**(디렉터 2026-07-22): 절차 생성 이미지 지도를 **항공뷰 시점의 모델링**으로 대체하고, 노드 클릭 시 **그 지점의 근접 환경**을 보여준다. 목적 = **"내가 어딜 정확히 탐사하는지"의 공간 실감**.
-> **지위: 설계서 — 구현 미착수.** 관련: [../ui/UI-REWORK-REVIEW.md](../ui/UI-REWORK-REVIEW.md)(지도 상세는 PDA 소유) · [../eng/REFACTOR-GUIDE.md](../eng/REFACTOR-GUIDE.md)(관문 원칙) · GD-2.0 §9.8(도시뷰).
+> **지위: S1 프로토 구현 완료(디렉터 판정 대기) · S2 미착수.** 관련: [../ui/UI-REWORK-REVIEW.md](../ui/UI-REWORK-REVIEW.md)(지도 상세는 PDA 소유) · [../eng/REFACTOR-GUIDE.md](../eng/REFACTOR-GUIDE.md)(관문 원칙) · GD-2.0 §9.8(도시뷰).
+
+## ★ 구현 현황 (2026-07-22 · `map-aerial` 브랜치)
+
+| 항목 | 상태 |
+|---|---|
+| 코드 | `src/render/aerialproto.js` (씬·조명·카메라·잠식) + `game.js` renderFrame 분기 + QA 훅 `__shelter.aerialProto()` |
+| 캡처 도구 | **`tools/aerial-capture.cjs`** — `--mode=weather`(시간대×날씨 8컷) / `--mode=ruin`(잠식 연차 8컷). 판단물 재생산의 유일한 경로 |
+| S1 (씬·실시간) | ✅ 인스턴싱 도시 · 조명 키프레임 8 · 눈 3면 스왑 · overview↔focus 돌리 줌 · 본편 픽셀화 파이프 공유 |
+| S1-b (폐허·잠식) | ✅ 손상 원형 6종(부지 300→박스 1,406) + 잔해 스커트 · 잠식 #71 규약 이식(5→124→575개, 겨울 0.6배) |
+| S2~S4 | ⬜ 미착수 — 노드 DOM 오버레이·정보 카드·mapview 추출·출발 연결·데모 유입·모바일 실측 |
+
+**재현 절차**(다른 세션이 현재 모습을 보려면):
+```powershell
+$env:Path = "$env:LOCALAPPDATA\node-portable;$env:Path"
+npm run build:electron
+./node_modules/.bin/electron.cmd tools/aerial-capture.cjs --mode=ruin   # scratchpad/aerial/에 8컷
+```
+
+**S1 실측 함정 3건**(재발 방지):
+1. **팩토리 반환에 메서드 미노출** → 매 프레임 TypeError → renderFrame 사망 → **캔버스가 정지 프레임으로 남아 "정상 렌더"로 위장**(DOM은 독립 합성이라 UI만 계속 갱신). 오프스크린 검증은 **에러 리스너 선부착**이 필수.
+2. **노드 회피 반경 20** → focus(dist 30) 시야가 통째로 빈 공터. 폐허를 보여주는 뷰인데 폐허를 치워둔 꼴 → 11로 축소.
+3. **안개 밀도 고정** → overview(dist 165)에서 도시가 뿌옇게 씻김 → 카메라 거리 반비례(clamp 0.28~1).
 
 ## ★ 개정 1차 (2026-07-22 — 디렉터 확정 3건, 초판 §0·§2·§5를 대체)
 
