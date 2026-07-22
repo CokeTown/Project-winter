@@ -1473,7 +1473,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #confirm-panel .pixel-btn { flex: 1; }
 
   /* ── 전자시계 (LCD) ── */
-  #clock-panel { top: 12px; right: 210px; padding: 8px 10px; }
+  /* 재배치 2차 정정(2026-07-22): 뷰 컨트롤이 시계 자리(최상단 우측)를 가져간다 — 시계는 같은 줄
+     왼쪽 밴드(좌 HUD 오른쪽)로 이동. 상단 한 줄 = HUD | 시계 | 뷰 컨트롤 | PDA독. */
+  #clock-panel { top: 12px; left: 272px; right: auto; padding: 8px 10px; } /* left = HUD 우변(실측 262) + 10 */
   #lcd {
     background: #081209; border: 2px solid #3f6a46; border-radius: 3px;
     padding: 6px 12px; text-align: center; min-width: 108px;
@@ -1492,10 +1494,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* ── 온스크린 카메라 컨트롤 ── */
   /* 디렉터 UI 재배치: 우측 세로열 → 하단 가로 바(우측). 편집(🔧)은 좌측 분리(#btn-edit). */
   #cam-ctrl {
-    /* 디렉터 재배치 2차(2026-07-22): 하단 우측 → 상단 우측, 시계 패널 바로 아래(우변 210 정렬 동일).
-       상단 갭(구 명령 바 자리)은 9버튼×줌 폭이 시계를 침범해 기각(1280 실측 137px 겹침).
-       시계와 같은 zoom(--uiz) 좌표계라 top:140(시계 top12+실측높이119+8)이 전 해상도에서 비율 유지. */
-    position: fixed; right: 210px; left: auto; top: 140px; bottom: auto; z-index: 6;
+    /* 디렉터 재배치 2차→정정(2026-07-22): "아예 화면 상단 고정 — 시계 위치에".
+       뷰 컨트롤이 최상단 우측(구 시계 슬롯)을 차지하고, 시계는 같은 줄 왼쪽 밴드로 밀린다.
+       우측 여백 62는 PDA 엣지독 클리어런스(실측) — rect 프로브로 전 해상도 검증. */
+    position: fixed; right: 62px; left: auto; top: 10px; bottom: auto; z-index: 6;
     display: flex; flex-direction: row; gap: 5px; align-items: center;
     zoom: var(--uiz);
   }
@@ -1565,6 +1567,19 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #btn-cancel-place.show { display: block; }
 
   /* ── 모바일 ── */
+  /* 상단 한 줄(HUD | 시계 | 뷰 컨트롤 | PDA독) 좁은 데스크톱 대응 — WSVGA(1024) 실측:
+     기본 크기로는 셋의 합이 뷰포트를 넘는다. 버튼·간격만 줄여 한 줄을 지킨다(모바일 규칙과 별개 대역). */
+  @media (min-width: 761px) and (max-width: 1240px) {
+    #cam-ctrl { right: 56px; gap: 3px; }
+    .cam-btn { width: 30px; height: 30px; font-size: 14px; }
+    #clock-panel { left: 268px; }
+  }
+  /* 낮은 화면(WSVGA 600·1024×640): 할 일 카드가 하단 명령 바에 깔린다 — 바 위로 올린다 */
+  @media (min-width: 761px) and (max-height: 760px) {
+    #quest-card { top: auto; bottom: 118px; }
+    body.edit-mode #quest-card { bottom: 260px; }
+  }
+
   @media (max-width: 760px) {
     /* #208(디렉터 "허기·갈증 짤린다 → 가로로 늘리고 대신 접을 수 있게"): 구 190px 고정폭이 3열 게이지를
        53px씩 쪼개 라벨을 죽였다("허기"→"허", 실측 g-name 8.6px). 화면 폭에 맞춰 늘린다.
