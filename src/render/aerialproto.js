@@ -156,6 +156,34 @@ export function makeAerialProto(cfg = {}) {
         made++;
       }
     }
+    // ── 옥상·폐허 디테일 (디렉터 2026-07-22: "건물 디테일 추가") — 전부 기존 parts 인스턴싱에 합류(추가 드로콜 0) ──
+    //   온전 건물: 계단실 박스 + 급수탱크(받침 포함) + 안테나 + 환기 유닛 — 도시 스카이라인의 생활 흔적.
+    //   폐허: 노출 철골(가는 세로 부재 2~4) — S1-b 잔여 후보의 상환. 항공 거리에서 실루엣으로 읽힌다.
+    for (const lot of lots) {
+      if (!lot.ruined && lot.H >= 5) {
+        const t2 = 0.30 + rand() * 0.06;
+        if (rand() < 0.7) // 계단실/옥탑 박스
+          pushPart({ x: lot.x + (rand() - 0.5) * lot.w * 0.4, y: lot.H, z: lot.z + (rand() - 0.5) * lot.d * 0.4,
+                     w: lot.w * 0.22, h: 1.4 + rand() * 0.8, d: lot.d * 0.22, tone: t2 });
+        if (rand() < 0.45) { // 급수탱크 + 받침
+          const wx = lot.x + (rand() - 0.5) * lot.w * 0.5, wz = lot.z + (rand() - 0.5) * lot.d * 0.5;
+          pushPart({ x: wx, y: lot.H, z: wz, w: 1.1, h: 0.7, d: 1.1, tone: t2 * 0.85 });          // 받침
+          pushPart({ x: wx, y: lot.H + 0.7, z: wz, w: 1.5, h: 1.5, d: 1.5, tone: t2 * 1.15 });    // 탱크
+        }
+        if (rand() < 0.35) // 안테나 마스트
+          pushPart({ x: lot.x + (rand() - 0.5) * lot.w * 0.6, y: lot.H, z: lot.z + (rand() - 0.5) * lot.d * 0.6,
+                     w: 0.22, h: 2.6 + rand() * 2.2, d: 0.22, tone: 0.22 });
+        if (rand() < 0.5) // 환기 유닛(낮은 상자 1~2)
+          for (let k = 0, kn = 1 + Math.floor(rand() * 2); k < kn; k++)
+            pushPart({ x: lot.x + (rand() - 0.5) * lot.w * 0.55, y: lot.H, z: lot.z + (rand() - 0.5) * lot.d * 0.55,
+                       w: 0.8 + rand() * 0.5, h: 0.5, d: 0.8 + rand() * 0.5, tone: t2 * 0.9, ry: rand() * 1.5 });
+      } else if (lot.ruined && rand() < 0.55) {
+        // 노출 철골 — 무너진 슬래브 위로 삐져나온 세로 부재(살짝 기울어짐)
+        for (let k = 0, kn = 2 + Math.floor(rand() * 3); k < kn; k++)
+          pushPart({ x: lot.x + (rand() - 0.5) * lot.w * 0.7, y: lot.H * 0.35, z: lot.z + (rand() - 0.5) * lot.d * 0.7,
+                     w: 0.24, h: 1.6 + rand() * 2.4, d: 0.24, rz: (rand() - 0.5) * 0.5, tone: 0.18 });
+      }
+    }
     // parts → InstancedMesh 2벌(도색 스왑 단위 유지: 짝수/홀수로 분할해 기존 dry/snow 배열 구조 계승)
     { const half = Math.ceil(parts.length / 2);
       const mk = (arr) => {
@@ -240,11 +268,8 @@ export function makeAerialProto(cfg = {}) {
       }
       wins.count = i; wins.instanceMatrix.needsUpdate = true; scene.add(wins);
       winsMesh = wins; winsTotal = i; } // 재건 비네트: setLit(n)이 count를 0→total로 몰아 "불이 하나씩 켜진다"
-    for (let k = 0; k < 5; k++) { // 적색 항공 장애등 (레퍼런스 무드)
-      const b = new THREE.Mesh(new THREE.SphereGeometry(0.55, 6, 5), new THREE.MeshBasicMaterial({ color: 0xff3020 }));
-      b.position.set((rand() - 0.5) * 160, 20 + rand() * 10, (rand() - 0.5) * 160);
-      b.userData.ph = rand() * 6.28; beacons.push(b); scene.add(b);
-    }
+    // 적색 항공 장애등 폐기(디렉터 2026-07-22): 공중 부유 점이 '셸터 마커'로 오독 —
+    //   셸터 위치는 PDA 지도 전용 원칙. 관측 화면에는 위치성 점 표식을 두지 않는다.
     // ── 노드 권역 드레싱 (해당 노드가 주입됐을 때만 — S3에서 전 노드 드레싱 확장) ──
     if (NODES.residential) { // 주거(residential): 낮은 집들 정렬 — 살던 동네의 질서
       const g = new THREE.Group(); const nd = NODES.residential;

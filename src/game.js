@@ -10103,16 +10103,19 @@ const postMat = new THREE.ShaderMaterial({
       if (uCrt > 0.5) {
         float t = uCrtT;
         int m = int(mod(floor(gl_FragCoord.x), 3.0));
-        vec3 tri = vec3(0.55);
-        if (m == 0) tri.r = 1.45; else if (m == 1) tri.g = 1.45; else tri.b = 1.45;
-        col *= mix(vec3(1.0), tri, 0.42);
-        col *= (mod(floor(gl_FragCoord.y), 3.0) < 1.0) ? 0.78 : 1.06;      // 스캔라인 1/3
+        vec3 tri = vec3(0.62);
+        if (m == 0) tri.r = 1.38; else if (m == 1) tri.g = 1.38; else tri.b = 1.38;
+        // 디렉터 2026-07-22 정정: 형광체·감광이 시간대 색온을 눌러 '건조한 위성사진'이 됐다 —
+        //   트라이어드 혼합 완화(0.42→0.28) + 감광 전반 보상. 아침 볕·노을·밤 창문이 CRT 너머로도 읽혀야 한다.
+        col *= mix(vec3(1.0), tri, 0.28);
+        col *= (mod(floor(gl_FragCoord.y), 3.0) < 1.0) ? 0.86 : 1.07;      // 스캔라인 1/3 (감광 완화)
         float sweep = fract(t / 3.6);                                       // 리프레시 스윕: 3.6s 주기 위→아래
         col += vec3(0.10, 0.13, 0.10) * smoothstep(0.10, 0.0, abs(vUv.y - (1.0 - sweep)));
         float n = fract(sin(dot(floor(vUv * uRes) + floor(t * 24.0), vec2(12.9898, 78.233))) * 43758.5453);
-        col += (n - 0.5) * 0.055;                                           // 신호 그레인
+        col += (n - 0.5) * 0.04;                                            // 신호 그레인 (완화)
         vec2 vc = vUv - 0.5;
-        col *= 1.0 - dot(vc, vc) * 0.55;                                    // 코너 감광(관 유리)
+        col *= 1.0 - dot(vc, vc) * 0.32;                                    // 코너 감광(관 유리, 완화)
+        col *= 1.06;                                                        // 전체 휘도 보상 — 관측이 본편보다 어두워지지 않게
       }
       gl_FragColor = vec4(col, 1.0);
     }`,
@@ -11535,6 +11538,7 @@ window.__shelter = {
   openObsMap, obsView, activeAerial, // S2 관측 단말 — QA/하네스 진입점 (activeAerial: 골든 씬 전환 시 잔여 디오라마 강제 종료용)
   setBarrel, setPanelBulge, // CRT 실험 노브(씬 배럴·패널 볼록, 기본 off) — 판정 후 정식 편입 여부 결정
   setCrtLook: on => { postMat.uniforms.uCrt.value = on ? 1 : 0; setBarrel(on ? 0.14 : 0); }, // #217 관측 CRT 위성 룩 — QA/캡처 토글
+  setAerialHour: h => { aerialHourOverride = (h == null ? null : +h); }, // #218 시간대 컷 캡처용 — 비네트와 동일 채널
   regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
   shelterUnlocked, // 2.0-(b) QA: 동부 관문 이주 게이트(eastGateOpen) 검증
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
