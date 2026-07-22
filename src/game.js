@@ -7160,9 +7160,10 @@ const KEYBIND_DEFAULT = {
   rotViewR: 'KeyE',   // 시점 회전 우
   rotateItem: 'KeyR', // 가구 회전
   reclaim: 'Delete',  // 회수
+  hudExt: 'Tab',      // HUD 정보 확장 (홀드 — HUD-SPEC-RECON §1.4)
 };
 // 리바인딩 UI/안내표 순서 (선언 순서 고정)
-const KEYBIND_ORDER = ['map', 'migrate', 'craft', 'clean', 'sleep', 'journal', 'pause', 'editMode', 'rotViewL', 'rotViewR', 'rotateItem', 'reclaim'];
+const KEYBIND_ORDER = ['map', 'migrate', 'craft', 'clean', 'sleep', 'journal', 'pause', 'editMode', 'rotViewL', 'rotViewR', 'rotateItem', 'reclaim', 'hudExt'];
 // const로 두고 항상 제자리 변경(reassign 금지) — 외부(QA/export) 참조가 항상 라이브 상태를 본다.
 const KEYBINDS = { ...KEYBIND_DEFAULT };
 try {
@@ -7239,8 +7240,13 @@ addEventListener('keydown', e => {
   // 설정 창이 열려 있으면(입력 필드 등) 게임 액션 단축키 무시 — 오작동 방지
   if (settingsOpen()) return;
   const act = actionForEvent(e);
+  // hudExt만 홀드 문법(누르는 동안) — 단발 runAction과 분리. repeat는 브라우저 키 반복이라 무시.
+  if (act === 'hudExt') { e.preventDefault(); if (!e.repeat) hudExtSet(true); return; }
   if (act) { e.preventDefault(); runAction(act); }
 });
+// 홀드 해제 쌍: keyup + 창 이탈(blur — keyup을 영영 못 받는 경로) 안전장치
+addEventListener('keyup', e => { if (e.code === KEYBINDS.hudExt) hudExtSet(false); });
+addEventListener('blur', () => hudExtSet(false));
 // 지지대 회전 시 위 소품도 함께 90° 공전 (dir=+1: rot+1과 동일 방향)
 function rotateChildren(item, dir) {
   if (!DEFS[item.defId].surface) return;
@@ -7990,6 +7996,39 @@ function renderResBar() {
   lastResSnapshot = { ...state.res };
   updateMoveBadge();
 }
+// ── #225 Tab 정보 확장 (HUD-SPEC-RECON §1.4) — 누르는 동안만 몸·집 요약 ──
+//   자원은 res-bar가, 게이지 수치는 HUD가 이미 말한다 — 여기는 HUD에 '없는' 것만:
+//   청결 · 컨디션(부상/피로/버프/날씨) · 쾌적 4축 · 정착 계측. 상세·조작은 PDA(중복 금지).
+let hudExtOn = false;
+function hudExtSet(on) {
+  if (hudExtOn === on) return;
+  hudExtOn = on;
+  document.body.classList.toggle('hud-ext', on);
+  if (on) renderHudExt();
+}
+function renderHudExt() {
+  const el = $('hud-ext'); if (!el) return;
+  const cleanV = state.cleanBy?.[state.current] ?? 70;
+  const cSev = gaugeSev(cleanV);
+  let h = `<div class="hx-gauge"><span class="hx-k">${t('pda.clean')}</span><span class="hx-bar"><i class="${cSev}" style="width:${Math.max(0, Math.round(cleanV))}%"></i></span><b class="hx-v">${Math.round(cleanV)}</b></div>`;
+  // 컨디션 한 줄 요약 — PDA 상태 탭 lines와 동일 소스, 버튼(치료) 없이 텍스트만
+  const cond = [];
+  if (state.injury) {
+    const inj = INJURIES[state.injury.type];
+    cond.push(`${LName(inj)} — ${t('pda.injuryLeft', { h: Math.max(0, Math.ceil((state.injury.untilMin - state.gameMin) / 60)) })}`);
+  }
+  if (state.expFatigue === state.day) cond.push(t('exp.fatigue'));
+  const w = WEATHERS[state.weatherType];
+  if (w?.penalty) cond.push(`${t('pda.weatherPen')} -${Math.round(w.penalty * 100)}%`);
+  if (state.buff) cond.push(buffLabel(state.buff));
+  h += `<div class="hx-h">// ${t('pda.cond')}</div><div class="hx-line">${cond.length ? cond.join(' · ') : t('pda.noInjury')}</div>`;
+  const cb = comfortBreakdown();
+  const ax = (label, v) => `${label} ${v < 0 ? '' : '+'}${Math.round(v)}`;
+  h += `<div class="hx-h">// ${t('pda.comfort')} ${cb.score}</div>`
+    + `<div class="hx-line">${[ax(t('comfort.warmth'), cb.warmth), ax(t('comfort.clean'), cb.clean), ax(t('comfort.security'), cb.security), ax(t('comfort.mood'), cb.mood)].join(' · ')}</div>`
+    + `<div class="hx-line dim">${t('nt.settledDays', { n: state.stayDays || 0 })} · ${t('pda.exp')} ${state.expToday}</div>`;
+  el.innerHTML = h;
+}
 // ── #199 UI B: 우측 도킹 PDA — 전자 계측 오버레이 (상태/자원/지도/기록) ──
 //   하이브리드 원칙: 계측=전자(이 단말), 기록=종이(일지 도킹=기존 저널 진입점).
 //   기존 HUD는 불변 — 상단 정리 여부는 디렉터 결정 대기. 조회 전용(게임 진행 비정지).
@@ -7998,11 +8037,12 @@ const pdaVisible = () => $('pda-back').style.display !== 'none';
 function pdaOpen(tab) {
   if (tab) pdaTab = tab;
   $('pda-back').style.display = '';
+  document.body.classList.add('pda-on'); // #225 스펙 2.2: PDA가 상세를 맡는 동안 HUD는 물러난다(디밍 — 중복 금지)
   renderPDA();
   const lcd = $('pda-lcd'); // 켜질 때 LCD 부트 플리커 — 기기 핍진성
   lcd.classList.remove('pda-boot'); void lcd.offsetWidth; lcd.classList.add('pda-boot');
 }
-function pdaClose() { $('pda-back').style.display = 'none'; }
+function pdaClose() { $('pda-back').style.display = 'none'; document.body.classList.remove('pda-on'); }
 // #199 5차-c(디렉터 B안): HUD 메뉴 → PDA 앱 모드 — 공용 모달을 LCD 안으로 라우팅해 기존 로직 무수정 재사용.
 //   #modal-back은 absolute inset:0이라 #pda-lcd(relative)로 옮기면 그대로 화면에 맞는다. 닫으면 원위치+기기 끔.
 let pdaAppOn = false;
@@ -11205,7 +11245,7 @@ function renderFrame() {
     p.position.y = 0.03 * Math.sin(t * 0.4 + p.userData.phase);
     p.position.x = 0.02 * Math.sin(t * 0.23 + p.userData.phase * 1.7);
   }
-  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); if (pdaVisible() && pdaTab === 'status') renderPDA(true); syncBgm(); syncSfxAmbience(); drainDiscoveryQueue(); } // 디렉터: PDA 상태탭도 0.5s 실시간 갱신(탐험 진행바·게이지) — quiet=플리커 생략, 지도/자원탭은 이벤트 갱신(맵 재생성 비용 회피)
+  if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); if (pdaVisible() && pdaTab === 'status') renderPDA(true); if (hudExtOn) renderHudExt(); syncBgm(); syncSfxAmbience(); drainDiscoveryQueue(); } // 디렉터: PDA 상태탭도 0.5s 실시간 갱신(탐험 진행바·게이지) — quiet=플리커 생략, 지도/자원탭은 이벤트 갱신(맵 재생성 비용 회피)
   // 항공뷰 프로토 활성 시: 같은 rt→post 파이프로 디오라마 씬을 대신 렌더 (픽셀 룩 동일 보장).
   //   위의 시뮬 틱은 그대로 돌므로 시간·날씨가 실시간으로 디오라마에 반영된다 (AERIAL-MAP 개정 1차).
   // #217 CRT 시간 공급: 골든/캡처 결정론 — freeze(_golden) 중엔 고정값(위상 동결, crtFlicker와 같은 사상)

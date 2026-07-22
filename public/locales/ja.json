@@ -89,6 +89,7 @@
   "ctrl.act.rotViewR": "視点回転 (右)",
   "ctrl.act.rotateItem": "家具を回転",
   "ctrl.act.reclaim": "選択家具を回収",
+  "ctrl.act.hudExt": "情報表示（押している間）",
   "acc.title": "アクセシビリティ",
   "opt.fontscale": "文字サイズ",
   "acc.font.normal": "標準",

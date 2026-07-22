@@ -89,6 +89,7 @@
   "ctrl.act.rotViewR": "Rotate view (right)",
   "ctrl.act.rotateItem": "Rotate furniture",
   "ctrl.act.reclaim": "Reclaim selected",
+  "ctrl.act.hudExt": "Info overlay (hold)",
   "acc.title": "Accessibility",
   "opt.fontscale": "Font size",
   "acc.font.normal": "Normal",

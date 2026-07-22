@@ -89,6 +89,7 @@
   "ctrl.act.rotViewR": "시점 회전 (우)",
   "ctrl.act.rotateItem": "가구 회전",
   "ctrl.act.reclaim": "선택 가구 회수",
+  "ctrl.act.hudExt": "정보 확장 (누르는 동안)",
   "acc.title": "접근성",
   "opt.fontscale": "글자 크기",
   "acc.font.normal": "보통",

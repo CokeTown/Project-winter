@@ -16,6 +16,7 @@ const KEYBIND_LABEL = {
   map: 'ctrl.act.map', migrate: 'ctrl.act.migrate', craft: 'ctrl.act.craft', clean: 'ctrl.act.clean',
   sleep: 'ctrl.act.sleep', journal: 'ctrl.act.journal', pause: 'ctrl.act.pause', editMode: 'ctrl.act.editMode',
   rotViewL: 'ctrl.act.rotViewL', rotViewR: 'ctrl.act.rotViewR', rotateItem: 'ctrl.act.rotateItem', reclaim: 'ctrl.act.reclaim',
+  hudExt: 'ctrl.act.hudExt',
 };
 
 export function makeKeybindUI(ctx) {

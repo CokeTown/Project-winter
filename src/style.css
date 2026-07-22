@@ -230,6 +230,28 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #hud .shelter-name .px-icon { width: 14px; height: 14px; vertical-align: -3px; }
   /* HUD-SPEC-RECON §1.1 (기획서 6.1 A패널): 게이지 3열 그리드 → 행 스택(라벨|바|수치) — 수치·상태문자 공간 확보 */
   #hud #gauges { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+  /* ── #225 Tab 정보 확장(§1.4): 홀드 동안만 게이지 아래로 붙는 요약 시트 — 스캔인은 PDA 리프레시와 동일 계열 ── */
+  #hud-ext { display: none; border-top: 1px solid rgba(140, 245, 166, 0.22); margin-top: 2px; padding-top: 6px; }
+  body.hud-ext #hud-ext { display: block; animation: termScanIn 0.18s steps(7); }
+  body.reduce-motion #hud-ext { animation: none !important; }
+  #hud-ext .hx-gauge { display: flex; align-items: center; gap: 6px; }
+  #hud-ext .hx-k { font-size: 10px; color: #7da884; white-space: nowrap; }
+  #hud-ext .hx-bar { position: relative; flex: 1 1 auto; height: 7px; background: rgba(140, 245, 166, 0.07); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(140, 245, 166, 0.14); }
+  #hud-ext .hx-bar i { position: absolute; inset: 0 auto 0 0; background: #8cf5a6; }
+  #hud-ext .hx-bar i.warn { background: #ffc24a; }
+  #hud-ext .hx-bar i.crit { background: #ff5f4d; }
+  #hud-ext .hx-v { font-size: 11px; color: #d9ffe6; min-width: 16px; text-align: right; }
+  #hud-ext .hx-h { font-size: 9px; color: #5d8a68; letter-spacing: 1px; margin-top: 6px; }
+  #hud-ext .hx-line { font-size: 10px; color: #b8e6c4; margin-top: 2px; word-break: keep-all; line-height: 1.5; }
+  #hud-ext .hx-line.dim { color: #6f9a7b; }
+  /* ── #225 PDA 사용 중 HUD 축소(스펙 2.2): 상세는 PDA가 맡는다 — 겹치는 계기·명령만 물러남(시계·도크 유지).
+     animation:none 필수 — .panel의 crtFlicker가 opacity를 애니메이트해 캐스케이드에서 이 규칙을 이긴다(실측).
+     filter는 쓰지 않는다 — crt-bulge 곡률 필터(.panel filter:url)와 한 자리 경합. */
+  body.pda-on #hud, body.pda-on #res-bar, body.pda-on #action-bar, body.pda-on #cam-ctrl {
+    animation: none; opacity: 0.22; transition: opacity 0.25s;
+  }
+  body.reduce-motion.pda-on #hud, body.reduce-motion.pda-on #res-bar,
+  body.reduce-motion.pda-on #action-bar, body.reduce-motion.pda-on #cam-ctrl { transition: none; }
   #hud .gauge {
     height: auto; display: flex; flex-direction: row; align-items: center; gap: 7px;
     padding: 4px 7px;
