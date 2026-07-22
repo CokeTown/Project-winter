@@ -10028,6 +10028,7 @@ const postMat = new THREE.ShaderMaterial({
     tex: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
     uLevels: { value: 8.0 }, uQuant: { value: 1.0 }, uDither: { value: 1.0 }, uDitherAmt: { value: 1.0 },
     uPalOn: { value: 0.0 },
+    uBarrel: { value: 0.0 }, // CRT 배럴 실험(디렉터 2026-07-22): 0=항등(기본·골든 불변). 씬만 휘고 DOM UI는 평면.
     uPal: { value: PALETTE_FLAT.map(c => new THREE.Vector3(c[0] / 255, c[1] / 255, c[2] / 255)) },
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
@@ -10036,7 +10037,7 @@ const postMat = new THREE.ShaderMaterial({
     #define PAL_N ${PAL_N}
     varying vec2 vUv;
     uniform sampler2D tex; uniform vec2 uRes;
-    uniform float uLevels, uQuant, uDither, uDitherAmt, uPalOn;
+    uniform float uLevels, uQuant, uDither, uDitherAmt, uPalOn, uBarrel;
     uniform vec3 uPal[PAL_N];
     float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
     float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
@@ -10055,15 +10056,23 @@ const postMat = new THREE.ShaderMaterial({
       return best;
     }
     void main(){
-      vec3 col = texture2D(tex, vUv).rgb;
+      // CRT 배럴(실험): 중앙이 부풀고 모서리가 유리 밖(흑)으로 말린다. uBarrel=0이면 정확히 항등(골든 불변).
+      //   디더 그리드(pc)도 워프된 uv를 쓴다 — 픽셀 격자 자체가 유리에 휘어 보이는 게 진짜 CRT 문법.
+      vec2 uv = vUv;
+      if (uBarrel > 0.0) {
+        vec2 cc = uv - 0.5;
+        uv = 0.5 + cc * (1.0 + uBarrel * dot(cc, cc));
+        if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) { gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); return; }
+      }
+      vec3 col = texture2D(tex, uv).rgb;
       col = pow(col, vec3(1.0 / 2.2));
       if (uPalOn > 0.5) {
         // 그라데이션이 두 스와치 사이에서 매끄럽게 넘어가도록 스냅 전에 약한 오더드 디더만.
-        vec2 pc = floor(vUv * uRes);
+        vec2 pc = floor(uv * uRes);
         float d = uDither > 0.5 ? (bayer4(pc) - 0.5) * 0.05 * uDitherAmt : 0.0;
         col = snapPal(clamp(col + d, 0.0, 1.0));
       } else if (uQuant > 0.5) {
-        vec2 pc = floor(vUv * uRes);
+        vec2 pc = floor(uv * uRes);
         float d = uDither > 0.5 ? (bayer4(pc) - 0.5) * 0.55 * uDitherAmt / uLevels : 0.0;
         col = clamp(col + d, 0.0, 1.0);
         col = floor(col * uLevels + 0.5) / uLevels;
@@ -10073,6 +10082,8 @@ const postMat = new THREE.ShaderMaterial({
   depthTest: false, depthWrite: false,
 });
 postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
+// CRT 배럴 실험 노브(디렉터 2026-07-22) — QA 전용. 채택 시 설정창 그래픽 탭에 정식 편입 예정.
+function setBarrel(k) { postMat.uniforms.uBarrel.value = Math.max(0, +k || 0); }
 
 // 언어 전환 등 재로딩 전 암전 — 재로딩된 페이지는 인라인 스타일로 이미 암전 상태에서 시작 (index.html)
 function reloadWithVeil() {
@@ -11441,6 +11452,7 @@ window.__shelter = {
   mapBiomeDataUrl, // 2.0-(d) QA: 도시별 전도 분기 검증(홈/동부 캔버스 상이)
   aerialProto, // AERIAL-MAP S1: 항공뷰 프로토 핸들(지연 생성) — open/close/focus/overview, 하네스 캡처 매트릭스용
   openObsMap, obsView, activeAerial, // S2 관측 단말 — QA/하네스 진입점 (activeAerial: 골든 씬 전환 시 잔여 디오라마 강제 종료용)
+  setBarrel, // CRT 배럴 실험 노브(0=off) — 판정 후 정식 편입 여부 결정
   regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
   shelterUnlocked, // 2.0-(b) QA: 동부 관문 이주 게이트(eastGateOpen) 검증
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
