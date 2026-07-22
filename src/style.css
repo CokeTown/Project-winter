@@ -657,8 +657,11 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* ── 탐험 패널 ── */
   /* 디렉터 UI 정비: 탐험 패널 = 거점 오른편으로 (튜토리얼 카드가 거점 아래로 오면서 자리 교대) */
   #exp-panel { top: 12px; left: 272px; width: 240px; display: none; max-height: calc(100vh - 40px); overflow-y: auto; }
-  #exp-panel.show { display: block; }
+  /* #226 터미널 2차: 전자 표면 등장 = 스캔인 통일(설정/모달/확인/PDA와 동일 의식). 종이(퀘스트 카드·팁)는 제외 */
+  #exp-panel.show { display: block; animation: termScanIn 0.22s steps(8); }
+  body.reduce-motion #exp-panel.show { animation: none; }
   #exp-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
+  #exp-panel h2::before { content: '// '; opacity: 0.55; }
   .region-card {
     border: 2px solid var(--panel-border); border-radius: 3px;
     padding: 7px 8px; margin-bottom: 7px; background: #201b16;
@@ -823,6 +826,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   /* 배치 모드(🔧)에서만 노출 — 평소 하단을 차지하지 않는다 */
   body:not(.edit-mode) #toolbar { display: none !important; }
+  /* #226 터미널 2차: 배치 진입 = 장비 랙 스캔인 (전자 표면 등장 의식 통일) */
+  body.edit-mode #toolbar { animation: termScanIn 0.22s steps(8); }
+  body.reduce-motion.edit-mode #toolbar { animation: none; }
   /* 카메라 열 버튼 라벨: 네이티브 툴팁 대체 — data-label을 버튼 좌측에 게임 스타일로 */
   .cam-btn { position: relative; }
   .cam-btn[data-label]::before {
@@ -879,8 +885,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     width: 178px; padding: 8px 9px;
     display: none; text-align: center;
   }
-  #sel-panel.show { display: block; }
+  #sel-panel.show { display: block; animation: termScanIn 0.2s steps(7); }
+  body.reduce-motion #sel-panel.show { animation: none; }
   #sel-panel h2 { font-size: 11px; color: var(--accent); margin-bottom: 6px; }
+  #sel-panel h2::before { content: '// '; opacity: 0.55; }
   #sel-panel .swatches { display: flex; gap: 6px; justify-content: center; margin-bottom: 7px; }
   .swatch { width: 18px; height: 18px; border-radius: 3px; cursor: pointer; border: 2px solid #555b6b; position: relative; }
   .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
@@ -1018,6 +1026,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     border-bottom: 1px solid rgba(140, 245, 166, 0.3); padding-bottom: 5px;
   }
   #modal h2::before { content: '// '; opacity: 0.55; }
+  /* #226 터미널 2차: 일지/도감 탭 전환 리프레시 스캔 — PDA pda-refresh와 동일 계열, 유저 액션 빈도라 안전 */
+  #modal-body.m-refresh { animation: termScanIn 0.14s steps(5); }
+  body.reduce-motion #modal-body.m-refresh { animation: none; }
   #modal h2:empty { display: none; } /* 제목 없는 모달(이벤트 카드 등)에 '//'만 뜨는 것 방지 */
   #modal .modal-body { font-size: 12px; line-height: 1.8; }
   #modal .close-row { text-align: right; margin-top: 12px; }

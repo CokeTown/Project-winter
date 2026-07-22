@@ -313,7 +313,12 @@ function openJournalModal(tab = 'journal') {
   const jContent = tab === 'record' ? recordTabHtml() : tab === 'ach' ? achBody : tab === 'col' ? colBody : journalBody;
   openModal(t('journal.title'), journalTabBar(tab) + jContent);
   const body = $('modal-body');
-  body.querySelectorAll('button[data-jtab]').forEach(b => b.addEventListener('click', () => openJournalModal(b.dataset.jtab)));
+  // #226 터미널 2차: 탭 전환 = 화면 리프레시 스캔(PDA renderPDA와 동일 의식). 첫 열림은 모달 크롬 스캔인이 담당 — 이중 발화 없음.
+  body.querySelectorAll('button[data-jtab]').forEach(b => b.addEventListener('click', () => {
+    openJournalModal(b.dataset.jtab);
+    const mb = $('modal-body');
+    mb.classList.remove('m-refresh'); void mb.offsetWidth; mb.classList.add('m-refresh');
+  }));
   body.querySelectorAll('[data-memo]').forEach(el => el.addEventListener('click', () => showMemoPage(el.dataset.memo, el.dataset.will === '1')));
   body.querySelectorAll('[data-broadcast]').forEach(el => el.addEventListener('click', () => showBroadcastModal(el.dataset.broadcast)));
   body.querySelectorAll('[data-sketch]').forEach(el => el.addEventListener('click', () => showSketchPage(el.dataset.sketch)));
