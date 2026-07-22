@@ -33,25 +33,23 @@
      핵심 스타일을 인라인으로 박는다. 부팅 완료 시 game.js가 페이드아웃. -->
 <div id="fade-veil" style="position:fixed;inset:0;background:#07080b;opacity:1;pointer-events:auto;z-index:999"></div>
 
+<!-- #227 로비 개편(디렉터 트위터 레퍼런스): 좌측 열 세로 텍스트 메뉴(패널 없음, 선택=좌 세로 바+인광),
+     우측은 셸터 라이브 뷰(캔버스 시프트) — 드래그 회전 상호작용 유지. 언어 버튼 제거(설정 창 언어 항목이 담당),
+     설정=텍스트 항목 승격, 종료=Electron에서 노출(기존 t-quit 배선 그대로). -->
 <div id="title-screen" style="display:none">
   <div id="title-inner">
     <div id="title-logo"><img src="img/logo_wordmark.png" alt="NINE WINTERS" draggable="false"></div>
     <div id="title-menu">
-      <button class="pixel-btn primary" id="t-continue" style="display:none"><span data-i18n="title.continue">이어하기</span><br><span id="t-continue-info" style="font-size:9px;color:var(--text-dim)"></span></button>
+      <button class="pixel-btn primary" id="t-continue" style="display:none"><span data-i18n="title.continue">이어하기</span><span id="t-continue-info"></span></button>
       <button class="pixel-btn" id="t-new" data-i18n="title.new">새 게임</button>
       <button class="pixel-btn" id="t-load" data-i18n="title.load">불러오기</button>
       <button class="pixel-btn" id="t-help" data-i18n="title.help">살아남는 법</button>
+      <button class="pixel-btn" id="t-settings" data-i18n="title.tools.settings">설정</button>
       <button class="pixel-btn" id="t-quit" data-i18n="title.quit" style="display:none">게임 종료</button>
-      <div id="title-lang">
-        <button class="pixel-btn lang-btn" id="lang-ko">한국어</button>
-        <button class="pixel-btn lang-btn" id="lang-en">English</button>
-        <button class="pixel-btn lang-btn" id="lang-ja">日本語</button>
-      </div>
-      <div id="title-tools">
-        <button class="pixel-btn" id="t-export" data-i18n-title="title.tools.export" title="세이브 내보내기"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_save.svg');mask-image:url('img/glyphs/icon_sys_save.svg')"></span></button>
-        <button class="pixel-btn" id="t-import" data-i18n-title="title.tools.import" title="세이브 가져오기"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_import.svg');mask-image:url('img/glyphs/icon_sys_import.svg')"></span></button>
-        <button class="pixel-btn" id="t-settings" data-i18n-title="title.tools.settings" title="설정"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_settings.svg');mask-image:url('img/glyphs/icon_sys_settings.svg')"></span></button>
-      </div>
+    </div>
+    <div id="title-tools">
+      <button class="pixel-btn" id="t-export" data-i18n-title="title.tools.export" title="세이브 내보내기"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_save.svg');mask-image:url('img/glyphs/icon_sys_save.svg')"></span></button>
+      <button class="pixel-btn" id="t-import" data-i18n-title="title.tools.import" title="세이브 가져오기"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_import.svg');mask-image:url('img/glyphs/icon_sys_import.svg')"></span></button>
     </div>
     <div id="title-ver" data-i18n="title.ver">Nine Winters · web build</div>
   </div>

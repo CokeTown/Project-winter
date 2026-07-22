@@ -1291,24 +1291,47 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
 
   /* ── 타이틀 화면 ── */
+  /* #227 로비 개편(디렉터 레퍼런스): 메뉴=좌측 열, 셸터 라이브 뷰=우측(캔버스 시프트). 배경 드래그 회전 유지. */
   #title-screen {
     position: absolute; inset: 0; z-index: 35;
-    display: flex; align-items: center; justify-content: center;
-    background: radial-gradient(ellipse at 50% 62%, rgba(10,12,17,0.25) 0%, rgba(8,9,13,0.82) 78%);
+    display: flex; align-items: center; justify-content: flex-start;
+    background: linear-gradient(90deg, rgba(8,9,13,0.86) 0%, rgba(8,9,13,0.55) 34%, rgba(8,9,13,0.06) 62%, rgba(8,9,13,0) 78%);
     pointer-events: none; /* #7 피드백: 배경은 통과 → 집 화면 드래그로 시점 회전. 메뉴만 클릭 수신(아래) */
   }
-  #title-inner { text-align: center; zoom: var(--uiz); pointer-events: auto; }
-  #title-logo { margin-bottom: 14px; }
+  #title-inner { text-align: left; zoom: var(--uiz); pointer-events: auto; padding-left: clamp(28px, 6vw, 96px); }
+  #title-logo { margin-bottom: 26px; }
   /* 정식 픽셀 워드마크 이미지(픽셀 규격 준수판). image-rendering:pixelated 로 하드 엣지 유지. */
   #title-logo img {
-    width: min(380px, 72vw); height: auto; display: block; margin: 0 auto;
+    width: min(300px, 60vw); height: auto; display: block;
     image-rendering: pixelated;
     filter: drop-shadow(0 0 16px rgba(232,168,108,0.28)) drop-shadow(2px 2px 0 rgba(20,17,8,0.9));
   }
   #title-sub { font-size: 13px; color: var(--text-dim); letter-spacing: 3px; margin-bottom: 34px; }
-  #title-menu { display: flex; flex-direction: column; gap: 9px; width: 240px; margin: 0 auto; }
-  #title-menu .pixel-btn { padding: 11px 10px; font-size: 13px; }
+  /* 패널 없는 세로 텍스트 메뉴 — 선택/호버 = 좌측 세로 바 + 인광 (레퍼런스 문법) */
+  #title-menu { display: flex; flex-direction: column; gap: 4px; width: max-content; min-width: 220px; }
+  #title-menu .pixel-btn {
+    background: none; border: none; box-shadow: none; border-radius: 0;
+    text-align: left; padding: 7px 16px 7px 18px; font-size: 19px; letter-spacing: 1px;
+    color: #86a98e; position: relative; word-break: keep-all;
+  }
+  #title-menu .pixel-btn::before {
+    content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 3px;
+    background: var(--accent); opacity: 0; transition: opacity 0.12s;
+  }
+  #title-menu .pixel-btn:hover, #title-menu .pixel-btn:focus-visible {
+    background: none; color: #e9ffee; text-shadow: 0 0 9px rgba(140, 245, 166, 0.55);
+  }
+  #title-menu .pixel-btn:hover::before, #title-menu .pixel-btn:focus-visible::before { opacity: 1; }
+  #title-menu .pixel-btn.primary { background: none; color: #d9ffe6; }
+  #t-continue-info { display: block; font-size: 9px; color: var(--text-dim); letter-spacing: 0; margin-top: 2px; }
   #title-ver { margin-top: 26px; font-size: 10px; color: #565b6b; letter-spacing: 1px; }
+  /* 우측 라이브 뷰: 월드+이펙트 캔버스를 함께 우측으로 — 셸터가 메뉴 반대편에 앉는다. 인게임 진입 시 복귀.
+     scale 동반 필수: 시프트만 하면 캔버스 왼쪽 엣지(빈 밴드)가 화면 안으로 드러난다(실측) — 1.15배로 엣지를 프레임 밖에. */
+  /* transition은 title-mode 한정 — 상시 걸면 타이틀 해제 직후 0.7s 복귀 이동이 골든 캡처에 간헐 오염(실측 3.43% 1회).
+     해제 순간엔 이 규칙도 함께 사라져 즉시 원위치 — 인게임은 암전(fade) 뒤라 손실 없음. */
+  body.title-mode #c, body.title-mode #fx { transform: translateX(7%) scale(1.15); transition: transform 0.7s ease; }
+  body.reduce-motion.title-mode #c, body.reduce-motion.title-mode #fx { transition: none; }
+  @media (max-width: 700px) { body.title-mode #c, body.title-mode #fx { transform: none; } }
   .slot-card {
     display: flex; gap: 10px; align-items: center;
     border: 2px solid var(--panel-border); border-radius: 4px;
@@ -1791,17 +1814,15 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   #ending-next { padding: 10px 26px; font-size: 13px; }
 
-  /* ── v2.3.1: 타이틀 언어 선택 + 셀렉트 픽셀 테마 ── */
-  #title-lang { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
-  #title-lang .lang-btn { font-size: 11px; padding: 6px 14px; flex: 1; }
+  /* #227: 타이틀 언어 선택 UI 제거 — 언어는 설정 창(opt-lang)이 유일 경로. (구 #title-lang 규칙 소거) */
 
   /* ── v0.9.1: 가독성 — 전 UI 15% 확대 (베타 피드백: 폰트가 작다) ──
      P0 수정: 배율은 JS(updateUiScale)에서 TEXT_BOOST를 곱해 --uiz 단일 소스로 통합.
      CSS zoom은 항상 var(--uiz) 만 사용 → 드래그/클램프 좌표 보정과 렌더 배율이 정확히 일치. */
 
-  /* ── v0.9.1: 타이틀 화면 — 저장/불러오기/설정 아이콘 버튼 ── */
-  #title-tools { display: flex; gap: 8px; margin-top: 8px; }
-  #title-tools .pixel-btn { flex: 1; font-size: 14px; padding: 6px 0; }
+  /* ── v0.9.1→#227: 타이틀 세이브 유틸(내보내기/가져오기) — 메뉴 밖 하단 소형 아이콘 열 ── */
+  #title-tools { display: flex; gap: 8px; margin-top: 22px; }
+  #title-tools .pixel-btn { font-size: 14px; padding: 6px 12px; }
 
   /* ── 모바일 설정 진입 톱니 — #87 스윕: fixed 좌표(top:96px)가 세로폰 배율에서 cam-ctrl 회전 버튼과
      겹쳐 오탭 나던 실기기 신고 → 스택 첫 버튼으로 편입(index.html). 위치 규칙 불필요, 표시 토글은 JS 그대로. ── */

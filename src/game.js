@@ -7649,12 +7649,7 @@ function showTitle() {
   } else {
     $('t-continue').style.display = 'none';
   }
-  // 현재 언어 버튼 표시
-  const cur = opts.lang || 'ko';
-  $('lang-ko')?.classList.toggle('primary', cur === 'ko');
-  $('lang-en')?.classList.toggle('primary', cur === 'en');
-  $('lang-ja')?.classList.toggle('primary', cur === 'ja');
-  if (typeof syncBgm === 'function') syncBgm(); // Main_theme
+  if (typeof syncBgm === 'function') syncBgm(); // Main_theme (#227: 타이틀 언어 버튼 표시 동기화는 버튼 제거로 소거)
 }
 function hideTitle() {
   titleVisible = false;
@@ -10849,16 +10844,7 @@ const TEXT_BOOST = 1.25;
 
 // 타이틀 / 인트로 (자리 비운 사이 끝난 탐험 정산은 hideTitle에서 — 타이틀에선 집만 보여준다)
 $('t-continue').addEventListener('click', hideTitle);
-// 타이틀 언어 선택 (설정 진입 없이 첫 화면에서)
-function pickTitleLang(next) {
-  if (next === (opts.lang || 'ko')) return;
-  opts.lang = next;
-  flushSave();
-  reloadWithVeil();
-}
-$('lang-ko').addEventListener('click', () => pickTitleLang('ko'));
-$('lang-en').addEventListener('click', () => pickTitleLang('en'));
-$('lang-ja')?.addEventListener('click', () => pickTitleLang('ja'));
+// #227: 타이틀 언어 3버튼 제거(디렉터 로비 개편 오더) — 언어 변경은 설정 창 opt-lang이 유일 경로.
 $('t-new').addEventListener('click', () => openSlotModal('new'));
 $('t-load').addEventListener('click', () => openSlotModal('load'));
 $('t-help').addEventListener('click', openHelpModal);
