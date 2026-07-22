@@ -10132,10 +10132,16 @@ function setPanelBulge(n) { document.body.classList.toggle('crt-bulge1', n === 1
 //   변위장은 필터와 동일 수식(dx = u·r²·scale·폭) — 강도 계수는 index.html 필터 scale과 1:1 동기.
 const BULGE_SCALE = { 1: 0.02, 2: 0.045 }; // crtBulgeA/B의 feDisplacementMap scale과 동일 값
 function bulgeRetarget(e) {
-  const k = document.body.classList.contains('crt-bulge2') ? BULGE_SCALE[2]
+  if (e.__bulged || !e.isTrusted && !e.__bulgeTest) return; // 합성 이벤트는 통과(재귀 방지) — __bulgeTest는 QA 주입용
+  // #218 관측 오버레이: 풀스크린 곡률(crtBulgeB — 옵션 무관, CRT 위성 룩의 일부)이 상시 걸린다.
+  //   변위 기준이 '화면 bbox'이므로 패널 rect 대신 #obs-screen rect로 계산한다.
+  const obsScr = e.target && e.target.closest ? e.target.closest('#obs-screen') : null;
+  let k;
+  if (obsScr) k = 0.045; // 관측은 옵션과 무관하게 crtBulgeB 강도 고정
+  else k = document.body.classList.contains('crt-bulge2') ? BULGE_SCALE[2]
     : document.body.classList.contains('crt-bulge1') ? BULGE_SCALE[1] : 0;
-  if (!k || e.__bulged || !e.isTrusted && !e.__bulgeTest) return; // 합성 이벤트는 통과(재귀 방지) — __bulgeTest는 QA 주입용
-  const panel = e.target && e.target.closest ? e.target.closest('.panel') : null;
+  if (!k) return;
+  const panel = obsScr || (e.target && e.target.closest ? e.target.closest('.panel') : null);
   if (!panel) return;
   const r = panel.getBoundingClientRect();
   if (!r.width || !r.height) return;

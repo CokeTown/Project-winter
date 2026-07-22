@@ -882,6 +882,11 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* ── 관측 단말 (S2 — 풀스크린 위성 뷰. 모달(50)보다 아래: 준비/눈사태 선택 모달이 위에 뜬다) ── */
   #obs-screen { position: absolute; inset: 0; z-index: 44; display: none; pointer-events: none; }
   #obs-screen.show { display: block; }
+  /* #218 곡률 정합(디렉터 2026-07-22): 관측 오버레이(헤더·패널·핀)도 화면에 '부착'된 것 —
+     씬 배럴(uBarrel 0.14)과 같은 유리 위에 있으므로 전체를 한 장으로 휜다(crtBulgeB 변위장,
+     풀스크린 bbox = 씬과 동일한 화면 중심 곡률). 씬-핀 투영 어긋남도 같이 휘어 복원된다. */
+  body.obs-mode #obs-screen.show { filter: url(#crtBulgeB); }
+  body.obs-mode #obs-panel { filter: none !important; } /* 패널 개별 볼록 해제 — CRT는 화면에 하나 */
   /* 관측 모드: 본편 크롬을 걷는다 — 상단 시계 밴드만 남긴다(시안 상단 스테이터스 문법) */
   body.obs-mode #hud, body.obs-mode #res-bar, body.obs-mode #quest-card, body.obs-mode #radio-bubble,
   body.obs-mode #dock-pda, body.obs-mode #toolbar, body.obs-mode #exp-panel, body.obs-mode .cam-btn,
@@ -912,6 +917,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #obs-panel { position: absolute; top: 44px; right: 12px; bottom: 12px; width: 260px; z-index: 3; pointer-events: auto; overflow-y: auto; display: flex; flex-direction: column; }
   #obs-panel .obs-region { padding: 6px 8px; }
   #obs-panel .obs-region:hover { background: rgba(140, 245, 166, 0.08); }
+  /* 프레임 돌출 수습(디렉터 2026-07-22): 헤더 버튼이 코너 브래킷 위로 삐져나옴 — 안쪽으로 */
+  #obs-panel .p-head { margin: -8px -8px 8px; }
+  /* back 버튼은 글자 라벨("닫기"/"전체 지도") — 모달 X 버튼 규격(width:20px)을 풀지 않으면 프레임 밖으로 넘친다(#218) */
+  #obs-panel .p-head .p-min { margin: 2px 2px 0 auto; flex-shrink: 0; width: auto; height: auto; padding: 2px 7px; white-space: nowrap; }
   #obs-panel .obs-body { padding: 8px 10px; }
   #obs-panel .obs-hint { color: #7da884; font-size: var(--fs-s); }
   #obs-panel .obs-desc { color: #bcd0b6; font-size: var(--fs-s); line-height: 1.6; margin-bottom: 6px; word-break: keep-all; }
