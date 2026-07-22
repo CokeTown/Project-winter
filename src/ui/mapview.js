@@ -21,7 +21,7 @@ export const MAP_MARKERS = {
   commercial:  { x: 74, y: 18 },  // 우상 무너진 빌딩(도심)
   industrial:  { x: 18, y: 54 },  // 좌중 공장
   slum:        { x: 78, y: 50 },  // 우중 판자촌
-  slumdeep:    { x: 86, y: 60 },  // #167 판자촌 안쪽 — 슬럼 핀의 대각 안깊이 (숙련 ★1 해금 전엔 비노출)
+  slumdeep:    { x: 86, y: 60 },  // #167 판자촌 안쪽 — 슬럼 핀의 대각 안깊이 (숙련 1 해금 전엔 비노출)
   // #85 도시 전도: 확장 5종을 지리 서사대로 — 항구 벨트(남서 해안, 세로로 적층), 리조트(북동 산정),
   //   금지 구역(동남 봉쇄선 너머). ── 디렉터 신고(2026-07-19): 수산시장 라벨이 야적장·연구동과 겹침 →
   //   하단 밀집을 행(row)별로 분리. 라벨은 ~33% 폭이라 중앙에서 좌·우 핀 이름이 마주쳐 겹친다:
@@ -118,7 +118,7 @@ export function makeMapview(ctx) {
           lk.style.top = Math.min(MAP_SAFE.y1, Math.max(MAP_SAFE.y0, p.y)) + '%';
           lk.style.opacity = '0.55';
           lk.title = t('demo.regionLocked');
-          lk.innerHTML = `${icon ? icon('icon_sys_locked', '🔒') : ''}<span class="pin-rate lack">???</span>`;
+          lk.innerHTML = `${icon ? icon('icon_sys_locked') : ''}<span class="pin-rate lack">???</span>`;
           wrap.appendChild(lk);
         }
         continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
@@ -139,7 +139,7 @@ export function makeMapview(ctx) {
       const rate = Math.round(rateParts(rid).eff * 100);
       const cls = rate >= 50 ? 'ok' : 'lack';
       // #204(디렉터): 숙련은 이름 색으로 — 첫 방문 붉은색에서 최종 티어(100%)의 초록까지 천천히.
-      //   ★/• 발자취 표식은 색 인코딩이 대체(타르코프식 점+이름 미니멀). 진행률은 툴팁으로.
+      //   /• 발자취 표식은 색 인코딩이 대체(타르코프식 점+이름 미니멀). 진행률은 툴팁으로.
       const mProg = Math.min(1, visits / BAL.mastery.tiers[BAL.mastery.tiers.length - 1]);
       const nameCol = visits > 0
         ? `rgb(${Math.round(198 - 71 * mProg)},${Math.round(83 + 109 * mProg)},${Math.round(64 + 42 * mProg)})`
@@ -237,11 +237,12 @@ export function makeMapview(ctx) {
 export function makeObsView(ctx) {
   const { aerialProto, expBlockReason, prepUI, bpName, avalancheForecastToday, openAvalancheChoice, getWeather } = ctx;
   const ctxGetClock = ctx.getClock || null; // 단말 내부 시계 (없으면 표기 생략 — 하위호환)
+  const setCrtLook = ctx.setCrtLook || (() => {}); // #217 CRT 위성 룩 토글 (없으면 무동작 — 하위호환)
   const obsDemoEd = !!ctx.demoEd; // 데모 「궁금한 문」 — 잠긴 기본 4지구를 ??? 잠금 핀으로(확장 지역은 완전 비노출)
   const $ = id => document.getElementById(id);
   let openState = false, view = 'overview', focusId = null, bootTimer = null;
   const pinEls = new Map(); // rid → { el, x, z }
-  $('obs-close')?.addEventListener('click', () => close());
+  // (#220: 상단 obs-close 버튼 폐지 — 종료는 패널 하단 「나가기」가 전담)
 
   // 숙련 이름색 — 전도 핀(#204)과 동일 공식: 첫 방문 붉은색 → 만렙 초록
   function masteryColor(rid) {
@@ -298,19 +299,35 @@ export function makeObsView(ctx) {
     }, 14);
   }
 
+  // #220 「나가기」 — overview·focus 공용, 패널 맨 하단 상시 고정(스타일은 #obs-exit-wrap)
+  const exitBtnHtml = () => `<div id="obs-exit-wrap"><button class="pixel-btn" id="obs-exit">${t('obs.exit')}</button></div>`;
+  const wireExitBtn = (p) => p.querySelector('#obs-exit').addEventListener('click', () => close());
+
   function panelOverview() {
     const p = $('obs-panel');
-    // 개요 패널: 고르는 화면 — 힌트 + 「이 도시에서만」 pull(전도 모달과 같은 §9.8.10 문법)
-    const cityRids = [...pinEls.keys()];
+    // 개요 패널(디렉터 2026-07-22): 갈 수 있는 지역 리스트 — 행 클릭=해당 노드로 줌 인(노드 클릭과 동일).
+    //   뒤로 버튼 상시(overview에선 단말 닫기) — "뒤로 가는 메커니즘"을 패널 안에 명시.
+    const cityRids = [...pinEls.keys()].filter(rid => regionUnlocked(rid)); // 데모 잠금 핀(???) 제외
     const sigAll = cityRids.flatMap(rid => BAL.blueprint.regionItems[rid] || []);
     const unowned = sigAll.filter(id => !(state.blueprints || {})[id]);
+    const rows = cityRids.map(rid => {
+      const col = masteryColor(rid);
+      return `<div class="prep-row li-row obs-region" data-rid="${rid}" style="cursor:pointer">
+        <span${col ? ` style="color:${col}"` : ''}>${LName(REGIONS[rid])}</span></div>`;
+    }).join('');
+    // #220: 헤더 닫기 폐지 → 하단 상시 「나가기」(단말 종료). 뒤로 가는 자리가 뷰와 무관하게 항상 같다.
     p.innerHTML = `<div class="p-head"><span class="p-title">${t('map.title')}</span></div>
       <div class="obs-body">
         <div class="obs-hint">${t('map.pick')}</div>
+        <div style="margin-top:6px">${rows}</div>
         ${sigAll.length ? `<div class="rate-line" style="margin-top:8px">${unowned.length
           ? t('map.cityPull', { items: unowned.map(bpName).join(', ') })
           : `<span style="color:var(--good)">${t('map.cityPullDone')}</span>`}</div>` : ''}
-      </div>`;
+      </div>
+      ${exitBtnHtml()}`;
+    wireExitBtn(p);
+    p.querySelectorAll('.obs-region').forEach(row =>
+      row.addEventListener('click', () => focus(row.dataset.rid)));
   }
 
   function panelFocus(rid) {
@@ -328,9 +345,11 @@ export function makeObsView(ctx) {
           ${cLv > 0 ? ` · <span style="color:var(--good)">${t('map.cond.richTip')}</span>` : cLv < 0 ? ` · <span style="color:var(--bad)">${t('map.cond.leanTip')}</span>` : ''}</div>
         ${sig.length ? `<div class="rate-line">${t('obs.pull', { items: sig.map(bpName).join(', ') })}</div>` : ''}
         <div id="obs-prep"></div>
-      </div>`;
+      </div>
+      ${exitBtnHtml()}`;
     p.innerHTML = head;
     p.querySelector('#obs-back-btn').addEventListener('click', back);
+    wireExitBtn(p);
     const mount = p.querySelector('#obs-prep');
     const blocked = expBlockReason(rid);
     if (blocked) {
@@ -369,6 +388,7 @@ export function makeObsView(ctx) {
     // satellite 스케치 이스터에그(§3-5): 보유 시 궤적 점 1개 — "저건 별이 아니다"의 회수. 신규 카피 0.
     const sat = $('obs-sat'); if (sat) sat.classList.toggle('show', !!(state.sketches || {}).satellite);
     aerialProto().open();
+    setCrtLook(true); // #217: 관측 중에만 CRT 위성 룩(형광체·지터·스윕·배럴)
     buildPins();
     panelOverview();
     boot();
@@ -377,6 +397,7 @@ export function makeObsView(ctx) {
     if (!openState) return;
     openState = false;
     clearInterval(bootTimer);
+    setCrtLook(false); // #217: 본편 복귀 — CRT 룩 완전 해제
     aerialProto().close();
     document.body.classList.remove('obs-mode');
     $('obs-screen').classList.remove('show', 'focus');

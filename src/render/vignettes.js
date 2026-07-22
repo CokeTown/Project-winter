@@ -569,7 +569,7 @@ export function playJungleSunVignette() {
     state.sights.jungleSun = (state.sights.jungleSun || 0) + 1;
     addMoodBuff(2, 1);                                            // 익일 무드: "그 하늘을 생각했다"
     state.dayLog.notes.push(t('sight.jungleSun.note'));
-    if (first) jackpotToast(`🌇 ${t('sight.jungleSun.first')}`, 0xffb04a);
+    if (first) jackpotToast(`${t('sight.jungleSun.first')}`, 0xffb04a);
     scheduleSave();
   });
 }
@@ -883,7 +883,7 @@ export function playGoldenGateVignette() {
     state.sights.goldenGate = (state.sights.goldenGate || 0) + 1;
     addMoodBuff(2, 1);                                              // 익일 무드: 그 다리를 생각했다
     state.dayLog.notes.push(t('sight.goldenGate.note'));
-    if (first) jackpotToast(`🌉 ${t('sight.goldenGate.first')}`, 0xff6a3a);
+    if (first) jackpotToast(`${t('sight.goldenGate.first')}`, 0xff6a3a);
     scheduleSave();
   });
 }

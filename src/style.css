@@ -14,6 +14,17 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     src: url('./assets/fonts/DungGeunMo.woff') format('woff');
     font-weight: normal; font-style: normal; font-display: swap;
   }
+  /* 일본어 픽셀 폰트 (PixelMplus12, M+ FONT LICENSE — 상용·재배포·개변 자유, 무보증. 라이선스 원문 동봉).
+     둥근모는 한글·라틴·숫자까지고 가나·한자가 없어 일본어가 시스템 고딕으로 빠졌다(#219 비트맵 실측).
+     터미널 UI 안에 매끈한 고딕이 섞이는 문제 + 폰트 메트릭 차이로 인한 행 어긋남을 이걸로 함께 해소한다.
+     unicode-range로 가나·한자·CJK 구두점에만 걸어, 한국어·영어 화면은 이 폰트를 내려받지도 쓰지도 않는다. */
+  @font-face {
+    font-family: 'PixelMplus12';
+    src: url('./assets/fonts/PixelMplus12-Regular.woff2') format('woff2');
+    font-weight: normal; font-style: normal; font-display: swap;
+    unicode-range: U+3000-303F, U+3040-309F, U+30A0-30FF, U+31F0-31FF, U+3200-32FF,
+                   U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+  }
   /* ── UI 표면 언어 A안 (디렉터 확정 2026-07-17): "클로드 스타일" 청회 차콜 → Nine Winters 고유 재질 ──
      잿빛(웜 차콜) 판자·강판 + 앰버(랜턴) + 종이 토큰. 레이아웃 불변 — 관상 3요소(팔레트·프레임·재질)만 교체. */
   :root {
@@ -85,13 +96,16 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     border-radius: 4px; margin-bottom: 10px; image-rendering: auto;
   }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #0e1014; }
-  body { font-family: 'DungGeunMo', 'Malgun Gothic', sans-serif; color: var(--text); user-select: none; }
+  /* PixelMplus12는 unicode-range로 가나·한자에만 걸리므로 전 언어 스택에 상시 둔다 —
+     한국어 화면에 일본어가 섞여 나와도(도감·메모 등) 픽셀 조판이 깨지지 않는다. */
+  body { font-family: 'DungGeunMo', 'PixelMplus12', 'Malgun Gothic', sans-serif; color: var(--text); user-select: none; }
   /* 디렉터: 게임 UI에서 웹 특유의 이미지 드래그 고스트·롱프레스 콜아웃 전면 제거(게임이지 웹이 아님). */
   img { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: none; user-drag: none; -webkit-touch-callout: none; }
-  /* ja 조판: DungGeunMo(한글 픽셀 폰트)엔 가나/한자 글리프가 없어 시스템 일본어 폰트로 폴백.
+  /* ja 조판: DungGeunMo(한글 픽셀 폰트)엔 가나/한자 글리프가 없다 → PixelMplus12가 받는다(#219).
+     시스템 고딕은 PixelMplus에도 없는 희귀 글리프용 최후 폴백으로만 남긴다.
      keep-all은 한국어 어절 단위 줄바꿈 규칙 — 일본어(무공백)엔 줄바꿈 자체를 막아 오버플로를 만들므로
      전역 해제하고 금칙처리(line-break: strict)를 적용한다. applyStaticI18n이 <html lang>을 스탬프. */
-  html[lang="ja"] body { font-family: 'DungGeunMo', 'Meiryo', 'Yu Gothic UI', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; }
+  html[lang="ja"] body { font-family: 'DungGeunMo', 'PixelMplus12', 'Meiryo', 'Yu Gothic UI', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; }
   /* 디렉터: 영어 기본 폰트 살짝 상향 (박스 안에서 — Latin 글리프가 작게 읽힘). 토큰 +1px + 버튼 라벨.
      게이지 라벨(.g-name)은 3열 그리드라 오버플로 위험 커서 제외(원하면 세로 스택 후 상향). */
   html[lang="en"] { --fs-s: 11px; --fs-m: 13px; --fs-l: 16px; }
@@ -102,13 +116,25 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .panel {
     position: absolute;
     /* 노스트로모/MU·TH·UR 인광 터미널 (디렉터 적용 — ui-deco-mockup 반영): 근흑 인광 바탕 + 스캔라인 + 얇은 녹색 프레임 + 곡률 비네트 */
+    /* CRT 볼록(디렉터 2026-07-22, cool-retro-term): ①중앙 유리 하이라이트(브라운관이 앞으로 부풀어 빛을 받는 면)
+       ②하단·코너 비네트 강화(가장자리가 뒤로 말림) — 두 겹이 합쳐져 "중앙이 튀어나온 화면"으로 읽힌다. */
     background:
+      radial-gradient(120% 92% at 50% 36%, rgba(190, 255, 205, 0.05), transparent 56%),
       repeating-linear-gradient(0deg, rgba(140, 245, 166, 0.028) 0 1px, transparent 1px 3px),
+      radial-gradient(145% 125% at 50% 112%, transparent 55%, rgba(0, 0, 0, 0.30) 100%),
       radial-gradient(130% 120% at 50% 0%, #08130d 0%, rgba(5, 10, 8, 0.975) 58%, #030706 100%);
-    border: 2px solid rgba(140, 245, 166, 0.30); border-radius: 5px;
-    box-shadow: 0 0 0 1px rgba(140, 245, 166, 0.08), inset 0 0 34px rgba(0, 0, 0, 0.5), 0 4px 18px rgba(0, 0, 0, 0.55);
+    border: 2px solid rgba(140, 245, 166, 0.30); border-radius: 6px;
+    /* 베젤: 프레임 밖 어두운 플라스틱 림 1겹 + 유리 상단 미세 반사 — "모니터 위에 올라와 있는" 물성 */
+    box-shadow:
+      0 0 0 1px rgba(140, 245, 166, 0.08),
+      0 0 0 4px rgba(9, 12, 10, 0.92),
+      0 0 0 5px rgba(140, 245, 166, 0.05),
+      inset 0 1px 0 rgba(190, 255, 205, 0.09),
+      inset 0 0 34px rgba(0, 0, 0, 0.5),
+      0 5px 20px rgba(0, 0, 0, 0.6);
     padding: 10px 12px;
     zoom: var(--uiz);
+    animation: crtFlicker 7s steps(1) infinite; /* 인광 미세 플리커 — 살아있는 브라운관(감지 한계 수준 0.985) */
     /* P1-F: 라운드 코너 기준 내부 클리핑 — p-head의 음수 마진/줌 반올림으로 생기는
        가장자리 1px 투명 틈(다른 패널이 비쳐 보임)을 막는다. 드래그 핸들/내용은 전부 내부라 무영향. */
     overflow: hidden;
@@ -204,6 +230,28 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #hud .shelter-name .px-icon { width: 14px; height: 14px; vertical-align: -3px; }
   /* HUD-SPEC-RECON §1.1 (기획서 6.1 A패널): 게이지 3열 그리드 → 행 스택(라벨|바|수치) — 수치·상태문자 공간 확보 */
   #hud #gauges { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+  /* ── #225 Tab 정보 확장(§1.4): 홀드 동안만 게이지 아래로 붙는 요약 시트 — 스캔인은 PDA 리프레시와 동일 계열 ── */
+  #hud-ext { display: none; border-top: 1px solid rgba(140, 245, 166, 0.22); margin-top: 2px; padding-top: 6px; }
+  body.hud-ext #hud-ext { display: block; animation: termScanIn 0.18s steps(7); }
+  body.reduce-motion #hud-ext { animation: none !important; }
+  #hud-ext .hx-gauge { display: flex; align-items: center; gap: 6px; }
+  #hud-ext .hx-k { font-size: 10px; color: #7da884; white-space: nowrap; }
+  #hud-ext .hx-bar { position: relative; flex: 1 1 auto; height: 7px; background: rgba(140, 245, 166, 0.07); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(140, 245, 166, 0.14); }
+  #hud-ext .hx-bar i { position: absolute; inset: 0 auto 0 0; background: #8cf5a6; }
+  #hud-ext .hx-bar i.warn { background: #ffc24a; }
+  #hud-ext .hx-bar i.crit { background: #ff5f4d; }
+  #hud-ext .hx-v { font-size: 11px; color: #d9ffe6; min-width: 16px; text-align: right; }
+  #hud-ext .hx-h { font-size: 9px; color: #5d8a68; letter-spacing: 1px; margin-top: 6px; }
+  #hud-ext .hx-line { font-size: 10px; color: #b8e6c4; margin-top: 2px; word-break: keep-all; line-height: 1.5; }
+  #hud-ext .hx-line.dim { color: #6f9a7b; }
+  /* ── #225 PDA 사용 중 HUD 축소(스펙 2.2): 상세는 PDA가 맡는다 — 겹치는 계기·명령만 물러남(시계·도크 유지).
+     animation:none 필수 — .panel의 crtFlicker가 opacity를 애니메이트해 캐스케이드에서 이 규칙을 이긴다(실측).
+     filter는 쓰지 않는다 — crt-bulge 곡률 필터(.panel filter:url)와 한 자리 경합. */
+  body.pda-on #hud, body.pda-on #res-bar, body.pda-on #action-bar, body.pda-on #cam-ctrl {
+    animation: none; opacity: 0.22; transition: opacity 0.25s;
+  }
+  body.reduce-motion.pda-on #hud, body.reduce-motion.pda-on #res-bar,
+  body.reduce-motion.pda-on #action-bar, body.reduce-motion.pda-on #cam-ctrl { transition: none; }
   #hud .gauge {
     height: auto; display: flex; flex-direction: row; align-items: center; gap: 7px;
     padding: 4px 7px;
@@ -223,10 +271,23 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* 세그먼트 갭 — 채움 위에 어두운 세로 틈을 얹어 칸칸이 (디지털 계기 느낌, 디렉터 요청) */
   #hud .g-bar::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; background: repeating-linear-gradient(90deg, transparent 0 5px, #060d0a 5px 7px); }
   #hud .g-fill { position: absolute; inset: 0 auto 0 0; display: block; height: 100%; width: 50%; transition: width 0.3s; box-shadow: 0 0 6px rgba(140, 245, 166, 0.5); } /* 인광 글로우. 전역 .g-fill(inset:0) 무력화 — 바 안에서만 */
-  /* 게이지 고유색(디렉터 목업 실현: 배고픔 머스터드·수분 시안·에너지 그린·청결 라임) — 게이지별 색 구분 */
-  /* HUD-SPEC-RECON §1.1 (기획서 8.5·P-04): 색=심각도 — 정상 그린/주의 앰버/위험 적.
-     구 v1.9.10 색=정체(허기 머스터드·갈증 시안·기력 그린·청결 라임)는 본 스펙이 대체. */
-  #hud #gauges .g-fill { background: #8cf5a6; box-shadow: 0 0 6px rgba(140, 245, 166, 0.5); }
+  /* 게이지 고유색 복원(디렉터 확정 2026-07-22): v1.9.10 「색=정체」 문법이 승 — 허기 머스터드·갈증 시안·
+     기력 그린. HUD 1차의 색=심각도(전부 그린)는 기각. 저수위 붉은 전환(warn/crit)·수치 병기·상태 문자는 유지. */
+  #hud #g-hunger .g-fill { background: #d9b34a; box-shadow: 0 0 6px rgba(217, 179, 74, 0.5); }
+  #hud #g-thirst .g-fill { background: #5cc4dd; box-shadow: 0 0 6px rgba(92, 196, 221, 0.5); }
+  #hud #g-energy .g-fill { background: #8cf5a6; box-shadow: 0 0 6px rgba(140, 245, 166, 0.5); }
+  /* 색약 모드: 고유색(ID 셀렉터)이 전역 cb 팔레트를 이겨버리므로 같은 특이도로 재무력화 */
+  body.cb-mode #hud #g-hunger .g-fill, body.cb-mode #hud #g-thirst .g-fill, body.cb-mode #hud #g-energy .g-fill { background: #3f7fb0; box-shadow: none; }
+  /* 충전(회복) 연출 — 1.9.10 문법의 터미널 실현: 차오르는 동안 밝은 스윕이 채움 위를 훑고 글로우가 서지 */
+  #hud .g-fill.up { animation: gaugeCharge 0.9s steps(8) infinite; }
+  #hud .g-fill.up::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 15%, rgba(255, 255, 255, 0.4) 50%, transparent 85%);
+    animation: chargeSweep 0.9s steps(10) infinite;
+  }
+  @keyframes gaugeCharge { 0%, 100% { filter: brightness(1); } 40% { filter: brightness(1.65); } }
+  @keyframes chargeSweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  body.reduce-motion #hud .g-fill.up, body.reduce-motion #hud .g-fill.up::before { animation: none; }
   /* 위험색은 게이지 고유색(ID 셀렉터)보다 강하게 — #gauges ID 중첩으로 승격 */
   #hud #gauges .g-fill.warn { background: #ffc24a; box-shadow: 0 0 6px rgba(255, 194, 74, 0.55); }
   /* 점멸 1.3s 주기 = ≤0.8Hz (기획서 7.1 상한) */
@@ -265,29 +326,30 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* ── HUD-SPEC-RECON §1.1 (기획서 6.5 E-바): 하단 중앙 명령 바 — 주 5 + 보조 3(.sec 축소).
      #hud .btn-row.icons에서 이동. 버튼 id·배선 불변, 스타일만 이 블록이 소유. ── */
   #action-bar {
-    /* 디렉터 재배치(2026-07-21): 하단 → 상단. 뷰포트 중앙이 아니라 좌 HUD·우 시계 '사이 여백'에
-       중앙 정렬 — left/right를 패널 존에 앵커하고 margin:auto. 어느 해상도에서도 두 패널 비침 0.
-       (1280 실측: 뷰포트 중앙 정렬은 시계와 71px 겹침 → 갭 중앙 정렬로 해소.) */
-    position: fixed; top: 10px; left: 336px; right: auto; margin: 0; width: fit-content; max-width: 440px;
+    /* 디렉터 재배치 2차(2026-07-22): 상단 → 하단 중앙. 명령(행동)은 하단, 뷰 컨트롤은 상단으로 맞교대.
+       하단은 좌 HUD·우 시계 제약이 없어 뷰포트 중앙 정렬 가능. 편집 버튼이 이 바에 편성된다. */
+    position: fixed; top: auto; bottom: 10px; left: 50%; transform: translateX(-50%); margin: 0; width: fit-content; max-width: 440px;
     display: flex; align-items: stretch; gap: 4px; z-index: 60;
     max-width: none; flex-wrap: wrap; justify-content: center;
     padding: 5px 7px; background: rgba(7, 14, 10, 0.86);
     border: 1px solid #2e5c3a; border-radius: var(--r);
   }
   #action-bar .pixel-btn {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 5px 8px 4px; min-width: 48px; line-height: 1; font-size: 15px; position: relative;
+    /* #220 디렉터: 하단 명령 바 사이즈 업 — 아이콘 24→30, 라벨 10→11, 터치 타깃 확대 */
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 7px 10px 6px; min-width: 58px; line-height: 1; font-size: 15px; position: relative;
     background: #0b1710; border-color: #3f6a46; border-radius: var(--r);
   }
   #action-bar .pixel-btn:hover { border-color: #6fae78; }
-  #action-bar .act-icon { width: 24px; height: 24px; }
-  #action-bar .act-lbl { font-size: 10px; line-height: 1; color: #7da884; font-weight: normal; letter-spacing: 0; }
+  #action-bar .act-icon { width: 30px; height: 30px; }
+  #action-bar .act-lbl { font-size: 11px; line-height: 1; color: #7da884; font-weight: normal; letter-spacing: 0; }
   #action-bar .pixel-btn.primary .act-lbl { color: #ffffff; }
   #action-bar .ab-div { width: 1px; align-self: stretch; background: #294f34; margin: 1px 3px; }
   #action-bar .pixel-btn.sec { opacity: 0.85; min-width: 44px; padding: 8px 7px 5px; }
   #action-bar .pixel-btn.sec .act-icon { width: 18px; height: 18px; }
   #action-bar .pixel-btn.sec .act-lbl { font-size: 9px; }
   body.title-mode #action-bar, body.ui-hidden #action-bar { display: none !important; }
+  body.edit-mode #action-bar { display: none !important; } /* 배치 중엔 툴바(bottom:62)+취소 버튼이 하단 주인 — 명령 바 숨김 */
   body.wallpaper-mode #action-bar .pixel-btn.primary { display: none; } /* 배경화면 모드: 탐험 off(압박 UI 소거) */
   /* 모바일: 상단은 HUD 패널과 세로로 겹치고 엄지 도달성도 하단이 우위 → 하단 전폭 밴드 유지(랩 허용).
      데스크톱만 상단 갭 밴드(디렉터 "상단으로"는 와이드 레이아웃 대상). */
@@ -394,6 +456,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     to { background-position: 0 0, 0 calc(100% + 90px); }
   }
   .pda-boot { animation: pdaBoot 0.3s steps(3); }
+  /* #221: 탭 전환·재조회 = 화면 리프레시 스캔(관측·설정창과 같은 계열). 0.5s 실시간 갱신(quiet)은 이 클래스를 안 건드린다. */
+  #pda-screen.pda-refresh { animation: termScanIn 0.18s steps(6); }
+  body.reduce-motion #pda-screen.pda-refresh { animation: none; }
   @keyframes pdaBoot { 0% { opacity: 0.15; } 55% { opacity: 0.75; } 70% { opacity: 0.4; } 100% { opacity: 1; } }
   #pda-screen { /* 에셋 유리가 배경 — 콘텐츠는 포스퍼 텍스트만 얹는다 */
     flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
@@ -592,8 +657,11 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* ── 탐험 패널 ── */
   /* 디렉터 UI 정비: 탐험 패널 = 거점 오른편으로 (튜토리얼 카드가 거점 아래로 오면서 자리 교대) */
   #exp-panel { top: 12px; left: 272px; width: 240px; display: none; max-height: calc(100vh - 40px); overflow-y: auto; }
-  #exp-panel.show { display: block; }
+  /* #226 터미널 2차: 전자 표면 등장 = 스캔인 통일(설정/모달/확인/PDA와 동일 의식). 종이(퀘스트 카드·팁)는 제외 */
+  #exp-panel.show { display: block; animation: termScanIn 0.22s steps(8); }
+  body.reduce-motion #exp-panel.show { animation: none; }
   #exp-panel h2 { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
+  #exp-panel h2::before { content: '// '; opacity: 0.55; }
   .region-card {
     border: 2px solid var(--panel-border); border-radius: 3px;
     padding: 7px 8px; margin-bottom: 7px; background: #201b16;
@@ -625,27 +693,41 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     max-height: calc(94vh / var(--uiz, 1)); display: flex; flex-direction: column;
     padding: 0; overflow: hidden;
   }
+  /* ── 설정창 터미널화 (디렉터 2026-07-22 — 카세트 퓨처리즘/MU·TH·UR 전면화 1착지) ──
+     창 껍데기(.panel)는 07-19에 인광 터미널로 넘어갔으나 내부 컨트롤이 구 웜 차콜(#241f19 계열)로
+     남아 있었다. 여기서 내부 어휘를 전부 터미널 문법(인광 그린·`//` 헤더·LED·세그먼트 위젯)으로 통일. */
   #settings-head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 12px 8px; border-bottom: 2px solid var(--panel-border);
-    flex-shrink: 0; /* ⑧ 헤더 고정 — 창이 짧아도 줄지 않음 */
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    padding: 8px 12px 7px; flex-shrink: 0;
+    background: linear-gradient(180deg, rgba(140, 245, 166, 0.06), transparent); /* .p-head 터미널 헤더 스트립 동일 문법 */
+    border-bottom: 1px solid rgba(140, 245, 166, 0.3);
   }
-  #settings-head h2 { font-size: 13px; color: var(--accent); margin: 0; }
+  #settings-head::before { /* 상태 LED — 노스트로모 콘솔 점멸 */
+    content: ''; flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%;
+    background: #8cf5a6; box-shadow: 0 0 5px rgba(140, 245, 166, 0.85); animation: ledBlink 1.9s steps(1) infinite;
+  }
+  body.reduce-motion #settings-head::before { animation: none; }
+  #settings-head h2 { font-size: 12px; color: #8cf5a6; margin: 0; flex: 1; letter-spacing: 1.5px; text-shadow: 0 0 5px rgba(140, 245, 166, 0.35); }
+  #settings-head h2::before { content: '// '; opacity: 0.55; }
   #settings-x {
-    background: none; border: none; color: var(--text-dim);
-    font-family: inherit; font-size: 15px; cursor: pointer; line-height: 1; padding: 2px 4px;
+    background: none; border: 1px solid rgba(140, 245, 166, 0.3); border-radius: 3px; color: #8cf5a6;
+    font-family: inherit; font-size: 12px; cursor: pointer; line-height: 1; padding: 3px 6px;
   }
-  #settings-x:hover { color: var(--bad); }
-  #settings-tabs { display: flex; gap: 0; padding: 6px 8px 0; border-bottom: 2px solid var(--panel-border); flex-wrap: wrap; flex-shrink: 0; /* ⑧ 탭줄 고정 */ }
-  .settings-tab {
+  #settings-x:hover { color: var(--bad); border-color: var(--bad); }
+  #settings-tabs { display: flex; gap: 4px; padding: 7px 8px 0; border-bottom: 1px solid rgba(140, 245, 166, 0.25); flex-wrap: wrap; flex-shrink: 0; /* ⑧ 탭줄 고정 */ }
+  .settings-tab { /* 터미널 채널 버튼 — pixel-btn 문법(얇은 인광 박스), 활성=밝은 인광+글로우 */
     flex: 1 1 auto; min-width: 0;
     font-family: inherit; font-size: 11px; color: var(--text-dim);
-    background: #241f19; border: 2px solid var(--panel-border); border-bottom: none;
-    border-radius: 4px 4px 0 0; padding: 6px 4px; margin-right: 2px; cursor: pointer;
+    background: rgba(140, 245, 166, 0.04); border: 1px solid rgba(140, 245, 166, 0.22); border-bottom: none;
+    border-radius: 4px 4px 0 0; padding: 6px 4px; cursor: pointer;
     white-space: nowrap;
   }
-  .settings-tab:hover { color: var(--accent); }
-  .settings-tab.active { color: var(--accent); background: var(--panel-bg); border-color: var(--accent); position: relative; top: 2px; }
+  .settings-tab:hover { color: var(--accent); border-color: rgba(140, 245, 166, 0.5); }
+  .settings-tab.active {
+    color: #8cf5a6; background: rgba(140, 245, 166, 0.09); border-color: rgba(140, 245, 166, 0.55);
+    text-shadow: 0 0 5px rgba(140, 245, 166, 0.4); box-shadow: inset 0 6px 10px -8px rgba(140, 245, 166, 0.35);
+    position: relative; top: 1px;
+  }
   /* ⑧ 탭 콘텐츠만 내부 스크롤 — min-height:0으로 flex 자식이 축소 가능해야 overflow가 실제로 걸린다.
      얇은 픽셀 톤 스크롤바. 헤더/탭/푸터는 flex-shrink:0으로 고정이라 이 영역만 넘칠 때 스크롤된다. */
   #settings-tabbody { padding: 10px 14px; overflow-y: auto; flex: 1 1 auto; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--panel-border) transparent; }
@@ -658,40 +740,78 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
     gap: 4px; font-size: 11px; margin: 8px 0; cursor: pointer;
   }
-  #settings-window input[type=range] { width: 110px; accent-color: var(--accent); }
-  #settings-window input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
-  #settings-window h2 { font-size: 12px; color: var(--accent); margin: 12px 0 6px; }
+  /* 레인지 → 인광 트랙+블록 썸 (세그먼트 게이지 문법의 연속) */
+  #settings-window input[type=range] {
+    width: 110px; height: 14px; -webkit-appearance: none; appearance: none;
+    background: transparent; cursor: pointer;
+  }
+  #settings-window input[type=range]::-webkit-slider-runnable-track {
+    height: 4px; background: rgba(140, 245, 166, 0.18); border: 1px solid rgba(140, 245, 166, 0.25); border-radius: 0;
+  }
+  #settings-window input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 9px; height: 14px; margin-top: -6px; border-radius: 1px;
+    background: #8cf5a6; box-shadow: 0 0 6px rgba(140, 245, 166, 0.55); border: none;
+  }
+  #settings-window input[type=range]::-moz-range-track { height: 4px; background: rgba(140, 245, 166, 0.18); border: 1px solid rgba(140, 245, 166, 0.25); }
+  #settings-window input[type=range]::-moz-range-thumb { width: 9px; height: 14px; border-radius: 1px; background: #8cf5a6; border: none; box-shadow: 0 0 6px rgba(140, 245, 166, 0.55); }
+  /* 체크박스 → 터미널 토글: 빈 브래킷 박스 ↔ 채워진 인광 블록 */
+  #settings-window input[type=checkbox] {
+    -webkit-appearance: none; appearance: none; width: 14px; height: 14px; margin: 0;
+    background: rgba(140, 245, 166, 0.04); border: 1px solid rgba(140, 245, 166, 0.4); border-radius: 2px;
+    cursor: pointer; position: relative; flex: 0 0 auto;
+  }
+  #settings-window input[type=checkbox]:checked::after {
+    content: ''; position: absolute; inset: 3px;
+    background: #8cf5a6; box-shadow: 0 0 6px rgba(140, 245, 166, 0.6);
+  }
+  #settings-window h2 { font-size: 12px; color: #8cf5a6; margin: 12px 0 6px; letter-spacing: 1px; }
+  #settings-window .settings-pane h2::before, #settings-window #display-section h2::before, #settings-window #widget-section h2::before { content: '// '; opacity: 0.55; }
   #settings-window select {
-    background: #201b16; color: var(--text);
-    border: 2px solid var(--panel-border); border-radius: 3px;
+    background: rgba(8, 19, 13, 0.92); color: var(--text);
+    border: 1px solid rgba(140, 245, 166, 0.35); border-radius: 3px;
     font-family: inherit; font-size: inherit; padding: 2px 4px;
   }
+  #settings-window select:hover { border-color: rgba(140, 245, 166, 0.6); }
   #controls-guide { font-size: 11px; line-height: 1.9; color: var(--text-dim); }
   #controls-guide .cg-row { display: flex; gap: 8px; margin: 5px 0; align-items: baseline; }
-  #controls-guide .cg-key {
-    flex: 0 0 auto; min-width: 62px; color: var(--accent);
-    font-size: 10px; border: 1px solid var(--panel-border); border-radius: 3px;
-    padding: 1px 5px; text-align: center; background: #241f19;
+  #controls-guide .cg-key { /* 터미널 키캡 — 카세트 퓨처리즘: 인광 각인된 기계식 키 */
+    flex: 0 0 auto; min-width: 62px; color: #8cf5a6;
+    font-size: 10px; border: 1px solid rgba(140, 245, 166, 0.35); border-radius: 3px;
+    padding: 1px 5px; text-align: center; background: rgba(140, 245, 166, 0.05);
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.4);
   }
   #controls-guide .cg-desc { flex: 1 1 auto; }
   #controls-guide .cg-note { font-size: 10px; opacity: 0.7; margin-top: 10px; }
   /* #14 리바인딩 UI: 클릭 가능한 키 버튼 + 시스템 예약 표기 */
   #controls-guide .cg-fixed { align-self: center; }
   #controls-guide button.cg-bind {
-    flex: 0 0 auto; min-width: 62px; color: var(--accent);
-    font-family: inherit; font-size: 10px; border: 1px solid var(--panel-border);
-    border-radius: 3px; padding: 2px 5px; text-align: center; background: #241f19;
+    flex: 0 0 auto; min-width: 62px; color: #8cf5a6;
+    font-family: inherit; font-size: 10px; border: 1px solid rgba(140, 245, 166, 0.35);
+    border-radius: 3px; padding: 2px 5px; text-align: center; background: rgba(140, 245, 166, 0.05);
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.4);
     cursor: pointer; align-self: center;
   }
   #controls-guide button.cg-bind:hover { border-color: var(--accent); }
   #controls-guide button.cg-bind.waiting { color: #1a1408; background: var(--accent); border-color: var(--accent); }
   #controls-guide .cg-reserved { font-size: 9px; opacity: 0.6; margin-left: 4px; }
   #settings-foot {
-    display: flex; gap: 6px; flex-wrap: wrap;
-    padding: 8px 12px 10px; border-top: 2px solid var(--panel-border);
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    padding: 8px 12px 10px; border-top: 1px solid rgba(140, 245, 166, 0.25);
     flex-shrink: 0; /* ⑧ 푸터(저장/기본값/타이틀/닫기) 고정 — 항상 보이게 (잘림 원천 차단) */
   }
   #settings-foot .pixel-btn { flex: 1 1 auto; }
+  #settings-foot::after { /* 대기 중 블록 커서 — 터미널이 살아있다는 신호(카피 0) */
+    content: '▊'; color: #8cf5a6; font-size: 10px; opacity: 0.7; flex: 0 0 auto;
+    animation: ledBlink 1.2s steps(1) infinite;
+  }
+  body.reduce-motion #settings-foot::after { animation: none; }
+  /* 열림 연출: CRT 스캔인 — 위에서 아래로 걷히는 주사선(steps = 픽셀 감성). 관측 단말 부팅과 같은 계열의 의식 */
+  #settings-screen.show #settings-window { animation: termScanIn 0.26s steps(9); }
+  @keyframes termScanIn {
+    from { clip-path: inset(0 0 100% 0); filter: brightness(1.6); }
+    to { clip-path: inset(0 0 0 0); filter: brightness(1); }
+  }
+  body.reduce-motion #settings-screen.show #settings-window { animation: none; }
   #display-section, #widget-section { border-top: 1px solid rgba(255,255,255,0.12); margin-top: 10px; padding-top: 8px; }
   #display-section .btn-row { display: flex; gap: 6px; margin-top: 8px; }
 
@@ -706,19 +826,21 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   /* 배치 모드(🔧)에서만 노출 — 평소 하단을 차지하지 않는다 */
   body:not(.edit-mode) #toolbar { display: none !important; }
+  /* #226 터미널 2차: 배치 진입 = 장비 랙 스캔인 (전자 표면 등장 의식 통일) */
+  body.edit-mode #toolbar { animation: termScanIn 0.22s steps(8); }
+  body.reduce-motion.edit-mode #toolbar { animation: none; }
   /* 카메라 열 버튼 라벨: 네이티브 툴팁 대체 — data-label을 버튼 좌측에 게임 스타일로 */
   .cam-btn { position: relative; }
   .cam-btn[data-label]::before {
     content: attr(data-label);
-    /* 하단 가로 바용: 버튼 위로 팝업 (기존 우측 세로열의 '왼쪽' 위치는 가로 바에서 겹침/화면밖) */
-    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    /* 상단 가로 바용(재배치 2차): 버튼 아래로 팝업 — 상단 이동 후 위 팝업은 화면 밖 */
+    position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
     background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 3px;
     padding: 4px 8px; font-size: 10px; color: var(--text); white-space: nowrap;
     opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 45;
   }
   @media (hover: hover) { .cam-btn[data-label]:hover::before { opacity: 1; } }
-  /* 하단 바 가장자리 버튼: 툴팁이 화면 밖으로 안 나가게 안쪽 정렬 (편집=좌단, 👁=우단) */
-  #btn-edit[data-label]::before { left: 0; transform: none; }
+  /* 상단 바 우단 버튼: 툴팁이 화면 밖으로 안 나가게 안쪽 정렬 (편집은 명령 바로 편성돼 규칙 소멸) */
   #btn-ui-toggle[data-label]::before { left: auto; right: 0; transform: none; }
   /* 모바일(호버 없음): 퀘스트 유도(pulse) 단계에선 라벨 상시 표시 */
   .cam-btn.pulse[data-label]::before { opacity: 1; }
@@ -763,8 +885,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     width: 178px; padding: 8px 9px;
     display: none; text-align: center;
   }
-  #sel-panel.show { display: block; }
+  #sel-panel.show { display: block; animation: termScanIn 0.2s steps(7); }
+  body.reduce-motion #sel-panel.show { animation: none; }
   #sel-panel h2 { font-size: 11px; color: var(--accent); margin-bottom: 6px; }
+  #sel-panel h2::before { content: '// '; opacity: 0.55; }
   #sel-panel .swatches { display: flex; gap: 6px; justify-content: center; margin-bottom: 7px; }
   .swatch { width: 18px; height: 18px; border-radius: 3px; cursor: pointer; border: 2px solid #555b6b; position: relative; }
   .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
@@ -806,6 +930,11 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* ── 관측 단말 (S2 — 풀스크린 위성 뷰. 모달(50)보다 아래: 준비/눈사태 선택 모달이 위에 뜬다) ── */
   #obs-screen { position: absolute; inset: 0; z-index: 44; display: none; pointer-events: none; }
   #obs-screen.show { display: block; }
+  /* #218 곡률 정합(디렉터 2026-07-22): 관측 오버레이(헤더·패널·핀)도 화면에 '부착'된 것 —
+     씬 배럴(uBarrel 0.14)과 같은 유리 위에 있으므로 전체를 한 장으로 휜다(crtBulgeB 변위장,
+     풀스크린 bbox = 씬과 동일한 화면 중심 곡률). 씬-핀 투영 어긋남도 같이 휘어 복원된다. */
+  body.obs-mode #obs-screen.show { filter: url(#crtBulgeB); }
+  body.obs-mode #obs-panel { filter: none !important; } /* 패널 개별 볼록 해제 — CRT는 화면에 하나 */
   /* 관측 모드: 본편 크롬을 걷는다 — 상단 시계 밴드만 남긴다(시안 상단 스테이터스 문법) */
   body.obs-mode #hud, body.obs-mode #res-bar, body.obs-mode #quest-card, body.obs-mode #radio-bubble,
   body.obs-mode #dock-pda, body.obs-mode #toolbar, body.obs-mode #exp-panel, body.obs-mode .cam-btn,
@@ -814,7 +943,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #obs-clock { font-size: var(--fs-s, 12px); color: #6fd88c; letter-spacing: 1.5px; font-variant-numeric: tabular-nums;
     text-shadow: 0 0 6px rgba(120, 255, 150, 0.45); opacity: 0.92; }
   #obs-clock::before { content: '· '; opacity: 0.6; }
-  #obs-top { position: absolute; top: 10px; left: 14px; display: flex; align-items: center; gap: 10px; z-index: 4; pointer-events: auto; }
+  /* #220: 곡률(crtBulgeB)이 좌상단 모서리를 최대 ~15px 밖으로 밀어 헤더가 잘렸다(디렉터 실캡처 신고)
+     — 변위 최대치+여유만큼 안쪽으로 들여 곡률 후에도 실화면 안에 정착 */
+  #obs-top { position: absolute; top: 30px; left: 38px; display: flex; align-items: center; gap: 10px; z-index: 4; pointer-events: auto; }
   #obs-title { font-size: var(--fs-m); color: #8cf5a6; letter-spacing: 2px; text-shadow: 0 0 7px rgba(120, 255, 150, 0.55); }
   #obs-title::before { content: '// '; opacity: 0.8; }
   #obs-pins { position: absolute; inset: 0; z-index: 1; }
@@ -832,8 +963,27 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .obs-pin:hover .dot { background: rgba(140, 245, 166, 0.7); }
   #obs-screen.focus .obs-pin { opacity: 0.28; }
   #obs-screen.focus .obs-pin.cur { opacity: 1; }
-  #obs-panel { position: absolute; top: 44px; right: 12px; bottom: 12px; width: 330px; z-index: 3; pointer-events: auto; overflow-y: auto; display: flex; flex-direction: column; }
+  /* 폭 330→260(디렉터 2026-07-22: 화면 1/3 체감 → 1/4로 — zoom(--uiz) 곱 실폭 기준) */
+  /* 폭 300 = 1280의 23.4%(디렉터 오더 '1/4 가량'). 260은 en/ja 준비물 행을 2줄로 꺾던 오버슈트(#219 실측) */
+  #obs-panel { position: absolute; top: 44px; right: 12px; bottom: 12px; width: 300px; z-index: 3; pointer-events: auto; overflow-y: auto; display: flex; flex-direction: column; }
+  #obs-panel .obs-region { padding: 6px 8px; }
+  #obs-panel .obs-region:hover { background: rgba(140, 245, 166, 0.08); }
+  /* 프레임 돌출 수습(디렉터 2026-07-22): 헤더 버튼이 코너 브래킷 위로 삐져나옴 — 안쪽으로 */
+  #obs-panel .p-head { margin: -8px -8px 8px; }
+  /* back 버튼은 글자 라벨("닫기"/"전체 지도") — 모달 X 버튼 규격(width:20px)을 풀지 않으면 프레임 밖으로 넘친다(#218) */
+  #obs-panel .p-head .p-min { margin: 2px 2px 0 auto; flex-shrink: 0; width: auto; height: auto; padding: 2px 7px; white-space: nowrap; }
   #obs-panel .obs-body { padding: 8px 10px; }
+  /* #220 「나가기」 — 패널 맨 하단 상시 고정(디렉터: 뒤로 가는 메커니즘을 항상 같은 자리에).
+     sticky+margin-top:auto 조합: 콘텐츠가 짧으면 바닥에, 길어 스크롤이 생기면 뷰 하단에 붙어 따라온다. */
+  #obs-exit-wrap { margin-top: auto; position: sticky; bottom: 0; padding: 8px 0 0;
+    background: linear-gradient(180deg, transparent, rgba(4, 9, 6, 0.92) 40%); }
+  #obs-exit { width: 100%; padding: 7px 0; font-size: var(--fs-m); letter-spacing: 2px; }
+  /* #219 준비물 행 1줄화 — 좁은 폭에선 여백을 아끼고, 이름은 절대 꺾이지 않는다(꺾임은 eff가 담당) */
+  #obs-panel .prep-row { padding: 5px 6px; gap: 6px; }
+  .prep-row > span:first-child { white-space: nowrap; }
+  /* 칸마다 라인박스를 명시 고정 — 폰트가 섞이면(ja: 가나·한자는 둥근모에 없어 시스템 고딕이 그린다)
+     ascent 차이로 칸 높이가 갈려 글자가 어긋난다. 높이를 못 박아 폰트와 무관하게 같은 줄에 세운다. */
+  .prep-row > span { line-height: 14px; }
   #obs-panel .obs-hint { color: #7da884; font-size: var(--fs-s); }
   #obs-panel .obs-desc { color: #bcd0b6; font-size: var(--fs-s); line-height: 1.6; margin-bottom: 6px; word-break: keep-all; }
   /* 부팅 — 접속 의식: 인광 스윕 1회 + 타이프라이터 한 줄 (낡은 TV 지직임 레지스터, 군용 브리핑 아님) */
@@ -865,7 +1015,21 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* #194: max-height에 ⑧(#settings-window 165-168줄) 역보정 적용 — zoom(--uiz)이 창 전체를 곱해
      80vh 클램프를 초과(도감·업적·기록 탭 상하 잘림, 탭바·닫기 버튼 뷰포트 밖) → /--uiz로 역보정. */
   #modal { max-width: 560px; width: calc(100vw - 60px); max-height: calc(80vh / var(--uiz, 1)); overflow-y: auto; }
-  #modal h2 { font-size: 14px; color: var(--accent); margin-bottom: 10px; }
+  /* #221 터미널 전면화 1차 — 공용 모달 셸에 설정창 문법 이식(디렉터: "PDA 내부에서도 비슷한 문법").
+     열림 = CRT 스캔인(설정창·확인창과 같은 의식), 제목 = // 섹션 헤더 + 점멸 LED(패널 p-head와 동일 어휘). */
+  #modal-back.show #modal { animation: termScanIn 0.22s steps(8); }
+  body.reduce-motion #modal-back.show #modal { animation: none; }
+  /* 제목 = // 섹션 헤더(패널 p-title과 동일 어휘). LED는 상주 콘솔(패널)의 것 — 일시 화면인 모달엔 두지 않는다. */
+  #modal h2 {
+    font-size: 13px; color: #8cf5a6; margin: 0 0 10px; letter-spacing: 1.5px;
+    text-shadow: 0 0 5px rgba(140, 245, 166, 0.35);
+    border-bottom: 1px solid rgba(140, 245, 166, 0.3); padding-bottom: 5px;
+  }
+  #modal h2::before { content: '// '; opacity: 0.55; }
+  /* #226 터미널 2차: 일지/도감 탭 전환 리프레시 스캔 — PDA pda-refresh와 동일 계열, 유저 액션 빈도라 안전 */
+  #modal-body.m-refresh { animation: termScanIn 0.14s steps(5); }
+  body.reduce-motion #modal-body.m-refresh { animation: none; }
+  #modal h2:empty { display: none; } /* 제목 없는 모달(이벤트 카드 등)에 '//'만 뜨는 것 방지 */
   #modal .modal-body { font-size: 12px; line-height: 1.8; }
   #modal .close-row { text-align: right; margin-top: 12px; }
   /* #181 방문자 콤팩트 카드: 약한 딤 + 하단 배치 + 소형 (대사는 라디오 버블, 카드는 선택지만) */
@@ -1103,18 +1267,23 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .report-tip { color: var(--good); }
   kbd { background:#2b2620; border:1px solid var(--panel-border); border-radius:3px; padding:0 5px; font-family: inherit; }
 
+  /* #224 알림 큐: #toast = 투명 스택 컨테이너(동시 2), 박스 스타일은 .t-item 단위로 이관.
+     각 아이템 = 회선 수신 라인('> ' + 스캔인, #221 문법 계승). 소멸은 .out 페이드. */
   #toast {
     position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
-    background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 4px;
-    padding: 7px 16px; font-size: 12px; color: var(--accent);
-    opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 55;
-    text-align: center;
-    /* 장문 토스트가 화면 밖으로 나가지 않게 폭 상한 + 어절 단위 줄바꿈 */
-    max-width: min(88vw, 420px);
-    word-break: keep-all; overflow-wrap: break-word;
-    zoom: var(--uiz);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    pointer-events: none; z-index: 55; zoom: var(--uiz);
   }
-  #toast.show { opacity: 1; }
+  #toast .t-item {
+    background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 4px;
+    padding: 7px 16px; font-size: 12px; color: var(--accent); text-align: center;
+    max-width: min(88vw, 420px); word-break: keep-all; overflow-wrap: break-word;
+    animation: termScanIn 0.16s steps(5);
+  }
+  #toast .t-item::before { content: '> '; opacity: 0.55; }
+  #toast .t-item.warn { border-color: var(--bad); color: var(--bad); }
+  #toast .t-item.out { opacity: 0; transition: opacity 0.3s; }
+  body.reduce-motion #toast .t-item { animation: none; }
 
   #loading {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -1122,17 +1291,18 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
 
   /* ── 타이틀 화면 ── */
+  /* #227 로비 개편(디렉터 레퍼런스): 메뉴=좌측 열, 셸터 라이브 뷰=우측(캔버스 시프트). 배경 드래그 회전 유지. */
   #title-screen {
     position: absolute; inset: 0; z-index: 35;
-    display: flex; align-items: center; justify-content: center;
-    background: radial-gradient(ellipse at 50% 62%, rgba(10,12,17,0.25) 0%, rgba(8,9,13,0.82) 78%);
+    display: flex; align-items: center; justify-content: flex-start;
+    background: linear-gradient(90deg, rgba(8,9,13,0.86) 0%, rgba(8,9,13,0.55) 34%, rgba(8,9,13,0.06) 62%, rgba(8,9,13,0) 78%);
     pointer-events: none; /* #7 피드백: 배경은 통과 → 집 화면 드래그로 시점 회전. 메뉴만 클릭 수신(아래) */
   }
-  #title-inner { text-align: center; zoom: var(--uiz); pointer-events: auto; }
-  #title-logo { margin-bottom: 14px; }
+  #title-inner { text-align: left; zoom: var(--uiz); pointer-events: auto; padding-left: clamp(28px, 6vw, 96px); }
+  #title-logo { margin-bottom: 26px; }
   /* 정식 픽셀 워드마크 이미지(픽셀 규격 준수판). image-rendering:pixelated 로 하드 엣지 유지. */
   #title-logo img {
-    width: min(380px, 72vw); height: auto; display: block; margin: 0 auto;
+    width: min(300px, 60vw); height: auto; display: block;
     image-rendering: pixelated;
     filter: drop-shadow(0 0 16px rgba(232,168,108,0.28)) drop-shadow(2px 2px 0 rgba(20,17,8,0.9));
   }
@@ -1144,9 +1314,31 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     text-shadow: 0 0 8px rgba(232,168,108,0.4);
   }
   #title-sub { font-size: 13px; color: var(--text-dim); letter-spacing: 3px; margin-bottom: 34px; }
-  #title-menu { display: flex; flex-direction: column; gap: 9px; width: 240px; margin: 0 auto; }
-  #title-menu .pixel-btn { padding: 11px 10px; font-size: 13px; }
+  /* 패널 없는 세로 텍스트 메뉴 — 선택/호버 = 좌측 세로 바 + 인광 (레퍼런스 문법) */
+  #title-menu { display: flex; flex-direction: column; gap: 4px; width: max-content; min-width: 220px; }
+  #title-menu .pixel-btn {
+    background: none; border: none; box-shadow: none; border-radius: 0;
+    text-align: left; padding: 7px 16px 7px 18px; font-size: 19px; letter-spacing: 1px;
+    color: #86a98e; position: relative; word-break: keep-all;
+  }
+  #title-menu .pixel-btn::before {
+    content: ''; position: absolute; left: 0; top: 15%; bottom: 15%; width: 3px;
+    background: var(--accent); opacity: 0; transition: opacity 0.12s;
+  }
+  #title-menu .pixel-btn:hover, #title-menu .pixel-btn:focus-visible {
+    background: none; color: #e9ffee; text-shadow: 0 0 9px rgba(140, 245, 166, 0.55);
+  }
+  #title-menu .pixel-btn:hover::before, #title-menu .pixel-btn:focus-visible::before { opacity: 1; }
+  #title-menu .pixel-btn.primary { background: none; color: #d9ffe6; }
+  #t-continue-info { display: block; font-size: 9px; color: var(--text-dim); letter-spacing: 0; margin-top: 2px; }
   #title-ver { margin-top: 26px; font-size: 10px; color: #565b6b; letter-spacing: 1px; }
+  /* 우측 라이브 뷰: 월드+이펙트 캔버스를 함께 우측으로 — 셸터가 메뉴 반대편에 앉는다. 인게임 진입 시 복귀.
+     scale 동반 필수: 시프트만 하면 캔버스 왼쪽 엣지(빈 밴드)가 화면 안으로 드러난다(실측) — 1.15배로 엣지를 프레임 밖에. */
+  /* transition은 title-mode 한정 — 상시 걸면 타이틀 해제 직후 0.7s 복귀 이동이 골든 캡처에 간헐 오염(실측 3.43% 1회).
+     해제 순간엔 이 규칙도 함께 사라져 즉시 원위치 — 인게임은 암전(fade) 뒤라 손실 없음. */
+  body.title-mode #c, body.title-mode #fx { transform: translateX(7%) scale(1.15); transition: transform 0.7s ease; }
+  body.reduce-motion.title-mode #c, body.reduce-motion.title-mode #fx { transition: none; }
+  @media (max-width: 700px) { body.title-mode #c, body.title-mode #fx { transform: none; } }
   .slot-card {
     display: flex; gap: 10px; align-items: center;
     border: 2px solid var(--panel-border); border-radius: 4px;
@@ -1346,6 +1538,17 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   @keyframes ledBlink { 50% { opacity: 0.25; } }
   body.reduce-motion .p-head::before { animation: none; }
+
+  /* CRT 패널 볼록 실험 — 각 창=작은 브라운관(디렉터). QA setPanelBulge(0|1|2)로 강도 토글. */
+  body.crt-bulge1 .panel { filter: url(#crtBulgeA); }
+  body.crt-bulge2 .panel { filter: url(#crtBulgeB); }
+  /* CRT 인광 플리커 — 불규칙 2회 미세 감광(cool-retro-term 시그니처). opacity만 건드려 컴포지터 전용(성능 0). */
+  @keyframes crtFlicker {
+    0%, 46%, 49%, 78%, 81%, 100% { opacity: 1; }
+    47%, 48% { opacity: 0.985; }
+    79%, 80% { opacity: 0.99; }
+  }
+  body.reduce-motion .panel { animation: none; }
   .p-head .p-title::before { content: '// '; opacity: 0.55; } /* // 섹션 프리픽스 */
   /* 터미널 코너 브래킷 — 헤더 상단 좌우 (구 프레임 리벳 자리). 얇은 녹색 ㄱ (노스트로모 프레임) */
   .panel::before, .panel::after {
@@ -1383,12 +1586,19 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     position: relative; max-width: min(86vw, 380px); padding: 14px 16px;
     zoom: var(--uiz);
   }
+  /* 확인창 터미널화(디렉터 2026-07-22, cool-retro-term 레퍼런스): 시스템 물음 = 프롬프트.
+     메시지 앞 '// ' + CRT 스캔인 — 설정창과 같은 계열의 접속 의식. */
+  #confirm-back.show #confirm-panel { animation: termScanIn 0.22s steps(8); }
+  body.reduce-motion #confirm-back.show #confirm-panel { animation: none; }
+  #confirm-msg::before { content: '// '; color: #8cf5a6; opacity: 0.55; }
   #confirm-msg { font-size: 12px; line-height: 1.7; margin-bottom: 12px; word-break: keep-all; overflow-wrap: break-word; }
   #confirm-panel .close-row { display: flex; gap: 8px; }
   #confirm-panel .pixel-btn { flex: 1; }
 
   /* ── 전자시계 (LCD) ── */
-  #clock-panel { top: 12px; right: 210px; padding: 8px 10px; }
+  /* 재배치 2차 정정(2026-07-22): 최상단 줄은 뷰 컨트롤이 점유 — 시계는 우측 홈 유지하고 한 줄 아래로.
+     디렉터: "시계는 어차피 자유 배치" — 기본값만 비켜 주면 되고, 배치는 플레이어 드래그가 정한다. */
+  #clock-panel { top: 62px; right: 210px; left: auto; padding: 8px 10px; }
   #lcd {
     background: #081209; border: 2px solid #3f6a46; border-radius: 3px;
     padding: 6px 12px; text-align: center; min-width: 108px;
@@ -1407,13 +1617,13 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* ── 온스크린 카메라 컨트롤 ── */
   /* 디렉터 UI 재배치: 우측 세로열 → 하단 가로 바(우측). 편집(🔧)은 좌측 분리(#btn-edit). */
   #cam-ctrl {
-    position: fixed; right: 12px; bottom: 10px; z-index: 6;
+    /* 디렉터 재배치 2차→정정(2026-07-22): "아예 화면 상단 고정 — 시계 위치에".
+       뷰 컨트롤이 최상단 우측(구 시계 슬롯)을 차지하고, 시계는 같은 줄 왼쪽 밴드로 밀린다.
+       우측 여백 62는 PDA 엣지독 클리어런스(실측) — rect 프로브로 전 해상도 검증. */
+    /* #220 디렉터: "네모 아이콘들은 우측 끝으로" — PDA 엣지독은 top ~250부터라 top:10 줄과는 안 겹친다(실측) */
+    position: fixed; right: 10px; left: auto; top: 10px; bottom: auto; z-index: 6;
     display: flex; flex-direction: row; gap: 5px; align-items: center;
     zoom: var(--uiz);
-  }
-  /* 편집(배치) 버튼 — 하단 바 좌측 분리 */
-  #btn-edit {
-    position: fixed; left: 12px; bottom: 10px; z-index: 6; zoom: var(--uiz);
   }
   /* 게임 UI 숨김 모드: 게임플레이 패널(거점/자원/시계/탐험/할일)만 숨기고 카메라 조작·편집·토글은 유지 */
   body.ui-hidden #hud,
@@ -1481,6 +1691,12 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #btn-cancel-place.show { display: block; }
 
   /* ── 모바일 ── */
+  /* 낮은 화면(WSVGA 600·1024×640): 할 일 카드가 하단 명령 바에 깔린다 — 바 위로 올린다 */
+  @media (min-width: 761px) and (max-height: 760px) {
+    #quest-card { top: auto; bottom: 118px; }
+    body.edit-mode #quest-card { bottom: 260px; }
+  }
+
   @media (max-width: 760px) {
     /* #208(디렉터 "허기·갈증 짤린다 → 가로로 늘리고 대신 접을 수 있게"): 구 190px 고정폭이 3열 게이지를
        53px씩 쪼개 라벨을 죽였다("허기"→"허", 실측 g-name 8.6px). 화면 폭에 맞춰 늘린다.
@@ -1503,9 +1719,8 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     .swatch.locked::after { font-size: 14px; }
     #sel-panel .swatches { flex-wrap: wrap; }
     /* 조작 바(디렉터 모바일 정비): zoom 축소를 끄고 실제 터치 크기로 전폭 단일 행.
-       편집(🔧)=좌끝, 카메라/게임 조작 9개=그 옆부터 우끝까지 균등 배치. */
-    #cam-ctrl { zoom: 1; left: 48px; right: 6px; bottom: 8px; justify-content: space-between; gap: 2px; flex-wrap: nowrap; }
-    #btn-edit { zoom: 1; left: 6px; bottom: 8px; }
+       재배치 2차: 편집은 명령 바로 편성 — 좌끝 예약(48px) 해제. 데스크톱 top:10 상속 차단(top:auto). */
+    #cam-ctrl { zoom: 1; top: auto; left: 6px; right: 6px; bottom: 8px; justify-content: space-between; gap: 2px; flex-wrap: nowrap; }
     .cam-btn { width: 37px; height: 37px; font-size: 18px; } /* 디렉터: 하단 UI 조금 더 크게 (33→37) */
     /* 편집 모드 가구 툴바·팔레트는 조작 바 위로 (조작 바 zoom:1 실측 클리어런스) */
     #toolbar { bottom: 106px; padding: 6px; }
@@ -1542,7 +1757,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     #toolbar { bottom: 52px; padding: 4px; max-width: calc((100vw - 16px) / var(--uiz, 1)); }
     .tool-item { min-width: 42px; padding: 4px 2px 3px; }
     .tool-item .emoji { font-size: 14px; }
-    #cam-ctrl { bottom: 4px; right: 4px; gap: 3px; }
+    #cam-ctrl { top: auto; left: auto; bottom: 4px; right: 4px; gap: 3px; }
     .cam-btn { width: 32px; height: 32px; font-size: 13px; }
     /* 가로폰도 하단 시트 폴백 (A안 앵커 무시) — #194: 툴바가 52 밴드로 올라와 60이 깔림 → 툴바 위(110), 넘치면 스크롤 */
     #sel-panel { top: auto; bottom: 110px; left: 50%; transform: translateX(-50%); width: auto; max-height: calc(100vh / var(--uiz, 1) - 120px); overflow-y: auto; }
@@ -1607,17 +1822,15 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   #ending-next { padding: 10px 26px; font-size: 13px; }
 
-  /* ── v2.3.1: 타이틀 언어 선택 + 셀렉트 픽셀 테마 ── */
-  #title-lang { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
-  #title-lang .lang-btn { font-size: 11px; padding: 6px 14px; flex: 1; }
+  /* #227: 타이틀 언어 선택 UI 제거 — 언어는 설정 창(opt-lang)이 유일 경로. (구 #title-lang 규칙 소거) */
 
   /* ── v0.9.1: 가독성 — 전 UI 15% 확대 (베타 피드백: 폰트가 작다) ──
      P0 수정: 배율은 JS(updateUiScale)에서 TEXT_BOOST를 곱해 --uiz 단일 소스로 통합.
      CSS zoom은 항상 var(--uiz) 만 사용 → 드래그/클램프 좌표 보정과 렌더 배율이 정확히 일치. */
 
-  /* ── v0.9.1: 타이틀 화면 — 저장/불러오기/설정 아이콘 버튼 ── */
-  #title-tools { display: flex; gap: 8px; margin-top: 8px; }
-  #title-tools .pixel-btn { flex: 1; font-size: 14px; padding: 6px 0; }
+  /* ── v0.9.1→#227: 타이틀 세이브 유틸(내보내기/가져오기) — 메뉴 밖 하단 소형 아이콘 열 ── */
+  #title-tools { display: flex; gap: 8px; margin-top: 22px; }
+  #title-tools .pixel-btn { font-size: 14px; padding: 6px 12px; }
 
   /* ── 모바일 설정 진입 톱니 — #87 스윕: fixed 좌표(top:96px)가 세로폰 배율에서 cam-ctrl 회전 버튼과
      겹쳐 오탭 나던 실기기 신고 → 스택 첫 버튼으로 편입(index.html). 위치 규칙 불필요, 표시 토글은 JS 그대로. ── */

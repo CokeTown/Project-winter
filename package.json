@@ -25,7 +25,7 @@
     "modal-golden": "electron tests/grounding/modal-golden.cjs",
     "modal-golden:update": "electron tests/grounding/modal-golden.cjs --update",
     "modal-golden:build": "vite build --mode electron && npm run modal-golden",
-    "gates": "node tools/check-i18n.mjs && node tools/check-hardcode.mjs"
+    "gates": "node tools/check-i18n.mjs && node tools/check-hardcode.mjs && node tools/check-emoji.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
@@ -40,7 +40,8 @@
     "gif-encoder": "^0.7.2",
     "pngjs": "^7.0.0",
     "vite": "^5.4.0",
-    "vite-plugin-pwa": "^1.3.0"
+    "vite-plugin-pwa": "^1.3.0",
+    "wawoff2": "^2.0.1"
   },
   "build": {
     "appId": "com.projectwinter.shelter",

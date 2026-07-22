@@ -19,7 +19,7 @@ export function resAdd(id, n) {
   state.dayLog.gain[id] = (state.dayLog.gain[id] || 0) + n;
 }
 export function resConsume(id, n) {
-  if (isWallpaper()) return true; // 🖼️ 배경화면: 자원 무한 — 차감하지 않는다(표시는 ∞)
+  if (isWallpaper()) return true; // 배경화면: 자원 무한 — 차감하지 않는다(표시는 ∞)
   if ((state.res[id] || 0) < n) return false;
   state.res[id] -= n;
   state.dayLog.spend[id] = (state.dayLog.spend[id] || 0) + n;
@@ -27,7 +27,7 @@ export function resConsume(id, n) {
   return true;
 }
 export function resHasAll(cost) {
-  if (isWallpaper()) return true; // 🖼️ 배경화면: 항상 충족 (배치/이주 자유)
+  if (isWallpaper()) return true; // 배경화면: 항상 충족 (배치/이주 자유)
   return Object.entries(cost).every(([id, n]) => (state.res[id] || 0) >= n);
 }
 export function resConsumeAll(cost) {

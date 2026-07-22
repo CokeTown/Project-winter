@@ -15,7 +15,7 @@
      when: { ... },          // 노출 조건. EVENTS.when 과 동일 스키마를 game.js projectAvailable()가 해석.
                              //   지원: shelters[], districts[], seasons[], minDay, needsMod, needsFlag(state 불리언 키)
      site: 'stairRubble',    // 현장 오브젝트 키. game.js SHELTER가 stage에 따라 3D 표현을 교체.
-     icon: '🪨',             // UI 카드/수첩 아이콘 (이모지 — im-not-strange-ai 이모지 예외)
+     icon: '',             // UI 카드/수첩 아이콘 (이모지 — im-not-strange-ai 이모지 예외)
      memoirKey: 'proj.<id>.memoir', // 완공 시 수첩 "그 해의 공사" 자동 기록 i18n 키
      stages: [               // 순서대로 진행. 마지막 stage 완료 = 프로젝트 완공.
        {
@@ -47,7 +47,7 @@ export const PROJECTS = {
     id: 'clearPassage',
     when: { shelters: ['bunker'], needsFlag: 'bunkerBackdoor' },
     site: 'stairRubble',
-    icon: '🪨',
+    icon: '',
     memoirKey: 'proj.clearPassage.memoir',
     stages: [
       { costKey: 'clearPassage1', need: 3, siteStage: 1, effectKey: null },
@@ -65,7 +65,7 @@ export const PROJECTS = {
     id: 'breakwaterHut',
     when: { shelters: ['tugboat', 'controltower'] },
     site: 'breakwaterHut',
-    icon: '🛖',
+    icon: '',
     memoirKey: 'proj.breakwaterHut.memoir',
     stages: [
       { costKey: 'breakwater1', need: 4, siteStage: 1, effectKey: null },              // 잔해 정리
@@ -88,7 +88,7 @@ export const PROJECTS = {
     id: 'subRail1',
     when: { shelters: ['subway'], needsFlag: 'subwayHub' },
     site: 'railSegment',
-    icon: '🚈',
+    icon: '',
     memoirKey: 'proj.subRail1.memoir',
     stages: [
       { costKey: 'subRail1a', need: 3, siteStage: 1, effectKey: null },                 // 잔해 제거
@@ -101,7 +101,7 @@ export const PROJECTS = {
     id: 'subRail2',
     when: { shelters: ['subway'], needsFlag: 'subwayHub' },
     site: 'railSegment',
-    icon: '🚈',
+    icon: '',
     memoirKey: 'proj.subRail2.memoir',
     stages: [
       { costKey: 'subRail2a', need: 4, siteStage: 1, effectKey: null },
@@ -114,7 +114,7 @@ export const PROJECTS = {
     id: 'subRail3',
     when: { shelters: ['subway'], needsFlag: 'subwayHub' },
     site: 'railSegment',
-    icon: '🚈',
+    icon: '',
     memoirKey: 'proj.subRail3.memoir',
     stages: [
       { costKey: 'subRail3a', need: 4, siteStage: 1, effectKey: null },
@@ -132,7 +132,7 @@ export const PROJECTS = {
     id: 'cablecar',
     when: { shelters: ['lodge'] },
     site: 'cablecar',
-    icon: '🚡',
+    icon: '',
     memoirKey: 'proj.cablecar.memoir',
     stages: [
       { costKey: 'cablecar1', need: 3, siteStage: 1, effectKey: null },              // 잔해 정리 → 지주
@@ -150,7 +150,7 @@ export const PROJECTS = {
     id: 'observatory',
     when: { shelters: ['lodge'] },
     site: 'observatory',
-    icon: '🔭',
+    icon: '',
     memoirKey: 'proj.observatory.memoir',
     stages: [
       { costKey: 'observatory1', need: 3, siteStage: 1, effectKey: null },              // 기초
@@ -172,7 +172,7 @@ export const PROJECTS = {
     id: 'radioBase',
     when: { needsFlag: 'hazmatDone' }, // 방호복 제작 이력 = 금지 구역에 닿았다는 증거 → 무전 기지 공사 개방
     site: 'radioBase',
-    icon: '📡',
+    icon: '',
     memoirKey: 'proj.radioBase.memoir',
     stages: [
       { costKey: 'radioAntenna1', need: 3, siteStage: 1, effectKey: null },                 // 안테나
@@ -192,7 +192,7 @@ export const PROJECTS = {
     id: 'hiddenGate',
     when: { shelters: ['subway'], needsFlag: 'subwayHidden' },
     site: 'hiddenGate',
-    icon: '🕳️',
+    icon: '',
     memoirKey: 'proj.hiddenGate.memoir',
     stages: [
       { costKey: 'hiddenGate1', need: 4, siteStage: 1, effectKey: null },                // 벽을 허문다
@@ -212,7 +212,7 @@ export const PROJECTS = {
     id: 'eastgate',
     when: { needsFlag: 'eastRoadRumor' },
     site: 'eastgate',
-    icon: '🛃',
+    icon: '',
     memoirKey: 'proj.eastgate.memoir',
     stages: [
       { costKey: 'eastgate1', need: 5, siteStage: 1, effectKey: null },             // 도로의 3년 — 잔해 개통

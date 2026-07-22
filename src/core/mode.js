@@ -10,7 +10,7 @@ import { state } from './state.js';
 //   전리품/게이지/한파 강화가 하드코어에도 적용된다(배치 D 밸런스 불가침, 하드 값 재사용).
 export const isHard = () => state.mode === 'hard' || state.mode === 'hardcore';
 export const isHardcore = () => state.mode === 'hardcore'; // 폐허는 두 번 묻지 않는다 — 구제 없음
-export const isZen = () => state.mode === 'zen'; // ♾️ 무한: 자동 진행 첫날 해금 + 겨울 카운터 분모 없음
-export const isWallpaper = () => state.mode === 'wallpaper'; // 🖼️ 배경화면: 압박 전부 off, 자원 무한, 셸터 전 해금
+export const isZen = () => state.mode === 'zen'; // 무한: 자동 진행 첫날 해금 + 겨울 카운터 분모 없음
+export const isWallpaper = () => state.mode === 'wallpaper'; // 배경화면: 압박 전부 off, 자원 무한, 셸터 전 해금
 // 구제 대상 모드: 노말/하드만(무한·배경화면은 무력 미적용, 하드코어는 구제 없음)
 export const rescueEligible = () => state.mode === 'normal' || state.mode === 'hard';

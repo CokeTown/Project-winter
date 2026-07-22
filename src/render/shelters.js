@@ -1773,7 +1773,7 @@ export function makeShelterBuilders(ctx) {
             // 후면(확장) 돔 — 앞 돔과 동일 반경(R)/결의 '스테이브 돔' + 내부(바닥·먼 반달벽).
             //   디렉터 라이브: "확장된 왼쪽은 OK, 오른쪽(확장 돔)이 매끈 블롭 → 기존 돔처럼" + "확장 돔 내부도 구현".
             //   [셸] 온전 스테이브(solid=구멍 없음) 좌/우 반쪽. 정면/외부에선 불투명 돔 실루엣(투시 없음), 후면 회전 시
-            //     근접 반쪽이 컬링돼 내부 노출(메인 돔과 동일 사상). ★ makeWalls는 wallList를 리셋하므로 재호출 불가 →
+            //     근접 반쪽이 컬링돼 내부 노출(메인 돔과 동일 사상). makeWalls는 wallList를 리셋하므로 재호출 불가 →
             //     빌드된 반쪽/먼벽을 wallList에 직접 push해 동일 컬 루프(updateWallCulling)에 편입(proxy=null 가드됨).
             const sR = 4.35, sDep = 5.0;
             const rearCz = -d / 2 - 0.4 - sDep / 2;          // 확장 돔 중심 z (앞 가장자리가 메인 돔 뒷면 zBack=-d/2-0.4에 접함)
@@ -1795,7 +1795,7 @@ export function makeShelterBuilders(ctx) {
               (th < Math.PI / 2 ? rearRight : rearLeft).add(tuft);
             }
             roomGroup.add(rearRight); roomGroup.add(rearLeft);
-            // ★ 뒷문 해금(bunkerBackdoor) 시에만 컬링 등록 → 근접 반쪽이 열려 내부 투시. 잠김 상태는 wallList 미등록
+            // 뒷문 해금(bunkerBackdoor) 시에만 컬링 등록 → 근접 반쪽이 열려 내부 투시. 잠김 상태는 wallList 미등록
             //   = 항상 불투명한 온전 돔(디렉터: "불투명해야지. 문 열기 조건 달성시에만 뒤를 투명하게"). solid 스테이브라 셸 자체도 불투명.
             if (state.bunkerBackdoor) {
               getWallList().push({ group: rearRight, normal: new THREE.Vector3(1, 0, 0), proxy: null });
@@ -1822,7 +1822,7 @@ export function makeShelterBuilders(ctx) {
         if (!state.bunkerBackdoor) {
           // ⑥-b 개방 전: 돔 후면에 "잠긴 철문 + 콘크리트 프레임" 매스를 뚜렷이 세운다.
           //   유저 신고("뒤가 허전하다 / 뭔가 있어야 게이트를 인지한다") 해소 — 순수 비주얼(게이트 로직/비용 불변).
-          //   ★ back(뒷벽) 그룹은 카메라가 후면에 오면 벽 컬링으로 통째로 숨는다(실내가 보이게). 그러면 문이 안 보이므로
+          //   back(뒷벽) 그룹은 카메라가 후면에 오면 벽 컬링으로 통째로 숨는다(실내가 보이게). 그러면 문이 안 보이므로
           //     이 잠긴문 매스는 back이 아니라 roomGroup에 직접 붙여, 후면 외부에서도 항상 보이게 한다(컬링 무관).
           //     back 위치 z = -d/2-0.13, 외부(-z)로 조금 더 나가 zW = -d/2-0.13-0.26.
           const lock = new THREE.Group();
@@ -2024,7 +2024,7 @@ export function makeShelterBuilders(ctx) {
           cabinW.add(rust);
         }
         cabinW.position.set(0, 0, -d / 2 - 0.28);
-        // ★ 컬링 등록은 아래 간이집 벽 3면과 함께 makeWalls 1회로 일괄 — makeWalls가 wallList를 리셋하므로
+        // 컬링 등록은 아래 간이집 벽 3면과 함께 makeWalls 1회로 일괄 — makeWalls가 wallList를 리셋하므로
         //   따로 호출하면 먼저 등록한 벽이 목록에서 사라진다(옥탑 문법: 벽 전부를 한 번에 등록).
         // ── 2층 데크 실루엣: 선실 지붕(=1층 천장) + 2층 상부 구조 + 상부 난간 + 창 ──
         //   지붕은 실내 상부를 덮으므로 천장 컬링 등록(⑥-a/배치A 부감 투시). 선실 벽 뒤(-z)에 얹는다.
@@ -2159,7 +2159,7 @@ export function makeShelterBuilders(ctx) {
           awn.position.set(1.8, SH - 0.28, 0.3); awn.rotation.x = 0.42; awn.castShadow = true; // 문 위 차양
           shFront.add(awn);
         }
-        // ★ 벽 컬링 일괄 등록 — 법선은 (방 중심이 아니라) 간이집 기준 월드 바깥향. 선실 벽(-z)도 여기서 함께.
+        // 벽 컬링 일괄 등록 — 법선은 (방 중심이 아니라) 간이집 기준 월드 바깥향. 선실 벽(-z)도 여기서 함께.
         makeWalls([
           { group: cabinW, pos: [0, 0, -d / 2 - 0.28], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
           { group: shFront, pos: [SCX, 0, SFZ], rotY: 0, normal: new THREE.Vector3(0, 0, 1) },
@@ -2699,7 +2699,7 @@ export function makeShelterBuilders(ctx) {
         }
         // 신광: 지붕 구멍에서 바닥 웅덩이로 내리꽂는 볼륨 빛(beamTex 십자면) + 먼지 티끌 + 부드러운 빛웅덩이
         if (!patched) {
-          // ⚠️ beamTex/floorGlowTex는 지연 생성 팩토리 — 반드시 호출해서 넘긴다. 함수 자체를 map에 넣으면
+          // beamTex/floorGlowTex는 지연 생성 팩토리 — 반드시 호출해서 넘긴다. 함수 자체를 map에 넣으면
           //    THREE refreshMaterialUniforms가 map.matrix.elements에서 크래시(동부 봉인 탓에 숨어 있던 결함).
           const mkBeam = (bw, op) => { for (const ry of [0, Math.PI / 2]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(bw, h + 1.6), new THREE.MeshBasicMaterial({ map: beamTex(), color: 0xffe0b0, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); m.position.set(TX + 0.2, (h + 0.8) / 2, TZ - 0.2); m.rotation.set(0, ry, -0.13); roomGroup.add(m); } };
           mkBeam(2.2, 0.17); mkBeam(3.4, 0.07);

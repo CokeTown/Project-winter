@@ -8,7 +8,7 @@ const WOODS = { names: ['오크', '월넛', '화이트워시', '블랙우드'], 
 
 const DEFS = {
   bed: {
-    name: '침대', nameEn: 'Bed', emoji: '🛏️', fp: { w: 1.8, d: 2.3 },
+    name: '침대', nameEn: 'Bed', emoji: '', fp: { w: 1.8, d: 2.3 },
     colorNames: ['와인레드', '포레스트', '네이비', '크림'],
     colorNamesEn: ['Wine Red', 'Forest', 'Navy', 'Cream'],
     colors: [0xa84a4a, 0x5a7d5a, 0x46557a, 0xd6c9ab],
@@ -54,7 +54,7 @@ const DEFS = {
     }
   },
   sofa: {
-    name: '소파', nameEn: 'Sofa', emoji: '🛋️', fp: { w: 2.0, d: 0.95 },
+    name: '소파', nameEn: 'Sofa', emoji: '', fp: { w: 2.0, d: 0.95 },
     colorNames: ['베이지', '그레이', '올리브', '테라코타'],
     colorNamesEn: ['Beige', 'Gray', 'Olive', 'Terracotta'],
     colors: [0xc4b295, 0x84878e, 0x7d7f5a, 0xb0644d],
@@ -102,7 +102,7 @@ const DEFS = {
     }
   },
   chair: {
-    name: '의자', nameEn: 'Chair', emoji: '🪑', fp: { w: 0.6, d: 0.6 },
+    name: '의자', nameEn: 'Chair', emoji: '', fp: { w: 0.6, d: 0.6 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     tiered: true, // #157: T1 뒤집은 우유짝(등받이 없음) → T2 삐걱 나무 의자 → T3 현행. 착석면 높이 동일.
     build(c, ci, sk, tier) {
@@ -135,7 +135,7 @@ const DEFS = {
     }
   },
   table: {
-    name: '테이블', nameEn: 'Table', emoji: '🪵', fp: { w: 1.5, d: 0.9 },
+    name: '테이블', nameEn: 'Table', emoji: '', fp: { w: 1.5, d: 0.9 },
     surface: { y: 0.77, w: 1.3, d: 0.72 }, // 상판 위에 소품을 올릴 수 있음
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     tiered: true, // #157: T1 벽돌+합판 → T2 긁힌 원목(다리 하나 딴색) → T3 현행. 상판 높이 동일(스태킹 정합).
@@ -170,7 +170,7 @@ const DEFS = {
     }
   },
   dresser: {
-    name: '서랍장', nameEn: 'Dresser', emoji: '🗄️', fp: { w: 1.2, d: 0.55 },
+    name: '서랍장', nameEn: 'Dresser', emoji: '', fp: { w: 1.2, d: 0.55 },
     surface: { y: 1.13, w: 1.05, d: 0.42 },
     surfaceYByTier: { 1: 1.10 }, // #196: T1 종이상자 top=0.92+0.18(뚜껑 날개는 가장자리 소품) — 1.13 고정이면 스택 소품 0.03 부양. T2/T3=1.13 실측 일치
     colorNames: ['내추럴', '다크브라운', '화이트', '그레이'],
@@ -222,7 +222,7 @@ const DEFS = {
     }
   },
   bookshelf: {
-    name: '책장', nameEn: 'Bookshelf', emoji: '📚', fp: { w: 1.0, d: 0.4 },
+    name: '책장', nameEn: 'Bookshelf', emoji: '', fp: { w: 1.0, d: 0.4 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     tiered: true, // #157: T1 벽돌+판자 선반 → T2 기울어진 책장·옹이·듬성한 책 → T3 현행.
     build(c, colorIdx = 0, sk, tier) {
@@ -299,7 +299,7 @@ const DEFS = {
   },
   // 「생존의 흔적」 밀도 프롭(2026-07-15, 디렉터 B안): 빈 방 → 생존자 소굴. 벽·구석을 보급 디테일로 채운다.
   supplyshelf: {
-    name: '보급 선반', nameEn: 'Supply Shelf', emoji: '🥫', fp: { w: 1.0, d: 0.36 },
+    name: '보급 선반', nameEn: 'Supply Shelf', emoji: '', fp: { w: 1.0, d: 0.36 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     build(c, colorIdx = 0) {
       const g = new THREE.Group();
@@ -325,7 +325,7 @@ const DEFS = {
     }
   },
   cratestack: {
-    name: '보급 상자', nameEn: 'Supply Crates', emoji: '📦', fp: { w: 0.85, d: 0.7 },
+    name: '보급 상자', nameEn: 'Supply Crates', emoji: '', fp: { w: 0.85, d: 0.7 },
     colorNames: ['파인', '올리브', '러스트', '애쉬'], colorNamesEn: ['Pine', 'Olive', 'Rust', 'Ash'],
     colors: [0x8a6a44, 0x6a6a44, 0x8a5038, 0x5a5650],
     build(c) {
@@ -347,7 +347,7 @@ const DEFS = {
     }
   },
   fuelpile: {
-    name: '장작 더미', nameEn: 'Firewood Pile', emoji: '🪵', fp: { w: 0.86, d: 0.5 },
+    name: '장작 더미', nameEn: 'Firewood Pile', emoji: '', fp: { w: 0.86, d: 0.5 },
     colorNames: ['참나무', '자작', '소나무', '유목'], colorNamesEn: ['Oak', 'Birch', 'Pine', 'Driftwood'],
     colors: [0x7a5636, 0xa89474, 0x8a6a44, 0x6a5a4a],
     build(c, colorIdx = 0) {
@@ -367,7 +367,7 @@ const DEFS = {
     }
   },
   noticeboard: {
-    name: '상황판', nameEn: 'Notice Board', emoji: '📋', fp: { w: 1.0, d: 0.34 },
+    name: '상황판', nameEn: 'Notice Board', emoji: '', fp: { w: 1.0, d: 0.34 },
     colorNames: ['코르크', '칠판', '화이트', '메탈'], colorNamesEn: ['Cork', 'Slate', 'White', 'Steel'],
     colors: [0xb2905a, 0x2f3a34, 0xcfc9ba, 0x6a6e72],
     build(c, colorIdx = 0) {
@@ -389,7 +389,7 @@ const DEFS = {
     }
   },
   jugcluster: {
-    name: '물·연료 비축', nameEn: 'Jug Cluster', emoji: '🛢️', fp: { w: 0.85, d: 0.6 },
+    name: '물·연료 비축', nameEn: 'Jug Cluster', emoji: '', fp: { w: 0.85, d: 0.6 },
     colorNames: ['블루', '레드', '그린', '앰버'], colorNamesEn: ['Blue', 'Red', 'Green', 'Amber'],
     colors: [0x3a6aa8, 0xb03828, 0x4a7a4a, 0xc08a3a],
     build(c) {
@@ -409,7 +409,7 @@ const DEFS = {
     }
   },
   rug: {
-    name: '러그', nameEn: 'Rug', emoji: '🧶', fp: { w: 2.2, d: 1.5 }, noCollide: true,
+    name: '러그', nameEn: 'Rug', emoji: '', fp: { w: 2.2, d: 1.5 }, noCollide: true,
     colorNames: ['레드', '블루', '그린', '베이지'],
     colorNamesEn: ['Red', 'Blue', 'Green', 'Beige'],
     colors: [0x9e524e, 0x54688a, 0x6a7f5b, 0xc4b295],
@@ -459,7 +459,7 @@ const DEFS = {
     }
   },
   lamp: {
-    name: '스탠드 조명', nameEn: 'Floor Lamp', emoji: '💡', fp: { w: 0.45, d: 0.45 },
+    name: '스탠드 조명', nameEn: 'Floor Lamp', emoji: '', fp: { w: 0.45, d: 0.45 },
     colorNames: ['웜화이트', '세이지', '로즈', '스카이'],
     colorNamesEn: ['Warm White', 'Sage', 'Rose', 'Sky'],
     colors: [0xe8d9b0, 0x9aa88a, 0xc79a9a, 0x93a8bb],
@@ -517,7 +517,7 @@ const DEFS = {
     }
   },
   plant: {
-    name: '화분', nameEn: 'Potted Plant', emoji: '🪴', fp: { w: 0.55, d: 0.55 },
+    name: '화분', nameEn: 'Potted Plant', emoji: '', fp: { w: 0.55, d: 0.55 },
     stackable: true,
     colorNames: ['테라코타', '화이트', '블랙', '민트'],
     colorNamesEn: ['Terracotta', 'White', 'Black', 'Mint'],
@@ -536,7 +536,7 @@ const DEFS = {
     }
   },
   crate: {
-    name: '나무상자', nameEn: 'Wooden Crate', emoji: '📦', fp: { w: 0.8, d: 0.8 },
+    name: '나무상자', nameEn: 'Wooden Crate', emoji: '', fp: { w: 0.8, d: 0.8 },
     surface: { y: 0.6, w: 0.68, d: 0.68 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     build(c) {
@@ -550,7 +550,7 @@ const DEFS = {
     }
   },
   radio: {
-    name: '라디오', nameEn: 'Radio', emoji: '📻', fp: { w: 0.6, d: 0.35 },
+    name: '라디오', nameEn: 'Radio', emoji: '', fp: { w: 0.6, d: 0.35 },
     stackable: true, // 테이블·서랍장 등 표면 위에 올릴 수 있음
     colorNames: ['체리레드', '크림', '민트', '브라운'],
     colorNamesEn: ['Cherry Red', 'Cream', 'Mint', 'Brown'],
@@ -603,7 +603,7 @@ const DEFS = {
     }
   },
   candle: {
-    name: '캔들 스툴', nameEn: 'Candle Stool', emoji: '🕯️', fp: { w: 0.5, d: 0.5 },
+    name: '캔들 스툴', nameEn: 'Candle Stool', emoji: '', fp: { w: 0.5, d: 0.5 },
     stackable: true, // 상자·테이블 등 표면 위에도 올릴 수 있다
     colorNames: ['우드', '화이트', '블랙', '라벤더'],
     colorNamesEn: ['Wood', 'White', 'Black', 'Lavender'],
@@ -654,7 +654,7 @@ const DEFS = {
     }
   },
   fridge: {
-    name: '냉장고', nameEn: 'Fridge', emoji: '🧊', fp: { w: 0.78, d: 0.68 },
+    name: '냉장고', nameEn: 'Fridge', emoji: '', fp: { w: 0.78, d: 0.68 },
     colorNames: ['체리레드', '민트', '크림', '화이트'],
     colorNamesEn: ['Cherry Red', 'Mint', 'Cream', 'White'],
     colors: [0xa8433f, 0x93b5a5, 0xd9cdb2, 0xd8d8d4],
@@ -707,7 +707,7 @@ const DEFS = {
     }
   },
   purifier: {
-    name: '정수기', nameEn: 'Water Purifier', emoji: '🚰', fp: { w: 0.6, d: 0.6 },
+    name: '정수기', nameEn: 'Water Purifier', emoji: '', fp: { w: 0.6, d: 0.6 },
     colorNames: ['스틸', '화이트', '올리브', '네이비'],
     colorNamesEn: ['Steel', 'White', 'Olive', 'Navy'],
     colors: [0x8a8f96, 0xd4cfc2, 0x7d7f5a, 0x46557a],
@@ -760,7 +760,7 @@ const DEFS = {
     }
   },
   generator: {
-    name: '발전기', nameEn: 'Generator', emoji: '⚡', fp: { w: 0.95, d: 0.7 },
+    name: '발전기', nameEn: 'Generator', emoji: '', fp: { w: 0.95, d: 0.7 },
     colorNames: ['레드', '옐로우', '올리브', '그레이'],
     colorNamesEn: ['Red', 'Yellow', 'Olive', 'Gray'],
     colors: [0x9e4a3a, 0xb08a3a, 0x6a7047, 0x7c7f86],
@@ -783,7 +783,7 @@ const DEFS = {
   },
   /* ── cozy 확장 가구 (v1.4) ── */
   stove: {
-    name: '장작 난로', nameEn: 'Wood Stove', emoji: '🔥', fp: { w: 1.0, d: 0.75 },
+    name: '장작 난로', nameEn: 'Wood Stove', emoji: '', fp: { w: 1.0, d: 0.75 },
     colorNames: ['무쇠', '벽돌레드', '크림', '올리브'],
     colorNamesEn: ['Cast Iron', 'Brick Red', 'Cream', 'Olive'],
     colors: [0x3a3d42, 0x8a5138, 0xcfc8ba, 0x6a7047],
@@ -838,7 +838,7 @@ const DEFS = {
     }
   },
   cushion: {
-    name: '방석', nameEn: 'Cushion', emoji: '🧘', fp: { w: 0.65, d: 0.65 },
+    name: '방석', nameEn: 'Cushion', emoji: '', fp: { w: 0.65, d: 0.65 },
     colorNames: ['머스터드', '와인', '세이지', '인디고'],
     colorNamesEn: ['Mustard', 'Wine', 'Sage', 'Indigo'],
     colors: [0xbb9440, 0x8f4a4a, 0x8a9a78, 0x4a5680],
@@ -868,7 +868,7 @@ const DEFS = {
     }
   },
   teatable: {
-    name: '찻상', nameEn: 'Tea Table', emoji: '🍵', fp: { w: 0.95, d: 0.6 },
+    name: '찻상', nameEn: 'Tea Table', emoji: '', fp: { w: 0.95, d: 0.6 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     tiered: true, // #157: T1 뒤집은 나무상자 → T2 낡은 찻상·컵자국 → T3 현행. 상판 높이 동일.
     build(c, ci, sk, tier) {
@@ -907,7 +907,7 @@ const DEFS = {
     }
   },
   bookstack: {
-    name: '책 더미', nameEn: 'Book Stack', emoji: '📖', fp: { w: 0.5, d: 0.5 },
+    name: '책 더미', nameEn: 'Book Stack', emoji: '', fp: { w: 0.5, d: 0.5 },
     stackable: true,
     colorNames: ['모험담', '시집', '도감', '일기장'],
     colorNamesEn: ['Adventure', 'Poetry', 'Field Guide', 'Diary'],
@@ -929,7 +929,7 @@ const DEFS = {
     }
   },
   clock: {
-    name: '괘종시계', nameEn: 'Grandfather Clock', emoji: '🕰️', fp: { w: 0.55, d: 0.4 },
+    name: '괘종시계', nameEn: 'Grandfather Clock', emoji: '', fp: { w: 0.55, d: 0.4 },
     colorNames: ['마호가니', '오크', '블랙', '아이보리'],
     colorNamesEn: ['Mahogany', 'Oak', 'Black', 'Ivory'],
     colors: [0x6b4a32, 0xa07850, 0x3c3a38, 0xcfc8ba],
@@ -950,7 +950,7 @@ const DEFS = {
     }
   },
   lantern: {
-    name: '걸이 랜턴', nameEn: 'Hanging Lantern', emoji: '🏮', fp: { w: 0.45, d: 0.45 },
+    name: '걸이 랜턴', nameEn: 'Hanging Lantern', emoji: '', fp: { w: 0.45, d: 0.45 },
     colorNames: ['황동', '무쇠', '레드', '민트'],
     colorNamesEn: ['Brass', 'Cast Iron', 'Red', 'Mint'],
     colors: [0xb08a3a, 0x4a4d52, 0xa8433f, 0x93b5a5],
@@ -1001,7 +1001,7 @@ const DEFS = {
   },
   /* ── 고급 제작 가전 (Phase B — 후반 인플레 싱크) ── */
   heater: {
-    name: '온풍기', nameEn: 'Space Heater', emoji: '♨️', fp: { w: 0.62, d: 0.5 },
+    name: '온풍기', nameEn: 'Space Heater', emoji: '', fp: { w: 0.62, d: 0.5 },
     colorNames: ['오렌지', '크림', '슬레이트', '올리브'],
     colorNamesEn: ['Orange', 'Cream', 'Slate', 'Olive'],
     colors: [0xc9662f, 0xd9cdb2, 0x5a6068, 0x6a7047],
@@ -1025,7 +1025,7 @@ const DEFS = {
     }
   },
   autopurifier: {
-    name: '자동 급수기', nameEn: 'Auto Water Station', emoji: '⛲', fp: { w: 0.66, d: 0.62 },
+    name: '자동 급수기', nameEn: 'Auto Water Station', emoji: '', fp: { w: 0.66, d: 0.62 },
     colorNames: ['스틸', '화이트', '틸', '네이비'],
     colorNamesEn: ['Steel', 'White', 'Teal', 'Navy'],
     colors: [0x8a8f96, 0xd4cfc2, 0x4a8a8a, 0x46557a],
@@ -1052,7 +1052,7 @@ const DEFS = {
   },
   /* ── 소품 가구 (v1.0 꾸미기 확장 #13) — 절차 텍스처, 일러 재사용 없음 ── */
   frame: {
-    name: '액자', nameEn: 'Framed Picture', emoji: '🖼️', fp: { w: 0.5, d: 0.3 },
+    name: '액자', nameEn: 'Framed Picture', emoji: '', fp: { w: 0.5, d: 0.3 },
     stackable: true, // 서랍장·선반 위에 올리는 탁상 액자
     colorNames: ['호두나무', '골드', '화이트', '슬레이트'],
     colorNamesEn: ['Walnut', 'Gold', 'White', 'Slate'],
@@ -1089,7 +1089,7 @@ const DEFS = {
     }
   },
   curtain: {
-    name: '커튼', nameEn: 'Curtain', emoji: '🪟', fp: { w: 1.4, d: 0.25 }, noCollide: true,
+    name: '커튼', nameEn: 'Curtain', emoji: '', fp: { w: 1.4, d: 0.25 }, noCollide: true,
     colorNames: ['리넨', '세이지', '버건디', '머스터드'],
     colorNamesEn: ['Linen', 'Sage', 'Burgundy', 'Mustard'],
     colors: [0xd6c9ab, 0x8a9a78, 0x7a3f42, 0xbb9440],
@@ -1139,7 +1139,7 @@ const DEFS = {
     }
   },
   desklamp: {
-    name: '책상 램프', nameEn: 'Desk Lamp', emoji: '🔦', fp: { w: 0.3, d: 0.3 },
+    name: '책상 램프', nameEn: 'Desk Lamp', emoji: '', fp: { w: 0.3, d: 0.3 },
     stackable: true, // 테이블·서랍장 위
     colorNames: ['그린', '블랙', '브라스', '크림'],
     colorNamesEn: ['Green', 'Black', 'Brass', 'Cream'],
@@ -1160,7 +1160,7 @@ const DEFS = {
   // #189 P4 LED 라이트 바 — 초희귀 도면. 화기(따뜻·흔들림)의 대척: 선명·안정·컬러(젤 틴트).
   //   폐허에 남은 마지막 신문물 — 표현 스펙트럼의 끝. 발광 스트립·광원이 젤 색을 그대로 받는다.
   ledbar: {
-    name: 'LED 라이트 바', nameEn: 'LED Light Bar', emoji: '💠', fp: { w: 0.4, d: 0.4 },
+    name: 'LED 라이트 바', nameEn: 'LED Light Bar', emoji: '', fp: { w: 0.4, d: 0.4 },
     colorNames: ['그래파이트', '실버', '화이트', '네이비'],
     colorNamesEn: ['Graphite', 'Silver', 'White', 'Navy'],
     colors: [0x3a3d42, 0xb9bec6, 0xd8d8d4, 0x46557a],
@@ -1204,7 +1204,7 @@ const DEFS = {
     }
   },
   firstaidbox: {
-    name: '구급상자', nameEn: 'First-Aid Box', emoji: '🧰', fp: { w: 0.5, d: 0.35 },
+    name: '구급상자', nameEn: 'First-Aid Box', emoji: '', fp: { w: 0.5, d: 0.35 },
     stackable: true, // 벽걸이 대신 선반/서랍 위 배치 (관통 회피)
     colorNames: ['화이트', '레드', '올리브', '스틸'],
     colorNamesEn: ['White', 'Red', 'Olive', 'Steel'],
@@ -1221,7 +1221,7 @@ const DEFS = {
     }
   },
   mirror: {
-    name: '전신 거울', nameEn: 'Standing Mirror', emoji: '🪞', fp: { w: 0.5, d: 0.35 },
+    name: '전신 거울', nameEn: 'Standing Mirror', emoji: '', fp: { w: 0.5, d: 0.35 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     build(c) {
       const g = new THREE.Group();
@@ -1239,7 +1239,7 @@ const DEFS = {
   },
   /* ── #76 「지식과 사치」 사치 가구 — 책(지식)을 재료로 짓는다. 살아남은 뒤에야 갖는 것들 ── */
   globe: {
-    name: '골동품 지구본', nameEn: 'Antique Globe', emoji: '🌐', fp: { w: 0.5, d: 0.5 },
+    name: '골동품 지구본', nameEn: 'Antique Globe', emoji: '', fp: { w: 0.5, d: 0.5 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     build(c) {
       const g = new THREE.Group();
@@ -1265,7 +1265,7 @@ const DEFS = {
   // #119 서포터팩 전용 데코 — 곰인형. 순수 코스메틱(쾌적/조명 기여 0). 고양이가 위에 웅크린다(CAT_PERCH_Y.teddybear).
   //   dlc:'supporter' → 제작 레시피·툴바 노출이 Platform.dlc.owns('supporter') 뒤에서만. 색은 플러시 4색.
   teddybear: {
-    name: '곰인형', nameEn: 'Teddy Bear', emoji: '🧸', fp: { w: 0.5, d: 0.42 }, dlc: 'supporter', comfort: 0,
+    name: '곰인형', nameEn: 'Teddy Bear', emoji: '', fp: { w: 0.5, d: 0.42 }, dlc: 'supporter', comfort: 0,
     colorNames: ['갈색', '크림', '회색', '캐러멜'], colorNamesEn: ['Brown', 'Cream', 'Grey', 'Caramel'],
     colors: [0x8a5a34, 0xd8c4a0, 0x9a9084, 0xb07a3e],
     build(c) {
@@ -1293,7 +1293,7 @@ const DEFS = {
   // #119 서포터팩 전용 — 전구 무드등(바닥 랜턴). 따뜻한 전구가 유리 안에서 빛난다. emissive 발광이되 selfLit/comfort
   //   플래그가 없어 조명·쾌적 메커닉엔 기여 0(순수 코스메틱 — 페이투윈 회피, 방은 여전히 실광원이 필요). 고양이가 뚜껑 위에 웅크린다.
   moodlantern: {
-    name: '전구 무드등', nameEn: 'Fairy-Light Lantern', emoji: '🏮', fp: { w: 0.4, d: 0.4 }, dlc: 'supporter', comfort: 0,
+    name: '전구 무드등', nameEn: 'Fairy-Light Lantern', emoji: '', fp: { w: 0.4, d: 0.4 }, dlc: 'supporter', comfort: 0,
     colorNames: ['앰버', '로즈', '민트', '허니'], colorNamesEn: ['Amber', 'Rose', 'Mint', 'Honey'],
     colors: [0xffcf88, 0xffb0a0, 0xb8e6c8, 0xffdf9a],
     build(c) {
@@ -1315,7 +1315,7 @@ const DEFS = {
     }
   },
   phonograph: {
-    name: '축음기', nameEn: 'Phonograph', emoji: '🎶', fp: { w: 0.6, d: 0.55 },
+    name: '축음기', nameEn: 'Phonograph', emoji: '', fp: { w: 0.6, d: 0.55 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
     build(c) {
       const g = new THREE.Group();
@@ -1336,7 +1336,7 @@ const DEFS = {
     }
   },
   candelabra: {
-    name: '촛대', nameEn: 'Candelabra', emoji: '🕎', fp: { w: 0.5, d: 0.5 },
+    name: '촛대', nameEn: 'Candelabra', emoji: '', fp: { w: 0.5, d: 0.5 },
     stackable: true, // 테이블·서랍장 위에도
     colorNames: ['황동', '실버', '블랙', '앤티크골드'],
     colorNamesEn: ['Brass', 'Silver', 'Black', 'Antique Gold'],
@@ -1375,7 +1375,7 @@ const DEFS = {
      발광류(화로·네온)는 emissive 재질만(전원·연료 유지비 없음). 기대 세움류는 noCollide(벽에 붙여 배치). */
   // 슬럼 ① 드럼통 화로 — 슬럼의 밤 그 자체. 탄 드럼통 + 장작 + 불꽃(자기발광)
   barrelfire: {
-    name: '드럼통 화로', nameEn: 'Barrel Fire', emoji: '🛢️', fp: { w: 0.7, d: 0.7 },
+    name: '드럼통 화로', nameEn: 'Barrel Fire', emoji: '', fp: { w: 0.7, d: 0.7 },
     colorNames: ['방청 레드', '올리브 드럼', '재 그레이', '슬레이트'],
     colorNamesEn: ['Red Oxide', 'Olive Drum', 'Ash Gray', 'Slate'],
     colors: [0xa8433f, 0x6a7047, 0x8a8f96, 0x46557a],
@@ -1469,7 +1469,7 @@ const DEFS = {
   },
   // 슬럼 ② 그래피티 패널 — 뜯어온 합판에 남은 스프레이 태그. 벽에 기대 세운다.
   graffiti: {
-    name: '그래피티 패널', nameEn: 'Graffiti Panel', emoji: '🎨', fp: { w: 1.0, d: 0.3 }, noCollide: true,
+    name: '그래피티 패널', nameEn: 'Graffiti Panel', emoji: '', fp: { w: 1.0, d: 0.3 }, noCollide: true,
     colorNames: ['네온 핑크', '라임', '시안', '선셋 오렌지'],
     colorNamesEn: ['Neon Pink', 'Lime', 'Cyan', 'Sunset Orange'],
     colors: [0xd4548a, 0x8fc45a, 0x4aa8b8, 0xd4854a],
@@ -1543,7 +1543,7 @@ const DEFS = {
   },
   // 리조트 ① 스키 한 쌍 — 벽에 기대 교차 세운 낡은 스키
   skis: {
-    name: '스키 한 쌍', nameEn: 'Pair of Skis', emoji: '🎿', fp: { w: 0.5, d: 0.3 }, noCollide: true,
+    name: '스키 한 쌍', nameEn: 'Pair of Skis', emoji: '', fp: { w: 0.5, d: 0.3 }, noCollide: true,
     colorNames: ['체리 레드', '빙하 블루', '머스터드', '민트'],
     colorNamesEn: ['Cherry Red', 'Glacier Blue', 'Mustard', 'Mint'],
     colors: [0xa8433f, 0x54688a, 0xb08a3a, 0x93b5a5],
@@ -1597,7 +1597,7 @@ const DEFS = {
   },
   // 리조트 ② 스키 폴대 — 바스켓 링이 남은 폴 한 쌍
   skipoles: {
-    name: '스키 폴대', nameEn: 'Ski Poles', emoji: '⛷️', fp: { w: 0.4, d: 0.25 }, noCollide: true,
+    name: '스키 폴대', nameEn: 'Ski Poles', emoji: '', fp: { w: 0.4, d: 0.25 }, noCollide: true,
     colorNames: ['레이싱 레드', '네이비', '크롬', '올리브'],
     colorNamesEn: ['Racing Red', 'Navy', 'Chrome', 'Olive'],
     colors: [0xa8433f, 0x46557a, 0xb0b4ba, 0x6a7047],
@@ -1649,7 +1649,7 @@ const DEFS = {
   },
   // 리조트 ③ 스노우보드 — 벽에 기대 세운 보드 (복셀 라운드 — 끝단 계단)
   snowboard: {
-    name: '스노우보드', nameEn: 'Snowboard', emoji: '🏂', fp: { w: 0.5, d: 0.3 }, noCollide: true,
+    name: '스노우보드', nameEn: 'Snowboard', emoji: '', fp: { w: 0.5, d: 0.3 }, noCollide: true,
     colorNames: ['선셋', '딥 퍼플', '아이스 블루', '라임'],
     colorNamesEn: ['Sunset', 'Deep Purple', 'Ice Blue', 'Lime'],
     colors: [0xc9662f, 0x9a8ab0, 0x93a8bb, 0x8fc45a],
@@ -1706,7 +1706,7 @@ const DEFS = {
   },
   // 도심 ① 네온 사인 「VIP ZONE」 — 보라 계열 튜브(자기발광). 받침 프레임에 기대 세운다.
   neonvip: {
-    name: '네온 사인 · VIP ZONE', nameEn: 'Neon Sign · VIP ZONE', emoji: '🍸', fp: { w: 0.9, d: 0.3 }, noCollide: true,
+    name: '네온 사인 · VIP ZONE', nameEn: 'Neon Sign · VIP ZONE', emoji: '', fp: { w: 0.9, d: 0.3 }, noCollide: true,
     selfLit: true, // #195: build()가 PointLight를 내장한 실광원 — 무광원 폴백·needsLight 판정에 산입(쾌적 가산은 0 유지: 시그니처=파워 아님)
     colorNames: ['바이올렛', '마젠타', '핑크', '블루 바이올렛'],
     colorNamesEn: ['Violet', 'Magenta', 'Pink', 'Blue Violet'],
@@ -1765,7 +1765,7 @@ const DEFS = {
   },
   // 도심 ② 네온 사인 「ON AIR」 — 파랑 계열. 죽은 방송국의 파편.
   neonair: {
-    name: '네온 사인 · ON AIR', nameEn: 'Neon Sign · ON AIR', emoji: '🎙️', fp: { w: 0.9, d: 0.3 }, noCollide: true,
+    name: '네온 사인 · ON AIR', nameEn: 'Neon Sign · ON AIR', emoji: '', fp: { w: 0.9, d: 0.3 }, noCollide: true,
     selfLit: true, // #195: neonvip와 동일 — 실광원 판정 산입, 쾌적 가산 없음
     colorNames: ['일렉트릭 블루', '시안', '아쿠아', '인디고'],
     colorNamesEn: ['Electric Blue', 'Cyan', 'Aqua', 'Indigo'],
@@ -1831,7 +1831,7 @@ const DEFS = {
   },
   // 도심 ③ 양복 랙 — 행거 스탠드에 걸린 재킷. 폐허 이전의 출근길.
   suit: {
-    name: '양복 랙', nameEn: 'Suit Rack', emoji: '👔', fp: { w: 0.7, d: 0.4 },
+    name: '양복 랙', nameEn: 'Suit Rack', emoji: '', fp: { w: 0.7, d: 0.4 },
     colorNames: ['차콜', '네이비', '버건디', '카멜'],
     colorNamesEn: ['Charcoal', 'Navy', 'Burgundy', 'Camel'],
     colors: [0x3a3d42, 0x2f3a55, 0x6a3a3f, 0x9a7a4a],

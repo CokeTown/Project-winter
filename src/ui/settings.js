@@ -44,6 +44,7 @@ export function makeSettingsUI(ctx) {
     if (active === 'graphics') {
       opts.pixel = D.pixel; opts.quant = D.quant; opts.dither = D.dither;
       opts.ceil = D.ceil; opts.lowSpec = D.lowSpec; opts.fpsCap = D.fpsCap;
+      opts.crtBulge = D.crtBulge;
       // 접근성도 그래픽 탭에 배치되므로 함께 기본값 복원
       opts.fontScale = D.fontScale; opts.colorblind = D.colorblind; opts.reduceMotion = D.reduceMotion;
       d.applyOpts(); d.applyLowSpec();
@@ -73,6 +74,7 @@ export function makeSettingsUI(ctx) {
     $('opt-quant').addEventListener('change', e => { opts.quant = e.target.checked; d.applyOpts(); d.scheduleSave(); });
     $('opt-dither').addEventListener('change', e => { opts.dither = e.target.checked; d.applyOpts(); d.scheduleSave(); });
     { const eda = $('opt-ditheramt'); if (eda) eda.addEventListener('change', e => { opts.ditherAmt = +e.target.value || 1; d.applyOpts(); d.scheduleSave(); }); }
+    { const ecb = $('opt-crtbulge'); if (ecb) ecb.addEventListener('change', e => { opts.crtBulge = +e.target.value || 0; d.applyOpts(); d.scheduleSave(); }); } // CRT 곡률(디렉터: 강 기본·옵션 하향)
     { const eaa = $('opt-aa'); if (eaa) eaa.addEventListener('change', e => { opts.aa = e.target.checked; d.applyOpts(); d.scheduleSave(); }); }
     $('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; d.applyOpts(); d.scheduleSave(); });
     $('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; d.scheduleSave(); });

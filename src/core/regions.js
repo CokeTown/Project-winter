@@ -37,7 +37,7 @@ export function regionUnlocked(rid) {
   if (rid === 'resort') return state.successes >= SHELTER_META.lodge.unlockAt; // 1.3: 리조트는 스키 로지 해금 후
   if (rid === 'checkpoint' || rid === 'lab') return state.successes >= BAL.forbidden.unlockAt; // 1.4 금지구역(진입은 방호복 게이트가 별도)
   if (rid === 'citycore') return falloutCleared(); // 2.0: 봉쇄선 너머 수도의 심장 — 낙진이 걷혀야만
-  // #167 2겹화 파일럿: 뒷골목 심부는 겉(슬럼)을 아는 사람에게만 — 숙련 ★1(20회 시도)이 곧 열쇠.
+  // #167 2겹화 파일럿: 뒷골목 심부는 겉(슬럼)을 아는 사람에게만 — 숙련 1(20회 시도)이 곧 열쇠.
   //   "다시 마주칠 때 더 보인다"(DEPTH-DESIGN)의 공간 적용. 해금 전엔 지도에 아예 없다(소문조차 없음).
   if (rid === 'slumdeep') return masteryTier('slum') >= 1;
   // 2.0-(c): 동부 신영토 8지역 일괄 게이트 — 관문 「국경 길」 완공(eastGateOpen) 전엔 존재 자체가 없다

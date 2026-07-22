@@ -29,7 +29,7 @@ export function makeEvents(ctx) {
   } = ctx;
   const EVENTS = {
     wanderer: {
-      icon: '🚶', titleId: 'ev.wanderer.title', textId: 'ev.wanderer.text',
+      icon: '', titleId: 'ev.wanderer.title', textId: 'ev.wanderer.text',
       arrive: 'door', // #181 홀로 온 거지 — 계단으로 문 앞까지 (수레 아님)
       choices: [
         { labelId: 'ev.wanderer.c0', cost: { food: 2 }, run() { state.buff = { exp: 0.10, labelId: 'buff.wanderer' }; return t('ev.wanderer.r0'); } },
@@ -37,7 +37,7 @@ export function makeEvents(ctx) {
       ],
     },
     trader: {
-      icon: '🎒', titleId: 'ev.trader.title', textId: 'ev.trader.text',
+      icon: '', titleId: 'ev.trader.title', textId: 'ev.trader.text',
       arrive: 'foot', // #181 수레 끄는 행상 — 지상 셸터만
       choices: [
         { labelId: 'ev.trader.c0', cost: { battery: 2 }, run() { resAdd('bandage', 1); resAdd('antiseptic', 1); return t('ev.trader.r0'); } },
@@ -45,7 +45,7 @@ export function makeEvents(ctx) {
       ],
     },
     dog: {
-      icon: '🐕', titleId: 'ev.dog.title', textId: 'ev.dog.text',
+      icon: '', titleId: 'ev.dog.title', textId: 'ev.dog.text',
       choices: [
         { labelId: 'ev.dog.c0', cost: { food: 1 }, run() { state.buff = { exp: 0.10, labelId: 'buff.dog' }; return t('ev.dog.r0'); } },
         { labelId: 'ev.dog.c1', run() { return t('ev.dog.r1'); } },
@@ -53,7 +53,7 @@ export function makeEvents(ctx) {
     },
     // 1.1 밀수꾼 행상인 — 항구 한정, 지나가는 존재(캐논: 타인은 흐른다). 계절 가격 극단(겨울 연료 프리미엄).
     smuggler: {
-      icon: '🚢', titleId: 'ev.smuggler.title', textId: 'ev.smuggler.text',
+      icon: '', titleId: 'ev.smuggler.title', textId: 'ev.smuggler.text',
       arrive: 'boat', // #181 배로 접안 — 물가 셸터만
       when: { districts: ['harbor'], dayOnly: true },
       choices: [
@@ -69,7 +69,7 @@ export function makeEvents(ctx) {
       ],
     },
     storm: {
-      icon: '🌪️', titleId: 'ev.storm.title', textId: 'ev.storm.text',
+      icon: '', titleId: 'ev.storm.title', textId: 'ev.storm.text',
       // #163 재게이트(아트 재분배): 일러스트가 무설(헐벗은 나무+강풍) = 환절기 돌풍 — 가을·봄으로 보낸다.
       when: { seasons: ['autumn', 'spring'] },
       choices: [
@@ -78,14 +78,14 @@ export function makeEvents(ctx) {
       ],
     },
     broken: {
-      icon: '🔩', titleId: 'ev.broken.title', textId: 'ev.broken.text',
+      icon: '', titleId: 'ev.broken.title', textId: 'ev.broken.text',
       choices: [
         { labelId: 'ev.broken.c0', cost: { parts: 1 }, run() { return t('ev.broken.r0'); } },
         { labelId: 'ev.broken.c1', run() { state.buff = { exp: -0.05, labelId: 'buff.broken' }; return t('ev.broken.r1'); } },
       ],
     },
     thief: {
-      icon: '👣', titleId: 'ev.thief.title', textId: 'ev.thief.text',
+      icon: '', titleId: 'ev.thief.title', textId: 'ev.thief.text',
       arrive: 'trace', // #181 밤사이 흔적(발자국) — 지상 접근 가능한 곳만
       choices: [
         { labelId: 'ev.thief.c0', run() {
@@ -99,7 +99,7 @@ export function makeEvents(ctx) {
       ],
     },
     seeds: {
-      icon: '🌱', titleId: 'ev.seeds.title', textId: 'ev.seeds.text',
+      icon: '', titleId: 'ev.seeds.title', textId: 'ev.seeds.text',
       // #163 재게이트: 씨앗=파종 — 봄 정체성으로. (일러스트는 중립 정물이라 그대로)
       when: { seasons: ['spring'] },
       choices: [
@@ -112,7 +112,7 @@ export function makeEvents(ctx) {
       ],
     },
     radio_sig: {
-      icon: '📡', titleId: 'ev.radio.title', textId: 'ev.radio.text',
+      icon: '', titleId: 'ev.radio.title', textId: 'ev.radio.text',
       when: { needsRadio: true }, // (구 cond: 라디오 보유 시에만) — 동작 불변, 스키마 이관
       choices: [
         { labelId: 'ev.radio.c0', run() { state.buff = { loot: 2, labelId: 'buff.radio' }; return t('ev.radio.r0'); } },
@@ -122,7 +122,7 @@ export function makeEvents(ctx) {
     /* ── Phase D 신규 인카운터 12종 (#12) — 조건은 when 스키마로 선언 ── */
     // 1. 겨울+한파: 문 밖에 쓰러진 낯선 이. 데워 보내기 / 못 본 척.
     coldsnap_stranger: {
-      icon: '🧊', titleId: 'ev.coldstranger.title', textId: 'ev.coldstranger.text',
+      icon: '', titleId: 'ev.coldstranger.title', textId: 'ev.coldstranger.text',
       arrive: 'door', // #181 문 밖에 쓰러진 사람 — 계단 오를 수 있는 곳
       when: { seasons: ['winter'] }, cond: () => coldSnapActive(),
       choices: [
@@ -132,7 +132,7 @@ export function makeEvents(ctx) {
     },
     // 2. 여름: 상한 것 반값에 떠넘기려는 행상. 간파 / 속아 삼(식중독).
     spoil_merchant: {
-      icon: '🥴', titleId: 'ev.spoilmerchant.title', textId: 'ev.spoilmerchant.text',
+      icon: '', titleId: 'ev.spoilmerchant.title', textId: 'ev.spoilmerchant.text',
       arrive: 'foot', // #181 수레 끄는 상인 — 지상 셸터만
       when: { seasons: ['summer'] },
       choices: [
@@ -146,7 +146,7 @@ export function makeEvents(ctx) {
     },
     // 3. 비/폭우 + 비 새는 셸터: 지붕 물 새기. 건축재 응급 / 방치(청결↓).
     leaky_roof: {
-      icon: '💧', titleId: 'ev.leakyroof.title', textId: 'ev.leakyroof.text',
+      icon: '', titleId: 'ev.leakyroof.title', textId: 'ev.leakyroof.text',
       when: { weather: ['rain', 'storm'], shelters: ['container', 'rooftop', 'subway', 'ship'] },
       choices: [
         { labelId: 'ev.leakyroof.c0', cost: { material: 1 }, run() { return t('ev.leakyroof.r0'); } },
@@ -155,7 +155,7 @@ export function makeEvents(ctx) {
     },
     // 4. 눈+아침: 밤새 셸터를 돌고 간 발자국. 따라가기(소득/부상) / 지우기(안정감+).
     snow_prints: {
-      icon: '👣', titleId: 'ev.snowprints.title', textId: 'ev.snowprints.text',
+      icon: '', titleId: 'ev.snowprints.title', textId: 'ev.snowprints.text',
       when: { weather: ['snow'] },
       choices: [
         { labelId: 'ev.snowprints.c0', run() {
@@ -167,7 +167,7 @@ export function makeEvents(ctx) {
     },
     // 5. 등대 전용+밤: 먼바다의 불빛 신호. 응답 점등 / 침묵. (1.1 항구 복선)
     lighthouse_ship: {
-      icon: '🚢', titleId: 'ev.lighthouseship.title', textId: 'ev.lighthouseship.text',
+      icon: '', titleId: 'ev.lighthouseship.title', textId: 'ev.lighthouseship.text',
       when: { shelters: ['lighthouse'], night: true },
       choices: [
         { labelId: 'ev.lighthouseship.c0', cost: { fuel: 1 }, run() { addMoodBuff(2, 3); state.dayLog.notes.push(t('ev.lighthouseship.note0')); return t('ev.lighthouseship.r0'); } },
@@ -176,7 +176,7 @@ export function makeEvents(ctx) {
     },
     // 6. 온실 전용: 씨앗 훔치는 새들. 쫓기 / 나눠주기(분위기+, 반짝이).
     greenhouse_birds: {
-      icon: '🐦', titleId: 'ev.greenhousebirds.title', textId: 'ev.greenhousebirds.text',
+      icon: '', titleId: 'ev.greenhousebirds.title', textId: 'ev.greenhousebirds.text',
       when: { shelters: ['greenhouse'] },
       choices: [
         { labelId: 'ev.greenhousebirds.c0', run() { return t('ev.greenhousebirds.r0'); } },
@@ -189,7 +189,7 @@ export function makeEvents(ctx) {
     },
     // 7. 먼 불빛(REQ-EVT-03): 지상 도심계 셸터+맑음+밤. 보상 없음, 안정감 +2 1회, 목격 기록.
     distant_light: {
-      icon: '🌆', titleId: 'ev.distantlight.title', textId: 'ev.distantlight.text',
+      icon: '', titleId: 'ev.distantlight.title', textId: 'ev.distantlight.text',
       when: { shelters: ['rooftop', 'cabin', 'bunker'], weather: ['clear'], night: true },
       choices: [
         { labelId: 'ev.distantlight.c0', run() {
@@ -203,7 +203,7 @@ export function makeEvents(ctx) {
     },
     // 8. 라디오 배치+밤: 주파수 사이의 목소리. 미수집 방송 드랍 연동.
     radio_ghost: {
-      icon: '📻', titleId: 'ev.radioghost.title', textId: 'ev.radioghost.text',
+      icon: '', titleId: 'ev.radioghost.title', textId: 'ev.radioghost.text',
       when: { needsRadio: true, night: true },
       choices: [
         { labelId: 'ev.radioghost.c0', run() {
@@ -218,19 +218,19 @@ export function makeEvents(ctx) {
     //   주제 조우들을 "확정 스크립트"로 승격 — processDay가 특정 데모일에 pendingEvent로 강제 예약(when 무시).
     //   서사 척추: "따뜻한 고독, 응답하는 불빛". Day7 먼 불빛 → Day11 지나가는 사람들 → Day14 라디오→응답.
     demo_far_light: {
-      icon: '🌃', titleId: 'ev.demofarlight.title', textId: 'ev.demofarlight.text',
+      icon: '', titleId: 'ev.demofarlight.title', textId: 'ev.demofarlight.text',
       choices: [
         { labelId: 'ev.demofarlight.c0', run() { addMoodBuff(2, 2); recordDistantLight(); return t('ev.demofarlight.r0'); } },
       ],
     },
     demo_procession: {
-      icon: '🕯️', titleId: 'ev.demoprocession.title', textId: 'ev.demoprocession.text',
+      icon: '', titleId: 'ev.demoprocession.title', textId: 'ev.demoprocession.text',
       choices: [
         { labelId: 'ev.demoprocession.c0', run() { addMoodBuff(1, 2); return t('ev.demoprocession.r0'); } },
       ],
     },
     demo_radio_light: { // 시그니처: 부서진 라디오 → 한 번 송출 → 창 하나가 응답한다(첫 survivorLight).
-      icon: '📻', titleId: 'ev.demoradiolight.title', textId: 'ev.demoradiolight.text',
+      icon: '', titleId: 'ev.demoradiolight.title', textId: 'ev.demoradiolight.text',
       choices: [
         { labelId: 'ev.demoradiolight.c0', run() {
           state.survivorLights = Math.max(state.survivorLights || 0, 1); // 첫 응답 불빛(온기는 남는다)
@@ -243,7 +243,7 @@ export function makeEvents(ctx) {
     },
     // 9. 무조건부 저확률: 벽에서 발견한 과거 달력. 메모 1 드랍.
     old_calendar: {
-      icon: '📅', titleId: 'ev.oldcalendar.title', textId: 'ev.oldcalendar.text',
+      icon: '', titleId: 'ev.oldcalendar.title', textId: 'ev.oldcalendar.text',
       weight: 0.5,
       choices: [
         { labelId: 'ev.oldcalendar.c0', run() {
@@ -255,7 +255,7 @@ export function makeEvents(ctx) {
     },
     // 10. 고양이 보유: 고양이가 물어온 것. 잡동사니/희귀부품/죽은 쥐.
     cat_gift: {
-      icon: '🐾', titleId: 'ev.catgift.title', textId: 'ev.catgift.text',
+      icon: '', titleId: 'ev.catgift.title', textId: 'ev.catgift.text',
       when: { needsCat: true },
       choices: [
         { labelId: 'ev.catgift.c0', run() {
@@ -268,7 +268,7 @@ export function makeEvents(ctx) {
     },
     // 11. 겨울: 수도관 동파. 부품 수리 / 방치(정수기 3일 정지).
     frozen_pipe: {
-      icon: '🚰', titleId: 'ev.frozenpipe.title', textId: 'ev.frozenpipe.text',
+      icon: '', titleId: 'ev.frozenpipe.title', textId: 'ev.frozenpipe.text',
       when: { seasons: ['winter'] },
       choices: [
         { labelId: 'ev.frozenpipe.c0', cost: { parts: 1 }, run() { return t('ev.frozenpipe.r0'); } },
@@ -277,7 +277,7 @@ export function makeEvents(ctx) {
     },
     // 12. 봄/가을+낮: 멀리 지나가는 행렬. 관측만(만나지 않는다). 쌍안경 있으면 상세 노트.
     caravan_pass: {
-      icon: '🛻', titleId: 'ev.caravanpass.title', textId: 'ev.caravanpass.text',
+      icon: '', titleId: 'ev.caravanpass.title', textId: 'ev.caravanpass.text',
       arrive: 'view', // #181 멀리 지나가는 행렬 — 시야 트인 곳만 (다가오지 않음)
       when: { seasons: ['spring', 'autumn'], dayOnly: true },
       choices: [
@@ -296,7 +296,7 @@ export function makeEvents(ctx) {
 
     // ── 봄: 해빙·재생·젖은 흙 ──
     thaw_stream: {
-      icon: '💧', titleId: 'ev.thawstream.title', textId: 'ev.thawstream.text',
+      icon: '', titleId: 'ev.thawstream.title', textId: 'ev.thawstream.text',
       when: { seasons: ['spring'] },
       choices: [
         { labelId: 'ev.thawstream.c0', run() { resAdd('water', 2); return t('ev.thawstream.r0'); } },
@@ -304,7 +304,7 @@ export function makeEvents(ctx) {
       ],
     },
     first_sprout: {
-      icon: '🌱', titleId: 'ev.firstsprout.title', textId: 'ev.firstsprout.text',
+      icon: '', titleId: 'ev.firstsprout.title', textId: 'ev.firstsprout.text',
       when: { seasons: ['spring'] },
       choices: [
         { labelId: 'ev.firstsprout.c0', cost: { water: 1 }, run() {
@@ -316,7 +316,7 @@ export function makeEvents(ctx) {
       ],
     },
     returning_birds: {
-      icon: '🕊️', titleId: 'ev.returningbirds.title', textId: 'ev.returningbirds.text',
+      icon: '', titleId: 'ev.returningbirds.title', textId: 'ev.returningbirds.text',
       when: { seasons: ['spring'], dayOnly: true },
       choices: [
         { labelId: 'ev.returningbirds.c0', run() {
@@ -327,7 +327,7 @@ export function makeEvents(ctx) {
       ],
     },
     melt_reveal: {
-      icon: '🥾', titleId: 'ev.meltreveal.title', textId: 'ev.meltreveal.text',
+      icon: '', titleId: 'ev.meltreveal.title', textId: 'ev.meltreveal.text',
       when: { seasons: ['spring'] },
       choices: [
         { labelId: 'ev.meltreveal.c0', run() {
@@ -339,7 +339,7 @@ export function makeEvents(ctx) {
       ],
     },
     bee_swarm: {
-      icon: '🐝', titleId: 'ev.beeswarm.title', textId: 'ev.beeswarm.text',
+      icon: '', titleId: 'ev.beeswarm.title', textId: 'ev.beeswarm.text',
       when: { seasons: ['spring'] },
       choices: [
         { labelId: 'ev.beeswarm.c0', run() {
@@ -351,7 +351,7 @@ export function makeEvents(ctx) {
       ],
     },
     mud_tracks: {
-      icon: '🛻', titleId: 'ev.mudtracks.title', textId: 'ev.mudtracks.text',
+      icon: '', titleId: 'ev.mudtracks.title', textId: 'ev.mudtracks.text',
       when: { seasons: ['spring'], dayOnly: true },
       choices: [
         { labelId: 'ev.mudtracks.c0', run() {
@@ -364,14 +364,14 @@ export function makeEvents(ctx) {
 
     // ── 여름: 더위·부패·소나기·생명 소리 ──
     cicada_evening: {
-      icon: '🎶', titleId: 'ev.cicada.title', textId: 'ev.cicada.text',
+      icon: '', titleId: 'ev.cicada.title', textId: 'ev.cicada.text',
       when: { seasons: ['summer'] },
       choices: [
         { labelId: 'ev.cicada.c0', run() { addMoodBuff(2, 2); return state.cat ? t('ev.cicada.r0cat') : t('ev.cicada.r0'); } },
       ],
     },
     mosquito_net: {
-      icon: '🦟', titleId: 'ev.mosquitonet.title', textId: 'ev.mosquitonet.text',
+      icon: '', titleId: 'ev.mosquitonet.title', textId: 'ev.mosquitonet.text',
       when: { seasons: ['summer'] },
       choices: [
         { labelId: 'ev.mosquitonet.c0', cost: { cloth: 1 }, run() { return t('ev.mosquitonet.r0'); } },
@@ -379,7 +379,7 @@ export function makeEvents(ctx) {
       ],
     },
     wild_berries: {
-      icon: '🫐', titleId: 'ev.wildberries.title', textId: 'ev.wildberries.text',
+      icon: '', titleId: 'ev.wildberries.title', textId: 'ev.wildberries.text',
       when: { seasons: ['summer'], dayOnly: true },
       choices: [
         { labelId: 'ev.wildberries.c0', run() { resAdd('food', 2); return t('ev.wildberries.r0'); } },
@@ -387,14 +387,14 @@ export function makeEvents(ctx) {
       ],
     },
     sudden_shower: {
-      icon: '🌦️', titleId: 'ev.suddenshower.title', textId: 'ev.suddenshower.text',
+      icon: '', titleId: 'ev.suddenshower.title', textId: 'ev.suddenshower.text',
       when: { seasons: ['summer'], dayOnly: true },
       choices: [
         { labelId: 'ev.suddenshower.c0', run() { resAdd('water', 1); addMoodBuff(2, 2); return t('ev.suddenshower.r0'); } },
       ],
     },
     heat_haze: {
-      icon: '🥵', titleId: 'ev.heathaze.title', textId: 'ev.heathaze.text',
+      icon: '', titleId: 'ev.heathaze.title', textId: 'ev.heathaze.text',
       when: { seasons: ['summer'], dayOnly: true },
       choices: [
         { labelId: 'ev.heathaze.c0', run() { addMoodBuff(1, 1); return t('ev.heathaze.r0'); } },
@@ -402,7 +402,7 @@ export function makeEvents(ctx) {
       ],
     },
     firefly_field: {
-      icon: '✨', titleId: 'ev.firefly.title', textId: 'ev.firefly.text',
+      icon: '', titleId: 'ev.firefly.title', textId: 'ev.firefly.text',
       when: { seasons: ['summer'], night: true },
       choices: [
         { labelId: 'ev.firefly.c0', run() { addMoodBuff(3, 2); return t('ev.firefly.r0'); } },
@@ -411,7 +411,7 @@ export function makeEvents(ctx) {
 
     // ── 가을: 낙엽·갈무리·겨울의 예감 ──
     acorn_cache: {
-      icon: '🌰', titleId: 'ev.acorncache.title', textId: 'ev.acorncache.text',
+      icon: '', titleId: 'ev.acorncache.title', textId: 'ev.acorncache.text',
       when: { seasons: ['autumn'] },
       choices: [
         { labelId: 'ev.acorncache.c0', run() { resAdd('food', 1); return t('ev.acorncache.r0'); } },
@@ -419,7 +419,7 @@ export function makeEvents(ctx) {
       ],
     },
     leaf_drift: {
-      icon: '🍂', titleId: 'ev.leafdrift.title', textId: 'ev.leafdrift.text',
+      icon: '', titleId: 'ev.leafdrift.title', textId: 'ev.leafdrift.text',
       when: { seasons: ['autumn'] },
       choices: [
         { labelId: 'ev.leafdrift.c0', run() { resAdd('fuel', 1); return t('ev.leafdrift.r0'); } },
@@ -427,7 +427,7 @@ export function makeEvents(ctx) {
       ],
     },
     first_frost: {
-      icon: '🪟', titleId: 'ev.firstfrost.title', textId: 'ev.firstfrost.text',
+      icon: '', titleId: 'ev.firstfrost.title', textId: 'ev.firstfrost.text',
       when: { seasons: ['autumn'] },
       choices: [
         { labelId: 'ev.firstfrost.c0', cost: { cloth: 1 }, run() { addMoodBuff(1, 2); state.dayLog.notes.push(t('ev.firstfrost.note0')); return t('ev.firstfrost.r0'); } },
@@ -435,7 +435,7 @@ export function makeEvents(ctx) {
       ],
     },
     geese_south: {
-      icon: '🦆', titleId: 'ev.geesesouth.title', textId: 'ev.geesesouth.text',
+      icon: '', titleId: 'ev.geesesouth.title', textId: 'ev.geesesouth.text',
       when: { seasons: ['autumn'], dayOnly: true },
       choices: [
         { labelId: 'ev.geesesouth.c0', run() {
@@ -446,7 +446,7 @@ export function makeEvents(ctx) {
       ],
     },
     pickling_day: {
-      icon: '🥫', titleId: 'ev.picklingday.title', textId: 'ev.picklingday.text',
+      icon: '', titleId: 'ev.picklingday.title', textId: 'ev.picklingday.text',
       when: { seasons: ['autumn'] },
       choices: [
         { labelId: 'ev.picklingday.c0', cost: { food: 2, water: 1 }, run() { resAdd('canned', 2); return t('ev.picklingday.r0'); } },
@@ -454,7 +454,7 @@ export function makeEvents(ctx) {
       ],
     },
     spider_web: {
-      icon: '🕸️', titleId: 'ev.spiderweb.title', textId: 'ev.spiderweb.text',
+      icon: '', titleId: 'ev.spiderweb.title', textId: 'ev.spiderweb.text',
       when: { seasons: ['autumn'] },
       choices: [
         { labelId: 'ev.spiderweb.c0', run() { addMoodBuff(2, 2); return t('ev.spiderweb.r0'); } },
@@ -464,7 +464,7 @@ export function makeEvents(ctx) {
 
     // ── 겨울: 신규 5 (기존 coldsnap_stranger·frozen_pipe·snow_prints 합류 → 8) ──
     icicle_row: {
-      icon: '🧊', titleId: 'ev.iciclerow.title', textId: 'ev.iciclerow.text',
+      icon: '', titleId: 'ev.iciclerow.title', textId: 'ev.iciclerow.text',
       when: { seasons: ['winter'] },
       choices: [
         { labelId: 'ev.iciclerow.c0', run() { resAdd('water', 2); return t('ev.iciclerow.r0'); } },
@@ -472,7 +472,7 @@ export function makeEvents(ctx) {
       ],
     },
     frozen_sparrow: {
-      icon: '🐦', titleId: 'ev.frozensparrow.title', textId: 'ev.frozensparrow.text',
+      icon: '', titleId: 'ev.frozensparrow.title', textId: 'ev.frozensparrow.text',
       when: { seasons: ['winter'] },
       choices: [
         { labelId: 'ev.frozensparrow.c0', cost: { fuel: 1 }, run() { addMoodBuff(3, 3); state.dayLog.notes.push(t('ev.frozensparrow.note0')); return t('ev.frozensparrow.r0'); } },
@@ -480,7 +480,7 @@ export function makeEvents(ctx) {
       ],
     },
     snowman_scarf: {
-      icon: '⛄', titleId: 'ev.snowmanscarf.title', textId: 'ev.snowmanscarf.text',
+      icon: '', titleId: 'ev.snowmanscarf.title', textId: 'ev.snowmanscarf.text',
       when: { seasons: ['winter'] },
       choices: [
         { labelId: 'ev.snowmanscarf.c0', run() { resAdd('cloth', 1); addMoodBuff(-1, 1); return t('ev.snowmanscarf.r0'); } },
@@ -488,14 +488,14 @@ export function makeEvents(ctx) {
       ],
     },
     clear_winter_night: {
-      icon: '🌌', titleId: 'ev.winternight.title', textId: 'ev.winternight.text',
+      icon: '', titleId: 'ev.winternight.title', textId: 'ev.winternight.text',
       when: { seasons: ['winter'], weather: ['clear'], night: true },
       choices: [
         { labelId: 'ev.winternight.c0', run() { addMoodBuff(3, 2); return t('ev.winternight.r0'); } },
       ],
     },
     blizzard_warning: {
-      icon: '📻', titleId: 'ev.blizzardwarn.title', textId: 'ev.blizzardwarn.text',
+      icon: '', titleId: 'ev.blizzardwarn.title', textId: 'ev.blizzardwarn.text',
       when: { seasons: ['winter'], needsRadio: true },
       choices: [
         { labelId: 'ev.blizzardwarn.c0', run() { addMoodBuff(1, 1); state.dayLog.notes.push(t('ev.blizzardwarn.note0')); return t('ev.blizzardwarn.r0'); } },
@@ -505,14 +505,14 @@ export function makeEvents(ctx) {
 
     // ── 공용: 무계절 ──
     red_balloon: {
-      icon: '🎈', titleId: 'ev.redballoon.title', textId: 'ev.redballoon.text',
+      icon: '', titleId: 'ev.redballoon.title', textId: 'ev.redballoon.text',
       weight: 0.6,
       choices: [
         { labelId: 'ev.redballoon.c0', run() { addMoodBuff(2, 2); return t('ev.redballoon.r0'); } },
       ],
     },
     doorstep_bundle: {
-      icon: '🧺', titleId: 'ev.doorstepbundle.title', textId: 'ev.doorstepbundle.text',
+      icon: '', titleId: 'ev.doorstepbundle.title', textId: 'ev.doorstepbundle.text',
       weight: 0.6,
       choices: [
         { labelId: 'ev.doorstepbundle.c0', run() {
@@ -528,21 +528,21 @@ export function makeEvents(ctx) {
       ],
     },
     music_box: {
-      icon: '🎼', titleId: 'ev.musicbox.title', textId: 'ev.musicbox.text',
+      icon: '', titleId: 'ev.musicbox.title', textId: 'ev.musicbox.text',
       choices: [
         { labelId: 'ev.musicbox.c0', cost: { parts: 1 }, run() { addMoodBuff(3, 3); return t('ev.musicbox.r0'); } },
         { labelId: 'ev.musicbox.c1', run() { return t('ev.musicbox.r1'); } },
       ],
     },
     cat_dream: {
-      icon: '🐾', titleId: 'ev.catdream.title', textId: 'ev.catdream.text',
+      icon: '', titleId: 'ev.catdream.title', textId: 'ev.catdream.text',
       when: { needsCat: true },
       choices: [
         { labelId: 'ev.catdream.c0', run() { addMoodBuff(2, 2); return t('ev.catdream.r0'); } },
       ],
     },
     old_photo: {
-      icon: '🖼️', titleId: 'ev.oldphoto.title', textId: 'ev.oldphoto.text',
+      icon: '', titleId: 'ev.oldphoto.title', textId: 'ev.oldphoto.text',
       weight: 0.7,
       choices: [
         { labelId: 'ev.oldphoto.c0', run() { addMoodBuff(2, 2); return t('ev.oldphoto.r0'); } },
@@ -554,7 +554,7 @@ export function makeEvents(ctx) {
        생존·혹한 전용(modes) + 경과 겨울 게이트(minWinters). 코지에는 오지 않는다.
        자원은 해마다 줄어드는 세계 — 이벤트가 그 결핍을 서사로 보여준다. */
     silent_frequency: {
-      icon: '📻', titleId: 'ev.silentfreq.title', textId: 'ev.silentfreq.text',
+      icon: '', titleId: 'ev.silentfreq.title', textId: 'ev.silentfreq.text',
       when: { modes: ['hard', 'hardcore'], minWinters: 1, needsRadio: true },
       choices: [
         { labelId: 'ev.silentfreq.c0', run() { addMoodBuff(-1, 2); state.dayLog.notes.push(t('ev.silentfreq.note0')); return t('ev.silentfreq.r0'); } },
@@ -562,7 +562,7 @@ export function makeEvents(ctx) {
       ],
     },
     barren_traps: {
-      icon: '🪤', titleId: 'ev.barrentraps.title', textId: 'ev.barrentraps.text',
+      icon: '', titleId: 'ev.barrentraps.title', textId: 'ev.barrentraps.text',
       when: { modes: ['hard', 'hardcore'], minWinters: 1 },
       choices: [
         { labelId: 'ev.barrentraps.c0', cost: { food: 1 }, run() {
@@ -573,7 +573,7 @@ export function makeEvents(ctx) {
       ],
     },
     looted_cache: {
-      icon: '📦', titleId: 'ev.lootedcache.title', textId: 'ev.lootedcache.text',
+      icon: '', titleId: 'ev.lootedcache.title', textId: 'ev.lootedcache.text',
       when: { modes: ['hard', 'hardcore'], minWinters: 1 },
       choices: [
         { labelId: 'ev.lootedcache.c0', run() {
@@ -594,7 +594,7 @@ export function makeEvents(ctx) {
       ],
     },
     desperate_knock: {
-      icon: '🚪', titleId: 'ev.desperateknock.title', textId: 'ev.desperateknock.text',
+      icon: '', titleId: 'ev.desperateknock.title', textId: 'ev.desperateknock.text',
       arrive: 'door', // #181 문 너머의 목소리 — 계단 오를 수 있는 곳
       when: { modes: ['hard', 'hardcore'], minWinters: 2, night: true },
       choices: [
@@ -603,7 +603,7 @@ export function makeEvents(ctx) {
       ],
     },
     stripped_district: {
-      icon: '🗄️', titleId: 'ev.strippeddistrict.title', textId: 'ev.strippeddistrict.text',
+      icon: '', titleId: 'ev.strippeddistrict.title', textId: 'ev.strippeddistrict.text',
       when: { modes: ['hard', 'hardcore'], minWinters: 2 },
       choices: [
         { labelId: 'ev.strippeddistrict.c0', run() {
@@ -614,7 +614,7 @@ export function makeEvents(ctx) {
       ],
     },
     harsh_barter: {
-      icon: '🛒', titleId: 'ev.harshbarter.title', textId: 'ev.harshbarter.text',
+      icon: '', titleId: 'ev.harshbarter.title', textId: 'ev.harshbarter.text',
       arrive: 'foot', // #181 다리 밑 행상 — 지상 셸터만
       when: { modes: ['hard', 'hardcore'], minWinters: 2, seasons: ['winter'], dayOnly: true },
       choices: [
@@ -628,7 +628,7 @@ export function makeEvents(ctx) {
        문안은 탐험 목적지(state.exp.region)별 변형. */
     collapsed_entrance: {
       special: true,
-      icon: '🧱', titleId: 'ev.collapse.title',
+      icon: '', titleId: 'ev.collapse.title',
       textFn: () => {
         const rg = state.riskEventRegion || (state.exp && state.exp.region); // #193: 귀환 후 표시 — 박제 지역 우선
         if (rg === 'slumdeep') return t('ev.collapse.text.slum'); // #167 심부: 슬럼 문안 공유 (같은 골목의 안쪽)
@@ -652,7 +652,7 @@ export function makeEvents(ctx) {
     /* ── 특수 인카운터 (일반 풀에서 제외) ── */
     cat: {
       special: true,
-      icon: '🐈', titleId: 'ev.cat.title', textId: 'ev.cat.text',
+      icon: '', titleId: 'ev.cat.title', textId: 'ev.cat.text',
       choices: [
         { labelId: 'ev.cat.c0', cost: { food: 1 }, run() {
           state.cat = 1;
@@ -675,7 +675,7 @@ export function makeEvents(ctx) {
     //   겨울이 이미 답을 빚었다. 문안은 누적 성향(endingLeaning) 한 줄 변주 유지. 두 갈래 모두 런은 계속된다.
     ending_choice: {
       special: true,
-      icon: '🚁', titleId: 'end3.title', textId: 'end3.text',
+      icon: '', titleId: 'end3.title', textId: 'end3.text',
       textFn: () => t('end3.text', { winters: state.winters }) + '<br><br>' + t('end3.lean.' + endingLeaning()),
       choices: [
         { labelId: 'end3.c.escape', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.r.escape'); } },
@@ -686,7 +686,7 @@ export function makeEvents(ctx) {
     //   보류하면 이 문은 닫힌다(구조는 9겨울에 다시 온다). 진실을 다 보기 전에 떠나는 자의 엔딩.
     early_rescue: {
       special: true,
-      icon: '📻', titleId: 'end3.early.title', textId: 'end3.early.text',
+      icon: '', titleId: 'end3.early.title', textId: 'end3.early.text',
       choices: [
         { labelId: 'end3.early.c0', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.early.r0'); } },
         { labelId: 'end3.early.c1', run() { return t('end3.early.r1'); } },
@@ -697,7 +697,7 @@ export function makeEvents(ctx) {
     //   소각/마감 보류(endingStayed)가 안식의 능동 선언 — 이후 무전 조기 구조도 오지 않는다.
     invitation_choice: {
       special: true,
-      icon: '📄', titleId: 'end3.inv.title', textId: 'end3.inv.text',
+      icon: '', titleId: 'end3.inv.title', textId: 'end3.inv.text',
       choices: [
         { labelId: 'end3.inv.c0', run() { state.endingType = 'newworld'; state.invitationHeld = false; setTimeout(() => runEndingSequence('newworld'), 400); return t('end3.inv.r0'); } },
         { labelId: 'end3.inv.c1', run() { state.endingStayed = true; state.invitationHeld = false; state.dayLog.notes.push(t('end3.inv.note')); return t('end3.inv.r1'); } },
@@ -707,7 +707,7 @@ export function makeEvents(ctx) {
     // 초대장 마감일 아침 — 서랍의 종이가 마지막으로 묻는다(1회). 흘려보내면 안식 확정.
     invitation_due: {
       special: true,
-      icon: '📄', titleId: 'end3.due.title', textId: 'end3.due.text',
+      icon: '', titleId: 'end3.due.title', textId: 'end3.due.text',
       choices: [
         { labelId: 'end3.due.c0', run() { state.endingType = 'newworld'; setTimeout(() => runEndingSequence('newworld'), 400); return t('end3.due.r0'); } },
         { labelId: 'end3.due.c1', run() { state.endingStayed = true; state.dayLog.notes.push(t('end3.inv.note')); return t('end3.due.r1'); } },
@@ -717,7 +717,7 @@ export function makeEvents(ctx) {
     //   무기록 원칙: 사일로·버튼·문서를 직접 말하지 않는다("개방 기록"까지만). 박사도 게임도 판단하지 않는다.
     doctor_call: {
       special: true,
-      icon: '📻', titleId: 'end3.call.title', textId: 'end3.call.text',
+      icon: '', titleId: 'end3.call.title', textId: 'end3.call.text',
       choices: [
         { labelId: 'end3.call.c0', run() { state.endingType = 'escape'; setTimeout(() => runEndingSequence('escape'), 400); return t('end3.call.r0'); } },
         { labelId: 'end3.call.c1', run() { return t('end3.call.r1'); } },
@@ -726,7 +726,7 @@ export function makeEvents(ctx) {
     // ── #170 REV3 재건의 봄 도입 (ENDINGS-REV3 §3d) — 카드 5장은 runRebuildSequence(ending-screen)가 맡는다 ──
     rebuilding: {
       special: true,
-      icon: '🌱', titleId: 'end3.rb.title', textId: 'end3.rb.text',
+      icon: '', titleId: 'end3.rb.title', textId: 'end3.rb.text',
       choices: [
         { labelId: 'end3.rb.c0', run() { setTimeout(() => runRebuildSequence(), 400); return t('end3.rb.r0'); } },
       ],
@@ -735,7 +735,7 @@ export function makeEvents(ctx) {
     //   모드별 값 차등(노말·무한 2 / 하드 3 / 하드코어 4). 만나는 건 운, 사는 건 선택 — 도료 드랍의 교환 채널.
     dye_merchant: {
       special: true,
-      icon: '🎨', titleId: 'dye.title', textId: 'dye.text',
+      icon: '', titleId: 'dye.title', textId: 'dye.text',
       textFn: () => t('dye.text', {
         names: (state.dyeOffer || []).map((f, i) => `${i + 1}. ${LN(PAINT_FAMILIES[f])}`).join(' · '),
         n: dyeCost(),
@@ -751,14 +751,14 @@ export function makeEvents(ctx) {
     //   선택지는 하나: 유보. 떠나지도, 받아들이지도 않는다(§5.1 — 유보한 자만이 문서를 발견한다).
     hidden_reach: {
       special: true,
-      icon: '🕳️', titleId: 'hidden.reach.title', textId: 'hidden.reach.text',
+      icon: '', titleId: 'hidden.reach.title', textId: 'hidden.reach.text',
       choices: [
         { labelId: 'hidden.reach.c0', run() { state.hiddenReached = true; return t('hidden.reach.r0'); } },
       ],
     },
     ending: {
       special: true,
-      icon: '🚁', titleId: 'ev.ending.title', textId: 'ev.ending.text',
+      icon: '', titleId: 'ev.ending.title', textId: 'ev.ending.text',
       // 1.4 다리: 무전 기지에서 방송을 송출한 적 있으면 구조 무전 문구가 달라진다(그들이 내 신호를 따라왔다).
       textFn: () => t('ev.ending.text') + ((state.survivorLights || 0) > 0 ? '<br><br>' + t('ev.ending.textSignal') : ''),
       choices: [
@@ -769,7 +769,7 @@ export function makeEvents(ctx) {
     // Nine Winters(#11): 9번째 겨울 이후 박사의 첫 무전 — Day 10000 엔딩의 첫 복선 (이름은 밝히지 않는다)
     doctor_radio: {
       special: true,
-      icon: '📻', titleId: 'ev.doctor.title', textId: 'ev.doctor.text',
+      icon: '', titleId: 'ev.doctor.title', textId: 'ev.doctor.text',
       // 박사 일지 조각 2종을 모두 수집했다면 무전 문안에 한 줄이 이어진다 (REQ-RADIO-01 연호).
       textFn: () => t('ev.doctor.text') + (doctorFragmentsComplete() ? '<br><br>' + t('ev.doctor.textFrag') : ''),
       choices: [
@@ -780,7 +780,7 @@ export function makeEvents(ctx) {
     //   기밀 문서를 다 읽었다면 박사 정체를 알아본 뒤의 교신이다(문안에 한 줄이 더 이어진다).
     doctor_radio_regular: {
       special: true,
-      icon: '📡', titleId: 'ev.doctorReg.title', textId: 'ev.doctorReg.text',
+      icon: '', titleId: 'ev.doctorReg.title', textId: 'ev.doctorReg.text',
       textFn: () => t('ev.doctorReg.text') + (state.memos && MEMOS_RESEARCH.every(id => state.memos[id]) ? '<br><br>' + t('ev.doctorReg.textTruth') : ''),
       choices: [
         { labelId: 'ev.doctorReg.c0', run() { state.doctorRegularSeen = true; return t('ev.doctorReg.r0'); } },

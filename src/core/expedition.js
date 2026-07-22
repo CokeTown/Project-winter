@@ -77,7 +77,7 @@ export function rateParts(regionId, prep = []) {
   const avalanchePen = (state._avalancheDetour && regionId === 'resort') ? BAL.highland.avalancheDetourRatePen : 0; // 1.3 눈사태 우회로
   const mastery = masteryBonus(regionId); // 2.0 지역 숙련: 지리 지식 티어 가산 (시뮬은 visits 0 = 항상 0)
   // 동부 경제(EAST-ECONOMY.md): 하드·하드코어만 동부 지역 한 겹 더 — 코지는 무보정(등가 밴드).
-  //   ⚠️ sim 무접점의 진짜 근거(#208 감사 정정): sim 기본 선택기(_simDaysInner)는 isForbiddenRegion만 거르고
+  //   sim 무접점의 진짜 근거(#208 감사 정정): sim 기본 선택기(_simDaysInner)는 isForbiddenRegion만 거르고
   //   regionUnlocked/eastGateOpen을 **검사하지 않는다**. sim이 동부를 안 도는 건 게이트가 아니라 rate 랭킹의
   //   여유 덕이다 — 동부 최고 uptown 0.55 ≪ residential 0.83. 따라서 동부 rate를 0.83 위로 올리는 캘리브를
   //   하면 sim이 조용히 동부를 돌기 시작해 베이스라인이 오염된다. 수치 컨펌 시 이 여유를 반드시 재확인할 것.

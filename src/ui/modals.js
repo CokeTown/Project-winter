@@ -34,7 +34,7 @@ export function makeModals(ctx) {
   function openModeModal(n) {
     const card = (mode, titleId, tagId, descId, opt = {}) => {
       const lock = opt.locked;
-      // ★ 템플릿 리터럴 선행 공백 = 출력 HTML에 그대로 들어감. 코드 들여쓰기와 무관하게 원본(4/6/8칸) 유지 (모달 게이트 무손실).
+      // 템플릿 리터럴 선행 공백 = 출력 HTML에 그대로 들어감. 코드 들여쓰기와 무관하게 원본(4/6/8칸) 유지 (모달 게이트 무손실).
       // #158 잠금 문구는 카드별 키(mode.<id>.lock/{n}) — zen=겨울 1(모드 무관), wallpaper=코지 겨울 2.
       return `
     <div class="slot-card mode-card ${lock ? 'locked' : ''}" data-mode="${mode}" data-locked="${lock ? 1 : 0}">
@@ -72,11 +72,11 @@ export function makeModals(ctx) {
       fresh.savedAt = Date.now();
       fresh.helpSeen = true;
       fresh.mode = ['hard', 'zen', 'hardcore', 'wallpaper'].includes(m) ? m : 'normal';
-      // ♾️ 무한 모드: 넉넉한 시작 물자 가산 (노말 밸런스 위에)
+      // 무한 모드: 넉넉한 시작 물자 가산 (노말 밸런스 위에)
       if (fresh.mode === 'zen') {
         for (const [rid, n2] of Object.entries(BAL.economy.zenStart || {})) fresh.res[rid] = (fresh.res[rid] || 0) + n2;
       }
-      // 🖼️ 배경화면 모드: 셸터 전 해금 + 무한 물자(표시는 ∞) + 배치/꾸미기 전용.
+      // 배경화면 모드: 셸터 전 해금 + 무한 물자(표시는 ∞) + 배치/꾸미기 전용.
       //   successes를 최고 해금선까지 올려 전 셸터를 열고, 게이지는 만땅으로 시작(무력 미적용).
       if (fresh.mode === 'wallpaper') {
         fresh.successes = Math.max(...Object.values(SHELTERS).map(s => s.unlockAt || 0));
@@ -95,7 +95,7 @@ export function makeModals(ctx) {
     }));
   }
 
-  // ★ 아래 verbatim 이동 함수들 — 코드 들여쓰기는 원본 유지(0-indent)하되 템플릿 리터럴 공백을 보존한다(모달 게이트 무손실 규율).
+  // 아래 verbatim 이동 함수들 — 코드 들여쓰기는 원본 유지(0-indent)하되 템플릿 리터럴 공백을 보존한다(모달 게이트 무손실 규율).
   function openWardrobeModal() {
   if (getPaused()) { toast(t('pause.blocked')); return; }
   const ownedList = state.outfits || ['default'];
@@ -147,7 +147,7 @@ export function makeModals(ctx) {
         ${right}
       </div>`;
     }).join('');
-    return `<div style="margin-top:8px"><div style="font-weight:bold;font-size:12px;margin-bottom:2px">${br.emoji} ${LName(br)}</div>${rows}</div>`;
+    return `<div style="margin-top:8px"><div style="font-weight:bold;font-size:12px;margin-bottom:2px">${LName(br)}</div>${rows}</div>`;
   }).join('');
   openModal(t('know.title'), `<div style="font-size:12px;color:var(--accent);margin-bottom:6px">${t('know.books', { n: books })}</div>${sections}`);
   $('modal-body').querySelectorAll('button[data-know]').forEach(b =>
@@ -163,8 +163,8 @@ function recordTabHtml() {
   const bown = state.broadcasts || {};
   const regionKeys = { residential: 'record.regionRes', commercial: 'record.regionCom', industrial: 'record.regionInd', slum: 'record.regionSlum' };
   const memoRow = (id, tbl) => owned[id]
-    ? `<div class="prep-row li-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>${icon('icon_rec_memo', '📄')}</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
+    ? `<div class="prep-row li-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>${icon('icon_rec_memo')}</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>·</span><span>${t('record.locked')}</span></div>`;
   let sections = '';
   // #90: 데모는 스코프 내 지역 섹션만 — 잠긴 지역(코지의 상업지구 등)은 존재 자체를 안 보인다
   for (const rg of (DEMO_ED ? demoMemoRegions() : ['residential', 'commercial', 'industrial', 'slum'])) {
@@ -195,7 +195,7 @@ function recordTabHtml() {
       sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionResearch')} (${cgot}/${MEMOS_RESEARCH.length})</div>` + MEMOS_RESEARCH.map(id => memoRow(id, MEMOS)).join('');
       // 최종장: 12종 전부 수집 시 "그날의 진실" 페이지 열람 링크 (기록 문법, data-truth 훅).
       if (cgot >= MEMOS_RESEARCH.length) {
-        sections += `<div class="prep-row li-row" style="cursor:pointer;border-top:1px solid var(--panel-border);margin-top:4px" data-truth="1"><span>📖</span><span style="color:var(--accent)">${t('record.truthTitle')}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`;
+        sections += `<div class="prep-row li-row" style="cursor:pointer;border-top:1px solid var(--panel-border);margin-top:4px" data-truth="1"><span></span><span style="color:var(--accent)">${t('record.truthTitle')}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`;
       }
     }
   }
@@ -213,10 +213,10 @@ function recordTabHtml() {
   const willIds = Object.keys(WILLS);
   const willGot = willIds.filter(id => owned[id]).length;
   sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
-  // 라디오 로그 (#90: 데모는 수집 가능한 방송 슬롯만 — 본편 서사 방송은 총계에도 안 잡힌다)
+  // 라디오 로그 (#90: 데모는 수집 가능한 방송 슬롯만 — 본편 서사 방송은 총계에도 안 잡힌다. 아이콘은 #213 이모지 소거판)
   const radioRows = Object.keys(BROADCASTS).filter(id => !DEMO_ED || DEMO_BROADCASTS.has(id)).map(id => bown[id]
-    ? `<div class="prep-row li-row" style="cursor:pointer" data-broadcast="${id}"><span>${icon('icon_rec_radio', '📻')}</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
+    ? `<div class="prep-row li-row" style="cursor:pointer" data-broadcast="${id}"><span>${icon('icon_rec_radio')}</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>·</span><span>${t('record.locked')}</span></div>`).join('');
   const distant = state.distantLight?.count
     ? `<div class="report-sec"><span class="r-title">${t('record.distantTitle', { n: state.distantLight.count })}</span></div>` : '';
   // 1.3 밤하늘 스케치 — 관측소 완공 후 수집이 시작되면 섹션 노출(스포일러 방지, 벙커/지하 문법). satellite는 1.4 복선.
@@ -224,8 +224,8 @@ function recordTabHtml() {
   let sketchSec = '';
   if (state.observatoryDone || sketchesCollected() > 0) {
     const rows = Object.keys(SKETCHES).map(id => sown[id]
-      ? `<div class="prep-row li-row" style="cursor:pointer" data-sketch="${id}"><span>${icon('icon_rec_sketch', '🌌')}</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-      : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
+      ? `<div class="prep-row li-row" style="cursor:pointer" data-sketch="${id}"><span>${icon('icon_rec_sketch')}</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+      : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>·</span><span>${t('record.locked')}</span></div>`).join('');
     sketchSec = `<div class="report-sec"><span class="r-title">${t('record.sketchTitle', { n: sketchesCollected(), total: sketchesTotal() })}</span>${rows}</div>`;
   }
   // #90: 데모 총계는 데모 풀 기준 — "63개 중 6개" 같은 표기로 숨은 콘텐츠 규모가 새지 않게
@@ -234,7 +234,7 @@ function recordTabHtml() {
   // ??? 티저 (디렉터 2026-07-09): 잠긴 규모는 보여주되 내용(제목)은 은닉 — "뭐가 더 있지?"가 구매 동기가 된다
   if (DEMO_ED) {
     const hiddenN = (memosTotal() - total) + (broadcastsTotal() - radioTotal);
-    sections += `<div class="prep-row li-row" style="cursor:default;opacity:0.55;border-top:1px solid var(--panel-border);margin-top:6px"><span>${icon('icon_sys_locked', '🔒')}</span><span>???</span><span class="p-cost">${t('demo.moreRecords', { n: hiddenN })}</span></div>`;
+    sections += `<div class="prep-row li-row" style="cursor:default;opacity:0.55;border-top:1px solid var(--panel-border);margin-top:6px"><span>${icon('icon_sys_locked')}</span><span>???</span><span class="p-cost">${t('demo.moreRecords', { n: hiddenN })}</span></div>`;
   }
   return `
     <div class="report-sec"><span class="r-title">${t('record.memoTitle', { n: memosCollected(), total })}</span>${sections}</div>
@@ -264,19 +264,19 @@ function openJournalModal(tab = 'journal') {
     const arr = state.collection?.[id] || [];
     const sw = def.colors.map((c, i) =>
       `<span title="${LColor(def, i)}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-left:3px;background:${arr[i] ? '#' + c.toString(16).padStart(6, '0') : '#22252d'};border:1px solid ${arr[i] ? 'var(--accent)' : '#333'}"></span>`).join('');
-    return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${def.emoji}${sw}</span>`;
+    return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${LName(def)}${sw}</span>`;
   }).join('');
   let colTotal = colDefs.reduce((a, [, d]) => a + d.colors.length, 0);
   // ??? 티저 (디렉터 2026-07-09): 도감에도 "미확인 N종" 실루엣 — 규모만 노출, 정체(이모지·이름)는 은닉
   let colTeaser = '';
   if (DEMO_ED) {
     const hiddenFurn = Object.keys(DEFS).length - colDefs.length;
-    if (hiddenFurn > 0) colTeaser = `<div style="font-size:11px;opacity:0.55;margin-top:4px">${icon('icon_sys_locked', '🔒')} ??? — ${t('demo.moreFurn', { n: hiddenFurn })}</div>`;
+    if (hiddenFurn > 0) colTeaser = `<div style="font-size:11px;opacity:0.55;margin-top:4px">${icon('icon_sys_locked')} ??? — ${t('demo.moreFurn', { n: hiddenFurn })}</div>`;
   }
   // 테마 세트 도감 뱃지 (#13): 충족 시 강조.
   const themeBadges = THEME_SETS.map(ts => {
     const done = themeSetActive(ts);
-    return `<span title="${ts.items.map(id => LName(DEFS[id])).join(' + ')}" style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid ${done ? 'var(--good)' : '#333'};color:${done ? 'var(--good)' : 'var(--text-dim)'}">${done ? '🏅' : '▫️'} ${ts.emoji} ${LName(ts)}</span>`;
+    return `<span title="${ts.items.map(id => LName(DEFS[id])).join(' + ')}" style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid ${done ? 'var(--good)' : '#333'};color:${done ? 'var(--good)' : 'var(--text-dim)'}">${done ? '✓' : '·'} ${LName(ts)}</span>`;
   }).join('');
   // #211: 쾌적 4축 분해는 PDA 상태 탭이 유일한 집이다(2클릭). 여기 있던 comfortBreakdownHtml()은 제거 —
   //   같은 것을 두 화면에 두는 게 "기기·화면이 서로를 베끼는" 그 문제고, 일지는 '지나온 기록'이지
@@ -338,7 +338,12 @@ function openJournalModal(tab = 'journal') {
   const jContent = tab === 'record' ? recordTabHtml() : tab === 'ach' ? achBody : tab === 'col' ? colBody : journalBody;
   openModal(t('journal.title'), journalTabBar(tab) + jContent);
   const body = $('modal-body');
-  body.querySelectorAll('button[data-jtab]').forEach(b => b.addEventListener('click', () => openJournalModal(b.dataset.jtab)));
+  // #226 터미널 2차: 탭 전환 = 화면 리프레시 스캔(PDA renderPDA와 동일 의식). 첫 열림은 모달 크롬 스캔인이 담당 — 이중 발화 없음.
+  body.querySelectorAll('button[data-jtab]').forEach(b => b.addEventListener('click', () => {
+    openJournalModal(b.dataset.jtab);
+    const mb = $('modal-body');
+    mb.classList.remove('m-refresh'); void mb.offsetWidth; mb.classList.add('m-refresh');
+  }));
   body.querySelectorAll('[data-memo]').forEach(el => el.addEventListener('click', () => showMemoPage(el.dataset.memo, el.dataset.will === '1')));
   body.querySelectorAll('[data-broadcast]').forEach(el => el.addEventListener('click', () => showBroadcastModal(el.dataset.broadcast)));
   body.querySelectorAll('[data-sketch]').forEach(el => el.addEventListener('click', () => showSketchPage(el.dataset.sketch)));

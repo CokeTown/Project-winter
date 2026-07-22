@@ -5,7 +5,7 @@ const { boot, evalJs, call, check, near, report, app } = require('./harness.cjs'
 
 const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
-const SHELTER_HASH = 1678801657; // 2026-07-18 재핀: #209 F44 펜트하우스 발코니 데크 상면 접지(balcony.y=0.023 신규 필드) (직전: #193 벙커 유지비 라벨)
+const SHELTER_HASH = -1377374676; // 2026-07-22 재핀: #213 이모지 전멸 — limits/emoji 필드 컬러 이모지 소거 (직전: #209 F44 발코니)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
 const MIG_HASH = -1042252206; // 2026-07-17 재핀: 2.0-α 4도시 가산 필드 4종(citiesReached·cityWinters·finalWinterCity·homeStay) 스냅샷 편입 (직전: 시그니처 도면)
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.
@@ -232,7 +232,7 @@ const KNOWLEDGE_HASH = -451536973;
       S.state.res.cloth = 5; S.state.res.parts = 3; S.state.bagDur = 0; S.state.energy = 100; S.state.exp = null; S.state.expToday = 0;
       S.startExpedition('residential');
       const h = document.getElementById('modal-body').innerHTML;
-      const craftRow = h.includes('가방을 꿰맨다') && h.includes('data-bag');
+      const craftRow = h.includes(S.t('prep.bagCraft')) && h.includes('data-bag'); // #220 카피 개명("가방") — 리터럴 대신 로케일 키로 핀
       const el = document.querySelector('#modal-body [data-bag]');
       if (el) el.click();
       const h2 = document.getElementById('modal-body').innerHTML;

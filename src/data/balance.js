@@ -146,7 +146,7 @@ export const BAL = {
 
   /* ── 경제 (processDay 생산/소비 / 제작 / 개조 / 이주) ── */
   economy: {
-    // ♾️ 무한(zen) 모드 시작 물자 증량 — 새 게임 생성 시 mode==='zen'이면 DEFAULT_STATE.res에 가산.
+    // 무한(zen) 모드 시작 물자 증량 — 새 게임 생성 시 mode==='zen'이면 DEFAULT_STATE.res에 가산.
     zenStart: { food: 6, canned: 8, water: 10, cloth: 4, candle: 4, fuel: 4, material: 4, parts: 2, battery: 2 },
     // #76 후속(디렉터 "좀 challenging 해야지"): 난이도별 전리품 수급 배수. rollRes(실게임)+expectedLoot(시뮬) 공통.
     //   난이도가 높을수록 파밍이 야박하다. 노말도 소폭 조인다(구 1.0 → 0.85, "획득 손맛" 상향을 되돌림).
@@ -551,7 +551,7 @@ export const BAL = {
      경제 게이트: regionVisits는 !_simRunning 가드 안에서만 증가(#85 시뮬 순수성) → 시드 시뮬 항상 티어 0,
        Day30/60 밴드 구조적 불변. 가구 발견율은 자원 경제 밖(코스매틱) — surplusCap 무관. */
   mastery: {
-    tiers: [20, 50, 100],  // 시도 임계 → ★1/★2/★3 (디렉터 "50회" = 중간 티어의 비약)
+    tiers: [20, 50, 100],  // 시도 임계 → 1/2/3 (디렉터 "50회" = 중간 티어의 비약)
     ratePerTier: 0.12,     // 티어당 성공률 가산 (지역 캡까지)
     capGain: 0.40,         // 지역별 숙련 캡 = base + capGain — 저확률 지역일수록 성장 여지가 크다
     capMax: 0.85,          // 절대 상한 — 숙련만으로 pity 천장(0.95)에 닿지 못하게 (하드가 시시해지지 않게)

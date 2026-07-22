@@ -12,47 +12,48 @@
 import { BAL } from './balance.js';
 
 export const RESOURCES = {
-  food:       { name: '신선식품', nameEn: 'Fresh Food',  emoji: '🍎' },
-  canned:     { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫' },
-  water:      { name: '깨끗한 물', nameEn: 'Clean Water', emoji: '💧' },
-  cloth:      { name: '천',       nameEn: 'Cloth',       emoji: '🧵' },
-  bandage:    { name: '붕대',     nameEn: 'Bandage',     emoji: '🩹' },
-  antiseptic: { name: '소독약',   nameEn: 'Antiseptic',  emoji: '🧴' },
-  painkiller: { name: '진통제',   nameEn: 'Painkiller',  emoji: '💊' },
-  candle:     { name: '양초',     nameEn: 'Candle',      emoji: '🕯️' },
-  battery:    { name: '배터리',   nameEn: 'Battery',     emoji: '🔋' },
-  fuel:       { name: '연료',     nameEn: 'Fuel',        emoji: '⛽' },
-  parts:      { name: '부품',     nameEn: 'Parts',       emoji: '⚙️' },
-  material:   { name: '건축재',   nameEn: 'Material',    emoji: '🧱' },
-  salt:       { name: '소금',     nameEn: 'Salt',        emoji: '🧂' }, // 1.1 항구: 수산시장/야적장 전리품 · 염장 재료
-  book:       { name: '책',       nameEn: 'Book',        emoji: '📕' }, // #76 지식: 잉여 식량을 암시장에 판 부산물 + 탐험 희귀 드랍 · 사치 가구 재료
+  food:       { name: '신선식품', nameEn: 'Fresh Food',  emoji: '' },
+  canned:     { name: '통조림',   nameEn: 'Canned Food', emoji: '' },
+  water:      { name: '깨끗한 물', nameEn: 'Clean Water', emoji: '' },
+  cloth:      { name: '천',       nameEn: 'Cloth',       emoji: '' },
+  bandage:    { name: '붕대',     nameEn: 'Bandage',     emoji: '' },
+  antiseptic: { name: '소독약',   nameEn: 'Antiseptic',  emoji: '' },
+  painkiller: { name: '진통제',   nameEn: 'Painkiller',  emoji: '' },
+  candle:     { name: '양초',     nameEn: 'Candle',      emoji: '' },
+  battery:    { name: '배터리',   nameEn: 'Battery',     emoji: '' },
+  fuel:       { name: '연료',     nameEn: 'Fuel',        emoji: '' },
+  parts:      { name: '부품',     nameEn: 'Parts',       emoji: '' },
+  material:   { name: '건축재',   nameEn: 'Material',    emoji: '' },
+  salt:       { name: '소금',     nameEn: 'Salt',        emoji: '' }, // 1.1 항구: 수산시장/야적장 전리품 · 염장 재료
+  book:       { name: '책',       nameEn: 'Book',        emoji: '' }, // #76 지식: 잉여 식량을 암시장에 판 부산물 + 탐험 희귀 드랍 · 사치 가구 재료
 };
 // ---- 부상 (기획서 v0.2: 부상 치료 시스템) ----
 export const INJURIES = {
-  minor:     { name: '가벼운 부상', nameEn: 'Minor Injury',    icon: '🩹', pen: 0.05, restH: 12, cure: { bandage: 1 }, infect: 0.10 },
-  deep:      { name: '깊은 상처',   nameEn: 'Deep Wound',      icon: '🩸', pen: 0.15, restH: 24, cure: { bandage: 1, antiseptic: 1 }, infect: 0.25 },
-  sprain:    { name: '염좌',        nameEn: 'Sprain',          icon: '🦵', pen: 0.10, restH: 18, timeMult: 1.3, cure: { painkiller: 1 } },
-  infection: { name: '감염 위험',   nameEn: 'Infection Risk',  icon: '🤒', pen: 0.20, restH: 36, cure: { antiseptic: 1, water: 1 } },
+  minor:     { name: '가벼운 부상', nameEn: 'Minor Injury',    icon: '', pen: 0.05, restH: 12, cure: { bandage: 1 }, infect: 0.10 },
+  deep:      { name: '깊은 상처',   nameEn: 'Deep Wound',      icon: '', pen: 0.15, restH: 24, cure: { bandage: 1, antiseptic: 1 }, infect: 0.25 },
+  sprain:    { name: '염좌',        nameEn: 'Sprain',          icon: '', pen: 0.10, restH: 18, timeMult: 1.3, cure: { painkiller: 1 } },
+  infection: { name: '감염 위험',   nameEn: 'Infection Risk',  icon: '', pen: 0.20, restH: 36, cure: { antiseptic: 1, water: 1 } },
   // 2.0 중상 (GD-2.0 §9.3) — 부상 트리의 정점. 하드코어 도심 중심지 조우(총 미보유) + 하드코어 악화 사슬의 끝.
   //   사망 아님("사망 없음, 탈진만" 정체성) — 의약품 소요 급증·장기 회복. memoir 흉터(§9.4-④)로 남는다.
-  critical:  { name: '중상',        nameEn: 'Critical Wound',  icon: '🚑', pen: 0.35, restH: 72, timeMult: 1.5, cure: { bandage: 2, antiseptic: 2, painkiller: 1 } },
+  critical:  { name: '중상',        nameEn: 'Critical Wound',  icon: '', pen: 0.35, restH: 72, timeMult: 1.5, cure: { bandage: 2, antiseptic: 2, painkiller: 1 } },
 };
 // ---- 탐험 준비물 (기획서 v0.2: 준비물 슬롯) ----
 export const PREPS = {
-  bottle:    { name: '물병',     nameEn: 'Water Bottle', emoji: '🥤', cost: { water: 1 },  eff: '탐험 갈증 소모 절반 · 부상 회복 -20%', effEn: 'Halves thirst use on expeditions · injury recovery -20%' },
-  canned:    { name: '통조림',   nameEn: 'Canned Food', emoji: '🥫', cost: { canned: 1 }, eff: '공업/슬럼 성공률 +5%p', effEn: 'Industrial/slum success +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
-  flashlight:{ name: '손전등',   nameEn: 'Flashlight', emoji: '🔦', cost: { battery: 1 },eff: '상업/슬럼 성공률 +10%p', effEn: 'Commercial/slum success +10%p', bonus: { commercial: 0.10, slum: 0.10 } },
-  gloves:    { name: '장갑',     nameEn: 'Gloves', emoji: '🧤', cost: { cloth: 1 },  eff: '부상 확률 -30%', effEn: 'Injury chance -30%' },
-  raincoat:  { name: '우의',     nameEn: 'Raincoat', emoji: '🧥', cost: { cloth: 1 },  eff: '날씨 페널티 -70%', effEn: 'Weather penalty -70%' },
-  firstaid:  { name: '응급키트', nameEn: 'First-Aid Kit', emoji: '⛑️', cost: { bandage: 1, antiseptic: 1 }, eff: '깊은 상처 → 가벼운 부상으로 완화', effEn: 'Softens deep wounds into minor injuries' },
+  // #219 카피 압축(디렉터: 준비물 행 1줄화). 물병 '부상 회복 -20%'는 페널티로 오독 → '회복 시간 -20%'(applyInjury restH ×0.8)로 방향 명시.
+  bottle:    { name: '물병',     nameEn: 'Bottle', emoji: '', cost: { water: 1 },  eff: '갈증 절반 · 회복 가속', effEn: 'Thirst -50% · quick heal' },
+  canned:    { name: '통조림',   nameEn: 'Canned Food', emoji: '', cost: { canned: 1 }, eff: '공업/슬럼 +5%p', effEn: 'Ind/slum +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
+  flashlight:{ name: '손전등',   nameEn: 'Flashlight', emoji: '', cost: { battery: 1 },eff: '상업/슬럼 +10%p', effEn: 'Com/slum +10%p', bonus: { commercial: 0.10, slum: 0.10 } },
+  gloves:    { name: '장갑',     nameEn: 'Gloves', emoji: '', cost: { cloth: 1 },  eff: '부상 -30%', effEn: 'Injury -30%' },
+  raincoat:  { name: '우의',     nameEn: 'Raincoat', emoji: '', cost: { cloth: 1 },  eff: '날씨 페널티 -70%', effEn: 'Weather -70%' },
+  firstaid:  { name: '응급키트', nameEn: 'Medkit', emoji: '', cost: { bandage: 1, antiseptic: 1 }, eff: '깊은 상처 완화', effEn: 'Deep wound → minor' },
 };
 
 export const THEME_SETS = [
-  { id: 'bedroom', name: '따뜻한 침실', nameEn: 'Warm Bedroom', emoji: '🛏️', items: ['bed', 'rug', 'lamp', 'heater'] },
-  { id: 'workshop', name: '작업 공간', nameEn: 'Work Space', emoji: '🛠️', items: ['table', 'crate', 'bookshelf'] },
-  { id: 'greencorner', name: '녹색 구석', nameEn: 'Green Corner', emoji: '🪴', items: ['plant', 'plant', 'teatable'] },
+  { id: 'bedroom', name: '따뜻한 침실', nameEn: 'Warm Bedroom', emoji: '', items: ['bed', 'rug', 'lamp', 'heater'] },
+  { id: 'workshop', name: '작업 공간', nameEn: 'Work Space', emoji: '', items: ['table', 'crate', 'bookshelf'] },
+  { id: 'greencorner', name: '녹색 구석', nameEn: 'Green Corner', emoji: '', items: ['plant', 'plant', 'teatable'] },
   // #76 사치 세트 — 살아남은 뒤에야 갖추는 응접실. 셋을 다 모으면 분위기 가산.
-  { id: 'parlor', name: '응접실', nameEn: 'Parlor', emoji: '🎶', items: ['globe', 'phonograph', 'candelabra'] },
+  { id: 'parlor', name: '응접실', nameEn: 'Parlor', emoji: '', items: ['globe', 'phonograph', 'candelabra'] },
 ];
 
 export const CAT_POSES = {
@@ -111,51 +112,51 @@ export const TIER_TOP_Y = {
 
 // ---- #86④ 복장 (디렉터 UX 결정: 생성 시 X — 천을 구해 '만들어 입는' 제작 문법) ----
 //   pal = 아바타 복셀 팔레트 오버라이드(coat/coatHem/sleeve/beanie/scarf). default는 시작 복장.
-//   획득은 CRAFTS(아래), 착용은 옷장(툴바 👕/아바타 탭). 세이브: state.outfits(보유)/state.outfit(착용).
+//   획득은 CRAFTS(아래), 착용은 옷장(툴바 /아바타 탭). 세이브: state.outfits(보유)/state.outfit(착용).
 export const OUTFITS = {
-  default:  { name: '방한 코트',   nameEn: 'Winter Coat',   emoji: '🧥', pal: {} },
-  navy:     { name: '네이비 코트', nameEn: 'Navy Coat',     emoji: '🧥',
+  default:  { name: '방한 코트',   nameEn: 'Winter Coat',   emoji: '', pal: {} },
+  navy:     { name: '네이비 코트', nameEn: 'Navy Coat',     emoji: '',
     pal: { coat: 0x3e4a5c, coatHem: 0x333d4c, sleeve: 0x394454, scarf: 0xb84a3a, beanie: 0x2e3540 } },
-  wine:     { name: '와인 코트',   nameEn: 'Wine Coat',     emoji: '🧥',
+  wine:     { name: '와인 코트',   nameEn: 'Wine Coat',     emoji: '',
     pal: { coat: 0x6a3a3e, coatHem: 0x553034, sleeve: 0x613639, scarf: 0xd9c9a8, beanie: 0x4a2c30 } },
-  forest:   { name: '숲 파카',     nameEn: 'Forest Parka',  emoji: '🧥',
+  forest:   { name: '숲 파카',     nameEn: 'Forest Parka',  emoji: '',
     pal: { coat: 0x44523a, coatHem: 0x384430, sleeve: 0x3f4c36, scarf: 0xd0812f, beanie: 0x333f2c } },
-  cream:    { name: '크림 파카',   nameEn: 'Cream Parka',   emoji: '🧥',
+  cream:    { name: '크림 파카',   nameEn: 'Cream Parka',   emoji: '',
     pal: { coat: 0xcfc4ae, coatHem: 0xb4a98f, sleeve: 0xc4b9a2, scarf: 0x3e4a5c, beanie: 0x6a5a44 } },
-  charcoal: { name: '차콜 코트',   nameEn: 'Charcoal Coat', emoji: '🧥',
+  charcoal: { name: '차콜 코트',   nameEn: 'Charcoal Coat', emoji: '',
     pal: { coat: 0x3a3a40, coatHem: 0x2f2f35, sleeve: 0x35353b, scarf: 0xb8862e, beanie: 0x2a2a30 } },
   // ── 2.0-(e) 동부 시그니처 복장 4종 (GD-2.0 §6 "도심 시그니처=복장") ──
   //   구역 서사를 입는다: 도면(bp)은 그 지역에서만 드랍(DDD-4 문법) → 제작 해금 → 옷장 착용.
   //   팔레트는 동부 아트 디렉션(TLOU 감성+붉은 노을) — 채도 죽인 웜톤 + 노을 액센트.
-  customsvest: { name: '세관 우비',     nameEn: 'Customs Slicker',   emoji: '🧥',
+  customsvest: { name: '세관 우비',     nameEn: 'Customs Slicker',   emoji: '',
     pal: { coat: 0xb0512f, coatHem: 0x8f421f, sleeve: 0xa54a2a, scarf: 0x2e3540, beanie: 0x30281f } },
-  riggerjacket: { name: '정비공 재킷',  nameEn: 'Rigger Jacket',     emoji: '🧥',
+  riggerjacket: { name: '정비공 재킷',  nameEn: 'Rigger Jacket',     emoji: '',
     pal: { coat: 0x4a5a68, coatHem: 0x3c4a56, sleeve: 0x44535f, scarf: 0xd8a13c, beanie: 0x2f3844 } },
-  stationcoat: { name: '역무원 코트',   nameEn: 'Stationmaster Coat', emoji: '🧥',
+  stationcoat: { name: '역무원 코트',   nameEn: 'Stationmaster Coat', emoji: '',
     pal: { coat: 0x2f3850, coatHem: 0x272e42, sleeve: 0x2b3449, scarf: 0xc9963a, beanie: 0x232a3c } },
-  towncoat: { name: '마천루 롱코트',    nameEn: 'Skyline Longcoat',  emoji: '🧥',
+  towncoat: { name: '마천루 롱코트',    nameEn: 'Skyline Longcoat',  emoji: '',
     pal: { coat: 0x4c3a44, coatHem: 0x3d2f38, sleeve: 0x463641, scarf: 0x9d5c4e, beanie: 0x33282f } },
   // ── 스타일 복장 4종 (디렉터 2026-07-17: "단순 색 변경이 아니라 옷 스타일 자체 변경") ──
   //   style 필드가 아바타 복셀 실루엣을 바꾼다(avatar.js buildMesh 분기): 후드/패딩/판초/조끼.
-  hoodie: { name: '잿빛 후드티',  nameEn: 'Ash Hoodie',   emoji: '🧥', style: 'hoodie',
+  hoodie: { name: '잿빛 후드티',  nameEn: 'Ash Hoodie',   emoji: '', style: 'hoodie',
     pal: { coat: 0x6a6d72, coatHem: 0x585b60, sleeve: 0x63666b, scarf: 0x585b60, beanie: 0x5d6065 } },
-  puffer: { name: '벽돌색 패딩',  nameEn: 'Brick Puffer', emoji: '🧥', style: 'puffer',
+  puffer: { name: '벽돌색 패딩',  nameEn: 'Brick Puffer', emoji: '', style: 'puffer',
     pal: { coat: 0x8a4030, coatHem: 0x7a3628, sleeve: 0x84392b, scarf: 0x6e3225, beanie: 0x3a3230 } },
-  poncho: { name: '모래 판초',    nameEn: 'Sand Poncho',  emoji: '🧥', style: 'poncho',
+  poncho: { name: '모래 판초',    nameEn: 'Sand Poncho',  emoji: '', style: 'poncho',
     pal: { coat: 0x7a5a3c, coatHem: 0x684c32, sleeve: 0x715340, scarf: 0xb84a3a, beanie: 0x4a3b2c } },
-  vest: { name: '올리브 조끼',    nameEn: 'Olive Vest',   emoji: '🧥', style: 'vest',
+  vest: { name: '올리브 조끼',    nameEn: 'Olive Vest',   emoji: '', style: 'vest',
     pal: { coat: 0x3f4a3a, coatHem: 0x353f31, sleeve: 0xa89478, scarf: 0x8a5a3c, beanie: 0x39322a } },
   // ── #119 서포터팩 전용 복장 2종 (dlc:'supporter') — 코스메틱. 도면·드랍 없이 DLC 소유 시 제작대에 노출.
   //   얼룩파카: 클래식 실루엣 유지(style 미지정 → 애니·팔·목도리 그대로) + camo 필드로 코트에 2톤 얼룩 오버레이(avatar.js).
   //   청바지: 순수 팔레트(데님 재킷+청바지) — 실루엣 손 안 댐.
-  camoparka: { name: '얼룩파카', nameEn: 'Camo Parka', emoji: '🧥', dlc: 'supporter',
+  camoparka: { name: '얼룩파카', nameEn: 'Camo Parka', emoji: '', dlc: 'supporter',
     camo: [0x3f4630, 0x746c48], // 얼룩 2톤(다크올리브·카키) — 코트 위 복셀 위장 무늬
     pal: { coat: 0x5a5f3e, coatHem: 0x474d32, sleeve: 0x50553a, pants: 0x39392f, scarf: 0x2f3326, beanie: 0x3a3f2b } },
-  denim: { name: '청바지', nameEn: 'Denim', emoji: '👖', dlc: 'supporter',
+  denim: { name: '청바지', nameEn: 'Denim', emoji: '', dlc: 'supporter',
     pal: { coat: 0x466684, coatHem: 0x3b5670, sleeve: 0x41607c, pants: 0x33506e, boots: 0x3a2c22, scarf: 0xcabfa4, beanie: 0x6a5a44 } },
   // 검정 정장: style:'suit' 분기가 재킷 위에 흰 와이셔츠 패널·칼라 + 붉은 넥타이 + 라펠을 얹는다(목도리 대신).
   //   beanie=어두운 머리색(정장엔 니트 비니 대신 머리로 읽힘). shirt/tie는 pal 전용 키(suit 분기만 참조).
-  suit: { name: '검정 정장', nameEn: 'Black Suit', emoji: '🕴️', style: 'suit', dlc: 'supporter',
+  suit: { name: '검정 정장', nameEn: 'Black Suit', emoji: '', style: 'suit', dlc: 'supporter',
     pal: { coat: 0x26272f, coatHem: 0x1b1c23, sleeve: 0x26272f, pants: 0x23242b, boots: 0x17140f, shirt: 0xe6e2d8, tie: 0xb23a34, beanie: 0x2b2620 } },
 };
 

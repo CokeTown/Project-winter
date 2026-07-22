@@ -8,15 +8,15 @@
      지식은 영구·전 셸터 패시브. 기존 개조와 중복 아니라 max(합산 ✗) — 각 훅에서 규정.
    ============================================================ */
 export const KNOWLEDGE_BRANCHES = [
-  { id: 'warmth', name: '온기', nameEn: 'Warmth', emoji: '🔥' },
-  { id: 'supply', name: '자급', nameEn: 'Self-sufficiency', emoji: '🌱' },
-  { id: 'home',   name: '살림', nameEn: 'Homemaking', emoji: '🏠' },
-  { id: 'lore',   name: '앎',   nameEn: 'Knowing', emoji: '🔭' },
+  { id: 'warmth', name: '온기', nameEn: 'Warmth', emoji: '' },
+  { id: 'supply', name: '자급', nameEn: 'Self-sufficiency', emoji: '' },
+  { id: 'home',   name: '살림', nameEn: 'Homemaking', emoji: '' },
+  { id: 'lore',   name: '앎',   nameEn: 'Knowing', emoji: '' },
 ];
 
 // tier 1→2→3 = 책 1→2→3권 (선행 필수). effect 키는 core/knowledge.js 게터와 짝.
 export const KNOWLEDGE = {
-  // 🔥 온기 — 하드의 최대 압박(한파)에 대응
+  // 온기 — 하드의 최대 압박(한파)에 대응
   insulation: { branch: 'warmth', tier: 1, cost: 1, name: '단열', nameEn: 'Insulation',
     desc: '벽과 창을 여며 냉기를 막는 법. 전 셸터가 단열된다.', descEn: 'Sealing walls and windows against the cold. Every shelter gains insulation.',
     effect: { coldDefense: 1, insulates: true } },
@@ -26,7 +26,7 @@ export const KNOWLEDGE = {
   hearthCraft: { branch: 'warmth', tier: 3, cost: 3, name: '화덕', nameEn: 'Hearthcraft',
     desc: '어느 집에나 벽난로를 놓는 법. 겨울 온기와 한파 방어.', descEn: 'Building a hearth in any home. Winter warmth and cold defense.',
     effect: { hearthAnywhere: true, coldDefense: 1, winterComfort: 8 } },
-  // 🌱 자급 — 탐험 의존을 줄인다
+  // 자급 — 탐험 의존을 줄인다
   purify: { branch: 'supply', tier: 1, cost: 1, name: '정수', nameEn: 'Purification',
     desc: '이슬과 빗물을 모아 거르는 법. 매일 깨끗한 물 +1.', descEn: 'Gathering and filtering dew and rain. Clean water +1 daily.',
     effect: { waterPerDay: 1 } },
@@ -36,7 +36,7 @@ export const KNOWLEDGE = {
   preserve: { branch: 'supply', tier: 3, cost: 3, name: '보존', nameEn: 'Preservation',
     desc: '상하지 않게 갈무리하는 법. 부패 −50%, 염장 +1.', descEn: 'Keeping food from spoiling. Spoilage −50%, salt-cure +1.',
     effect: { spoilMul: 0.5, saltCureBonus: 1 } },
-  // 🏠 살림 — 코지의 심장
+  // 살림 — 코지의 심장
   tidiness: { branch: 'home', tier: 1, cost: 1, name: '정리', nameEn: 'Tidiness',
     desc: '집을 늘 갈무리하는 손. 일일 청결 감소 −0.5.', descEn: 'A hand that keeps a home in order. Daily grime −0.5.',
     effect: { dirtReduce: 0.5 } },
@@ -46,7 +46,7 @@ export const KNOWLEDGE = {
   coziness: { branch: 'home', tier: 3, cost: 3, name: '아늑함', nameEn: 'Coziness',
     desc: '집을 집답게 하는 경지. 쾌적 +6.', descEn: 'The art of a home that feels like one. Comfort +6.',
     effect: { comfortBonus: 6 } },
-  // 🔭 앎 — 탐험 + 엔딩 스파인
+  // 앎 — 탐험 + 엔딩 스파인
   scouting: { branch: 'lore', tier: 1, cost: 1, name: '정찰', nameEn: 'Scouting',
     desc: '길을 읽는 눈. 전 지역 탐험 성공률 +4%p.', descEn: 'An eye for the way. Expedition success +4%p everywhere.',
     effect: { expBonus: 0.04 } },
