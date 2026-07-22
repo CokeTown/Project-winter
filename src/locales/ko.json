@@ -232,6 +232,7 @@
   "auto.off": "자동 진행 꺼짐",
   "btn.auto.title": "자동 진행 (Day 10+)",
   "btn.edit.title": "배치 모드 — 가구 이동/회수",
+  "btn.edit.lbl": "편집",
   "edit.on": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">배치 모드 — 가구를 옮기고 회수할 수 있다",
   "edit.off": "배치 모드 해제",
   "btn.uiToggle.title": "게임 UI 숨기기 / 보이기",

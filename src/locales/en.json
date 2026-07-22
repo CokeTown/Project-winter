@@ -232,6 +232,7 @@
   "auto.off": "Auto-play off",
   "btn.auto.title": "Auto-play (Day 10+)",
   "btn.edit.title": "Arrange mode — move/reclaim furniture",
+  "btn.edit.lbl": "Edit",
   "edit.on": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">Arrange mode — you can move and reclaim furniture",
   "edit.off": "Arrange mode off",
   "btn.uiToggle.title": "Hide / show game UI",

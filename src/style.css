@@ -290,10 +290,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* ── HUD-SPEC-RECON §1.1 (기획서 6.5 E-바): 하단 중앙 명령 바 — 주 5 + 보조 3(.sec 축소).
      #hud .btn-row.icons에서 이동. 버튼 id·배선 불변, 스타일만 이 블록이 소유. ── */
   #action-bar {
-    /* 디렉터 재배치(2026-07-21): 하단 → 상단. 뷰포트 중앙이 아니라 좌 HUD·우 시계 '사이 여백'에
-       중앙 정렬 — left/right를 패널 존에 앵커하고 margin:auto. 어느 해상도에서도 두 패널 비침 0.
-       (1280 실측: 뷰포트 중앙 정렬은 시계와 71px 겹침 → 갭 중앙 정렬로 해소.) */
-    position: fixed; top: 10px; left: 336px; right: auto; margin: 0; width: fit-content; max-width: 440px;
+    /* 디렉터 재배치 2차(2026-07-22): 상단 → 하단 중앙. 명령(행동)은 하단, 뷰 컨트롤은 상단으로 맞교대.
+       하단은 좌 HUD·우 시계 제약이 없어 뷰포트 중앙 정렬 가능. 편집 버튼이 이 바에 편성된다. */
+    position: fixed; top: auto; bottom: 10px; left: 50%; transform: translateX(-50%); margin: 0; width: fit-content; max-width: 440px;
     display: flex; align-items: stretch; gap: 4px; z-index: 60;
     max-width: none; flex-wrap: wrap; justify-content: center;
     padding: 5px 7px; background: rgba(7, 14, 10, 0.86);
@@ -313,6 +312,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #action-bar .pixel-btn.sec .act-icon { width: 18px; height: 18px; }
   #action-bar .pixel-btn.sec .act-lbl { font-size: 9px; }
   body.title-mode #action-bar, body.ui-hidden #action-bar { display: none !important; }
+  body.edit-mode #action-bar { display: none !important; } /* 배치 중엔 툴바(bottom:62)+취소 버튼이 하단 주인 — 명령 바 숨김 */
   body.wallpaper-mode #action-bar .pixel-btn.primary { display: none; } /* 배경화면 모드: 탐험 off(압박 UI 소거) */
   /* 모바일: 상단은 HUD 패널과 세로로 겹치고 엄지 도달성도 하단이 우위 → 하단 전폭 밴드 유지(랩 허용).
      데스크톱만 상단 갭 밴드(디렉터 "상단으로"는 와이드 레이아웃 대상). */
@@ -787,15 +787,14 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .cam-btn { position: relative; }
   .cam-btn[data-label]::before {
     content: attr(data-label);
-    /* 하단 가로 바용: 버튼 위로 팝업 (기존 우측 세로열의 '왼쪽' 위치는 가로 바에서 겹침/화면밖) */
-    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    /* 상단 가로 바용(재배치 2차): 버튼 아래로 팝업 — 상단 이동 후 위 팝업은 화면 밖 */
+    position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
     background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 3px;
     padding: 4px 8px; font-size: 10px; color: var(--text); white-space: nowrap;
     opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 45;
   }
   @media (hover: hover) { .cam-btn[data-label]:hover::before { opacity: 1; } }
-  /* 하단 바 가장자리 버튼: 툴팁이 화면 밖으로 안 나가게 안쪽 정렬 (편집=좌단, 👁=우단) */
-  #btn-edit[data-label]::before { left: 0; transform: none; }
+  /* 상단 바 우단 버튼: 툴팁이 화면 밖으로 안 나가게 안쪽 정렬 (편집은 명령 바로 편성돼 규칙 소멸) */
   #btn-ui-toggle[data-label]::before { left: auto; right: 0; transform: none; }
   /* 모바일(호버 없음): 퀘스트 유도(pulse) 단계에선 라벨 상시 표시 */
   .cam-btn.pulse[data-label]::before { opacity: 1; }
@@ -1493,13 +1492,12 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* ── 온스크린 카메라 컨트롤 ── */
   /* 디렉터 UI 재배치: 우측 세로열 → 하단 가로 바(우측). 편집(🔧)은 좌측 분리(#btn-edit). */
   #cam-ctrl {
-    position: fixed; right: 12px; bottom: 10px; z-index: 6;
+    /* 디렉터 재배치 2차(2026-07-22): 하단 우측 → 상단 우측, 시계 패널 바로 아래(우변 210 정렬 동일).
+       상단 갭(구 명령 바 자리)은 9버튼×줌 폭이 시계를 침범해 기각(1280 실측 137px 겹침).
+       시계와 같은 zoom(--uiz) 좌표계라 top:140(시계 top12+실측높이119+8)이 전 해상도에서 비율 유지. */
+    position: fixed; right: 210px; left: auto; top: 140px; bottom: auto; z-index: 6;
     display: flex; flex-direction: row; gap: 5px; align-items: center;
     zoom: var(--uiz);
-  }
-  /* 편집(배치) 버튼 — 하단 바 좌측 분리 */
-  #btn-edit {
-    position: fixed; left: 12px; bottom: 10px; z-index: 6; zoom: var(--uiz);
   }
   /* 게임 UI 숨김 모드: 게임플레이 패널(거점/자원/시계/탐험/할일)만 숨기고 카메라 조작·편집·토글은 유지 */
   body.ui-hidden #hud,
@@ -1589,9 +1587,8 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     .swatch.locked::after { font-size: 14px; }
     #sel-panel .swatches { flex-wrap: wrap; }
     /* 조작 바(디렉터 모바일 정비): zoom 축소를 끄고 실제 터치 크기로 전폭 단일 행.
-       편집(🔧)=좌끝, 카메라/게임 조작 9개=그 옆부터 우끝까지 균등 배치. */
-    #cam-ctrl { zoom: 1; left: 48px; right: 6px; bottom: 8px; justify-content: space-between; gap: 2px; flex-wrap: nowrap; }
-    #btn-edit { zoom: 1; left: 6px; bottom: 8px; }
+       재배치 2차: 편집은 명령 바로 편성 — 좌끝 예약(48px) 해제. 데스크톱 top:10 상속 차단(top:auto). */
+    #cam-ctrl { zoom: 1; top: auto; left: 6px; right: 6px; bottom: 8px; justify-content: space-between; gap: 2px; flex-wrap: nowrap; }
     .cam-btn { width: 37px; height: 37px; font-size: 18px; } /* 디렉터: 하단 UI 조금 더 크게 (33→37) */
     /* 편집 모드 가구 툴바·팔레트는 조작 바 위로 (조작 바 zoom:1 실측 클리어런스) */
     #toolbar { bottom: 106px; padding: 6px; }
@@ -1628,7 +1625,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     #toolbar { bottom: 52px; padding: 4px; max-width: calc((100vw - 16px) / var(--uiz, 1)); }
     .tool-item { min-width: 42px; padding: 4px 2px 3px; }
     .tool-item .emoji { font-size: 14px; }
-    #cam-ctrl { bottom: 4px; right: 4px; gap: 3px; }
+    #cam-ctrl { top: auto; left: auto; bottom: 4px; right: 4px; gap: 3px; }
     .cam-btn { width: 32px; height: 32px; font-size: 13px; }
     /* 가로폰도 하단 시트 폴백 (A안 앵커 무시) — #194: 툴바가 52 밴드로 올라와 60이 깔림 → 툴바 위(110), 넘치면 스크롤 */
     #sel-panel { top: auto; bottom: 110px; left: 50%; transform: translateX(-50%); width: auto; max-height: calc(100vh / var(--uiz, 1) - 120px); overflow-y: auto; }

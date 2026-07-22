@@ -232,6 +232,7 @@
   "auto.off": "自動進行オフ",
   "btn.auto.title": "自動進行 (Day 10+)",
   "btn.edit.title": "配置モード — 家具の移動/回収",
+  "btn.edit.lbl": "編集",
   "edit.on": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">配置モード — 家具を動かして回収できる",
   "edit.off": "配置モード解除",
   "btn.uiToggle.title": "ゲームUIの表示/非表示",
