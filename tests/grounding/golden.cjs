@@ -12,6 +12,10 @@
  *     npm run golden          — 커밋된 기준과 비교 (초과 시 exit 1)
  *     npm run golden:update   — 기준 재생성 (의도된 시각 변경 후에만!)
  *   기준 PNG: tests/grounding/golden/<id>.png (커밋 대상).
+ *
+ *   ⚠️ golden:update는 전 씬을 다시 쓴다 — **부분 커밋 금지**(전량 커밋 또는 전량 폐기).
+ *   미커밋 기준이 워킹트리에 남으면, 그 캡처가 #212 양봉(bimodal) 모드로 찍혔을 때
+ *   "안정적으로 재현되는 가짜 회귀"가 된다(2026-07-22 lodge 5.2% 실증 — 코드 무죄, 기준 드리프트).
  */
 const { BrowserWindow } = require('electron');
 const fs = require('fs');

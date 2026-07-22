@@ -326,7 +326,7 @@
   "obs.back": "全体地図",
   "obs.pull": "ここだけ: {items}",
   "obs.loot": "回収可能 · {items}",
-  "obs.lootFurn": "家具の設計図",
+  "obs.lootFurn": "家具の設計図 {pct}%",
   "map.sketchInfo": "まだ行っていない — 噂だけだ。行って帰れば、地図にインクで残る。",
   "map.visits": "訪問 ×{n}",
   "map.home": "私のシェルター",

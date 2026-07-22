@@ -326,7 +326,7 @@
   "obs.back": "Full Map",
   "obs.pull": "Only here: {items}",
   "obs.loot": "Salvage · {items}",
-  "obs.lootFurn": "furniture blueprints",
+  "obs.lootFurn": "furniture blueprints {pct}%",
   "map.sketchInfo": "Not yet visited — rumors only. Come back and it stays in ink.",
   "map.visits": "Visited ×{n}",
   "map.home": "Home",

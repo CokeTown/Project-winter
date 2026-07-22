@@ -3442,7 +3442,7 @@ function prepUI(regionId, body) {
       const nm = LName(RESOURCES[id] || { name: id, nameEn: id });
       return (ch != null && ch < 1) ? `${nm} ${Math.round(ch * 100)}%` : `${nm} ×${a}${b > a ? '~' + b : ''}`;
     });
-    if (r.furnChance) lootBits.push(`${t('obs.lootFurn')} ${Math.round(r.furnChance * 100)}%`);
+    if (r.furnChance) lootBits.push(t('obs.lootFurn', { pct: Math.round(r.furnChance * 100) }));
     body.innerHTML = `
       <div class="rate-line">
         ${t('prep.rateLine', { emoji: r.emoji, pct: Math.round(p.eff * 100), lines: lines.join(' · ') })}<br>
@@ -7801,14 +7801,44 @@ function runRebuildSequence() {
   let i = 0;
   const scr = $('ending-screen'), txt = $('ending-text'), btn = $('ending-next');
   scr.style.display = 'flex';
+  // ── 항공뷰 무대(디렉터 승인 2026-07-22): line2 「지도를 폈다」부터 배경이 밤 관측 뷰로 살아나고
+  //    불이 하나씩 켜진다. 문안 불변 — 무대만 승격(OBSERVATORY-CANON §2 "결정적 보너스").
+  let stageTimer = null, stageOn = false;
+  const stageStart = () => {
+    if (stageOn) return; stageOn = true;
+    const a = aerialProto('home');
+    a.open({}); a.overview();
+    aerialHourOverride = 22; // 그 밤의 지도 — 불빛이 읽히는 시각으로 고정
+    a.setLit(0);
+    let k = 0; const total = a.litTotal();
+    // 처음 다섯은 셀 수 있게 하나씩, 그 뒤는 셀 수 없게 몰아친다 — "세다가 그만뒀다"의 리듬
+    stageTimer = setInterval(() => {
+      k += k < 5 ? 1 : Math.ceil(total / 40);
+      a.setLit(k);
+      if (k >= total && stageTimer) { clearInterval(stageTimer); stageTimer = null; }
+    }, 320);
+    scr.classList.add('aerial-stage');
+    document.body.classList.add('obs-mode'); // 스크림을 걷으면 본편 크롬이 비친다(실캡처 검거) — 관측 은닉 목록 재사용
+  };
+  const stageEnd = () => {
+    if (!stageOn) return; stageOn = false;
+    if (stageTimer) { clearInterval(stageTimer); stageTimer = null; }
+    const a = _aerials.home;
+    if (a) { a.setLit(a.litTotal()); a.close(); } // 원복 — 이후 관측 단말 사용에 흔적 0
+    aerialHourOverride = null;
+    scr.classList.remove('aerial-stage');
+    document.body.classList.remove('obs-mode');
+  };
   const render = () => {
     txt.style.animation = 'none'; void txt.offsetWidth; txt.style.animation = '';
     txt.innerHTML = lines[i];
     btn.textContent = i === lines.length - 1 ? t('ending.back') : t('intro.next');
+    if (i >= 2) stageStart(); // line2부터 종막까지 도시가 뒤에서 계속 깨어 있다
   };
   btn.onclick = () => { // onclick 대입: 재실행 시 리스너 중복 방지 (runEndingSequence 동일 패턴)
     i++;
     if (i >= lines.length) {
+      stageEnd();
       scr.style.display = 'none';
       endingActive = false;
       state.rebuildSeen = true;
@@ -11020,7 +11050,7 @@ function renderFrame() {
   //   위의 시뮬 틱은 그대로 돌므로 시간·날씨가 실시간으로 디오라마에 반영된다 (AERIAL-MAP 개정 1차).
   const _aa = activeAerial();
   if (_aa) {
-    _aa.update(dt, { hour: gameHour(), weather: weather.type });
+    _aa.update(dt, { hour: aerialHourOverride ?? gameHour(), weather: weather.type });
     if (obsView.isOpen()) obsView.tick(); // S2: 핀 3D→화면 투영 갱신 + 출발 감지 자동 닫기
     renderer.setRenderTarget(rt);
     renderer.render(_aa.scene, _aa.camera);
@@ -11038,6 +11068,7 @@ function renderFrame() {
 //   open()에 경과일·계절을 주입해 잠식(#71 규약: years=min(3,day/360), 겨울=마른 톤)이 실제 진행도를 탄다.
 //   rebuild()는 연차 비교 캡처용 — 씬을 버리고 다른 day로 다시 짓는다(정식판은 loadShelter 시점 재생성).
 const _aerials = {}; // 도시별 디오라마 (home·east 최대 2벌) — 재생성 없이 즉시 전환, 각자 결정론 유지
+let aerialHourOverride = null; // 재건 비네트: 무대는 밤이어야 불빛이 읽힌다 — 연출 중에만 시각 고정
 // S2: 디오라마 노드 = MAP_MARKERS(% 전도 좌표) → 월드좌표 파생 — 2D 전도와 같은 지리 관계를 3D가 계승.
 //   (x-50)*3 = ±150 박스(도시 300×300)에 매핑. 서부와 동부 전도가 같은 % 공간이라 변환 공유.
 //   ×2.0 = ±100 박스 — ×3(±150)은 모서리 노드(주거)가 overview 프레임 밖(실측 y=-96), ×2.2도 경계(-13).

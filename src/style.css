@@ -841,6 +841,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   @media (max-width: 720px) { /* 모바일: 측면 패널 → 하단 시트 */
     #obs-panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 46%; }
   }
+  /* 재건 비네트 항공 무대: 스크림을 걷어 뒤의 밤 도시가 비치게 — 텍스트는 그림자로 가독 확보 */
+  #ending-screen.aerial-stage { background: rgba(8, 9, 13, 0.30); }
+  #ending-screen.aerial-stage #ending-text { text-shadow: 0 0 10px rgba(6, 8, 12, 0.95), 0 1px 2px rgba(6, 8, 12, 0.95); }
   /* satellite 스케치 이스터에그(OBSERVATORY-CANON §3-5): 궤적 점 1개 — "저건 별이 아니다"의 회수. 일정 속도 직선(캐논 문장 그대로). */
   #obs-sat { position: absolute; top: 54px; left: 0; width: 4px; height: 4px; border-radius: 50%; background: #cfe8d4;
     box-shadow: 0 0 6px rgba(140, 245, 166, 0.8); opacity: 0; pointer-events: none; z-index: 3; }

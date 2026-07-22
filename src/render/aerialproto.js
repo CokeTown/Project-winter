@@ -26,6 +26,7 @@ export function makeAerialProto(cfg = {}) {
   // 날씨 룩 스왑용 버퍼 (건물 지붕 적설 — 인스턴스 컬러 2벌 사전 계산)
   let bld = null, bldDry = null, bldSnow = null, winMat = null, firePt = null, fireCone = null;
   let snowPts = null, beacons = [], groundMat = null, roadMat = null, waterMat = null;
+  let winsMesh = null, winsTotal = 0; // 재건 비네트 점등 연출(setLit) — 창문 인스턴스 count 제어
   // 동부 아트 디렉션(2.0-d): 붉은 노을 팔레트 — 대기·태양을 녹슨 웜톤으로 물들인다(본편 지구 틴트 0xa8604a 계열 정합)
   const EAST_AIR = new THREE.Color(0x8a4638), EAST_SUN = new THREE.Color(0xff7a48);
   let ogMesh = null, ogInfo = { years: 0, winter: false, count: 0, parts: 0, lots: 0 }; // 잠식 QA 훅
@@ -237,7 +238,8 @@ export function makeAerialProto(cfg = {}) {
         else M.makeRotationY(Math.PI / 2).setPosition(p.x + p.w / 2 + 0.06, y, p.z + (rand() - 0.5) * p.d * 0.6);
         wins.setMatrixAt(i, M); i++;
       }
-      wins.count = i; wins.instanceMatrix.needsUpdate = true; scene.add(wins); }
+      wins.count = i; wins.instanceMatrix.needsUpdate = true; scene.add(wins);
+      winsMesh = wins; winsTotal = i; } // 재건 비네트: setLit(n)이 count를 0→total로 몰아 "불이 하나씩 켜진다"
     for (let k = 0; k < 5; k++) { // 적색 항공 장애등 (레퍼런스 무드)
       const b = new THREE.Mesh(new THREE.SphereGeometry(0.55, 6, 5), new THREE.MeshBasicMaterial({ color: 0xff3020 }));
       b.position.set((rand() - 0.5) * 160, 20 + rand() * 10, (rand() - 0.5) * 160);
@@ -552,5 +554,9 @@ export function makeAerialProto(cfg = {}) {
     nodeAt(id) { return NODES[id]; }, // S2 오버레이: 핀 월드좌표 조회
     ogState: () => ({ ...ogInfo }), // QA: 잠식 연차·인스턴스 수 (#71 overgrowthState 대응)
     qaFreeze(t = 12345) { _qaT = t; }, // 골든: 화톳불·비컨 펄스 위상 고정(카메라 이징은 실시간 유지 — 정착 후 캡처)
+    // 재건 비네트 ②(ENDINGS-REV3 §3d · 디렉터 승인 2026-07-22): "캄캄하던 자리마다 불이 하나씩" —
+    //   창문 InstancedMesh의 count를 밀어 올리는 것으로 점등을 구현(드로우콜·재질 불변).
+    litTotal: () => winsTotal,
+    setLit(n) { if (winsMesh) winsMesh.count = Math.max(0, Math.min(winsTotal, Math.round(n))); },
   };
 }

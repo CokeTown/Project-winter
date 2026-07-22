@@ -326,7 +326,7 @@
   "obs.back": "전체 지도",
   "obs.pull": "여기서만: {items}",
   "obs.loot": "회수 가능 · {items}",
-  "obs.lootFurn": "가구 도면",
+  "obs.lootFurn": "가구 도면 {pct}%",
   "map.sketchInfo": "아직 가 보지 않았다 — 소문뿐이다. 다녀오면 지도에 잉크로 남는다.",
   "map.visits": "다녀옴 ×{n}",
   "map.home": "내 거처",
