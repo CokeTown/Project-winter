@@ -45,7 +45,17 @@ function bgra2rgba(b) { const o = Buffer.alloc(b.length); for (let i = 0; i < b.
   };
   const setEnv = (h, w) => H.evalJs(`(()=>{const S=window.__shelter;S.setHour(${h});S.setWeather('${w}');return 1})()`);
 
-  if (MODE === 'nodes') {
+  if (MODE === 'scale') {
+    // focus 카메라 고도 비교 — "축소 스케일" 감각의 실체가 카메라 거리임을 판정(디렉터 2026-07-22)
+    await H.evalJs(`(()=>{const S=window.__shelter;const A=S.aerialProto();A.open();return 1})()`);
+    await setEnv(9, 'clear');
+    for (const [dist, elev, tag] of [[30, 0.62, 'd30_near'], [48, 0.72, 'd48_mid'], [70, 0.82, 'd70_aerial']]) {
+      for (const nd of ['slum', 'residential']) {
+        await H.evalJs(`(()=>{window.__shelter.aerialProto().focus('${nd}',${dist},${elev});return 1})()`);
+        await cap(`scale_${nd}_${tag}`);
+      }
+    }
+  } else if (MODE === 'nodes') {
     // S3 노드 드레싱 검수 — 전 노드 focus 순회 1컷씩 (주간 맑음 고정: 실루엣 판독 조건)
     await H.evalJs(`(()=>{const S=window.__shelter;const A=S.aerialProto();A.open();return A.nodes.join(',')})()`);
     const nodes = (await H.evalJs(`window.__shelter.aerialProto().nodes.join(',')`)).split(',');

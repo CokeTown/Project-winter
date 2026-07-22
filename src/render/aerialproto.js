@@ -443,7 +443,9 @@ export function makeAerialProto(cfg = {}) {
     },
     close() { active = false; },
     overview() { goto(shot(new THREE.Vector3(0, 0, 8), 165, 0.92)); },
-    focus(id) { const nd = NODES[id]; if (nd) goto(shot(new THREE.Vector3(nd.x, 0, nd.z), 30, 0.62)); },
+    // 기본 48/0.72 — d30은 드레싱이 보드게임 말처럼 읽혀 "축소 스케일" 감각의 원흉(3단 실측 d30/48/70).
+    //   d48부터 노드가 '구역'으로, 주변 폐허가 맥락으로 읽힌다. 위성 픽션 정합. 인자는 판정·연출용 오버라이드.
+    focus(id, dist = 48, elev = 0.72) { const nd = NODES[id]; if (nd) goto(shot(new THREE.Vector3(nd.x, 0, nd.z), dist, elev)); },
     nodes: Object.keys(NODES),
     nodeAt(id) { return NODES[id]; }, // S2 오버레이: 핀 월드좌표 조회
     ogState: () => ({ ...ogInfo }), // QA: 잠식 연차·인스턴스 수 (#71 overgrowthState 대응)
