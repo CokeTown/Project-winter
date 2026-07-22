@@ -3516,8 +3516,8 @@ async function departExpedition(regionId, prep, opts2 = {}) {
   if (paused) { toast(t('pause.blocked')); return; }
   if (state.exp) return;
   // 준비 모달을 열어둔 사이 상태가 나빠졌을 수도 있다 — 출발 직전 재검사
-  if (isExhausted()) { toast(t('toast.exhausted')); closeModal(); return; }
-  if (state.energy < 20) { toast(t('toast.tooTired')); closeModal(); return; }
+  if (isExhausted()) { toast(t('toast.exhausted'), 'warn'); closeModal(); return; }
+  if (state.energy < 20) { toast(t('toast.tooTired'), 'warn'); closeModal(); return; }
   // #199 5차-c(디렉터): 일일 상한 차단 폐지(출발 재검사도) — 과로 페널티(expFatigue)는 존치
   const r = REGIONS[regionId];
   const p = rateParts(regionId, prep);
@@ -6070,7 +6070,7 @@ function targetSurvivorLights() {
 function doBroadcast() {
   if (isWallpaper()) { toast(t('wallpaper.noAction')); return false; }
   if (!state.radioBaseDone) { toast(t('radio.needBase')); return false; }
-  if (state.energy < BAL.forbidden.broadcastEnergy) { toast(t('toast.tooTired')); return false; }
+  if (state.energy < BAL.forbidden.broadcastEnergy) { toast(t('toast.tooTired'), 'warn'); return false; }
   const sig = pickUnsentSignal();
   if (!sig) { toast(t('radio.allSent')); return false; }
   if (!state.broadcasts_sent) state.broadcasts_sent = {};
@@ -6191,7 +6191,7 @@ function doIceFish() {
   const H = BAL.harbor;
   const spots = 1 + (state.breakwaterHut ? 1 : 0);
   if ((state.icefishToday || 0) >= spots) { toast(t('icefish.noSpot')); return false; }
-  if (state.energy < H.icefishEnergy || isExhausted()) { toast(t('toast.tooTired')); return false; }
+  if (state.energy < H.icefishEnergy || isExhausted()) { toast(t('toast.tooTired'), 'warn'); return false; }
   state.energy = Math.max(0, state.energy - H.icefishEnergy);
   state.gameMin += H.icefishTimeMin;
   state.icefishToday = (state.icefishToday || 0) + 1;
@@ -8124,6 +8124,13 @@ function renderPDA(quiet) {
     body += notes.length
       ? `<ul class="plog">${notes.slice(-12).reverse().map(n => `<li>${n}</li>`).join('')}</ul>`
       : `<div class="pnote">${t('pda.noLog')}</div>`;
+    // #224 회선 기록 — 토스트 이력(증발 종식). 최근 10건 역순, 게임시각 스탬프.
+    if (toastLog.length) {
+      const fmtMin = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.floor(m % 60)).padStart(2, '0')}`;
+      body += `<div class="ph">${t('pda.commLog')}</div>`;
+      body += `<ul class="plog">${toastLog.slice(-10).reverse().map(e =>
+        `<li><span style="opacity:0.6">D${e.day} ${fmtMin(e.min)}</span> ${e.msg}</li>`).join('')}</ul>`;
+    }
     // #211(디렉터 "일지 그냥 PDA에 통합"): 일지·도감·업적 진입. 별도 기기가 아니라 이 단말의 앱으로 뜬다.
     body += `<div class="pbtn-row"><button class="pixel-btn" id="pda-journal">${t('btn.journal.lbl')}</button></div>`;
   }
@@ -10027,13 +10034,37 @@ function importSave() {
 $('t-export').addEventListener('click', exportSave);
 $('t-import').addEventListener('click', importSave);
 
+/* #224 HUD 2차 — 알림 큐 (HUD-SPEC-RECON §1.4 채택분):
+   구형은 단일 슬롯 덮어쓰기라 러시(정산·숙련·경고 연발) 때 앞 알림이 증발했다(#204에서 실측된 문제).
+   ① 동시 표시 2 + 초과분 대기 큐  ② 5초 동일 메시지 중복 억제  ③ warn 우선순위(대기열 앞)
+   ④ 회선 기록(toastLog) — 지나간 알림이 PDA 기록 탭에 남는다(증발 종식). 호출부 시그니처 불변. */
 const toastEl = $('toast');
-let toastTimer = null;
-function toast(msg) {
-  toastEl.innerHTML = msg; // P2: costLabel 등 아트 아이콘 수용 — msg는 전부 자체 로케일 문자열(외부 입력 없음)
-  toastEl.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
+const TOAST_SHOW_MS = 1800, TOAST_MAX = 2, TOAST_DEDUP_MS = 5000, TOAST_LOG_MAX = 60;
+const toastSeen = new Map(); // msg → 마지막 표시 시각(실시간) — 중복 억제용
+const toastLog = [];         // { day, min, msg } — 런타임 회선 기록(세이브 비영속: 알림은 '그 순간'의 것)
+let toastWait = [];
+function toast(msg, prio) {
+  const now = Date.now();
+  const last = toastSeen.get(msg);
+  if (last && now - last < TOAST_DEDUP_MS) return;
+  toastSeen.set(msg, now);
+  toastLog.push({ day: state.day, min: state.gameMin % 1440, msg });
+  if (toastLog.length > TOAST_LOG_MAX) toastLog.shift();
+  if (prio === 'warn') toastWait.unshift({ msg, prio }); else toastWait.push({ msg, prio });
+  drainToast();
+}
+function drainToast() {
+  while (toastEl.children.length < TOAST_MAX && toastWait.length) {
+    const { msg, prio } = toastWait.shift();
+    const el = document.createElement('div');
+    el.className = 't-item' + (prio ? ' ' + prio : '');
+    el.innerHTML = msg; // P2: costLabel 등 아트 아이콘 수용 — msg는 전부 자체 로케일 문자열(외부 입력 없음)
+    toastEl.appendChild(el);
+    setTimeout(() => {
+      el.classList.add('out');
+      setTimeout(() => { el.remove(); drainToast(); }, 300);
+    }, TOAST_SHOW_MS);
+  }
 }
 
 /* ============================================================
@@ -11235,7 +11266,7 @@ const obsView = makeObsView({
 });
 function openObsMap() {
   if (state.exp) { pdaOpen('status'); return; }
-  if (isExhausted()) { toast(t('toast.exhausted')); return; }
+  if (isExhausted()) { toast(t('toast.exhausted'), 'warn'); return; }
   obsView.open();
 }
 // v2.4: 숨김(document.hidden) 상태에서는 3D 렌더/카메라/환경/FX를 전부 건너뛰고
@@ -11546,6 +11577,7 @@ window.__shelter = {
   knowGardenAnywhere, knowGardenBonus, knowSpoilMul, knowSaltCureBonus, knowDirtReduce, knowHeatFuelMul, knowCraftMul, knowForecastLead, knowBroadcastBonus,
   // v1.4.1 QA 훅: i18n/josa/세이브 왕복 검증용 (하네스 전용, 프로덕션 무해)
   t, LName, josa, WEATHERS, buildWinterMemoir, flushSave, loadSave, readSlot, slotKey, setLang, steamLangToGame,
+  toast, renderPDA, // #224 알림 큐 QA 훅 — 러시·중복 억제·회선 기록 하네스 검증용
   // ③ 창유리 성에 QA 훅: 현재 성에 강도 + 창별 오버레이 투명도
   frostState: () => ({ frostLevel, netSev: coldSnapNetSeverity(), panes: winFrostMats.map(m => +m.material.opacity.toFixed(3)) }),
   renderFrame: () => renderFrame(),

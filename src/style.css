@@ -1234,22 +1234,23 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .report-tip { color: var(--good); }
   kbd { background:#2b2620; border:1px solid var(--panel-border); border-radius:3px; padding:0 5px; font-family: inherit; }
 
+  /* #224 알림 큐: #toast = 투명 스택 컨테이너(동시 2), 박스 스타일은 .t-item 단위로 이관.
+     각 아이템 = 회선 수신 라인('> ' + 스캔인, #221 문법 계승). 소멸은 .out 페이드. */
   #toast {
     position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
-    background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 4px;
-    padding: 7px 16px; font-size: 12px; color: var(--accent);
-    opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 55;
-    text-align: center;
-    /* 장문 토스트가 화면 밖으로 나가지 않게 폭 상한 + 어절 단위 줄바꿈 */
-    max-width: min(88vw, 420px);
-    word-break: keep-all; overflow-wrap: break-word;
-    zoom: var(--uiz);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    pointer-events: none; z-index: 55; zoom: var(--uiz);
   }
-  #toast.show { opacity: 1; }
-  /* #221: 토스트 = 회선 수신 라인 — '> ' 프리픽스 + 짧은 스캔인(등장만, 소멸은 기존 페이드) */
-  #toast::before { content: '> '; opacity: 0.55; }
-  #toast.show { animation: termScanIn 0.16s steps(5); }
-  body.reduce-motion #toast.show { animation: none; }
+  #toast .t-item {
+    background: var(--panel-bg); border: 2px solid var(--panel-border); border-radius: 4px;
+    padding: 7px 16px; font-size: 12px; color: var(--accent); text-align: center;
+    max-width: min(88vw, 420px); word-break: keep-all; overflow-wrap: break-word;
+    animation: termScanIn 0.16s steps(5);
+  }
+  #toast .t-item::before { content: '> '; opacity: 0.55; }
+  #toast .t-item.warn { border-color: var(--bad); color: var(--bad); }
+  #toast .t-item.out { opacity: 0; transition: opacity 0.3s; }
+  body.reduce-motion #toast .t-item { animation: none; }
 
   #loading {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
