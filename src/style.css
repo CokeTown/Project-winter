@@ -345,9 +345,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #action-bar .act-lbl { font-size: 11px; line-height: 1; color: #7da884; font-weight: normal; letter-spacing: 0; }
   #action-bar .pixel-btn.primary .act-lbl { color: #ffffff; }
   #action-bar .ab-div { width: 1px; align-self: stretch; background: #294f34; margin: 1px 3px; }
-  #action-bar .pixel-btn.sec { opacity: 0.85; min-width: 44px; padding: 8px 7px 5px; }
-  #action-bar .pixel-btn.sec .act-icon { width: 18px; height: 18px; }
-  #action-bar .pixel-btn.sec .act-lbl { font-size: 9px; }
+  /* #228①: 보조 18px가 주 30px 대비 급락해 쪼그라져 보임(디렉터) — 22px로 상향, 위계(주>보조)는 유지 */
+  #action-bar .pixel-btn.sec { opacity: 0.85; min-width: 48px; padding: 8px 8px 5px; }
+  #action-bar .pixel-btn.sec .act-icon { width: 22px; height: 22px; }
+  #action-bar .pixel-btn.sec .act-lbl { font-size: 10px; }
   body.title-mode #action-bar, body.ui-hidden #action-bar { display: none !important; }
   body.edit-mode #action-bar { display: none !important; } /* 배치 중엔 툴바(bottom:62)+취소 버튼이 하단 주인 — 명령 바 숨김 */
   body.wallpaper-mode #action-bar .pixel-btn.primary { display: none; } /* 배경화면 모드: 탐험 off(압박 UI 소거) */
@@ -877,13 +878,14 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .tool-item.empty:hover { border-color: var(--bad); transform: none; }
   .tool-item.empty .cnt { background: #3a3f4d; color: var(--text-dim); }
 
-  /* ── 선택 패널 — A안 컨텍스트 미니 카드 (디렉터 2026-07-09): 선택 가구 옆에 앵커되는 소형 카드.
-     좌표는 positionSelPanel()이 --sel-x/y로 매 프레임 주입(우측 우선·좌측 플립·클램프).
-     가구를 보면서 칠한다 — 중앙 대형 패널이 씬(정작 색이 바뀌는 가구)을 가리던 문제의 해소. */
+  /* ── 선택 패널 — #228③ 우하단 고정 도킹 (구 A안 가구 추적은 팬/줌 출렁임·조작 중 이동으로 UX 저해).
+     가구와의 연결은 선택 링(selRing)이 담당 — 카드는 계기판처럼 제자리에서 읽는다(터미널 문법).
+     bottom 150 = 배치 툴바(bottom 62 + 높이) 위 · 우측 res-bar(top 기준)와 비간섭. */
   #sel-panel {
-    left: var(--sel-x, 50%); top: var(--sel-y, 40%);
+    right: 12px; bottom: 150px; left: auto; top: auto;
     width: 178px; padding: 8px 9px;
     display: none; text-align: center;
+    max-height: calc(100vh - 260px); overflow-y: auto;
   }
   #sel-panel.show { display: block; animation: termScanIn 0.2s steps(7); }
   body.reduce-motion #sel-panel.show { animation: none; }

@@ -2344,6 +2344,7 @@ function buildItemGroup(item) {
     const sc = Math.max(0.85, def.light.dist * 0.16);
     sp.scale.set(sc, sc, 1);
     sp.position.set(_lx, _ly, 0); // #196: 헤일로도 티어 앵커 공유
+    sp.raycast = () => {}; // #228②: 헤일로가 픽킹 히트를 넓힘(가구 밖 클릭=선택 오발) — 장식 잎과 동일 처방
     g.add(sp);
     item.glowSprite = sp;
     item.glowBase = 0.3;
@@ -2358,6 +2359,7 @@ function buildItemGroup(item) {
     pool.position.set(0, 0.025, 0);
     pool.scale.setScalar(Math.max(0.9, def.light.dist * 0.42));
     pool.renderOrder = 1; // 러그 등 얇은 바닥재 위에 확실히 얹히게
+    pool.raycast = () => {}; // #228②: 빛 웅덩이 원판(지름 수 유닛)이 히트 영역을 삼킴 — 시각 메시만 픽킹
     g.add(pool);
     item.lightPool = pool;
     if (item.gel) applyGel(item); // #189 P3: 재빌드(recolorItem·도색 등) 시 젤 색 유지 — 리그 완성 후 적용
@@ -2367,16 +2369,28 @@ function buildItemGroup(item) {
 }
 // #189 P3 조명 젤: 광원·헤일로·발광 메시를 도료 계열 색으로 틴트. item.gel=null이면 원색 복원.
 //   화기(불꽃)는 def.light.gelable이 없어 UI에서 걸러진다 — 이 함수는 값 적용만 담당.
-function applyGel(item) {
+// #228⑥: 도료 스와치는 화면용 톤이라 원색(웜 화이트 계열)보다 시감 휘도가 낮아 PointLight에 그대로
+//   곱하면 방이 침침해진다(디렉터 실기 신고). 색(hue·무드)은 스와치 그대로 두고 — 젤의 목적은 색감이다 —
+//   광원 강도(lightBase)를 시감 휘도비로 보상한다. flicker 루프가 lightBase 기준이라 매 프레임 덮여도 정합.
+//   (1차 시도였던 HSL 명도 승격은 무채 스와치(목탄)에서 시감 휘도를 못 따라가 실캡처 기각 — luma 보상으로 교체.)
+const _gelC = new THREE.Color();
+function gelBoost(swatchHex, baseHex) {
+  const luma = h => { _gelC.setHex(h); return 0.2126 * _gelC.r + 0.7152 * _gelC.g + 0.0722 * _gelC.b; };
+  const ls = luma(swatchHex), lb = luma(baseHex);
+  return ls > 0.02 ? Math.min(2.4, Math.max(1, lb / ls)) : 2.4; // 상한 2.4 — 극저휘도 스와치 폭주 방지
+}
+function applyGel(item, previewFam) {
   const def = DEFS[item.defId];
   if (!def?.light) return;
-  const hex = (item.gel && PAINT_ALL[item.gel]?.swatch != null) ? PAINT_ALL[item.gel].swatch : def.light.color;
-  if (item.lightObj) item.lightObj.color.setHex(hex);
+  const fam = previewFam !== undefined ? previewFam : (item.gel || null); // #228⑦: 미리보기 오버라이드
+  const hex = (fam && PAINT_ALL[fam]?.swatch != null) ? PAINT_ALL[fam].swatch : def.light.color;
+  item.lightBase = def.light.intensity * (fam ? gelBoost(hex, def.light.color) : 1); // 시감 휘도 보상(원색=1)
+  if (item.lightObj) { item.lightObj.color.setHex(hex); item.lightObj.intensity = item.lightBase; }
   if (item.glowSprite) item.glowSprite.material.color.setHex(hex);
   if (item.lightPool) item.lightPool.material.color.setHex(hex); // #189 P4: 바닥 풀도 함께 물든다
   for (const m of item.glowMeshes || []) {
     if (!m.material?.emissive) continue;
-    m.material.emissive.setHex(item.gel ? hex : m.userData.origEmissive);
+    m.material.emissive.setHex(fam ? hex : m.userData.origEmissive);
   }
 }
 function syncTransform(item) {
@@ -2397,7 +2411,20 @@ function addItem(defId, colorIdx, x, z, rot, on = true, y = 0, tier = 0) {
 // 조명 전원 (기획서 v0.2: 조명 ON/OFF + 일일 소비)
 // silent=false(사용자가 직접 토글할 때만)이면 촛불류(candle/lantern) 켜고 끌 때 성냥음 재생.
 // 연료 부족 자동 꺼짐(processDay)이나 배치/로드 시 초기화에서는 silent 기본값(true)이라 재생되지 않는다.
+// #228⑤: 전력원 술어 — 배터리 구동 설비(전기등·LED·가전)는 태양광 개조 또는 가동 중 발전기(연료 보유)가
+//   있어야 켤 수 있다(디렉터: "led등 같이 전기를 사용하는 건 태양열을 달아야지만"). 설치 자체는 허용(꾸미기
+//   자유·수거 없이 준비 가능) — 게이트는 '통전'이다. 배경화면 모드는 관전용이라 면제.
+function powerAvailable() {
+  return isWallpaper() || hasMod('solar')
+    || items.some(i2 => DEFS[i2.defId].appliance?.effect === 'power' && i2.on !== false && (state.res.fuel || 0) > 0);
+}
 function setItemPower(item, on, { silent = true } = {}) {
+  const fuel = DEFS[item.defId].light?.fuel || DEFS[item.defId].appliance?.fuel;
+  if (on && fuel === 'battery' && !powerAvailable()) {
+    item.on = false; // 전력원 없음 — 통전 거부(로드·재빌드 경로도 동일하게 소등돼 구세이브가 새 규칙에 수렴)
+    if (!silent) toast(t('power.needSource'), 'warn');
+    on = false;
+  }
   item.on = on;
   if (item.lightObj) item.lightObj.visible = on;
   if (item.glowSprite) item.glowSprite.visible = on;
@@ -9327,55 +9354,72 @@ const selPanel = $('sel-panel');
 //   radioBubble과 동일한 투영·uiz 보정(패널은 zoom:--uiz 컨텍스트라 좌표를 uiz로 나눈다).
 //   우측 우선 배치, 오른쪽이 모자라면 좌측 플립, 상하는 클램프. 데스크톱 전용 —
 //   모바일 미디어 쿼리가 --sel-x/y를 무시하고 하단 시트로 강제한다(카메라 추적 불필요).
-function positionSelPanel() {
-  if (!selected || !selected.group || !selPanel.classList.contains('show')) return;
-  const p = new THREE.Vector3();
-  selected.group.getWorldPosition(p);
-  p.y += 0.5; // 가구 몸통 높이
-  p.project(camera);
-  const uiz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--uiz')) || 1;
-  const w = selPanel.offsetWidth * uiz, h = selPanel.offsetHeight * uiz, m = 8, gap = 30;
-  const ax = (p.x * 0.5 + 0.5) * innerWidth, ay = (-p.y * 0.5 + 0.5) * innerHeight;
-  let x = ax + gap;                                   // 기본: 가구 오른쪽
-  if (x + w > innerWidth - m) x = ax - gap - w;       // 오른쪽이 모자라면 왼쪽으로 플립
-  x = Math.max(m, Math.min(innerWidth - w - m, x));
-  let y = Math.max(m, Math.min(innerHeight - h - m, ay - h / 2)); // 가구 세로 중앙 정렬
-  selPanel.style.setProperty('--sel-x', (x / uiz) + 'px');
-  selPanel.style.setProperty('--sel-y', (y / uiz) + 'px');
+// #228③: 가구 추적(매 프레임 재투영) 폐기 — 팬/줌마다 출렁이고 스와치를 누르는 손 밑에서 카드가
+//   움직여 UX를 저해(디렉터). 카드=화면 우하단 고정 도킹(터미널 문법), 가구와의 연결은 선택 링이 담당.
+//   (검토한 대안 B: 선택 순간 위치 고정 — 출렁임은 없지만 카메라 팬 시 가구와 어긋난 채 씬을 가림 → 기각.)
+function positionSelPanel() { /* 고정 도킹 — 좌표 주입 불요. QA 프로브 호환용 잔류. */ }
+// #228⑦: 스와치 = 미리보기(무소모 둘러보기) → 「적용」 버튼으로 확정·소모 (디렉터: "그전까지는 눌러보면서 둘러보기").
+//   _selPreview가 미확정 상태를 소유 — 패널 닫힘·선택 해제·가구 전환 시 revertSelPreview()가 커밋 상태로 원복한다.
+let _selPreview = null; // { item, colorIdx(커밋), gel(커밋) } — 미리보기 중인 가구의 원상
+function revertSelPreview() {
+  const p = _selPreview;
+  if (!p) return;
+  _selPreview = null; // 재진입 가드 (recolorItem→showSelPanel 경로 방지: 원복은 시각만)
+  if (p.item.colorIdx !== p.colorIdx) recolorItem(p.item, p.colorIdx);
+  applyGel(p.item); // gel은 item.gel(커밋값) 기준 재적용 — 미리보기 오버라이드 해제
 }
 function showSelPanel(item) {
+  if (_selPreview && _selPreview.item !== item) revertSelPreview(); // 다른 가구로 전환 — 이전 미리보기 원복
+  if (!_selPreview) _selPreview = { item, colorIdx: item.colorIdx, gel: item.gel || null };
   const def = DEFS[item.defId];
   $('sel-name').innerHTML = `${furnIcon(item.defId)} ${LName(def)}`;
   const sw = $('sel-swatches');
   sw.innerHTML = '';
+  let previewIdx = item.colorIdx; // 이번 렌더의 미리보기 대상(= 현재 그룹 색)
+  const committedIdx = _selPreview.colorIdx;
   def.colors.forEach((c, i) => {
     const s = document.createElement('div');
-    // 도료 게이트 (REWARD-LOOP ②): 기본색(0)·현재색은 무료, 다른 색은 그 계열 도료 1통 소모.
+    // 도료 게이트 (REWARD-LOOP ②): 기본색(0)·커밋색은 무료, 다른 색은 그 계열 도료 1통 소모(적용 시점에).
     //   시그니처 발광 가구(네온)는 hex 계열이 아니라 도심 전용 '네온 안료'를 요구한다(paintFamilyRequired).
     const fam = paintFamilyRequired(item.defId, c);
     const have = state.paints[fam] || 0;
-    const needsPaint = i !== 0 && i !== item.colorIdx;
+    const needsPaint = i !== 0 && i !== committedIdx;
     const locked = needsPaint && have < 1;
-    s.className = 'swatch' + (i === item.colorIdx ? ' active' : '') + (locked ? ' locked' : '');
+    s.className = 'swatch' + (i === previewIdx ? ' active' : '') + (locked ? ' locked' : '');
     s.style.background = '#' + c.toString(16).padStart(6, '0');
     s.title = LColor(def, i) + (i === 0 ? '' : ` — ${LName(PAINT_ALL[fam])} ${t('paint.haveN', { n: have })}`);
     // #194: hover title은 터치에서 안 뜬다 — 도료 보유 수량을 스와치 우상단 상시 배지로 병기(title은 유지)
     if (i !== 0) { const bd = document.createElement('span'); bd.className = 'sw-cnt'; bd.textContent = have; s.appendChild(bd); }
-    s.addEventListener('click', async () => {
-      if (i === item.colorIdx) return;
-      if (needsPaint) {
-        if (have < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
-        // #194: 터치(coarse)는 스와치 오탭 1회 = 도료 1통 — 소모 동작만 1단계 확인(무소모 복원·기본색은 그대로)
-        if (matchMedia('(pointer: coarse)').matches
-          && !(await gameConfirm(t('paint.confirmUse', { name: LName(PAINT_ALL[fam]) }), t('paint.confirmYes'), t('confirm.no')))) return;
-        if ((state.paints[fam] || 0) < 1) return; // 확인 대기 동안 재고가 바뀔 수 있다 — 재검사
-        state.paints[fam] = (state.paints[fam] || 0) - 1;
-        toast(t('paint.used', { name: LName(PAINT_ALL[fam]), left: state.paints[fam] }));
-      }
-      recolorItem(item, i); markCollection(item.defId, i); showSelPanel(item); scheduleSave();
+    s.addEventListener('click', () => {
+      if (i === item.colorIdx) return; // 이미 이 색을 보는 중
+      recolorItem(item, i); // 미리보기 — 소모·콜렉션 마킹 없음(확정은 아래 「적용」)
+      showSelPanel(item);   // 스와치 active·적용 버튼 상태 재렌더
     });
     sw.appendChild(s);
   });
+  // 도색 확정 버튼 — 미리보기가 커밋색과 다를 때만 노출. 무료(기본색·복원)는 즉시 확정 문구.
+  { const oldAp = $('sel-color-apply'); if (oldAp) oldAp.remove(); }
+  if (previewIdx !== committedIdx) {
+    const fam = paintFamilyRequired(item.defId, def.colors[previewIdx]);
+    const needsPaint = previewIdx !== 0;
+    const have = state.paints[fam] || 0;
+    const div = document.createElement('div');
+    div.id = 'sel-color-apply';
+    div.style.cssText = 'margin-bottom:8px';
+    div.innerHTML = `<button class="pixel-btn primary" style="width:100%" ${needsPaint && have < 1 ? 'disabled' : ''}>${needsPaint ? t('paint.applyBtn', { name: LName(PAINT_ALL[fam]) }) : t('paint.applyFree')}</button>
+      <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${t('sel.previewHint')}</div>`;
+    sw.after(div);
+    div.querySelector('button').addEventListener('click', () => {
+      if (needsPaint) {
+        if ((state.paints[fam] || 0) < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
+        state.paints[fam] = (state.paints[fam] || 0) - 1;
+        toast(t('paint.used', { name: LName(PAINT_ALL[fam]), left: state.paints[fam] }));
+      }
+      _selPreview.colorIdx = previewIdx; // 커밋
+      markCollection(item.defId, previewIdx);
+      showSelPanel(item); scheduleSave();
+    });
+  }
   // DDD-2 수집품 전시: 액자에 밤하늘 스케치를 건다 — 수집(SKETCHES)의 두 번째 보상 (수집한 것만 노출)
   { const oldSk = $('sel-sketch'); if (oldSk) oldSk.remove(); }
   if (item.defId === 'frame' && Object.keys(state.sketches || {}).length) {
@@ -9417,36 +9461,51 @@ function showSelPanel(item) {
       showSelPanel(item); renderResBar(); scheduleSave();
     });
   }
-  // #189 P3 조명 젤: 필터북 보유 + gelable 광원이면 빛 색 스와치 행 — 도료 1통 = 1회 틴트(도색 게이트 문법).
+  // #189 P3 조명 젤 → #228⑦ 미리보기+확정: 스와치 클릭=빛만 바꿔 봄(무소모), 「적용」=도료 소모·커밋.
   { const oldGel = $('sel-gel'); if (oldGel) oldGel.remove(); }
   if (def.light?.gelable && state.lightGels) {
+    if (_selPreview.previewGel === undefined) _selPreview.previewGel = item.gel || null;
+    applyGel(item, _selPreview.previewGel); // recolorItem 재빌드가 커밋 젤로 되돌린 뒤에도 미리보기 유지
+    const cur = _selPreview.previewGel || '';
+    const committedGel = _selPreview.gel || '';
     const div = document.createElement('div');
     div.id = 'sel-gel';
     div.style.cssText = 'margin-bottom:8px';
-    const cur = item.gel || '';
     // #194: 배지(sw-cnt)로 보유 수량 상시 병기 + gap 3→6px (밀집 13스와치 오탭 완화)
     const gsw = (fam, hex, title, free) =>
       `<div class="swatch${cur === fam ? ' active' : ''}${!free && !(state.paints[fam] > 0) ? ' locked' : ''}" data-gel="${fam}" title="${title}" style="background:#${hex.toString(16).padStart(6, '0')}">${free ? '' : `<span class="sw-cnt">${state.paints[fam] || 0}</span>`}</div>`;
     div.innerHTML = `<div style="font-size:10px;color:var(--text-dim);margin-bottom:3px">${t('gel.rowTitle')}</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">${gsw('', def.light.color, t('gel.original'), true)}${Object.entries(PAINT_FAMILIES).map(([f, d]) => gsw(f, d.swatch, `${LName(d)} ${t('paint.haveN', { n: state.paints[f] || 0 })}`)).join('')}</div>`;
     $('sel-swatches').after(div);
-    div.querySelectorAll('[data-gel]').forEach(b => b.addEventListener('click', async () => {
+    div.querySelectorAll('[data-gel]').forEach(b => b.addEventListener('click', () => {
       const fam = b.dataset.gel || null;
-      if ((item.gel || null) === fam) return;
-      if (fam) { // 원색 복원은 무료 — 틴트만 도료 소모
-        const have = state.paints[fam] || 0;
-        if (have < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
-        // #194: 터치(coarse) 오탭 = 도료 1통 — 소모 동작만 1단계 확인(무소모 원색 복원은 그대로)
-        if (matchMedia('(pointer: coarse)').matches
-          && !(await gameConfirm(t('gel.confirmUse', { name: LName(PAINT_ALL[fam]) }), t('gel.confirmYes'), t('confirm.no')))) return;
-        if ((state.paints[fam] || 0) < 1) return; // 확인 대기 동안 재고가 바뀔 수 있다 — 재검사
-        state.paints[fam] = (state.paints[fam] || 0) - 1;
-        toast(t('gel.applied', { name: LName(PAINT_ALL[fam]) }));
-      } else toast(t('gel.reset'));
-      item.gel = fam;
-      applyGel(item);
-      showSelPanel(item); scheduleSave();
+      if ((_selPreview.previewGel || null) === fam) return;
+      _selPreview.previewGel = fam;
+      applyGel(item, fam); // 미리보기 — item.gel 무변·소모 없음
+      showSelPanel(item);
     }));
+    // 젤 확정 버튼 — 미리보기가 커밋과 다를 때만
+    if (cur !== committedGel) {
+      const fam = _selPreview.previewGel;
+      const have = fam ? (state.paints[fam] || 0) : 1;
+      const ap = document.createElement('div');
+      ap.id = 'sel-gel-apply';
+      ap.style.cssText = 'margin-top:6px';
+      ap.innerHTML = `<button class="pixel-btn primary" style="width:100%" ${fam && have < 1 ? 'disabled' : ''}>${fam ? t('gel.applyBtn', { name: LName(PAINT_ALL[fam]) }) : t('gel.applyFree')}</button>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${t('sel.previewHint')}</div>`;
+      div.appendChild(ap);
+      ap.querySelector('button').addEventListener('click', () => {
+        if (fam) {
+          if ((state.paints[fam] || 0) < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
+          state.paints[fam] = (state.paints[fam] || 0) - 1;
+          toast(t('gel.applied', { name: LName(PAINT_ALL[fam]) }));
+        } else toast(t('gel.reset'));
+        item.gel = fam;
+        _selPreview.gel = fam; // 커밋
+        applyGel(item);
+        showSelPanel(item); scheduleSave();
+      });
+    }
   }
   // 조명/가전: 전원 토글 + 연료 잔량 (기획서 v0.2 UI: "양초 3개 보유 / 1일 1개 소비")
   const old = $('sel-power'); if (old) old.remove();
@@ -9475,10 +9534,9 @@ function showSelPanel(item) {
       toast(item.on ? t('power.turnedOn', { name: LName(def) }) : t('power.turnedOff', { name: LName(def) }));
     });
   }
-  selPanel.classList.add('show');
-  positionSelPanel(); // 내용 구성 후 크기 확정 상태에서 1차 배치 (이후 매 프레임 재투영)
+  selPanel.classList.add('show'); // #228③: 우하단 고정 도킹 — 좌표 계산 불요
 }
-function hideSelPanel() { selPanel.classList.remove('show'); }
+function hideSelPanel() { revertSelPreview(); selPanel.classList.remove('show'); } // #228⑦: 미확정 미리보기는 닫힐 때 원복
 
 let modalKind = null; // 마지막으로 연 모달 종류 (닫힘 시 퀘스트 훅 판별용, 예: 'report')
 function openModal(title, html, kind = null) {
@@ -11233,7 +11291,7 @@ function renderFrame(ctx = renderCtx) {
   tickDropSpots(t); // #182 B0 동물 드랍 지면 반짝임 펄스
   tickBalconyHint(t); // 2.0 발코니 조망 은근한 신호 (펜트하우스 「콘크리트 정글의 해」 어포던스)
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
-  positionSelPanel(); // 편집 미니 카드 재투영 — 카메라 팬/줌/드래그를 따라간다 (A안)
+  // #228③: 편집 미니 카드 매 프레임 재투영 제거 — 우하단 고정 도킹(positionSelPanel 폐기 주석 참조)
   // #189 P1: 광원 레지스트리 동기화(전원 토글·연료 소진·설치 자동 반영) + 폴백 형광등 점멸.
   //   폴백(광원 0)일 때만 점멸이 보인다 — 조명 설비 전등은 안정(전기 vs 화기 대비축).
   updateLightingRig();

@@ -742,8 +742,11 @@ const KNOWLEDGE_HASH = -451536973;
       S.showSelPanel(it);
       const lockedNoPigment = document.querySelectorAll('#sel-swatches .swatch')[1].classList.contains('locked');
       S.state.paints.neonPigment = 1; S.showSelPanel(it);
+      // #228⑦: 스와치 클릭=미리보기(무소모) → 「적용」 버튼으로 확정·소모 (신 문법)
       document.querySelectorAll('#sel-swatches .swatch')[1].click();
-      const painted = it.colorIdx === 1 && (S.state.paints.neonPigment || 0) === 0;
+      const previewFree = it.colorIdx === 1 && (S.state.paints.neonPigment || 0) === 1; // 미리보기 — 색만 바뀌고 무소모
+      const ab = document.querySelector('#sel-color-apply button'); if (ab) ab.click();
+      const painted = previewFree && it.colorIdx === 1 && (S.state.paints.neonPigment || 0) === 0;
       const gw = (S.BAL.blueprint.weights || {}).graffiti;
       return JSON.stringify({ inCommon, inAll, rollLeak, neonGate, normalGate, lockedNoPigment, painted, gw });
     `).catch(err => JSON.stringify({ error: String(err) }));
@@ -943,12 +946,14 @@ const KNOWLEDGE_HASH = -451536973;
       const gi = S.qaItems().slice(-1)[0];
       S.state.lightGels = 1;
       gi.gel = 'sage'; S.applyGel(gi);
-      out.gelOn = gi.lightObj.color.getHex() === 0x93b5a5 && gi.glowSprite.material.color.getHex() === 0x93b5a5;
+      // #228⑥: 색=스와치 원색(젤의 무드 보존) + lightBase=시감 휘도 보상(≥ 원 강도) — 이원 기대
+      out.gelOn = gi.lightObj.color.getHex() === 0x93b5a5 && gi.glowSprite.material.color.getHex() === 0x93b5a5
+        && gi.lightBase >= S.DEFS.lamp.light.intensity && gi.lightObj.intensity === gi.lightBase;
       // 세이브 왕복: 실게임 플로우(이주·개조 리빌드)처럼 레이아웃 직렬화 후 리로드 — ge 필드 왕복 검증
       S.state.layouts[S.state.current] = S.qaItems().map(i => ({ d: i.defId, c: i.colorIdx, x: i.x, z: i.z, r: i.rot, o: i.on === false ? 0 : 1, y: i.y || 0, s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
       S.loadShelter('container');
       const gi2 = S.qaItems().filter(i => i.defId === 'lamp').slice(-1)[0];
-      out.gelPersist = !!gi2 && gi2.gel === 'sage' && gi2.lightObj.color.getHex() === 0x93b5a5;
+      out.gelPersist = !!gi2 && gi2.gel === 'sage' && gi2.lightObj.color.getHex() === 0x93b5a5; // 색=스와치 원색(#228⑥ luma 보상은 intensity 쪽)
       gi2.gel = null; S.applyGel(gi2);
       out.gelReset = gi2.lightObj.color.getHex() === S.DEFS.lamp.light.color;
       out.gelBal = (S.BAL.lighting.gelBookRegions || []).length >= 2 && S.BAL.lighting.gelBookChance > 0 && S.BAL.lighting.gelBookChance < 0.1;
@@ -962,7 +967,8 @@ const KNOWLEDGE_HASH = -451536973;
       out.pool = !!li.lightPool && li.lightPool.visible === true;
       S.setItemPower ? null : null;
       li.gel = 'redOxide'; S.applyGel(li);
-      out.poolGel = li.lightPool.material.color.getHex() === 0xa8433f && li.lightObj.color.getHex() === 0xa8433f;
+      out.poolGel = li.lightPool.material.color.getHex() === 0xa8433f && li.lightObj.color.getHex() === 0xa8433f
+        && li.lightBase >= S.DEFS.ledbar.light.intensity; // 풀·광원=스와치 원색 + 강도 보상(#228⑥)
       Math.random = or;
       return JSON.stringify(out);
     `).catch(err => JSON.stringify({ error: String(err) }));

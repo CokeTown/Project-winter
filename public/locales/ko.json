@@ -2219,5 +2219,11 @@
   "data.will.will6.name": "전하지 못한 답장",
   "exp.riskGain": "이벤트 발생으로 추가 획득:",
   "obs.exit": "나가기",
-  "inv.editDone": "배치 끝내기"
+  "inv.editDone": "배치 끝내기",
+  "power.needSource": "전력원이 없다 — 태양광 패널이나 발전기부터.",
+  "paint.applyBtn": "{name} 1통으로 확정",
+  "paint.applyFree": "이 색으로 확정 (무료)",
+  "gel.applyBtn": "{name} 1통으로 빛 확정",
+  "gel.applyFree": "원래 빛으로 (무료)",
+  "sel.previewHint": "눌러서 미리보기 — 확정 전엔 소모 없음"
 }

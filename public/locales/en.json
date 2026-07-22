@@ -2219,5 +2219,11 @@
   "data.will.will6.name": "The Reply Never Sent",
   "exp.riskGain": "Extra from what happened out there:",
   "obs.exit": "Exit",
-  "inv.editDone": "Done placing"
+  "inv.editDone": "Done placing",
+  "power.needSource": "No power source — install a solar panel or run the generator first.",
+  "paint.applyBtn": "Confirm with 1 {name}",
+  "paint.applyFree": "Confirm this color (free)",
+  "gel.applyBtn": "Confirm light with 1 {name}",
+  "gel.applyFree": "Back to original light (free)",
+  "sel.previewHint": "Tap to preview — nothing spent until confirmed"
 }

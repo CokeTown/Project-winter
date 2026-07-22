@@ -2219,5 +2219,11 @@
   "data.craft.vest.hint": "ワードローブに追加 — 腕が軽い作業ベスト",
   "exp.riskGain": "出来事による追加の収穫:",
   "obs.exit": "終了",
-  "inv.editDone": "配置終了"
+  "inv.editDone": "配置終了",
+  "power.needSource": "電源がない — ソーラーパネルか発電機が先だ。",
+  "paint.applyBtn": "{name}1本で確定",
+  "paint.applyFree": "この色で確定（無料）",
+  "gel.applyBtn": "{name}1本で光を確定",
+  "gel.applyFree": "元の光に戻す（無料）",
+  "sel.previewHint": "押して試し見 — 確定まで消費なし"
 }
