@@ -18,7 +18,9 @@ const { PNG } = require(path.join(process.cwd(), 'node_modules', 'pngjs'));
 const H = require(path.join(process.cwd(), 'tests', 'harness.cjs'));
 
 const MODE = (process.argv.find(a => a.startsWith('--mode=')) || '').split('=')[1] || 'weather';
-const W = 1280, HGT = 720;
+// 캡처 해상도 — 기본 FHD(디렉터 2026-07-22: 720p 판단물은 UI 글자가 안 읽힌다).
+//   CAP_W/CAP_H로 낮출 수 있다(빠른 스모크용). 오프스크린이라 물리 모니터와 무관.
+const W = +(process.env.CAP_W || 1920), HGT = +(process.env.CAP_H || 1080);
 const OUT = process.env.CAP_OUT || path.join(process.cwd(), 'scratchpad', 'aerial');
 setTimeout(() => { console.error('CAPTURE TIMEOUT'); process.exit(3); }, 300000);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
