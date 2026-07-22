@@ -49,6 +49,11 @@ const SCENES = [
   // §9.6 히든 루트: 통로 발견 후 조명 분기(붉은 비상등만·출구 표지 꺼짐) + 개척 완공 사다리.
   //   발견 전 subway 골든은 조건부 분기라 불변 — 이 씬만 flags 주입 신규 커버(z_bunker_backdoor 문법).
   { id: 'z_subway_hidden', shelter: 'subway', weather: 'clear', hour: 8, flags: { subwayHidden: true, hiddenGateDone: true, subwayHub: true, projects: { hiddenGate: { stage: 3, invested: 0 } } } },
+  // 항공 디오라마 2씬(지도 트랙 S4): 서부·동부 overview — 시각 회귀망을 본편 밖 씬까지 확장.
+  //   결정론: rand 4242/4243 시드 고정 빌드 + open({day:40}) 고정 + qaFreeze(화톳불·비컨 펄스 위상 동결)
+  //   + 주간 맑음(낙설·창불 없음) + obs-mode(크롬 0) + overview는 goto dur 0.01(이징 즉착). 핀 DOM은 안 연다(CSS 점멸 배제).
+  { id: 'z_aerial_home', aerial: 'home', weather: 'clear', hour: 9 },
+  { id: 'z_aerial_east', aerial: 'east', weather: 'clear', hour: 9 },
 ];
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -84,8 +89,23 @@ function blockDiffPct(a, b, blk = BLK, tol = 4) {
 }
 
 async function setup(sc) {
+  if (sc.aerial) { // 항공 디오라마 씬: 셸터 로드(베이스 심) 후 디오라마 open + 펄스 동결
+    await ev(`(()=>{const S=window.__shelter;const c=document.getElementById('modal-close');if(c)c.click();
+      S.simReset(); if(S.hideTitle)S.hideTitle(); if(S.setPaused)S.setPaused(true);
+      if(S.freezeForGolden)S.freezeForGolden(${SEED});
+      if(S.loadShelter)S.loadShelter('container');
+      document.body.classList.add('obs-mode');
+      const A=S.aerialProto(${JSON.stringify(sc.aerial)});
+      A.open({ day: 40, winter: false });
+      if(A.qaFreeze)A.qaFreeze();
+      if(S.setHour)S.setHour(${sc.hour});
+      if(S.setWeather)S.setWeather(${JSON.stringify(sc.weather)});
+      return 1;})()`);
+    return;
+  }
   // freezeForGolden는 loadShelter의 Math.random 소비 전에 시드를 고정해야 하므로 로드 직전 호출.
   await ev(`(()=>{const S=window.__shelter;const c=document.getElementById('modal-close');if(c)c.click();
+    if(S.activeAerial){const a=S.activeAerial();if(a)a.close();} document.body.classList.remove('obs-mode');
     S.simReset(); if(S.hideTitle)S.hideTitle(); if(S.setPaused)S.setPaused(true);
     S.state.current=${JSON.stringify(sc.shelter)};
     if(S.freezeForGolden)S.freezeForGolden(${SEED});

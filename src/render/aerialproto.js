@@ -20,7 +20,7 @@ export function makeAerialProto(cfg = {}) {
   const CITY = cfg.city || 'home'; // S3-2: 'home'(서부)·'east'(부산형 항구도시) — 지형·톤·드레싱 분기
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 2, 900);
-  let built = false, active = false;
+  let built = false, active = false, _qaT = null; // _qaT: 골든 펄스 동결 시각(null=실시간)
   const rand = seededRand(4242);
 
   // 날씨 룩 스왑용 버퍼 (건물 지붕 적설 — 인스턴스 컬러 2벌 사전 계산)
@@ -508,11 +508,12 @@ export function makeAerialProto(cfg = {}) {
     sun.color.copy(L.sunColor); sun.intensity = L.sunInt * (snowy ? 0.45 : 1);
     const el = THREE.MathUtils.degToRad(Math.max(2, L.sunElev));
     sun.position.set(Math.cos(el) * 90, Math.sin(el) * 110 + 6, Math.cos(el) * 55);
-    // 밤의 생존 신호: 창문·화톳불은 night 팩터로
+    // 밤의 생존 신호: 창문·화톳불은 night 팩터로. _qaT = 골든 동결(펄스 위상 고정 — 캡처 결정론)
+    const NOW = _qaT != null ? _qaT : performance.now();
     if (winMat) winMat.opacity = L.night * 0.95;
-    if (firePt) firePt.intensity = (0.8 + L.night * 4.5) * (1 + 0.18 * Math.sin(performance.now() * 0.013));
-    if (fireCone) fireCone.scale.setScalar(1 + 0.1 * Math.sin(performance.now() * 0.017));
-    for (const b of beacons) { const s = 0.55 + 0.45 * Math.sin(performance.now() * 0.003 + b.userData.ph); if (b.material.transparent) b.material.opacity = 0.5 + s * 0.4; else b.material.color.setScalar ? null : null; }
+    if (firePt) firePt.intensity = (0.8 + L.night * 4.5) * (1 + 0.18 * Math.sin(NOW * 0.013));
+    if (fireCone) fireCone.scale.setScalar(1 + 0.1 * Math.sin(NOW * 0.017));
+    for (const b of beacons) { const s = 0.55 + 0.45 * Math.sin(NOW * 0.003 + b.userData.ph); if (b.material.transparent) b.material.opacity = 0.5 + s * 0.4; else b.material.color.setScalar ? null : null; }
     applyWeatherLook(ctx.weather);
     if (snowPts && snowPts.visible) { // 낙설
       const p = snowPts.geometry.attributes.position;
@@ -550,5 +551,6 @@ export function makeAerialProto(cfg = {}) {
     nodes: Object.keys(NODES),
     nodeAt(id) { return NODES[id]; }, // S2 오버레이: 핀 월드좌표 조회
     ogState: () => ({ ...ogInfo }), // QA: 잠식 연차·인스턴스 수 (#71 overgrowthState 대응)
+    qaFreeze(t = 12345) { _qaT = t; }, // 골든: 화톳불·비컨 펄스 위상 고정(카메라 이징은 실시간 유지 — 정착 후 캡처)
   };
 }
