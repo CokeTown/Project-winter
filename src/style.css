@@ -926,6 +926,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* #219 준비물 행 1줄화 — 좁은 폭에선 여백을 아끼고, 이름은 절대 꺾이지 않는다(꺾임은 eff가 담당) */
   #obs-panel .prep-row { padding: 5px 6px; gap: 6px; }
   .prep-row > span:first-child { white-space: nowrap; }
+  /* 칸마다 라인박스를 명시 고정 — 폰트가 섞이면(ja: 가나·한자는 둥근모에 없어 시스템 고딕이 그린다)
+     ascent 차이로 칸 높이가 갈려 글자가 어긋난다. 높이를 못 박아 폰트와 무관하게 같은 줄에 세운다. */
+  .prep-row > span { line-height: 14px; }
   #obs-panel .obs-hint { color: #7da884; font-size: var(--fs-s); }
   #obs-panel .obs-desc { color: #bcd0b6; font-size: var(--fs-s); line-height: 1.6; margin-bottom: 6px; word-break: keep-all; }
   /* 부팅 — 접속 의식: 인광 스윕 1회 + 타이프라이터 한 줄 (낡은 TV 지직임 레지스터, 군용 브리핑 아님) */
