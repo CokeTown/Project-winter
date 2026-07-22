@@ -11,6 +11,7 @@
 import koStr from './locales/ko.json' with { type: 'json' };
 import enStr from './locales/en.json' with { type: 'json' };
 import jaStr from './locales/ja.json' with { type: 'json' };
+import { GLYPH_NAMES } from './data/glyphs.gen.js'; // 세미오틱 글리프 명단 (UI-PIXEL-UNITY §5)
 
 export let lang = 'ko';
 
@@ -29,11 +30,23 @@ export function setLang(l) {
 }
 export function isEn() { return lang === 'en'; }
 
+// UI-PIXEL-UNITY §5: 로케일 문자열 안의 인라인 도트 아이콘(<img … img/icons/…>)을 세미오틱 글리프로 치환.
+//   로케일 JSON 3언어 261건을 파일 수정 없이 이 관문 하나로 커버한다(런타임 오버라이드 병합분 포함).
+//   글리프 미보유 이름(가구·지도 등)은 원본 <img> 유지 — 점진 전환 안전.
+const _glyphSet = new Set(GLYPH_NAMES);
+const _glyphImgRe = /<img class="px-icon" src="img\/icons\/(icon_[a-z0-9_]+)\.png"[^>]*>/g;
+function glyphize(s) {
+  if (typeof s !== 'string' || s.indexOf('img/icons/') === -1) return s;
+  return s.replace(_glyphImgRe, (m, name) => _glyphSet.has(name)
+    ? `<span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/${name}.svg');mask-image:url('img/glyphs/${name}.svg')"></span>` : m);
+}
+
 // 현재 언어로 문자열 선택 — ja는 미번역 키를 en으로 폴백(부분 번역 드롭에도 안전), 최종 폴백은 ko(원문).
+//   pick은 t/LF/LC 세 조회 경로가 전부 지나는 병목이라 glyphize를 여기 한 곳에만 건다.
 function pick(table) {
-  if (lang === 'ja' && table.ja != null) return table.ja;
-  if (lang !== 'ko' && table.en != null) return table.en;
-  return table.ko;
+  if (lang === 'ja' && table.ja != null) return glyphize(table.ja);
+  if (lang !== 'ko' && table.en != null) return glyphize(table.en);
+  return glyphize(table.ko);
 }
 
 // #34 Steam 언어 연동: Steam API 언어 코드 → 게임 로케일.

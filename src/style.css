@@ -40,26 +40,44 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     --lcd-ink: #8cf5a6; /* PDA·필드 터미널 포스퍼 */
     --lcd-dim: #4a8a58;
     --bloom: 0 0 6px rgba(120, 255, 150, 0.45); /* LCD 포스퍼 블룸 1규칙 */
+    /* ── 아이콘 텍셀 스케일 (UI-PIXEL-UNITY §1) — em/px 난립 대체. 24-그리드 소스 기준 클린 4단.
+       신규 아이콘은 이 토큰만 사용. 밀집 레이아웃(HUD·PDA) 개별 px 수렴은 실화면 2차. */
+    --icon-sm: 16px;   /* 밀집 인라인 */
+    --icon-md: 20px;   /* 기본 인라인 아이콘 (.px-icon) */
+    --icon-lg: 24px;   /* 강조·카드 (24-그리드 1:1) */
+    --icon-xl: 28px;   /* HUD 액션 버튼 (.act-icon) */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   /* ── 생성 아트 아이콘 (#19): 이모지 UI 교체 ── */
   .px-icon {
-    width: 1.3em; height: 1.3em; vertical-align: -0.25em;
+    width: var(--icon-md); height: var(--icon-md); vertical-align: -0.25em;
     image-rendering: pixelated; object-fit: contain; display: inline-block;
   }
-  .px-icon.px-lg { width: 1.8em; height: 1.8em; vertical-align: -0.4em; }
+  .px-icon.px-lg { width: var(--icon-lg); height: var(--icon-lg); vertical-align: -0.4em; }
   /* HUD 행동 버튼 아이콘 — 버튼을 ~85% 채운다 ("칸에 비해 그림이 작다" 피드백) */
   .act-icon {
-    width: 28px; height: 28px; display: inline-block; vertical-align: middle;
+    width: var(--icon-xl); height: var(--icon-xl); display: inline-block; vertical-align: middle;
     image-rendering: pixelated; object-fit: contain; pointer-events: none;
   }
   /* (B-③) 시스템 버튼 아이콘 (편집/일시정지/자동진행/설정/퀘스트) — 아트 있으면 표시, 없으면 이모지 폴백.
      cam-btn·타이틀 버튼·퀘스트 카드 공용. 아트 미생성 동안은 emoji가 이 크기 근처로 렌더된다. */
   .sys-icon {
-    width: 1.15em; height: 1.15em; display: inline-block; vertical-align: -0.2em;
+    width: var(--icon-sm); height: var(--icon-sm); display: inline-block; vertical-align: -0.2em;
     image-rendering: pixelated; object-fit: contain; pointer-events: none;
   }
-  .q-check .sys-icon { width: 1.3em; height: 1.3em; }
+  .q-check .sys-icon { width: var(--icon-md); height: var(--icon-md); }
+  /* ── 세미오틱 글리프 (UI-PIXEL-UNITY §5) — SVG mask + currentColor.
+     도트 PNG 대체: 색은 부모 텍스트색 상속(인광 그린 / warn 앰버 / crit 적색), 어떤 uiz에서도 crisp.
+     기존 크기 토큰(.px-icon/.sys-icon/.act-icon)을 그대로 탄다 — 크기 축은 §1 유지. */
+  .glyph {
+    background: currentColor;
+    /* mask-image는 인라인 style로 지정한다(문서 기준 상대경로 해석).
+       var(--g) 경유 금지 — 커스텀 프로퍼티의 상대 url은 소비 스타일시트(dist/assets/*.css) 기준으로
+       풀려 dist에서 404→전면 투명이 된다(하네스 프로브로 검거). 여기는 롱핸드만. */
+    -webkit-mask-size: contain; -webkit-mask-position: center; -webkit-mask-repeat: no-repeat;
+    mask-size: contain; mask-position: center; mask-repeat: no-repeat;
+    image-rendering: auto; /* 벡터 — pixelated 상속 무효화 */
+  }
   /* 이벤트 일러스트 파일럿 — 640x360, 모바일에서도 뷰포트 안 */
   .ev-illust {
     display: block; width: 100%; max-width: 100%; max-height: 40vh;
@@ -68,22 +86,27 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #0e1014; }
   body { font-family: 'DungGeunMo', 'Malgun Gothic', sans-serif; color: var(--text); user-select: none; }
+  /* 디렉터: 게임 UI에서 웹 특유의 이미지 드래그 고스트·롱프레스 콜아웃 전면 제거(게임이지 웹이 아님). */
+  img { -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: none; user-drag: none; -webkit-touch-callout: none; }
   /* ja 조판: DungGeunMo(한글 픽셀 폰트)엔 가나/한자 글리프가 없어 시스템 일본어 폰트로 폴백.
      keep-all은 한국어 어절 단위 줄바꿈 규칙 — 일본어(무공백)엔 줄바꿈 자체를 막아 오버플로를 만들므로
      전역 해제하고 금칙처리(line-break: strict)를 적용한다. applyStaticI18n이 <html lang>을 스탬프. */
   html[lang="ja"] body { font-family: 'DungGeunMo', 'Meiryo', 'Yu Gothic UI', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif; }
+  /* 디렉터: 영어 기본 폰트 살짝 상향 (박스 안에서 — Latin 글리프가 작게 읽힘). 토큰 +1px + 버튼 라벨.
+     게이지 라벨(.g-name)은 3열 그리드라 오버플로 위험 커서 제외(원하면 세로 스택 후 상향). */
+  html[lang="en"] { --fs-s: 11px; --fs-m: 13px; --fs-l: 16px; }
+  html[lang="en"] #hud .btn-row.icons .act-lbl { font-size: 11px; }
   html[lang="ja"] * { word-break: normal !important; line-break: strict; }
   #c { display: block; width: 100%; height: 100%; }
 
   .panel {
     position: absolute;
-    /* 재질: 상단 랜턴 하이라이트 + 미세 수평 그레인(판자 결) + 웜 차콜 — 플랫 사각 탈피 */
+    /* 노스트로모/MU·TH·UR 인광 터미널 (디렉터 적용 — ui-deco-mockup 반영): 근흑 인광 바탕 + 스캔라인 + 얇은 녹색 프레임 + 곡률 비네트 */
     background:
-      linear-gradient(180deg, var(--panel-hi), transparent 22%),
-      repeating-linear-gradient(0deg, rgba(255, 236, 200, 0.016) 0 1px, transparent 1px 3px),
-      var(--panel-bg);
-    border: 2px solid var(--panel-edge); border-radius: 2px;
-    box-shadow: inset 0 0 0 1px var(--panel-border), 0 3px 10px rgba(0, 0, 0, 0.35);
+      repeating-linear-gradient(0deg, rgba(140, 245, 166, 0.028) 0 1px, transparent 1px 3px),
+      radial-gradient(130% 120% at 50% 0%, #08130d 0%, rgba(5, 10, 8, 0.975) 58%, #030706 100%);
+    border: 2px solid rgba(140, 245, 166, 0.30); border-radius: 5px;
+    box-shadow: 0 0 0 1px rgba(140, 245, 166, 0.08), inset 0 0 34px rgba(0, 0, 0, 0.5), 0 4px 18px rgba(0, 0, 0, 0.55);
     padding: 10px 12px;
     zoom: var(--uiz);
     /* P1-F: 라운드 코너 기준 내부 클리핑 — p-head의 음수 마진/줌 반올림으로 생기는
@@ -98,8 +121,8 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   button.pixel-btn {
     font-family: inherit; font-size: 11px; color: var(--text);
-    background: #2b2620; border: 2px solid var(--panel-edge); border-radius: 2px;
-    box-shadow: inset 0 1px 0 rgba(255, 236, 200, 0.09), inset 0 -2px 0 rgba(0, 0, 0, 0.32); /* 픽셀 베벨 */
+    background: rgba(140, 245, 166, 0.05); border: 1px solid rgba(140, 245, 166, 0.32); border-radius: 3px; /* 터미널 버튼: 얇은 녹색 인광 박스 (mockup .b) */
+    box-shadow: inset 0 0 8px rgba(140, 245, 166, 0.04);
     padding: 6px 9px; cursor: pointer;
     white-space: nowrap; /* 좁아져도 글자가 세로로 꺾이지 않게 */
   }
@@ -179,12 +202,15 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     word-break: keep-all;
   }
   #hud .shelter-name .px-icon { width: 14px; height: 14px; vertical-align: -3px; }
-  #hud #gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 6px; } /* 계기 3종(밥·물·에너지) — 폭 확보로 라벨 잘림 해소 */
+  /* HUD-SPEC-RECON §1.1 (기획서 6.1 A패널): 게이지 3열 그리드 → 행 스택(라벨|바|수치) — 수치·상태문자 공간 확보 */
+  #hud #gauges { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
   #hud .gauge {
-    height: auto; display: flex; flex-direction: column; gap: 4px;
-    padding: 5px 6px 6px;
+    height: auto; display: flex; flex-direction: row; align-items: center; gap: 7px;
+    padding: 4px 7px;
     background: #081209; border: 1px solid #3f6a46; border-radius: var(--r); /* 토큰: 인셋 섀도 제거(요소 단위 남발 금지) */
   }
+  #hud .gauge .g-bar { flex: 1 1 auto; }
+  #hud .gauge .g-top { flex: 0 0 auto; min-width: 58px; }
   #hud .gauge:hover { border-color: #6fae78; }
   #hud .g-top { display: flex; align-items: center; gap: 2px; }
   #hud .g-top .px-icon { width: 12px; height: 12px; flex: 0 0 auto; }
@@ -193,16 +219,24 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     margin-left: auto; font-size: var(--fs-m); color: #f0f5ee; font-weight: normal;
     font-variant-numeric: tabular-nums; text-shadow: var(--bloom); /* 화면 유일 블룸 */
   }
-  #hud .g-bar { position: relative; height: 5px; background: rgba(170, 240, 185, 0.1); overflow: hidden; } /* LCD 내부 = 각지게(토큰) */
-  #hud .g-fill { position: absolute; inset: 0 auto 0 0; display: block; height: 100%; width: 50%; transition: width 0.3s; } /* 전역 .g-fill(inset:0 카드 채움) 무력화 — 바 안에서만 */
-  /* 게이지 고유색(디렉터 목업: 배고픔 머스터드·수분 시안·에너지 그린) + 청결 라임 */
-  #hud #g-hunger .g-fill { background: #cfe0c8; }
-  #hud #g-thirst .g-fill { background: #cfe0c8; }
-  #hud #g-energy .g-fill { background: #cfe0c8; }
-  #hud #g-clean .g-fill { background: #cfe0c8; }
+  #hud .g-bar { position: relative; height: 9px; background: rgba(140, 245, 166, 0.07); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(140, 245, 166, 0.14); } /* 디지털 VU 게이지 트랙 (터미널) */
+  /* 세그먼트 갭 — 채움 위에 어두운 세로 틈을 얹어 칸칸이 (디지털 계기 느낌, 디렉터 요청) */
+  #hud .g-bar::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; background: repeating-linear-gradient(90deg, transparent 0 5px, #060d0a 5px 7px); }
+  #hud .g-fill { position: absolute; inset: 0 auto 0 0; display: block; height: 100%; width: 50%; transition: width 0.3s; box-shadow: 0 0 6px rgba(140, 245, 166, 0.5); } /* 인광 글로우. 전역 .g-fill(inset:0) 무력화 — 바 안에서만 */
+  /* 게이지 고유색(디렉터 목업 실현: 배고픔 머스터드·수분 시안·에너지 그린·청결 라임) — 게이지별 색 구분 */
+  /* HUD-SPEC-RECON §1.1 (기획서 8.5·P-04): 색=심각도 — 정상 그린/주의 앰버/위험 적.
+     구 v1.9.10 색=정체(허기 머스터드·갈증 시안·기력 그린·청결 라임)는 본 스펙이 대체. */
+  #hud #gauges .g-fill { background: #8cf5a6; box-shadow: 0 0 6px rgba(140, 245, 166, 0.5); }
   /* 위험색은 게이지 고유색(ID 셀렉터)보다 강하게 — #gauges ID 중첩으로 승격 */
-  #hud #gauges .g-fill.warn { background: #ffffff; }
-  #hud #gauges .g-fill.crit { background: #ffffff; animation: dkblink 1.1s steps(1) infinite; }
+  #hud #gauges .g-fill.warn { background: #ffc24a; box-shadow: 0 0 6px rgba(255, 194, 74, 0.55); }
+  /* 점멸 1.3s 주기 = ≤0.8Hz (기획서 7.1 상한) */
+  #hud #gauges .g-fill.crit { background: #ff5f4d; box-shadow: 0 0 8px rgba(255, 95, 77, 0.7); animation: dkblink 1.3s steps(2) infinite; }
+  /* HUD-A02·ACC-04: 수치 병기 + 상태 문자(주의/위험). 행 순서 = 라벨(+상태) | 바 | 수치 */
+  #hud .g-num { margin-left: 0; font-size: 11px; font-weight: normal; color: #e6efe4; letter-spacing: 0; min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; text-shadow: none; }
+  #hud .g-state { font-size: 9px; letter-spacing: 0; margin-left: 3px; }
+  #hud .g-state:empty { display: none; }
+  #hud .g-state.warn { color: #ffc24a; }
+  #hud .g-state.crit { color: #ff5f4d; }
   #hud .stat { /* 컨디션 스트립: 날씨 | 경고 | 탐험 */
     display: flex; align-items: center; justify-content: space-around; gap: 4px;
     background: #081209; border: 1px solid #3f6a46; border-radius: var(--r);
@@ -228,6 +262,36 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     box-shadow: 0 0 6px rgba(170, 240, 185, 0.22); /* 화면당 글로우 1곳 = 주 행동(탐험) */
   }
   #hud .btn-row.icons .pixel-btn.primary .act-lbl { color: #ffffff; }
+  /* ── HUD-SPEC-RECON §1.1 (기획서 6.5 E-바): 하단 중앙 명령 바 — 주 5 + 보조 3(.sec 축소).
+     #hud .btn-row.icons에서 이동. 버튼 id·배선 불변, 스타일만 이 블록이 소유. ── */
+  #action-bar {
+    /* 디렉터 재배치(2026-07-21): 하단 → 상단. 뷰포트 중앙이 아니라 좌 HUD·우 시계 '사이 여백'에
+       중앙 정렬 — left/right를 패널 존에 앵커하고 margin:auto. 어느 해상도에서도 두 패널 비침 0.
+       (1280 실측: 뷰포트 중앙 정렬은 시계와 71px 겹침 → 갭 중앙 정렬로 해소.) */
+    position: fixed; top: 10px; left: 336px; right: auto; margin: 0; width: fit-content; max-width: 440px;
+    display: flex; align-items: stretch; gap: 4px; z-index: 60;
+    max-width: none; flex-wrap: wrap; justify-content: center;
+    padding: 5px 7px; background: rgba(7, 14, 10, 0.86);
+    border: 1px solid #2e5c3a; border-radius: var(--r);
+  }
+  #action-bar .pixel-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 5px 8px 4px; min-width: 48px; line-height: 1; font-size: 15px; position: relative;
+    background: #0b1710; border-color: #3f6a46; border-radius: var(--r);
+  }
+  #action-bar .pixel-btn:hover { border-color: #6fae78; }
+  #action-bar .act-icon { width: 24px; height: 24px; }
+  #action-bar .act-lbl { font-size: 10px; line-height: 1; color: #7da884; font-weight: normal; letter-spacing: 0; }
+  #action-bar .pixel-btn.primary .act-lbl { color: #ffffff; }
+  #action-bar .ab-div { width: 1px; align-self: stretch; background: #294f34; margin: 1px 3px; }
+  #action-bar .pixel-btn.sec { opacity: 0.85; min-width: 44px; padding: 8px 7px 5px; }
+  #action-bar .pixel-btn.sec .act-icon { width: 18px; height: 18px; }
+  #action-bar .pixel-btn.sec .act-lbl { font-size: 9px; }
+  body.title-mode #action-bar, body.ui-hidden #action-bar { display: none !important; }
+  body.wallpaper-mode #action-bar .pixel-btn.primary { display: none; } /* 배경화면 모드: 탐험 off(압박 UI 소거) */
+  /* 모바일: 상단은 HUD 패널과 세로로 겹치고 엄지 도달성도 하단이 우위 → 하단 전폭 밴드 유지(랩 허용).
+     데스크톱만 상단 갭 밴드(디렉터 "상단으로"는 와이드 레이아웃 대상). */
+  @media (max-width: 700px) { #action-bar { top: auto; bottom: 6px; left: 6px; right: 6px; width: auto; max-width: none; margin: 0; gap: 4px; padding: 5px 6px; } #action-bar .pixel-btn { min-width: 46px; padding: 5px 7px 4px; } }
   /* ── #199 UI B: 우측 엣지 도킹(접힘 보관) + PDA 계측 오버레이 ──
      디렉터 레퍼런스: 화면 우측에 반쯤 걸친 PDA 하우징·가죽 일지. 당기면 열림.
      하이브리드: 계측=전자(LCD 포스퍼 — 기존 #lcd 톤 계승), 기록=종이(일지=기존 저널). */
@@ -334,19 +398,22 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #pda-screen { /* 에셋 유리가 배경 — 콘텐츠는 포스퍼 텍스트만 얹는다 */
     flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
     background: repeating-linear-gradient(180deg, rgba(170, 240, 185, 0.02) 0 2px, transparent 2px 4px);
-    padding: 2px 12px 10px; color: #f0f5ee; font-size: 11px; line-height: 1.8;
-    text-shadow: 0 0 4px rgba(120, 255, 150, 0.3); word-break: keep-all;
+    padding: 2px 11px 10px; color: #f0f5ee; font-size: 9px; line-height: 1.55;   /* 피드백: 7.5px는 너무 작아 blurry — 가독 우선 상향(넘치면 스크롤). 실화면 튜닝 대기 */
+    text-shadow: 0 0 2px rgba(120, 255, 150, 0.28); word-break: keep-all;         /* 포스퍼 글로우 축소 = 번짐↓ 크리스프↑ */
   }
   #pda-screen::-webkit-scrollbar { width: 5px; }
   #pda-screen::-webkit-scrollbar-thumb { background: #3f5a35; border-radius: 3px; }
-  #pda-screen .ph { font-size: 10px; letter-spacing: 2px; color: #7da884; border-bottom: 1px solid rgba(125, 168, 132, 0.4); padding-bottom: 3px; margin-bottom: 6px; }
+  #pda-screen .ph { font-size: 9px; letter-spacing: 1px; color: #7da884; border-bottom: 1px solid rgba(125, 168, 132, 0.4); padding-bottom: 3px; margin-bottom: 5px; }
   #pda-screen .ph:not(:first-child) { margin-top: 12px; }
   #pda-screen .pline { display: flex; align-items: center; gap: 8px; }
   #pda-screen .pline .pk { flex: 0 0 auto; min-width: 64px; color: #cfe0c8; }
   #pda-screen .pline .pbar { flex: 1; height: 8px; background: rgba(170, 240, 185, 0.1); border: 1px solid #3f6a46; border-radius: 2px; overflow: hidden; }
   #pda-screen .pline .pbar > i { display: block; height: 100%; background: #cfe0c8; box-shadow: 0 0 5px rgba(120, 255, 150, 0.5); }
-  #pda-screen .pline .pbar > i.warn { background: #cfe0c8; box-shadow: 0 0 5px rgba(170, 240, 185, 0.5); }
-  #pda-screen .pline .pbar > i.crit { background: #ffffff; box-shadow: 0 0 5px rgba(255, 255, 255, 0.6); }
+  /* 디렉터: PDA 게이지도 게이지별 색 (HUD와 동일 스킴). 아래 warn/crit이 뒤에 와서 위험 상태를 덮어씀. */
+  /* HUD-SPEC-RECON §1.1: PDA 게이지도 HUD와 동일 토큰(NFR-004) — 색=심각도 */
+  #pda-screen .pline .pbar > i { background: #8cf5a6; box-shadow: 0 0 5px rgba(140, 245, 166, 0.5); }
+  #pda-screen .pline .pbar > i.warn { background: #ffc24a; box-shadow: 0 0 5px rgba(255, 194, 74, 0.5); }
+  #pda-screen .pline .pbar > i.crit { background: #ff5f4d; box-shadow: 0 0 5px rgba(255, 95, 77, 0.6); animation: dkblink 1.3s steps(2) infinite; }
   #pda-screen .pline .pv { flex: 0 0 auto; min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
   #pda-screen .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
   #pda-screen .pcell { display: flex; align-items: center; gap: 6px; border-bottom: 1px dashed rgba(125, 168, 132, 0.3); padding: 2px 0; }
@@ -364,6 +431,12 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     background: #f0f5ee; box-shadow: 0 0 7px rgba(120, 255, 150, 0.9), 0 0 0 2px rgba(8, 18, 10, 0.8);
     animation: dkblink 1.4s steps(1) infinite;
   }
+  /* 디렉터: PDA 미니맵 해금 지역 점 — 방문 전은 흐린 회록, 다녀오면 밝은 라임(전도 잉크 톤과 통일) */
+  #pda-screen .pmap .pregion {
+    position: absolute; width: 6px; height: 6px; transform: translate(-50%, -50%); border-radius: 50%;
+    background: #7d9a80; box-shadow: 0 0 0 1px rgba(8, 18, 10, 0.8); opacity: 0.72; /* 서브픽셀 1.5px→1px(AA 제거) */
+  }
+  #pda-screen .pmap .pregion.seen { background: #b9f0c4; box-shadow: 0 0 5px rgba(120, 255, 150, 0.7), 0 0 0 1px rgba(8, 18, 10, 0.8); opacity: 1; }
   #pda-screen .pnote { color: #7da884; font-size: 10.5px; }
   #pda-screen .pbtn-row { margin-top: 10px; display: flex; justify-content: flex-end; }
   /* #211 필드노트 흡수 — 쾌적 4축 분해. 구 .nt-ax(종이 잉크)를 PDA 초록 LCD 문법으로 옮긴다:
@@ -441,17 +514,31 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     width: 100%; height: 100%; max-width: none;
     max-height: none; margin: 0;
     background: transparent; border: none; box-shadow: none;
-    padding: 6px 10px 8px; overflow-y: auto; overscroll-behavior: contain;
+    padding: 6px 9px 8px; overflow-y: auto; overscroll-behavior: contain;
     color: #f0f5ee; text-shadow: 0 0 4px rgba(120, 255, 150, 0.25);
-    font-size: 11px; word-break: keep-all;
+    font-size: 7px; word-break: keep-all; line-height: 1.5;   /* 디렉터 3차: PDA 앱 폰트 ~4pt 추가 축소 */
   }
   body.pda-app #pda-lcd #modal::-webkit-scrollbar { width: 5px; }
   body.pda-app #pda-lcd #modal::-webkit-scrollbar-thumb { background: #3f5a35; border-radius: 3px; }
   body.pda-app #pda-lcd #modal h2 { /* 앱 헤더 — LCD 상단 세그먼트 톤 */
-    font-size: 12px; letter-spacing: 2px; color: #f0f5ee;
-    border-bottom: 1px solid rgba(125, 168, 132, 0.5); padding-bottom: 5px;
+    font-size: 8.5px; letter-spacing: 1px; color: #f0f5ee;
+    border-bottom: 1px solid rgba(125, 168, 132, 0.5); padding-bottom: 4px;
     text-shadow: 0 0 6px rgba(120, 255, 150, 0.5);
   }
+  /* 디렉터: 좁은 LCD에서 본문·버튼·수치도 함께 축소. 프로젝트 카드·제작·이주 공통 압축. */
+  body.pda-app #pda-lcd #modal .pixel-btn { font-size: 7px; padding: 2px 6px; }
+  body.pda-app #pda-lcd #modal p, body.pda-app #pda-lcd #modal .modal-body { font-size: 7px; line-height: 1.55; }
+  /* 디렉터: 붉은 섹션 헤더(가구·물품·큰 공사·꾸미기 등) 인라인 font-size:12px가 커서 인라인 이김 → 스코프 !important로 축소 */
+  body.pda-app #pda-lcd #modal div[style*="var(--accent)"] { font-size: 8px !important; margin: 6px 0 3px !important; }
+  /* 디렉터: 저널/도감/업적 모달이 좁은 LCD에 도킹될 때 .report-sec가 축소 규칙에서 누락돼 박스를 넘쳤다. */
+  body.pda-app #pda-lcd #modal .report-sec { font-size: 8px; line-height: 1.5; }
+  body.pda-app #pda-lcd #modal .report-sec .r-title { font-size: 9px; }
+  /* 디렉터: 제작 상위 카테고리 탭바(가구·물품/복장/공사/꾸미기) — PDA 탭바 톤. 상단 고정. */
+  body.pda-app #pda-lcd #modal .craft-tabs { display: flex; gap: 3px; margin: -2px 0 6px; position: sticky; top: -6px; background: rgba(6, 10, 5, 0.92); padding: 3px 0; z-index: 4; }
+  body.pda-app #pda-lcd #modal .craft-tab { flex: 1; font-size: 8px; padding: 3px 2px; background: rgba(170, 240, 185, 0.06); border: 1px solid #3f6a46; border-radius: 3px; color: #bcd0b6; cursor: pointer; white-space: nowrap; }
+  body.pda-app #pda-lcd #modal .craft-tab.active { background: rgba(120, 255, 150, 0.16); border-color: var(--accent); color: #f0f5ee; font-weight: bold; }
+  body.pda-app #pda-lcd .prep-row, body.pda-app #pda-lcd .craft-row, body.pda-app #pda-lcd .li-row { padding: 3px 7px; gap: 2px 6px; }
+  body.pda-app #pda-lcd .px-icon { width: 1.2em; height: 1.2em; }
   body.pda-app #pda-lcd .prep-row { /* 행 = 포스퍼 리스트. 좁은 LCD 폭 정돈: 이름 한 줄 + 코스트·버튼 줄 */
     display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px;
     padding: 6px 8px; overflow: hidden;
@@ -683,12 +770,12 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
   /* 도료 게이트 (REWARD-LOOP ②): 그 계열 도료가 없으면 잠금 — 어둡게 + 자물쇠 */
   .swatch.locked { opacity: 0.45; cursor: not-allowed; }
-  .swatch.locked::after { content: '🔒'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  .swatch.locked::after { content: ''; position: absolute; inset: 0; background: rgba(6, 10, 5, 0.55); } /* 디렉터: 이모지 🔒 제거 — 잠금은 딤 오버레이로 표현 */
   /* #194: 도료 보유 수량 상시 배지 — hover title이 안 뜨는 터치 환경에서도 보유량이 보이게 (.tool-item .cnt 축소판) */
   .swatch .sw-cnt {
     position: absolute; top: -7px; right: -6px;
     background: #2b2620; color: var(--text); font-size: 9px; line-height: 1;
-    padding: 1px 4px; border: 1px solid var(--panel-border); border-radius: 7px;
+    padding: 1px 4px; border: 1px solid var(--panel-border); border-radius: var(--r); /* 과한 7px→토큰(웹앱풍 완화) */
     pointer-events: none;
   }
   #sel-panel .btn-row { display: flex; gap: 5px; }
@@ -716,6 +803,60 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   @keyframes jackpotIn { from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.9); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
 
   /* ── 모달 (이주 / 전리품 / 도움말) ── */
+  /* ── 관측 단말 (S2 — 풀스크린 위성 뷰. 모달(50)보다 아래: 준비/눈사태 선택 모달이 위에 뜬다) ── */
+  #obs-screen { position: absolute; inset: 0; z-index: 44; display: none; pointer-events: none; }
+  #obs-screen.show { display: block; }
+  /* 관측 모드: 본편 크롬을 걷는다 — 상단 시계 밴드만 남긴다(시안 상단 스테이터스 문법) */
+  body.obs-mode #hud, body.obs-mode #res-bar, body.obs-mode #quest-card, body.obs-mode #radio-bubble,
+  body.obs-mode #dock-pda, body.obs-mode #toolbar, body.obs-mode #exp-panel, body.obs-mode .cam-btn,
+  body.obs-mode #action-bar, body.obs-mode #tip-note,
+  body.obs-mode #clock-panel { display: none !important; } /* action-bar=상단 명령 밴드 · tip-note=종이 팁 — 관측 컷 노이즈(실캡처 검거) · clock-panel=본편 시계(디렉터 2026-07-22: 단말 내부 시계 #obs-clock으로 대체 — 크롬 완전 소거) */
+  #obs-clock { font-size: var(--fs-s, 12px); color: #6fd88c; letter-spacing: 1.5px; font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 6px rgba(120, 255, 150, 0.45); opacity: 0.92; }
+  #obs-clock::before { content: '· '; opacity: 0.6; }
+  #obs-top { position: absolute; top: 10px; left: 14px; display: flex; align-items: center; gap: 10px; z-index: 4; pointer-events: auto; }
+  #obs-title { font-size: var(--fs-m); color: #8cf5a6; letter-spacing: 2px; text-shadow: 0 0 7px rgba(120, 255, 150, 0.55); }
+  #obs-title::before { content: '// '; opacity: 0.8; }
+  #obs-pins { position: absolute; inset: 0; z-index: 1; }
+  /* 콜아웃 핀(디렉터 2026-07-22): 지역명이 노드 '위'에 연결선으로 얹힌다 — 점 하단 중심이 노드 좌표.
+     구형(옆 라벨+flip)은 폐기: 세로 콜아웃은 좌우 반전이 필요 없다. */
+  .obs-pin { position: absolute; transform: translate(-50%, calc(-100% + 4px)); display: flex; flex-direction: column; align-items: center; gap: 0; cursor: pointer; pointer-events: auto; white-space: nowrap; }
+  .obs-pin .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(140, 245, 166, 0.25); box-shadow: 0 0 0 1px #8cf5a6, 0 0 8px rgba(120, 255, 150, 0.8); animation: dkblink 1.6s steps(2) infinite; }
+  .obs-pin .lead { width: 1px; height: 13px; background: linear-gradient(to bottom, rgba(140, 245, 166, 0.7), rgba(140, 245, 166, 0.25)); }
+  .obs-pin .nm { font-size: 11px; color: #cfe0c8; padding: 0 3px 1px; text-shadow: 0 0 4px rgba(8, 18, 10, 0.95), 0 1px 0 rgba(8, 18, 10, 0.9); background: rgba(8, 16, 10, 0.42); }
+  /* 데모 「궁금한 문」 잠금 핀 — 인광 죽인 회색, 무점멸·무클릭 (#175 단일화, 본편=미노출) */
+  .obs-pin.lock { cursor: default; opacity: 0.55; }
+  .obs-pin.lock .dot { background: rgba(150, 158, 150, 0.3); box-shadow: 0 0 0 1px #8a9088; animation: none; }
+  .obs-pin.lock .nm { color: #98a098; }
+  .obs-pin.off { display: none; }
+  .obs-pin:hover .dot { background: rgba(140, 245, 166, 0.7); }
+  #obs-screen.focus .obs-pin { opacity: 0.28; }
+  #obs-screen.focus .obs-pin.cur { opacity: 1; }
+  #obs-panel { position: absolute; top: 44px; right: 12px; bottom: 12px; width: 330px; z-index: 3; pointer-events: auto; overflow-y: auto; display: flex; flex-direction: column; }
+  #obs-panel .obs-body { padding: 8px 10px; }
+  #obs-panel .obs-hint { color: #7da884; font-size: var(--fs-s); }
+  #obs-panel .obs-desc { color: #bcd0b6; font-size: var(--fs-s); line-height: 1.6; margin-bottom: 6px; word-break: keep-all; }
+  /* 부팅 — 접속 의식: 인광 스윕 1회 + 타이프라이터 한 줄 (낡은 TV 지직임 레지스터, 군용 브리핑 아님) */
+  #obs-boot { position: absolute; inset: 0; z-index: 5; pointer-events: none; display: none; }
+  #obs-boot.run { display: block; }
+  #obs-boot.run::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 0%, rgba(140, 245, 166, 0.14) 46%, rgba(140, 245, 166, 0.05) 54%, transparent 100%); background-size: 100% 260%; animation: obsSweep 0.45s ease-out 1 both; }
+  #obs-boot-line { position: absolute; left: 16px; bottom: 14px; font-size: var(--fs-s); color: #8cf5a6; text-shadow: 0 0 6px rgba(120, 255, 150, 0.5); }
+  @keyframes obsSweep { from { background-position: 0 -120%; } to { background-position: 0 220%; } }
+  @media (max-width: 720px) { /* 모바일: 측면 패널 → 하단 시트 */
+    #obs-panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 46%; }
+  }
+  /* 재건 비네트 항공 무대: 스크림을 걷어 뒤의 밤 도시가 비치게 — 텍스트는 그림자로 가독 확보 */
+  #ending-screen.aerial-stage { background: rgba(8, 9, 13, 0.30); }
+  #ending-screen.aerial-stage #ending-text { text-shadow: 0 0 10px rgba(6, 8, 12, 0.95), 0 1px 2px rgba(6, 8, 12, 0.95); }
+  /* satellite 스케치 이스터에그(OBSERVATORY-CANON §3-5): 궤적 점 1개 — "저건 별이 아니다"의 회수. 일정 속도 직선(캐논 문장 그대로). */
+  #obs-sat { position: absolute; top: 54px; left: 0; width: 4px; height: 4px; border-radius: 50%; background: #cfe8d4;
+    box-shadow: 0 0 6px rgba(140, 245, 166, 0.8); opacity: 0; pointer-events: none; z-index: 3; }
+  #obs-sat.show { opacity: 0.85; animation: obsSat 36s linear infinite; }
+  @keyframes obsSat { from { transform: translateX(-3vw); } to { transform: translateX(103vw); } }
+  /* 획득물 라인(디렉터 2026-07-22: "뭘 얻을 수 있고, 소요시간 정도") — 소요는 riskLine 기존 표기 */
+  .loot-line { font-size: var(--fs-s, 12px); color: #a9bfae; margin: 3px 0 6px; opacity: 0.95; }
+  @media (prefers-reduced-motion: reduce) { #obs-boot.run::before, .obs-pin .dot { animation: none; } #obs-sat.show { animation: none; opacity: 0.5; left: 24%; } }
+
   #modal-back {
     position: absolute; inset: 0; background: rgba(8, 9, 12, 0.72);
     display: none; align-items: center; justify-content: center; z-index: 50;
@@ -918,7 +1059,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   /* 정착(가구 배치) — 이중 원 */
   .map-shelter.furnished .dot::after {
-    content: ""; position: absolute; inset: 2px; border: 1.5px solid #4a3524; border-radius: 50%;
+    content: ""; position: absolute; inset: 2px; border: 2px solid #4a3524; border-radius: 50%; /* 서브픽셀 1.5px→2px */
   }
   /* 현 거처 — 채운 강조색 + 펄스 링 + 라벨 */
   .map-shelter.current .dot { border-color: #7a3b1e; background: #c65a2e; }
@@ -1013,6 +1154,13 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   .slot-card:hover { border-color: var(--accent); }
   .slot-card.empty { opacity: 0.55; }
+  /* 난이도/모드 = 슬롯카드 테두리색 (디렉터: 이모지 배지 폐지, 색으로 구분 — 쉬움 초록→어려움 빨강). */
+  .slot-card[data-mode="cozy"], .slot-card[data-mode="normal"] { border-color: #6fae78; }                     /* 코지 — 초록 */
+  .slot-card[data-mode="hard"] { border-color: #e0a53a; box-shadow: 0 0 0 1px rgba(224, 165, 58, 0.25); }     /* 생존 — 앰버 */
+  .slot-card[data-mode="hardcore"] { border-color: #e0574a; box-shadow: 0 0 0 1px rgba(224, 87, 74, 0.3); }   /* 혹한 — 적색 */
+  .slot-card[data-mode="zen"] { border-color: #5aa0d0; }                                                       /* 무한 — 청록 */
+  .slot-card[data-mode="wallpaper"] { border-color: #b06ee6; }                                                 /* 꾸미기 — 보라 */
+  .slot-card[data-mode]:hover { border-color: var(--accent); }  /* 호버 강조 복원 — 특이도(0,3,0) > data-mode(0,2,0) */
   .slot-card .sl-no { font-size: 18px; color: var(--accent); }
   .slot-card .sl-body { flex: 1; font-size: 11px; line-height: 1.6; }
   .slot-card .sl-meta { color: var(--text-dim); font-size: 10px; }
@@ -1090,8 +1238,8 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     zoom: var(--uiz);
   }
   #journal-screen.show #journal-paper { transform: translateY(0) rotate(-1deg); opacity: 1; }
-  #journal-title { font-size: 15px; font-weight: bold; margin-bottom: 12px; letter-spacing: 1px; }
-  #journal-body { font-size: 12px; line-height: 1.9; min-height: 90px; word-break: keep-all; overflow-wrap: break-word; }
+  #journal-title { font-size: 13px; font-weight: bold; margin-bottom: 10px; letter-spacing: 1px; } /* 디렉터: 저널 폰트 축소 */
+  #journal-body { font-size: 10px; line-height: 1.55; min-height: 90px; word-break: keep-all; overflow-wrap: break-word; } /* 디렉터: 12→10px·행간 1.9→1.55 (박스 넘침 방지) */
   #journal-body kbd { background: rgba(58,48,38,0.12); border: 1px solid rgba(58,48,38,0.4); border-radius: 3px; padding: 0 5px; font-family: inherit; color: #3a3026; }
   #journal-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
   #journal-page-ind { font-size: 11px; color: rgba(58,48,38,0.65); letter-spacing: 1px; }
@@ -1105,7 +1253,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     /* z-index 55: 모달 백드롭(50)보다 위 — 리포트/인카운터가 떠 있어도 쪽지가 보인다 (toast와 동급) */
     /* v1.4.1(오디트 P2): 우측 자원바(#res-bar right:12px width:208px → 우측 220px 점유)와 겹침 해소.
        쪽지를 자원바 컬럼 왼쪽으로 밀어(right 220px+여백) 우하단에서 세로로 겹치지 않게 한다. */
-    position: absolute; right: 232px; bottom: 22px; z-index: 55;
+    position: absolute; right: 232px; bottom: 22px; z-index: 55; /* 명령 바 상단 이동으로 하단 복원(원위치) */
     width: 260px; padding: 20px 26px 24px;
     /* 전용 가로 스트립 PNG(투명 배경·찢긴 테두리·그림자 베이크) — applyPaperBg가 씌운다.
        배경색/클립패스/박스섀도는 투명 PNG 밖으로 사각형이 비쳐서 금지 */
@@ -1148,7 +1296,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #quest-card.done-flash .q-lore { display: none; }
   #quest-card .q-body { display: flex; align-items: center; gap: 8px; }
   #quest-card .q-icon { font-size: 20px; line-height: 1; }
-  #quest-card .q-icon .q-art { width: 26px; height: 26px; image-rendering: auto; display: block; }
+  #quest-card .q-icon .q-art { width: 26px; height: 26px; image-rendering: pixelated; display: block; } /* 픽셀아트 아이콘 — 스무스(auto)→하드 엣지 */
   #quest-card .q-text { flex: 1; font-size: 11px; line-height: 1.4; }
   #quest-card .q-prog { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
   #quest-card .q-check {
@@ -1185,29 +1333,35 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .p-head {
     display: flex; align-items: center; gap: 6px;
     margin: -10px -12px 8px; padding: 5px 8px;
-    background: linear-gradient(180deg, #2c2620, #211c16); /* 그을린 헤더 스트립 */
-    border-bottom: 2px solid var(--panel-edge);
-    box-shadow: inset 0 -1px 0 rgba(232, 168, 108, 0.22);  /* 앰버 심 — 랜턴 불빛 한 줄 */
-    border-radius: 2px 2px 0 0;
+    background: linear-gradient(180deg, rgba(140, 245, 166, 0.06), transparent); /* 터미널 헤더 스트립 */
+    border-bottom: 1px solid rgba(140, 245, 166, 0.3);  /* // 섹션 라인 */
+    border-radius: 4px 4px 0 0;
     cursor: grab; user-select: none; touch-action: none;
-    font-size: 10px; color: var(--text-dim); letter-spacing: 1px;
+    font-size: 10px; color: #8cf5a6; letter-spacing: 1.5px; text-shadow: 0 0 5px rgba(140, 245, 166, 0.35);
   }
-  /* 프레임 리벳(못) — 헤더 좌우 상단 2점. 판자 게시판의 물성 한 방울 */
+  /* 상태 LED — 헤더 좌측 점멸 녹색 점 (노스트로모 콘솔) */
+  .p-head::before {
+    content: ''; flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%;
+    background: #8cf5a6; box-shadow: 0 0 5px rgba(140, 245, 166, 0.85); animation: ledBlink 1.9s steps(1) infinite;
+  }
+  @keyframes ledBlink { 50% { opacity: 0.25; } }
+  body.reduce-motion .p-head::before { animation: none; }
+  .p-head .p-title::before { content: '// '; opacity: 0.55; } /* // 섹션 프리픽스 */
+  /* 터미널 코너 브래킷 — 헤더 상단 좌우 (구 프레임 리벳 자리). 얇은 녹색 ㄱ (노스트로모 프레임) */
   .panel::before, .panel::after {
-    content: ''; position: absolute; top: 5px; width: 4px; height: 4px;
-    background: #6a5d49; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 236, 200, 0.35);
-    z-index: 2; pointer-events: none;
+    content: ''; position: absolute; top: 4px; width: 11px; height: 11px;
+    z-index: 2; pointer-events: none; opacity: 0.6;
   }
-  .panel::before { left: 5px; }
-  .panel::after { right: 5px; }
+  .panel::before { left: 4px; border-top: 2px solid #8cf5a6; border-left: 2px solid #8cf5a6; }
+  .panel::after { right: 4px; border-top: 2px solid #8cf5a6; border-right: 2px solid #8cf5a6; }
   .p-head:active { cursor: grabbing; }
   /* 📌 UI 배치 고정: 드래그 잠금 상태 — 손이 못 잡는 헤더 (디렉터 2026-07-10) */
   body.ui-pinned .p-head, body.ui-pinned .p-head:active { cursor: default; }
   body.ui-pinned .p-head .p-title { opacity: 0.75; }
   .p-head .p-title { flex: 1; overflow: hidden; white-space: nowrap; }
   .p-head .p-min {
-    background: #2c3140; border: 1px solid var(--panel-border); border-radius: 2px;
-    color: var(--text); font-family: inherit; font-size: 11px; line-height: 1;
+    background: rgba(140, 245, 166, 0.05); border: 1px solid rgba(140, 245, 166, 0.3); border-radius: 3px;
+    color: #8cf5a6; font-family: inherit; font-size: 11px; line-height: 1;
     width: 20px; height: 18px; cursor: pointer; padding: 0;
   }
   .p-head .p-min:hover { border-color: var(--accent); color: var(--accent); }
@@ -1290,7 +1444,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     max-width: 260px; padding: 7px 10px;
     background: rgba(8, 12, 9, 0.86); border: 1px solid rgba(127, 214, 127, 0.5); border-radius: 4px;
     color: #7fd67f; font-size: 12px; line-height: 1.55;
-    font-family: 'DungGeunMo', 'Galmuri11', monospace; letter-spacing: 0.2px;
+    font-family: 'DungGeunMo', 'Malgun Gothic', sans-serif; letter-spacing: 0.2px; /* 폴백 통일: 미로드 Galmuri11+monospace → body와 동일 스택 */
     word-break: keep-all; overflow-wrap: break-word;
     box-shadow: 0 3px 14px rgba(0,0,0,0.5), 0 0 8px rgba(127,214,127,0.12) inset;
     text-shadow: 0 0 4px rgba(127,214,127,0.35);
@@ -1414,7 +1568,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
 
   /* ── v1.9: 일시정지 ── */
   #pause-ind {
-    display: none; position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+    display: none; position: fixed; top: 62px; left: 50%; transform: translateX(-50%); /* 상단 명령 바(top:10) 아래로 */
     z-index: 20; padding: 6px 14px; font-size: 12px; letter-spacing: 2px;
     color: var(--accent); background: rgba(14,16,20,0.82);
     border: 2px solid var(--panel-border); border-radius: 4px;

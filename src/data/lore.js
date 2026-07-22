@@ -81,6 +81,9 @@ export const MEMOS = {
   rsc6: { region: 'research', name: '기상 예측 부록', nameEn: 'Climate Forecast Annex', desc: '두꺼운 부록의 접힌 페이지. 대규모 소각 이후 대기 그을음이 햇빛을 가려 수년간 겨울이 이어질 것이라는 예측.\n"인류가 스스로 부른 겨울. 우리는 그것을 알고도 눌렀다."', descEn: 'A folded page in a thick annex. It predicts that soot from mass incineration would veil the sun, and winter would last years.\n"A winter mankind called down upon itself. We knew, and we pressed it anyway."' },
   rsc7: { region: 'research', name: '연구소 출입 기록', nameEn: 'Lab Access Log', desc: '지하 연구동 출입 단말의 마지막 기록들. 대부분 퇴근 표시가 없다. 한 사람만 며칠 더 드나든다.\n식별번호 뒤 직함: 관측 프로그램 책임. 이름 자리엔 이니셜 하나뿐이다.', descEn: 'The last entries from the undercroft lab’s access terminal. Most have no clock-out. One person keeps coming and going for days more.\nAfter the ID, a title: Head, Observation Program. Where the name should be, a single initial.' },
   rsc8: { region: 'research', name: '관측 프로그램 개요', nameEn: 'Observation Program Brief', desc: '표지에 도장. 소각 이후 지상에 남은 생존 신호를 위성으로 관측·기록하는 계획.\n"우리는 내려갈 수 없다. 그러니 위에서 지켜본다. 버티는 불빛이 있는 한, 이건 실패가 아니다."', descEn: 'A stamped cover sheet. A plan to track and log surviving signals on the ground by satellite, after the burning.\n"We cannot come down. So we watch from above. As long as a light holds out, this is not a failure."' },
+  // 진실 사슬 정식 편입(디렉터 2026-07-22): 관측 프로그램(rsc8)의 실물 증거 — "계획"의 다음 장이 "명단"이다.
+  //   사슬=정의 순서(unRes[0] 순차 드랍)라 위치가 곧 읽는 순서. OBSERVATORY-CANON §3-2.
+  obs2: { region: 'research', name: '관측 일지 — 발신 불명', nameEn: 'Observation Log — Unsigned', desc: 'D+214. 3번 격자 불빛 하나 유지. 명단에 추가함.\n서명은 없다.', descEn: 'D+214. Grid 3, one light holding. Added to the list.\nThere is no signature.' },
   rsc9: { region: 'research', name: '박사의 개인 노트', nameEn: 'The Doctor’s Personal Note', desc: '연구용 노트 사이에 끼워진 사적인 쪽지. "나는 이 결정에 서명한 세 사람 중 하나였다. 반대편에.\n그래서 나는 여기 남아, 내가 막지 못한 겨울을 끝까지 지켜보기로 했다."', descEn: 'A private note tucked among the research pads. "I was one of the three who signed against this.\nSo I chose to stay here, and watch to the end the winter I could not stop."' },
   rsc10: { region: 'research', name: '위성 교신 로그', nameEn: 'Satellite Uplink Log', desc: '단말 화면을 옮겨 적은 종이. 궤도 관측소와의 정기 교신 기록. 대부분 "지상 신호 없음".\n맨 아래 한 줄만 다르다. "신호 하나 감지. 좌표 기록. — 계속 지켜본다."', descEn: 'A page transcribed from a terminal. Logs of regular contact with the orbital station. Most read "no surface signal."\nOnly the bottom line differs: "One signal detected. Coordinates logged. — Keep watching."' },
   rsc11: { region: 'research', name: '무전 기지 설계도', nameEn: 'Radio Base Schematic', desc: '접힌 청사진. 지상에서 궤도 관측소로 신호를 되쏘는 송신 기지의 도면이다. 안테나·송신기·전원 계통이 나뉘어 있다.\n여백에 손글씨. "누군가 이걸 다시 세운다면, 위에서 응답할 것이다."', descEn: 'A folded blueprint. Plans for a ground station that beams a signal back up to the orbital post. Antenna, transmitter, power — each drawn apart.\nIn the margin, by hand: "If someone raises this again, there will be an answer from above."' },
@@ -98,6 +101,10 @@ export const MEMOS = {
   nw2: { region: 'citycore', name: '선별 기준 각서', nameEn: 'Memorandum of Selection', desc: '타이핑된 각서. 스스로 버틴 자. 기록을 남기는 자. 불을 지킨 자 — \'데려갈 가치\'의 기준이 항목으로 늘어서 있다.\n여백에 도장 하나가 찍혀 있다. "합격."', descEn: 'A typed memorandum. Those who endured alone. Those who kept records. Those who tended a fire — the criteria of "worth taking," set down item by item.\nIn the margin, a single stamp: "Selected."' },
   nw3: { region: 'citycore', name: '규합 계획 개요', nameEn: 'Assembly Plan Brief', desc: '제본된 개요서. 남은 생존자를 한 곳에 모아 \'다음 인류\'를 시작한다는 계획 — 지도부와 규범, 자리 배치까지 이미 정해져 있다.\n우리가 함께 지을 세상이 아니라, 그들이 먼저 설계해 둔 세상이었다.', descEn: 'A bound brief. A plan to gather the remaining survivors in one place and begin the "next humanity" — leadership, rules, even seating already decided.\nNot a world we would build together. A world they had already drawn.' },
   nw4: { region: 'citycore', name: '초대장', nameEn: 'The Invitation', desc: '봉투도 없이 놓인 한 장. 좌표와 날짜, 그리고 짧은 문장.\n"우리는 당신을 오래 지켜봤습니다. 자리는 비워 두었습니다." — 초대인지, 소환인지.', descEn: 'A single sheet, left without an envelope. Coordinates, a date, and one short sentence.\n"We have watched you for a long time. Your place is kept." — An invitation, or a summons.' },
+
+  // ── 관측 단말 lore 씨앗 (OBSERVATORY-CANON §3 · 디렉터 승인 2026-07-22) ──
+  //   obs1=단말의 출처 서사(그 사람의 육성). obs2는 진실 사슬 편입으로 rsc8 뒤에 정의(사슬=정의 순서).
+  obs1: { region: 'residential', name: '수신 안내문', nameEn: 'Reception Note', desc: '옥상 안테나를 남쪽으로 3도. 새벽에만 잡힌다. 위에서 찍은 사진이 나온다 — 누가 보내는지는 모르겠고, 묻는 법도 없다.\n그냥 튼다. 우리 동네가 아직 있는지 보려고.', descEn: 'Roof antenna, three degrees south. Only comes in before dawn. Pictures taken from above — no idea who sends them, and no way to ask.\nI tune in anyway. To see if our block is still there.' },
 };
 // 유서 6종 — 지역 무관 별도 풀, 극저확률 (REQ-LORE-01)
 export const WILLS = {
@@ -164,6 +171,11 @@ export const BROADCASTS = {
   doctor2: { kind: 'doctor', doctor: true, name: '박사의 일지 · 조각 둘', nameEn: 'Doctor’s Log · Fragment Two',
     air: '…위성은 아직 돈다. 불빛 하나가 아홉 해를 버티면— 내려갈 이유가 된다. …기다린다. 끝.', airEn: '…the satellite still turns. One light, nine years— reason enough to come down. …I wait. Out.',
     desc: '"관측 위성은 아직 돈다. 지상에 불빛 하나가 아홉 해를 버티면, 우리는 내려갈 이유를 얻는다. 그 하나를 기다린다."', descEn: '"The satellite still turns. If one light on the ground lasts nine years, we are given a reason to come down. I wait for that one."' },
+  // 관측 단말 lore 씨앗 (OBSERVATORY-CANON §3-3 · 디렉터 승인 2026-07-22) — 죽은 기상 루프.
+  //   응답 금지가 곧 세계관("둘러싸였으나 혼자"의 회선판). 녹음된 목소리가 몇 년째 같은 자리를 돈다.
+  obs_loop: { kind: 'machine', name: '관측 회선 점검', nameEn: 'Observation Line Check',
+    air: '…관측 회선 점검 방송입니다. 응답하지 마십시오. 본 회선은 수신 전용입니다. …관측 회선 점검 방송입니다…', airEn: '…this is the observation-line check. Do not respond. This line is receive-only. …this is the observation-line check…',
+    desc: '녹음된 목소리가 몇 년째 같은 문장을 돈다. 응답하지 말라는 당부만 남아서 돈다.', descEn: 'A recorded voice has circled the same sentence for years. Only the plea not to answer keeps going round.' },
 };
 
 /* ── 1.3 밤하늘 스케치 6종 (관측소 완공 후, 맑은 밤 이벤트로 수집) ──

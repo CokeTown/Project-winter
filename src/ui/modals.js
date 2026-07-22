@@ -39,7 +39,7 @@ export function makeModals(ctx) {
       return `
     <div class="slot-card mode-card ${lock ? 'locked' : ''}" data-mode="${mode}" data-locked="${lock ? 1 : 0}">
       <div class="sl-body">
-        <div class="mc-title">${lock ? '🔒 ' : ''}${t(titleId)}</div>
+        <div class="mc-title">${lock ? `<span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_locked.svg');mask-image:url('img/glyphs/icon_sys_locked.svg')"></span> ` : ''}${t(titleId)}</div>
         <div class="mc-tag">${t(tagId)}</div>
         <div class="sl-meta">${lock ? t('mode.' + mode + '.lock', { n: opt.lockN }) : t(descId)}</div>${opt.extra || ''}
       </div>
@@ -109,7 +109,7 @@ export function makeModals(ctx) {
     const sw = (c) => `<span style="display:inline-block;width:11px;height:11px;border-radius:2px;background:#${(c ?? 0x5a5648).toString(16).padStart(6, '0')};margin-right:3px;vertical-align:-1px"></span>`;
     return `
       <div class="prep-row wd-row ${sel ? 'sel' : owned ? '' : 'no'}" style="cursor:default">
-        <span>${o.emoji} ${LName(o)}</span>
+        <span>${LName(o)}</span>
         <span class="p-eff" style="font-size:10px">${sw(o.pal.coat)}${sw(o.pal.scarf ?? 0xb8862e)}${owned ? '' : t('wardrobe.locked')}</span>
         ${sel
           ? `<span style="color:var(--good);font-size:11px;margin-left:6px">${t('wardrobe.wearing')}</span>`
@@ -283,7 +283,7 @@ function openJournalModal(tab = 'journal') {
   //   '지금 내 집 상태'가 아니다. 일지 = 통계(누계) + 도감 + 업적 + 기록.
   const journalBody = `
     <div class="report-sec"><span class="r-title">${t('journal.statsTitle')}</span><br>
-      ${t('journal.statsLine', { day: state.day, sicon: se.icon, exp: state.stats.exp, succ: state.stats.success, craft: state.stats.craft || 0, stay: state.stayDays || 0 })}
+      ${t('journal.statsLine', { day: state.day, sicon: `<span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_season_${se.id}.svg');mask-image:url('img/glyphs/icon_season_${se.id}.svg')"></span>`, exp: state.stats.exp, succ: state.stats.success, craft: state.stats.craft || 0, stay: state.stayDays || 0 })}
     </div>`;
   // #177 도감 탭 — 위시리스트/보급원 트래커의 수집 뷰. 도면(시그니처+커먼) + 색상 도감 + 테마 세트.
   //   시그니처: 지역별 묶음, 미수집=「{지역}에서만」(pull 표기 — 정보판 map.drops와 동일 축).

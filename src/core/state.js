@@ -145,7 +145,7 @@ export const opts = { pixel: 3, quant: true, dither: true, ceil: true, autoEat: 
   // #121 itch.io 국제판(__ITCH__)만 기본 언어 영어 — 신규 설치(nw-opts 없음)의 기본값이 곧 표시 언어(setLang(opts.lang||…)). 유저 명시 선택은 nw-opts로 저장돼 이 기본을 덮는다. typeof 가드=vite 밖(테스트) 안전.
   lang: (typeof __ITCH__ !== 'undefined' && __ITCH__) ? 'en' : 'ko', fpsCap: 60, lowSpec: false, bgIdle: true,
   // 렌더 품질: aa=MSAA 안티에일리어싱(도트 유지·엣지 매끄럽게) / ditherAmt=디더 도트 강도(0~1)
-  aa: true, ditherAmt: 1,
+  aa: true, ditherAmt: 1, palette: false, // palette: 큐레이션 마스터 팔레트 스냅(균일 양자화 대체) — 라이브 검증 후 기본 on 전환 예정
   // 접근성 (REQ-ACC-01): 폰트 3단(1/1.12/1.25) · 색약 팔레트 · 흔들림/깜빡임 감소
   fontScale: 1, colorblind: false, reduceMotion: false,
   // 피드백 #2: 즉시 행동(먹기·마시기·청소) 확인창 — 기본 off(코지 무마찰 유지). 확인창 안에서 "다음부터 묻지 않기"로 끔.

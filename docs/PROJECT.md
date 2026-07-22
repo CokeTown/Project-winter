@@ -1,7 +1,7 @@
 # Nine Winters — 프로젝트 문서
 
-> 사람이든 AI든, 이 문서 하나로 프로젝트의 전모를 파악할 수 있도록 쓴다.
-> 최종 갱신: 2026-07-04 (v2.8 / v0.9 Beta 준비 시점)
+> **기술 개요 정본** — 스택·코드 지도·에셋 파이프·빌드 명령. 세션 진입점은 `MASTER.md`, 로드맵은 `MILESTONES.md`, 버전 이력은 `PATCHNOTES.md`다.
+> 최종 갱신: 2026-07-21 (v1.9.12). 실측: `src/game.js` 11,701줄 · `src/` 모듈 55개 · 로케일 2,196키(ko/en/ja) · 가구 DEFS 47종 · BGM 37곡.
 
 ## 1. 게임 정체성
 
@@ -20,7 +20,7 @@
 | PC | Electron (NSIS+포터블) | Steam 배포 실적 있는 경로, 위젯 모드(투명도/항상 위) 구현 가능 |
 | 모바일 | Capacitor (Android) | 웹 코드 그대로, 서명 APK |
 | 오프라인 | vite-plugin-pwa (BGM은 런타임 캐시) | 113MB BGM 프리캐시 방지 |
-| i18n | 자체 (src/i18n.js, STR 363키 ko/en) | 의존성 없이 단순하게 |
+| i18n | 자체 (src/i18n.js + `locales/*.json` 2,196키 ko/en/ja) | 의존성 없이 단순하게. 런타임 오버라이드 지원 |
 | 사운드 | WebAudio (sfx.js) + HTMLAudio(BGM) | SFX는 지연/동시성, BGM은 스트리밍 |
 
 **엔진 포팅 질문에 대한 결론**: Unity/언리얼 포팅은 코드 재작성이지만, 현 스택으로 PC/모바일/웹 전부 커버되므로 계획상 불필요. 콘솔 진출 시에만 재고 (그땐 포팅 스튜디오 관행).
@@ -30,8 +30,9 @@
 ```
 index.html          DOM 셸. data-i18n 속성, 인라인 암전 베일(fade-veil)
 src/main.js         엔트리 (style.css + game.js import)
-src/game.js         게임 전체 (~5,700줄). 아래 "시스템 색인" 참조
-src/i18n.js         STR 테이블(ko/en), t(id,vars), LN/LD/LF/LL 헬퍼, applyStaticI18n
+src/game.js         게임 메인 (~11,700줄). 아래 "시스템 색인" 참조. 순수 로직은 core/·데이터는 data/·렌더는 render/·UI는 ui/로 분리 진행 중(#73)
+src/i18n.js         로케일 로더(ko/en/ja), t(id,vars), LN/LD/LF/LC 헬퍼, applyStaticI18n, 세미오틱 글리프 치환(pick)
+src/core/ data/ render/ ui/ systems/   모듈 분리분 (게이지·계절·경제·셸터 빌더·모달·고양이·아바타 등)
 src/sfx.js          WebAudio 매니저: playSfx/setAmbience/setFire/setSfxVol (크로스페이드 루프 채널)
 src/style.css       전체 스타일. --uiz 반응형 zoom 변수
 src/data/furniture.js  가구 DEFS 20종 (fp/surface/stackable/light/appliance/색상 4종/ko+en)
@@ -108,7 +109,9 @@ npx cap sync android; cd android; .\gradlew assembleRelease   # 서명 APK
 - Android 키스토어: `android/keystore/` (gitignored — **분실 시 앱 업데이트 불가, 백업 필수**)
 - 산출물은 커밋하지 않고 GitHub Releases에 태그별 첨부
 
-## 8. 버전 타임라인 (요약)
+## 8. 버전 타임라인 (내부 v1.0~2.8 — 리브랜딩 이전)
+
+> 아래는 **구 넘버링(Project Shelter 시절 내부 v1.0~v2.8)** 기록이다. Nine Winters 공개 넘버링(v0.9 베타 → v1.0 EA → v1.9.x 현재)의 이력은 `PATCHNOTES.md`, 이정표는 `MILESTONES.md` §1을 본다.
 
 - v0.x~v1.3: MVP — 셸터/탐험/제작/계절/타이틀/인카운터/개조
 - v1.4~1.8: Vite 전환, 에너지/취침, 도감/업적, Pages/exe/APK 경로
@@ -139,6 +142,8 @@ npx cap sync android; cd android; .\gradlew assembleRelease   # 서명 APK
 - appId(com.projectwinter.shelter)는 스토어 등록 직전에 최종 결정
 - 좀비 엔티티/직접 조종 파밍(TWoM식): 보류 (후자는 DLC 후보)
 
-## 11. 남은 로드맵 (태스크 보드)
+## 11. 남은 로드맵
 
-베타 후 우선순위: ① Living Shelter 패스(쾌적함 4요소/가구 태그/생존 노트) ② 월드 밀도+동물+창가 빛기둥(쨍한 날) ③ 아홉 번째 겨울 마일스톤 ④ 인카운터 20종+(개 동료/라디오 방송 수집) ⑤ 꾸미기 확장(벽지/테마 세트) ⑥ 밸런싱/난이도/계절 압박 ⑦ 패드/Steam Deck ⑧ 이모지 UI→아트 아이콘.
+**로드맵은 이 문서가 관리하지 않는다** — 정본은 `MILESTONES.md`(M0 출시 준비 → M1 기술 부채 → M2~M4 2.0 + 상시 트랙). 현재 작업 큐는 `WORKLINE.md`, 세션 좌표는 `MASTER.md`.
+
+*(구 베타 후 우선순위 8항목은 전부 소화되어 삭제 — Living Shelter·월드 밀도·아홉 번째 겨울·인카운터 확장·꾸미기 확장·난이도·Steam Deck·아트 아이콘(→세미오틱 글리프). 이력은 PATCHNOTES·HISTORY 참조.)*

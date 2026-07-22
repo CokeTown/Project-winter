@@ -105,7 +105,7 @@ spec.sfxEvents.forEach((e, i) => {
 const graph = chains.join(';') + `;${mixIns.join('')}amix=inputs=${mixIns.length}:duration=first:normalize=0,` +
   `loudnorm=I=-14:TP=-1.5:LRA=11[a]`; // 유튜브/스팀 압축 대비 라우드니스 정규화 (§6-R4)
 fs.writeFileSync(path.join(WORK, 'agraph.txt'), graph); // 디버그 보존
-run(`${FF} ${inputs.join(' ')} -filter_complex "${graph}" -map "[a]" -c:a aac -b:a 192k audio.m4a`);
+run(`${FF} ${inputs.join(' ')} -filter_complex "${graph}" -map "[a]" -c:a aac -b:a 192k -ar 48000 audio.m4a`); // 48kHz 스테레오 표준(스팀 재인코딩 대비)
 
 // 3b) 영상 + 3c) 먹스 (assemble3와 동일 2패스 — 결합 그래프 데드락 회피)
 console.log('[3b] 영상 인코딩…');

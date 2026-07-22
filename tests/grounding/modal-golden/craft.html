@@ -1,272 +1,253 @@
-
-    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">탐험에서 모은 재료로 물자와 가구를 만든다.</div><div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🪑 가구·물품</div>
-      <div class="prep-row " style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_res_bandage.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_res_bandage');this.replaceWith(document.createTextNode('🩹'))"> 붕대 ×1</span>
-        <span class="p-eff" style="font-size:10px">기본 치료품</span>
-        <span class="p-cost">🧵천 2</span>
+<div class="craft-tabs"><button class="craft-tab active" data-ctab="goods">가구·물품</button><button class="craft-tab" data-ctab="outfit">복장</button><button class="craft-tab" data-ctab="build">공사</button><button class="craft-tab" data-ctab="deco">꾸미기</button></div><div class="craft-panel" data-cpanel="goods"><div style="font-size:12px;color:var(--accent);margin:12px 0 6px"><img class="px-icon" src="img/icons/icon_furn_chair.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_chair');this.replaceWith(document.createTextNode(''))"> 가구·물품</div>
+      <div class="prep-row craft-row " style="cursor:default">
+        <span class="cr-out">붕대</span>
+        <span class="p-cost">천 2</span>
         <button class="pixel-btn" data-craft="0" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_res_candle.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_res_candle');this.replaceWith(document.createTextNode('🕯️'))"> 양초 ×2</span>
-        <span class="p-eff" style="font-size:10px">조명 연료</span>
-        <span class="p-cost">🧵천 1 + ⛽연료 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">양초 ×2</span>
+        <span class="p-cost">천 1 + 연료 1</span>
         <button class="pixel-btn" data-craft="1" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_res_material.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_res_material');this.replaceWith(document.createTextNode('🧱'))"> 건축재 ×1</span>
-        <span class="p-eff" style="font-size:10px">수리·유지비용</span>
-        <span class="p-cost">⚙️부품 2</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">건축재</span>
+        <span class="p-cost">부품 2</span>
         <button class="pixel-btn" data-craft="2" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row " style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_cushion.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_cushion');this.replaceWith(document.createTextNode('🧘'))"> 방석</span>
-        <span class="p-eff" style="font-size:10px">푹신한 바닥 방석</span>
-        <span class="p-cost">🧵천 2</span>
+      <div class="prep-row craft-row " style="cursor:default">
+        <span class="cr-out">방석</span>
+        <span class="p-cost">천 2</span>
         <button class="pixel-btn" data-craft="3" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_bookstack.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_bookstack');this.replaceWith(document.createTextNode('📖'))"> 책 더미</span>
-        <span class="p-eff" style="font-size:10px">주워 모은 책 무더기</span>
-        <span class="p-cost">🧵천 1 + 🧱건축재 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">책 더미</span>
+        <span class="p-cost">천 1 + 건축재 1</span>
         <button class="pixel-btn" data-craft="4" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_crate.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_crate');this.replaceWith(document.createTextNode('📦'))"> 나무상자</span>
-        <span class="p-eff" style="font-size:10px">수납 상자</span>
-        <span class="p-cost">🧱건축재 2</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">나무상자</span>
+        <span class="p-cost">건축재 2</span>
         <button class="pixel-btn" data-craft="5" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_chair.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_chair');this.replaceWith(document.createTextNode('🪑'))"> 의자</span>
-        <span class="p-eff" style="font-size:10px">나무 의자</span>
-        <span class="p-cost">🧱건축재 2</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">의자</span>
+        <span class="p-cost">건축재 2</span>
         <button class="pixel-btn" data-craft="11" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_candle.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_candle');this.replaceWith(document.createTextNode('🕯️'))"> 캔들 스툴</span>
-        <span class="p-eff" style="font-size:10px">캔들 스툴</span>
-        <span class="p-cost">🧱건축재 1 + 🕯️양초 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">캔들 스툴</span>
+        <span class="p-cost">건축재 1 + 양초 1</span>
         <button class="pixel-btn" data-craft="12" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_teatable.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_teatable');this.replaceWith(document.createTextNode('🍵'))"> 찻상</span>
-        <span class="p-eff" style="font-size:10px">낮은 찻상 — 따뜻한 한 잔</span>
-        <span class="p-cost">🧱건축재 2 + 🧵천 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">찻상</span>
+        <span class="p-cost">건축재 2 + 천 1</span>
         <button class="pixel-btn" data-craft="13" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_rug.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_rug');this.replaceWith(document.createTextNode('🧶'))"> 러그</span>
-        <span class="p-eff" style="font-size:10px">천을 엮은 러그</span>
-        <span class="p-cost">🧵천 3</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">러그</span>
+        <span class="p-cost">천 3</span>
         <button class="pixel-btn" data-craft="14" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_plant.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_plant');this.replaceWith(document.createTextNode('🪴'))"> 화분</span>
-        <span class="p-eff" style="font-size:10px">화분에 심은 초록</span>
-        <span class="p-cost">💧깨끗한 물 2 + 🧱건축재 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">화분</span>
+        <span class="p-cost">깨끗한 물 2 + 건축재 1</span>
         <button class="pixel-btn" data-craft="15" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_table.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_table');this.replaceWith(document.createTextNode('🪵'))"> 테이블</span>
-        <span class="p-eff" style="font-size:10px">식탁</span>
-        <span class="p-cost">🧱건축재 3</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">테이블</span>
+        <span class="p-cost">건축재 3</span>
         <button class="pixel-btn" data-craft="16" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_dresser.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_dresser');this.replaceWith(document.createTextNode('🗄️'))"> 서랍장</span>
-        <span class="p-eff" style="font-size:10px">서랍장</span>
-        <span class="p-cost">🧱건축재 3 + 🧵천 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">서랍장</span>
+        <span class="p-cost">건축재 3 + 천 1</span>
         <button class="pixel-btn" data-craft="17" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_lantern.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_lantern');this.replaceWith(document.createTextNode('🏮'))"> 걸이 랜턴</span>
-        <span class="p-eff" style="font-size:10px">걸이형 랜턴 (양초 연료)</span>
-        <span class="p-cost">⚙️부품 1 + 🧱건축재 1 + 🕯️양초 2</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">걸이 랜턴</span>
+        <span class="p-cost">부품 1 + 건축재 1 + 양초 2</span>
         <button class="pixel-btn" data-craft="18" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_bed.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_bed');this.replaceWith(document.createTextNode('🛏️'))"> 침대</span>
-        <span class="p-eff" style="font-size:10px">천 + 프레임 → 침대</span>
-        <span class="p-cost">🧵천 3 + 🧱건축재 2</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">침대</span>
+        <span class="p-cost">천 3 + 건축재 2</span>
         <button class="pixel-btn" data-craft="19" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_bookshelf.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_bookshelf');this.replaceWith(document.createTextNode('📚'))"> 책장</span>
-        <span class="p-eff" style="font-size:10px">책장</span>
-        <span class="p-cost">🧱건축재 4</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">책장</span>
+        <span class="p-cost">건축재 4</span>
         <button class="pixel-btn" data-craft="20" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_sofa.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_sofa');this.replaceWith(document.createTextNode('🛋️'))"> 소파</span>
-        <span class="p-eff" style="font-size:10px">패브릭 소파</span>
-        <span class="p-cost">🧵천 4 + 🧱건축재 2</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">소파</span>
+        <span class="p-cost">천 4 + 건축재 2</span>
         <button class="pixel-btn" data-craft="21" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_lamp.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_lamp');this.replaceWith(document.createTextNode('💡'))"> 스탠드 조명</span>
-        <span class="p-eff" style="font-size:10px">부품 조립 조명</span>
-        <span class="p-cost">⚙️부품 2 + 🔋배터리 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">스탠드 조명</span>
+        <span class="p-cost">부품 2 + 배터리 1</span>
         <button class="pixel-btn" data-craft="22" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_clock.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_clock');this.replaceWith(document.createTextNode('🕰️'))"> 괘종시계</span>
-        <span class="p-eff" style="font-size:10px">괘종시계 — 시간이 흐르는 소리</span>
-        <span class="p-cost">⚙️부품 2 + 🧱건축재 2</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">괘종시계</span>
+        <span class="p-cost">부품 2 + 건축재 2</span>
         <button class="pixel-btn" data-craft="24" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_radio.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_radio');this.replaceWith(document.createTextNode('📻'))"> 라디오</span>
-        <span class="p-eff" style="font-size:10px">라디오 (날씨 예보)</span>
-        <span class="p-cost">⚙️부품 3 + 🔋배터리 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">라디오</span>
+        <span class="p-cost">부품 3 + 배터리 1</span>
         <button class="pixel-btn" data-craft="25" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_stove.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_stove');this.replaceWith(document.createTextNode('🔥'))"> 장작 난로</span>
-        <span class="p-eff" style="font-size:10px">장작 난로 — 최고의 온기 (연료 1/일)</span>
-        <span class="p-cost">⚙️부품 3 + 🧱건축재 3</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">장작 난로</span>
+        <span class="p-cost">부품 3 + 건축재 3</span>
         <button class="pixel-btn" data-craft="26" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_purifier.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_purifier');this.replaceWith(document.createTextNode('🚰'))"> 정수기</span>
-        <span class="p-eff" style="font-size:10px">매일 물 +1 (전력 필요)</span>
-        <span class="p-cost">⚙️부품 4 + 🧱건축재 2</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">정수기</span>
+        <span class="p-cost">부품 4 + 건축재 2</span>
         <button class="pixel-btn" data-craft="27" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_generator.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_generator');this.replaceWith(document.createTextNode('⚡'))"> 발전기</span>
-        <span class="p-eff" style="font-size:10px">배터리 소비 무료화 (연료 필요)</span>
-        <span class="p-cost">⚙️부품 5 + 🧱건축재 3</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">발전기</span>
+        <span class="p-cost">부품 5 + 건축재 3</span>
         <button class="pixel-btn" data-craft="28" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_fridge.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_fridge');this.replaceWith(document.createTextNode('🧊'))"> 냉장고</span>
-        <span class="p-eff" style="font-size:10px">음식 부패 방지 (전력 필요)</span>
-        <span class="p-cost">⚙️부품 4 + 🧱건축재 2 + 🔋배터리 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">냉장고</span>
+        <span class="p-cost">부품 4 + 건축재 2 + 배터리 1</span>
         <button class="pixel-btn" data-craft="29" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_autopurifier.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_autopurifier');this.replaceWith(document.createTextNode('⛲'))"> 자동 급수기</span>
-        <span class="p-eff" style="font-size:10px">매일 물 +2 (배터리 1/일)</span>
-        <span class="p-cost">⚙️부품 6 + 🧱건축재 3 + 🔋배터리 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">자동 급수기</span>
+        <span class="p-cost">부품 6 + 건축재 3 + 배터리 1</span>
         <button class="pixel-btn" data-craft="30" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_furn_heater.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_furn_heater');this.replaceWith(document.createTextNode('♨️'))"> 온풍기</span>
-        <span class="p-eff" style="font-size:10px">한파 방어 + 겨울 쾌적 (연료 1/일)</span>
-        <span class="p-cost">⚙️부품 5 + 🧱건축재 3 + 🧵천 2</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">온풍기</span>
+        <span class="p-cost">부품 5 + 건축재 3 + 천 2</span>
         <button class="pixel-btn" data-craft="31" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><img class="px-icon" src="img/icons/icon_res_canned.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_res_canned');this.replaceWith(document.createTextNode('🥫'))"> 통조림 ×2</span>
-        <span class="p-eff" style="font-size:10px">소금으로 절인 보존식 — 여름 부패를 이긴다</span>
-        <span class="p-cost">🍎신선식품 2 + 🧂소금 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">통조림 ×2</span>
+        <span class="p-cost">신선식품 2 + 소금 1</span>
         <button class="pixel-btn" data-craft="32" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><span class="px-icon">🌐</span> 골동품 지구본</span>
-        <span class="p-eff" style="font-size:10px">책으로 채운 지구본 — 가 보지 못한 곳들</span>
-        <span class="p-cost">📕책 3 + 🧱건축재 2</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">골동품 지구본</span>
+        <span class="p-cost">책 3 + 건축재 2</span>
         <button class="pixel-btn" data-craft="33" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><span class="px-icon">🕎</span> 촛대</span>
-        <span class="p-eff" style="font-size:10px">가지 촛대 — 사치스러운 불빛</span>
-        <span class="p-cost">📕책 2 + 🧱건축재 1 + 🕯️양초 2</span>
-        <button class="pixel-btn" data-craft="34" disabled="" style="margin-left:6px">제작</button>
-      </div>
-      <div class="prep-row no" style="cursor:default">
-        <span><span class="px-icon">🎶</span> 축음기</span>
-        <span class="p-eff" style="font-size:10px">축음기 — 폐허에 음악을</span>
-        <span class="p-cost">📕책 4 + ⚙️부품 2 + 🧱건축재 1</span>
-        <button class="pixel-btn" data-craft="35" disabled="" style="margin-left:6px">제작</button>
-      </div><div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🧥 복장</div>
-      <div class="prep-row no" style="cursor:default">
-        <span>🧥 네이비 코트</span>
-        <span class="p-eff" style="font-size:10px">옷장에 추가 — 짙은 밤바다색</span>
-        <span class="p-cost">🧵천 3</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">촛대</span>
+        <span class="p-cost">책 2 + 건축재 1 + 양초 2</span>
         <button class="pixel-btn" data-craft="36" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span>🧥 와인 코트</span>
-        <span class="p-eff" style="font-size:10px">옷장에 추가 — 소금 매염 와인빛</span>
-        <span class="p-cost">🧵천 3 + 🧂소금 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">축음기</span>
+        <span class="p-cost">책 4 + 부품 2 + 건축재 1</span>
         <button class="pixel-btn" data-craft="37" disabled="" style="margin-left:6px">제작</button>
-      </div>
-      <div class="prep-row no" style="cursor:default">
-        <span>🧥 숲 파카</span>
-        <span class="p-eff" style="font-size:10px">옷장에 추가 — 수풀 위장색</span>
-        <span class="p-cost">🧵천 2 + 🧱건축재 1</span>
+      </div></div><div class="craft-panel" data-cpanel="outfit" style="display:none"><div style="font-size:12px;color:var(--accent);margin:12px 0 6px"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_act_wardrobe.svg');mask-image:url('img/glyphs/icon_act_wardrobe.svg')"></span> 복장</div>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">네이비 코트</span>
+        <span class="p-cost">천 3</span>
         <button class="pixel-btn" data-craft="38" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span>🧥 크림 파카</span>
-        <span class="p-eff" style="font-size:10px">옷장에 추가 — 밝은 생지 그대로</span>
-        <span class="p-cost">🧵천 4</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">와인 코트</span>
+        <span class="p-cost">천 3 + 소금 1</span>
         <button class="pixel-btn" data-craft="39" disabled="" style="margin-left:6px">제작</button>
       </div>
-      <div class="prep-row no" style="cursor:default">
-        <span>🧥 차콜 코트</span>
-        <span class="p-eff" style="font-size:10px">옷장에 추가 — 숯검정 물들임</span>
-        <span class="p-cost">🧵천 3 + ⛽연료 1</span>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">숲 파카</span>
+        <span class="p-cost">천 2 + 건축재 1</span>
         <button class="pixel-btn" data-craft="40" disabled="" style="margin-left:6px">제작</button>
       </div>
-    <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🔧 거처 개조 — 📦 버려진 컨테이너</div>
-    <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">개조는 이 거처에 영구히 남는다.</div>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">크림 파카</span>
+        <span class="p-cost">천 4</span>
+        <button class="pixel-btn" data-craft="41" disabled="" style="margin-left:6px">제작</button>
+      </div>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">차콜 코트</span>
+        <span class="p-cost">천 3 + 연료 1</span>
+        <button class="pixel-btn" data-craft="42" disabled="" style="margin-left:6px">제작</button>
+      </div>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">잿빛 후드티</span>
+        <span class="p-cost">천 4</span>
+        <button class="pixel-btn" data-craft="47" disabled="" style="margin-left:6px">제작</button>
+      </div>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">벽돌색 패딩</span>
+        <span class="p-cost">천 5</span>
+        <button class="pixel-btn" data-craft="48" disabled="" style="margin-left:6px">제작</button>
+      </div>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">모래 판초</span>
+        <span class="p-cost">천 4 + 건축재 1</span>
+        <button class="pixel-btn" data-craft="49" disabled="" style="margin-left:6px">제작</button>
+      </div>
+      <div class="prep-row craft-row no" style="cursor:default">
+        <span class="cr-out">올리브 조끼</span>
+        <span class="p-cost">천 3 + 건축재 1</span>
+        <button class="pixel-btn" data-craft="50" disabled="" style="margin-left:6px">제작</button>
+      </div></div><div class="craft-panel" data-cpanel="build" style="display:none"><div style="font-size:12px;color:var(--accent);margin:2px 0 6px"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_parts.svg');mask-image:url('img/glyphs/icon_res_parts.svg')"></span>거처 개조 — 📦 버려진 컨테이너</div><div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">개조는 이 거처에 영구히 남는다.</div>
       <div class="prep-row no" style="cursor:default">
-        <span>🪣 빗물받이</span>
+        <span><img class="px-icon" src="img/icons/icon_mod_raincatch.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_mod_raincatch');this.replaceWith(document.createTextNode(''))"> 빗물받이</span>
         <span class="p-eff" style="font-size:10px">비/눈 오는 날 깨끗한 물 +1</span>
-        <span class="p-cost">🧱건축재 2 + ⚙️부품 1</span>
+        <span class="p-cost"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 2 + <span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_parts.svg');mask-image:url('img/glyphs/icon_res_parts.svg')"></span>부품 1</span>
         <button class="pixel-btn" data-mod="raincatch" disabled="" style="margin-left:6px">설치</button>
       </div>
       <div class="prep-row no" style="cursor:default">
-        <span>🌱 텃밭 상자</span>
+        <span><img class="px-icon" src="img/icons/icon_mod_garden.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_mod_garden');this.replaceWith(document.createTextNode(''))"> 텃밭 상자</span>
         <span class="p-eff" style="font-size:10px">이틀에 한 번 음식 +1 (겨울 제외)</span>
-        <span class="p-cost">🧱건축재 2 + 💧깨끗한 물 2</span>
+        <span class="p-cost"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 2 + <span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_water.svg');mask-image:url('img/glyphs/icon_res_water.svg')"></span>깨끗한 물 2</span>
         <button class="pixel-btn" data-mod="garden" disabled="" style="margin-left:6px">설치</button>
       </div>
       <div class="prep-row no" style="cursor:default">
-        <span>🧤 단열재</span>
+        <span><img class="px-icon" src="img/icons/icon_mod_insulation.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_mod_insulation');this.replaceWith(document.createTextNode(''))"> 단열재</span>
         <span class="p-eff" style="font-size:10px">악천후에도 쾌적함이 떨어지지 않음</span>
-        <span class="p-cost">🧵천 3 + 🧱건축재 2</span>
+        <span class="p-cost"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_cloth.svg');mask-image:url('img/glyphs/icon_res_cloth.svg')"></span>천 3 + <span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 2</span>
         <button class="pixel-btn" data-mod="insulation" disabled="" style="margin-left:6px">설치</button>
       </div>
       <div class="prep-row no" style="cursor:default">
-        <span>🔆 태양광 패널</span>
+        <span><img class="px-icon" src="img/icons/icon_mod_solar.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_mod_solar');this.replaceWith(document.createTextNode(''))"> 태양광 패널</span>
         <span class="p-eff" style="font-size:10px">조명·가전 전력 무료 (지속 급전) · 이틀에 한 번 배터리 +1</span>
-        <span class="p-cost">⚙️부품 4 + 🔋배터리 1</span>
+        <span class="p-cost"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_parts.svg');mask-image:url('img/glyphs/icon_res_parts.svg')"></span>부품 4 + <span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_battery.svg');mask-image:url('img/glyphs/icon_res_battery.svg')"></span>배터리 1</span>
         <button class="pixel-btn" data-mod="solar" disabled="" style="margin-left:6px">설치</button>
       </div>
       <div class="prep-row no" style="cursor:default">
-        <span>💡 조명 설비</span>
+        <span><img class="px-icon" src="img/icons/icon_mod_lighting.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_mod_lighting');this.replaceWith(document.createTextNode(''))"> 조명 설비</span>
         <span class="p-eff" style="font-size:10px">천장에 전등을 매단다 — 방이 밝아진다 (배터리 1/일, 발전기 가동 중엔 무료)</span>
-        <span class="p-cost">⚙️부품 3 + 🔋배터리 1</span>
+        <span class="p-cost"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_parts.svg');mask-image:url('img/glyphs/icon_res_parts.svg')"></span>부품 3 + <span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_battery.svg');mask-image:url('img/glyphs/icon_res_battery.svg')"></span>배터리 1</span>
         <button class="pixel-btn" data-mod="lighting" disabled="" style="margin-left:6px">설치</button>
       </div>
       <div class="prep-row no" style="cursor:default">
-        <span>🧱 증축</span>
+        <span><img class="px-icon" src="img/icons/icon_mod_extension.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_mod_extension');this.replaceWith(document.createTextNode(''))"> 증축</span>
         <span class="p-eff" style="font-size:10px">거처 폭 +2m — 벽을 허물고 더 넓게</span>
-        <span class="p-cost">🧱건축재 6 + ⚙️부품 2</span>
+        <span class="p-cost"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 6 + <span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_parts.svg');mask-image:url('img/glyphs/icon_res_parts.svg')"></span>부품 2</span>
         <button class="pixel-btn" data-mod="extension" disabled="" style="margin-left:6px">설치</button>
-      </div>
-    
-    <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">🎨 꾸미기 — 벽지 · 바닥재</div>
+      </div></div><div class="craft-panel" data-cpanel="deco" style="display:none">
+    <div style="font-size:12px;color:var(--accent);margin:12px 0 6px">꾸미기 — 벽지· 바닥재</div>
     <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px">지금 머무는 거처의 벽과 바닥을 바꾼다. 거처마다 따로 기억된다.</div>
-    <div style="font-size:11px;margin-bottom:3px">벽지</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px"><button class="pixel-btn primary" data-deco="wall:default" title="기본 벽면 · 무료" style="margin:2px;padding:4px 6px;font-size:11px">🧱 기본 벽면 ✓</button><button class="pixel-btn " data-deco="wall:cream" title="크림 도배 · 🧵천 2" style="margin:2px;padding:4px 6px;font-size:11px">🟨 크림 도배 <span style="opacity:.6">🧵천 2</span></button><button class="pixel-btn " data-deco="wall:sage" title="세이지 도배 · 🧵천 2" style="margin:2px;padding:4px 6px;font-size:11px">🟩 세이지 도배 <span style="opacity:.6">🧵천 2</span></button><button class="pixel-btn " data-deco="wall:stripe" disabled="" title="줄무늬 벽지 · 🧵천 3" style="margin:2px;padding:4px 6px;font-size:11px">📏 줄무늬 벽지 <span style="opacity:.6">🧵천 3</span></button><button class="pixel-btn " data-deco="wall:floral" disabled="" title="빛바랜 꽃무늬 · 🧵천 3 + 🧱건축재 1" style="margin:2px;padding:4px 6px;font-size:11px">🌼 빛바랜 꽃무늬 <span style="opacity:.6">🧵천 3 + 🧱건축재 1</span></button><button class="pixel-btn " data-deco="wall:news" disabled="" title="신문지 임시도배 · 🧱건축재 1" style="margin:2px;padding:4px 6px;font-size:11px">📰 신문지 임시도배 <span style="opacity:.6">🧱건축재 1</span></button><button class="pixel-btn " data-deco="wall:plank" disabled="" title="판자 그대로 · 🧱건축재 2" style="margin:2px;padding:4px 6px;font-size:11px">🪵 판자 그대로 <span style="opacity:.6">🧱건축재 2</span></button></div>
-    <div style="font-size:11px;margin-bottom:3px">바닥재</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px"><button class="pixel-btn primary" data-deco="floor:default" title="기본 바닥 · 무료" style="margin:2px;padding:4px 6px;font-size:11px">⬜ 기본 바닥 ✓</button><button class="pixel-btn " data-deco="floor:wood" disabled="" title="원목 마루 · 🧱건축재 2" style="margin:2px;padding:4px 6px;font-size:11px">🟫 원목 마루 <span style="opacity:.6">🧱건축재 2</span></button><button class="pixel-btn " data-deco="floor:vinyl" disabled="" title="체크 장판 · 🧵천 1 + 🧱건축재 1" style="margin:2px;padding:4px 6px;font-size:11px">🏁 체크 장판 <span style="opacity:.6">🧵천 1 + 🧱건축재 1</span></button><button class="pixel-btn " data-deco="floor:cement" disabled="" title="노출 시멘트 · 🧱건축재 1" style="margin:2px;padding:4px 6px;font-size:11px">⬛ 노출 시멘트 <span style="opacity:.6">🧱건축재 1</span></button><button class="pixel-btn " data-deco="floor:tile" disabled="" title="타일 · 🧱건축재 2 + ⚙️부품 1" style="margin:2px;padding:4px 6px;font-size:11px">🔲 타일 <span style="opacity:.6">🧱건축재 2 + ⚙️부품 1</span></button><button class="pixel-btn " data-deco="floor:carpet" disabled="" title="카펫 · 🧵천 4" style="margin:2px;padding:4px 6px;font-size:11px">🟥 카펫 <span style="opacity:.6">🧵천 4</span></button><button class="pixel-btn " data-deco="floor:scrap" disabled="" title="스크랩 판자 · 🧱건축재 1" style="margin:2px;padding:4px 6px;font-size:11px">🧱 스크랩 판자 <span style="opacity:.6">🧱건축재 1</span></button></div>
-    <div style="font-size:11px;color:var(--accent);margin:8px 0 4px">🏅 테마 세트</div><div class="prep-row " style="cursor:default">
-      <span>🛏️ 따뜻한 침실</span>
+    <div style="font-size:11px;margin-bottom:3px">벽지</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px"><button class="pixel-btn primary" data-deco="wall:default" title="기본 벽면" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_wall_default.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_wall_default');this.replaceWith(document.createTextNode(''))"> 기본 벽면 ✓</button><button class="pixel-btn " data-deco="wall:cream" title="크림 도배" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_wall_cream.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_wall_cream');this.replaceWith(document.createTextNode(''))"> 크림 도배 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_cloth.svg');mask-image:url('img/glyphs/icon_res_cloth.svg')"></span>천 2</span></button><button class="pixel-btn " data-deco="wall:sage" title="세이지 도배" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_wall_sage.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_wall_sage');this.replaceWith(document.createTextNode(''))"> 세이지 도배 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_cloth.svg');mask-image:url('img/glyphs/icon_res_cloth.svg')"></span>천 2</span></button><button class="pixel-btn " data-deco="wall:stripe" disabled="" title="줄무늬 벽지" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_wall_stripe.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_wall_stripe');this.replaceWith(document.createTextNode(''))"> 줄무늬 벽지 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_cloth.svg');mask-image:url('img/glyphs/icon_res_cloth.svg')"></span>천 3</span></button><button class="pixel-btn " data-deco="wall:floral" disabled="" title="빛바랜 꽃무늬" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_wall_floral.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_wall_floral');this.replaceWith(document.createTextNode(''))"> 빛바랜 꽃무늬 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_cloth.svg');mask-image:url('img/glyphs/icon_res_cloth.svg')"></span>천 3 + <span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 1</span></button><button class="pixel-btn " data-deco="wall:news" disabled="" title="신문지 임시도배" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_wall_news.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_wall_news');this.replaceWith(document.createTextNode(''))"> 신문지 임시도배 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 1</span></button><button class="pixel-btn " data-deco="wall:plank" disabled="" title="판자 그대로" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_wall_plank.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_wall_plank');this.replaceWith(document.createTextNode(''))"> 판자 그대로 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 2</span></button></div>
+    <div style="font-size:11px;margin-bottom:3px">바닥재</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px"><button class="pixel-btn primary" data-deco="floor:default" title="기본 바닥" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_floor_default.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_floor_default');this.replaceWith(document.createTextNode(''))"> 기본 바닥 ✓</button><button class="pixel-btn " data-deco="floor:wood" disabled="" title="원목 마루" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_floor_wood.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_floor_wood');this.replaceWith(document.createTextNode(''))"> 원목 마루 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 2</span></button><button class="pixel-btn " data-deco="floor:vinyl" disabled="" title="체크 장판" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_floor_vinyl.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_floor_vinyl');this.replaceWith(document.createTextNode(''))"> 체크 장판 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_cloth.svg');mask-image:url('img/glyphs/icon_res_cloth.svg')"></span>천 1 + <span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 1</span></button><button class="pixel-btn " data-deco="floor:cement" disabled="" title="노출 시멘트" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_floor_cement.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_floor_cement');this.replaceWith(document.createTextNode(''))"> 노출 시멘트 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 1</span></button><button class="pixel-btn " data-deco="floor:tile" disabled="" title="타일" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_floor_tile.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_floor_tile');this.replaceWith(document.createTextNode(''))"> 타일 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 2 + <span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_parts.svg');mask-image:url('img/glyphs/icon_res_parts.svg')"></span>부품 1</span></button><button class="pixel-btn " data-deco="floor:carpet" disabled="" title="카펫" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_floor_carpet.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_floor_carpet');this.replaceWith(document.createTextNode(''))"> 카펫 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_cloth.svg');mask-image:url('img/glyphs/icon_res_cloth.svg')"></span>천 4</span></button><button class="pixel-btn " data-deco="floor:scrap" disabled="" title="스크랩 판자" style="margin:2px;padding:4px 6px;font-size:11px"><img class="px-icon" src="img/icons/icon_floor_scrap.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_floor_scrap');this.replaceWith(document.createTextNode(''))"> 스크랩 판자 <span style="opacity:.6"><span class="px-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_res_material.svg');mask-image:url('img/glyphs/icon_res_material.svg')"></span>건축재 1</span></button></div>
+    <div style="font-size:11px;color:var(--accent);margin:8px 0 4px">테마 세트</div><div class="prep-row " style="cursor:default">
+      <span><img class="px-icon" src="img/icons/icon_theme_bedroom.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_theme_bedroom');this.replaceWith(document.createTextNode(''))"> 따뜻한 침실</span>
       <span class="p-eff" style="font-size:10px">🛏️🧶💡♨️ → 분위기 +3</span>
       <span style="color:var(--text-dim);font-size:11px;margin-left:6px">미완성</span>
     </div><div class="prep-row " style="cursor:default">
-      <span>🛠️ 작업 공간</span>
+      <span><img class="px-icon" src="img/icons/icon_theme_workshop.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_theme_workshop');this.replaceWith(document.createTextNode(''))"> 작업 공간</span>
       <span class="p-eff" style="font-size:10px">🪵📦📚 → 분위기 +3</span>
       <span style="color:var(--text-dim);font-size:11px;margin-left:6px">미완성</span>
     </div><div class="prep-row " style="cursor:default">
-      <span>🪴 녹색 구석</span>
+      <span><img class="px-icon" src="img/icons/icon_theme_greencorner.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_theme_greencorner');this.replaceWith(document.createTextNode(''))"> 녹색 구석</span>
       <span class="p-eff" style="font-size:10px">🪴🪴🍵 → 분위기 +3</span>
       <span style="color:var(--text-dim);font-size:11px;margin-left:6px">미완성</span>
     </div><div class="prep-row " style="cursor:default">
-      <span>🎶 응접실</span>
+      <span><img class="px-icon" src="img/icons/icon_theme_parlor.png" alt="" draggable="false" onerror="window.__iconFail&amp;&amp;window.__iconFail('icon_theme_parlor');this.replaceWith(document.createTextNode(''))"> 응접실</span>
       <span class="p-eff" style="font-size:10px">🌐🎶🕎 → 분위기 +3</span>
       <span style="color:var(--text-dim);font-size:11px;margin-left:6px">미완성</span>
-    </div>
+    </div></div>

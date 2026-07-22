@@ -1,7 +1,7 @@
 {
   "name": "nine-winters",
   "private": true,
-  "version": "1.9.7",
+  "version": "1.9.12",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
