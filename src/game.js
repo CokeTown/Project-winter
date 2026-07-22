@@ -10037,6 +10037,8 @@ const postMat = new THREE.ShaderMaterial({
     uLevels: { value: 8.0 }, uQuant: { value: 1.0 }, uDither: { value: 1.0 }, uDitherAmt: { value: 1.0 },
     uPalOn: { value: 0.0 },
     uBarrel: { value: 0.0 }, // CRT 배럴 실험(디렉터 2026-07-22): 0=항등(기본·골든 불변). 씬만 휘고 DOM UI는 평면.
+    uCrt: { value: 0.0 },    // 관측 단말 CRT 위성 룩(디렉터 2026-07-22): 0=off. 지터·리프레시 스윕·RGB 형광체·스캔라인·그레인.
+    uCrtT: { value: 0.0 },   // CRT 시간(초) — 골든/캡처 결정론을 위해 renderFrame이 공급(freeze 시 고정)
     uPal: { value: PALETTE_FLAT.map(c => new THREE.Vector3(c[0] / 255, c[1] / 255, c[2] / 255)) },
   },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
@@ -10045,7 +10047,7 @@ const postMat = new THREE.ShaderMaterial({
     #define PAL_N ${PAL_N}
     varying vec2 vUv;
     uniform sampler2D tex; uniform vec2 uRes;
-    uniform float uLevels, uQuant, uDither, uDitherAmt, uPalOn, uBarrel;
+    uniform float uLevels, uQuant, uDither, uDitherAmt, uPalOn, uBarrel, uCrt, uCrtT;
     uniform vec3 uPal[PAL_N];
     float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
     float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
@@ -10072,6 +10074,16 @@ const postMat = new THREE.ShaderMaterial({
         uv = 0.5 + cc * (1.0 + uBarrel * dot(cc, cc));
         if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) { gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); return; }
       }
+      // ── 관측 단말 CRT 위성 룩(디렉터 2026-07-22: "낡은 위성 신호 하이재킹을 CRT로") ──
+      //   샘플 전 왜곡: 간헐 수평 지터(신호 발작) — 시간·라인 해시로 희소하게.
+      if (uCrt > 0.5) {
+        float t = uCrtT;
+        float fit = floor(t * 1.6);
+        float burst = step(0.72, fract(sin(fit * 91.7) * 4375.8));            // 이따금 오는 발작 구간
+        float line = floor(uv.y * 96.0);
+        float pick = step(0.93, fract(sin(line * 13.37 + fit * 7.1) * 43758.5)); // 발작 중에도 몇 줄만
+        uv.x += burst * pick * (fract(sin(line * 3.7 + floor(t * 30.0)) * 997.1) - 0.5) * 0.035;
+      }
       vec3 col = texture2D(tex, uv).rgb;
       col = pow(col, vec3(1.0 / 2.2));
       if (uPalOn > 0.5) {
@@ -10084,6 +10096,23 @@ const postMat = new THREE.ShaderMaterial({
         float d = uDither > 0.5 ? (bayer4(pc) - 0.5) * 0.55 * uDitherAmt / uLevels : 0.0;
         col = clamp(col + d, 0.0, 1.0);
         col = floor(col * uLevels + 0.5) / uLevels;
+      }
+      // ── CRT 후단(샘플·양자화 뒤): 형광체 RGB 트라이어드 + 스캔라인 + 리프레시 스윕 + 그레인 + 비네트 ──
+      //   트라이어드는 디바이스 픽셀(gl_FragCoord) 기준 — 게임 픽셀 하나가 여러 형광체로 갈라져 보이는
+      //   레퍼런스(CRT 접사)의 그 결. 스캔라인도 디바이스 좌표라 배럴 워프와 무관하게 유리면에 붙는다.
+      if (uCrt > 0.5) {
+        float t = uCrtT;
+        int m = int(mod(floor(gl_FragCoord.x), 3.0));
+        vec3 tri = vec3(0.55);
+        if (m == 0) tri.r = 1.45; else if (m == 1) tri.g = 1.45; else tri.b = 1.45;
+        col *= mix(vec3(1.0), tri, 0.42);
+        col *= (mod(floor(gl_FragCoord.y), 3.0) < 1.0) ? 0.78 : 1.06;      // 스캔라인 1/3
+        float sweep = fract(t / 3.6);                                       // 리프레시 스윕: 3.6s 주기 위→아래
+        col += vec3(0.10, 0.13, 0.10) * smoothstep(0.10, 0.0, abs(vUv.y - (1.0 - sweep)));
+        float n = fract(sin(dot(floor(vUv * uRes) + floor(t * 24.0), vec2(12.9898, 78.233))) * 43758.5453);
+        col += (n - 0.5) * 0.055;                                           // 신호 그레인
+        vec2 vc = vUv - 0.5;
+        col *= 1.0 - dot(vc, vc) * 0.55;                                    // 코너 감광(관 유리)
       }
       gl_FragColor = vec4(col, 1.0);
     }`,
@@ -11119,6 +11148,8 @@ function renderFrame() {
   if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); if (pdaVisible() && pdaTab === 'status') renderPDA(true); syncBgm(); syncSfxAmbience(); drainDiscoveryQueue(); } // 디렉터: PDA 상태탭도 0.5s 실시간 갱신(탐험 진행바·게이지) — quiet=플리커 생략, 지도/자원탭은 이벤트 갱신(맵 재생성 비용 회피)
   // 항공뷰 프로토 활성 시: 같은 rt→post 파이프로 디오라마 씬을 대신 렌더 (픽셀 룩 동일 보장).
   //   위의 시뮬 틱은 그대로 돌므로 시간·날씨가 실시간으로 디오라마에 반영된다 (AERIAL-MAP 개정 1차).
+  // #217 CRT 시간 공급: 골든/캡처 결정론 — freeze(_golden) 중엔 고정값(위상 동결, crtFlicker와 같은 사상)
+  postMat.uniforms.uCrtT.value = _golden ? 12.345 : performance.now() / 1000;
   const _aa = activeAerial();
   if (_aa) {
     _aa.update(dt, { hour: aerialHourOverride ?? gameHour(), weather: weather.type });
@@ -11169,6 +11200,9 @@ const obsView = makeObsView({
   getWeather: () => weather.type,
   getClock: () => ({ day: state.day, hour: gameHour() }), // 단말 내부 시계 — 본편 #clock-panel은 obs-mode에서 숨김(디렉터 2026-07-22)
   demoEd: DEMO_ED, // 데모 「궁금한 문」 — 잠긴 기본 4지구=??? 잠금 핀(#175 단일화)
+  // #217 CRT 위성 룩(디렉터 2026-07-22): 관측 단말 = 낡은 위성 신호를 CRT로 훔쳐보는 화면.
+  //   씬 포스트에 형광체·스캔라인·지터·스윕(uCrt) + 배럴 굴곡을 관측 중에만 건다.
+  setCrtLook: on => { postMat.uniforms.uCrt.value = on ? 1 : 0; setBarrel(on ? 0.14 : 0); },
 });
 function openObsMap() {
   if (state.exp) { pdaOpen('status'); return; }
@@ -11500,6 +11534,7 @@ window.__shelter = {
   aerialProto, // AERIAL-MAP S1: 항공뷰 프로토 핸들(지연 생성) — open/close/focus/overview, 하네스 캡처 매트릭스용
   openObsMap, obsView, activeAerial, // S2 관측 단말 — QA/하네스 진입점 (activeAerial: 골든 씬 전환 시 잔여 디오라마 강제 종료용)
   setBarrel, setPanelBulge, // CRT 실험 노브(씬 배럴·패널 볼록, 기본 off) — 판정 후 정식 편입 여부 결정
+  setCrtLook: on => { postMat.uniforms.uCrt.value = on ? 1 : 0; setBarrel(on ? 0.14 : 0); }, // #217 관측 CRT 위성 룩 — QA/캡처 토글
   regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
   shelterUnlocked, // 2.0-(b) QA: 동부 관문 이주 게이트(eastGateOpen) 검증
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)

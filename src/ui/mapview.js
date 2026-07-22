@@ -237,6 +237,7 @@ export function makeMapview(ctx) {
 export function makeObsView(ctx) {
   const { aerialProto, expBlockReason, prepUI, bpName, avalancheForecastToday, openAvalancheChoice, getWeather } = ctx;
   const ctxGetClock = ctx.getClock || null; // 단말 내부 시계 (없으면 표기 생략 — 하위호환)
+  const setCrtLook = ctx.setCrtLook || (() => {}); // #217 CRT 위성 룩 토글 (없으면 무동작 — 하위호환)
   const obsDemoEd = !!ctx.demoEd; // 데모 「궁금한 문」 — 잠긴 기본 4지구를 ??? 잠금 핀으로(확장 지역은 완전 비노출)
   const $ = id => document.getElementById(id);
   let openState = false, view = 'overview', focusId = null, bootTimer = null;
@@ -369,6 +370,7 @@ export function makeObsView(ctx) {
     // satellite 스케치 이스터에그(§3-5): 보유 시 궤적 점 1개 — "저건 별이 아니다"의 회수. 신규 카피 0.
     const sat = $('obs-sat'); if (sat) sat.classList.toggle('show', !!(state.sketches || {}).satellite);
     aerialProto().open();
+    setCrtLook(true); // #217: 관측 중에만 CRT 위성 룩(형광체·지터·스윕·배럴)
     buildPins();
     panelOverview();
     boot();
@@ -377,6 +379,7 @@ export function makeObsView(ctx) {
     if (!openState) return;
     openState = false;
     clearInterval(bootTimer);
+    setCrtLook(false); // #217: 본편 복귀 — CRT 룩 완전 해제
     aerialProto().close();
     document.body.classList.remove('obs-mode');
     $('obs-screen').classList.remove('show', 'focus');
