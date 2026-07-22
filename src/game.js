@@ -104,7 +104,10 @@ const _glyphSet = new Set(GLYPH_NAMES);
 function icon(name, emoji = '', cls = '') {
   if (_glyphSet.has(name)) return `<span class="px-icon glyph${cls ? ' ' + cls : ''}" style="-webkit-mask-image:url('img/glyphs/${name}.svg');mask-image:url('img/glyphs/${name}.svg')"></span>`;
   const fb = ''; // 디렉터: 이모지 폴백 전면 제거 — 아이콘 PNG 부재 시 공란(라벨이 의미 전달). emoji 인자는 하위호환용, _iconEsc 무용.
-  if (_iconMissing.has(name)) return `<span class="px-icon${cls ? ' ' + cls : ''}">${fb}</span>`;
+  // 폴백이 공란이면 '빈 껍데기'를 남기지 않는다(#219): .px-icon은 크기가 박힌 inline-block이라
+  // 내용이 없어도 라인박스를 31px로 부풀려 옆 텍스트의 베이스라인을 아래로 민다 — 준비물 행 어긋남의 진범.
+  // 첫 렌더(=img onerror로 빈 텍스트 치환)와 이후 렌더가 같은 모양이 되도록 통일하는 효과도 있다.
+  if (_iconMissing.has(name)) return '';
   return `<img class="px-icon${cls ? ' ' + cls : ''}" src="img/icons/${name}.png" alt="" draggable="false"`
     + ` onerror="window.__iconFail&&window.__iconFail('${name}');this.replaceWith(document.createTextNode('${fb}'))">`;
 }
