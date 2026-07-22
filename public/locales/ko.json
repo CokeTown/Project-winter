@@ -363,9 +363,9 @@
   "prep.expectCost": "예상 소비: {cost}",
   "prep.depart": "출발 ({dur})",
   "prep.bag": "가방 챙기기",
-  "prep.bagEff": "빈손 방지",
+  "prep.bagEff": "최소 1개 보장",
   "prep.bagOwn": "가방 · 내구 {n}",
-  "prep.bagCraft": "가방을 꿰맨다",
+  "prep.bagCraft": "가방",
   "prep.bagCrafted": "가방을 꿰맸다. 이제 빈손으로 돌아올 일은 없다. (내구 {n})",
   "prep.bagWear": "가방이 한 짐을 버텼다. (내구 {n})",
   "prep.bagBroke": "가방 솔기가 완전히 터졌다. 다시 꿰매야 쓴다.",
@@ -2216,5 +2216,7 @@
   "data.will.will5.name": "개에게 남긴 말",
   "data.will.will6.desc": "네 편지 잘 받았다. 나도 보고 싶었다고, 그 말을 꼭 하고 싶었다.\n부칠 곳이 이제 없구나.",
   "data.will.will6.name": "전하지 못한 답장",
-  "exp.riskGain": "이벤트 발생으로 추가 획득:"
+  "exp.riskGain": "이벤트 발생으로 추가 획득:",
+  "obs.exit": "나가기",
+  "inv.editDone": "배치 끝내기"
 }

@@ -363,9 +363,9 @@
   "prep.expectCost": "Expected use: {cost}",
   "prep.depart": "Depart ({dur})",
   "prep.bag": "Pack a bag",
-  "prep.bagEff": "No empty hands",
+  "prep.bagEff": "At least 1 item",
   "prep.bagOwn": "Bag · durability {n}",
-  "prep.bagCraft": "Sew a bag",
+  "prep.bagCraft": "Bag",
   "prep.bagCrafted": "Sewed a bag. No more coming home empty-handed. (durability {n})",
   "prep.bagWear": "The bag held one more load. (durability {n})",
   "prep.bagBroke": "The bag's seams finally gave out. It needs sewing again.",
@@ -2216,5 +2216,7 @@
   "data.will.will5.name": "A Word for the Dog",
   "data.will.will6.desc": "I got your letter. I wanted to say I missed you too — I needed to say it.\nThere’s nowhere left to send this now.",
   "data.will.will6.name": "The Reply Never Sent",
-  "exp.riskGain": "Extra from what happened out there:"
+  "exp.riskGain": "Extra from what happened out there:",
+  "obs.exit": "Exit",
+  "inv.editDone": "Done placing"
 }

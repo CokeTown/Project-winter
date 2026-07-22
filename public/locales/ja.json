@@ -363,7 +363,7 @@
   "prep.expectCost": "予想消費: {cost}",
   "prep.depart": "出発 ({dur})",
   "prep.bag": "バッグ持参",
-  "prep.bagEff": "手ぶら防止",
+  "prep.bagEff": "最低1個保証",
   "prep.bagOwn": "バッグ · 耐久 {n}",
   "prep.bagCraft": "バッグ",
   "prep.bagCrafted": "バッグを縫った。もう手ぶらで帰ることはない。(耐久 {n})",
@@ -2216,5 +2216,7 @@
   "data.craft.puffer.hint": "ワードローブに追加 — 中綿でふくらんだジャンパー",
   "data.craft.poncho.hint": "ワードローブに追加 — 毛布をまとったようなポンチョ",
   "data.craft.vest.hint": "ワードローブに追加 — 腕が軽い作業ベスト",
-  "exp.riskGain": "出来事による追加の収穫:"
+  "exp.riskGain": "出来事による追加の収穫:",
+  "obs.exit": "終了",
+  "inv.editDone": "配置終了"
 }
