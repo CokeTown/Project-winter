@@ -10086,6 +10086,38 @@ postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
 function setBarrel(k) { postMat.uniforms.uBarrel.value = Math.max(0, +k || 0); }
 // 패널 볼록(창=브라운관) 실험 노브 — 0=off, 1=약, 2=강
 function setPanelBulge(n) { document.body.classList.toggle('crt-bulge1', n === 1); document.body.classList.toggle('crt-bulge2', n === 2); }
+// ── CRT 곡률 히트 보정(디렉터: "각 강도별 픽셀 보정") ──
+//   변위 필터는 픽셀만 옮기고 클릭 판정은 평면에 남는다. 사용자는 '보이는 위치'를 누르므로,
+//   캡처 단계에서 클릭 좌표를 순변위(표시 좌표→평면 좌표)해 실제 요소로 재조준한다.
+//   변위장은 필터와 동일 수식(dx = u·r²·scale·폭) — 강도 계수는 index.html 필터 scale과 1:1 동기.
+const BULGE_SCALE = { 1: 0.02, 2: 0.045 }; // crtBulgeA/B의 feDisplacementMap scale과 동일 값
+function bulgeRetarget(e) {
+  const k = document.body.classList.contains('crt-bulge2') ? BULGE_SCALE[2]
+    : document.body.classList.contains('crt-bulge1') ? BULGE_SCALE[1] : 0;
+  if (!k || e.__bulged || !e.isTrusted && !e.__bulgeTest) return; // 합성 이벤트는 통과(재귀 방지) — __bulgeTest는 QA 주입용
+  const panel = e.target && e.target.closest ? e.target.closest('.panel') : null;
+  if (!panel) return;
+  const r = panel.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  // 좌표계 실측 확정(probe-coord): gBCR·이벤트 clientX·elementFromPoint 전부 같은 시각 좌표계(zoom 기반영).
+  //   ×zoom 환산 금지 — 앞선 "불일치"는 설정창 스캔인 애니(clip-path 0.26s) 중 동기 프로브가 만든 유령이었다.
+  const u = (e.clientX - r.left) / r.width - 0.5, v = (e.clientY - r.top) / r.height - 0.5;
+  if (u < -0.55 || u > 0.55 || v < -0.55 || v > 0.55) return; // 패널 밖 방어
+  const r2 = (u * u + v * v) / 0.5; // 필터 맵과 동일 정규화(코너≈1)
+  const dx = k * r.width * u * r2, dy = k * r.height * v * r2;
+  if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return; // 중앙부 — 보정 무의미
+  const el2 = document.elementFromPoint(e.clientX + dx, e.clientY + dy);
+  // el2가 타깃의 조상이면 버블링이 이미 커버 — 재조준 무의미. 반대로 el2가 타깃의 '자손'(컨테이너→버튼)은
+  //   재조준해야 하는 정확한 케이스라 걸러선 안 된다(probe-bulge3에서 검거된 가드 과잉).
+  if (!el2 || el2 === e.target || el2.contains(e.target) || !panel.contains(el2)) return;
+  e.stopPropagation(); e.preventDefault();
+  const e2 = new MouseEvent(e.type, { bubbles: true, cancelable: true, view: window,
+    clientX: e.clientX + dx, clientY: e.clientY + dy, button: e.button });
+  e2.__bulged = true;
+  el2.dispatchEvent(e2);
+}
+document.addEventListener('click', bulgeRetarget, true);
+document.addEventListener('pointerdown', bulgeRetarget, true);
 
 // 언어 전환 등 재로딩 전 암전 — 재로딩된 페이지는 인라인 스타일로 이미 암전 상태에서 시작 (index.html)
 function reloadWithVeil() {
@@ -10142,6 +10174,11 @@ function applyOpts() {
   $('opt-dither').checked = opts.dither; $('opt-ceil').checked = opts.ceil;
   { const eda = $('opt-ditheramt'); if (eda) eda.value = String(opts.ditherAmt != null ? opts.ditherAmt : 1); }
   { const eaa = $('opt-aa'); if (eaa) eaa.checked = opts.aa !== false; }
+  // CRT 패널 볼록(창=브라운관, 디렉터 2026-07-22): 강 기본·옵션 하향. lowSpec=필터 비용 미실측이라 강제 off.
+  { const ecb2 = $('opt-crtbulge'); if (ecb2) ecb2.value = String(opts.crtBulge != null ? opts.crtBulge : 2); }
+  { const bl = opts.lowSpec ? 0 : (opts.crtBulge != null ? opts.crtBulge : 2);
+    document.body.classList.toggle('crt-bulge1', bl === 1);
+    document.body.classList.toggle('crt-bulge2', bl === 2); }
   $('opt-autoeat').checked = opts.autoEat !== false;
   $('opt-autoplay').checked = !!opts.autoPlay;
   { const cc = $('opt-confirmactions'); if (cc) cc.checked = !!opts.confirmActions; } // #2
