@@ -13,7 +13,7 @@ import { BAL } from '../data/balance.js';
 
 // 시간(gm분)만큼 배고픔/갈증 감소. 겨울·하드·한파·여름 배수 적용. autoEat면 임계 이하 자동 섭취.
 export function decayGauges(gm) {
-  if (isWallpaper()) return; // 🖼️ 배경화면: 게이지 압박 off — 배고픔/갈증/에너지 정지(볼거리만 흐른다)
+  if (isWallpaper()) return; // 배경화면: 게이지 압박 off — 배고픔/갈증/에너지 정지(볼거리만 흐른다)
   const winterMult = seasonOf().id === 'winter' ? BAL.gauges.winterMult : 1; // 겨울엔 열량 소모가 크다
   const hardMul = isHard() ? BAL.hard.drainMul : 1; // 하드: 배고픔/갈증 소모 +50%
   // 한파: 방어가 안 된 만큼(netSeverity) 배고픔 감소를 가속 (완전 방어 시 1.0)

@@ -21,7 +21,7 @@ export const MAP_MARKERS = {
   commercial:  { x: 74, y: 18 },  // 우상 무너진 빌딩(도심)
   industrial:  { x: 18, y: 54 },  // 좌중 공장
   slum:        { x: 78, y: 50 },  // 우중 판자촌
-  slumdeep:    { x: 86, y: 60 },  // #167 판자촌 안쪽 — 슬럼 핀의 대각 안깊이 (숙련 ★1 해금 전엔 비노출)
+  slumdeep:    { x: 86, y: 60 },  // #167 판자촌 안쪽 — 슬럼 핀의 대각 안깊이 (숙련 1 해금 전엔 비노출)
   // #85 도시 전도: 확장 5종을 지리 서사대로 — 항구 벨트(남서 해안, 세로로 적층), 리조트(북동 산정),
   //   금지 구역(동남 봉쇄선 너머). ── 디렉터 신고(2026-07-19): 수산시장 라벨이 야적장·연구동과 겹침 →
   //   하단 밀집을 행(row)별로 분리. 라벨은 ~33% 폭이라 중앙에서 좌·우 핀 이름이 마주쳐 겹친다:
@@ -118,7 +118,7 @@ export function makeMapview(ctx) {
           lk.style.top = Math.min(MAP_SAFE.y1, Math.max(MAP_SAFE.y0, p.y)) + '%';
           lk.style.opacity = '0.55';
           lk.title = t('demo.regionLocked');
-          lk.innerHTML = `${icon ? icon('icon_sys_locked', '🔒') : ''}<span class="pin-rate lack">???</span>`;
+          lk.innerHTML = `${icon ? icon('icon_sys_locked') : ''}<span class="pin-rate lack">???</span>`;
           wrap.appendChild(lk);
         }
         continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
@@ -139,7 +139,7 @@ export function makeMapview(ctx) {
       const rate = Math.round(rateParts(rid).eff * 100);
       const cls = rate >= 50 ? 'ok' : 'lack';
       // #204(디렉터): 숙련은 이름 색으로 — 첫 방문 붉은색에서 최종 티어(100%)의 초록까지 천천히.
-      //   ★/• 발자취 표식은 색 인코딩이 대체(타르코프식 점+이름 미니멀). 진행률은 툴팁으로.
+      //   /• 발자취 표식은 색 인코딩이 대체(타르코프식 점+이름 미니멀). 진행률은 툴팁으로.
       const mProg = Math.min(1, visits / BAL.mastery.tiers[BAL.mastery.tiers.length - 1]);
       const nameCol = visits > 0
         ? `rgb(${Math.round(198 - 71 * mProg)},${Math.round(83 + 109 * mProg)},${Math.round(64 + 42 * mProg)})`

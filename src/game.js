@@ -678,14 +678,14 @@ function applyTimeLighting() {
   updateSunShafts();
 }
 function timeLabel() { // [2]=아트 아이콘 키(#199 이모지 스윕) — 기존 [0][1] 사용처 무영향
-  const h = gameHour();
-  if (h < 4.5) return ['🌙', t('time.night'), 'icon_time_night'];
-  if (h < 7) return ['🌄', t('time.dawn'), 'icon_time_dawn'];
-  if (h < 11) return ['🌅', t('time.morning'), 'icon_time_dawn'];
-  if (h < 16.5) return ['☀️', t('time.day'), 'icon_time_day'];
-  if (h < 19) return ['🌆', t('time.evening'), 'icon_time_dusk'];
-  if (h < 21) return ['🌇', t('time.dusk'), 'icon_time_dusk'];
-  return ['🌙', t('time.night'), 'icon_time_night'];
+  const h = gameHour(); // #213: [0] 이모지 슬롯은 폐기(빈 문자열) — 사용처 0 확인, 아트 아이콘 키([2])가 정본
+  if (h < 4.5) return ['', t('time.night'), 'icon_time_night'];
+  if (h < 7) return ['', t('time.dawn'), 'icon_time_dawn'];
+  if (h < 11) return ['', t('time.morning'), 'icon_time_dawn'];
+  if (h < 16.5) return ['', t('time.day'), 'icon_time_day'];
+  if (h < 19) return ['', t('time.evening'), 'icon_time_dusk'];
+  if (h < 21) return ['', t('time.dusk'), 'icon_time_dusk'];
+  return ['', t('time.night'), 'icon_time_night'];
 }
 
 /* ============================================================
@@ -2175,18 +2175,26 @@ function glowTex() {
 }
 /* ④ 제작 손맛 연출 (GD-THESIS L1): 제작 완료 시 결과물 아이콘 스프라이트가 작업대 위로 ~1초
    떠올랐다 사라지고, 반짝임 입자 3~4개가 함께 튄다. 기존 craft 사운드는 호출부에서 유지. */
-const _emojiTexCache = new Map();
-function emojiTex(emoji) {
-  if (_emojiTexCache.has(emoji)) return _emojiTexCache.get(emoji);
-  const S = 128;
-  const cv = document.createElement('canvas'); cv.width = cv.height = S;
-  const g2 = cv.getContext('2d');
-  g2.font = `${Math.floor(S * 0.72)}px "Segoe UI Emoji","Apple Color Emoji",sans-serif`;
-  g2.textAlign = 'center'; g2.textBaseline = 'middle';
-  g2.fillText(emoji || '📦', S / 2, S / 2 + S * 0.04);
-  const tex = new THREE.CanvasTexture(cv);
+// #213 이모지 전멸: 이모지 캔버스 텍스처 → 실아이콘 PNG 텍스처 (터미널 베이스에 컬러 이모지 금지)
+//   ⚠️ 함정 2건(실캡처 검거): ①사후 map 할당+needsUpdate는 스프라이트가 안 그려짐 — 생성자 map만.
+//   ②THREE.TextureLoader는 crossOrigin 기본값 때문에 file://(dist)에서 조용히 실패할 수 있다 —
+//   crossOrigin 없는 맨 Image 태그를 THREE.Texture에 직결(본편 CanvasTexture와 동일한 소스 직결 사상).
+const _craftTexCache = new Map(); // iconId → THREE.Texture (이미지 도착 시 needsUpdate로 자동 표시)
+function craftIconTex(iconId) {
+  let tex = _craftTexCache.get(iconId);
+  if (tex) return tex;
+  const img = new Image();
+  tex = new THREE.Texture(img);
   tex.colorSpace = THREE.SRGBColorSpace;
-  _emojiTexCache.set(emoji, tex);
+  tex.magFilter = THREE.NearestFilter; // 도트 아이콘 — 확대 보간 금지
+  // ③(진범) 아이콘 PNG는 192px = NPOT — Texture 기본 minFilter(mipmap)가 NPOT에서 텍스처 incomplete
+  //   → 상태는 전부 정상인데 투명하게 그려진다. CanvasTexture가 무사했던 이유 = 기본이 mipmap 없는 Linear.
+  tex.minFilter = THREE.LinearFilter;
+  tex.generateMipmaps = false;
+  img.onload = () => { tex.needsUpdate = true; };
+  img.onerror = () => console.warn('[craftfx] 아이콘 텍스처 로드 실패:', iconId);
+  img.src = 'img/icons/' + iconId + '.png';
+  _craftTexCache.set(iconId, tex);
   return tex;
 }
 let _sparkTex = null;
@@ -2218,15 +2226,17 @@ function craftAnchor() {
   if (best) return best;
   return { x: camCenter.x, z: camCenter.z, y: 0.7 };
 }
-function spawnCraftFx(emoji) {
+function spawnCraftFx(iconId) {
   if (opts.reduceMotion) return; // 접근성: 흔들림·깜빡임 감소 시 연출 생략
   const a = craftAnchor();
   const grp = new THREE.Group();
   grp.position.set(a.x, a.y, a.z);
-  // 결과물 아이콘 스프라이트
+  // 결과물 아이콘 스프라이트 — 생성자 map(스파클과 동일 경로). 의류 등 아이콘 부재는 스파클만.
   const icon = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: emojiTex(emoji), transparent: true, opacity: 0, depthWrite: false, depthTest: false,
+    map: iconId ? craftIconTex(iconId) : null,
+    transparent: true, opacity: 0, depthWrite: false, depthTest: false,
   }));
+  if (!iconId) icon.visible = false; // map 없는 스프라이트 = 흰 사각형 방지
   icon.scale.set(0.5, 0.5, 1);
   grp.add(icon);
   // 반짝임 입자 3~4개
@@ -2444,7 +2454,7 @@ function floorTopOf(o) {
   return (d.floorTopByTier || {})[o.tier || 3] || 0;
 }
 // (x,z)에 놓일 item의 바닥 높이. 러그 여러 장이 겹쳐도 (러그 자신의 y + 상면)의 최대값 = 맨 위 층.
-// ⚠️ 러그끼리는 서열이 필요하다(실측으로 검거): 서열 없이 서로를 들어올리면 재접지 루프가 A→C→B→…로
+// 러그끼리는 서열이 필요하다(실측으로 검거): 서열 없이 서로를 들어올리면 재접지 루프가 A→C→B→…로
 //    물려 0.065→0.114→0.164로 폭주하고 맨 처음 러그마저 뜬다. 서열 = **배치 순서**(나중에 깐 것이 위) —
 //    items 배열 인덱스가 곧 순서이고 세이브에도 그 순서로 직렬화되므로 로드 후에도 같은 결과가 나온다.
 function floorLiftAt(item, x, z) {
@@ -3355,7 +3365,7 @@ function forecastText() {
 // 탐험 봉쇄 사유 (순수 판정 — 토스트 없음). startExpedition(모달 경로)과 관측 단말 focus 패널(S2)이 공유.
 //   반환: null=출발 가능 · {key, params}=사유 i18n 키 · {key:''}=무토스트 차단(도달 불가 방어선).
 function expBlockReason(regionId) {
-  if (isWallpaper()) return { key: 'wallpaper.noAction' }; // 🖼️ 배경화면: 탐험 off
+  if (isWallpaper()) return { key: 'wallpaper.noAction' }; // 배경화면: 탐험 off
   if (isExhausted()) return { key: 'toast.exhausted' };
   if (state.energy < BAL.exp.minEnergy) return { key: 'toast.tooTired' };
   // #199 5차-c(디렉터): 일일 상한 차단 폐지 — 에너지가 실질 제한. 과로 회복 페널티(expFatigue)는 존치.
@@ -3460,11 +3470,11 @@ function prepUI(regionId, body) {
       }).join('')}</div>
       ${state.bagDur > 0
         ? `<div class="prep-row sel" style="margin-top:6px;cursor:default">
-            <span>🎒 ${t('prep.bagOwn', { n: state.bagDur })}</span>
+            <span>${t('prep.bagOwn', { n: state.bagDur })}</span>
             <span class="p-eff">${t('prep.bagEff')}</span>
           </div>`
         : `<div class="prep-row ${resHasAll(BAL.exp.bagCost) ? '' : 'no'}" data-bag="1" style="margin-top:6px">
-            <span>🎒 ${t('prep.bagCraft')}</span>
+            <span>${t('prep.bagCraft')}</span>
             <span class="p-eff">${t('prep.bagEff')}</span>
             <span class="p-cost">${costLabel(BAL.exp.bagCost)}</span>
           </div>`}
@@ -3560,7 +3570,7 @@ function resolveExpedition() {
       state.masteryDone[exp.region] = 1;
       masteryFull = true;
       const _mName = LName(REGIONS[exp.region]);
-      setTimeout(() => toast(t('ach.unlocked', { icon: '🧭', name: t('mastery.fullName', { name: _mName }) })), 4000);
+      setTimeout(() => toast(t('ach.unlocked', { name: t('mastery.fullName', { name: _mName }) })), 4000);
     }
   }
   const prep = exp.prep || [];
@@ -3591,9 +3601,9 @@ function resolveExpedition() {
   const barehandTrip = isForbiddenRegion(exp.region) && !hazmatUsable();
   if (isForbiddenRegion(exp.region)) { wearHazmat(); if (state.hazmat) notes.push(t('hazmat.wearNote', { dur: state.hazmat.dur })); }
   // 2.0 지역 숙련: 티어 상승의 순간 — 성패와 무관하게 알린다 (실패한 트립도 진행이었다는 감각).
-  if (masteryUp) notes.push(t('mastery.up', { name: LName(r), stars: '★'.repeat(masteryUp) }));
+  if (masteryUp) notes.push(t('mastery.up', { name: LName(r), stars: ''.repeat(masteryUp) }));
   if (masteryFull) notes.push(t('mastery.fullNote', { name: LName(r) })); // #204: 숙련 100% — 정산 카드에도 기록
-  // #167 2겹화: 슬럼 ★1 도달의 그 귀환에서 심부가 열린다 — 지도에 새 핀 + 아침 보고 한 줄.
+  // #167 2겹화: 슬럼 1 도달의 그 귀환에서 심부가 열린다 — 지도에 새 핀 + 아침 보고 한 줄.
   if (masteryUp === 1 && exp.region === 'slum') {
     notes.push(t('map.deepOpen'));
     toast(t('map.deepOpenToast'));
@@ -3677,7 +3687,7 @@ function resolveExpedition() {
       const fam = rollPaintFamily(exp.region);
       state.paints[fam] = (state.paints[fam] || 0) + 1;
       notes.push(t('paint.foundNote', { name: LName(PAINT_FAMILIES[fam]) }));
-      special.push({ icon: icon('icon_loot_paint', '🪣'), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
+      special.push({ icon: icon('icon_loot_paint', ''), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
       jackpotToast(t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) }), PAINT_FAMILIES[fam].swatch);
     }
     // 네온 안료 (디렉터 2026-07-09): 도심 전용 최희귀 도료 — 일반 도료 풀과 무관한 별도 저확률 롤.
@@ -3701,7 +3711,7 @@ function resolveExpedition() {
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
         notes.push(t('bp.foundNote', { name: bpName(bpId) }));
-        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
+        special.push({ icon: icon('icon_loot_blueprint', ''), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
         jackpotToast(t('bp.jackpot', { name: bpName(bpId) }), 0xd4b46a);
         if (DEFS[bpId]) queueDiscovery(bpId, 0, 3, bpName(bpId)); // #150 발견 컷 — 가구 도면만(복장은 디오라마 모델 없음)
       }
@@ -3715,7 +3725,7 @@ function resolveExpedition() {
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
         notes.push(t('bp.foundNote', { name: LName(DEFS[bpId]) }));
-        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'rare' });
+        special.push({ icon: icon('icon_loot_blueprint', ''), label: t('bp.lootLabel', { name: LName(DEFS[bpId]) }), tier: 'rare' });
       }
     }
     // #189 P4 LED 라이트 바 도면 — 초희귀 전 지역 별도 롤(시그니처 풀 비희석). 발견 컷 있음(신문물의 순간).
@@ -3724,7 +3734,7 @@ function resolveExpedition() {
         state.blueprints = state.blueprints || {};
         state.blueprints.ledbar = 1;
         notes.push(t('bp.foundNote', { name: LName(DEFS.ledbar) }));
-        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: LName(DEFS.ledbar) }), tier: 'legendary' });
+        special.push({ icon: icon('icon_loot_blueprint', ''), label: t('bp.lootLabel', { name: LName(DEFS.ledbar) }), tier: 'legendary' });
         jackpotToast(t('bp.jackpot', { name: LName(DEFS.ledbar) }), 0xdfeaff);
         queueDiscovery('ledbar', 0, 3, LName(DEFS.ledbar));
       }
@@ -3735,8 +3745,8 @@ function resolveExpedition() {
         Math.random() < (BAL.lighting.gelBookChance || 0)) {
       state.lightGels = 1;
       notes.push(t('gel.foundNote'));
-      special.push({ icon: '🎭', label: t('gel.lootLabel'), tier: 'legendary' });
-      jackpotToast(`🎭 ${t('gel.jackpot')}`, 0xc98ad4);
+      special.push({ icon: icon('icon_loot_paint'), label: t('gel.lootLabel'), tier: 'legendary' }); // 젤=도료 계열 아이콘 (#213 이모지 소거)
+      jackpotToast(t('gel.jackpot'), 0xc98ad4);
     }
     // #164 떠오른 자리 회수 (성공 = 온전한 보상)
     resolveFieldSpot(exp, 1, notes, special);
@@ -3901,7 +3911,7 @@ function resolveExpedition() {
     : '';
   state.riskEventGain = null; // 이번 정산에서 소진 — 다음 탐험으로 새지 않게
   const prepHtml = prep.length
-    ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">${t('exp.usedPrep', { list: prep.map(p => `${PREPS[p].emoji}${LName(PREPS[p])}`).join(', ') })}</div>`
+    ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px">${t('exp.usedPrep', { list: prep.map(p => LName(PREPS[p])).join(', ') })}</div>`
     : '';
   const noteHtml = notes.length
     ? `<div class="note-reveal" style="--li:${li};font-size:11px;line-height:1.7;margin-top:8px">${notes.join('<br>')}</div>`
@@ -3962,7 +3972,7 @@ const avatarSys = makeAvatarSystem({
   BED_TOP_Y, TIER_TOP_Y, // #193·#196: 착석 y 티어 실높이 표 (침대·소파·방석·의자)
 });
 
-// #86④ 옷장 — 보유 의류(제작으로 획득) 목록에서 탭하여 갈아입기. 진입: 툴바 👕 버튼 + 아바타 탭.
+// #86④ 옷장 — 보유 의류(제작으로 획득) 목록에서 탭하여 갈아입기. 진입: 툴바 버튼 + 아바타 탭.
 // 아바타 탭 → 옷장 (고양이 탭 선례 — 배치 모드에선 오작동 방지 차 미동작)
 function pickAvatar(e) {
   if (!avatarSys.exists()) return false;
@@ -4159,7 +4169,7 @@ function eventCtx() {
 // eventMatches/eventWeight/eventThreePeatBlocked/pushEvHistory → core/encounter.js 이관 (Tier3, 순수 술어)
 // 후보 풀에서 가중 추첨해 pendingEvent 예약. 성공 시 뽑힌 id, 없으면 null.
 function drawEvent(ctx = eventCtx()) {
-  if (isWallpaper()) return null; // 🖼️ 배경화면: 인카운터/이벤트 off
+  if (isWallpaper()) return null; // 배경화면: 인카운터/이벤트 off
   const cands = Object.keys(EVENTS).filter(id =>
     !EVENTS[id].special && eventMatches(id, ctx) && !eventThreePeatBlocked(id));
   if (!cands.length) return null;
@@ -4232,7 +4242,7 @@ function collapseEntranceLoot() {
     state.paints[fam] = (state.paints[fam] || 0) + 1;
     collapseLootFx = { kind: 'paint', tier: 'rare', body: PAINT_FAMILIES[fam].swatch }; // 깡통 몸통=그 계열 색, 광선=등급 보라
     jackpotToast(t('paint.jackpot', { name: LName(PAINT_FAMILIES[fam]) }), PAINT_FAMILIES[fam].swatch);
-    riskGainPush({ icon: icon('icon_loot_paint', '🪣'), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
+    riskGainPush({ icon: icon('icon_loot_paint', ''), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
     return t('ev.collapse.rPaint', { name: LName(PAINT_FAMILIES[fam]) });
   }
   const bpPool = (BAL.blueprint.regionItems[region] || []).filter(id => !(state.blueprints || {})[id]);
@@ -4242,7 +4252,7 @@ function collapseEntranceLoot() {
     state.blueprints[bpId] = 1;
     collapseLootFx = { kind: 'blueprint', tier: 'legend' };
     jackpotToast(t('bp.jackpot', { name: bpName(bpId) }), 0xd4b46a);
-    riskGainPush({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
+    riskGainPush({ icon: icon('icon_loot_blueprint', ''), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
     return t('ev.collapse.rBp', { name: bpName(bpId) });
   }
   // 자원 잡동사니 — 무너진 건물다운 4종으로 다양화(색·종류 단조 타파, 디렉터 2026-07-19). 등급 common(보라 아님).
@@ -4251,7 +4261,7 @@ function collapseEntranceLoot() {
   const jn = 1 + (Math.random() < 0.4 ? 1 : 0); // 가끔 2개
   resAdd(rid, jn);
   collapseLootFx = { kind: rid === 'cloth' ? 'cloth' : 'parts', tier: 'common' }; // 모델=천/부품 프록시(그 외 자원도 상자 실루엣)
-  riskGainPush({ icon: icon('icon_res_' + rid, '📦'), label: LN(RESOURCES[rid]), n: jn, tier: '' });
+  riskGainPush({ icon: icon('icon_res_' + rid, ''), label: LN(RESOURCES[rid]), n: jn, tier: '' });
   return t('ev.collapse.rJunk', { name: LN(RESOURCES[rid]) });
 }
 // #164 「떠오른 자리」 회수 — 스팟 지역 탐험이 성공/부분성공으로 닿았을 때 resolveExpedition에서 호출.
@@ -4264,12 +4274,12 @@ function resolveFieldSpot(exp, mult, notes, special) {
     for (const [rid, n] of Object.entries(sp.loot.res || {})) {
       const amt = Math.max(1, Math.round(n * mult));
       resAdd(rid, amt);
-      special.push({ icon: icon('icon_res_' + rid, '📦'), label: LN(RESOURCES[rid]), n: amt, tier: 'rare' });
+      special.push({ icon: icon('icon_res_' + rid, ''), label: LN(RESOURCES[rid]), n: amt, tier: 'rare' });
     }
     for (let i = 0; i < Math.round((sp.loot.paint || 0) * mult); i++) {
       const fam = rollPaintFamily(exp.region);
       state.paints[fam] = (state.paints[fam] || 0) + 1;
-      special.push({ icon: icon('icon_loot_paint', '🪣'), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
+      special.push({ icon: icon('icon_loot_paint', ''), label: LName(PAINT_FAMILIES[fam]), n: 1, tier: 'rare', swatch: PAINT_FAMILIES[fam].swatch });
     }
     if (sp.loot.bp && Math.random() < sp.loot.bp * mult) {
       const bpPool = (BAL.blueprint.regionItems[exp.region] || []).filter(id => !(state.blueprints || {})[id]);
@@ -4277,13 +4287,13 @@ function resolveFieldSpot(exp, mult, notes, special) {
         const bpId = bpPool[Math.floor(Math.random() * bpPool.length)];
         state.blueprints = state.blueprints || {};
         state.blueprints[bpId] = 1;
-        special.push({ icon: icon('icon_loot_blueprint', '📐'), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
+        special.push({ icon: icon('icon_loot_blueprint', ''), label: t('bp.lootLabel', { name: bpName(bpId) }), tier: 'legendary' });
       }
     }
     if (sp.loot.mood) addMoodBuff(sp.loot.mood[0], sp.loot.mood[1]);
   }
   notes.push(t('spot.explored', { name }));
-  jackpotToast(`${(sp && sp.icon) || '📍'} ${t('spot.jackpot', { name })}`, 0xd4b46a);
+  jackpotToast(t('spot.jackpot', { name }), 0xd4b46a);
   state.fieldSpot = null;
 }
 // 인카운터 테이블은 src/data/events.js로 분리(콘텐츠 데이터 Phase 1). 함수 필드가 game.js
@@ -4460,7 +4470,7 @@ function showVisitorBubble(id) {
   radioBubble = { el, item: { group: visitor.g }, yOff: 1.9, ttl: 0, fading: false, sfxTimers: [], typeTimer: null };
   positionRadioBubble();
   // #181 디렉터(2026-07-15): 대사 시 라디오 지지직음 제거 — 거슬린다는 피드백. 무음으로 건넨다.
-  el.querySelector('.rb-title').textContent = `📻 ${t(ev.titleId)}`;
+  el.querySelector('.rb-title').textContent = t(ev.titleId);
   const bodyEl = el.querySelector('.rb-body');
   let ci = 0;
   const type = () => {
@@ -4810,36 +4820,36 @@ function hideEventChip() {
 ============================================================ */
 /* ── 거처 개조 (기지 커스터마이징: 빗물받이·텃밭·증축 등) ── */
 const SHELTER_MODS = {
-  raincatch:  { name: '빗물받이',    nameEn: 'Rain Catch',   emoji: '🪣', cost: { material: 2, parts: 1 }, desc: '비/눈 오는 날 깨끗한 물 +1', descEn: 'Clean water +1 on rainy/snowy days', not: ['lighthouse'] },
-  garden:     { name: '텃밭 상자',   nameEn: 'Garden Box',   emoji: '🌱', cost: { material: 2, water: 2 }, desc: '이틀에 한 번 음식 +1 (겨울 제외)', descEn: 'Food +1 every other day (except winter)', not: ['subway', 'rooftop'] },
+  raincatch:  { name: '빗물받이',    nameEn: 'Rain Catch',   emoji: '', cost: { material: 2, parts: 1 }, desc: '비/눈 오는 날 깨끗한 물 +1', descEn: 'Clean water +1 on rainy/snowy days', not: ['lighthouse'] },
+  garden:     { name: '텃밭 상자',   nameEn: 'Garden Box',   emoji: '', cost: { material: 2, water: 2 }, desc: '이틀에 한 번 음식 +1 (겨울 제외)', descEn: 'Food +1 every other day (except winter)', not: ['subway', 'rooftop'] },
   // 옥상 텃밭 (#53) — rooftop 전용. 마당을 텃밭으로 개조. 매일 음식 생산(겨울 0), 옥탑 퍽 gardenMult로 2배.
   //   현재 텃밭은 rooftop 전용이라 퍽이 곧 정체성 — 다른 셸터로의 확장은 향후.
-  rooftopGarden: { name: '옥상 텃밭', nameEn: 'Rooftop Garden', emoji: '🌱', cost: { material: 3, water: 2 }, desc: '마당을 텃밭으로 — 매일 음식 +2 (겨울 휴면)', descEn: 'Turn the yard into a garden — food +2 daily (dormant in winter)', only: ['rooftop'] },
+  rooftopGarden: { name: '옥상 텃밭', nameEn: 'Rooftop Garden', emoji: '', cost: { material: 3, water: 2 }, desc: '마당을 텃밭으로 — 매일 음식 +2 (겨울 휴면)', descEn: 'Turn the yard into a garden — food +2 daily (dormant in winter)', only: ['rooftop'] },
   // 1.2 버섯 재배칸 (subway 전용) — 어둠에서 자라는 식량. 옥탑 텃밭(볕/여름)의 대칭축(어둠/연중).
   //   매일 음식 +1(겨울 포함 연중), 이틀에 한 번 물 1 소모. 옥탑보다 산출 절반이되 계절을 타지 않는다.
-  mushroom: { name: '버섯 재배칸', nameEn: 'Mushroom Bed', emoji: '🍄', cost: { material: 3, water: 3 }, desc: '어둠 속 균상 — 매일 음식 +1 (연중, 물 소모)', descEn: 'A mushroom bed in the dark — food +1 daily year-round (uses water)', only: ['subway'] },
-  insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '🧤', cost: { cloth: 3, material: 2 }, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
-  shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '🪜', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
+  mushroom: { name: '버섯 재배칸', nameEn: 'Mushroom Bed', emoji: '', cost: { material: 3, water: 3 }, desc: '어둠 속 균상 — 매일 음식 +1 (연중, 물 소모)', descEn: 'A mushroom bed in the dark — food +1 daily year-round (uses water)', only: ['subway'] },
+  insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '', cost: { cloth: 3, material: 2 }, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
+  shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
   // #189 P2 지속 급전 승격: 설치 시 조명·가전 전력 무료 + 기존 발전(이틀 배터리 +1) 유지.
-  solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '🔆', cost: { parts: 4, battery: 1 },  desc: '조명·가전 전력 무료 (지속 급전) · 이틀에 한 번 배터리 +1', descEn: 'Free power for lights & appliances (steady supply) · battery +1 every other day', not: ['subway'] },
+  solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '', cost: { parts: 4, battery: 1 },  desc: '조명·가전 전력 무료 (지속 급전) · 이틀에 한 번 배터리 +1', descEn: 'Free power for lights & appliances (steady supply) · battery +1 every other day', not: ['subway'] },
   // #189 P1 조명 설비 — 어둠(무비용·우울) ↔ 화기(연료·온기·흔들림) ↔ 전기조명(전력·안정) 밸런스 축의 세 번째 기둥.
   //   rebuild: 설치 즉시 loadShelter 재실행 → 천장 펜던트 소품+전등 점등. 전력은 processDay가 매일 배터리 1 소비.
-  lighting:   { name: '조명 설비',   nameEn: 'Electric Lighting', emoji: '💡', cost: { parts: 3, battery: 1 }, desc: '천장에 전등을 매단다 — 방이 밝아진다 (배터리 1/일, 발전기 가동 중엔 무료)', descEn: 'Hang an electric light from the ceiling — the room brightens (battery 1/day, free while the generator runs)', rebuild: true },
-  roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '🛠️', cost: { material: 4 },      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
-  extension:  { name: '증축',        nameEn: 'Extension',    emoji: '🧱', cost: { material: 6, parts: 2 },  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
+  lighting:   { name: '조명 설비',   nameEn: 'Electric Lighting', emoji: '', cost: { parts: 3, battery: 1 }, desc: '천장에 전등을 매단다 — 방이 밝아진다 (배터리 1/일, 발전기 가동 중엔 무료)', descEn: 'Hang an electric light from the ceiling — the room brightens (battery 1/day, free while the generator runs)', rebuild: true },
+  roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '', cost: { material: 4 },      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
+  extension:  { name: '증축',        nameEn: 'Extension',    emoji: '', cost: { material: 6, parts: 2 },  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
   // 1.3 온천 (lodge 전용) — 고원 발견물을 개조로 개방. cozy의 정점: 쾌적 온기 대형 + 취침 에너지 회복 보너스.
   //   고양이/개가 온천 옆에서 조는 전용 포즈(연출은 아트 폴백 — addModProp 소품 + 절차 김 파티클).
-  onsen: { name: '온천', nameEn: 'Hot Spring', emoji: '♨️', cost: { material: 4, parts: 2 }, desc: '고원의 온천을 끌어들여 — 쾌적함 대폭 + 취침 회복 보너스', descEn: 'Tap the highland hot spring — big comfort boost + restful sleep bonus', only: ['lodge'] },
+  onsen: { name: '온천', nameEn: 'Hot Spring', emoji: '', cost: { material: 4, parts: 2 }, desc: '고원의 온천을 끌어들여 — 쾌적함 대폭 + 취침 회복 보너스', descEn: 'Tap the highland hot spring — big comfort boost + restful sleep bonus', only: ['lodge'] },
   // Phase B 개조 2단계 (비용 곡선 상향: 1단계의 2~2.5배)
-  insulationPlus: { name: '강화 단열재', nameEn: 'Reinforced Insulation', emoji: '🧥', cost: { cloth: 7, material: 5, parts: 1 }, desc: '한파 방어 강화 (단열재 위에)', descEn: 'Stronger cold-snap defense (over insulation)', req: 'insulation' },
+  insulationPlus: { name: '강화 단열재', nameEn: 'Reinforced Insulation', emoji: '', cost: { cloth: 7, material: 5, parts: 1 }, desc: '한파 방어 강화 (단열재 위에)', descEn: 'Stronger cold-snap defense (over insulation)', req: 'insulation' },
   // 2.0 동부 세관 (디렉터 2026-07-09: "shelter라고 하면 응당 안전해야 하니까") — buildRoom 지오 분기라 rebuild 플래그.
-  customsClear: { name: '선반 철거', nameEn: 'Clear the Shelves', emoji: '🧹', cost: {}, desc: '압수품 선반을 뜯어낸다 — 벽이 비고, 내 것을 놓을 자리가 생긴다', descEn: 'Tear out the seizure shelves — the wall clears for things of your own', only: ['customs'], rebuild: true },
-  customsSeal: { name: '창구 봉쇄', nameEn: 'Seal the Booths', emoji: '🪵', cost: { material: 3, cloth: 1 }, desc: '심사 창구를 판자로 막는다 — 외풍이 멎는다 (악천후 쾌적 하락 해소)', descEn: 'Board up the inspection booths — the draft stops (no comfort loss in bad weather)', only: ['customs'], rebuild: true },
-  terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '🧱', cost: { material: 4, cloth: 1 }, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
-  bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '🛢️', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
+  customsClear: { name: '선반 철거', nameEn: 'Clear the Shelves', emoji: '', cost: {}, desc: '압수품 선반을 뜯어낸다 — 벽이 비고, 내 것을 놓을 자리가 생긴다', descEn: 'Tear out the seizure shelves — the wall clears for things of your own', only: ['customs'], rebuild: true },
+  customsSeal: { name: '창구 봉쇄', nameEn: 'Seal the Booths', emoji: '', cost: { material: 3, cloth: 1 }, desc: '심사 창구를 판자로 막는다 — 외풍이 멎는다 (악천후 쾌적 하락 해소)', descEn: 'Board up the inspection booths — the draft stops (no comfort loss in bad weather)', only: ['customs'], rebuild: true },
+  terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '', cost: { material: 4, cloth: 1 }, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
+  bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
   // 무전 기지 개조 (디렉터: "무선기지국 설치 가능한 집엔 개조 기능") — 개척 프로젝트 「무전 기지 복구」 완공(radioBaseDone) 후
   //   지상 셸터에 실체(지붕 송신 안테나)를 세운다. gate=radioBaseDone → 프로젝트 완공과 연동. 지하(subway)는 하늘 미접근이라 제외.
-  radiostation: { name: '무전 기지', nameEn: 'Radio Base', emoji: '📡', cost: { parts: 3, material: 2 }, desc: '지붕에 송신 안테나를 세운다 — 무전 기지의 실체 (붉은 항공등이 밤을 깜빡인다)', descEn: 'Raise the transmitter antenna on the roof — the radio base made real (a red beacon blinks through the night)', not: ['subway'], gate: 'radioBaseDone' },
+  radiostation: { name: '무전 기지', nameEn: 'Radio Base', emoji: '', cost: { parts: 3, material: 2 }, desc: '지붕에 송신 안테나를 세운다 — 무전 기지의 실체 (붉은 항공등이 밤을 깜빡인다)', descEn: 'Raise the transmitter antenna on the roof — the radio base made real (a red beacon blinks through the night)', not: ['subway'], gate: 'radioBaseDone' },
 };
 // 개조 앵커 참조표 (문서 전용 — 런타임 미소비. 디스패치는 addModProp의 id 하드코딩 분기가 직접 수행).
 // roof=지붕면 브래킷 · eave=처마 홈통+파이프+물통 · wall=외벽 덧댐 · ground=지면(마당) 배치.
@@ -5710,8 +5720,8 @@ function openCraftModal() {
   const themeHtml = THEME_SETS.map(ts => {
     const done = themeSetActive(ts);
     return `<div class="prep-row ${done ? 'sel' : ''}" style="cursor:default">
-      <span>${icon('icon_theme_' + ts.id, ts.emoji)} ${LName(ts)}</span>
-      <span class="p-eff" style="font-size:10px">${ts.items.map(id => DEFS[id].emoji).join('')} → ${t('deco.themeBonus', { n: DECO_THEME_COMFORT })}</span>
+      <span>${icon('icon_theme_' + ts.id)} ${LName(ts)}</span>
+      <span class="p-eff" style="font-size:10px">${t('deco.themeBonus', { n: DECO_THEME_COMFORT })}</span>
       <span style="color:${done ? 'var(--good)' : 'var(--text-dim)'};font-size:11px;margin-left:6px">${done ? t('deco.themeDone') : t('deco.themeTodo')}</span>
     </div>`;
   }).join('');
@@ -5729,8 +5739,8 @@ function openCraftModal() {
     + `<div style="font-size:10px;color:var(--text-dim);margin-bottom:8px">${t('craft.modIntro')}</div>${modRows || `<div style="font-size:11px;color:var(--text-dim)">${t('craft.noMods')}</div>`}`;
   const buildHtml = `${modHtml}${bunkerHtml}${rooftopHtml}${subwayHtml}${icefishHtml}${forbiddenHtml}${projHtml}`;
   const catDefs = [
-    { id: 'goods', label: t('craft.catGoods'), html: secHead(icon('icon_furn_chair', '🪑'), 'craft.catGoods') + goodsRows },
-    ...(outfitRows.trim() ? [{ id: 'outfit', label: t('craft.catOutfit'), html: secHead(icon('icon_act_wardrobe', '🧥'), 'craft.catOutfit') + outfitRows }] : []),
+    { id: 'goods', label: t('craft.catGoods'), html: secHead(icon('icon_furn_chair', ''), 'craft.catGoods') + goodsRows },
+    ...(outfitRows.trim() ? [{ id: 'outfit', label: t('craft.catOutfit'), html: secHead(icon('icon_act_wardrobe', ''), 'craft.catOutfit') + outfitRows }] : []),
     { id: 'build', label: t('craft.catBuild'), html: buildHtml },
     ...(decoHtml.trim() ? [{ id: 'deco', label: t('craft.catDeco'), html: decoHtml }] : []),
   ];
@@ -5844,12 +5854,12 @@ function openCraftModal() {
       const c = CRAFTS[+b.dataset.craft];
       if (c.out.outfit && (state.outfits || ['default']).includes(c.out.outfit)) return; // #86④ 이중 방어(버튼은 이미 숨김)
       if (!resConsumeAll(craftCost(c))) { toast(t('toast.needMaterial')); return; }
-      let craftEmoji;
+      let craftIcon = null; // #213: FX는 이모지 아닌 실아이콘 PNG (의류는 아이콘 부재 → 스파클만)
       if (c.out.res) {
         resAdd(c.out.res, c.out.n);
-        craftEmoji = RESOURCES[c.out.res].emoji;
+        craftIcon = 'icon_res_' + c.out.res;
         // 양초는 배치 가구가 아니라 연료 — "만들었는데 못 놓는다" 혼동 방지 (디렉터 신고 2026-07-16, 모바일 1.9.0)
-        toast(t('craft.doneRes', { emoji: craftEmoji, name: LName(RESOURCES[c.out.res]), n: c.out.n })
+        toast(t('craft.doneRes', { name: LName(RESOURCES[c.out.res]), n: c.out.n })
           + (c.out.res === 'candle' ? '\n' + t('craft.candleHint') : ''));
       } else if (c.out.outfit) {
         // #86④ 의류: 옷장에 영구 추가 + 바로 갈아입기 (만든 옷을 그 자리에서 입는 게 손맛)
@@ -5857,12 +5867,11 @@ function openCraftModal() {
         state.outfits.push(c.out.outfit);
         state.outfit = c.out.outfit;
         avatarSys.refreshOutfit();
-        craftEmoji = OUTFITS[c.out.outfit].emoji;
         toast(t('craft.doneOutfit', { name: LName(OUTFITS[c.out.outfit]) }));
       } else {
         state.inventory[c.out.furn] = (state.inventory[c.out.furn] || 0) + 1;
-        craftEmoji = DEFS[c.out.furn].emoji;
-        toast(t('craft.doneFurn', { emoji: craftEmoji, name: LName(DEFS[c.out.furn]) }));
+        craftIcon = 'icon_furn_' + c.out.furn;
+        toast(t('craft.doneFurn', { name: LName(DEFS[c.out.furn]) }));
         renderInventoryBar();
       }
       state.stats.craft = (state.stats.craft || 0) + 1;
@@ -5873,7 +5882,7 @@ function openCraftModal() {
       // #86④ 의류는 망치질 대신 천 스치는 소리 (디렉터 오더 — 갈아입기와 동일 결)
       if (c.out.outfit) playSfx('whoosh', { rate: 0.72, vol: 0.5, jitter: 0.06 });
       else playSfx('craft');
-      spawnCraftFx(craftEmoji); // ④ 제작 손맛: 결과물 아이콘 떠오름 + 반짝임
+      spawnCraftFx(craftIcon); // ④ 제작 손맛: 결과물 아이콘 떠오름 + 반짝임
       if (c.out.outfit) openCraftModal(); // #86④: 보유 배지 즉시 반영 (재제작 버튼 잔류 방지)
       openCraftModal(); // 갱신
     }));
@@ -7093,7 +7102,7 @@ canvas.addEventListener('wheel', e => {
 const isPcInput = matchMedia('(pointer: fine)').matches && !('ontouchstart' in window);
 // v0.9.1: 모바일(터치 기기/Capacitor 포함) 판정 — 백그라운드 오디오 정책 분기에 사용.
 const isMobileEnv = ('ontouchstart' in window) || /Android|iPhone|iPad/i.test(navigator.userAgent);
-// #52: 탭형 환경설정 창 — 타이틀 ⚙️ / 인게임 ESC / 모바일 톱니 3경로가 모두 이 전용 오버레이를 개폐한다.
+// #52: 탭형 환경설정 창 — 타이틀 / 인게임 ESC / 모바일 톱니 3경로가 모두 이 전용 오버레이를 개폐한다.
 // 중앙 고정 창이라 clampPanel/updateUiScale 위치 로직은 호출하지 않는다(함수 자체는 존치).
 // #210: 설정 셸(열기/닫기/토글/탭 전환)은 ui/settings.js로 이관 — renderControlsGuide(키 리바인딩 가이드)만 주입.
 //   구조 무변(로직 원문 이관). 콜사이트는 아래 구조분해로 동일 명칭 유지 → 나머지 game.js 무변.
@@ -7532,7 +7541,7 @@ function makeDraggablePanel(el, key, title) {
   let drag = null;
   head.addEventListener('pointerdown', ev => {
     if (ev.target === minBtn) return;
-    if (uiState.pinned) return; // 📌 UI 고정(디렉터 2026-07-10): 드래그 시작 자체를 막는다 — 접기(–)는 유지
+    if (uiState.pinned) return; // UI 고정(디렉터 2026-07-10): 드래그 시작 자체를 막는다 — 접기(–)는 유지
 
     const z = getUiz();
     const r = el.getBoundingClientRect();
@@ -7650,7 +7659,7 @@ function hideTitle() {
 
 // ── #74 Next Fest 데모 「첫 번째 겨울」 종료 화면 ──────────────────────────
 // 첫 겨울을 넘긴 롤오버에서 아침 보고 대신 뜬다(tickTime 게이트). 시간 동결·취침/탐험 봉인과 한 세트 —
-// ✕로 닫아도 진행은 없고, 봄이 온 거처를 둘러보는 것만 남는다.
+// 로 닫아도 진행은 없고, 봄이 온 거처를 둘러보는 것만 남는다.
 function showDemoEnd() {
   // 페이퍼 레이어(수첩/튜토리얼)는 모달보다 위 — 떠 있으면 엔드 스크린을 덮는다(프로브 실측). 강제 정리.
   const jscr = $('journal-screen');
@@ -7668,7 +7677,7 @@ function showDemoEnd() {
 }
 // 슬롯 모드 배지 (하드/무한/하드코어/배경화면) — icon() 폴백 문법 대신 이모지 배지 유지
 function slotModeBadge(mode) {
-  return ''; // 난이도/모드 = 슬롯카드 테두리색(data-mode)으로 이관 (디렉터: 이모지 🔥💀♾️🖼️ 배지 폐지)
+  return ''; // 난이도/모드 = 슬롯카드 테두리색(data-mode)으로 이관 (디렉터: 이모지 배지 폐지)
 }
 function openSlotModal(mode) {
   const cards = [];
@@ -7684,7 +7693,7 @@ function openSlotModal(mode) {
         <div class="sl-body">${m
           ? `${LName(m.shelter)} — Day ${m.day}${m.winters >= 1 ? ` <span class="sl-winters">${m.winters}${m.mode === 'zen' ? '' : '/9'}</span>` : ''}${ended ? ` <span class="sl-ended">${t('slot.endedTag')}</span>` : ''}<br><span class="sl-meta">${m.mode === 'wallpaper' ? t('slot.metaWp', { saved: m.saved }) : t('slot.meta', { succ: m.successes, saved: m.saved })}</span>`
           : t('slot.empty')}</div>
-        ${m ? `<button class="sl-del" data-del="${n}" title="${t('slot.del.title')}">🗑</button>` : ''}
+        ${m ? `<button class="sl-del" data-del="${n}" title="${t('slot.del.title')}"></button>` : ''}
       </div>`);
   }
   openModal(mode === 'new' ? t('slot.new') : t('slot.load'), `<div class="slot-scroll">${cards.join('')}</div>`);
@@ -7889,7 +7898,7 @@ function updateClock() {
 
 function updateHud() {
   if (typeof updateSpeedBtn === 'function') updateSpeedBtn(); // 배속 버튼 해금 상태 동기화
-  // 🖼️ 배경화면 모드: 게이지/탐험 패널을 숨긴다(CSS). 압박 UI가 없는 순수 가꾸기.
+  // 배경화면 모드: 게이지/탐험 패널을 숨긴다(CSS). 압박 UI가 없는 순수 가꾸기.
   document.body.classList.toggle('wallpaper-mode', isWallpaper());
   const sh = SHELTERS[state.current];
   const W = WEATHERS[weather.type];
@@ -7917,7 +7926,7 @@ function updateHud() {
   ].filter(Boolean).join(' · ');
   // 기본 이모지 금지(디렉터) — 제작 아이콘 + 이모지 폴백
   const segs = [
-    `<span class="cond-seg" data-tip="${warnTip}">${icon('icon_cond_warn', '⚠️')}<b class="${warnN ? 'bad' : ''}">${warnN}</b>${state.buff ? icon('icon_cond_buff', '✨') : ''}</span>`,
+    `<span class="cond-seg" data-tip="${warnTip}">${icon('icon_cond_warn', '')}<b class="${warnN ? 'bad' : ''}">${warnN}</b>${state.buff ? icon('icon_cond_buff', '') : ''}</span>`,
     `<span class="cond-seg" data-tip="${comfortTip}">${icon('icon_cond_comfort', '')}<b>${cd.score}</b></span>`, // 쾌적=단색 스마일 아이콘(디렉터: raw 이모지 금지, 아이콘팩 차용)
   ];
   $('hud-stat').innerHTML = segs.join('<span class="cond-div">|</span>');
@@ -8028,7 +8037,7 @@ function renderPDA(quiet) {
       const total = state.exp.dur || ((er.time || 60) * 1000);
       const pct = Math.min(100, Math.max(0, Math.round((1 - remain / total) * 100)));
       body += `<div class="ph">${t('exp.panel.title')}</div>`
-        + `<div class="pline"><span class="pk">${er.emoji || ''} ${LName(er)}</span><span class="pbar"><i style="width:${pct}%"></i></span><span class="pv">${pct}%</span></div>`;
+        + `<div class="pline"><span class="pk">${LName(er)}</span><span class="pbar"><i style="width:${pct}%"></i></span><span class="pv">${pct}%</span></div>`;
     }
     const lines = [];
     if (state.injury) {
@@ -8040,10 +8049,10 @@ function renderPDA(quiet) {
     if (state.expFatigue === state.day) lines.push(t('exp.fatigue'));
     if (state.moodBuff && state.moodBuff.until > state.day) lines.push(t('pda.mood', { amt: state.moodBuff.amt, d: state.moodBuff.until - state.day }));
     if (w?.penalty) lines.push(`${t('pda.weatherPen')}: -${Math.round(w.penalty * 100)}%`); // 지금 몸에 걸린 것 = 여기. 진행 계측은 기록 탭으로 이관(#211)
-    if (state.buff) lines.push(`${icon('icon_cond_buff', '✨')} ${buffLabel(state.buff)}`);
+    if (state.buff) lines.push(`${icon('icon_cond_buff', '')} ${buffLabel(state.buff)}`);
     body += `<div class="ph">${t('pda.cond')}</div>` + lines.map(l => `<div>${l}</div>`).join('');
-    // #211 필드노트 흡수: 쾌적 4축 분해. PDA엔 총점(★)만, '왜 이 점수인가'는 노트에만 있었다 — 한 화면으로.
-    //   구 `쾌적: 26 ★★` 라인은 삭제: 총점을 이 분해 헤더가 이미 말한다(한 화면에 점수 두 번 = 중복).
+    // #211 필드노트 흡수: 쾌적 4축 분해. PDA엔 총점()만, '왜 이 점수인가'는 노트에만 있었다 — 한 화면으로.
+    //   구 `쾌적: 26 ` 라인은 삭제: 총점을 이 분해 헤더가 이미 말한다(한 화면에 점수 두 번 = 중복).
     const cb = comfortBreakdown();
     const ax = (label, v, logs) => `<div class="pax">
       <div class="pax-h"><span>${label}</span><b>${v < 0 ? '' : '+'}${Math.round(v)}</b></div>
@@ -8756,7 +8765,7 @@ function processDay() {
     notes.push(t('east.rumorNote'));
   }
   // #164 「떠오른 자리」 + 지역 컨디션 (디렉터 2026-07-10 — 반복 타파). 배경화면 모드는 무대상.
-  //   ⚠️ 난수는 공유 Math.random을 쓰지 않는다 — 시드 시뮬(하드코어 치사성 등 밴드 테스트)의 스트림을
+  //   난수는 공유 Math.random을 쓰지 않는다 — 시드 시뮬(하드코어 치사성 등 밴드 테스트)의 스트림을
   //   밀어버리기 때문(실측: 데모 스위트 50/51 회귀). 런 시드+일자 해시의 자체 스트림 → 시뮬 무접점
   //   + 세이브 재로드 리롤 방지(같은 날은 같은 소문) 보너스.
   if (!isWallpaper()) {
@@ -8824,14 +8833,14 @@ function briefingHtml(forecast, prep, warns) {
   let advice;
   if (coldExposed || (coldIncoming && coldDefenseLevel() < 1)) advice = t('brief.advice.cold');
   else if (prep && (!prep.fuelOk || !prep.cannedOk)) advice = t('brief.advice.winterPrep');
-  else if (warns.length) advice = t('brief.advice.shortage', { list: warns.map(id => RESOURCES[id].emoji + LName(RESOURCES[id])).join(', ') });
+  else if (warns.length) advice = t('brief.advice.shortage', { list: warns.map(id => LName(RESOURCES[id])).join(', ') });
   else advice = t('brief.advice.calm');
   lines.push(`<div style="font-size:11px;color:var(--good)">▸ ${advice}</div>`);
   return `<div class="report-sec" style="border-color:#6b5a40"><span class="r-title">${t('brief.title')}</span>${lines.join('')}</div>`;
 }
 function showDayReport() {
   const log = state.dayLog;
-  const fmt = obj => Object.entries(obj).map(([id, n]) => `${RESOURCES[id].emoji}${LName(RESOURCES[id])} ${n}`).join(', ');
+  const fmt = obj => Object.entries(obj).map(([id, n]) => `${LName(RESOURCES[id])} ${n}`).join(', ');
   const warns = Object.keys(RESOURCES).filter(id => ['water', 'food', 'bandage', 'candle', 'battery'].includes(id) && (state.res[id] || 0) === 0);
   const tips = [];
   if (warns.includes('bandage')) tips.push(t('report.tip.bandage'));
@@ -8878,7 +8887,7 @@ function setPaused(p) {
   document.body.classList.toggle('paused', p);
   const b = $('btn-pause');
   // (B-③) 재생/일시정지 아이콘 — icon() 폴백 구조(아트 있으면 표시, 없으면 이모지). 시스템 버튼 통일.
-  if (b) b.innerHTML = p ? icon('icon_sys_play', '▶', 'sys-icon') : icon('icon_sys_pause', '⏸', 'sys-icon');
+  if (b) b.innerHTML = p ? icon('icon_sys_play', '', 'sys-icon') : icon('icon_sys_pause', '', 'sys-icon');
 }
 let reportQueued = false;
 let lastAutoHour = -1;
@@ -9121,7 +9130,7 @@ function renderInventoryBar() {
     const placedN = items.length;
     const btn = document.createElement('div');
     btn.className = 'tool-item tool-collect' + (placedN <= 0 ? ' empty' : '');
-    btn.innerHTML = `<span class="emoji">${icon('icon_sys_collect', '📦')}</span><span>${t('inv.collectAll')}</span><span class="cnt">${placedN}</span>`;
+    btn.innerHTML = `<span class="emoji">${icon('icon_sys_collect', '')}</span><span>${t('inv.collectAll')}</span><span class="cnt">${placedN}</span>`;
     btn.title = placedN > 0 ? t('inv.collectAll.title', { n: placedN }) : t('inv.collectAll.none');
     btn.addEventListener('click', () => reclaimAll());
     bar.appendChild(btn);
@@ -9174,7 +9183,7 @@ function renderExpPanel() {
   }
   box.innerHTML = injuryHtml + `
     <button class="pixel-btn primary" id="btn-open-map" style="width:100%">${t('exp.openMap')}</button>
-    ${hasForecast() ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px;text-align:center">📻 ${forecastText()}</div>` : ''}`;
+    ${hasForecast() ? `<div style="font-size:10px;color:var(--text-dim);margin-top:6px;text-align:center">${icon('icon_rec_radio')} ${forecastText()}</div>` : ''}`;
   const mb = $('btn-open-map');
   if (mb) mb.addEventListener('click', () => openMapModal()); // 핸들러 직접 등록 금지 — MouseEvent가 viewCity 인자로 들어가 city가 이벤트 객체가 되면 핀이 전부 걸러져 빈 지도가 된다(2.0-(f) viewCity 신설 때 생긴 잠복 회귀, S2-1에서 검거)
   const tb = $('btn-treat');
@@ -9685,7 +9694,7 @@ function showBroadcastModal(id) { // 이름 유지(기존 호출부 호환), 실
   // 이전 버블 정리
   clearRadioBubble();
   const el = ensureRadioBubbleEl();
-  const full = `📻 ${LN(b)}`;
+  const full = LN(b);
   // v1.4.2(디렉터 오더): 자막에는 전파를 타는 단파 단문(air)만 — 수신자 시점 서술(desc)은 수첩 기록 전용.
   const bodyText = LD(b.air ? { desc: b.air, descEn: b.airEn || b.air } : b).replace(/\s+/g, ' ');
   el.className = '';
@@ -9780,16 +9789,16 @@ function showTutorialPage(day) {
    기존 세이브는 loadSave()에서 -1로 마이그레이션해 표시하지 않는다.
 ============================================================ */
 const QUESTS = [
-  // icon = 이모지 폴백 · img = 현행 아트 아이콘(#202 디렉터: 전 단계 아이콘 현행화 — drink/eat도 게이지·자원 아이콘으로).
-  { id: 'drink',  icon: '💧', img: 'icon_g_thirst',     textId: 'quest.drink.text',  loreId: 'quest.drink.lore',  doneId: 'quest.drink.done',  reward: { water: 1 } },
-  { id: 'eat',    icon: '🥫', img: 'icon_res_canned',   textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
-  { id: 'place',  icon: '🔧', img: 'icon_sys_edit',    textId: 'quest.place.text',  loreId: 'quest.place.lore',  doneId: 'quest.place.done',  reward: { cloth: 1 } },
-  { id: 'depart', icon: '🎒', img: 'icon_act_explore', textId: 'quest.depart.text', loreId: 'quest.depart.lore', doneId: 'quest.depart.done', reward: {} },
+  // img = 현행 아트 아이콘(#202 디렉터: 전 단계 아이콘 현행화). #213: 이모지 폴백 폐지 — 로드 실패 시 공란.
+  { id: 'drink',  img: 'icon_g_thirst',     textId: 'quest.drink.text',  loreId: 'quest.drink.lore',  doneId: 'quest.drink.done',  reward: { water: 1 } },
+  { id: 'eat',    img: 'icon_res_canned',   textId: 'quest.eat.text',    loreId: 'quest.eat.lore',    doneId: 'quest.eat.done',    reward: { canned: 1 } },
+  { id: 'place',  img: 'icon_sys_edit',    textId: 'quest.place.text',  loreId: 'quest.place.lore',  doneId: 'quest.place.done',  reward: { cloth: 1 } },
+  { id: 'depart', img: 'icon_act_explore', textId: 'quest.depart.text', loreId: 'quest.depart.lore', doneId: 'quest.depart.done', reward: {} },
   // '결산 리포트 확인' 단계였음 — 거점 UI에 그런 화면이 없어 유저가 길을 잃었다.
   // 취침 유도로 교체: 자고 일어나면 아침 보고가 뜨는 흐름 자체가 결산을 가르친다.
-  { id: 'sleep', icon: '🛌', img: 'icon_act_sleep', textId: 'quest.sleep.text', loreId: 'quest.sleep.lore', doneId: 'quest.sleep.done', reward: { bandage: 1 } },
-  { id: 'craft',  icon: '🔨', img: 'icon_act_craft', textId: 'quest.craft.text',  loreId: 'quest.craft.lore',  doneId: 'quest.craft.done',  reward: { parts: 1 } },
-  { id: 'clean',  icon: '🧹', img: 'icon_act_clean', textId: 'quest.clean.text',  loreId: 'quest.clean.lore',  doneId: 'quest.clean.done',  reward: { water: 1 } },
+  { id: 'sleep', img: 'icon_act_sleep', textId: 'quest.sleep.text', loreId: 'quest.sleep.lore', doneId: 'quest.sleep.done', reward: { bandage: 1 } },
+  { id: 'craft',  img: 'icon_act_craft', textId: 'quest.craft.text',  loreId: 'quest.craft.lore',  doneId: 'quest.craft.done',  reward: { parts: 1 } },
+  { id: 'clean',  img: 'icon_act_clean', textId: 'quest.clean.text',  loreId: 'quest.clean.lore',  doneId: 'quest.clean.done',  reward: { water: 1 } },
 ];
 // 튜토리얼류(온보딩 퀘스트·수첩 페이지·쪽지 팁)는 노말에서만 (디렉터: "하드·하드코어는 이미 할 줄 알잖아").
 //   무한(zen)·배경화면도 언락/관전 모드라 동일 제외 — 신규 유저 진입점은 노말뿐.
@@ -9801,15 +9810,14 @@ function renderQuestCard() {
   if (!questActive()) { card.classList.remove('show'); return; }
   const q = QUESTS[state.questIdx];
   const qi = $('quest-icon');
-  // 튜토리얼 아이콘 = HUD 액션 아트 아이콘(img) 우선, 없으면 이모지(게이지류). 로드 실패 시 이모지 폴백.
-  if (q.img) qi.innerHTML = `<img class="q-art" src="img/icons/${q.img}.png" alt="" draggable="false" onerror="this.replaceWith(document.createTextNode('${q.icon}'))">`;
-  else qi.textContent = q.icon;
+  // 튜토리얼 아이콘 = HUD 액션 아트 아이콘(img). #213: 이모지 폴백 폐지 — 로드 실패 시 소멸(라벨이 의미 전달).
+  qi.innerHTML = q.img ? `<img class="q-art" src="img/icons/${q.img}.png" alt="" draggable="false" onerror="this.remove()">` : '';
   const lore = $('quest-lore');
   // #208(디렉터 "영어서 json열 나온다"): quest.*.text/lore는 인라인 px-icon(<img>)을 담을 수 있어 innerHTML로 렌더.
   //   textContent였던 탓에 en/ja의 <img> 태그가 글자로 유출됐다(ko는 순수 텍스트라 무증상). 로케일=우리 통제 문자열이라 안전.
   if (lore) lore.innerHTML = q.loreId ? t(q.loreId) : '';
   $('quest-text').innerHTML = t(q.textId);
-  // 배치 단계 동안 🔧 버튼 시선 유도 (툴바가 배치 모드 전용이 되면서 진입점을 가르쳐야 한다)
+  // 배치 단계 동안 버튼 시선 유도 (툴바가 배치 모드 전용이 되면서 진입점을 가르쳐야 한다)
   const eb = $('btn-edit');
   if (eb) eb.classList.toggle('pulse', q.id === 'place');
   $('quest-prog').textContent = t('quest.progress', { cur: state.questIdx, total: QUESTS.length });
@@ -9948,7 +9956,7 @@ $('btn-reset').addEventListener('click', () => {
   flushSave();                                     // 마지막 상태를 즉시 기록 후
   setTimeout(() => location.reload(), 500);        // 타이틀로
 });
-// 인게임 💾 저장 — 즉시 슬롯에 기록해 로비에서 불러올 세이브를 확정 (타이틀 모드에선 버튼 숨김 처리됨)
+// 인게임 저장 — 즉시 슬롯에 기록해 로비에서 불러올 세이브를 확정 (타이틀 모드에선 버튼 숨김 처리됨)
 $('btn-save-now').addEventListener('click', () => {
   if (titleVisible) return; // 안전 가드 — 유령 세이브 방지 (버튼은 CSS로도 숨겨짐)
   flushSave();
@@ -10676,10 +10684,10 @@ $('cam-rotr').addEventListener('click', () => { exitCatCloseup(); camState.targe
 $('cam-zin').addEventListener('click', () => { exitCatCloseup(); camState.zoom = THREE.MathUtils.clamp(camState.zoom * 1.25, 0.25, 3.2); });
 $('cam-zout').addEventListener('click', () => { exitCatCloseup(); camState.zoom = THREE.MathUtils.clamp(camState.zoom * 0.8, 0.25, 3.2); });
 $('cam-home').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw = Math.PI / 4; setPanTarget(0, 0); fitZoomForShelter(); }); // #70: 홈 복귀에 팬 0,0 리셋 포함
-// 👁 게임 UI 숨김 토글 (디렉터 UI 재배치): 게임플레이 패널만 숨기고 카메라 조작/편집은 유지. 배경화면 모드와 별개의 인게임 뷰 정리.
+// 게임 UI 숨김 토글 (디렉터 UI 재배치): 게임플레이 패널만 숨기고 카메라 조작/편집은 유지. 배경화면 모드와 별개의 인게임 뷰 정리.
 { const uib = $('btn-ui-toggle'); if (uib) uib.addEventListener('click', () => { const hid = document.body.classList.toggle('ui-hidden'); uib.classList.toggle('primary', hid); toast(t(hid ? 'ui.hidden' : 'ui.shown')); }); }
-// 📌 UI 배치 고정 토글 (디렉터 2026-07-10): 패널 드래그를 잠가 실수 이동을 원천 차단.
-//   uiState.pinned에 영속(패널 위치와 같은 저장소) — 재시작해도 고정 유지. 접기(–)·숨김(👁)은 별개.
+// UI 배치 고정 토글 (디렉터 2026-07-10): 패널 드래그를 잠가 실수 이동을 원천 차단.
+//   uiState.pinned에 영속(패널 위치와 같은 저장소) — 재시작해도 고정 유지. 접기(–)·숨김()은 별개.
 {
   const pb = $('btn-ui-pin');
   const syncPin = () => {
@@ -10733,7 +10741,7 @@ if (window.nineWidget && window.nineWidget.available) {
     if (await gameConfirm(t('title.quit.confirm'), t('title.quit'), t('confirm.cancel'))) window.close();
   }); }
 }
-// #52: 타이틀 ⚙️ — 전용 설정 오버레이 토글 (인게임과 동일 창)
+// #52: 타이틀 — 전용 설정 오버레이 토글 (인게임과 동일 창)
 $('t-settings').addEventListener('click', () => toggleSettingsPanel());
 // 씬 저작 크리에이터 모드 — QA 패널/URL(?creator=1)로 진입. 인게임 editMode + __shelter 훅 재사용.
 const _creatorUI = makeCreatorUI({
@@ -10768,7 +10776,7 @@ function markQa() { state.qaUsed = true; if (typeof updateSpeedBtn === 'function
 function openQaPanel() {
   const btn = (id, label) => `<button class="pixel-btn" data-qa="${id}" style="margin:3px;font-size:11px">${label}</button>`;
   const body = `
-    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">⚙️ QA 전용 · 사용 시 이 세이브의 신규 업적은 잠깁니다 (qaUsed)</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">QA 전용 · 사용 시 이 세이브의 신규 업적은 잠깁니다 (qaUsed)</div>
     <div style="display:flex;flex-wrap:wrap">
       ${btn('res100', '자원 전종 +100')}
       ${btn('gauges', '게이지 풀')}
@@ -10789,8 +10797,8 @@ function openQaPanel() {
       ${btn('hidden', '히든 루트 점프 (침묵)')}
       ${btn('paints', '도료 전 계열 +3')}
       ${btn('bps', '시그니처 도면 전부')}
-      ${btn('creator', '🎬 크리에이터 모드')}
-      ${btn('speed', '⏩ 배속 해금')}
+      ${btn('creator', '크리에이터 모드')}
+      ${btn('speed', '배속 해금')}
     </div>
     <div id="qa-status" style="font-size:11px;color:var(--good);margin-top:8px;min-height:16px"></div>`;
   openModal('QA 치트 패널', body);
@@ -11651,7 +11659,10 @@ window.__shelter = {
   // #13 꾸미기 확장 + 사운드 QA 훅
   WALLPAPERS, FLOORINGS, THEME_SETS, DECO_THEME_COMFORT, applyDecoChoice, applyDeco,
   // ④ 제작 손맛 연출 QA 훅: 임의 이모지로 연출 트리거 + 진행 중 연출 수 조회
-  spawnCraftFx: (emoji = '🥫') => spawnCraftFx(emoji), craftFxCount: () => craftFx.length,
+  spawnCraftFx: (iconId = 'icon_res_canned') => spawnCraftFx(iconId), craftFxCount: () => craftFx.length,
+  craftFxDump: () => craftFx.map(f => ({ v: f.icon.visible, o: +f.icon.material.opacity.toFixed(2), hasMap: !!f.icon.material.map,
+    imgW: (f.icon.material.map && f.icon.material.map.image && (f.icon.material.map.image.naturalWidth || f.icon.material.map.image.width)) || 0,
+    pos: [+f.grp.position.x.toFixed(1), +f.grp.position.y.toFixed(1), +f.grp.position.z.toFixed(1)], scl: +f.icon.scale.x.toFixed(2) })),
   themeSetActive, activeThemeSets, currentDeco, EVENT_STING, playEventSting,
   setSeasonAmbience, seasonAmbienceName,
   pickItemAt: (cx, cy) => pickItem({ clientX: cx, clientY: cy }),

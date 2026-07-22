@@ -8,10 +8,10 @@ import { state } from './state.js';
 import { BAL } from '../data/balance.js';
 
 export const SEASONS = [
-  { id: 'spring', name: '봄',   nameEn: 'Spring', icon: '🌸', tint: [1.03, 1.05, 1.0],  desc: '만물이 깨어난다', descEn: 'all things awaken' },
-  { id: 'summer', name: '여름', nameEn: 'Summer', icon: '☀️', tint: [0.97, 1.04, 0.94], desc: '풀이 무성하다', descEn: 'the grass grows thick' },
-  { id: 'autumn', name: '가을', nameEn: 'Autumn', icon: '🍂', tint: [1.1, 1.0, 0.86],   desc: '세상이 물든다', descEn: 'the world takes on color' },
-  { id: 'winter', name: '겨울', nameEn: 'Winter', icon: '❄️', tint: [1.0, 1.02, 1.1],   desc: '혹독한 계절', descEn: 'a harsh season' },
+  { id: 'spring', name: '봄',   nameEn: 'Spring', icon: '', tint: [1.03, 1.05, 1.0],  desc: '만물이 깨어난다', descEn: 'all things awaken' },
+  { id: 'summer', name: '여름', nameEn: 'Summer', icon: '', tint: [0.97, 1.04, 0.94], desc: '풀이 무성하다', descEn: 'the grass grows thick' },
+  { id: 'autumn', name: '가을', nameEn: 'Autumn', icon: '', tint: [1.1, 1.0, 0.86],   desc: '세상이 물든다', descEn: 'the world takes on color' },
+  { id: 'winter', name: '겨울', nameEn: 'Winter', icon: '', tint: [1.0, 1.02, 1.1],   desc: '혹독한 계절', descEn: 'a harsh season' },
 ];
 export const SEASON_DAYS = BAL.seasons.daysPerSeason;
 export function seasonOf(day = state.day) { return SEASONS[Math.floor((day - 1) / SEASON_DAYS) % 4]; }

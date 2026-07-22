@@ -8,24 +8,24 @@
    이 파일은 의존성 0의 순수 데이터+순수 함수 (import 금지 — 순환 방지).
    ============================================================ */
 export const PAINT_FAMILIES = {
-  whitewash:   { name: '화이트워시',   nameEn: 'Whitewash',    swatch: 0xd8d3c8, icon: '🪣' },
-  ashgray:     { name: '재 그레이',    nameEn: 'Ash Gray',     swatch: 0x8a8f96, icon: '🪣' },
-  charcoal:    { name: '목탄',         nameEn: 'Charcoal',     swatch: 0x3a3d42, icon: '🪣' },
-  oakStain:    { name: '오크 스테인',  nameEn: 'Oak Stain',    swatch: 0xa07850, icon: '🪣' },
-  walnutStain: { name: '월넛 스테인',  nameEn: 'Walnut Stain', swatch: 0x64452e, icon: '🪣' },
-  redOxide:    { name: '방청 레드',    nameEn: 'Red Oxide',    swatch: 0xa8433f, icon: '🪣' },
-  terracotta:  { name: '테라코타',     nameEn: 'Terracotta',   swatch: 0xc9662f, icon: '🪣' },
-  mustard:     { name: '머스터드',     nameEn: 'Mustard',      swatch: 0xb08a3a, icon: '🪣' },
-  olive:       { name: '올리브',       nameEn: 'Olive Drab',   swatch: 0x6a7047, icon: '🪣' },
-  sage:        { name: '세이지',       nameEn: 'Sage',         swatch: 0x93b5a5, icon: '🪣' },
-  slateBlue:   { name: '슬레이트 블루', nameEn: 'Slate Blue',  swatch: 0x46557a, icon: '🪣' },
-  lavender:    { name: '라벤더',       nameEn: 'Lavender',     swatch: 0x9a8aa8, icon: '🪣' },
+  whitewash:   { name: '화이트워시',   nameEn: 'Whitewash',    swatch: 0xd8d3c8, icon: '' },
+  ashgray:     { name: '재 그레이',    nameEn: 'Ash Gray',     swatch: 0x8a8f96, icon: '' },
+  charcoal:    { name: '목탄',         nameEn: 'Charcoal',     swatch: 0x3a3d42, icon: '' },
+  oakStain:    { name: '오크 스테인',  nameEn: 'Oak Stain',    swatch: 0xa07850, icon: '' },
+  walnutStain: { name: '월넛 스테인',  nameEn: 'Walnut Stain', swatch: 0x64452e, icon: '' },
+  redOxide:    { name: '방청 레드',    nameEn: 'Red Oxide',    swatch: 0xa8433f, icon: '' },
+  terracotta:  { name: '테라코타',     nameEn: 'Terracotta',   swatch: 0xc9662f, icon: '' },
+  mustard:     { name: '머스터드',     nameEn: 'Mustard',      swatch: 0xb08a3a, icon: '' },
+  olive:       { name: '올리브',       nameEn: 'Olive Drab',   swatch: 0x6a7047, icon: '' },
+  sage:        { name: '세이지',       nameEn: 'Sage',         swatch: 0x93b5a5, icon: '' },
+  slateBlue:   { name: '슬레이트 블루', nameEn: 'Slate Blue',  swatch: 0x46557a, icon: '' },
+  lavender:    { name: '라벤더',       nameEn: 'Lavender',     swatch: 0x9a8aa8, icon: '' },
 };
 // 희귀 안료 (디렉터 확정 2026-07-09) — 일반 12계열과 분리된 도시 전용 최희귀 도료.
 //   일반 파밍 풀(rollPaintFamily)에 안 들어간다 — 지정 지역 전용 저확률 드랍으로만 나온다.
 //   시그니처 발광 가구(네온)의 색은 이 안료로만 칠할 수 있어 "그 색은 그 도시에서만"이 한 층 깊어진다.
 export const RARE_PAINTS = {
-  neonPigment: { name: '네온 안료', nameEn: 'Neon Pigment', swatch: 0x9a5ad4, icon: '🌈', region: 'citycore' },
+  neonPigment: { name: '네온 안료', nameEn: 'Neon Pigment', swatch: 0x9a5ad4, icon: '', region: 'citycore' },
 };
 // 시그니처 아이템별 도료 게이트 오버라이드: 기본색(0) 외 스와치는 hex 계열이 아니라 이 안료를 요구한다.
 export const SIGNATURE_PAINT = { neonvip: 'neonPigment', neonair: 'neonPigment' };

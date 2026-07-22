@@ -154,7 +154,7 @@ export const BROADCASTS = {
     air: '…배급표 지참. 1인 1일 1통. 질서 유지. …배급표 지참. 1인—', airEn: '…coupon required. One jug per person. Keep order. …coupon required—',
     desc: '…배급표를 지참하십시오. 한 사람당 하루 한 통. 질서를 지켜주십시오. 같은 문장이 끝없이 되풀이된다.', descEn: '…bring your ration coupon. One jug per person a day. Please keep order. The same lines loop without end.' },
   music_unknown: { kind: 'music', name: '정체불명의 음악', nameEn: 'Music from Nowhere',
-    air: '…♪ …가사 없는 낡은 곡… ♪…', airEn: '…♪ …an old tune, no words… ♪…',
+    air: '……가사 없는 낡은 곡… …', airEn: '……an old tune, no words… …',
     desc: '가사 없는 낡은 곡이 흐른다. 누가, 왜 아직도 이걸 송출하는지 알 수 없다. 그래도 잠시, 혼자가 아닌 것 같다.', descEn: 'An old tune, no words, drifting through. Who plays it, and why, no one can say. Still — for a moment, you feel less alone.' },
   survivor1: { kind: 'survivor', name: '생존자 사연 · 등대', nameEn: 'Survivor’s Story · Lighthouse',
     air: '…바닷가요. 밤마다 불 켭니다. 지나는 배 있으면— 혼자 아니라고. …응답 바람.', airEn: '…by the sea. Light burns each night. If you pass— you’re not alone. …do you copy.',

@@ -31,7 +31,7 @@ export function makeModals(ctx) {
   function openModeModal(n) {
     const card = (mode, titleId, tagId, descId, opt = {}) => {
       const lock = opt.locked;
-      // ★ 템플릿 리터럴 선행 공백 = 출력 HTML에 그대로 들어감. 코드 들여쓰기와 무관하게 원본(4/6/8칸) 유지 (모달 게이트 무손실).
+      // 템플릿 리터럴 선행 공백 = 출력 HTML에 그대로 들어감. 코드 들여쓰기와 무관하게 원본(4/6/8칸) 유지 (모달 게이트 무손실).
       // #158 잠금 문구는 카드별 키(mode.<id>.lock/{n}) — zen=겨울 1(모드 무관), wallpaper=코지 겨울 2.
       return `
     <div class="slot-card mode-card ${lock ? 'locked' : ''}" data-mode="${mode}" data-locked="${lock ? 1 : 0}">
@@ -65,11 +65,11 @@ export function makeModals(ctx) {
       fresh.savedAt = Date.now();
       fresh.helpSeen = true;
       fresh.mode = ['hard', 'zen', 'hardcore', 'wallpaper'].includes(m) ? m : 'normal';
-      // ♾️ 무한 모드: 넉넉한 시작 물자 가산 (노말 밸런스 위에)
+      // 무한 모드: 넉넉한 시작 물자 가산 (노말 밸런스 위에)
       if (fresh.mode === 'zen') {
         for (const [rid, n2] of Object.entries(BAL.economy.zenStart || {})) fresh.res[rid] = (fresh.res[rid] || 0) + n2;
       }
-      // 🖼️ 배경화면 모드: 셸터 전 해금 + 무한 물자(표시는 ∞) + 배치/꾸미기 전용.
+      // 배경화면 모드: 셸터 전 해금 + 무한 물자(표시는 ∞) + 배치/꾸미기 전용.
       //   successes를 최고 해금선까지 올려 전 셸터를 열고, 게이지는 만땅으로 시작(무력 미적용).
       if (fresh.mode === 'wallpaper') {
         fresh.successes = Math.max(...Object.values(SHELTERS).map(s => s.unlockAt || 0));
@@ -88,7 +88,7 @@ export function makeModals(ctx) {
     }));
   }
 
-  // ★ 아래 verbatim 이동 함수들 — 코드 들여쓰기는 원본 유지(0-indent)하되 템플릿 리터럴 공백을 보존한다(모달 게이트 무손실 규율).
+  // 아래 verbatim 이동 함수들 — 코드 들여쓰기는 원본 유지(0-indent)하되 템플릿 리터럴 공백을 보존한다(모달 게이트 무손실 규율).
   function openWardrobeModal() {
   if (getPaused()) { toast(t('pause.blocked')); return; }
   const ownedList = state.outfits || ['default'];
@@ -138,7 +138,7 @@ export function makeModals(ctx) {
         ${right}
       </div>`;
     }).join('');
-    return `<div style="margin-top:8px"><div style="font-weight:bold;font-size:12px;margin-bottom:2px">${br.emoji} ${LName(br)}</div>${rows}</div>`;
+    return `<div style="margin-top:8px"><div style="font-weight:bold;font-size:12px;margin-bottom:2px">${LName(br)}</div>${rows}</div>`;
   }).join('');
   openModal(t('know.title'), `<div style="font-size:12px;color:var(--accent);margin-bottom:6px">${t('know.books', { n: books })}</div>${sections}`);
   $('modal-body').querySelectorAll('button[data-know]').forEach(b =>
@@ -154,8 +154,8 @@ function recordTabHtml() {
   const bown = state.broadcasts || {};
   const regionKeys = { residential: 'record.regionRes', commercial: 'record.regionCom', industrial: 'record.regionInd', slum: 'record.regionSlum' };
   const memoRow = (id, tbl) => owned[id]
-    ? `<div class="prep-row li-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>${icon('icon_rec_memo', '📄')}</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`;
+    ? `<div class="prep-row li-row" style="cursor:pointer" data-memo="${id}" data-will="${tbl === WILLS ? 1 : 0}"><span>${icon('icon_rec_memo')}</span><span>${LN(tbl[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>·</span><span>${t('record.locked')}</span></div>`;
   let sections = '';
   for (const rg of ['residential', 'commercial', 'industrial', 'slum']) {
     const ids = MEMOS_BY_REGION[rg];
@@ -185,7 +185,7 @@ function recordTabHtml() {
       sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionResearch')} (${cgot}/${MEMOS_RESEARCH.length})</div>` + MEMOS_RESEARCH.map(id => memoRow(id, MEMOS)).join('');
       // 최종장: 12종 전부 수집 시 "그날의 진실" 페이지 열람 링크 (기록 문법, data-truth 훅).
       if (cgot >= MEMOS_RESEARCH.length) {
-        sections += `<div class="prep-row li-row" style="cursor:pointer;border-top:1px solid var(--panel-border);margin-top:4px" data-truth="1"><span>📖</span><span style="color:var(--accent)">${t('record.truthTitle')}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`;
+        sections += `<div class="prep-row li-row" style="cursor:pointer;border-top:1px solid var(--panel-border);margin-top:4px" data-truth="1"><span></span><span style="color:var(--accent)">${t('record.truthTitle')}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`;
       }
     }
   }
@@ -205,8 +205,8 @@ function recordTabHtml() {
   sections += `<div style="font-size:11px;color:var(--accent);margin:8px 0 3px">${t('record.regionWill')} (${willGot}/${willIds.length})</div>` + willIds.map(id => memoRow(id, WILLS)).join('');
   // 라디오 로그
   const radioRows = Object.keys(BROADCASTS).map(id => bown[id]
-    ? `<div class="prep-row li-row" style="cursor:pointer" data-broadcast="${id}"><span>${icon('icon_rec_radio', '📻')}</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
+    ? `<div class="prep-row li-row" style="cursor:pointer" data-broadcast="${id}"><span>${icon('icon_rec_radio')}</span><span>${LN(BROADCASTS[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+    : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>·</span><span>${t('record.locked')}</span></div>`).join('');
   const distant = state.distantLight?.count
     ? `<div class="report-sec"><span class="r-title">${t('record.distantTitle', { n: state.distantLight.count })}</span></div>` : '';
   // 1.3 밤하늘 스케치 — 관측소 완공 후 수집이 시작되면 섹션 노출(스포일러 방지, 벙커/지하 문법). satellite는 1.4 복선.
@@ -214,8 +214,8 @@ function recordTabHtml() {
   let sketchSec = '';
   if (state.observatoryDone || sketchesCollected() > 0) {
     const rows = Object.keys(SKETCHES).map(id => sown[id]
-      ? `<div class="prep-row li-row" style="cursor:pointer" data-sketch="${id}"><span>${icon('icon_rec_sketch', '🌌')}</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
-      : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>▫️</span><span>${t('record.locked')}</span></div>`).join('');
+      ? `<div class="prep-row li-row" style="cursor:pointer" data-sketch="${id}"><span>${icon('icon_rec_sketch')}</span><span>${LN(SKETCHES[id])}</span><span class="p-cost" style="color:var(--accent)">${t('record.readHint')}</span></div>`
+      : `<div class="prep-row li-row" style="cursor:default;opacity:0.4"><span>·</span><span>${t('record.locked')}</span></div>`).join('');
     sketchSec = `<div class="report-sec"><span class="r-title">${t('record.sketchTitle', { n: sketchesCollected(), total: sketchesTotal() })}</span>${rows}</div>`;
   }
   const total = memosTotal();
@@ -245,13 +245,13 @@ function openJournalModal(tab = 'journal') {
     const arr = state.collection?.[id] || [];
     const sw = def.colors.map((c, i) =>
       `<span title="${LColor(def, i)}" style="display:inline-block;width:12px;height:12px;border-radius:2px;margin-left:3px;background:${arr[i] ? '#' + c.toString(16).padStart(6, '0') : '#22252d'};border:1px solid ${arr[i] ? 'var(--accent)' : '#333'}"></span>`).join('');
-    return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${def.emoji}${sw}</span>`;
+    return `<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">${LName(def)}${sw}</span>`;
   }).join('');
   const colTotal = Object.values(DEFS).reduce((a, d) => a + d.colors.length, 0);
   // 테마 세트 도감 뱃지 (#13): 충족 시 강조.
   const themeBadges = THEME_SETS.map(ts => {
     const done = themeSetActive(ts);
-    return `<span title="${ts.items.map(id => LName(DEFS[id])).join(' + ')}" style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid ${done ? 'var(--good)' : '#333'};color:${done ? 'var(--good)' : 'var(--text-dim)'}">${done ? '🏅' : '▫️'} ${ts.emoji} ${LName(ts)}</span>`;
+    return `<span title="${ts.items.map(id => LName(DEFS[id])).join(' + ')}" style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px;padding:2px 6px;border-radius:4px;border:1px solid ${done ? 'var(--good)' : '#333'};color:${done ? 'var(--good)' : 'var(--text-dim)'}">${done ? '✓' : '·'} ${LName(ts)}</span>`;
   }).join('');
   // #211: 쾌적 4축 분해는 PDA 상태 탭이 유일한 집이다(2클릭). 여기 있던 comfortBreakdownHtml()은 제거 —
   //   같은 것을 두 화면에 두는 게 "기기·화면이 서로를 베끼는" 그 문제고, 일지는 '지나온 기록'이지
