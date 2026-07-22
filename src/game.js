@@ -13,6 +13,7 @@ import { DISTRICTS, REGIONS, WEATHERS } from './data/world.js';
 import { ACH_DEFS } from './data/achs.js'; // #73 Tier4: 업적 정의(판정 chk는 아래 ACH_CHECKS 병합)
 import { SHELTER_META, SHELTER_ACCESS } from './data/shelters.js'; // 셸터 데이터 필드(분리 Phase 1) — build 함수는 아래 SHELTERS에서 병합. SHELTER_ACCESS: #182 드랍 지면 판정
 import { makeShelterBuilders } from './render/shelters.js'; // Tier4 렌더 추출 Phase1-①: 셸터 build 함수(ctx 주입)
+import { DAY_PHASES, DAY_KEYS } from './render/timelight.js'; // D1 상환: 시간대 대기 커브 SSOT(항공 커브와 병치) — 값 원본 그대로 이관
 import { tagDecoWall } from './render/props.js'; // 순수 프롭 빌더(deco 태그) — game.js 직접 사용분
 import { makeCulling } from './render/culling.js'; // Tier4 렌더 추출 Phase1-②: 벽/천장 컬링
 import { makeCamera } from './render/camera.js'; // Tier4 렌더 추출 Phase1-③: 카메라
@@ -541,26 +542,8 @@ function applyMood(m) {
 /* ============================================================
    시간대 시스템 (아침~밤~새벽, 하늘/조명이 실시간으로 변함)
 ============================================================ */
-// 밤은 셸터 고유 무드를 그대로 사용, 나머지는 전역 팔레트
-// 디렉터 24h 하늘 팔레트(2026-07-19, 「NUCLEAR WINTER 24-HOUR SKY」): 시간대별 하늘이 다채롭게 —
-//   밤(어둠)→새벽 청색→해뜰녘 금빛→창백한 정오 크림→따뜻한 오후 베이지→붉은 황혼→보랏빛 땅거미→밤.
-//   핵겨울 채도라 은은하게(과포화 금지). skyZ(천정)는 대체로 차게 유지해 하늘 그라디언트 대비 확보.
-const DAY_PHASES = {
-  // 새벽(청): 밤이 걷히기 직전 차가운 청회색 — 별이 아직 남았다(stars↑).
-  predawn:   { fog: 0x39414f, skyH: 0x566274, skyZ: 0x2a3242, sunC: 0xaebccf, sunInt: 0.34, hemiC: 0x828d9d, hemiG: 0x3e434c, hemiInt: 0.62, stars: 0.45 },
-  // 해뜰녘(금): 골든아워 온기 — 회색 fog·hemi를 앰버로, 지평선 채도↑, 태양광↑(실질 광원감).
-  dawn:      { fog: 0x5e4836, skyH: 0xc06a40, skyZ: 0x2a3045, sunC: 0xffbe84, sunInt: 0.68, hemiC: 0xcaa87c, hemiG: 0x564539, hemiInt: 0.86, stars: 0.25 },
-  // 정오(창백한 크림): 팔레트의 가장 밝은 대. 을씨년 회색을 살짝 덥혀 창백한 크림 톤(과거 냉회청 → 온회색).
-  day:       { fog: 0x8f9088, skyH: 0xaeaaa0, skyZ: 0x74746c, sunC: 0xfff2d6, sunInt: 1.5, hemiC: 0xdadcd0, hemiG: 0x77706a, hemiInt: 1.28, stars: 0 },
-  // 오후(따뜻한 베이지): 정오와 황혼 사이 — 마른 잎빛 베이지로 하루가 기울기 시작.
-  afternoon: { fog: 0x8a8070, skyH: 0xb4a58c, skyZ: 0x807868, sunC: 0xffe8c6, sunInt: 1.12, hemiC: 0xccc0a8, hemiG: 0x786e5e, hemiInt: 1.06, stars: 0 },
-  // 황혼(붉은 노을): sunset이 sunrise보다 더 붉게 — 붉은 노을 톤으로 덥힌다.
-  dusk:      { fog: 0x6b4838, skyH: 0xcf5e2e, skyZ: 0x2f2c4c, sunC: 0xff9048, sunInt: 0.72, hemiC: 0xd0925e, hemiG: 0x564138, hemiInt: 0.86, stars: 0.2 },
-  // 땅거미(보라): 노을이 식어 자줏빛 — 밤으로 넘어가는 마지막 색.
-  twilight:  { fog: 0x3e3448, skyH: 0x6e4c6a, skyZ: 0x2c2740, sunC: 0xa87f9c, sunInt: 0.42, hemiC: 0x8a7a92, hemiG: 0x483e50, hemiInt: 0.68, stars: 0.35 },
-};
-// 6~7단 하루 리듬: 밤 → 새벽(청) → 해뜰녘(금) → 낮(크림) → 오후(베이지) → 황혼(붉음) → 땅거미(보라) → 밤.
-const DAY_KEYS = [[0, 'night'], [4, 'night'], [5.3, 'predawn'], [6.6, 'dawn'], [9, 'day'], [14.5, 'day'], [16, 'afternoon'], [18, 'dusk'], [19.8, 'twilight'], [21.3, 'night'], [24, 'night']];
+// 24h 하늘 팔레트(DAY_PHASES)·하루 리듬(DAY_KEYS)은 render/timelight.js로 이관(D1 상환) —
+//   항공 디오라마 커브와 병치·계약. 값은 원본 그대로다. 밤은 셸터 고유 무드(currentMood)가 대체(phaseValues).
 function phaseValues(name) {
   if (name !== 'night') return DAY_PHASES[name];
   const m = currentMood;

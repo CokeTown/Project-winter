@@ -6,29 +6,8 @@
  */
 import * as THREE from 'three';
 import { seededRand } from '../lib/helpers.js';
-
-// ── 시간대 조명 키프레임 (겨울 잿빛 도시 — 본편 무드 근사, S2에서 본편 applyTimeLighting과 통일 예정) ──
-//   [hour, sky, fog, hemiSky, hemiGround, sunColor, sunInt, sunElev(deg), night(0~1)]
-//   밤의 sun은 '달'로 재해석(int 0.28) — 완전 소등은 실루엣이 죽는다(1차 캡처 검거: 밤 과암전).
-const LIGHT_KEYS = [
-  [0,  0x0d1220, 0x0d1220, 0x3e4f78, 0x0c1018, 0x8aa0d0, 0.28, 42, 1.0],
-  [5,  0x101527, 0x101526, 0x44507a, 0x0d1119, 0xa090a0, 0.22, 30, 0.9],
-  [7,  0x3a4052, 0x343a4a, 0x66738e, 0x1c2028, 0xe0a060, 0.70, 12, 0.25],
-  [9,  0x4a5262, 0x424a58, 0x707c94, 0x222630, 0xd8d2c4, 1.00, 30, 0.0],
-  [15, 0x485064, 0x40485a, 0x6c7890, 0x20242e, 0xcfc9bd, 0.95, 26, 0.0],
-  [18, 0x5a3346, 0x4a2c3c, 0x6a4a60, 0x1a1420, 0xff8040, 0.50, 8,  0.35],
-  [20, 0x1a1e30, 0x181c2c, 0x46557e, 0x101320, 0xb08060, 0.24, 18, 0.8],
-  [24, 0x0d1220, 0x0d1220, 0x3e4f78, 0x0c1018, 0x8aa0d0, 0.28, 42, 1.0],
-];
-function lightAt(hour) {
-  let a = LIGHT_KEYS[0], b = LIGHT_KEYS[LIGHT_KEYS.length - 1];
-  for (let i = 0; i < LIGHT_KEYS.length - 1; i++)
-    if (hour >= LIGHT_KEYS[i][0] && hour <= LIGHT_KEYS[i + 1][0]) { a = LIGHT_KEYS[i]; b = LIGHT_KEYS[i + 1]; break; }
-  const t = b[0] === a[0] ? 0 : (hour - a[0]) / (b[0] - a[0]);
-  const cl = (i) => new THREE.Color(a[i]).lerp(new THREE.Color(b[i]), t);
-  const nm = (i) => a[i] + (b[i] - a[i]) * t;
-  return { sky: cl(1), fog: cl(2), hemiSky: cl(3), hemiGround: cl(4), sunColor: cl(5), sunInt: nm(6), sunElev: nm(7), night: nm(8) };
-}
+// 시간대 조명 커브는 timelight.js로 이관(D1 상환) — 본편 DAY_PHASES와 병치·계약. 값·보간은 그대로.
+import { aerialLightAt } from './timelight.js';
 
 // 노드 기본값 (S1 하위호환 — S2부터는 게임이 MAP_MARKERS 파생 월드좌표를 주입한다)
 const DEFAULT_NODES = {
@@ -397,7 +376,7 @@ export function makeAerialProto(cfg = {}) {
 
   function update(dt, ctx) {
     if (camera.aspect !== innerWidth / innerHeight) { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
-    const L = lightAt(ctx.hour % 24);
+    const L = aerialLightAt(ctx.hour % 24);
     const snowy = ctx.weather === 'snow' || ctx.weather === 'storm';
     scene.background = L.sky;
     // 안개는 뷰 거리에 반비례 — overview(165)에 focus용 밀도를 쓰면 도시 전체가 뿌옇게 씻긴다(실측).
