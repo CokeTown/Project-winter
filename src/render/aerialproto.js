@@ -30,13 +30,14 @@ function lightAt(hour) {
   return { sky: cl(1), fog: cl(2), hemiSky: cl(3), hemiGround: cl(4), sunColor: cl(5), sunInt: nm(6), sunElev: nm(7), night: nm(8) };
 }
 
-// 노드 정의 (S1: 서부 2권역만 — 정본화는 S2 mapnodes.js로)
-const NODES = {
+// 노드 기본값 (S1 하위호환 — S2부터는 게임이 MAP_MARKERS 파생 월드좌표를 주입한다)
+const DEFAULT_NODES = {
   residential: { x: -46, z: 34 },
   slum: { x: 38, z: 50 },
 };
 
-export function makeAerialProto() {
+export function makeAerialProto(cfg = {}) {
+  const NODES = cfg.nodes || DEFAULT_NODES; // S2: 지역 rid → 디오라마 월드좌표(전 노드 회피·비컨·focus 대상)
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 2, 900);
   let built = false, active = false;
@@ -224,8 +225,8 @@ export function makeAerialProto() {
       b.position.set((rand() - 0.5) * 160, 20 + rand() * 10, (rand() - 0.5) * 160);
       b.userData.ph = rand() * 6.28; beacons.push(b); scene.add(b);
     }
-    // ── 노드 권역 드레싱 ──
-    { // 주거(residential): 낮은 집들 정렬 — 살던 동네의 질서
+    // ── 노드 권역 드레싱 (해당 노드가 주입됐을 때만 — S3에서 전 노드 드레싱 확장) ──
+    if (NODES.residential) { // 주거(residential): 낮은 집들 정렬 — 살던 동네의 질서
       const g = new THREE.Group(); const nd = NODES.residential;
       for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) {
         const hg = 1.8 + rand() * 1.2;
@@ -235,7 +236,7 @@ export function makeAerialProto() {
       }
       scene.add(g);
     }
-    { // 슬럼(slum): 판자촌 난립 + 드럼통 화톳불(밤의 오렌지 — 유일한 온기)
+    if (NODES.slum) { // 슬럼(slum): 판자촌 난립 + 드럼통 화톳불(밤의 오렌지 — 유일한 온기)
       const g = new THREE.Group(); const nd = NODES.slum;
       for (let k = 0; k < 26; k++) {
         const sh = new THREE.Mesh(boxG, new THREE.MeshLambertMaterial({ color: [0x6a6250, 0x5c5445, 0x746952][k % 3] }));
@@ -330,8 +331,15 @@ export function makeAerialProto() {
     applyCam(performance.now() / 1000);
   }
 
+  // S2 노드 오버레이: 월드 (x,z) → 화면 px 투영 (DOM 핀이 매 프레임 호출)
+  const _pv = new THREE.Vector3();
+  function project(x, z, y = 2) {
+    _pv.set(x, y, z).project(camera);
+    return { x: (_pv.x * 0.5 + 0.5) * innerWidth, y: (-_pv.y * 0.5 + 0.5) * innerHeight, behind: _pv.z > 1 };
+  }
+
   return {
-    scene, camera, update,
+    scene, camera, update, project,
     get active() { return active; },
     open(o = {}) {
       if (!built) { build({ day: o.day, winter: o.winter }); built = true; }
@@ -343,6 +351,7 @@ export function makeAerialProto() {
     overview() { goto(shot(new THREE.Vector3(0, 0, 8), 165, 0.92)); },
     focus(id) { const nd = NODES[id]; if (nd) goto(shot(new THREE.Vector3(nd.x, 0, nd.z), 30, 0.62)); },
     nodes: Object.keys(NODES),
+    nodeAt(id) { return NODES[id]; }, // S2 오버레이: 핀 월드좌표 조회
     ogState: () => ({ ...ogInfo }), // QA: 잠식 연차·인스턴스 수 (#71 overgrowthState 대응)
   };
 }

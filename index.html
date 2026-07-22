@@ -280,6 +280,16 @@
     </div>
   </div>
 </div>
+<!-- 관측 단말 (S2 — AERIAL-MAP·OBSERVATORY-CANON): 풀스크린 위성 관측 뷰. 씬은 본편 캔버스가 렌더(항공 분기), 여기는 DOM 오버레이만 -->
+<div id="obs-screen">
+  <div id="obs-top">
+    <span id="obs-title" data-i18n="obs.title">관측 회선</span>
+    <button class="pixel-btn" id="obs-close" data-i18n="modal.close">닫기</button>
+  </div>
+  <div id="obs-pins"></div>
+  <div id="obs-panel" class="panel"></div>
+  <div id="obs-boot"><span id="obs-boot-line"></span></div>
+</div>
 <div id="modal-back">
   <div class="panel" id="modal">
     <h2 id="modal-title"></h2>

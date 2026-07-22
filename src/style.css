@@ -803,6 +803,40 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   @keyframes jackpotIn { from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.9); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
 
   /* ── 모달 (이주 / 전리품 / 도움말) ── */
+  /* ── 관측 단말 (S2 — 풀스크린 위성 뷰. 모달(50)보다 아래: 준비/눈사태 선택 모달이 위에 뜬다) ── */
+  #obs-screen { position: absolute; inset: 0; z-index: 44; display: none; pointer-events: none; }
+  #obs-screen.show { display: block; }
+  /* 관측 모드: 본편 크롬을 걷는다 — 상단 시계 밴드만 남긴다(시안 상단 스테이터스 문법) */
+  body.obs-mode #hud, body.obs-mode #res-bar, body.obs-mode #quest-card, body.obs-mode #radio-bubble,
+  body.obs-mode #dock-pda, body.obs-mode #toolbar, body.obs-mode #exp-panel, body.obs-mode .cam-btn,
+  body.obs-mode #tip-pop { display: none !important; }
+  #obs-top { position: absolute; top: 10px; left: 14px; display: flex; align-items: center; gap: 10px; z-index: 4; pointer-events: auto; }
+  #obs-title { font-size: var(--fs-m); color: #8cf5a6; letter-spacing: 2px; text-shadow: 0 0 7px rgba(120, 255, 150, 0.55); }
+  #obs-title::before { content: '// '; opacity: 0.8; }
+  #obs-pins { position: absolute; inset: 0; z-index: 1; }
+  .obs-pin { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 5px; cursor: pointer; pointer-events: auto; white-space: nowrap; }
+  .obs-pin .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(140, 245, 166, 0.25); box-shadow: 0 0 0 1px #8cf5a6, 0 0 8px rgba(120, 255, 150, 0.8); animation: dkblink 1.6s steps(2) infinite; }
+  .obs-pin .nm { font-size: 11px; color: #cfe0c8; text-shadow: 0 0 4px rgba(8, 18, 10, 0.95), 0 1px 0 rgba(8, 18, 10, 0.9); }
+  .obs-pin.flip { flex-direction: row-reverse; }
+  .obs-pin.off { display: none; }
+  .obs-pin:hover .dot { background: rgba(140, 245, 166, 0.7); }
+  #obs-screen.focus .obs-pin { opacity: 0.28; }
+  #obs-screen.focus .obs-pin.cur { opacity: 1; }
+  #obs-panel { position: absolute; top: 44px; right: 12px; bottom: 12px; width: 330px; z-index: 3; pointer-events: auto; overflow-y: auto; display: flex; flex-direction: column; }
+  #obs-panel .obs-body { padding: 8px 10px; }
+  #obs-panel .obs-hint { color: #7da884; font-size: var(--fs-s); }
+  #obs-panel .obs-desc { color: #bcd0b6; font-size: var(--fs-s); line-height: 1.6; margin-bottom: 6px; word-break: keep-all; }
+  /* 부팅 — 접속 의식: 인광 스윕 1회 + 타이프라이터 한 줄 (낡은 TV 지직임 레지스터, 군용 브리핑 아님) */
+  #obs-boot { position: absolute; inset: 0; z-index: 5; pointer-events: none; display: none; }
+  #obs-boot.run { display: block; }
+  #obs-boot.run::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 0%, rgba(140, 245, 166, 0.14) 46%, rgba(140, 245, 166, 0.05) 54%, transparent 100%); background-size: 100% 260%; animation: obsSweep 0.45s ease-out 1 both; }
+  #obs-boot-line { position: absolute; left: 16px; bottom: 14px; font-size: var(--fs-s); color: #8cf5a6; text-shadow: 0 0 6px rgba(120, 255, 150, 0.5); }
+  @keyframes obsSweep { from { background-position: 0 -120%; } to { background-position: 0 220%; } }
+  @media (max-width: 720px) { /* 모바일: 측면 패널 → 하단 시트 */
+    #obs-panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 46%; }
+  }
+  @media (prefers-reduced-motion: reduce) { #obs-boot.run::before, .obs-pin .dot { animation: none; } }
+
   #modal-back {
     position: absolute; inset: 0; background: rgba(8, 9, 12, 0.72);
     display: none; align-items: center; justify-content: center; z-index: 50;

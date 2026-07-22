@@ -3,7 +3,7 @@
 //   줌 상태 머신·노드 오버레이가 이 모듈에 얹힌다 — 신규 기능을 God Object에 얹지 않기 위한 선행.
 //   t/state/BAL/REGIONS/코어 게이트는 직접 import, game.js 클로저(모달·탐험 플로우·셸터)만 ctx 주입.
 //   게이트: 코어 배터리 + 실화면 핀 검증(추출 전후 지도 DOM 동일).
-import { t, LN as LName } from '../i18n.js';
+import { t, LN as LName, LD as LDesc } from '../i18n.js';
 import { state } from '../core/state.js';
 import { BAL } from '../data/balance.js';
 import { REGIONS } from '../data/world.js';
@@ -213,4 +213,155 @@ export function makeMapview(ctx) {
   }
 
   return { openMapModal, renderSurvivorLights };
+}
+
+/* ── 관측 단말 (S2 — AERIAL-MAP 개정 2~4차 · OBSERVATORY-CANON) ─────────────────────────
+   풀스크린 위성 관측 뷰: overview(도시 전체·노드 핀) ↔ focus(노드 근접 + 측면 정보/장비 패널 + 출발).
+   씬·카메라는 aerialproto가, 렌더는 본편 renderFrame 분기가 소유 — 이 모듈은 DOM(핀 투영·패널·부팅)만.
+   레지스터: 군용 콘솔 아님 — 죽은 관측 위성의 다운링크를 엿듣는 낡은 단말(부팅=지직임, 어투=다나까/혼잣말). */
+export function makeObsView(ctx) {
+  const { aerialProto, expBlockReason, prepUI, bpName, avalancheForecastToday, openAvalancheChoice, getWeather } = ctx;
+  const $ = id => document.getElementById(id);
+  let openState = false, view = 'overview', focusId = null, bootTimer = null;
+  const pinEls = new Map(); // rid → { el, x, z }
+  $('obs-close')?.addEventListener('click', () => close());
+
+  // 숙련 이름색 — 전도 핀(#204)과 동일 공식: 첫 방문 붉은색 → 만렙 초록
+  function masteryColor(rid) {
+    const visits = (state.regionVisits || {})[rid] || 0;
+    if (!visits) return '';
+    const mProg = Math.min(1, visits / BAL.mastery.tiers[BAL.mastery.tiers.length - 1]);
+    return `rgb(${Math.round(198 - 71 * mProg)},${Math.round(83 + 109 * mProg)},${Math.round(64 + 42 * mProg)})`;
+  }
+
+  function buildPins() {
+    const wrap = $('obs-pins');
+    wrap.innerHTML = ''; pinEls.clear();
+    const aerial = aerialProto();
+    for (const rid of aerial.nodes) {
+      if (!REGIONS[rid] || !regionUnlocked(rid)) continue;
+      const nd = aerial.nodeAt(rid);
+      const el = document.createElement('div');
+      el.className = 'obs-pin';
+      el.dataset.rid = rid;
+      const col = masteryColor(rid);
+      el.innerHTML = `<span class="dot"></span><span class="nm"${col ? ` style="color:${col}"` : ''}>${LName(REGIONS[rid])}</span>`;
+      el.addEventListener('click', () => focus(rid));
+      wrap.appendChild(el);
+      pinEls.set(rid, { el, x: nd.x, z: nd.z });
+    }
+  }
+
+  // 부팅 라인 — 접속 의식(0.3~0.5s). 눈보라·폭풍이면 수신 약함 문구(핍진성: 날씨가 회선을 간섭한다).
+  function boot() {
+    const line = $('obs-boot-line');
+    const txt = t((getWeather() === 'snow' || getWeather() === 'storm') ? 'obs.boot.weak' : 'obs.boot.ok');
+    const box = $('obs-boot');
+    box.classList.add('run');
+    line.textContent = '';
+    let i = 0;
+    clearInterval(bootTimer);
+    bootTimer = setInterval(() => {
+      line.textContent = txt.slice(0, ++i);
+      if (i >= txt.length) { clearInterval(bootTimer); setTimeout(() => box.classList.remove('run'), 900); }
+    }, 14);
+  }
+
+  function panelOverview() {
+    const p = $('obs-panel');
+    // 개요 패널: 고르는 화면 — 힌트 + 「이 도시에서만」 pull(전도 모달과 같은 §9.8.10 문법)
+    const cityRids = [...pinEls.keys()];
+    const sigAll = cityRids.flatMap(rid => BAL.blueprint.regionItems[rid] || []);
+    const unowned = sigAll.filter(id => !(state.blueprints || {})[id]);
+    p.innerHTML = `<div class="p-head"><span class="p-title">${t('map.title')}</span></div>
+      <div class="obs-body">
+        <div class="obs-hint">${t('map.pick')}</div>
+        ${sigAll.length ? `<div class="rate-line" style="margin-top:8px">${unowned.length
+          ? t('map.cityPull', { items: unowned.map(bpName).join(', ') })
+          : `<span style="color:var(--good)">${t('map.cityPullDone')}</span>`}</div>` : ''}
+      </div>`;
+  }
+
+  function panelFocus(rid) {
+    const p = $('obs-panel');
+    const r = REGIONS[rid];
+    const visits = (state.regionVisits || {})[rid] || 0;
+    const mProg = Math.min(1, visits / BAL.mastery.tiers[BAL.mastery.tiers.length - 1]);
+    const cLv = (state.regionCond && state.regionCond.lv && state.regionCond.lv[rid]) || 0;
+    const sig = (BAL.blueprint.regionItems[rid] || []).filter(id => !(state.blueprints || {})[id]);
+    const head = `<div class="p-head"><span class="p-title" style="${masteryColor(rid) ? `color:${masteryColor(rid)}` : ''}">${LName(r)}</span>
+        <button class="pixel-btn p-min" id="obs-back-btn">${t('obs.back')}</button></div>
+      <div class="obs-body">
+        <div class="obs-desc">${LDesc(r) || ''}</div>
+        <div class="rate-line">${visits > 0 ? t('map.masteryPct', { p: Math.round(mProg * 100) }) : ''}
+          ${cLv > 0 ? ` · <span style="color:var(--good)">${t('map.cond.richTip')}</span>` : cLv < 0 ? ` · <span style="color:var(--bad)">${t('map.cond.leanTip')}</span>` : ''}</div>
+        ${sig.length ? `<div class="rate-line">${t('obs.pull', { items: sig.map(bpName).join(', ') })}</div>` : ''}
+        <div id="obs-prep"></div>
+      </div>`;
+    p.innerHTML = head;
+    p.querySelector('#obs-back-btn').addEventListener('click', back);
+    const mount = p.querySelector('#obs-prep');
+    const blocked = expBlockReason(rid);
+    if (blocked) {
+      mount.innerHTML = `<div class="rate-line" style="color:var(--bad);margin-top:8px">${blocked.key ? t(blocked.key, blocked.params) : t('map.pick')}</div>`;
+    } else if (avalancheForecastToday(rid)) {
+      // 눈사태 예보 당일 — 선택 모달(우회/돌아섬)은 기존 플로우 그대로(관측 뷰 위로 뜬다)
+      mount.innerHTML = `<button class="pixel-btn primary" id="obs-av" style="width:100%;margin-top:8px">${t('avalanche.title')}</button>`;
+      mount.querySelector('#obs-av').addEventListener('click', () => openAvalancheChoice(rid));
+    } else {
+      prepUI(rid, mount); // 성공률 분해·준비물·가방·출발 — 준비 모달과 동일 UI를 측면 패널에
+    }
+  }
+
+  function focus(rid) {
+    view = 'focus'; focusId = rid;
+    $('obs-screen').classList.add('focus');
+    aerialProto().focus(rid);
+    for (const [id, rec] of pinEls) rec.el.classList.toggle('cur', id === rid);
+    panelFocus(rid);
+  }
+  function back() {
+    if (view === 'focus') {
+      view = 'overview'; focusId = null;
+      $('obs-screen').classList.remove('focus');
+      aerialProto().overview();
+      for (const [, rec] of pinEls) rec.el.classList.remove('cur');
+      panelOverview();
+    } else close();
+  }
+  function open() {
+    if (openState) return;
+    openState = true; view = 'overview'; focusId = null;
+    document.body.classList.add('obs-mode');
+    $('obs-screen').classList.add('show');
+    $('obs-screen').classList.remove('focus');
+    aerialProto().open();
+    buildPins();
+    panelOverview();
+    boot();
+  }
+  function close() {
+    if (!openState) return;
+    openState = false;
+    clearInterval(bootTimer);
+    aerialProto().close();
+    document.body.classList.remove('obs-mode');
+    $('obs-screen').classList.remove('show', 'focus');
+    $('obs-boot').classList.remove('run');
+  }
+  // 매 프레임(renderFrame 항공 분기): 3D 월드좌표 → 화면 투영으로 핀 위치 갱신 + 출발 감지 자동 닫기
+  function tick() {
+    if (!openState) return;
+    if (state.exp) { close(); return; } // 출발했다 — 단말을 덮고 본편으로
+    const aerial = aerialProto();
+    const W = innerWidth, H = innerHeight;
+    for (const [, rec] of pinEls) {
+      const s = aerial.project(rec.x, rec.z);
+      rec.el.style.left = s.x + 'px';
+      rec.el.style.top = s.y + 'px';
+      rec.el.classList.toggle('off', s.behind || s.x < -40 || s.x > W + 40 || s.y < -30 || s.y > H + 30); // y 경계 포함(실측: 상단 이탈 미검출 함정)
+      rec.el.classList.toggle('flip', s.x > W * 0.56);
+    }
+  }
+  return { open, close, back, tick, isOpen: () => openState, get view() { return view; } };
 }
