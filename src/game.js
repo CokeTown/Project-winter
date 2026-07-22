@@ -9980,6 +9980,10 @@ function tipOnce(id) {
   if (!tutorialEligible()) return; // 튜토리얼 쪽지도 노말 전용 (디렉터 오더)
   if (_simRunning) return; // F1(헤르메틱): 시뮬 중엔 종이 팁 렌더 금지. showTipNote→applyPaperBg가 절차적 종이 텍스처를
   //   Math.random으로 생성(첫 호출 캐시=첫-run 래치)해 시드 시퀀스를 ~9600 소비·desync시켰다. 팁은 순수 시각.
+  // #212 근원 치료: 골든 동결 중에도 금지 — 로드 시 날씨 롤(시드 고정=snow 확정)이 tip.snow를 발화시키고,
+  //   소멸이 실시간 15s 타이머라 러너 진행 속도에 따라 캡처 순간과 교차(lodge 3.43% 이항 플레이키의 정체).
+  //   팁은 게이트가 검증할 대상(지오·조명)이 아닌 순수 UI — sim 가드와 같은 사유로 차단한다.
+  if (isGoldenFrozen()) return;
   if (state.tipsSeen[id]) return;
   state.tipsSeen[id] = true;
   tipQueue.push(id);
