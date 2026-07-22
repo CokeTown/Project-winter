@@ -301,17 +301,28 @@ export function makeObsView(ctx) {
 
   function panelOverview() {
     const p = $('obs-panel');
-    // 개요 패널: 고르는 화면 — 힌트 + 「이 도시에서만」 pull(전도 모달과 같은 §9.8.10 문법)
-    const cityRids = [...pinEls.keys()];
+    // 개요 패널(디렉터 2026-07-22): 갈 수 있는 지역 리스트 — 행 클릭=해당 노드로 줌 인(노드 클릭과 동일).
+    //   뒤로 버튼 상시(overview에선 단말 닫기) — "뒤로 가는 메커니즘"을 패널 안에 명시.
+    const cityRids = [...pinEls.keys()].filter(rid => regionUnlocked(rid)); // 데모 잠금 핀(???) 제외
     const sigAll = cityRids.flatMap(rid => BAL.blueprint.regionItems[rid] || []);
     const unowned = sigAll.filter(id => !(state.blueprints || {})[id]);
-    p.innerHTML = `<div class="p-head"><span class="p-title">${t('map.title')}</span></div>
+    const rows = cityRids.map(rid => {
+      const col = masteryColor(rid);
+      return `<div class="prep-row li-row obs-region" data-rid="${rid}" style="cursor:pointer">
+        <span${col ? ` style="color:${col}"` : ''}>${LName(REGIONS[rid])}</span></div>`;
+    }).join('');
+    p.innerHTML = `<div class="p-head"><span class="p-title">${t('map.title')}</span>
+        <button class="pixel-btn p-min" id="obs-back-btn">${t('modal.close')}</button></div>
       <div class="obs-body">
         <div class="obs-hint">${t('map.pick')}</div>
+        <div style="margin-top:6px">${rows}</div>
         ${sigAll.length ? `<div class="rate-line" style="margin-top:8px">${unowned.length
           ? t('map.cityPull', { items: unowned.map(bpName).join(', ') })
           : `<span style="color:var(--good)">${t('map.cityPullDone')}</span>`}</div>` : ''}
       </div>`;
+    p.querySelector('#obs-back-btn').addEventListener('click', back);
+    p.querySelectorAll('.obs-region').forEach(row =>
+      row.addEventListener('click', () => focus(row.dataset.rid)));
   }
 
   function panelFocus(rid) {
