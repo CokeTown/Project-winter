@@ -19,6 +19,9 @@ export const BAL = {
     drinkRestore: 45,      // 수동 drinkWater 회복량
     eatFullGate: 85,       // hunger 이 값 초과면 수동 섭취 거부 ("배부름")
     drinkFullGate: 85,     // thirst 이 값 초과면 수동 음용 거부
+    // P2(REFACTOR-GUIDE §3): 심각도 임계 — 단일 출처. gaugeSev(HUD 색·도크 LED·PDA 바)와
+    //   comfort.js 부상·허기 페널티 게이트가 같은 상수를 읽는다(한쪽만 바뀌어 조용히 갈라지던 구조 봉합).
+    sev: { crit: 25, warn: 50 },
   },
 
   /* ── 취침 / 에너지 (restEnergyValue / sleepUntilMorning) ── */
@@ -44,6 +47,12 @@ export const BAL = {
   },
 
   /* ── 탐험 (startExpedition / _simDaysInner 탐험 비용) ── */
+  // P2: 청소 비용 — 구 game.js cleanShelter 리터럴(10/5). (주의: 상위 키 신설 전 중복 검색 필수 —
+  //   gauges 중복 선언이 감쇠 수치를 통째로 덮어 diff-0가 깨진 실측 사고 있음. clean은 유일 키 확인됨.)
+  clean: {
+    minEnergy: 10,       // 청소 최소 에너지
+    energyCost: 5,       // 청소 1회 에너지 소모
+  },
   exp: {
     perDay: 5,           // EXP_PER_DAY: 하루 탐험 가능 횟수
     /* 탐험 시간 개편 (디렉터 2026-07-08): 탐험 소요(인게임) = expDuration(실대기 초) × timeScale(분).
@@ -51,8 +60,9 @@ export const BAL = {
        귀환 순간의 시간 점프(구 +2~5시간 "그냥 지나는" 이슈) 폐지. 공업 45초 → 3시간, 도심 80초 → 5시간20분. */
     timeScale: 4,        // 탐험 중 시간 배속 (실1초 = 게임4분. 평상시 1분)
     energyCost: 20,      // 탐험 1회 에너지 소모
-    hungerCost: 4,       // 탐험 1회 배고픔 소모 (sim 경로)
-    thirstCost: 5,       // 탐험 1회 갈증 소모 (sim 경로)
+    hungerCost: 4,       // 탐험 1회 배고픔 소모 (P2: 실경로 departExpedition·sim 공용 — 리터럴 이원화 해소)
+    thirstCost: 5,       // 탐험 1회 갈증 소모 (P2: 실경로·sim 공용)
+    thirstCostBottle: 3, // 물병 준비물 지참 시 갈증 소모 (departExpedition — 구 리터럴 3)
     minEnergy: 20,       // 탐험 출발 최소 에너지 (startExpedition 게이트)
     midRest: 20,         // 탐험 사이 energy<20 시 간이 회복 (sim 경로)
     hungryPenGate: 25,   // hunger/thirst 이 값 미만이면 성공률 페널티 (rateParts)

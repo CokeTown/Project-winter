@@ -146,3 +146,11 @@ tests/            ← [신설] 회귀 그물: harness.cjs(오프스크린 Electr
 - **무손실 증명**: 배터리 102/102 · 골든 19장 **재고정 없이 0.000%**(4회 중 그린 3, 2연속 그린 충족) · 모달 DOM 7/7 · 외부 API 4종+keepEntities 스테핑 실주행 무에러(probe-renderctx).
 - **#212 lodge 판정(정직 기록)**: 리팩터 후에도 동일 수치(3.43%/6%)로 간헐 재현 — **숨김 누락이 원인이 아님**이 확정됨. 항상 같은 diff 크기 = 특정 요소의 이항 토글 패턴. GOLDEN_HIDE 관문은 마련됐고, lodge 원인 규명은 별도 조사(골든 결정론 후속)로 이관.
 - 지표: 모듈 let 92→**88** · `_golden` 코드 참조 22→**0**(주석 표기 9 잔존).
+
+## P2 — 매직 넘버 → BAL 외부화 1차 (2026-07-23 · refactor-p2-balance)
+
+- ✅ **게이지 심각도 임계 단일 출처** — `BAL.gauges.sev = { crit:25, warn:50 }` 신설(기존 gauges 블록 안에 병합). `gaugeSev`(HUD 색·도크 LED·PDA 바)와 `comfort.js` 부상·허기 페널티 게이트(구 리터럴 25)가 같은 상수를 읽는다 — 가이드가 지목한 "같은 개념·별개 리터럴" 드리프트 봉합. 비교 연산자(<= vs <)는 각자 유지(거동 불변).
+- ✅ **탐험 소모 리터럴 이원화 봉합** — `departExpedition`(실경로)의 4/5/3/20/20 리터럴을 기왕의 `BAL.exp.hungerCost/thirstCost/energyCost/minEnergy`로 배선(+`thirstCostBottle:3` 신설). sim(_simDaysInner)만 BAL을 읽고 실경로는 리터럴이던 구조 — 한쪽만 바뀌는 사고 원천 차단.
+- ✅ **청소 비용 외부화** — `BAL.clean = { minEnergy:10, energyCost:5 }` (구 cleanShelter 리터럴).
+- **⚠️ 사고·검거 기록(재발 방지)**: `BAL.gauges`를 하위에 중복 선언 → JS 객체 리터럴 중복 키는 **뒤가 앞을 덮어** 감쇠 수치(hungerPerMin 등)가 통째 증발 → 소크 hard 161/182→157/243 변동. **diff-0 검증이 정확히 검거** — 상위 키 신설 전 중복 grep이 규약(§3-1 중복 키 함정의 BAL판). comfort.js BAL import도 중복 추가(16행에 기존) → 빌드 에러로 즉검.
+- **무손실 증명**: 소크 diff-0(hard 161/182 · hardcore 147/65 — #90 재오디트 원본과 동일) · 배터리 102/102 · 골든 19장 0.000% · check-hardcode 후보 26→**19**(베이스라인 재고정).

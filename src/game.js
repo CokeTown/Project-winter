@@ -3537,7 +3537,7 @@ async function departExpedition(regionId, prep, opts2 = {}) {
   if (state.exp) return;
   // 준비 모달을 열어둔 사이 상태가 나빠졌을 수도 있다 — 출발 직전 재검사
   if (isExhausted()) { toast(t('toast.exhausted'), 'warn'); closeModal(); return; }
-  if (state.energy < 20) { toast(t('toast.tooTired'), 'warn'); closeModal(); return; }
+  if (state.energy < BAL.exp.minEnergy) { toast(t('toast.tooTired'), 'warn'); closeModal(); return; }
   // #199 5차-c(디렉터): 일일 상한 차단 폐지(출발 재검사도) — 과로 페널티(expFatigue)는 존치
   const r = REGIONS[regionId];
   const p = rateParts(regionId, prep);
@@ -3549,10 +3549,11 @@ async function departExpedition(regionId, prep, opts2 = {}) {
   const dur = expDuration(r) * 1000;
   // 탐험도 몸을 쓴다 (소모 절반으로 완화) + 에너지 소모
   const expMul = isHard() ? 1.5 : 1; // 하드: 탐험 게이지 소모 +50%
-  state.hunger = Math.max(0, state.hunger - 4 * expMul);
-  state.thirst = Math.max(0, state.thirst - (prep.includes('bottle') ? 3 : 5) * expMul);
-  state.energy = Math.max(0, state.energy - 20);
-  if (state.energy < 20) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
+  // P2: 소모량은 BAL.exp 단일 출처 — sim(_simDaysInner)과 실경로가 같은 상수를 읽는다(리터럴 이원화 봉합)
+  state.hunger = Math.max(0, state.hunger - BAL.exp.hungerCost * expMul);
+  state.thirst = Math.max(0, state.thirst - (prep.includes('bottle') ? BAL.exp.thirstCostBottle : BAL.exp.thirstCost) * expMul);
+  state.energy = Math.max(0, state.energy - BAL.exp.energyCost);
+  if (state.energy < BAL.exp.minEnergy) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
   // 성공률 버프/디버프는 이번 출발에 반영되어 소진 (물자 좌표 버프는 정산 시)
   if (state.buff?.exp) state.buff = null;
   // #94(디렉터): 출발 시각 기록 — 귀환 정산이 '대기 중 이미 흐른 게임 시간'을 차감해 이중 계산을 없앤다.
@@ -7966,7 +7967,7 @@ function updateHud() {
 }
 // HUD-SPEC-RECON §1.1 (기획서 8.5·HUD-A02·ACC-04): 색=심각도 + 수치 병기 + 상태 문자.
 //   임계 = 스펙 준수(0~25 위험 / 26~50 주의 / 51~ 정상). 구 "수치=PDA 전용" 오더는 본 스펙이 대체.
-function gaugeSev(v) { return v <= 25 ? 'crit' : v <= 50 ? 'warn' : ''; }
+function gaugeSev(v) { return v <= BAL.gauges.sev.crit ? 'crit' : v <= BAL.gauges.sev.warn ? 'warn' : ''; } // P2: 임계 단일 출처(BAL) — comfort.js 페널티 게이트와 공유
 // 충전(회복) 연출 — 1.9.10 게이지 문법 복원(디렉터 2026-07-22): 값이 오르는 동안 .up(밝은 스윕+글로우 서지).
 //   updateHud가 0.5s마다 재호출되며 증가가 이어지면 계속 갱신 — "충전 중" 지속 연출. 멈추면 1.1s 후 소등.
 const _gaugePrev = {}, _gaugeUpT = {};
@@ -8199,11 +8200,11 @@ async function cleanShelter(auto = false) {
   if (paused) { toast(t('pause.blocked')); return; }
   const c = state.cleanBy[state.current] ?? 70;
   if (c >= 100) { if (!auto) toast(t('clean.already')); return; }
-  if (state.energy < 10) { if (!auto) toast(t('clean.tooTired')); return; }
+  if (state.energy < BAL.clean.minEnergy) { if (!auto) toast(t('clean.tooTired')); return; }
   if (!auto && !(await confirmAct('confirm.clean'))) return;
   if (!resConsume('water', 1)) { if (!auto) toast(t('clean.needWater')); return; }
-  state.energy = Math.max(0, state.energy - 5);
-  if (state.energy < 20) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
+  state.energy = Math.max(0, state.energy - BAL.clean.energyCost);
+  if (state.energy < BAL.exp.minEnergy) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
   state.cleanBy[state.current] = Math.min(100, c + 20);
   toast(t('clean.done', { n: Math.round(state.cleanBy[state.current]) }));
   state.dayLog.notes.push(t('clean.note'));

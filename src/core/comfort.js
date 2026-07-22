@@ -66,7 +66,8 @@ export function comfortDetail() {
   const cleanMod = clean >= 80 ? 5 : clean >= 50 ? 0 : clean >= 20 ? -5 : -10;
   const sh = SHELTER_META[state.current];
   const shelterMod = state.upkeepOk ? (sh.baseComfort || 0) : 0;
-  const injuryMod = (state.injury ? -5 : 0) + ((state.hunger < 25 || state.thirst < 25) ? -5 : 0);
+  // P2: 25 리터럴 → BAL.gauges.sev.crit (gaugeSev와 같은 '위험' 임계 개념 — 비교 연산자(<)는 기존 거동 유지)
+  const injuryMod = (state.injury ? -5 : 0) + ((state.hunger < BAL.gauges.sev.crit || state.thirst < BAL.gauges.sev.crit) ? -5 : 0);
   // 정든 집: 한 거처에 연속으로 머물수록 아늑해진다 (하루 +1, 최대 +8)
   const settled = Math.min(8, state.stayDays || 0);
   const catMod = (state.cat && !state.catHungry) ? 6 : 0; // 고양이가 있는 집은 따뜻하다 (배고파하면 정지)
