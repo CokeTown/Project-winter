@@ -1416,6 +1416,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   @keyframes ledBlink { 50% { opacity: 0.25; } }
   body.reduce-motion .p-head::before { animation: none; }
+
+  /* CRT 패널 볼록 실험 — 각 창=작은 브라운관(디렉터). QA setPanelBulge(0|1|2)로 강도 토글. */
+  body.crt-bulge1 .panel { filter: url(#crtBulgeA); }
+  body.crt-bulge2 .panel { filter: url(#crtBulgeB); }
   /* CRT 인광 플리커 — 불규칙 2회 미세 감광(cool-retro-term 시그니처). opacity만 건드려 컴포지터 전용(성능 0). */
   @keyframes crtFlicker {
     0%, 46%, 49%, 78%, 81%, 100% { opacity: 1; }

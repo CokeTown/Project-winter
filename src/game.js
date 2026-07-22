@@ -10084,6 +10084,8 @@ const postMat = new THREE.ShaderMaterial({
 postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
 // CRT 배럴 실험 노브(디렉터 2026-07-22) — QA 전용. 채택 시 설정창 그래픽 탭에 정식 편입 예정.
 function setBarrel(k) { postMat.uniforms.uBarrel.value = Math.max(0, +k || 0); }
+// 패널 볼록(창=브라운관) 실험 노브 — 0=off, 1=약, 2=강
+function setPanelBulge(n) { document.body.classList.toggle('crt-bulge1', n === 1); document.body.classList.toggle('crt-bulge2', n === 2); }
 
 // 언어 전환 등 재로딩 전 암전 — 재로딩된 페이지는 인라인 스타일로 이미 암전 상태에서 시작 (index.html)
 function reloadWithVeil() {
@@ -11452,7 +11454,7 @@ window.__shelter = {
   mapBiomeDataUrl, // 2.0-(d) QA: 도시별 전도 분기 검증(홈/동부 캔버스 상이)
   aerialProto, // AERIAL-MAP S1: 항공뷰 프로토 핸들(지연 생성) — open/close/focus/overview, 하네스 캡처 매트릭스용
   openObsMap, obsView, activeAerial, // S2 관측 단말 — QA/하네스 진입점 (activeAerial: 골든 씬 전환 시 잔여 디오라마 강제 종료용)
-  setBarrel, // CRT 배럴 실험 노브(0=off) — 판정 후 정식 편입 여부 결정
+  setBarrel, setPanelBulge, // CRT 실험 노브(씬 배럴·패널 볼록, 기본 off) — 판정 후 정식 편입 여부 결정
   regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
   shelterUnlocked, // 2.0-(b) QA: 동부 관문 이주 게이트(eastGateOpen) 검증
   qaWeatherCaps: () => weatherFx.caps, // 눈 캡 메시 직접 조회(부유 바 원흉 판정)
