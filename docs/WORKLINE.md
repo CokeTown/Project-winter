@@ -5,6 +5,7 @@
 
 - **관측 단말 라운드 완결 (07-22~23, `map-aerial`)**: #217 CRT 위성 룩(지터·스윕·형광체·배럴, freeze 시 위상 고정) → #218 생동 패스(낮 커브·옥상 디테일·셸터 점 제거)+오버레이 곡률 정합(이중 곡률 금지·역변위 히트 보정)+패널 지역 리스트 → #219 준비물 행 1줄화(3언어 카피 압축·costIcons·폭 300)+**빈 아이콘 껍데기 검거**(에셋 없는 icon()이 2번째 렌더부터 31px 유령 스팬 — 베이스라인 붕괴 근원)+라인박스 고정(3언어 소수점 동일) → #220 HUD 배치 5건(헤더 곡률 안쪽·뷰 컨트롤 우측 끝·하단 「나가기」 상시·가방=「최소 1개 보장」·명령 바 확대+**배치 끝내기** 신설). 커밋 f9e45bb~b43d9f3.
 - **ja 픽셀 폰트 PixelMplus12 (07-23, A안)**: 둥근모 커버리지 실측(가나·한자 없음 — 비트맵 대조) → 후보 4종 제시 → SD 워키토키 기각(임베딩 라이선스 제외·일본어 0자·비픽셀) → PixelMplus 승인. WOFF2 276KB·unicode-range로 ko/en 무변경 보장·M+ 라이선스 동봉. 검증=실화면 3벌 픽셀 대조 100% 일치(캔버스 ctx.font·폭 비교는 위양성 — probe-jafont.cjs 박제).
+- **터미널 전면화 1차+PDA 정정+제작 아이콘화 (07-23, #221~223)**: 공용 모달·PDA·토스트에 설정창 문법(스캔인·// 헤더·> 수신 라인) → PDA 신고 2라운드(내부 오독 revert → 외관 갈색 원본 pda04 복원, 07-20 듀오톤 결정 대체) → 제작 재료 아이콘×n(cloth=원단 롤·antiseptic=약병 재제작, fuel/water 11px 수렴 위험은 판정 대기). 커밋 61c82d1~2621de8.
 - **판단물 FHD 체계 (07-23)**: aerial-capture 기본 1920×1080 + gallery-shots.cjs(전체=JPEG q92·디테일=1:1 무손실 PNG, capturePage 1회 동시 취득). 갤러리=클릭 1:1 전개, URL 고정.
 
 - **v1.9.7 양 에디션 발행 (07-18)**: [v1.9.7-dc](https://github.com/CokeTown/Project-winter/releases/tag/v1.9.7-dc) + [v1.9.7-demo](https://github.com/CokeTown/Project-winter/releases/tag/v1.9.7-demo), 각 exe 2종 + **APK 로컬 서명 빌드**(직전 "APK 미빌드" 상환 — JDK21/SDK는 MSIX 샌드박스 LocalCache에 실재, JAVA_HOME 샌드박스 지정으로 해결). 봄눈 지면 녹음(#1, 상태-심)·배속 2×/4×(엔딩/QA 게이트)·펜트하우스 절차 운해·QA 데모 개방 반영. **#2 물 반사는 revert**(CubeCamera 오프스크린 상태-오염=지붕눈류 함정, 재작업 대기).
