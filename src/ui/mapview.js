@@ -64,6 +64,7 @@ export const MAP_LIGHT_MAX = 12; // 종이 지도 오버레이 최대 불빛 점
 export function makeMapview(ctx) {
   const { openModal, closeModal, toast, renderExpPanel, startExpedition, showMapInfo,
     shelterUnlocked, avalancheBlocks, SHELTERS, mapBiomeDataUrl, scheduleSave, bpName } = ctx;
+  const demoEd = !!ctx.demoEd, icon = ctx.icon || null; // 데모 「궁금한 문」 티저(#175 단일화 — 본편 빌드=false로 불활성)
   const $ = id => document.getElementById(id);
 
   function openMapModal(viewCity) {
@@ -107,7 +108,21 @@ export function makeMapview(ctx) {
     for (const [rid, r] of Object.entries(REGIONS)) {
       const p = MAP_MARKERS[rid];
       if (!p) continue;
-      if (!regionUnlocked(rid)) continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
+      if (!regionUnlocked(rid)) {
+        // 1.7.0 데모 「궁금한 문」(#175 단일화 — 데모 분기 코드를 트렁크가 품는다. 본편 빌드에선 demoEd=false로 불활성):
+        //   기본 4지구 중 잠긴 곳은 숨기지 않고 잠금 실루엣으로 — 이름·수치 은닉. 확장 지역은 완전 비노출(규모 누출 방지).
+        if (demoEd && ['residential', 'commercial', 'industrial', 'slum'].includes(rid) && regionCityOf(rid) === city) {
+          const lk = document.createElement('div');
+          lk.className = 'map-pin region sketch';
+          lk.style.left = Math.min(MAP_SAFE.x1, Math.max(MAP_SAFE.x0, p.x)) + '%';
+          lk.style.top = Math.min(MAP_SAFE.y1, Math.max(MAP_SAFE.y0, p.y)) + '%';
+          lk.style.opacity = '0.55';
+          lk.title = t('demo.regionLocked');
+          lk.innerHTML = `${icon ? icon('icon_sys_locked', '🔒') : ''}<span class="pin-rate lack">???</span>`;
+          wrap.appendChild(lk);
+        }
+        continue; // 1.1: 항구 구역은 항구 셸터 해금 후에만 노출
+      }
       if (regionCityOf(rid) !== city) continue; // 2.0-(f): 마커는 '뷰 도시' 스코프 — 탐험 가능 여부는 아래 클릭 게이트가 판정
       const el = document.createElement('div');
       el.className = 'map-pin region';
@@ -222,6 +237,7 @@ export function makeMapview(ctx) {
 export function makeObsView(ctx) {
   const { aerialProto, expBlockReason, prepUI, bpName, avalancheForecastToday, openAvalancheChoice, getWeather } = ctx;
   const ctxGetClock = ctx.getClock || null; // 단말 내부 시계 (없으면 표기 생략 — 하위호환)
+  const obsDemoEd = !!ctx.demoEd; // 데모 「궁금한 문」 — 잠긴 기본 4지구를 ??? 잠금 핀으로(확장 지역은 완전 비노출)
   const $ = id => document.getElementById(id);
   let openState = false, view = 'overview', focusId = null, bootTimer = null;
   const pinEls = new Map(); // rid → { el, x, z }
@@ -240,7 +256,20 @@ export function makeObsView(ctx) {
     wrap.innerHTML = ''; pinEls.clear();
     const aerial = aerialProto();
     for (const rid of aerial.nodes) {
-      if (!REGIONS[rid] || !regionUnlocked(rid)) continue;
+      if (!REGIONS[rid]) continue;
+      if (!regionUnlocked(rid)) {
+        // 데모 「궁금한 문」(#175 단일화): 기본 4지구의 잠긴 곳만 ??? 잠금 핀 — 이름 은닉·클릭 없음. 본편=불활성.
+        if (obsDemoEd && ['residential', 'commercial', 'industrial', 'slum'].includes(rid)) {
+          const nd0 = aerial.nodeAt(rid);
+          const lk = document.createElement('div');
+          lk.className = 'obs-pin lock';
+          lk.title = t('demo.regionLocked');
+          lk.innerHTML = `<span class="nm">???</span><span class="lead"></span><span class="dot"></span>`;
+          wrap.appendChild(lk);
+          pinEls.set(rid, { el: lk, x: nd0.x, z: nd0.z }); // 투영은 동일 — tick이 위치만 갱신
+        }
+        continue;
+      }
       const nd = aerial.nodeAt(rid);
       const el = document.createElement('div');
       el.className = 'obs-pin';

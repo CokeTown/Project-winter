@@ -824,6 +824,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .obs-pin .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(140, 245, 166, 0.25); box-shadow: 0 0 0 1px #8cf5a6, 0 0 8px rgba(120, 255, 150, 0.8); animation: dkblink 1.6s steps(2) infinite; }
   .obs-pin .lead { width: 1px; height: 13px; background: linear-gradient(to bottom, rgba(140, 245, 166, 0.7), rgba(140, 245, 166, 0.25)); }
   .obs-pin .nm { font-size: 11px; color: #cfe0c8; padding: 0 3px 1px; text-shadow: 0 0 4px rgba(8, 18, 10, 0.95), 0 1px 0 rgba(8, 18, 10, 0.9); background: rgba(8, 16, 10, 0.42); }
+  /* 데모 「궁금한 문」 잠금 핀 — 인광 죽인 회색, 무점멸·무클릭 (#175 단일화, 본편=미노출) */
+  .obs-pin.lock { cursor: default; opacity: 0.55; }
+  .obs-pin.lock .dot { background: rgba(150, 158, 150, 0.3); box-shadow: 0 0 0 1px #8a9088; animation: none; }
+  .obs-pin.lock .nm { color: #98a098; }
   .obs-pin.off { display: none; }
   .obs-pin:hover .dot { background: rgba(140, 245, 166, 0.7); }
   #obs-screen.focus .obs-pin { opacity: 0.28; }

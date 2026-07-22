@@ -653,6 +653,7 @@
   "demo.end.sub": "製品版では九度の冬が待っています — 十二のシェルター、地下路線、封鎖の向こうの物語。ウィッシュリストに追加しておけば、冬が来たらお知らせします。",
   "demo.end.back": "タイトルへ",
   "demo.end.locked": "デモは最初の冬まで — この物語は製品版へ続きます。",
+  "demo.regionLocked": "ここはまだ閉ざされている — サバイバルモードのもの。",
   "winter.page.title": "{n}度目の冬",
   "winter.page.title.first": "最初の冬",
   "winter.page.body": "シェルターで{days}日を耐え抜いた。<br>寒波{cold}回、うち{defended}日は防ぎきった。<br>探索で{exp}回、何かを持ち帰った。<br>燃料を{fuel}個燃やした。<br>{cat}<br><br>{closing}",

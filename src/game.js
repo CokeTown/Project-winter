@@ -2881,6 +2881,7 @@ function buildMapCanvas() {
 const { openMapModal, renderSurvivorLights } = makeMapview({
   openModal, closeModal, toast, renderExpPanel, startExpedition, showMapInfo,
   shelterUnlocked, avalancheBlocks, SHELTERS, mapBiomeDataUrl, scheduleSave, bpName,
+  demoEd: DEMO_ED, icon, // 데모 「궁금한 문」 티저(#175 단일화 — 본편 빌드=false로 불활성)
 });
 /* ── 지도 리워크 2차(디렉터: 타르코프 Woods식 진짜 지형도) ──
    지역별 색면 폐기. 회백 종이 전면 + 초록은 '식생'만 + 갈색 등고선(높이장 marching-squares)이
@@ -11097,6 +11098,7 @@ const obsView = makeObsView({
   aerialProto, expBlockReason, prepUI, bpName, avalancheForecastToday, openAvalancheChoice,
   getWeather: () => weather.type,
   getClock: () => ({ day: state.day, hour: gameHour() }), // 단말 내부 시계 — 본편 #clock-panel은 obs-mode에서 숨김(디렉터 2026-07-22)
+  demoEd: DEMO_ED, // 데모 「궁금한 문」 — 잠긴 기본 4지구=??? 잠금 핀(#175 단일화)
 });
 function openObsMap() {
   if (state.exp) { pdaOpen('status'); return; }

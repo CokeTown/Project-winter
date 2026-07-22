@@ -653,6 +653,7 @@
   "demo.end.sub": "Nine winters await in the full game — twelve shelters, the metro line, and what lies beyond the blockade. Wishlist it and we'll let you know when winter comes.",
   "demo.end.back": "Back to Title",
   "demo.end.locked": "The demo ends after the first winter — the story continues in the full game.",
+  "demo.regionLocked": "Still locked — it belongs to Survival mode.",
   "winter.page.title": "Winter №{n}",
   "winter.page.title.first": "The First Winter",
   "winter.page.body": "Held out {days} days in the shelter.<br>{cold} cold snaps, {defended} of them held off.<br>Brought something back {exp} times.<br>Burned {fuel} fuel.<br>{cat}<br><br>{closing}",
