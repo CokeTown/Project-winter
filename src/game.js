@@ -10283,15 +10283,15 @@ function pdaTexUrl(base) {
 function applyPdaTex() {
   const px = (opts.pixel | 0);
   const pixed = !(opts.quant === false || px <= 1); // 픽셀화 활성 여부
-  // §5.6 잔여 ①: 하우징은 듀오톤 프리베이크(pda04m*/dock_pdam*, tools/pda-mono.mjs)만 사용 —
-  //   리얼컬러 하우징은 "혼자 붕 뜸" 피드백으로 퇴역(07-20). LCD DOM은 무접촉.
-  const p = $('pda'); if (p) p.style.backgroundImage = `url('${pdaTexUrl('pda04m')}')`;
+  // #222(디렉터 07-23): 하우징 = 원본 리얼컬러(갈색 pda04*) 복원 — "에셋의 원래 색이 왜 초록색이 됐느냐".
+  //   07-20 듀오톤 퇴역 결정(pda04m*)을 대체한다. 듀오톤 프리베이크는 유물로 잔류(재사용 금지 아님, 미사용일 뿐).
+  const p = $('pda'); if (p) p.style.backgroundImage = `url('${pdaTexUrl('pda04')}')`;
   const d = $('dock-pda');
   if (d) {
     // 도크는 53px 초소형 → 세계 텍셀 크기(opts.pixel px)를 그대로 맞추면 소스가 ~18px로 뭉갠다.
     //   대신 표시크기에 맞는 고정 픽셀본(px8, 47w)을 pixelated로 살짝 업스케일해 "크리스프 도트"만 확보
     //   (스무스 트루컬러의 AI티 제거 = 색상수 40 + 하드 엣지). 원본은 스무스 다운스케일 유지.
-    d.style.backgroundImage = `url('img/ui/${pixed ? 'dock_pdam_px8' : 'dock_pdam'}.png')`;
+    d.style.backgroundImage = `url('img/ui/${pixed ? 'dock_pda_px8' : 'dock_pda'}.png')`; // #222: 도크도 원본 리얼컬러
     d.style.imageRendering = pixed ? 'pixelated' : 'auto';
   }
 }
