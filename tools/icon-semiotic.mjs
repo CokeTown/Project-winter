@@ -33,13 +33,15 @@ const G = {
   icon_res_water: '<path d="M12,2.5 C12,2.5 18.5,11 18.5,15.5 A6.5,6.5 0 0,1 5.5,15.5 C5.5,11 12,2.5 12,2.5 Z"/>', // 물방울
   icon_res_fuel: '<path d="M12,2 C15,6 17,8.5 17,12.5 A5,5 0 0,1 7,12.5 C7,10 8.5,9 9,7 C10,8.5 11,8 11,6 C11,4.5 11.5,3 12,2 Z"/>', // 불꽃
   icon_res_material: '<path d="M4,15 H20 V19.5 H4 Z"/><path d="M6,10 H18 V14 H6 Z"/><path d="M8,5 H16 V9 H8 Z"/>', // 적재 블록 3단
-  icon_res_cloth: '<path fill-rule="evenodd" d="M4,6.5 H20 V17.5 H4 Z M4,11.5 H20 V12.7 H4 Z"/>', // 접힌 천 + 접선(홀)
+  // #223 재제작: 구형(사각+접선)은 11px에서 '줄 있는 상자'로 뭉갬 — 원단 롤(말린 심+리본 꼬리)로 실루엣 강화
+  icon_res_cloth: '<path fill-rule="evenodd" d="M7,7.5 A4.5,4.5 0 0,0 7,16.5 H21 L18.6,12 L21,7.5 Z M7,10.3 A1.7,1.7 0 1,0 7,13.7 A1.7,1.7 0 1,0 7,10.3 Z"/>', // 원단 롤 + 심 홀 + V 꼬리
   icon_res_parts: '<path fill-rule="evenodd" d="M10.3,2.3 H13.7 L14.2,4.6 L16.4,3.6 L18.9,6.1 L17.9,8.3 L20.2,8.8 V12.2 L17.9,12.7 L18.9,14.9 L16.4,17.4 L14.2,16.4 L13.7,18.7 H10.3 L9.8,16.4 L7.6,17.4 L5.1,14.9 L6.1,12.7 L3.8,12.2 V8.8 L6.1,8.3 L5.1,6.1 L7.6,3.6 L9.8,4.6 Z M12,8.5 A3,3 0 1,0 12,14.5 A3,3 0 1,0 12,8.5 Z"/>', // 톱니바퀴 + 중심 홀
   icon_res_battery: '<path fill-rule="evenodd" d="M7,6 H17 V21 H7 Z M10,3 H14 V6 H10 Z M12.6,8.5 L9.5,14 H11.6 L10.8,18.5 L14.6,12.5 H12 Z"/>', // 배터리 + 번개 홀
   icon_res_candle: '<path d="M9.5,10 H14.5 V21 H9.5 Z"/><path d="M12,3 C13.6,5.2 13.6,7.4 12,9 C10.4,7.4 10.4,5.2 12,3 Z"/>', // 초 + 불꽃
   icon_res_book: '<path fill-rule="evenodd" d="M6,4 H18 V20 H6 Z M9.2,4 H10.4 V20 H9.2 Z"/>', // 책 + 책등선(홀)
   icon_res_bandage: '<path d="M9.5,4 H14.5 V9.5 H20 V14.5 H14.5 V20 H9.5 V14.5 H4 V9.5 H9.5 Z"/>', // 의료 십자
-  icon_res_antiseptic: '<path fill-rule="evenodd" d="M10,3 H14 V8 L19,17.5 A2,2 0 0,1 17.2,20.5 H6.8 A2,2 0 0,1 5,17.5 L10,8 Z M11.1,11 H12.9 V13 H15 V14.8 H12.9 V16.8 H11.1 V14.8 H9 V13 H11.1 Z"/>', // 플라스크+십자 홀(사물 묘사→의약 기호)
+  // #223 재제작: 플라스크(삼각)는 11px에서 화학병으로 오독 + bandage 십자와 변별 약함 — 캡·어깨 있는 각진 약병+라벨 십자
+  icon_res_antiseptic: '<path fill-rule="evenodd" d="M9.3,2.8 H14.7 V5.4 H14 V7.1 L16.6,9.2 V19 A1.4,1.4 0 0,1 15.2,20.4 H8.8 A1.4,1.4 0 0,1 7.4,19 V9.2 L10,7.1 V5.4 H9.3 Z M11.1,11.3 H12.9 V13 H14.6 V14.8 H12.9 V16.5 H11.1 V14.8 H9.4 V13 H11.1 Z"/>', // 약병(캡+어깨)+십자 라벨 홀
   icon_res_painkiller: '<g transform="rotate(45 12 12)"><path fill-rule="evenodd" d="M8,9 H16 A3,3 0 0,1 16,15 H8 A3,3 0 0,1 8,9 Z M11.5,9 H12.7 V15 H11.5 Z"/></g>', // 캡슐 + 분할선(홀)
   icon_res_salt: '<path fill-rule="evenodd" d="M8,8.5 H16 V20.5 H8 Z M9.5,3.5 H14.5 V8.5 H9.5 Z M11.2,11.5 h1.6 v1.6 h-1.6 Z M11.2,15.5 h1.6 v1.6 h-1.6 Z"/>', // 소금통 — 구멍 2로 환원·중심 대칭
   // ── 액션 (act) ── 게임 문법 필수

@@ -5492,8 +5492,9 @@ function openCraftModal() {
         ? `${LName(OUTFITS[c.out.outfit])}`
         : `${LName(DEFS[c.out.furn])}`;
     // 재료도 아이콘 없이 이름+수량(아이콘 정렬 붕괴 방지). 예: 「천 2 + 테이프 1」
-    const costEnts = Object.entries(craftCost(c));
-    const costCompact = costEnts.map(([id, n]) => `${LName(RESOURCES[id])} ${n}`).join(' + ');
+    // #223(디렉터 승인): 재료 = 아이콘×n — 단어는 언어별 길이가 통제 불가라 좁은 LCD에서 잘린다.
+    //   전체 명칭 안전망 = 좌측 자원바 상시 병기 + 부족 토스트. 결과물 이름은 글 유지(결과물이 주인공).
+    const costCompact = costIcons(craftCost(c));
     // #86④: 이미 옷장에 있는 의류는 재제작 불가 (영구 소유물 — 중복 소모 방지)
     const owned = c.out.outfit && (state.outfits || ['default']).includes(c.out.outfit);
     const ok = !owned && resHasAll(craftCost(c));
