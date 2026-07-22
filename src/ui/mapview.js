@@ -246,7 +246,8 @@ export function makeObsView(ctx) {
       el.className = 'obs-pin';
       el.dataset.rid = rid;
       const col = masteryColor(rid);
-      el.innerHTML = `<span class="dot"></span><span class="nm"${col ? ` style="color:${col}"` : ''}>${LName(REGIONS[rid])}</span>`;
+      // 콜아웃(디렉터 2026-07-22): 이름이 노드 '위'에 연결선으로 얹힌다 — 점 하단이 노드 좌표(CSS transform 정합)
+      el.innerHTML = `<span class="nm"${col ? ` style="color:${col}"` : ''}>${LName(REGIONS[rid])}</span><span class="lead"></span><span class="dot"></span>`;
       el.addEventListener('click', () => focus(rid));
       wrap.appendChild(el);
       pinEls.set(rid, { el, x: nd.x, z: nd.z });
@@ -336,6 +337,8 @@ export function makeObsView(ctx) {
     document.body.classList.add('obs-mode');
     $('obs-screen').classList.add('show');
     $('obs-screen').classList.remove('focus');
+    // satellite 스케치 이스터에그(§3-5): 보유 시 궤적 점 1개 — "저건 별이 아니다"의 회수. 신규 카피 0.
+    const sat = $('obs-sat'); if (sat) sat.classList.toggle('show', !!(state.sketches || {}).satellite);
     aerialProto().open();
     buildPins();
     panelOverview();
@@ -369,7 +372,7 @@ export function makeObsView(ctx) {
       rec.el.style.left = s.x + 'px';
       rec.el.style.top = s.y + 'px';
       rec.el.classList.toggle('off', s.behind || s.x < -40 || s.x > W + 40 || s.y < -30 || s.y > H + 30); // y 경계 포함(실측: 상단 이탈 미검출 함정)
-      rec.el.classList.toggle('flip', s.x > W * 0.56);
+      // flip 토글 폐기 — 콜아웃(세로) 전환으로 좌우 반전 불요(디렉터 2026-07-22)
     }
   }
   return { open, close, back, tick, isOpen: () => openState, get view() { return view; } };

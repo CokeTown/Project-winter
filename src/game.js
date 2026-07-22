@@ -3437,11 +3437,18 @@ function prepUI(regionId, body) {
     for (const id of selected) for (const [rid, n] of Object.entries(PREPS[id].cost)) cost[rid] = (cost[rid] || 0) + n;
     const dur = fmtGameDur(expDuration(r) * GAME_MIN_PER_SEC * BAL.exp.timeScale); // 인게임 소요(배속 반영) 표기
     const fc = hasForecast() ? t('forecast.prefix', { text: forecastText() }) : '';
+    // 획득물 요약(디렉터 2026-07-22: 디테일="뭘 얻을 수 있고, 소요시간 정도") — 소요는 아래 riskLine의 dur가 담당
+    const lootBits = (r.lootRes || []).map(([id, a, b, ch]) => {
+      const nm = LName(RESOURCES[id] || { name: id, nameEn: id });
+      return (ch != null && ch < 1) ? `${nm} ${Math.round(ch * 100)}%` : `${nm} ×${a}${b > a ? '~' + b : ''}`;
+    });
+    if (r.furnChance) lootBits.push(`${t('obs.lootFurn')} ${Math.round(r.furnChance * 100)}%`);
     body.innerHTML = `
       <div class="rate-line">
         ${t('prep.rateLine', { emoji: r.emoji, pct: Math.round(p.eff * 100), lines: lines.join(' · ') })}<br>
         ${t('prep.riskLine', { risk: LRisk(r), dur, sprain: state.injury?.type === 'sprain' ? t('prep.sprainTag') : '', mobile: SHELTERS[state.current].perk?.timeMult ? t('prep.mobileTag') : '', wicon: wxIcon(weather.type), wname: LName(WEATHERS[weather.type]), forecast: fc })}
       </div>
+      ${lootBits.length ? `<div class="loot-line">${t('obs.loot', { items: lootBits.join(' · ') })}</div>` : ''}
       <div id="prep-list">${Object.entries(PREPS).map(([id, pr]) => {
         const has = resHasAll(pr.cost);
         return `<div class="prep-row ${selected.has(id) ? 'sel' : ''} ${has ? '' : 'no'}" data-prep="${id}">

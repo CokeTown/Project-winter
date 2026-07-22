@@ -98,6 +98,11 @@ export const MEMOS = {
   nw2: { region: 'citycore', name: '선별 기준 각서', nameEn: 'Memorandum of Selection', desc: '타이핑된 각서. 스스로 버틴 자. 기록을 남기는 자. 불을 지킨 자 — \'데려갈 가치\'의 기준이 항목으로 늘어서 있다.\n여백에 도장 하나가 찍혀 있다. "합격."', descEn: 'A typed memorandum. Those who endured alone. Those who kept records. Those who tended a fire — the criteria of "worth taking," set down item by item.\nIn the margin, a single stamp: "Selected."' },
   nw3: { region: 'citycore', name: '규합 계획 개요', nameEn: 'Assembly Plan Brief', desc: '제본된 개요서. 남은 생존자를 한 곳에 모아 \'다음 인류\'를 시작한다는 계획 — 지도부와 규범, 자리 배치까지 이미 정해져 있다.\n우리가 함께 지을 세상이 아니라, 그들이 먼저 설계해 둔 세상이었다.', descEn: 'A bound brief. A plan to gather the remaining survivors in one place and begin the "next humanity" — leadership, rules, even seating already decided.\nNot a world we would build together. A world they had already drawn.' },
   nw4: { region: 'citycore', name: '초대장', nameEn: 'The Invitation', desc: '봉투도 없이 놓인 한 장. 좌표와 날짜, 그리고 짧은 문장.\n"우리는 당신을 오래 지켜봤습니다. 자리는 비워 두었습니다." — 초대인지, 소환인지.', descEn: 'A single sheet, left without an envelope. Coordinates, a date, and one short sentence.\n"We have watched you for a long time. Your place is kept." — An invitation, or a summons.' },
+
+  // ── 관측 단말 lore 씨앗 2종 (OBSERVATORY-CANON §3 · 디렉터 승인 2026-07-22) ──
+  //   obs1=단말의 출처 서사(그 사람의 육성) · obs2=양가성 씨앗(누군가 나를 세고 있다 — rsc 사슬 곁가지, 서명 없음).
+  obs1: { region: 'residential', name: '수신 안내문', nameEn: 'Reception Note', desc: '옥상 안테나를 남쪽으로 3도. 새벽에만 잡힌다. 위에서 찍은 사진이 나온다 — 누가 보내는지는 모르겠고, 묻는 법도 없다.\n그냥 튼다. 우리 동네가 아직 있는지 보려고.', descEn: 'Roof antenna, three degrees south. Only comes in before dawn. Pictures taken from above — no idea who sends them, and no way to ask.\nI tune in anyway. To see if our block is still there.' },
+  obs2: { region: 'research', name: '관측 일지 — 발신 불명', nameEn: 'Observation Log — Unsigned', desc: 'D+214. 3번 격자 불빛 하나 유지. 명단에 추가함.\n서명은 없다.', descEn: 'D+214. Grid 3, one light holding. Added to the list.\nThere is no signature.' },
 };
 // 유서 6종 — 지역 무관 별도 풀, 극저확률 (REQ-LORE-01)
 export const WILLS = {
@@ -164,6 +169,11 @@ export const BROADCASTS = {
   doctor2: { kind: 'doctor', doctor: true, name: '박사의 일지 · 조각 둘', nameEn: 'Doctor’s Log · Fragment Two',
     air: '…위성은 아직 돈다. 불빛 하나가 아홉 해를 버티면— 내려갈 이유가 된다. …기다린다. 끝.', airEn: '…the satellite still turns. One light, nine years— reason enough to come down. …I wait. Out.',
     desc: '"관측 위성은 아직 돈다. 지상에 불빛 하나가 아홉 해를 버티면, 우리는 내려갈 이유를 얻는다. 그 하나를 기다린다."', descEn: '"The satellite still turns. If one light on the ground lasts nine years, we are given a reason to come down. I wait for that one."' },
+  // 관측 단말 lore 씨앗 (OBSERVATORY-CANON §3-3 · 디렉터 승인 2026-07-22) — 죽은 기상 루프.
+  //   응답 금지가 곧 세계관("둘러싸였으나 혼자"의 회선판). 녹음된 목소리가 몇 년째 같은 자리를 돈다.
+  obs_loop: { kind: 'machine', name: '관측 회선 점검', nameEn: 'Observation Line Check',
+    air: '…관측 회선 점검 방송입니다. 응답하지 마십시오. 본 회선은 수신 전용입니다. …관측 회선 점검 방송입니다…', airEn: '…this is the observation-line check. Do not respond. This line is receive-only. …this is the observation-line check…',
+    desc: '녹음된 목소리가 몇 년째 같은 문장을 돈다. 응답하지 말라는 당부만 남아서 돈다.', descEn: 'A recorded voice has circled the same sentence for years. Only the plea not to answer keeps going round.' },
 };
 
 /* ── 1.3 밤하늘 스케치 6종 (관측소 완공 후, 맑은 밤 이벤트로 수집) ──

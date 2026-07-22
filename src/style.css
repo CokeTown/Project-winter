@@ -818,10 +818,12 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #obs-title { font-size: var(--fs-m); color: #8cf5a6; letter-spacing: 2px; text-shadow: 0 0 7px rgba(120, 255, 150, 0.55); }
   #obs-title::before { content: '// '; opacity: 0.8; }
   #obs-pins { position: absolute; inset: 0; z-index: 1; }
-  .obs-pin { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 5px; cursor: pointer; pointer-events: auto; white-space: nowrap; }
+  /* 콜아웃 핀(디렉터 2026-07-22): 지역명이 노드 '위'에 연결선으로 얹힌다 — 점 하단 중심이 노드 좌표.
+     구형(옆 라벨+flip)은 폐기: 세로 콜아웃은 좌우 반전이 필요 없다. */
+  .obs-pin { position: absolute; transform: translate(-50%, calc(-100% + 4px)); display: flex; flex-direction: column; align-items: center; gap: 0; cursor: pointer; pointer-events: auto; white-space: nowrap; }
   .obs-pin .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(140, 245, 166, 0.25); box-shadow: 0 0 0 1px #8cf5a6, 0 0 8px rgba(120, 255, 150, 0.8); animation: dkblink 1.6s steps(2) infinite; }
-  .obs-pin .nm { font-size: 11px; color: #cfe0c8; text-shadow: 0 0 4px rgba(8, 18, 10, 0.95), 0 1px 0 rgba(8, 18, 10, 0.9); }
-  .obs-pin.flip { flex-direction: row-reverse; }
+  .obs-pin .lead { width: 1px; height: 13px; background: linear-gradient(to bottom, rgba(140, 245, 166, 0.7), rgba(140, 245, 166, 0.25)); }
+  .obs-pin .nm { font-size: 11px; color: #cfe0c8; padding: 0 3px 1px; text-shadow: 0 0 4px rgba(8, 18, 10, 0.95), 0 1px 0 rgba(8, 18, 10, 0.9); background: rgba(8, 16, 10, 0.42); }
   .obs-pin.off { display: none; }
   .obs-pin:hover .dot { background: rgba(140, 245, 166, 0.7); }
   #obs-screen.focus .obs-pin { opacity: 0.28; }
@@ -839,7 +841,14 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   @media (max-width: 720px) { /* 모바일: 측면 패널 → 하단 시트 */
     #obs-panel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 46%; }
   }
-  @media (prefers-reduced-motion: reduce) { #obs-boot.run::before, .obs-pin .dot { animation: none; } }
+  /* satellite 스케치 이스터에그(OBSERVATORY-CANON §3-5): 궤적 점 1개 — "저건 별이 아니다"의 회수. 일정 속도 직선(캐논 문장 그대로). */
+  #obs-sat { position: absolute; top: 54px; left: 0; width: 4px; height: 4px; border-radius: 50%; background: #cfe8d4;
+    box-shadow: 0 0 6px rgba(140, 245, 166, 0.8); opacity: 0; pointer-events: none; z-index: 3; }
+  #obs-sat.show { opacity: 0.85; animation: obsSat 36s linear infinite; }
+  @keyframes obsSat { from { transform: translateX(-3vw); } to { transform: translateX(103vw); } }
+  /* 획득물 라인(디렉터 2026-07-22: "뭘 얻을 수 있고, 소요시간 정도") — 소요는 riskLine 기존 표기 */
+  .loot-line { font-size: var(--fs-s, 12px); color: #a9bfae; margin: 3px 0 6px; opacity: 0.95; }
+  @media (prefers-reduced-motion: reduce) { #obs-boot.run::before, .obs-pin .dot { animation: none; } #obs-sat.show { animation: none; opacity: 0.5; left: 24%; } }
 
   #modal-back {
     position: absolute; inset: 0; background: rgba(8, 9, 12, 0.72);
