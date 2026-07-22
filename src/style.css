@@ -313,13 +313,14 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     border: 1px solid #2e5c3a; border-radius: var(--r);
   }
   #action-bar .pixel-btn {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 5px 8px 4px; min-width: 48px; line-height: 1; font-size: 15px; position: relative;
+    /* #220 디렉터: 하단 명령 바 사이즈 업 — 아이콘 24→30, 라벨 10→11, 터치 타깃 확대 */
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 7px 10px 6px; min-width: 58px; line-height: 1; font-size: 15px; position: relative;
     background: #0b1710; border-color: #3f6a46; border-radius: var(--r);
   }
   #action-bar .pixel-btn:hover { border-color: #6fae78; }
-  #action-bar .act-icon { width: 24px; height: 24px; }
-  #action-bar .act-lbl { font-size: 10px; line-height: 1; color: #7da884; font-weight: normal; letter-spacing: 0; }
+  #action-bar .act-icon { width: 30px; height: 30px; }
+  #action-bar .act-lbl { font-size: 11px; line-height: 1; color: #7da884; font-weight: normal; letter-spacing: 0; }
   #action-bar .pixel-btn.primary .act-lbl { color: #ffffff; }
   #action-bar .ab-div { width: 1px; align-self: stretch; background: #294f34; margin: 1px 3px; }
   #action-bar .pixel-btn.sec { opacity: 0.85; min-width: 44px; padding: 8px 7px 5px; }
@@ -909,7 +910,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #obs-clock { font-size: var(--fs-s, 12px); color: #6fd88c; letter-spacing: 1.5px; font-variant-numeric: tabular-nums;
     text-shadow: 0 0 6px rgba(120, 255, 150, 0.45); opacity: 0.92; }
   #obs-clock::before { content: '· '; opacity: 0.6; }
-  #obs-top { position: absolute; top: 10px; left: 14px; display: flex; align-items: center; gap: 10px; z-index: 4; pointer-events: auto; }
+  /* #220: 곡률(crtBulgeB)이 좌상단 모서리를 최대 ~15px 밖으로 밀어 헤더가 잘렸다(디렉터 실캡처 신고)
+     — 변위 최대치+여유만큼 안쪽으로 들여 곡률 후에도 실화면 안에 정착 */
+  #obs-top { position: absolute; top: 30px; left: 38px; display: flex; align-items: center; gap: 10px; z-index: 4; pointer-events: auto; }
   #obs-title { font-size: var(--fs-m); color: #8cf5a6; letter-spacing: 2px; text-shadow: 0 0 7px rgba(120, 255, 150, 0.55); }
   #obs-title::before { content: '// '; opacity: 0.8; }
   #obs-pins { position: absolute; inset: 0; z-index: 1; }
@@ -937,6 +940,11 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* back 버튼은 글자 라벨("닫기"/"전체 지도") — 모달 X 버튼 규격(width:20px)을 풀지 않으면 프레임 밖으로 넘친다(#218) */
   #obs-panel .p-head .p-min { margin: 2px 2px 0 auto; flex-shrink: 0; width: auto; height: auto; padding: 2px 7px; white-space: nowrap; }
   #obs-panel .obs-body { padding: 8px 10px; }
+  /* #220 「나가기」 — 패널 맨 하단 상시 고정(디렉터: 뒤로 가는 메커니즘을 항상 같은 자리에).
+     sticky+margin-top:auto 조합: 콘텐츠가 짧으면 바닥에, 길어 스크롤이 생기면 뷰 하단에 붙어 따라온다. */
+  #obs-exit-wrap { margin-top: auto; position: sticky; bottom: 0; padding: 8px 0 0;
+    background: linear-gradient(180deg, transparent, rgba(4, 9, 6, 0.92) 40%); }
+  #obs-exit { width: 100%; padding: 7px 0; font-size: var(--fs-m); letter-spacing: 2px; }
   /* #219 준비물 행 1줄화 — 좁은 폭에선 여백을 아끼고, 이름은 절대 꺾이지 않는다(꺾임은 eff가 담당) */
   #obs-panel .prep-row { padding: 5px 6px; gap: 6px; }
   .prep-row > span:first-child { white-space: nowrap; }
@@ -1530,7 +1538,8 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     /* 디렉터 재배치 2차→정정(2026-07-22): "아예 화면 상단 고정 — 시계 위치에".
        뷰 컨트롤이 최상단 우측(구 시계 슬롯)을 차지하고, 시계는 같은 줄 왼쪽 밴드로 밀린다.
        우측 여백 62는 PDA 엣지독 클리어런스(실측) — rect 프로브로 전 해상도 검증. */
-    position: fixed; right: 62px; left: auto; top: 10px; bottom: auto; z-index: 6;
+    /* #220 디렉터: "네모 아이콘들은 우측 끝으로" — PDA 엣지독은 top ~250부터라 top:10 줄과는 안 겹친다(실측) */
+    position: fixed; right: 10px; left: auto; top: 10px; bottom: auto; z-index: 6;
     display: flex; flex-direction: row; gap: 5px; align-items: center;
     zoom: var(--uiz);
   }

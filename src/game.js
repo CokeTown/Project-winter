@@ -9132,6 +9132,15 @@ function renderInventoryBar() {
     }, { passive: false });
   }
   bar.innerHTML = '';
+  // #220 배치 끝내기 — 편집 모드 안에서 나가는 길이 없었다(디렉터 신고: 액션 바가 숨어 토글 재클릭 불가).
+  //   모두 수거 왼쪽 상시 배치. 클릭 = 편집 모드 종료(토글 off 경로와 동일 — 토스트·선택 해제 포함).
+  {
+    const btn = document.createElement('div');
+    btn.className = 'tool-item tool-collect';
+    btn.innerHTML = `<span class="emoji">${icon('icon_sys_check', '')}</span><span>${t('inv.editDone')}</span>`;
+    btn.addEventListener('click', () => toggleEditMode(false));
+    bar.appendChild(btn);
+  }
   // 배치 D ④: 전체 수거 버튼 — 현재 셸터에 놓인 가구 전부를 인벤토리로 거둔다.
   //   icon() 폴백 구조(아트 없으면 이모지). 놓인 가구가 있을 때만 활성.
   {

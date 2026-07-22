@@ -217,7 +217,7 @@ const KNOWLEDGE_HASH = -451536973;
       S.state.res.cloth = 5; S.state.res.parts = 3; S.state.bagDur = 0; S.state.energy = 100; S.state.exp = null; S.state.expToday = 0;
       S.startExpedition('residential');
       const h = document.getElementById('modal-body').innerHTML;
-      const craftRow = h.includes('가방을 꿰맨다') && h.includes('data-bag');
+      const craftRow = h.includes(S.t('prep.bagCraft')) && h.includes('data-bag'); // #220 카피 개명("가방") — 리터럴 대신 로케일 키로 핀
       const el = document.querySelector('#modal-body [data-bag]');
       if (el) el.click();
       const h2 = document.getElementById('modal-body').innerHTML;

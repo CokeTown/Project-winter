@@ -242,7 +242,7 @@ export function makeObsView(ctx) {
   const $ = id => document.getElementById(id);
   let openState = false, view = 'overview', focusId = null, bootTimer = null;
   const pinEls = new Map(); // rid → { el, x, z }
-  $('obs-close')?.addEventListener('click', () => close());
+  // (#220: 상단 obs-close 버튼 폐지 — 종료는 패널 하단 「나가기」가 전담)
 
   // 숙련 이름색 — 전도 핀(#204)과 동일 공식: 첫 방문 붉은색 → 만렙 초록
   function masteryColor(rid) {
@@ -299,6 +299,10 @@ export function makeObsView(ctx) {
     }, 14);
   }
 
+  // #220 「나가기」 — overview·focus 공용, 패널 맨 하단 상시 고정(스타일은 #obs-exit-wrap)
+  const exitBtnHtml = () => `<div id="obs-exit-wrap"><button class="pixel-btn" id="obs-exit">${t('obs.exit')}</button></div>`;
+  const wireExitBtn = (p) => p.querySelector('#obs-exit').addEventListener('click', () => close());
+
   function panelOverview() {
     const p = $('obs-panel');
     // 개요 패널(디렉터 2026-07-22): 갈 수 있는 지역 리스트 — 행 클릭=해당 노드로 줌 인(노드 클릭과 동일).
@@ -311,16 +315,17 @@ export function makeObsView(ctx) {
       return `<div class="prep-row li-row obs-region" data-rid="${rid}" style="cursor:pointer">
         <span${col ? ` style="color:${col}"` : ''}>${LName(REGIONS[rid])}</span></div>`;
     }).join('');
-    p.innerHTML = `<div class="p-head"><span class="p-title">${t('map.title')}</span>
-        <button class="pixel-btn p-min" id="obs-back-btn">${t('modal.close')}</button></div>
+    // #220: 헤더 닫기 폐지 → 하단 상시 「나가기」(단말 종료). 뒤로 가는 자리가 뷰와 무관하게 항상 같다.
+    p.innerHTML = `<div class="p-head"><span class="p-title">${t('map.title')}</span></div>
       <div class="obs-body">
         <div class="obs-hint">${t('map.pick')}</div>
         <div style="margin-top:6px">${rows}</div>
         ${sigAll.length ? `<div class="rate-line" style="margin-top:8px">${unowned.length
           ? t('map.cityPull', { items: unowned.map(bpName).join(', ') })
           : `<span style="color:var(--good)">${t('map.cityPullDone')}</span>`}</div>` : ''}
-      </div>`;
-    p.querySelector('#obs-back-btn').addEventListener('click', back);
+      </div>
+      ${exitBtnHtml()}`;
+    wireExitBtn(p);
     p.querySelectorAll('.obs-region').forEach(row =>
       row.addEventListener('click', () => focus(row.dataset.rid)));
   }
@@ -340,9 +345,11 @@ export function makeObsView(ctx) {
           ${cLv > 0 ? ` · <span style="color:var(--good)">${t('map.cond.richTip')}</span>` : cLv < 0 ? ` · <span style="color:var(--bad)">${t('map.cond.leanTip')}</span>` : ''}</div>
         ${sig.length ? `<div class="rate-line">${t('obs.pull', { items: sig.map(bpName).join(', ') })}</div>` : ''}
         <div id="obs-prep"></div>
-      </div>`;
+      </div>
+      ${exitBtnHtml()}`;
     p.innerHTML = head;
     p.querySelector('#obs-back-btn').addEventListener('click', back);
+    wireExitBtn(p);
     const mount = p.querySelector('#obs-prep');
     const blocked = expBlockReason(rid);
     if (blocked) {
