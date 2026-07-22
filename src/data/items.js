@@ -39,12 +39,13 @@ export const INJURIES = {
 };
 // ---- 탐험 준비물 (기획서 v0.2: 준비물 슬롯) ----
 export const PREPS = {
-  bottle:    { name: '물병',     nameEn: 'Water Bottle', emoji: '', cost: { water: 1 },  eff: '탐험 갈증 소모 절반 · 부상 회복 -20%', effEn: 'Halves thirst use on expeditions · injury recovery -20%' },
-  canned:    { name: '통조림',   nameEn: 'Canned Food', emoji: '', cost: { canned: 1 }, eff: '공업/슬럼 성공률 +5%p', effEn: 'Industrial/slum success +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
-  flashlight:{ name: '손전등',   nameEn: 'Flashlight', emoji: '', cost: { battery: 1 },eff: '상업/슬럼 성공률 +10%p', effEn: 'Commercial/slum success +10%p', bonus: { commercial: 0.10, slum: 0.10 } },
-  gloves:    { name: '장갑',     nameEn: 'Gloves', emoji: '', cost: { cloth: 1 },  eff: '부상 확률 -30%', effEn: 'Injury chance -30%' },
-  raincoat:  { name: '우의',     nameEn: 'Raincoat', emoji: '', cost: { cloth: 1 },  eff: '날씨 페널티 -70%', effEn: 'Weather penalty -70%' },
-  firstaid:  { name: '응급키트', nameEn: 'First-Aid Kit', emoji: '', cost: { bandage: 1, antiseptic: 1 }, eff: '깊은 상처 → 가벼운 부상으로 완화', effEn: 'Softens deep wounds into minor injuries' },
+  // #219 카피 압축(디렉터: 준비물 행 1줄화). 물병 '부상 회복 -20%'는 페널티로 오독 → '회복 시간 -20%'(applyInjury restH ×0.8)로 방향 명시.
+  bottle:    { name: '물병',     nameEn: 'Bottle', emoji: '', cost: { water: 1 },  eff: '갈증 절반 · 회복 가속', effEn: 'Thirst -50% · quick heal' },
+  canned:    { name: '통조림',   nameEn: 'Canned Food', emoji: '', cost: { canned: 1 }, eff: '공업/슬럼 +5%p', effEn: 'Ind/slum +5%p', bonus: { industrial: 0.05, slum: 0.05 } },
+  flashlight:{ name: '손전등',   nameEn: 'Flashlight', emoji: '', cost: { battery: 1 },eff: '상업/슬럼 +10%p', effEn: 'Com/slum +10%p', bonus: { commercial: 0.10, slum: 0.10 } },
+  gloves:    { name: '장갑',     nameEn: 'Gloves', emoji: '', cost: { cloth: 1 },  eff: '부상 -30%', effEn: 'Injury -30%' },
+  raincoat:  { name: '우의',     nameEn: 'Raincoat', emoji: '', cost: { cloth: 1 },  eff: '날씨 페널티 -70%', effEn: 'Weather -70%' },
+  firstaid:  { name: '응급키트', nameEn: 'Medkit', emoji: '', cost: { bandage: 1, antiseptic: 1 }, eff: '깊은 상처 완화', effEn: 'Deep wound → minor' },
 };
 
 export const THEME_SETS = [

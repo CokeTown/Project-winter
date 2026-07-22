@@ -1683,6 +1683,11 @@ function costLabel(cost) {
   // P2 스윕: 이모지 → 모노 아트 (toast가 innerHTML로 승격돼 전 표면 HTML 안전)
   return Object.entries(cost).map(([id, n]) => `${resIcon(id)}${LName(RESOURCES[id])} ${n}`).join(' + ');
 }
+// #219 준비물 행 전용 압축 코스트 — 아이콘(+×n). 좁은 관측 패널(260px)에서 행 1줄화를 위해
+// 자원 이름을 뗀다. 전체 명칭 병기는 아래 '예상 소비' 라인과 부족 토스트가 담당(B-④ 원칙의 잉여 표면).
+function costIcons(cost) {
+  return Object.entries(cost).map(([id, n]) => `${resIcon(id)}${n > 1 ? '×' + n : ''}`).join(' ');
+}
 // (B-④) 보유/필요 대조 칩 공통 렌더러 — 이주 창·프로젝트 카드·셸터 카드 전부 이 한 곳을 쓴다.
 //   [아이콘 이름 보유/필요] 형태로 자원 이름을 병기(아이콘+숫자만으론 무슨 아이템인지·무슨 수치인지 모른다는 신고).
 //   keep-all 조판으로 이름이 줄바꿈으로 잘리지 않게. ok=충족(green)/lack=부족(red) 색 구분 유지.
@@ -3465,7 +3470,7 @@ function prepUI(regionId, body) {
         return `<div class="prep-row ${selected.has(id) ? 'sel' : ''} ${has ? '' : 'no'}" data-prep="${id}">
           <span>${icon('icon_prep_' + id, pr.emoji)} ${LName(pr)}</span>
           <span class="p-eff">${LEff(pr)}</span>
-          <span class="p-cost">${costLabel(pr.cost)}</span>
+          <span class="p-cost">${costIcons(pr.cost)}</span>
         </div>`;
       }).join('')}</div>
       ${state.bagDur > 0
@@ -3476,7 +3481,7 @@ function prepUI(regionId, body) {
         : `<div class="prep-row ${resHasAll(BAL.exp.bagCost) ? '' : 'no'}" data-bag="1" style="margin-top:6px">
             <span>${t('prep.bagCraft')}</span>
             <span class="p-eff">${t('prep.bagEff')}</span>
-            <span class="p-cost">${costLabel(BAL.exp.bagCost)}</span>
+            <span class="p-cost">${costIcons(BAL.exp.bagCost)}</span>
           </div>`}
       <div style="font-size:11px;color:var(--text-dim);margin:8px 0">
         ${t('prep.expectCost', { cost: Object.keys(cost).length ? costLabel(cost) : t('none') })}
