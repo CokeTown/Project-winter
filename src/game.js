@@ -220,9 +220,29 @@ const camPanApplied = { x: 0, z: 0 };
 
 // ── 시네마틱 원근 카메라 (스토리 트레일러 전용 — 게임은 텍스트/UI 기반이라 연출 컷을 직접 렌더한다).
 //   실제 씬(옥탑·라디오·눈·스카이라인)을 오쏘가 아닌 원근으로 날며 진짜 시네마 무빙(푸시인·달리·룩앳)을 낸다.
-//   프로덕션 무해: _cine=false면 렌더 경로는 기존 오쏘와 100% 동일(플래그가 꺼진 채 부팅). __shelter.cine* 로만 켠다.
+//   프로덕션 무해: cam='ortho'면 렌더 경로는 기존 오쏘와 100% 동일(꺼진 채 부팅). __shelter.cine* 로만 켠다.
 const cineCam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.05, 400);
-let _cine = false;
+
+/* ── P1 렌더 컨텍스트 (REFACTOR-GUIDE §3-P1: Parameter Object) ──
+   흩어져 있던 렌더 모드 플래그(_golden 계열 8개 let + _cine)를 단일 객체로 수렴 — 어떤 함수가
+   어떤 모드에 의존하는지 renderCtx 참조로 가시화한다. 단일 인스턴스 재사용(핫패스 할당 회피).
+   · frozen / cam 은 직교 2축: 트레일러 캡처가 freeze(keepEntities)+cineOn을 동시에 쓰므로
+     'live|golden|cine' 단일 enum은 실체와 어긋난다(가이드의 mode 제안을 실측으로 각색).
+   · 외부 API(freezeForGolden/stepGolden/cineOn·cineOff — 골든 러너·트레일러 하네스가 호출)는
+     시그니처·거동 불변, 내부 구현만 이 객체를 조작한다. */
+const renderCtx = {
+  frozen: false,        // 골든 동결(구 _golden): 시드 고정 + dt=0 정지 + 동적 요소 숨김
+  cam: 'ortho',         // 'ortho' | 'cine' (구 _cine): renderFrame의 카메라 선택
+  dt: 0, t: 0,          // 이번 프레임 확정값 — renderFrame 서두에서 기록(프레임 시간의 SSOT)
+  goldenT: 5.0,         // 골든 기준 시각(고정 — 구 _goldenT)
+  goldenDt: 0,          // 동역학 스테핑 중에만 >0 (구 _goldenDt)
+  goldenAcc: 0,         // 결정론 누적 시간 (구 _goldenAcc)
+  keepEntities: false,  // 트레일러: 엔티티 살린 채 고정 dt 스테핑 (구 _goldenKeep)
+  seed: 12345,          // LCG 시드 (구 _goldenSeed)
+  lcgS: 12345,          // LCG 진행 상태 (구 _goldenS — #212: 언제든 시드로 되감기 가능해야 결정론)
+  hidApplied: false,    // once 성 숨김(고양이 despawn)의 1회 적용 플래그 (구 _goldenHid)
+};
+const isGoldenFrozen = () => renderCtx.frozen; // 산발 게이트용 술어 — 리터럴 플래그 접근 금지, 의미로 읽는다
 
 // ④ 고양이 클로즈업 카메라 — 비배치 모드에서 고양이 탭 시 얼굴로 글라이드. 드래그/ESC/빈곳 탭으로 복원.
 //   활성 중엔 카메라 타겟을 고양이(눈높이 살짝 위)로 옮기고 거리/줌/앙각을 클로즈업 프로필로 보간(지연 추적).
@@ -2584,12 +2604,12 @@ function addDistantSmoke() {
 }
 
 // #2 물 반사(디렉터): 수변 셸터 수면에 하늘·스카이라인을 큐브맵으로 1회 베이크해 반사.
-//   실기(하드웨어 GPU)에서만 — _golden/lowSpec 제외. cam.update가 던져도 try/finally로 sea.visible 복원 +
+//   실기(하드웨어 GPU)에서만 — 골든 동결/lowSpec 제외. cam.update가 던져도 try/finally로 sea.visible 복원 +
 //   씬에서 CubeCamera 제거 보장(고아 카메라가 후속 렌더 오염 방지). 라이브 렌더 1회뿐이라 방치/배터리 무해.
 let _seaCubeRT = null;
 function bakeWaterReflection() {
   const sea = envDyn && envDyn.sea;
-  if (!sea || _golden || opts.lowSpec) return;
+  if (!sea || isGoldenFrozen() || opts.lowSpec) return;
   if (_seaCubeRT) { _seaCubeRT.dispose(); _seaCubeRT = null; }
   const rt = new THREE.WebGLCubeRenderTarget(128, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
   const cam = new THREE.CubeCamera(0.5, 1400, rt);
@@ -6711,8 +6731,8 @@ function pickBalconyView(e) {
 }
 
 // 발코니 조망 은근한 신호 (디렉터 2026-07-18): 더블탭 발동은 그대로(발견의 결) — 여기 조망 포인트가 있다는
-//   최소 어포던스만 얹는다. ① 데크에 희미한 앰버 글린트 펄스 ② 호버 시 커서 포인터(데스크톱). 글린트는 _golden
-//   중 숨겨(비결정 배제) 펜트하우스 골든 레퍼런스 불변 — 실플레이에서만 보인다.
+//   최소 어포던스만 얹는다. ① 데크에 희미한 앰버 글린트 펄스 ② 호버 시 커서 포인터(데스크톱). 글린트는 골든
+//   동결 중 숨겨(비결정 배제) 펜트하우스 골든 레퍼런스 불변 — 실플레이에서만 보인다.
 let _balHint = null, _balHover = false;
 function tickBalconyHint(t) {
   const bal = SHELTERS[state.current] && SHELTERS[state.current].balcony;
@@ -6720,7 +6740,7 @@ function tickBalconyHint(t) {
     _balHint = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTexOnce(), color: 0xffce94, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
     _balHint.scale.set(0.5, 0.5, 0.5); _balHint.renderOrder = 4; scene.add(_balHint);
   }
-  const show = !!bal && !_golden && !vignetteBusy() && !editMode && !paused && !titleVisible;
+  const show = !!bal && !isGoldenFrozen() && !vignetteBusy() && !editMode && !paused && !titleVisible;
   _balHint.visible = show;
   if (show) {
     _balHint.position.set((bal.x0 + bal.x1) / 2, 1.02, bal.z0 + 0.35);
@@ -11133,20 +11153,15 @@ addEventListener('pointermove', () => { if (padState.active) showPadCursor(false
 //   범인 = 매 프레임 Math.random으로 배회하는 고양이/야생동물/아바타(별도 모듈, Phase1 렌더 리팩토링 대상 아님) — 실시간 프레임 수 지터로 로드마다 위치가 어긋난다.
 //   해법: freezeForGolden = ①Math.random 시드 고정 ②렌더 시간 동결(dt=0) ③배회 엔티티 업데이트 스킵+숨김.
 //   그러면 골든 캡처 = 순수 정적 지오메트리+조명+날씨FX(=리팩토링 대상 코드)만 남아 로드 간 결정론적.
-let _golden = false; const _goldenT = 5.0; let _goldenHid = false;
-let _goldenDt = 0, _goldenAcc = 0; // 동역학 게이트: 스테핑 중에만 dt>0, t는 _goldenAcc로 결정론적 누적
-// 트레일러 캡처(#172): 골든의 고정 dt 스테핑을 엔티티 살린 채 쓴다 — 오프스크린 캡처는 프레임당 실시간
-// ~0.2s가 흘러 애니메이션이 수 배속으로 보이므로, keepEntities 스테핑이 정속(1/30s/frame)의 유일한 경로.
-let _goldenKeep = false;
-// #212: LCG 상태 s를 모듈 변수로 승격해 언제든 시드로 되돌릴 수 있게 한다(_goldenReseed).
+// 상태는 renderCtx(파일 상단 P1 Parameter Object)가 소유 — 여기는 조작 함수만 남는다.
+// #212: LCG 상태(lcgS)를 ctx 필드로 두어 언제든 시드로 되돌릴 수 있게 한다(goldenReseed).
 //   구버전은 s가 Math.random 클로저 안에 갇혀, freeze 이후 settleCapture가 소비한 난수만큼 상태가
 //   밀린 채 stepGolden에 진입 → 누적 시작점이 로드마다 달라 d_snow/d_rain 골든이 플레이키였다.
-let _goldenSeed = 12345, _goldenS = 12345;
-function _goldenReseed() { _goldenS = _goldenSeed >>> 0; }
+function goldenReseed() { renderCtx.lcgS = renderCtx.seed >>> 0; }
 function freezeForGolden(seed = 12345, keepEntities = false) {
-  _goldenSeed = seed >>> 0; _goldenReseed();
-  Math.random = function () { let s = (_goldenS + 0x6D2B79F5) | 0; _goldenS = s; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
-  windLevel = 1; _golden = true; _goldenHid = false; _goldenDt = 0; _goldenAcc = 0;
+  renderCtx.seed = seed >>> 0; goldenReseed();
+  Math.random = function () { let s = (renderCtx.lcgS + 0x6D2B79F5) | 0; renderCtx.lcgS = s; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+  windLevel = 1; renderCtx.frozen = true; renderCtx.hidApplied = false; renderCtx.goldenDt = 0; renderCtx.goldenAcc = 0;
   // CSS 무한 애니(LED·crit 블링크·CRT 플리커)는 dt 동결과 무관하게 실시간으로 돈다 — 캡처 순간의
   //   위상이 곧 플레이크다(crtFlicker 딥 프레임 ~6% 확률 실측 우려). reduce-motion 클래스로 전부 정지.
   document.body.classList.add('reduce-motion');
@@ -11154,43 +11169,54 @@ function freezeForGolden(seed = 12345, keepEntities = false) {
   //   남겨, d_rain_wet(비)이 직전 d_snow_accum(눈)의 적설을 물려받아 결정론이 깨졌다(로드 간 70% 흔들림).
   //   각 골든 씬은 깨끗한 날씨에서 시작해야 dt 스테핑이 순수 재현된다. (설정 씬은 이후 setSnow가 덮어씀.)
   snowCover = 0; wetness = 0; wetApplied = -1;
-  _goldenKeep = !!keepEntities; // 트레일러 캡처: 고정 dt 스테핑 + 엔티티(고양이/아바타) 유지 — 정속 애니메이션 캡처
+  // 트레일러 캡처(#172): 골든의 고정 dt 스테핑을 엔티티 살린 채 쓴다 — 오프스크린 캡처는 프레임당 실시간
+  //   ~0.2s가 흘러 애니메이션이 수 배속으로 보이므로, keepEntities 스테핑이 정속(1/30s/frame)의 유일한 경로.
+  renderCtx.keepEntities = !!keepEntities;
 }
 // 동역학 게이트: renderFrame을 동기 루프로 frames번 호출(rAF 개입 없음=결정론) → 눈 누적·젖음/성에 페이드가
 //   고정 dt로 확정 진행. 캡처 전 호출해 dt구동 날씨 상태를 박제한다. 루프 후 dt=0 복귀(rAF 프레임은 정지 유지).
 function stepGolden(frames = 200, dtSec = 0.1) {
-  _goldenReseed(); // 정착이 소비한 난수 오프셋 제거 → 누적 시작점을 시드로 고정(로드 간 결정론)
-  _goldenDt = dtSec;
+  goldenReseed(); // 정착이 소비한 난수 오프셋 제거 → 누적 시작점을 시드로 고정(로드 간 결정론)
+  renderCtx.goldenDt = dtSec;
   for (let i = 0; i < frames; i++) renderFrame();
-  _goldenDt = 0;
+  renderCtx.goldenDt = 0;
 }
-function renderFrame() {
+/* ── 골든 동결이 숨기는 동적 요소 — 선언 목록 (REFACTOR-GUIDE P1: hideDynamic) ──
+   "무엇이 골든에서 숨겨지는가"가 코드 전역에 흩어져 누락을 눈으로 못 찾던 문제(#212 계열)의 관문.
+   새 동적 요소(파티클·배회체·반투명 오버레이)를 추가하면 여기에 한 줄을 추가하는 것이 규약.
+   · once: true = 1회 적용(despawn류). 나머지는 매 프레임 재적용 — 스폰/재생성 재발을 억제한다. */
+const GOLDEN_HIDE = [
+  { name: 'cat', once: true, why: '배회 Math.random — 로드마다 위치 상이', apply() { try { despawnCat(); } catch (e) { /* 씬에 없음 */ } } },
+  { name: 'wildlife', why: '배회 엔티티(로밍·개막 연출)', apply() { const g = wildlifeSys.getGroup && wildlifeSys.getGroup(); if (g) g.visible = false; } },
+  { name: 'avatar', why: '실내 생활 배회(#86)', apply() { const g = avatarSys.getGroup && avatarSys.getGroup(); if (g) g.visible = false; } },
+  // #212: 낙하 날씨 파티클(눈·비). 입자 위치는 씬 간 이월돼(리셋 안 됨) 프레임/로드마다 달라 ~19% 렌더
+  //   흔들림을 냈다 — 동역학 골든의 목적은 '적설/젖음 누적'(지면 셰이더=결정론)이지 낙하 입자가 아니다.
+  { name: 'weatherParticles', why: '낙하 입자 위치 씬 간 이월(비결정)', apply() { if (weather.pts) weather.pts.visible = false; } },
+  // 젖은 반사 오버레이(웅덩이·글린트): 반투명(depthWrite off)이라 SwiftShader 스레드 정렬이 프로세스마다
+  //   뒤집혀(빔과 동일 계열) cross-load 흔들림. 젖음의 '누적'은 재질 톤 다크닝(applyWetness, 결정론)이 담당.
+  { name: 'wetOverlays', why: '반투명 정렬 프로세스 비결정', apply() { if (weatherFx.puddles) for (const p of weatherFx.puddles) p.visible = false; if (weatherFx.glints) for (const gl of weatherFx.glints) gl.visible = false; } },
+  { name: 'dust', why: '부유 먼지 — Math.random 배치·반투명', apply() { if (dust && dust.pts) dust.pts.visible = false; } },
+];
+function applyGoldenHiding(ctx) {
+  for (const h of GOLDEN_HIDE) { if (h.once && ctx.hidApplied) continue; h.apply(); }
+  ctx.hidApplied = true;
+}
+function renderFrame(ctx = renderCtx) {
   let dt = Math.min(clock.getDelta(), 0.1);
   let t = clock.elapsedTime;
-  if (_golden) { dt = _goldenDt; if (_goldenDt > 0) _goldenAcc += _goldenDt; t = _goldenT + _goldenAcc; } // 골든: dt=0 정지 / 스테핑 시 고정 dt 결정론 진행
+  if (ctx.frozen) { dt = ctx.goldenDt; if (ctx.goldenDt > 0) ctx.goldenAcc += ctx.goldenDt; t = ctx.goldenT + ctx.goldenAcc; } // 골든: dt=0 정지 / 스테핑 시 고정 dt 결정론 진행
+  ctx.dt = dt; ctx.t = t; // 프레임 확정값 기록 — 이후 하위/외부가 조회하는 SSOT (지역 t/dt와 동일 값)
   pollGamepad(dt);
   if (!titleVisible && !paused && !endingActive) tickTime(dt); // 타이틀·일시정지·엔딩 중엔 시간 정지
   else if (state.exp) state.exp.end += dt * 1000; // 탐험 실시간 타이머도 함께 멈춘다
   applyTimeLighting();
-  if (!_cine) updateCamera(); // 시네마틱 중엔 오쏘 갱신 스킵 — camera.position은 cineSet이 동기화(컬링 기준 유지)
+  if (ctx.cam !== 'cine') updateCamera(); // 시네마틱 중엔 오쏘 갱신 스킵 — camera.position은 cineSet이 동기화(컬링 기준 유지)
   updateWallCulling(dt);
   updateEnvironment(t, dt);
   updateWeather(dt, t);
-  if (_golden && !_goldenKeep) {
-    // 배회 엔티티 동결·숨김 (한 번 despawn/숨김 → 업데이트 스킵으로 재배회 없음)
-    if (!_goldenHid) { try { despawnCat(); } catch (e) {} _goldenHid = true; }
-    const wg = wildlifeSys.getGroup && wildlifeSys.getGroup(); if (wg) wg.visible = false;
-    const ag = avatarSys.getGroup && avatarSys.getGroup(); if (ag) ag.visible = false;
-    // #212: 낙하 날씨 파티클(눈·비)도 숨긴다. 입자 위치는 씬 간 이월돼(리셋 안 됨) 프레임/로드마다 달라
-    //   ~19% 렌더 흔들림을 냈다 — 동역학 골든의 목적은 '적설/젖음 누적'(지면 셰이더=결정론)이지 낙하 입자가
-    //   아니므로, 배회 엔티티와 같은 논리로 숨겨 결정론을 회복한다. 지면 snowCover/wetness는 그대로 캡처된다.
-    if (weather.pts) weather.pts.visible = false;
-    // 젖은 반사 오버레이(웅덩이·글린트)도 숨긴다. 반투명(depthWrite off)이라 SwiftShader 스레드 정렬이
-    //   프로세스마다 뒤집혀(빔과 동일 계열) cross-load 흔들림을 냈다. 젖음의 '누적'은 재질 톤 다크닝
-    //   (applyWetness, 결정론)이 담당하므로, 반사 오버레이만 숨겨도 동역학 골든의 취지는 보존된다.
-    if (weatherFx.puddles) for (const p of weatherFx.puddles) p.visible = false;
-    if (weatherFx.glints) for (const gl of weatherFx.glints) gl.visible = false;
-    if (dust && dust.pts) dust.pts.visible = false; // 부유 먼지(Math.random 배치·반투명)도 골든에서 숨김
+  if (ctx.frozen && !ctx.keepEntities) {
+    // 동결·숨김 대상은 GOLDEN_HIDE 선언 목록 1곳(renderFrame 위)이 정본 — 여기는 적용만 한다.
+    applyGoldenHiding(ctx);
   } else {
     updateCat(t, dt);
     tickCatPurr(dt);           // #93: 방석 골골 기믹 (잠든 고양이 + 방석)
@@ -11234,8 +11260,8 @@ function renderFrame() {
   if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); if (pdaVisible() && pdaTab === 'status') renderPDA(true); if (hudExtOn) renderHudExt(); syncBgm(); syncSfxAmbience(); drainDiscoveryQueue(); } // 디렉터: PDA 상태탭도 0.5s 실시간 갱신(탐험 진행바·게이지) — quiet=플리커 생략, 지도/자원탭은 이벤트 갱신(맵 재생성 비용 회피)
   // 항공뷰 프로토 활성 시: 같은 rt→post 파이프로 디오라마 씬을 대신 렌더 (픽셀 룩 동일 보장).
   //   위의 시뮬 틱은 그대로 돌므로 시간·날씨가 실시간으로 디오라마에 반영된다 (AERIAL-MAP 개정 1차).
-  // #217 CRT 시간 공급: 골든/캡처 결정론 — freeze(_golden) 중엔 고정값(위상 동결, crtFlicker와 같은 사상)
-  postMat.uniforms.uCrtT.value = _golden ? 12.345 : performance.now() / 1000;
+  // #217 CRT 시간 공급: 골든/캡처 결정론 — 동결 중엔 고정값(위상 동결, crtFlicker와 같은 사상)
+  postMat.uniforms.uCrtT.value = ctx.frozen ? 12.345 : performance.now() / 1000;
   const _aa = activeAerial();
   if (_aa) {
     _aa.update(dt, { hour: aerialHourOverride ?? gameHour(), weather: weather.type });
@@ -11247,7 +11273,7 @@ function renderFrame() {
     return;
   }
   renderer.setRenderTarget(rt);
-  renderer.render(scene, _cine ? cineCam : camera);
+  renderer.render(scene, ctx.cam === 'cine' ? cineCam : camera);
   renderer.setRenderTarget(null);
   renderer.render(postScene, postCam);
   updateScreenFx(dt, t);
@@ -11654,8 +11680,8 @@ window.__shelter = {
   // ── 시네마틱 원근 카메라 훅 (스토리 트레일러 하네스 전용) ──
   //   cineOn: 시네마틱 모드 진입(이후 렌더는 원근 cineCam). cineOff: 오쏘 복귀.
   //   cineSet: 카메라를 (px,py,pz)에 두고 (lx,ly,lz)를 바라보게. fov 지정 가능. camera.position도 동기화해 벽 컬링이 원근 시점을 따른다.
-  cineOn: (fov) => { _cine = true; if (fov) cineCam.fov = fov; cineCam.aspect = innerWidth / innerHeight; cineCam.updateProjectionMatrix(); },
-  cineOff: () => { _cine = false; },
+  cineOn: (fov) => { renderCtx.cam = 'cine'; if (fov) cineCam.fov = fov; cineCam.aspect = innerWidth / innerHeight; cineCam.updateProjectionMatrix(); },
+  cineOff: () => { renderCtx.cam = 'ortho'; },
   cineSet: (px, py, pz, lx, ly, lz, fov) => {
     cineCam.position.set(px, py, pz);
     cineCam.up.set(0, 1, 0);
