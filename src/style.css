@@ -434,6 +434,9 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     to { background-position: 0 0, 0 calc(100% + 90px); }
   }
   .pda-boot { animation: pdaBoot 0.3s steps(3); }
+  /* #221: 탭 전환·재조회 = 화면 리프레시 스캔(관측·설정창과 같은 계열). 0.5s 실시간 갱신(quiet)은 이 클래스를 안 건드린다. */
+  #pda-screen.pda-refresh { animation: termScanIn 0.18s steps(6); }
+  body.reduce-motion #pda-screen.pda-refresh { animation: none; }
   @keyframes pdaBoot { 0% { opacity: 0.15; } 55% { opacity: 0.75; } 70% { opacity: 0.4; } 100% { opacity: 1; } }
   #pda-screen { /* 에셋 유리가 배경 — 콘텐츠는 포스퍼 텍스트만 얹는다 */
     flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
@@ -982,7 +985,18 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* #194: max-height에 ⑧(#settings-window 165-168줄) 역보정 적용 — zoom(--uiz)이 창 전체를 곱해
      80vh 클램프를 초과(도감·업적·기록 탭 상하 잘림, 탭바·닫기 버튼 뷰포트 밖) → /--uiz로 역보정. */
   #modal { max-width: 560px; width: calc(100vw - 60px); max-height: calc(80vh / var(--uiz, 1)); overflow-y: auto; }
-  #modal h2 { font-size: 14px; color: var(--accent); margin-bottom: 10px; }
+  /* #221 터미널 전면화 1차 — 공용 모달 셸에 설정창 문법 이식(디렉터: "PDA 내부에서도 비슷한 문법").
+     열림 = CRT 스캔인(설정창·확인창과 같은 의식), 제목 = // 섹션 헤더 + 점멸 LED(패널 p-head와 동일 어휘). */
+  #modal-back.show #modal { animation: termScanIn 0.22s steps(8); }
+  body.reduce-motion #modal-back.show #modal { animation: none; }
+  /* 제목 = // 섹션 헤더(패널 p-title과 동일 어휘). LED는 상주 콘솔(패널)의 것 — 일시 화면인 모달엔 두지 않는다. */
+  #modal h2 {
+    font-size: 13px; color: #8cf5a6; margin: 0 0 10px; letter-spacing: 1.5px;
+    text-shadow: 0 0 5px rgba(140, 245, 166, 0.35);
+    border-bottom: 1px solid rgba(140, 245, 166, 0.3); padding-bottom: 5px;
+  }
+  #modal h2::before { content: '// '; opacity: 0.55; }
+  #modal h2:empty { display: none; } /* 제목 없는 모달(이벤트 카드 등)에 '//'만 뜨는 것 방지 */
   #modal .modal-body { font-size: 12px; line-height: 1.8; }
   #modal .close-row { text-align: right; margin-top: 12px; }
   /* #181 방문자 콤팩트 카드: 약한 딤 + 하단 배치 + 소형 (대사는 라디오 버블, 카드는 선택지만) */
@@ -1232,6 +1246,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     zoom: var(--uiz);
   }
   #toast.show { opacity: 1; }
+  /* #221: 토스트 = 회선 수신 라인 — '> ' 프리픽스 + 짧은 스캔인(등장만, 소멸은 기존 페이드) */
+  #toast::before { content: '> '; opacity: 0.55; }
+  #toast.show { animation: termScanIn 0.16s steps(5); }
+  body.reduce-motion #toast.show { animation: none; }
 
   #loading {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;

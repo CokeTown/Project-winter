@@ -8026,6 +8026,8 @@ function pdaAppExit(toHome) {
 function renderPDA(quiet) {
   document.querySelectorAll('#pda-tabs .pda-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === pdaTab));
   const scr = $('pda-screen');
+  // #221: 탭 전환·재조회 = 화면 리프레시 스캔. quiet(0.5s 실시간 갱신)는 생략 — 매초 번쩍이면 재앙.
+  if (!quiet) { scr.classList.remove('pda-refresh'); void scr.offsetWidth; scr.classList.add('pda-refresh'); }
   const mm = state.gameMin % 1440, hh = String(Math.floor(mm / 60)).padStart(2, '0'), mi = String(Math.floor(mm % 60)).padStart(2, '0');
   const w = WEATHERS[state.weatherType];
   const head = `<div class="ph">${t('pda.day', { n: state.day })} · ${hh}:${mi} · ${w ? `${wxIcon(state.weatherType)} ${LName(w)}` : ''} — ${LName(SHELTERS[state.current])}</div>`;
