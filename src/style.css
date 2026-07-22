@@ -578,15 +578,14 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   body.pda-app #pda-lcd #modal .report-sec .r-title { font-size: 9px; }
   /* 디렉터: 제작 상위 카테고리 탭바(가구·물품/복장/공사/꾸미기) — PDA 탭바 톤. 상단 고정. */
   body.pda-app #pda-lcd #modal .craft-tabs { display: flex; gap: 3px; margin: -2px 0 6px; position: sticky; top: -6px; background: rgba(6, 10, 5, 0.92); padding: 3px 0; z-index: 4; }
-  /* #221 정정: 탭·행 크롬도 세이지(민트 rgba(170,240,185)·그린 보더 #3f6a46 → PDA 문법) */
-  body.pda-app #pda-lcd #modal .craft-tab { flex: 1; font-size: 8px; padding: 3px 2px; background: rgba(240, 245, 238, 0.05); border: 1px solid rgba(125, 168, 132, 0.5); border-radius: 3px; color: #bcd0b6; cursor: pointer; white-space: nowrap; }
-  body.pda-app #pda-lcd #modal .craft-tab.active { background: rgba(240, 245, 238, 0.14); border-color: var(--accent); color: #f0f5ee; font-weight: bold; }
+  body.pda-app #pda-lcd #modal .craft-tab { flex: 1; font-size: 8px; padding: 3px 2px; background: rgba(170, 240, 185, 0.06); border: 1px solid #3f6a46; border-radius: 3px; color: #bcd0b6; cursor: pointer; white-space: nowrap; }
+  body.pda-app #pda-lcd #modal .craft-tab.active { background: rgba(120, 255, 150, 0.16); border-color: var(--accent); color: #f0f5ee; font-weight: bold; }
   body.pda-app #pda-lcd .prep-row, body.pda-app #pda-lcd .craft-row, body.pda-app #pda-lcd .li-row { padding: 3px 7px; gap: 2px 6px; }
   body.pda-app #pda-lcd .px-icon { width: 1.2em; height: 1.2em; }
   body.pda-app #pda-lcd .prep-row { /* 행 = 포스퍼 리스트. 좁은 LCD 폭 정돈: 이름 한 줄 + 코스트·버튼 줄 */
     display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px;
     padding: 6px 8px; overflow: hidden;
-    background: rgba(240, 245, 238, 0.03); border: 1px solid rgba(125, 168, 132, 0.4); border-radius: 3px;
+    background: rgba(170, 240, 185, 0.04); border: 1px solid #3f6a46; border-radius: 3px;
   }
   body.pda-app #pda-lcd .prep-row > span:first-child { flex: 1 1 100%; min-width: 0; }
   /* 제작 행 한 줄 압축(디렉터): 「붕대 ×1 ← 천 2 [제작]」 — 이름 전폭 점유 해제 + 랩 금지 */
@@ -621,15 +620,12 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   body.pda-app #pda-lcd .prep-row .pixel-btn { margin-left: auto !important; } /* 인라인 margin 6px보다 우선 — 버튼 우측 정렬 */
   body.pda-app #pda-lcd #modal img { max-width: 100%; }
   body.pda-app #pda-lcd .prep-row.no { opacity: 0.55; }
-  /* #221 정정(디렉터: "PDA 색은 왜 초록색이야 — 기존 톤 유지"): LCD 안 크롬은 본편 터미널 그린이
-     아니라 PDA 문법(흰 포스퍼 #f0f5ee + 저채도 세이지 rgba(125,168,132) — 홈 화면 .ph와 동일 어휘).
-     그린 그라데이션·민트 보더를 세이지·중성으로 강등. 정보색(good/bad)은 정보라 유지. */
-  body.pda-app #pda-lcd .prep-row.sel { border-color: #f0f5ee; background: rgba(240, 245, 238, 0.07); }
+  body.pda-app #pda-lcd .prep-row.sel { border-color: #6fae78; background: rgba(170, 240, 185, 0.08); }
   body.pda-app #pda-lcd .pixel-btn {
-    background: rgba(240, 245, 238, 0.05); box-shadow: none;
-    border-color: rgba(125, 168, 132, 0.5); color: #f0f5ee; border-radius: 3px;
+    background: linear-gradient(180deg, #1e3524, #0e1c12);
+    border-color: #3f6a46; color: #cfe0c8; border-radius: 3px;
   }
-  body.pda-app #pda-lcd .pixel-btn:not([disabled]):hover { border-color: #f0f5ee; color: #f0f5ee; }
+  body.pda-app #pda-lcd .pixel-btn:not([disabled]):hover { border-color: #6fae78; color: #f0f5ee; }
   body.pda-app #pda-lcd .pixel-btn.primary { border-color: #ffffff; color: #ffffff; }
   body.title-mode #edge-dock, body.wallpaper-mode #edge-dock,
   body.title-mode #pda-back, body.wallpaper-mode #pda-back,
