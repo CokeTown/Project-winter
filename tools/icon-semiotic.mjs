@@ -49,7 +49,7 @@ const G = {
   icon_act_move: '<path fill-rule="evenodd" d="M12,3 L21,11 H18 V20 H6 V11 H3 Z M10,14 H14 V20 H10 Z"/>', // 집 + 문(홀)
   icon_act_craft: '<g transform="rotate(38 12 12)"><rect x="4.5" y="3" width="15" height="5" rx="1"/><rect x="10.5" y="8" width="3" height="13"/></g>', // 망치: 머리+자루
   icon_act_knowledge: '<path fill-rule="evenodd" d="M12,6 C9.5,4 5.5,4 3,5 V18 C5.5,17 9.5,17 12,19 C14.5,17 18.5,17 21,18 V5 C18.5,4 14.5,4 12,6 Z M11.3,6.4 H12.7 V18.6 H11.3 Z"/>', // 펼친 책 + 책등(홀)
-  icon_act_clean: '<g transform="rotate(-30 12 12)"><rect x="10.7" y="2.5" width="2.6" height="10.5"/><path fill-rule="evenodd" d="M8.5,13 H15.5 L17,20.5 H7 Z M11.3,15.5 h1.4 v3 h-1.4 Z"/></g>', // 빗자루 — 사다리꼴 헤드+중앙 홀 1(빗살 묘사 소거)
+  icon_act_clean: '<g transform="rotate(-28 12 12)"><rect x="10.6" y="2.5" width="2.6" height="11"/><path fill-rule="evenodd" d="M8,13.5 H16 L17.6,21 H6.4 Z M9.9,16.5 h0.9 v4 h-0.9 Z M12.4,16.5 h0.9 v4 h-0.9 Z"/></g>', // 빗자루: 자루+빗살(홀) — 구형 유지(디렉터 2026-07-22: 이전이 낫다)
   // 취침 = 침대(이 게임의 원 문법 🛌). 초승달+Z 안은 폐기 — 실캡처에서 화성 기호(♂)로 오독됐고,
   //   초승달은 time_night이 이미 쓰고 있어 의미도 충돌했다.
   icon_act_sleep: '<path d="M2,6.5 H4.6 V20.5 H2 Z"/><path d="M4.6,13.5 H19.5 A2.5,2.5 0 0,1 22,16 V20.5 H19.4 V16.8 H4.6 Z"/><rect x="6" y="9.8" width="5" height="3.7" rx="1.2"/>',
@@ -85,7 +85,7 @@ const G = {
   icon_g_hunger: '<path fill-rule="evenodd" d="M6,4 H18 V20 H6 Z M8,7 H16 V9 H8 Z"/>',
   icon_g_thirst: '<path d="M12,2.5 C12,2.5 18.5,11 18.5,15.5 A6.5,6.5 0 0,1 5.5,15.5 C5.5,11 12,2.5 12,2.5 Z"/>',
   icon_g_energy: '<path d="M13,2 L6,13 H11 L9,22 L18,10 H13 Z"/>', // 번개
-  icon_g_clean: '<g transform="rotate(-30 12 12)"><rect x="10.7" y="2.5" width="2.6" height="10.5"/><path d="M8.5,13 H15.5 L17,20.5 H7 Z"/></g>', // 빗자루(청결) — act_clean과 동일 기하
+  icon_g_clean: '<g transform="rotate(-28 12 12)"><rect x="10.6" y="2.5" width="2.6" height="11"/><path d="M8,13.5 H16 L17.6,21 H6.4 Z"/></g>', // 빗자루(청결) — 구형 유지(act_clean과 동일 기하)
   // ── 날씨 (weather) ── 솔리드 구름 베이스
   icon_weather_clear: '<circle cx="12" cy="12" r="5"/><g ' + S + '><line x1="12" y1="2.5" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21.5"/><line x1="2.5" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21.5" y2="12"/><line x1="5.5" y1="5.5" x2="7.2" y2="7.2"/><line x1="16.8" y1="16.8" x2="18.5" y2="18.5"/><line x1="16.8" y1="7.2" x2="18.5" y2="5.5"/><line x1="5.5" y1="18.5" x2="7.2" y2="16.8"/></g>', // 해
   // 날씨 = 뭉게구름 원형 유지 (디렉터 2026-07-22: "캡슐은 symbolism 과축약 — 존재하는 아이콘에 기반").
@@ -116,7 +116,7 @@ const G = {
   // ── 기록 (rec) ──
   icon_rec_memo: '<path fill-rule="evenodd" d="M6,4 H18 V15 L13,20 H6 Z M8,8 H16 V9.4 H8 Z M8,11 H14 V12.4 H8 Z"/><path d="M13,20 V15 H18 Z"/>', // 메모 + 접힘
   icon_rec_radio: '<path fill-rule="evenodd" d="M4,9 H20 V20 H4 Z M9,12.3 A2.2,2.2 0 1,0 9,16.7 A2.2,2.2 0 1,0 9,12.3 Z M13.8,13.8 H17.2 V15.2 H13.8 Z"/><path d="M6,9 L15,4 L15.8,5.5 L8.5,9 Z"/>', // 라디오 — 스피커 원+슬릿 1(다이얼 장식 소거)
-  icon_rec_sketch: '<path fill-rule="evenodd" d="M4.5,4.5 H19.5 V19.5 H4.5 Z M7.5,16.5 L12,10.5 L16.5,16.5 Z"/>', // 프레임 + 산 삼각 1(해·이중 산 소거)
+  icon_rec_sketch: '<path fill-rule="evenodd" d="M4.5,4.5 H19.5 V19.5 H4.5 Z M7,16 L11,11 L13.5,14 L15.5,12 L17,15 V17 H7 Z M9.5,7.5 A1.5,1.5 0 1,0 9.5,10.5 A1.5,1.5 0 1,0 9.5,7.5 Z"/>', // 사진 프레임(산+해) — 구형 유지(디렉터: 이전이 좋다)
   // ── 전리품 (loot) ──
   icon_loot_blueprint: '<path fill-rule="evenodd" d="M4,5 H20 V19 H4 Z M8.5,16 L12,11 L15.5,16 Z M6.5,8 H11 V9.4 H6.5 Z"/>', // 도면
   icon_loot_paint: '<path d="M6.5,10 H17.5 L16.5,20.5 A1,1 0 0,1 15.5,21.5 H8.5 A1,1 0 0,1 7.5,20.5 Z"/><path fill-rule="evenodd" d="M6,8.5 A6,6 0 0,1 18,8.5 V10 H16 V8.5 A4,4 0 0,0 8,8.5 V10 H6 Z"/>', // 페인트 통 + 손잡이
