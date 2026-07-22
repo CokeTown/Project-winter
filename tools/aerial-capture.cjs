@@ -32,7 +32,8 @@ function bgra2rgba(b) { const o = Buffer.alloc(b.length); for (let i = 0; i < b.
   await sleep(300);
   // 에러 리스너 선부착 — 오프스크린에서 '정지 프레임'은 살아있는 화면과 구분이 안 된다(07-22 함정).
   await H.evalJs(`(()=>{window.__perr=null;window.addEventListener('error',e=>{window.__perr=(e.error&&e.error.stack)||e.message});
-    const S=window.__shelter;S.simReset();if(S.hideTitle)S.hideTitle();if(S.loadShelter)S.loadShelter('container');return 1})()`);
+    const S=window.__shelter;S.simReset();if(S.hideTitle)S.hideTitle();if(S.loadShelter)S.loadShelter('container');
+    document.body.classList.add('obs-mode');return 1})()`); // obs-mode: 본편 크롬 숨김 — 판단 컷에 HUD 노이즈 금지(07-22 실측 검거)
   await sleep(1000);
 
   const cap = async (name) => {
@@ -44,7 +45,18 @@ function bgra2rgba(b) { const o = Buffer.alloc(b.length); for (let i = 0; i < b.
   };
   const setEnv = (h, w) => H.evalJs(`(()=>{const S=window.__shelter;S.setHour(${h});S.setWeather('${w}');return 1})()`);
 
-  if (MODE === 'ruin') {
+  if (MODE === 'nodes') {
+    // S3 노드 드레싱 검수 — 전 노드 focus 순회 1컷씩 (주간 맑음 고정: 실루엣 판독 조건)
+    await H.evalJs(`(()=>{const S=window.__shelter;const A=S.aerialProto();A.open();return A.nodes.join(',')})()`);
+    const nodes = (await H.evalJs(`window.__shelter.aerialProto().nodes.join(',')`)).split(',');
+    await setEnv(9, 'clear');
+    for (const nd of nodes) {
+      await H.evalJs(`(()=>{window.__shelter.aerialProto().focus('${nd}');return 1})()`);
+      await cap('node_' + nd);
+    }
+    await H.evalJs(`(()=>{window.__shelter.aerialProto().overview();return 1})()`);
+    await cap('node_overview');
+  } else if (MODE === 'ruin') {
     // 잠식 연차 비교 — rebuild(day)로 씬을 다시 지어 시간의 흐름을 대조한다.
     for (const [day, winter, tag] of [[20, false, 'y0'], [400, false, 'y1'], [1080, false, 'y3'], [1080, true, 'y3w']]) {
       const r = await H.evalJs(`(()=>{const S=window.__shelter;S.aerialProto().rebuild({day:${day},winter:${winter}});

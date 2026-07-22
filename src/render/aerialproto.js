@@ -251,6 +251,100 @@ export function makeAerialProto(cfg = {}) {
       firePt = new THREE.PointLight(0xff8a30, 0, 34, 1); firePt.position.set(nd.x, 2.4, nd.z); g.add(firePt); // decay 1 — 물리 감쇠는 이 스케일에서 빛이 죽는다(1차 캡처)
       scene.add(g);
     }
+    // ── S3 노드 드레싱: 잔여 노드 정체성 실루엣 (원경 저폴리 — 픽셀화가 마감을 진다) ──
+    //   전용 rand(4243): 기존 도시·창문·비컨의 rand(4242) 소비 순서를 건드리지 않는다(배치 결정론 보존).
+    //   각 노드 = "이름을 가리고도 뭔지 읽히는" 최소 실루엣 1벌. focus(dist 30)에서 판독되는 밀도가 기준.
+    {
+      const r2 = seededRand(4243);
+      const put = (g, x, y, z, w, h, d, color, ry = 0) => {
+        const m = new THREE.Mesh(boxG, new THREE.MeshLambertMaterial({ color }));
+        m.scale.set(w, h, d); m.position.set(x, y, z); m.rotation.y = ry; g.add(m); return m;
+      };
+      const cyl = (g, x, y, z, r, h, color, seg = 7) => {
+        const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.15, h, seg), new THREE.MeshLambertMaterial({ color }));
+        m.position.set(x, y + h / 2, z); g.add(m); return m;
+      };
+      const dress = {
+        commercial(g, nd) { // 도심 상업 — 무너진 고층 코어 군집 + 중앙에 쓰러진 간판(공터 앵커)
+          //   높이 7~12·반경 5.5~8.5 — 1차 캡처 검거: 10~19 타워가 focus 카메라(dist 30)와 노드 사이에
+          //   서서 프레임을 검은 벽으로 삼켰다. 근경은 낮게, 스카이라인은 도시 원경(기존 tall 존)이 진다.
+          //   배치는 카메라 반대편 반원(무대 뒤편) — focus 카메라(AZIM 0.62, +x+z측)와 노드 사이에
+          //   세우면 역광 벽이 프레임을 삼킨다(2차 캡처 검거). back = AZIM+π 중심 ±1.15.
+          const BACK = 0.62 + Math.PI;
+          for (let k = 0; k < 4; k++) {
+            const a = BACK + (k / 3 - 0.5) * 2.3 + (r2() - 0.5) * 0.3, rr = 5.5 + r2() * 3;
+            put(g, nd.x + Math.cos(a) * rr, 0, nd.z + Math.sin(a) * rr,
+              3.0 + r2() * 1.8, 7 + r2() * 5, 3.0 + r2() * 1.8, 0x565b66, r2() * 0.4);
+          }
+          put(g, nd.x - 0.5, 0, nd.z + 1.2, 5.5, 2.0, 0.6, 0x6a5844, 0.35); // 쓰러진 간판 — 공터 중앙 앵커
+          put(g, nd.x + 1.8, 0, nd.z - 1.6, 1.8, 0.8, 1.4, 0x4e5560, 0.7);  // 뒤집힌 차 실루엣
+        },
+        industrial(g, nd) { // 공업 — 공장 홀·굴뚝은 뒤편(−x−z), 앞마당은 낮은 팔레트 더미(3차: 홀 역광 벽 검거)
+          put(g, nd.x - 5.5, 0, nd.z - 4.5, 9, 4.2, 5.5, 0x51565f, 0.1);
+          put(g, nd.x + 3.5, 0, nd.z - 6, 6, 3.2, 4.5, 0x4a4e56, -0.15);
+          cyl(g, nd.x - 7.5, 0, nd.z - 7, 0.8, 11, 0x434750);
+          cyl(g, nd.x - 5.1, 0, nd.z - 7, 0.7, 14, 0x434750);
+          cyl(g, nd.x + 7, 0, nd.z - 4, 1.6, 3, 0x5c616b, 9);
+          for (let k = 0; k < 3; k++) put(g, nd.x - 0.8 + k * 1.6, 0, nd.z + 1.5 + (k % 2), 1.2, 0.5 + r2() * 0.5, 1.0, 0x5a5142, r2() * 0.5); // 앞마당 팔레트
+        },
+        harborYard(g, nd) { // 항구 야적장 — 컨테이너 스택 격자 + 크레인
+          const PAL = [0x7a614b, 0x50665c, 0x695459, 0x5a6875]; // 1차 캡처: 원톤이 잿빛에 묻힘 — 한 단 승톤
+          for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) {
+            if (r2() < 0.2) continue;
+            const st = 1 + Math.floor(r2() * 2);
+            for (let s = 0; s < st; s++) // z를 뒤편(−)으로 — 카메라측 스택 역광 회피(2차 캡처)
+              put(g, nd.x - 5 + c * 3.1, s * 1.3, nd.z - 5.5 + r * 2.2, 2.8, 1.25, 2.2, PAL[Math.floor(r2() * 4)]);
+          }
+          put(g, nd.x - 6.5, 0, nd.z - 2, 0.8, 12, 0.8, 0x5a5142);   // 크레인 기둥 (뒤편)
+          put(g, nd.x - 6.5, 11, nd.z + 1.5, 0.7, 0.7, 9, 0x5a5142); // 크레인 붐
+        },
+        fishMarket(g, nd) { // 수산시장 — 부두 데크 + 좌판 열 + 뒤집힌 보트 + 방파제(도시 경계 허전함 완화)
+          put(g, nd.x, 0, nd.z, 12, 0.6, 7, 0x6a5c48); // 4차: 어두운 데크가 역광에 죽음 — 승톤
+          for (let k = 0; k < 3; k++)
+            put(g, nd.x - 3.5 + k * 3.4, 0.6, nd.z - 2, 2.4, 1.3, 1.6, 0x74674f, r2() * 0.3);
+          put(g, nd.x + 2, 0.6, nd.z + 1.5, 4.5, 1.0, 1.8, 0x5c6773, 0.5);
+          for (let k = 0; k < 5; k++) put(g, nd.x - 8 + k * 4.2, 0, nd.z + 5.5, 2.6, 1.0, 1.6, 0x565b63, r2() * 0.2); // 방파제 블록
+        },
+        resort(g, nd) { // 고원 리조트 — A프레임 로지(뒤편·승톤) + 리프트 기둥 열
+          const lodge = new THREE.Mesh(new THREE.ConeGeometry(3, 4.2, 4),
+            new THREE.MeshLambertMaterial({ color: 0x7a6448 })); // 4차: 역광 검붉음 — 승톤
+          lodge.position.set(nd.x - 2, 2.1, nd.z - 2.5); lodge.rotation.y = 0.79; g.add(lodge); // 링과 분리(뒤편)
+          for (let k = 0; k < 3; k++)
+            put(g, nd.x - 6 + k * 5, 0, nd.z + 5 - k * 4, 0.5, 6 + k, 0.5, 0x545963);
+          put(g, nd.x + 1.5, 0, nd.z + 1, 2.2, 0.6, 1.0, 0x6a5f4b, 0.4); // 공터 벤치 잔해
+        },
+        checkpoint(g, nd) { // 봉쇄선 검문소 — 게이트 바 + 바리케이드 + 감시탑(뒤편·승톤, 4차: 탑이 카메라측 프레임 밖)
+          put(g, nd.x, 0, nd.z, 8.5, 1.1, 1.1, 0x666c76);
+          put(g, nd.x - 3, 0, nd.z + 2, 2.2, 1.6, 1.2, 0x5a5f68, 0.3);
+          put(g, nd.x - 4, 0, nd.z - 3.5, 1.4, 6.5, 1.4, 0x565b64);
+          put(g, nd.x - 4, 6.5, nd.z - 3.5, 2.6, 1.4, 2.6, 0x666c76);
+        },
+        lab(g, nd) { // 폭심지 연구동 — 낮은 벙커 + 상부 구조물 + 안테나
+          put(g, nd.x, 0, nd.z, 7, 2.6, 5.5, 0x4d525b);
+          put(g, nd.x - 1, 2.6, nd.z, 3, 1.2, 3, 0x454a52);
+          cyl(g, nd.x + 2.4, 2.6, nd.z + 1.2, 0.12, 6, 0x666c76, 5);
+        },
+        slumdeep(g, nd) { // 판자촌 심부 — 슬럼의 축소·밀집판
+          for (let k = 0; k < 10; k++) {
+            const a = r2() * 6.28, rr = 2.5 + r2() * 4.5;
+            put(g, nd.x + Math.cos(a) * rr, 0, nd.z + Math.sin(a) * rr,
+              1.3 + r2() * 1.2, 0.9 + r2() * 1.0, 1.2 + r2() * 1.2,
+              [0x655d4b, 0x585040, 0x6f654e][k % 3], r2() * 0.8);
+          }
+        },
+        citycore(g, nd) { // 도심 중심지 — 마천루 코어(봉쇄 너머의 우뚝) + 부속동. 코어는 뒤편으로
+          //   4차 검거: 중앙 26h 타워가 focus 카메라 정면에서 화면 전체를 검은 기둥으로 삼켰다.
+          put(g, nd.x - 5.5, 0, nd.z - 6, 6.5, 26, 6.5, 0x565b66);
+          put(g, nd.x + 2.8, 0, nd.z - 7.2, 4, 14, 4, 0x50555f);
+          put(g, nd.x - 8.2, 0, nd.z + 0.8, 3.4, 9, 3.4, 0x4b505a);
+          put(g, nd.x + 1, 0, nd.z + 1, 3.2, 1.4, 2.2, 0x5e646e, 0.5); // 공터 — 무너진 로비 잔해
+        },
+      };
+      for (const [id, fn] of Object.entries(dress)) {
+        if (!NODES[id]) continue;
+        const g = new THREE.Group(); fn(g, NODES[id]); scene.add(g);
+      }
+    }
     // 노드 비컨 링 (S2에서 DOM 오버레이로 대체 — S1은 위치 감각용)
     for (const nd of Object.values(NODES)) {
       const ring = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.16, 6, 28),

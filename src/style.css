@@ -809,7 +809,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* 관측 모드: 본편 크롬을 걷는다 — 상단 시계 밴드만 남긴다(시안 상단 스테이터스 문법) */
   body.obs-mode #hud, body.obs-mode #res-bar, body.obs-mode #quest-card, body.obs-mode #radio-bubble,
   body.obs-mode #dock-pda, body.obs-mode #toolbar, body.obs-mode #exp-panel, body.obs-mode .cam-btn,
-  body.obs-mode #tip-pop { display: none !important; }
+  body.obs-mode #action-bar, body.obs-mode #tip-note { display: none !important; } /* action-bar=상단 명령 밴드 · tip-note=종이 팁 — 관측 컷 노이즈(실캡처 검거) */
   #obs-top { position: absolute; top: 10px; left: 14px; display: flex; align-items: center; gap: 10px; z-index: 4; pointer-events: auto; }
   #obs-title { font-size: var(--fs-m); color: #8cf5a6; letter-spacing: 2px; text-shadow: 0 0 7px rgba(120, 255, 150, 0.55); }
   #obs-title::before { content: '// '; opacity: 0.8; }
