@@ -221,6 +221,7 @@ export function makeMapview(ctx) {
    레지스터: 군용 콘솔 아님 — 죽은 관측 위성의 다운링크를 엿듣는 낡은 단말(부팅=지직임, 어투=다나까/혼잣말). */
 export function makeObsView(ctx) {
   const { aerialProto, expBlockReason, prepUI, bpName, avalancheForecastToday, openAvalancheChoice, getWeather } = ctx;
+  const ctxGetClock = ctx.getClock || null; // 단말 내부 시계 (없으면 표기 생략 — 하위호환)
   const $ = id => document.getElementById(id);
   let openState = false, view = 'overview', focusId = null, bootTimer = null;
   const pinEls = new Map(); // rid → { el, x, z }
@@ -350,9 +351,17 @@ export function makeObsView(ctx) {
     $('obs-boot').classList.remove('run');
   }
   // 매 프레임(renderFrame 항공 분기): 3D 월드좌표 → 화면 투영으로 핀 위치 갱신 + 출발 감지 자동 닫기
+  let lastClock = '';
   function tick() {
     if (!openState) return;
     if (state.exp) { close(); return; } // 출발했다 — 단말을 덮고 본편으로
+    // 단말 내부 시계(디렉터 2026-07-22): 본편 #clock-panel은 obs-mode에서 숨긴다 — 시간은 다이제틱 표기로.
+    //   라틴 DAY + HH:MM은 본편 시계와 같은 문법이라 신규 로케일 키가 필요 없다.
+    if (ctxGetClock) {
+      const ck = ctxGetClock();
+      const s = `DAY ${String(ck.day).padStart(2, '0')} · ${String(Math.floor(ck.hour)).padStart(2, '0')}:${String(Math.floor((ck.hour % 1) * 60)).padStart(2, '0')}`;
+      if (s !== lastClock) { lastClock = s; const el = $('obs-clock'); if (el) el.textContent = s; }
+    }
     const aerial = aerialProto();
     const W = innerWidth, H = innerHeight;
     for (const [, rec] of pinEls) {

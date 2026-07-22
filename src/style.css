@@ -809,7 +809,11 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* 관측 모드: 본편 크롬을 걷는다 — 상단 시계 밴드만 남긴다(시안 상단 스테이터스 문법) */
   body.obs-mode #hud, body.obs-mode #res-bar, body.obs-mode #quest-card, body.obs-mode #radio-bubble,
   body.obs-mode #dock-pda, body.obs-mode #toolbar, body.obs-mode #exp-panel, body.obs-mode .cam-btn,
-  body.obs-mode #action-bar, body.obs-mode #tip-note { display: none !important; } /* action-bar=상단 명령 밴드 · tip-note=종이 팁 — 관측 컷 노이즈(실캡처 검거) */
+  body.obs-mode #action-bar, body.obs-mode #tip-note,
+  body.obs-mode #clock-panel { display: none !important; } /* action-bar=상단 명령 밴드 · tip-note=종이 팁 — 관측 컷 노이즈(실캡처 검거) · clock-panel=본편 시계(디렉터 2026-07-22: 단말 내부 시계 #obs-clock으로 대체 — 크롬 완전 소거) */
+  #obs-clock { font-size: var(--fs-s, 12px); color: #6fd88c; letter-spacing: 1.5px; font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 6px rgba(120, 255, 150, 0.45); opacity: 0.92; }
+  #obs-clock::before { content: '· '; opacity: 0.6; }
   #obs-top { position: absolute; top: 10px; left: 14px; display: flex; align-items: center; gap: 10px; z-index: 4; pointer-events: auto; }
   #obs-title { font-size: var(--fs-m); color: #8cf5a6; letter-spacing: 2px; text-shadow: 0 0 7px rgba(120, 255, 150, 0.55); }
   #obs-title::before { content: '// '; opacity: 0.8; }

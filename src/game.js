@@ -11058,6 +11058,7 @@ const activeAerial = () => Object.values(_aerials).find(a => a.active) || null;
 const obsView = makeObsView({
   aerialProto, expBlockReason, prepUI, bpName, avalancheForecastToday, openAvalancheChoice,
   getWeather: () => weather.type,
+  getClock: () => ({ day: state.day, hour: gameHour() }), // 단말 내부 시계 — 본편 #clock-panel은 obs-mode에서 숨김(디렉터 2026-07-22)
 });
 function openObsMap() {
   if (state.exp) { pdaOpen('status'); return; }
