@@ -2176,7 +2176,7 @@ function glowTex() {
 /* ④ 제작 손맛 연출 (GD-THESIS L1): 제작 완료 시 결과물 아이콘 스프라이트가 작업대 위로 ~1초
    떠올랐다 사라지고, 반짝임 입자 3~4개가 함께 튄다. 기존 craft 사운드는 호출부에서 유지. */
 // #213 이모지 전멸: 이모지 캔버스 텍스처 → 실아이콘 PNG 텍스처 (터미널 베이스에 컬러 이모지 금지)
-//   ⚠️ 함정 2건(실캡처 검거): ①사후 map 할당+needsUpdate는 스프라이트가 안 그려짐 — 생성자 map만.
+//   [주의] 함정 2건(실캡처 검거): ①사후 map 할당+needsUpdate는 스프라이트가 안 그려짐 — 생성자 map만.
 //   ②THREE.TextureLoader는 crossOrigin 기본값 때문에 file://(dist)에서 조용히 실패할 수 있다 —
 //   crossOrigin 없는 맨 Image 태그를 THREE.Texture에 직결(본편 CanvasTexture와 동일한 소스 직결 사상).
 const _craftTexCache = new Map(); // iconId → THREE.Texture (이미지 도착 시 needsUpdate로 자동 표시)
