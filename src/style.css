@@ -102,13 +102,25 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   .panel {
     position: absolute;
     /* 노스트로모/MU·TH·UR 인광 터미널 (디렉터 적용 — ui-deco-mockup 반영): 근흑 인광 바탕 + 스캔라인 + 얇은 녹색 프레임 + 곡률 비네트 */
+    /* CRT 볼록(디렉터 2026-07-22, cool-retro-term): ①중앙 유리 하이라이트(브라운관이 앞으로 부풀어 빛을 받는 면)
+       ②하단·코너 비네트 강화(가장자리가 뒤로 말림) — 두 겹이 합쳐져 "중앙이 튀어나온 화면"으로 읽힌다. */
     background:
+      radial-gradient(120% 92% at 50% 36%, rgba(190, 255, 205, 0.05), transparent 56%),
       repeating-linear-gradient(0deg, rgba(140, 245, 166, 0.028) 0 1px, transparent 1px 3px),
+      radial-gradient(145% 125% at 50% 112%, transparent 55%, rgba(0, 0, 0, 0.30) 100%),
       radial-gradient(130% 120% at 50% 0%, #08130d 0%, rgba(5, 10, 8, 0.975) 58%, #030706 100%);
-    border: 2px solid rgba(140, 245, 166, 0.30); border-radius: 5px;
-    box-shadow: 0 0 0 1px rgba(140, 245, 166, 0.08), inset 0 0 34px rgba(0, 0, 0, 0.5), 0 4px 18px rgba(0, 0, 0, 0.55);
+    border: 2px solid rgba(140, 245, 166, 0.30); border-radius: 6px;
+    /* 베젤: 프레임 밖 어두운 플라스틱 림 1겹 + 유리 상단 미세 반사 — "모니터 위에 올라와 있는" 물성 */
+    box-shadow:
+      0 0 0 1px rgba(140, 245, 166, 0.08),
+      0 0 0 4px rgba(9, 12, 10, 0.92),
+      0 0 0 5px rgba(140, 245, 166, 0.05),
+      inset 0 1px 0 rgba(190, 255, 205, 0.09),
+      inset 0 0 34px rgba(0, 0, 0, 0.5),
+      0 5px 20px rgba(0, 0, 0, 0.6);
     padding: 10px 12px;
     zoom: var(--uiz);
+    animation: crtFlicker 7s steps(1) infinite; /* 인광 미세 플리커 — 살아있는 브라운관(감지 한계 수준 0.985) */
     /* P1-F: 라운드 코너 기준 내부 클리핑 — p-head의 음수 마진/줌 반올림으로 생기는
        가장자리 1px 투명 틈(다른 패널이 비쳐 보임)을 막는다. 드래그 핸들/내용은 전부 내부라 무영향. */
     overflow: hidden;
@@ -223,10 +235,23 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* 세그먼트 갭 — 채움 위에 어두운 세로 틈을 얹어 칸칸이 (디지털 계기 느낌, 디렉터 요청) */
   #hud .g-bar::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; background: repeating-linear-gradient(90deg, transparent 0 5px, #060d0a 5px 7px); }
   #hud .g-fill { position: absolute; inset: 0 auto 0 0; display: block; height: 100%; width: 50%; transition: width 0.3s; box-shadow: 0 0 6px rgba(140, 245, 166, 0.5); } /* 인광 글로우. 전역 .g-fill(inset:0) 무력화 — 바 안에서만 */
-  /* 게이지 고유색(디렉터 목업 실현: 배고픔 머스터드·수분 시안·에너지 그린·청결 라임) — 게이지별 색 구분 */
-  /* HUD-SPEC-RECON §1.1 (기획서 8.5·P-04): 색=심각도 — 정상 그린/주의 앰버/위험 적.
-     구 v1.9.10 색=정체(허기 머스터드·갈증 시안·기력 그린·청결 라임)는 본 스펙이 대체. */
-  #hud #gauges .g-fill { background: #8cf5a6; box-shadow: 0 0 6px rgba(140, 245, 166, 0.5); }
+  /* 게이지 고유색 복원(디렉터 확정 2026-07-22): v1.9.10 「색=정체」 문법이 승 — 허기 머스터드·갈증 시안·
+     기력 그린. HUD 1차의 색=심각도(전부 그린)는 기각. 저수위 붉은 전환(warn/crit)·수치 병기·상태 문자는 유지. */
+  #hud #g-hunger .g-fill { background: #d9b34a; box-shadow: 0 0 6px rgba(217, 179, 74, 0.5); }
+  #hud #g-thirst .g-fill { background: #5cc4dd; box-shadow: 0 0 6px rgba(92, 196, 221, 0.5); }
+  #hud #g-energy .g-fill { background: #8cf5a6; box-shadow: 0 0 6px rgba(140, 245, 166, 0.5); }
+  /* 색약 모드: 고유색(ID 셀렉터)이 전역 cb 팔레트를 이겨버리므로 같은 특이도로 재무력화 */
+  body.cb-mode #hud #g-hunger .g-fill, body.cb-mode #hud #g-thirst .g-fill, body.cb-mode #hud #g-energy .g-fill { background: #3f7fb0; box-shadow: none; }
+  /* 충전(회복) 연출 — 1.9.10 문법의 터미널 실현: 차오르는 동안 밝은 스윕이 채움 위를 훑고 글로우가 서지 */
+  #hud .g-fill.up { animation: gaugeCharge 0.9s steps(8) infinite; }
+  #hud .g-fill.up::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 15%, rgba(255, 255, 255, 0.4) 50%, transparent 85%);
+    animation: chargeSweep 0.9s steps(10) infinite;
+  }
+  @keyframes gaugeCharge { 0%, 100% { filter: brightness(1); } 40% { filter: brightness(1.65); } }
+  @keyframes chargeSweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  body.reduce-motion #hud .g-fill.up, body.reduce-motion #hud .g-fill.up::before { animation: none; }
   /* 위험색은 게이지 고유색(ID 셀렉터)보다 강하게 — #gauges ID 중첩으로 승격 */
   #hud #gauges .g-fill.warn { background: #ffc24a; box-shadow: 0 0 6px rgba(255, 194, 74, 0.55); }
   /* 점멸 1.3s 주기 = ≤0.8Hz (기획서 7.1 상한) */
@@ -1391,6 +1416,13 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   @keyframes ledBlink { 50% { opacity: 0.25; } }
   body.reduce-motion .p-head::before { animation: none; }
+  /* CRT 인광 플리커 — 불규칙 2회 미세 감광(cool-retro-term 시그니처). opacity만 건드려 컴포지터 전용(성능 0). */
+  @keyframes crtFlicker {
+    0%, 46%, 49%, 78%, 81%, 100% { opacity: 1; }
+    47%, 48% { opacity: 0.985; }
+    79%, 80% { opacity: 0.99; }
+  }
+  body.reduce-motion .panel { animation: none; }
   .p-head .p-title::before { content: '// '; opacity: 0.55; } /* // 섹션 프리픽스 */
   /* 터미널 코너 브래킷 — 헤더 상단 좌우 (구 프레임 리벳 자리). 얇은 녹색 ㄱ (노스트로모 프레임) */
   .panel::before, .panel::after {
@@ -1428,6 +1460,11 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     position: relative; max-width: min(86vw, 380px); padding: 14px 16px;
     zoom: var(--uiz);
   }
+  /* 확인창 터미널화(디렉터 2026-07-22, cool-retro-term 레퍼런스): 시스템 물음 = 프롬프트.
+     메시지 앞 '// ' + CRT 스캔인 — 설정창과 같은 계열의 접속 의식. */
+  #confirm-back.show #confirm-panel { animation: termScanIn 0.22s steps(8); }
+  body.reduce-motion #confirm-back.show #confirm-panel { animation: none; }
+  #confirm-msg::before { content: '// '; color: #8cf5a6; opacity: 0.55; }
   #confirm-msg { font-size: 12px; line-height: 1.7; margin-bottom: 12px; word-break: keep-all; overflow-wrap: break-word; }
   #confirm-panel .close-row { display: flex; gap: 8px; }
   #confirm-panel .pixel-btn { flex: 1; }

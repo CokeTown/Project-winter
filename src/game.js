@@ -7928,6 +7928,9 @@ function updateHud() {
 // HUD-SPEC-RECON §1.1 (기획서 8.5·HUD-A02·ACC-04): 색=심각도 + 수치 병기 + 상태 문자.
 //   임계 = 스펙 준수(0~25 위험 / 26~50 주의 / 51~ 정상). 구 "수치=PDA 전용" 오더는 본 스펙이 대체.
 function gaugeSev(v) { return v <= 25 ? 'crit' : v <= 50 ? 'warn' : ''; }
+// 충전(회복) 연출 — 1.9.10 게이지 문법 복원(디렉터 2026-07-22): 값이 오르는 동안 .up(밝은 스윕+글로우 서지).
+//   updateHud가 0.5s마다 재호출되며 증가가 이어지면 계속 갱신 — "충전 중" 지속 연출. 멈추면 1.1s 후 소등.
+const _gaugePrev = {}, _gaugeUpT = {};
 function renderGauge(id, val, gkey) {
   const g = $(id);
   if (!g) return;
@@ -7936,6 +7939,12 @@ function renderGauge(id, val, gkey) {
   const fill = g.querySelector('.g-fill');
   fill.style.width = v + '%';
   fill.className = 'g-fill' + (sev ? ' ' + sev : '');
+  const pv = _gaugePrev[id]; _gaugePrev[id] = v;
+  if (pv != null && v > pv) {
+    fill.classList.add('up');
+    clearTimeout(_gaugeUpT[id]);
+    _gaugeUpT[id] = setTimeout(() => { fill.classList.remove('up'); delete _gaugeUpT[id]; }, 1100);
+  } else if (_gaugeUpT[id]) fill.classList.add('up'); // 타이머 생존 중엔 재부착(위 className 대입이 지웠으므로) — 발화 시 delete로 소멸
   const top = g.querySelector('.g-top');
   let st = g.querySelector('.g-state');
   if (!st) { st = document.createElement('span'); st.className = 'g-state'; top.appendChild(st); }
@@ -10965,6 +10974,9 @@ function freezeForGolden(seed = 12345, keepEntities = false) {
   _goldenSeed = seed >>> 0; _goldenReseed();
   Math.random = function () { let s = (_goldenS + 0x6D2B79F5) | 0; _goldenS = s; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
   windLevel = 1; _golden = true; _goldenHid = false; _goldenDt = 0; _goldenAcc = 0;
+  // CSS 무한 애니(LED·crit 블링크·CRT 플리커)는 dt 동결과 무관하게 실시간으로 돈다 — 캡처 순간의
+  //   위상이 곧 플레이크다(crtFlicker 딥 프레임 ~6% 확률 실측 우려). reduce-motion 클래스로 전부 정지.
+  document.body.classList.add('reduce-motion');
   // #212: 날씨 누적 상태를 씬마다 초기화한다. simReset은 weather.type만 지우고 snowCover/wetness는
   //   남겨, d_rain_wet(비)이 직전 d_snow_accum(눈)의 적설을 물려받아 결정론이 깨졌다(로드 간 70% 흔들림).
   //   각 골든 씬은 깨끗한 날씨에서 시작해야 dt 스테핑이 순수 재현된다. (설정 씬은 이후 setSnow가 덮어씀.)
