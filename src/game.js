@@ -11011,11 +11011,12 @@ function renderFrame() {
   if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); if (pdaVisible() && pdaTab === 'status') renderPDA(true); syncBgm(); syncSfxAmbience(); drainDiscoveryQueue(); } // 디렉터: PDA 상태탭도 0.5s 실시간 갱신(탐험 진행바·게이지) — quiet=플리커 생략, 지도/자원탭은 이벤트 갱신(맵 재생성 비용 회피)
   // 항공뷰 프로토 활성 시: 같은 rt→post 파이프로 디오라마 씬을 대신 렌더 (픽셀 룩 동일 보장).
   //   위의 시뮬 틱은 그대로 돌므로 시간·날씨가 실시간으로 디오라마에 반영된다 (AERIAL-MAP 개정 1차).
-  if (_aerial && _aerial.active) {
-    _aerial.update(dt, { hour: gameHour(), weather: weather.type });
+  const _aa = activeAerial();
+  if (_aa) {
+    _aa.update(dt, { hour: gameHour(), weather: weather.type });
     if (obsView.isOpen()) obsView.tick(); // S2: 핀 3D→화면 투영 갱신 + 출발 감지 자동 닫기
     renderer.setRenderTarget(rt);
-    renderer.render(_aerial.scene, _aerial.camera);
+    renderer.render(_aa.scene, _aa.camera);
     renderer.setRenderTarget(null);
     renderer.render(postScene, postCam);
     return;
@@ -11029,26 +11030,31 @@ function renderFrame() {
 // 항공뷰 S1 프로토 — 지연 생성(첫 open 전 비용 0), QA/하네스에서만 접근.
 //   open()에 경과일·계절을 주입해 잠식(#71 규약: years=min(3,day/360), 겨울=마른 톤)이 실제 진행도를 탄다.
 //   rebuild()는 연차 비교 캡처용 — 씬을 버리고 다른 day로 다시 짓는다(정식판은 loadShelter 시점 재생성).
-let _aerial = null;
+const _aerials = {}; // 도시별 디오라마 (home·east 최대 2벌) — 재생성 없이 즉시 전환, 각자 결정론 유지
 // S2: 디오라마 노드 = MAP_MARKERS(% 전도 좌표) → 월드좌표 파생 — 2D 전도와 같은 지리 관계를 3D가 계승.
-//   (x-50)*3 = ±150 박스(도시 300×300)에 매핑. 서부(home)만 — 동부 디오라마는 S3.
-function obsNodes() {
+//   (x-50)*3 = ±150 박스(도시 300×300)에 매핑. 서부와 동부 전도가 같은 % 공간이라 변환 공유.
+//   ×2.0 = ±100 박스 — ×3(±150)은 모서리 노드(주거)가 overview 프레임 밖(실측 y=-96), ×2.2도 경계(-13).
+function obsNodes(city) {
   const m = {};
   for (const [rid, p] of Object.entries(MAP_MARKERS)) {
-    if (!REGIONS[rid] || regionCityOf(rid) !== 'home') continue;
-    // ×2.0 = ±100 박스 — ×3(±150)은 모서리 노드(주거)가 overview 프레임 밖(실측 y=-96), ×2.2도 경계(-13).
+    if (!REGIONS[rid] || regionCityOf(rid) !== city) continue;
     m[rid] = { x: (p.x - 50) * 2.0, z: (p.y - 50) * 2.0 };
   }
   return m;
 }
-function aerialProto() {
-  if (!_aerial) _aerial = makeAerialProto({ nodes: obsNodes() });
-  const openRaw = _aerial.open.bind(_aerial);
-  _aerial.open = (o = {}) => openRaw({ day: o.day ?? state.day, winter: o.winter ?? (seasonOf().id === 'winter'), ...o });
-  _aerial.rebuild = (o = {}) => { _aerial = makeAerialProto({ nodes: obsNodes() }); return aerialProto().open(o); };
-  return _aerial;
+function aerialProto(cityArg) { // cityArg: QA/캡처용 강제 지정 — 평시엔 거주 도시를 따른다
+  const city = cityArg || (cityOf(state.current) === 'east' ? 'east' : 'home');
+  if (!_aerials[city]) {
+    const a = makeAerialProto({ nodes: obsNodes(city), city });
+    const openRaw = a.open.bind(a);
+    a.open = (o = {}) => openRaw({ day: o.day ?? state.day, winter: o.winter ?? (seasonOf().id === 'winter'), ...o });
+    a.rebuild = (o = {}) => { delete _aerials[city]; return aerialProto(city).open(o); };
+    _aerials[city] = a;
+  }
+  return _aerials[city];
 }
-// 관측 단말(S2) — 탐험 진입점. 동부 거주 중엔 전도 모달 폴백(동부 디오라마 미구현 S3).
+const activeAerial = () => Object.values(_aerials).find(a => a.active) || null;
+// 관측 단말(S2) — 탐험 진입점. 동부 거주 시 동부 디오라마(S3-2)로 자동 전환 — 구지도 폴백 해소.
 const obsView = makeObsView({
   aerialProto, expBlockReason, prepUI, bpName, avalancheForecastToday, openAvalancheChoice,
   getWeather: () => weather.type,
@@ -11056,7 +11062,6 @@ const obsView = makeObsView({
 function openObsMap() {
   if (state.exp) { pdaOpen('status'); return; }
   if (isExhausted()) { toast(t('toast.exhausted')); return; }
-  if (cityOf(state.current) !== 'home') { openMapModal(); return; }
   obsView.open();
 }
 // v2.4: 숨김(document.hidden) 상태에서는 3D 렌더/카메라/환경/FX를 전부 건너뛰고

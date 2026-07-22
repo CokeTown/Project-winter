@@ -55,6 +55,19 @@ function bgra2rgba(b) { const o = Buffer.alloc(b.length); for (let i = 0; i < b.
         await cap(`scale_${nd}_${tag}`);
       }
     }
+  } else if (MODE === 'east') {
+    // S3-2 동부 디오라마 검수 — aerialProto('east') 강제 지정(거주 도시 무관). overview + 8노드 + 노을·설야
+    await H.evalJs(`(()=>{const S=window.__shelter;const A=S.aerialProto('east');A.open();return A.nodes.join(',')})()`);
+    const nodes = (await H.evalJs(`window.__shelter.aerialProto('east').nodes.join(',')`)).split(',');
+    await setEnv(9, 'clear');
+    await cap('east_overview_am');
+    for (const nd of nodes) {
+      await H.evalJs(`(()=>{window.__shelter.aerialProto('east').focus('${nd}');return 1})()`);
+      await cap('east_' + nd);
+    }
+    await H.evalJs(`(()=>{window.__shelter.aerialProto('east').overview();return 1})()`);
+    await setEnv(18, 'clear'); await cap('east_overview_dusk'); // 붉은 노을 팔레트 판독
+    await setEnv(22, 'snow'); await cap('east_overview_night_snow'); // 결빙 항만 + 진지 화톳불
   } else if (MODE === 'nodes') {
     // S3 노드 드레싱 검수 — 전 노드 focus 순회 1컷씩 (주간 맑음 고정: 실루엣 판독 조건)
     await H.evalJs(`(()=>{const S=window.__shelter;const A=S.aerialProto();A.open();return A.nodes.join(',')})()`);

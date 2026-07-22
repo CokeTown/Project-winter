@@ -17,6 +17,7 @@ const DEFAULT_NODES = {
 
 export function makeAerialProto(cfg = {}) {
   const NODES = cfg.nodes || DEFAULT_NODES; // S2: 지역 rid → 디오라마 월드좌표(전 노드 회피·비컨·focus 대상)
+  const CITY = cfg.city || 'home'; // S3-2: 'home'(서부)·'east'(부산형 항구도시) — 지형·톤·드레싱 분기
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 2, 900);
   let built = false, active = false;
@@ -24,7 +25,9 @@ export function makeAerialProto(cfg = {}) {
 
   // 날씨 룩 스왑용 버퍼 (건물 지붕 적설 — 인스턴스 컬러 2벌 사전 계산)
   let bld = null, bldDry = null, bldSnow = null, winMat = null, firePt = null, fireCone = null;
-  let snowPts = null, beacons = [], groundMat = null, roadMat = null;
+  let snowPts = null, beacons = [], groundMat = null, roadMat = null, waterMat = null;
+  // 동부 아트 디렉션(2.0-d): 붉은 노을 팔레트 — 대기·태양을 녹슨 웜톤으로 물들인다(본편 지구 틴트 0xa8604a 계열 정합)
+  const EAST_AIR = new THREE.Color(0x8a4638), EAST_SUN = new THREE.Color(0xff7a48);
   let ogMesh = null, ogInfo = { years: 0, winter: false, count: 0, parts: 0, lots: 0 }; // 잠식 QA 훅
   const hemi = new THREE.HemisphereLight(0x3a4256, 0x14161e, 0.9);
   const sun = new THREE.DirectionalLight(0xd8d2c4, 0.8);
@@ -43,10 +46,40 @@ export function makeAerialProto(cfg = {}) {
     roadMat = new THREE.MeshLambertMaterial({ color: 0x232730 });
     const roadG = new THREE.PlaneGeometry(1, 1);
     for (let i = -6; i <= 6; i++) {
-      const h = new THREE.Mesh(roadG, roadMat); h.rotation.x = -Math.PI / 2;
-      h.scale.set(320, 4.2, 1); h.position.set(0, 0.0, i * 24 + 6); scene.add(h);
+      if (CITY !== 'east' || i * 24 + 6 < 42) { // 동부: 해안선(z≈45) 남쪽 도로는 물에 잠긴다 — 클립
+        const h = new THREE.Mesh(roadG, roadMat); h.rotation.x = -Math.PI / 2;
+        h.scale.set(320, 4.2, 1); h.position.set(0, 0.0, i * 24 + 6); scene.add(h);
+      }
       const v = new THREE.Mesh(roadG, roadMat); v.rotation.x = -Math.PI / 2;
-      v.scale.set(4.2, 320, 1); v.position.set(i * 24 - 6, 0.0, 0); scene.add(v);
+      if (CITY === 'east') { v.scale.set(4.2, 206, 1); v.position.set(i * 24 - 6, 0.0, -57); }
+      else { v.scale.set(4.2, 320, 1); v.position.set(i * 24 - 6, 0.0, 0); }
+      scene.add(v);
+    }
+    // ── 동부(east) 지형: 남해안 수면·안벽·끊긴 대교 — 부산형 항구도시의 정체성 실루엣(S3-2) ──
+    //   대교는 일부러 중간이 끊겨 있다: "다리 관리소(eastbridge)가 지키는 죽은 대교" — 고립의 세계관 정합.
+    if (CITY === 'east') {
+      // 수면 0x4a5c6e — 마젠타 페인트 프로브로 확정한 값(probe-water 2단, 3차 검거): 어두운 슬레이트
+      //   (0x18222e·0x2c3846)는 조명×포스트 LUT를 지나며 흑색 버킷으로 스냅돼 바다가 '구멍'으로 읽혔다.
+      //   0x4a5c6e = LUT 생존 + 잿빛 도시와 안 싸우는 하한. 밤은 램버트가 알아서 어둡힌다.
+      waterMat = new THREE.MeshLambertMaterial({ color: 0x4a5c6e });
+      const water = new THREE.Mesh(new THREE.PlaneGeometry(460, 175), waterMat);
+      water.rotation.x = -Math.PI / 2; water.position.set(0, 0.02, 133); scene.add(water);
+      const boxG0 = new THREE.BoxGeometry(1, 1, 1); boxG0.translate(0, 0.5, 0);
+      const put0 = (x, y, z, w, h, d, color, rx = 0) => {
+        const m = new THREE.Mesh(boxG0, new THREE.MeshLambertMaterial({ color }));
+        m.scale.set(w, h, d); m.position.set(x, y, z); m.rotation.x = rx; scene.add(m); return m;
+      };
+      put0(0, 0, 45, 320, 1.1, 1.8, 0x4a505a);                       // 안벽(quay)
+      for (const px of [-62, -18, 34]) put0(px, 0, 52, 3.2, 0.7, 13, 0x50565f); // 부두 핑거
+      // 대교는 overview 프레임 안에서 '끊김'까지 읽혀야 한다 — 첫 캡처 검거: z70/122는 하단 밖으로 반출.
+      put0(-2, 7, 58, 7, 1.0, 28, 0x5a6068);                          // 상판 1 (뭍측 44~72)
+      put0(-2, 7, 96, 7, 1.0, 28, 0x5a6068);                          // 상판 2 (먼측 82~110)
+      put0(-2, 4.6, 77, 7, 1.0, 9, 0x555a62, 0.62);                   // 끊긴 상판 — 틈(72~82)에서 물로 처박힘
+      put0(-2, 1.6, 42, 7, 0.9, 17, 0x5a6068, -0.36);                 // 진입 램프
+      for (const pz of [58, 96]) {
+        for (const dx of [-4.6, 4.6]) put0(-2 + dx, -2, pz, 1.5, 27, 1.5, 0x646a74); // 주탑 2쌍
+        put0(-2, 23.2, pz, 10.7, 1.2, 1.5, 0x646a74);                 // 크로스빔
+      }
     }
     // ── 폐허 건물 (디렉터 오더: "네모로 퉁치지 말 것 — 폭격으로 부서진 디테일") ──
     //   한 '부지(lot)'가 손상 원형(archetype)에 따라 박스 1~6개를 뱉는다. 전부 같은 InstancedMesh라
@@ -62,14 +95,19 @@ export function makeAerialProto(cfg = {}) {
         const x = (rand() - 0.5) * 300, z = (rand() - 0.5) * 300;
         const inRoadX = Math.abs(((x + 6 + 3600) % 24) - 12) > 9.2, inRoadZ = Math.abs(((z - 6 + 3600) % 24) - 12) > 9.2;
         if (inRoadX || inRoadZ) continue;
-        let bad = false;
+        if (CITY === 'east' && z > 40) continue; // 동부: 해안선 남쪽은 바다 — 부지 금지
+        let bad = false, nearND = 1e9;
         // 회피 반경 11 — 20은 focus(dist 30) 시야를 통째로 빈 공터로 만들었다(실측 검거).
         //   폐허를 보여주는 뷰인데 폐허를 치워두면 안 된다: 노드는 '잔해에 둘러싸인 빈터'여야 한다.
-        for (const nd of Object.values(NODES)) if (Math.hypot(x - nd.x, z - nd.z) < 11) { bad = true; break; }
+        for (const nd of Object.values(NODES)) { const dd = Math.hypot(x - nd.x, z - nd.z); if (dd < nearND) nearND = dd; if (dd < 11) { bad = true; break; } }
         if (bad) continue;
-        const dc = Math.hypot(x, z);
-        const tall = dc < 70 || rand() < 0.35;
-        const H = tall ? (dc < 70 ? 12 + rand() * 16 : 6 + rand() * 8) : 2.2 + rand() * 4.5;
+        // 고층 존: 서부=도심(원점) / 동부=마천루 코어(megamall 24,-44) 중심 — 스카이라인의 무게중심이 도시마다 다르다
+        const dc = CITY === 'east' ? Math.hypot(x - 24, z + 44) : Math.hypot(x, z);
+        const tall = dc < (CITY === 'east' ? 60 : 70) || rand() < 0.35;
+        // 동부 한정: 노드 근접(<20) 부지는 저층 캡 — customsyard 실측 검거(전경 장신 폐허가 d48 focus를 가림).
+        //   빈터를 '둘러싼 잔해'는 유지하되 시야벽은 금지. rand 미소비(결정론·서부 스트림 불변).
+        const hCap = (CITY === 'east' && nearND < 20) ? 3.6 : 1e9;
+        const H = Math.min(tall ? (dc < 70 ? 12 + rand() * 16 : 6 + rand() * 8) : 2.2 + rand() * 4.5, hCap);
         const w = 4.5 + rand() * 5.5, d = 4.5 + rand() * 5.5;
         const tone = 0.27 + rand() * 0.18; // 잿빛 기준 밝기
         const a = rand();
@@ -128,7 +166,8 @@ export function makeAerialProto(cfg = {}) {
           E.set(p.rz || 0, p.ry || 0, 0); Q.setFromEuler(E);
           S.set(p.w, p.h, p.d); P.set(p.x, p.y || 0, p.z);
           M.compose(P, Q, S); m.setMatrixAt(i, M);
-          const g = p.tone; C.setRGB(g * 0.92, g, g * 1.14);
+          const g = p.tone; // 서부=차가운 잿빛 / 동부=녹슨 웜 그레이(붉은 노을 팔레트의 건물측 응답)
+          if (CITY === 'east') C.setRGB(g * 1.05, g * 0.96, g * 0.90); else C.setRGB(g * 0.92, g, g * 1.14);
           m.setColorAt(i, C); dry.set([C.r, C.g, C.b], i * 3);
           const s = 0.42 + (g - 0.27) * 0.4; snow.set([s * 0.94, s * 0.97, s * 1.05], i * 3);
         });
@@ -146,7 +185,7 @@ export function makeAerialProto(cfg = {}) {
       const winter = ctxWinter();
       const PAL = winter ? [0x6a5f45, 0x5d5340, 0x746a4e, 0x66603f]   // #71과 동일 팔레트(겨울 마른 톤)
                          : [0x3e5230, 0x46603a, 0x2f4527, 0x4a5c3c];
-      const dens = (winter ? 0.6 : 1) * (years / 3);
+      const dens = (winter ? 0.6 : 1) * (years / 3) * (CITY === 'east' ? 1.3 : 1); // 동부=Over Grown 가중(TLOU 감성 — 디렉터 키워드)
       const og = [];
       for (const lot of lots) {
         if (rand() > dens * 0.85) continue;
@@ -318,10 +357,88 @@ export function makeAerialProto(cfg = {}) {
           put(g, nd.x - 8.2, 0, nd.z + 0.8, 3.4, 9, 3.4, 0x4b505a);
           put(g, nd.x + 1, 0, nd.z + 1, 3.2, 1.4, 2.2, 0x5e646e, 0.5); // 공터 — 무너진 로비 잔해
         },
+        // ── S3-2 동부(east) 8종 — 부산형 항구도시. 서부와 같은 규약: 뒤편(BACK) 배치·승톤 0x5x~0x7x·공터 중앙 앵커 ──
+        customsyard(g, nd) { // 세관 압류창고 — 창고 열(뒤편) + 게이트 바(앵커) + 압류 컨테이너
+          for (let k = 0; k < 3; k++)
+            put(g, nd.x - 6 + k * 6.2, 0, nd.z - 5.5 + (k % 2) * 1.2, 5.4, 4.2 + r2(), 4.2, 0x5c6169, 0.05);
+          put(g, nd.x, 0, nd.z + 1.5, 7.5, 1.0, 0.9, 0x6d7078);       // 게이트 바
+          put(g, nd.x + 4, 0, nd.z + 3, 2.8, 1.25, 2.2, 0x6a5a49, 0.3);
+          put(g, nd.x - 4.5, 0, nd.z + 3.5, 2.8, 1.25, 2.2, 0x50665c, -0.2);
+        },
+        containerport(g, nd) { // 컨테이너 부두 — 대형 스택 + 겐트리 크레인 2문 + 좌초 화물선(수변)
+          const PAL = [0x7a614b, 0x50665c, 0x695459, 0x5a6875];
+          for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) {
+            if (r2() < 0.18) continue;
+            const st = 1 + Math.floor(r2() * 3);
+            for (let s = 0; s < st; s++)
+              put(g, nd.x - 7 + c * 3.2, s * 1.3, nd.z - 7.5 + r * 2.4, 2.9, 1.25, 2.2, PAL[Math.floor(r2() * 4)]);
+          }
+          for (const dx of [-8, 2]) { // 겐트리(문형) 크레인 — 뒤편, 승톤(첫 캡처: 어두운 배경에 묻힘)
+            put(g, nd.x + dx, 0, nd.z - 10, 0.9, 13, 0.9, 0x6a6f60);
+            put(g, nd.x + dx + 5, 0, nd.z - 10, 0.9, 13, 0.9, 0x6a6f60);
+            put(g, nd.x + dx + 2.5, 12.4, nd.z - 10, 7.5, 0.8, 0.9, 0x6a6f60);
+          }
+          // 좌초 화물선 — 1차 검거: 노드 정면(+z)의 대형 암톤 선체가 focus 전경을 역광 벽으로 삼켰다.
+          //   2차: 해안 평행 슬래브만으론 '판'으로 읽힘 → 선미루(브리지 캐슬)를 얹어 '배'의 최소 신호 확보.
+          const hull = put(g, nd.x + 10, -1.2, nd.z + 8, 14, 3.0, 4.5, 0x6e665c, 0.12); hull.rotation.x = 0.10;
+          put(g, nd.x + 15.3, 1.7, nd.z + 8.6, 2.2, 2.4, 3.0, 0x7a8088, 0.12); // 선미루
+        },
+        interchange(g, nd) { // 고가 램프 고리 — 도넛 데크 + 교각, 한 조각은 무너져 내렸다
+          const R = 8.5, seg = 10;
+          for (let k = 0; k < seg; k++) {
+            const a = (k + 0.5) / seg * 6.283, ry = Math.PI / 2 - a;
+            if (k === 3) { const m = put(g, nd.x + Math.cos(a) * R, 1.0, nd.z + Math.sin(a) * R, 5.6, 0.7, 3.4, 0x555a62, ry); m.rotation.z = 0.5; continue; }
+            put(g, nd.x + Math.cos(a) * R, 4.4, nd.z + Math.sin(a) * R, 5.6, 0.7, 3.4, 0x5c616b, ry);
+            if (k % 2 === 0) put(g, nd.x + Math.cos(a) * R, 0, nd.z + Math.sin(a) * R, 1.0, 4.4, 1.0, 0x4e535c);
+          }
+          put(g, nd.x, 0, nd.z, 2.6, 0.9, 2.0, 0x6a5f4b, 0.4); // 고리 중앙 공터 — 버려진 트레일러(앵커)
+        },
+        uptown(g, nd) { // 강변 주거단지 — 아파트 판상 3동(뒤편) + 놀이터 잔해(앵커)
+          for (let k = 0; k < 3; k++)
+            put(g, nd.x - 6 + k * 5.5, 0, nd.z - 6.5 - (k % 2) * 2.2, 8.5, 10 + k * 1.6, 2.6, 0x5e646e, 0.08);
+          put(g, nd.x, 0, nd.z + 1.2, 2.0, 1.6, 2.0, 0x6d6252, 0.3);
+          cyl(g, nd.x + 2.6, 0, nd.z + 2.4, 0.14, 3.2, 0x666c76, 5); // 부러진 가로등
+        },
+        grandplatform(g, nd) { // 중앙역 승강장 — 장축 역사 홀(뒤편) + 캐노피 2열 + 선로 3줄
+          put(g, nd.x - 2, 0, nd.z - 7, 16, 5.2, 6, 0x5c6169, 0.02);
+          put(g, nd.x - 2, 4.9, nd.z - 7, 17.5, 0.6, 7, 0x51565f, 0.02);
+          for (let k = 0; k < 2; k++)
+            put(g, nd.x - 3 + k * 2, 2.2, nd.z + 1.5 + k * 3.2, 14, 0.35, 1.6, 0x666c76, 0.02);
+          for (let k = 0; k < 3; k++)
+            put(g, nd.x, 0, nd.z + 0.4 + k * 1.7, 20, 0.12, 0.5, 0x3e434c, 0.02);
+        },
+        outpost(g, nd) { // 역 남측 진지 — 모래주머니 L벽 + 감시탑(뒤편) + 보급 드럼(화톳불은 build 말미 공용)
+          put(g, nd.x - 2.5, 0, nd.z + 1.8, 4.5, 0.9, 1.0, 0x6a614f, 0.1);
+          put(g, nd.x + 1.6, 0, nd.z - 0.6, 1.0, 0.9, 3.8, 0x6a614f, 0.05);
+          put(g, nd.x - 4.5, 0, nd.z - 4, 1.3, 5.8, 1.3, 0x565b64);
+          put(g, nd.x - 4.5, 5.8, nd.z - 4, 2.4, 1.2, 2.4, 0x666c76);
+          for (let k = 0; k < 3; k++) put(g, nd.x + 3.2, 0, nd.z + 2.2 + k * 1.1, 0.9, 0.8, 0.9, 0x5a6875, r2());
+        },
+        megamall(g, nd) { // 마천루 코어 — 최고층 군집(뒤편) + 스카이브리지 + 로비 잔해(앵커)
+          put(g, nd.x - 5, 0, nd.z - 6.5, 6, 30, 6, 0x565b66);
+          put(g, nd.x + 3.5, 0, nd.z - 7.5, 5, 22, 5, 0x50555f);
+          put(g, nd.x - 0.8, 16, nd.z - 7, 4.5, 0.9, 1.6, 0x5c616b);
+          put(g, nd.x - 9, 0, nd.z + 0.5, 3.2, 12, 3.2, 0x4b505a);
+          put(g, nd.x + 1, 0, nd.z + 1.2, 3.4, 1.2, 2.2, 0x5e646e, 0.5);
+        },
+        deptstore(g, nd) { // 백화점 지구 — 광폭 중층(뒤편) + 파사드 두 장(내부 소실) + 마른 분수(앵커)
+          put(g, nd.x - 3, 0, nd.z - 6, 10, 7.5, 5, 0x5c6169, 0.04);
+          put(g, nd.x + 5.5, 0, nd.z - 4.5, 0.8, 6.5, 7, 0x565b64, 0.1);
+          put(g, nd.x + 1, 0, nd.z - 2.8, 8, 5.5, 0.8, 0x51565f, 0.04);
+          cyl(g, nd.x - 0.5, 0, nd.z + 2.2, 1.7, 0.5, 0x666c76, 10);
+        },
       };
       for (const [id, fn] of Object.entries(dress)) {
         if (!NODES[id]) continue;
         const g = new THREE.Group(); fn(g, NODES[id]); scene.add(g);
+      }
+      // 동부의 밤 화톳불: 진지(outpost)에 — "밤의 오렌지"는 도시마다 한 점(서부=슬럼과 같은 문법)
+      if (!firePt && NODES.outpost) {
+        const nd = NODES.outpost;
+        fireCone = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.1, 6),
+          new THREE.MeshLambertMaterial({ color: 0xffa030, emissive: 0xdd6a10, emissiveIntensity: 1.2 }));
+        fireCone.position.set(nd.x - 0.5, 0.9, nd.z + 0.5); scene.add(fireCone);
+        firePt = new THREE.PointLight(0xff8a30, 0, 34, 1); firePt.position.set(nd.x - 0.5, 2.4, nd.z + 0.5); scene.add(firePt);
       }
     }
     // 노드 비컨 링 (S2에서 DOM 오버레이로 대체 — S1은 위치 감각용)
@@ -371,12 +488,17 @@ export function makeAerialProto(cfg = {}) {
     // 지면·도로도 설원 스왑 — 지붕만 하얘지면 밤 실루엣이 죽는다(2차 캡처 검거). 설원=달빛 반사판.
     if (groundMat) groundMat.color.setHex(snowy ? 0x8e98a4 : 0x191c22);
     if (roadMat) roadMat.color.setHex(snowy ? 0x5e6772 : 0x232730);
+    if (waterMat) waterMat.color.setHex(snowy ? 0x7e8894 : 0x4a5c6e); // 동부: 결빙 항만 — 수면도 설원 문법을 따른다
     if (snowPts) snowPts.visible = snowy;
   }
 
   function update(dt, ctx) {
     if (camera.aspect !== innerWidth / innerHeight) { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
     const L = aerialLightAt(ctx.hour % 24);
+    if (CITY === 'east') { // 붉은 노을 팔레트(동부 아트 디렉션) — aerialLightAt은 매 호출 새 Color라 제자리 lerp 안전
+      L.sky.lerp(EAST_AIR, 0.14); L.fog.lerp(EAST_AIR, 0.14); L.hemiSky.lerp(EAST_AIR, 0.10);
+      L.sunColor.lerp(EAST_SUN, 0.30);
+    }
     const snowy = ctx.weather === 'snow' || ctx.weather === 'storm';
     scene.background = L.sky;
     // 안개는 뷰 거리에 반비례 — overview(165)에 focus용 밀도를 쓰면 도시 전체가 뿌옇게 씻긴다(실측).
