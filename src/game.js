@@ -60,7 +60,7 @@ import { districtOf, cityOf, rateParts, expActualRate, setExpeditionWeather, mas
 import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
 import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEncounterEvents } from './core/encounter.js'; // 인카운터 술어 (Tier3)
 import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsAutoAvoid, falloutCleared, regionReachable, regionCityOf } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0) + 도시 필터(2.0-b) + 도시뷰(2.0-f)
-import { initVignettes, playVignette, playGeigerVignette, playEastGateVignette, playJungleSunVignette, playGoldenGateVignette, buildGoldenGateScene, showDiscoveryVignette, vignetteBusy, claimVignette, releaseVignette } from './render/vignettes.js'; // 시네마틱 비네트 (Tier5·6a — 발견 컷 포함)
+import { initVignettes, playVignette, playGeigerVignette, playEastGateVignette, playJungleSunVignette, playGoldenGateVignette, buildGoldenGateScene, buildJungleSunScene, showDiscoveryVignette, vignetteBusy, claimVignette, releaseVignette } from './render/vignettes.js'; // 시네마틱 비네트 (Tier5·6a — 발견 컷 포함)
 initVignettes({ addMoodBuff, jackpotToast, scheduleSave, gameHour, disposeDeep }); // 함수 선언 호이스팅 전제 — 게임 측 헬퍼 단방향 주입
 import { initNotebook, openJournalPages, openHelpModal, showMemoPage, showSketchPage, showTruthPage } from './ui/notebook.js'; // 수첩 페이지 (Tier7)
 // setJournalOpen: journalOpen(let, 아래 선언)은 렌더 루프 게이트 14곳이 읽는 잔류 전역 — 클로저는 호출 시점 참조라 TDZ 무관.
@@ -11800,6 +11800,7 @@ window.__shelter = {
   playGoldenGateVignette, // #146 「불타는 해협」 금문교 노을 비네트
   pickBridgeSight, bridgeSightHit, // #146 지역 결선 트리거 (QA 프로브 — 노을 창·히트 평면 실측)
   buildGoldenGateScene, // 트레일러 하네스 전용: {scene,camera,update(t)} 결정론 렌더 — Tier5: vignettes.js에서 import 재수출
+  buildJungleSunScene, // 컷씬 타임랩스 하네스(디렉터 2026-07-23 "비네트 구도에서 지나는 24시간") — 동일 계약
   showDiscoveryVignette, queueDiscovery, drainDiscoveryQueue, discoveryQueueLen: () => discoveryQueue.length, // #150 희귀템 발견 컷 (QA)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
   //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).
