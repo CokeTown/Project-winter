@@ -8372,7 +8372,7 @@ function renderPDA(quiet) {
   }
   scr.innerHTML = head + body;
   if (!quiet) { scr.classList.remove('pda-flick'); void scr.offsetWidth; scr.classList.add('pda-flick'); } // 전자 화면 전환 플리커(실시간 갱신 시 생략)
-  scr.querySelector('#pda-openmap')?.addEventListener('click', () => { pdaClose(); openMapModal(); });
+  scr.querySelector('#pda-openmap')?.addEventListener('click', () => { pdaClose(); openObsMap(); }); // 디렉터(2026-07-24): PDA 지도도 하단 탐험 버튼과 동일한 현 관측 단말 경로로 — 구 전도(openMapModal)는 동부 폴백에서만 내부적으로 쓰인다
   scr.querySelector('#pda-treat')?.addEventListener('click', () => { treatInjury(); renderPDA(); }); // 부상 치료(구 지역탐험 패널 이관)
   scr.querySelector('#pda-journal')?.addEventListener('click', () => pdaOpenApp(() => openJournalModal('journal')));
 }
