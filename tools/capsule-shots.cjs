@@ -10,7 +10,8 @@ const SHELTERS = (process.env.SHELTERS || 'rooftop').split(',');
 const TIMES = (process.env.TIMES || 'night,sunset,day').split(',');
 const ORIENT = process.env.ORIENT || 'portrait';
 const PORT = ORIENT === 'portrait';
-const W = PORT ? 1200 : 2560, HGT = PORT ? 1800 : 1440;
+// CW/CH: 캡슐 규격 전용 촬영 — 목표 비율 그대로 잡아야 크롭 손실 없이 프레이밍이 산다(2배 촬영→정수 2 다운샘플).
+const W = +process.env.CW || (PORT ? 1200 : 2560), HGT = +process.env.CH || (PORT ? 1800 : 1440);
 // 시간대: 시각 + 날씨. 노을=맑은 하늘로 골든, 야간/주간=눈(겨울 정체성).
 const TIME = { night: { h: 22, wx: 'snow' }, sunset: { h: 16, wx: 'clear' }, day: { h: 11, wx: 'snow' } };
 // 카메라 프레이밍(오리엔트별)
@@ -31,6 +32,11 @@ async function main() {
   const win = new BrowserWindow({ show: false, width: W, height: HGT, webPreferences: { offscreen: true, backgroundThrottling: false } });
   win.webContents.setAudioMuted(true); win.webContents.setFrameRate(30);
   await win.loadFile(path.join(DIST, 'index.html'));
+  // 창 생성 크기로만 로드하면 renderer.setSize가 부팅 시점 크기에 머물러, 캡처 프레임 하단·우측에
+  //   렌더 안 된 검은 밴드가 남는다(v4·v5의 48px 밴드 정체 — 그동안 크롭으로 덮고 있었다).
+  //   로드 후 setContentSize로 resize를 한 번 울려 setSize+makeRT를 목표 해상도로 재바인딩한다.
+  win.setContentSize(W, HGT);
+  await sleep(600);
   const ev = e => win.webContents.executeJavaScript(e, true);
   for (let i = 0; i < 90; i++) { if (await ev(`!!(window.__shelter&&window.__shelter.loadShelter)`).catch(() => 0)) break; await sleep(500); }
   if (!fs.existsSync(OUT)) fs.mkdirSync(OUT, { recursive: true });
