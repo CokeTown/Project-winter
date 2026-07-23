@@ -28,6 +28,9 @@ function cloudReadAll() {
 }
 // 부팅 하이드레이션용 동기 읽기 (preload가 sendSync로 호출).
 ipcMain.on('cloud:read-all', (evt) => { try { evt.returnValue = cloudReadAll(); } catch (e) { evt.returnValue = {}; } });
+// 번역 오버라이드 폴더용 userData 경로 (preload가 sendSync로 호출) — 포터블 exe는 resources가
+// 실행마다 %TEMP%에 새로 풀려 편집이 증발하므로, 항상 같은 자리(%APPDATA%/Nine Winters)를 알려준다.
+ipcMain.on('paths:user-data', (evt) => { try { evt.returnValue = app.getPath('userData'); } catch (e) { evt.returnValue = null; } });
 
 // ── Steamworks (#34 언어 연동 · #117 DLC 게이트) ─────────────────────────────
 // Steam 클라이언트 밖(웹/포터블/개발/캡처 하네스)에선 init이 던진다 — null 폴백으로 전 기능 무해.
