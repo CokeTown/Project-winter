@@ -86,11 +86,17 @@ export function makeShelterBuilders(ctx) {
           const crand = seededRand(77);
           // 지붕 위 접힌 방수포 (한쪽으로 쏠려 늘어짐) — 실내를 덮으므로 천장 컬링 그룹에 묶는다(⑥-a).
           const roofG = new THREE.Group();
+          // 컨테이너 뚜껑 (디렉터 신고 2026-07-23): 지붕이 방수포 두 장뿐이라 상면 우측 ~30%가 뚫려 있었다.
+          //   타이틀 외경(closedHome)에선 천장을 숨기지 않으므로 그 구멍으로 실내가 그대로 보였다.
+          //   강판 뚜껑을 깔고 그 위에 방수포를 얹는다 — 뚜껑도 같은 천장 컬링 그룹이라 인게임 부감에선 함께 열린다.
+          const lid = new THREE.Mesh(new THREE.BoxGeometry(w + 0.22, 0.08, d + 0.22), wallPhong({ map: metalTex }));
+          lid.position.set(0, h + 0.02, 0); lid.castShadow = true; lid.receiveShadow = true;
+          roofG.add(lid);
           const tarp = new THREE.Mesh(new THREE.BoxGeometry(w * 0.62, 0.05, d + 0.5), lamb(0x4a5560));
-          tarp.position.set(-w * 0.12, h + 0.03, 0.1); tarp.rotation.z = 0.03; tarp.castShadow = true;
+          tarp.position.set(-w * 0.12, h + 0.10, 0.1); tarp.rotation.z = 0.03; tarp.castShadow = true; // 뚜껑 위로 올림
           roofG.add(tarp);
           const tarp2 = new THREE.Mesh(new THREE.BoxGeometry(w * 0.22, 0.06, d + 0.6), lamb(0x3f4954));
-          tarp2.position.set(-w * 0.32, h + 0.06, 0); tarp2.rotation.z = 0.16; tarp2.castShadow = true; // 접힌 자락
+          tarp2.position.set(-w * 0.32, h + 0.13, 0); tarp2.rotation.z = 0.16; tarp2.castShadow = true; // 접힌 자락
           tagSway(tarp2, 0.16); // F-1a [B]: 늘어진 방수포 자락 미세 sway (있는 소품만)
           roofG.add(tarp2);
           tagCeiling(roofG, h + 0.02); roomGroup.add(roofG);
