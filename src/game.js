@@ -10352,6 +10352,8 @@ const postMat = new THREE.ShaderMaterial({
     tex: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
     uLevels: { value: 8.0 }, uQuant: { value: 1.0 }, uDither: { value: 1.0 }, uDitherAmt: { value: 1.0 },
     uPalOn: { value: 0.0 },
+    uBloom: { value: 0.0 },    // 퀄업 A1 발광 블룸(디렉터 톤 판정 대기): 0=정확히 항등(골든 불변). 강도 0.3~0.7 권장 대역
+    uBloomThr: { value: 0.5 }, // 블룸 임계(선형 공간) — 발광·하이라이트만 넘긴다. 낮추면 낮 장면까지 번져 오염
     uBarrel: { value: 0.0 }, // CRT 배럴 실험(디렉터 2026-07-22): 0=항등(기본·골든 불변). 씬만 휘고 DOM UI는 평면.
     uCrt: { value: 0.0 },    // 관측 단말 CRT 위성 룩(디렉터 2026-07-22): 0=off. 지터·리프레시 스윕·RGB 형광체·스캔라인·그레인.
     uCrtT: { value: 0.0 },   // CRT 시간(초) — 골든/캡처 결정론을 위해 renderFrame이 공급(freeze 시 고정)
@@ -10363,7 +10365,7 @@ const postMat = new THREE.ShaderMaterial({
     #define PAL_N ${PAL_N}
     varying vec2 vUv;
     uniform sampler2D tex; uniform vec2 uRes;
-    uniform float uLevels, uQuant, uDither, uDitherAmt, uPalOn, uBarrel, uCrt, uCrtT;
+    uniform float uLevels, uQuant, uDither, uDitherAmt, uPalOn, uBarrel, uCrt, uCrtT, uBloom, uBloomThr;
     uniform vec3 uPal[PAL_N];
     float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
     float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
@@ -10401,6 +10403,20 @@ const postMat = new THREE.ShaderMaterial({
         uv.x += burst * pick * (fract(sin(line * 3.7 + floor(t * 30.0)) * 997.1) - 0.5) * 0.035;
       }
       vec3 col = texture2D(tex, uv).rgb;
+      // 퀄업 A1: 발광 한정 포스트 블룸 — 저해상 버퍼(양자화 전·선형 공간)에서 2겹 링 커널 가산.
+      //   여기(픽셀화 전)에 넣어야 번짐이 도트 결로 뭉친다(후단이면 뭉개짐 — 순서가 전부).
+      //   임계 초과분만 가산이라 어두운 씬 대비 유지. uBloom=0이면 분기 자체가 항등(골든 불변).
+      if (uBloom > 0.0) {
+        vec2 bpx = 1.0 / uRes;
+        vec3 acc = vec3(0.0);
+        for (int i = 0; i < 6; i++) {
+          float a = 1.0471976 * float(i); // 60도 간격 6방향 × 2반경
+          vec2 dir = vec2(cos(a), sin(a));
+          acc += max(texture2D(tex, uv + dir * 1.6 * bpx).rgb - uBloomThr, 0.0);
+          acc += max(texture2D(tex, uv + dir * 3.2 * bpx).rgb - uBloomThr, 0.0) * 0.5;
+        }
+        col += acc * (uBloom / 9.0);
+      }
       col = pow(col, vec3(1.0 / 2.2));
       if (uPalOn > 0.5) {
         // 그라데이션이 두 스와치 사이에서 매끄럽게 넘어가도록 스냅 전에 약한 오더드 디더만.
@@ -10440,6 +10456,8 @@ const postMat = new THREE.ShaderMaterial({
 postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat));
 // CRT 배럴 실험 노브(디렉터 2026-07-22) — QA 전용. 채택 시 설정창 그래픽 탭에 정식 편입 예정.
 function setBarrel(k) { postMat.uniforms.uBarrel.value = Math.max(0, +k || 0); }
+// 퀄업 A1 블룸 노브 — QA/시안 전용(기본 0=항등). 디렉터 톤 판정 후 opts·설정창 정식 편입.
+function setBloom(v, thr) { postMat.uniforms.uBloom.value = Math.max(0, +v || 0); if (thr != null) postMat.uniforms.uBloomThr.value = +thr; }
 // 패널 볼록(창=브라운관) 실험 노브 — 0=off, 1=약, 2=강
 function setPanelBulge(n) { document.body.classList.toggle('crt-bulge1', n === 1); document.body.classList.toggle('crt-bulge2', n === 2); }
 // ── CRT 곡률 히트 보정(디렉터: "각 강도별 픽셀 보정") ──
@@ -11868,6 +11886,7 @@ window.__shelter = {
   aerialProto, // AERIAL-MAP S1: 항공뷰 프로토 핸들(지연 생성) — open/close/focus/overview, 하네스 캡처 매트릭스용
   openObsMap, obsView, activeAerial, // S2 관측 단말 — QA/하네스 진입점 (activeAerial: 골든 씬 전환 시 잔여 디오라마 강제 종료용)
   setBarrel, setPanelBulge, // CRT 실험 노브(씬 배럴·패널 볼록, 기본 off) — 판정 후 정식 편입 여부 결정
+  setBloom, // 퀄업 A1 블룸 노브(기본 0=항등) — 시안 캡처·톤 판정용, 채택 시 opts·설정창 편입
   setCrtLook: on => { postMat.uniforms.uCrt.value = on ? 1 : 0; setBarrel(on ? 0.14 : 0); }, // #217 관측 CRT 위성 룩 — QA/캡처 토글
   setAerialHour: h => { aerialHourOverride = (h == null ? null : +h); }, // #218 시간대 컷 캡처용 — 비네트와 동일 채널
   regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
