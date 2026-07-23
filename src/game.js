@@ -8544,7 +8544,8 @@ function tryRadioBroadcast(notes) {
   if (state.lastBroadcastDay === state.day) return;      // 하루 1회
   if (!items.some(i => i.defId === 'radio' && i.on !== false)) return; // 라디오 ON 필요
   if (Math.random() >= BAL.events.radioListenChance) return;
-  const un = Object.keys(BROADCASTS).filter(id => !(state.broadcasts || {})[id]);
+  const un = Object.keys(BROADCASTS).filter(id => !(state.broadcasts || {})[id]
+    && (!BROADCASTS[id].gate || BROADCASTS[id].gate(state))); // 게이트(예: 후속작 떡밥 crew_intercept = 겨울 2회+) 미충족은 풀에서 제외
   if (!un.length) return;                                // 다 모음
   const id = un[Math.floor(Math.random() * un.length)];
   state.lastBroadcastDay = state.day;

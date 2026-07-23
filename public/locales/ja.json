@@ -2262,5 +2262,8 @@
   "data.craft.dinnerset.hint": "ダイニングセット——食器まで揃った一卓",
   "data.def.cupboard.name": "食器棚",
   "data.def.cupboard.colorNames": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド",
-  "data.craft.cupboard.hint": "食器棚——ガラス戸の向こうの暮らし"
+  "data.craft.cupboard.hint": "食器棚——ガラス戸の向こうの暮らし",
+  "data.bcast.crew_intercept.name": "見知らぬ交信",
+  "data.bcast.crew_intercept.air": "…二つ確保。西へ抜く。合流まで四分。静かに動け。別の信号を拾ったらこっちの仲間じゃない。切る。",
+  "data.bcast.crew_intercept.desc": "見知らぬ回線が一瞬つながって切れる。天気の案内でも、応答を待つ声でもない。何人かが息を合わせて、何かを「抜き出して」いた。通信の終わりに金属のぶつかる音。——この街に、自分のほかに別の何かが、今は群れをなして動いている。"
 }

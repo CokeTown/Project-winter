@@ -176,6 +176,13 @@ export const BROADCASTS = {
   obs_loop: { kind: 'machine', name: '관측 회선 점검', nameEn: 'Observation Line Check',
     air: '…관측 회선 점검 방송입니다. 응답하지 마십시오. 본 회선은 수신 전용입니다. …관측 회선 점검 방송입니다…', airEn: '…this is the observation-line check. Do not respond. This line is receive-only. …this is the observation-line check…',
     desc: '녹음된 목소리가 몇 년째 같은 문장을 돈다. 응답하지 말라는 당부만 남아서 돈다.', descEn: 'A recorded voice has circled the same sentence for years. Only the plea not to answer keeps going round.' },
+  // ── 후속작 떡밥 (디렉터 2026-07-24): "둘러싸였으나 혼자"의 고립이 끝나기 시작하는 첫 균열.
+  //   다른 회선들과 달리 외로운 목소리가 아니라 — 여럿이, 무장하고, 조직적으로 '빼내는' 무리의 교신을 엿듣는다.
+  //   gate로 겨울 2회 이후에만 등장(고립을 충분히 느낀 뒤). 익스트랙션 속편의 세계로 향하는 씨앗.
+  crew_intercept: { kind: 'survivor', name: '낯선 교신', nameEn: 'An Unfamiliar Transmission',
+    gate: (st) => (st.winters || 0) >= 2,
+    air: '…둘 챙겼다. 서쪽으로 뺀다. 접점까지 4분. 조용히 움직여. 딴 신호 잡히면 우리 편 아니다. 끊는다.', airEn: '…got two. Pulling west. Four minutes to the join. Move quiet. Any other signal isn’t ours. Cutting out.',
+    desc: '낯선 회선이 잠깐 잡혔다 끊긴다. 기상 안내도, 응답을 바라는 목소리도 아니다. 여럿이 손발을 맞춰 뭔가를 빼내는 중이었다. 교신 끝에 쇠붙이 부딪는 소리. — 이 도시에 나 말고 다른 것들이, 이제 무리를 지어 움직인다.', descEn: 'An unfamiliar channel catches for a moment, then cuts. Not a weather notice, not a voice begging to be answered. Several of them, moving in step, pulling something out. Metal clinks at the end of the transmission. — There are others in this city now. And they move in packs.' },
 };
 
 /* ── 1.3 밤하늘 스케치 6종 (관측소 완공 후, 맑은 밤 이벤트로 수집) ──
