@@ -109,6 +109,8 @@
   "opt.ditheramt.soft": "控えめ",
   "opt.aa": "アンチエイリアス",
   "opt.aa.title": "ドット感は保ったまま、ジャギー（ギザギザした縁）だけを滑らかに整えます。",
+  "opt.bloom": "発光ブルーム",
+  "opt.bloom.title": "ストーブや電灯など発光体の周りに、ほのかな光のにじみを加えます。",
   "opt.crtbulge": "CRT曲率",
   "opt.crtbulge.title": "UIウィンドウをブラウン管ガラスのように膨らませます。低スペックモードでは自動的にオフになります。",
   "opt.crtbulge.strong": "強め",

@@ -10352,8 +10352,8 @@ const postMat = new THREE.ShaderMaterial({
     tex: { value: null }, uRes: { value: new THREE.Vector2(1, 1) },
     uLevels: { value: 8.0 }, uQuant: { value: 1.0 }, uDither: { value: 1.0 }, uDitherAmt: { value: 1.0 },
     uPalOn: { value: 0.0 },
-    uBloom: { value: 0.0 },    // 퀄업 A1 발광 블룸(디렉터 톤 판정 대기): 0=정확히 항등(골든 불변). 강도 0.3~0.7 권장 대역
-    uBloomThr: { value: 0.5 }, // 블룸 임계(선형 공간) — 발광·하이라이트만 넘긴다. 낮추면 낮 장면까지 번져 오염
+    uBloom: { value: 0.0 },     // 퀄업 A1 발광 블룸 — applyOpts가 0.4(디렉터 확정 2026-07-23) 또는 0(토글 off) 공급
+    uBloomThr: { value: 0.72 }, // 블룸 임계(선형) — 0.5는 정오 관제탑 유리(넓은 밝은 면 ~0.7)까지 백화(24% diff 실측) → 0.72로 발광체(~1.0)만 통과
     uBarrel: { value: 0.0 }, // CRT 배럴 실험(디렉터 2026-07-22): 0=항등(기본·골든 불변). 씬만 휘고 DOM UI는 평면.
     uCrt: { value: 0.0 },    // 관측 단말 CRT 위성 룩(디렉터 2026-07-22): 0=off. 지터·리프레시 스윕·RGB 형광체·스캔라인·그레인.
     uCrtT: { value: 0.0 },   // CRT 시간(초) — 골든/캡처 결정론을 위해 renderFrame이 공급(freeze 시 고정)
@@ -10577,6 +10577,9 @@ function applyOpts() {
   postMat.uniforms.uDither.value = opts.dither ? 1 : 0;
   postMat.uniforms.uDitherAmt.value = (opts.ditherAmt != null ? opts.ditherAmt : 1);
   postMat.uniforms.uPalOn.value = (opts.palette !== false) ? 1 : 0; // 마스터 팔레트 스냅 토글
+  // 퀄업 A1 정식 편입: 발광 블룸 강도 0.4 = 디렉터 확정(2026-07-23, 시안 0/0.35/0.7 판정)
+  postMat.uniforms.uBloom.value = (opts.bloom !== false) ? 0.4 : 0;
+  { const eb = $('opt-bloom'); if (eb) eb.checked = opts.bloom !== false; }
   ceilLight.visible = opts.ceil;
   shadowDirty();
   makeRT();

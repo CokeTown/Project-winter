@@ -76,6 +76,7 @@ export function makeSettingsUI(ctx) {
     { const eda = $('opt-ditheramt'); if (eda) eda.addEventListener('change', e => { opts.ditherAmt = +e.target.value || 1; d.applyOpts(); d.scheduleSave(); }); }
     { const ecb = $('opt-crtbulge'); if (ecb) ecb.addEventListener('change', e => { opts.crtBulge = +e.target.value || 0; d.applyOpts(); d.scheduleSave(); }); } // CRT 곡률(디렉터: 강 기본·옵션 하향)
     { const eaa = $('opt-aa'); if (eaa) eaa.addEventListener('change', e => { opts.aa = e.target.checked; d.applyOpts(); d.scheduleSave(); }); }
+    { const eb = $('opt-bloom'); if (eb) eb.addEventListener('change', e => { opts.bloom = e.target.checked; d.applyOpts(); d.scheduleSave(); }); } // 퀄업 A1 — 강도 0.4 고정(디렉터 확정), 토글만 노출
     $('opt-ceil').addEventListener('change', e => { opts.ceil = e.target.checked; d.applyOpts(); d.scheduleSave(); });
     $('opt-autoeat').addEventListener('change', e => { opts.autoEat = e.target.checked; d.scheduleSave(); });
     $('opt-autoplay').addEventListener('change', e => { opts.autoPlay = e.target.checked; d.syncAutoBtn(); d.scheduleSave(); });

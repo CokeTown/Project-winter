@@ -109,6 +109,8 @@
   "opt.ditheramt.soft": "은은하게",
   "opt.aa": "안티에일리어싱",
   "opt.aa.title": "도트 느낌은 유지하면서 계단 현상(들쭉날쭉한 가장자리)만 매끄럽게 다듬습니다.",
+  "opt.bloom": "발광 블룸",
+  "opt.bloom.title": "난로·전등 같은 발광체 주변에 은은한 빛 번짐을 더합니다.",
   "opt.crtbulge": "CRT 곡률",
   "opt.crtbulge.title": "UI 창을 브라운관 유리처럼 볼록하게 휘게 합니다. 저사양 모드에서는 자동으로 꺼집니다.",
   "opt.crtbulge.strong": "강하게",
