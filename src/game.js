@@ -11779,7 +11779,7 @@ window.__shelter = {
   // 캡처용 고양이 고정 배치. 'sleep'(식빵)은 디렉터 오더로 풀에서 제거된 폐기 포즈이고
   //   이후 다리·피벗이 sprawl 기준으로 정리돼 강제 호출 시 배를 까뒤집은 듯 깨져 보인다(스토어 에셋 오염 사고).
   //   폐기 모드는 여기서 sprawl로 접어 캡처 경로가 다시 밟지 못하게 한다.
-  qaPlaceCat: (x, z, mode) => { const c = getCat(); if (!c) return false; const m = (!mode || mode === 'sleep') ? 'sprawl' : mode; c.g.position.set(x, c.baseY || 0.05, z); c.mode = m; c.timer = 99999; c.tgt = null; c.hop = null; c.sprawlFor = 14; return true; },
+  qaPlaceCat: (x, z, mode, rotY) => { const c = getCat(); if (!c) return false; const m = (!mode || mode === 'sleep') ? 'sprawl' : mode; c.g.position.set(x, c.baseY || 0.05, z); if (rotY != null) c.g.rotation.y = rotY; c.mode = m; c.timer = 99999; c.tgt = null; c.hop = null; c.sprawlFor = 14; return true; },
   qaCatInfo: () => { const c = getCat(); if (!c) return null; const p = c.g.position; let vis = true, inScene = false, n = c.g; while (n) { if (!n.visible) vis = false; if (!n.parent && n.isScene) inScene = true; n = n.parent; } return { x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2), vis, inScene, kids: c.g.children.length, sc: +c.g.scale.x.toFixed(2), mode: c.mode }; }, // 캡처 진단: 고양이 실좌표·가시성
   avatarRespawn: () => avatarSys.respawn(),
   avatarDespawn: () => avatarSys.despawn(), // #181 접지 캡처: 방문자 시트에서 아바타 제거

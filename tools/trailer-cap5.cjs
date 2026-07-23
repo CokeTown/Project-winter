@@ -39,9 +39,10 @@ const CLIPS = [
   { id: 'c4_shelter2', kind: 'fx', frames: 55, shelter: 'cabin', weather: 'clear', hour: 16, yaw: 0.70, zoom: 1.4 },
   { id: 'c4_shelter3', kind: 'fx', frames: 55, shelter: 'lodge', weather: 'snow', hour: 21, sub: 'Cozy', yaw: 0.55, zoom: 1.45 },
   { id: 'c4_shelter4', kind: 'fx', frames: 55, shelter: 'greenhouse', weather: 'snow', hour: 11, sub: 'Shelter', yaw: 0.66, zoom: 1.4 },
-  // 클로즈업 카메라는 실시간 글라이드로 수렴하는 연출 — FX 동결에선 목표에 도달하지 못한다.
-  //   가상시간(vt) 경로로 돌리되 UI는 숨겨 씬만 남긴다.
-  { id: 'c5_cat', kind: 'cat', frames: 110, shelter: 'rooftop', weather: 'snow', hour: 20, sub: 'With Your Cat', vt: true, hideUI: true },
+  // 클로즈업 카메라는 실시간 글라이드로 수렴하는 연출 — 동결 상태로는 목표에 도달하지 못한다.
+  //   가상시간 경로는 이 클립에서 예산 만료 이벤트가 오지 않아 행(실측) → **늦은 동결**로 해결:
+  //   실시간으로 카메라를 수렴시킨 뒤 그 상태에서 freezeForGolden → 이후는 FX 정속 스테핑.
+  { id: 'c5_cat', kind: 'cat', frames: 110, shelter: 'rooftop', weather: 'snow', hour: 20, sub: 'With Your Cat', lateFreeze: true },
   { id: 'c6_survive', kind: 'aerial', frames: 200, shelter: 'rooftop', weather: 'clear', hour: 17, sub: 'Survive' },
   { id: 'c7_title', kind: 'fx', frames: 130, shelter: 'rooftop', weather: 'snow', hour: 23, yaw: 0.62, zoom: 1.7, zoomOut: 0.85 },
 ];
@@ -94,7 +95,7 @@ async function main() {
     // ── 공통 셋업 ──
     const setup = await ev(`(async()=>{try{const S=window.__shelter;
       S.setLang&&S.setLang('en'); S.applyStaticI18n&&S.applyStaticI18n();
-      ${UI ? '' : 'S.freezeForGolden&&S.freezeForGolden(12345,true);'}
+      ${(UI || sc.lateFreeze) ? '' : 'S.freezeForGolden&&S.freezeForGolden(12345,true);'}
       S.simReset&&S.simReset(); S.hideTitle&&S.hideTitle();
       S.applyStaticI18n&&S.applyStaticI18n();
       S.state.cat=true; S.state.current=${JSON.stringify(sc.shelter)}; S.loadShelter(${JSON.stringify(sc.shelter)});
@@ -143,7 +144,8 @@ async function main() {
         if(rg&&S.qaPlaceCat)S.qaPlaceCat(rg.x-0.95,rg.z+0.75,'sprawl');
         S.enterCatCloseup&&S.enterCatCloseup();
         return S.qaCatInfo?S.qaCatInfo():1;})()`);
-      await sleep(1500); // 클로즈업 글라이드 수렴 대기(실시간) — 프레임 0부터 이미 붙어 있어야 한다
+      await sleep(1800); // 클로즈업 글라이드 수렴 대기(실시간) — 프레임 0부터 이미 붙어 있어야 한다
+      await ev(`(()=>{const S=window.__shelter;S.freezeForGolden&&S.freezeForGolden(12345,true);return 1;})()`); // 수렴 후 동결
     } else if (sc.kind === 'aerial') {
       await ev(`(()=>{document.getElementById('btn-exp').click();return 1;})()`); await sleep(1200);
       // 파노라마: 사이드 패널 숨김 — 디오라마만 남긴다
