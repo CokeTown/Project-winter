@@ -1070,8 +1070,29 @@ const envRoot = new THREE.Group(); scene.add(envRoot);
 
 // 벽/바닥 재질: Phong으로 생성 — applyWetness()가 젖었을 때 specular/shininess를 올려
 // 빛을 반사하는 재질감을 낸다 (Lambert는 specular가 없어 이 표현이 불가능).
+// 퀄업 B2 마이크로 노이즈: bumpMap 채널에 저강도 그레인 — 민무늬 면의 평탄감 해소.
+//   .map이 아니라 bump인 이유: 벽지(applyDeco)가 .map만 스왑하므로 map에 노이즈를 넣으면
+//   벽지 원복 시 색 곱연산 로직(baseMap truthy → 백색 고정)과 충돌한다. bump는 데코·젖음과 직교.
+let _microBumpTex = null;
+function microBumpTex() {
+  if (_microBumpTex) return _microBumpTex;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const g2 = cv.getContext('2d');
+  const im = g2.createImageData(64, 64);
+  let sd = 229 * 16807 % 2147483647; // 고정 시드 LCG — 부팅마다 그레인이 같아야 골든이 결정론(0.15% 런 간 잔차 실측 후 교체)
+  const rnd = () => (sd = sd * 16807 % 2147483647) / 2147483647;
+  for (let i = 0; i < im.data.length; i += 4) {
+    const v = 128 + (rnd() - 0.5) * 46 | 0; // ±23 그레인 — bumpScale이 최종 강도를 죈다
+    im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255;
+  }
+  g2.putImageData(im, 0, 0);
+  _microBumpTex = new THREE.CanvasTexture(cv);
+  _microBumpTex.wrapS = _microBumpTex.wrapT = THREE.RepeatWrapping;
+  _microBumpTex.repeat.set(2, 2);
+  return _microBumpTex;
+}
 function wallPhong(opts = {}) {
-  return new THREE.MeshPhongMaterial({ shininess: 4, specular: 0x000000, ...opts });
+  return new THREE.MeshPhongMaterial({ shininess: 4, specular: 0x000000, bumpMap: microBumpTex(), bumpScale: 0.05, ...opts });
 }
 // B()의 Phong 버전 — lamb() 헬퍼(Lambert)만 쓰는 벽 패널(예: 버스)을 위해
 function BP(parent, w, h, d, c, x = 0, y = 0, z = 0) {
@@ -2234,6 +2255,21 @@ function glowTex() {
   _glowTex = new THREE.CanvasTexture(cv);
   return _glowTex;
 }
+// 퀄업 B1 접지 콘택트 셰도 텍스처 (공용 1장): 부드러운 방사 감쇠의 어두운 얼룩 —
+//   방향광 실그림자(#120)가 못 주는 "발밑 눌림"(AO 근사). 픽셀화 파이프가 도트 결로 뭉쳐준다.
+let _ctShadowTex = null;
+function contactShadowTex() {
+  if (_ctShadowTex) return _ctShadowTex;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const g2 = cv.getContext('2d');
+  const gr = g2.createRadialGradient(32, 32, 3, 32, 32, 31);
+  gr.addColorStop(0, 'rgba(10,8,6,0.30)');
+  gr.addColorStop(0.55, 'rgba(10,8,6,0.20)');
+  gr.addColorStop(1, 'rgba(10,8,6,0)');
+  g2.fillStyle = gr; g2.fillRect(0, 0, 64, 64);
+  _ctShadowTex = new THREE.CanvasTexture(cv);
+  return _ctShadowTex;
+}
 /* ④ 제작 손맛 연출 (GD-THESIS L1): 제작 완료 시 결과물 아이콘 스프라이트가 작업대 위로 ~1초
    떠올랐다 사라지고, 반짝임 입자 3~4개가 함께 튄다. 기존 craft 사운드는 호출부에서 유지. */
 // #213 이모지 전멸: 이모지 캔버스 텍스처 → 실아이콘 PNG 텍스처 (터미널 베이스에 컬러 이모지 금지)
@@ -2359,6 +2395,21 @@ function buildItemGroup(item) {
       if (o.userData.glow) item.glowMeshes.push(o);
     }
   });
+  // 퀄업 B1: 접지 콘택트 셰도 — 가구 footprint 타원 데칼(그룹 자식이라 회전·스택 y 자동 동행.
+  //   스택 배치면 상판 위 그림자가 된다 — 그것도 맞는 그림, 라이트 풀과 동일 사상).
+  //   러그(floorLift)는 평면 깔개라 얼룩으로 읽혀 제외. raycast noop(#228② — 데칼이 픽킹을 삼키면 안 됨).
+  if (!def.floorLift) {
+    const fp = def.fp;
+    const cs = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({
+      map: contactShadowTex(), transparent: true, depthWrite: false,
+    }));
+    cs.rotation.x = -Math.PI / 2;
+    cs.scale.set(fp.w * 1.35, fp.d * 1.35, 1);
+    cs.position.set(0, 0.018, 0); // 라이트 풀(0.025)보다 아래 — 빛 웅덩이가 그림자 위에 얹힌다
+    cs.renderOrder = 1;           // 러그 등 얇은 바닥재 위에 얹히게 (라이트 풀과 동일)
+    cs.raycast = () => {};
+    g.add(cs);
+  }
   if (def.light) {
     // #196: 티어로 발광부 위치가 변하는 가구(스토브 T1 깡통·램프 T1 측면 전구)는 anchorByTier 오버라이드 —
     //   PointLight·헤일로가 같은 앵커를 쓰므로 여기 한 곳이면 정합. 표에 없으면 기존 def.light.y 고정.
