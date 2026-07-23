@@ -1454,6 +1454,10 @@ const SHELTERS = {
   bridgehouse: {
     ...SHELTER_META.bridgehouse, // build 함수 → render/shelters.js
     ..._shelterBuilders.bridgehouse,
+    // #146 「불타는 해협」 지역 결선(디렉터 2026-07-23: "다리 보이는 맵에서 노을 질 때 다리쪽 클릭").
+    //   무너진 현수교 실루엣의 히트 평면 — shelters.js bridgehouse env의 BZ2=-22·주탑 x[-18,14]·데크 y=-1과 정합.
+    //   z는 다리 앞면(BZ2+1), x/y는 주탑 바깥 케이블 늘어짐까지 여유.
+    bridgeSight: { z: -21, x0: -26, x1: 20, y0: -7, y1: 19 },
   },
 
   /* ── 2.0 동부 「대도시」 셸터 3: 역 대합실 (§6.0.5 — 신광+빛 웅덩이의 나무, TLOU 아트리움) ── */
@@ -6788,12 +6792,62 @@ addEventListener('pointermove', e => {
       over = px >= bal.x0 && px <= bal.x1 && pz >= bal.z0 && pz <= bal.z1;
     }
   }
+  // #146 다리 조망 호버 — 노을 창에서만 (bridgeSightHit이 시간·셸터 게이트를 겸한다)
+  if (!over && !vignetteBusy() && !editMode && !paused && !titleVisible && bridgeSightHit(e)) over = true;
   if (over !== _balHover) { canvas.style.cursor = over ? 'pointer' : ''; _balHover = over; }
 });
 
 // 「불타는 해협」 — 아포칼립스 금문교 노을 (#146, 디렉터 레퍼런스 대조 리워크).
 //   평면 측면 실루엣 폐기 → 3/4 후퇴 원근(다리 축을 따라 내려다봄) + 초목의 잠식 + 따뜻한 앰버 팔레트
 //   + 전경 서사(부서진 차·접근 고가·침몰선·도심 실루엣). 박스/스프라이트/캔버스 관용구만(셰이더/에셋 없음).
+
+// #146 지역 결선 (디렉터 2026-07-23): 다리 관리소에서 노을 질 때 무너진 현수교를 클릭 → 「불타는 해협」.
+//   판정 = 다리 실루엣 평면(z=bridgeSight.z)과의 레이 교차 — 발코니의 y=0 평면 문법을 수직판으로 돌린 것.
+//   노을 창 = 저녁~어스름 초입(16.5~20시, timeLabel 경계와 동일 축). 창 밖에선 트리거·커서·글린트 전부 침묵.
+//   발동은 단일 클릭(디렉터 원문 "다리쪽 클릭이 트리거야") — 발코니 더블탭과 달리 커서+글린트가 어포던스를 이미 준다.
+//   부작용 승인 전제: 노을 동안 다리 영역에서 드래그-팬 시작이 비네트로 이어진다(팬은 화면 다른 곳에서 가능).
+function bridgeSightRect() {
+  const bs = SHELTERS[state.current] && SHELTERS[state.current].bridgeSight;
+  if (!bs) return null;
+  const h = gameHour();
+  return (h >= 16.5 && h < 20) ? bs : null;
+}
+function bridgeSightHit(e) {
+  const bs = bridgeSightRect();
+  if (!bs) return false;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  const dz = raycaster.ray.direction.z;
+  if (Math.abs(dz) < 1e-6) return false;
+  const tr = (bs.z - raycaster.ray.origin.z) / dz;
+  if (!(tr > 0)) return false;
+  const px = raycaster.ray.origin.x + raycaster.ray.direction.x * tr;
+  const py = raycaster.ray.origin.y + raycaster.ray.direction.y * tr;
+  return px >= bs.x0 && px <= bs.x1 && py >= bs.y0 && py <= bs.y1;
+}
+function pickBridgeSight(e) {
+  if (vignetteBusy() || paused) return false;
+  if (!bridgeSightHit(e)) return false;
+  playGoldenGateVignette();
+  return true;
+}
+// 은근한 신호 — 발코니와 동일 문법(글린트 펄스 + 호버 커서), 골든 동결 중 숨김(비결정 배제).
+//   위치 = 끊긴 상판 사이 허공(협곡 중앙) — 노을빛이 새는 자리라는 픽션.
+let _bridgeHint = null;
+function tickBridgeHint(t) {
+  if (!_bridgeHint) {
+    _bridgeHint = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTexOnce(), color: 0xffb066, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    _bridgeHint.raycast = () => {}; // Sprite raycast noop 필수 (카메라 미설정 레이 크래시 함정 — 프로젝트 룰)
+    _bridgeHint.scale.set(1.6, 1.6, 1.6); _bridgeHint.renderOrder = 4; scene.add(_bridgeHint);
+  }
+  const bs = bridgeSightRect();
+  const show = !!bs && !isGoldenFrozen() && !vignetteBusy() && !editMode && !paused && !titleVisible;
+  _bridgeHint.visible = show;
+  if (show) {
+    _bridgeHint.position.set((bs.x0 + bs.x1) * 0.5 + 4, 0.4, bs.z - 0.5); // 끊긴 구간(-4..8) 중앙께
+    _bridgeHint.material.opacity = 0.16 + 0.11 * (0.5 + 0.5 * Math.sin(t * 1.3));
+  }
+}
 
 let hiddenTapAt = 0;
 function pickHidden(e) {
@@ -7067,7 +7121,7 @@ canvas.addEventListener('pointerdown', e => {
     };
   } else {
     // §9.6 「침묵」 히든 지점 — 모든 픽 미스 후의 최하위 히트 (시각 표시 0, 소비 시 팬/회전도 시작 안 함)
-    if (!editMode && (pickHidden(e) || pickBalconyView(e))) return;
+    if (!editMode && (pickHidden(e) || pickBalconyView(e) || pickBridgeSight(e))) return; // #146 다리 조망은 최하위 히트 축에 합류
     // #70 빈 공간 드래그: 비배치·비클로즈업이면 클램프 팬, 배치 모드/클로즈업 중엔 기존 yaw 회전(팬 비활성 스펙).
     //   팬은 최저 우선순위 — 계단/고양이/가구 픽이 전부 미스인 이 else에서만 시작(select 레이캐스트 경로 불변).
     //   데드존: 팬은 8px(탭 상호작용 보호 스펙), 회전은 기존 7px 유지.
@@ -11300,6 +11354,7 @@ function renderFrame(ctx = renderCtx) {
   tickVisitor(t, dt); // #181 방문자 걸어옴/글로우/퇴장 + 카메라 추적
   tickDropSpots(t); // #182 B0 동물 드랍 지면 반짝임 펄스
   tickBalconyHint(t); // 2.0 발코니 조망 은근한 신호 (펜트하우스 「콘크리트 정글의 해」 어포던스)
+  tickBridgeHint(t); // #146 다리 조망 은근한 신호 (다리 관리소 「불타는 해협」 — 노을 창에서만)
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   // #228③: 편집 미니 카드 매 프레임 재투영 제거 — 우하단 고정 도킹(positionSelPanel 폐기 주석 참조)
   // #189 P1: 광원 레지스트리 동기화(전원 토글·연료 소진·설치 자동 반영) + 폴백 형광등 점멸.
@@ -11742,7 +11797,8 @@ window.__shelter = {
   select, deselect, positionSelPanel, // 편집 미니 카드 A안 (접지 프로브용)
   clampToRoom, // 발코니 배치 칸 (접지 프로브용)
   playJungleSunVignette, pickBalconyView, vignetteState: () => vignetteBusy(), // 비네트 러너 (접지 프로브용 — Tier5: 플래그는 vignettes.js 소유)
-  playGoldenGateVignette, // #146 「불타는 해협」 금문교 노을 비네트 (QA·지역 결선 전 트리거)
+  playGoldenGateVignette, // #146 「불타는 해협」 금문교 노을 비네트
+  pickBridgeSight, bridgeSightHit, // #146 지역 결선 트리거 (QA 프로브 — 노을 창·히트 평면 실측)
   buildGoldenGateScene, // 트레일러 하네스 전용: {scene,camera,update(t)} 결정론 렌더 — Tier5: vignettes.js에서 import 재수출
   showDiscoveryVignette, queueDiscovery, drainDiscoveryQueue, discoveryQueueLen: () => discoveryQueue.length, // #150 희귀템 발견 컷 (QA)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
