@@ -65,7 +65,7 @@ async function main() {
     const catInfo = await ev(`(()=>{try{const S=window.__shelter,its=S.items||[];
       const find=id=>its.find(i=>i.defId===id);const st=find('stove'),tt=find('teatable');
       const rg=find("rug");const cx=rg?rg.x-0.55:-0.6, cz=rg?rg.z+0.55:1.4;
-      const placed=S.qaPlaceCat?S.qaPlaceCat(cx,cz,'sleep'):'noAPI';
+      const placed=S.qaPlaceCat?S.qaPlaceCat(cx,cz,'sprawl'):'noAPI';
       const g=S.avatarSys&&S.avatarSys.getGroup&&S.avatarSys.getGroup();
       if(g&&tt){g.position.x=tt.x-0.55;g.position.z=tt.z+0.35;g.rotation.y=-0.5;}
       return {placed,catInfo:S.qaCatInfo&&S.qaCatInfo()};}catch(e){return 'ERR'+e;}})()`);

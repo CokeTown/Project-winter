@@ -26,7 +26,7 @@ const COZY = `(S)=>{const R=(S.SHELTERS&&S.SHELTERS[S.state.current]&&S.SHELTERS
   S.clearGroundDrops&&S.clearGroundDrops();
   if(S.setPan)S.setPan(cx,cz);
   const its=S.items||[],rg=its.find(i=>i.defId==='rug'),tt=its.find(i=>i.defId==='teatable');
-  if(rg&&S.qaPlaceCat)S.qaPlaceCat(rg.x-0.55,rg.z+0.55,'sleep');
+  if(rg&&S.qaPlaceCat)S.qaPlaceCat(rg.x-0.55,rg.z+0.55,'sprawl');
   const g=S.avatarSys&&S.avatarSys.getGroup&&S.avatarSys.getGroup();
   if(g&&tt){g.position.x=tt.x-0.55;g.position.z=tt.z+0.35;g.rotation.y=-0.5;}
   return {x:cx,z:cz};}`;
@@ -39,8 +39,10 @@ const CLIPS = [
   { id: 'c4_shelter2', kind: 'fx', frames: 55, shelter: 'cabin', weather: 'clear', hour: 16, yaw: 0.70, zoom: 1.4 },
   { id: 'c4_shelter3', kind: 'fx', frames: 55, shelter: 'lodge', weather: 'snow', hour: 21, sub: 'Cozy', yaw: 0.55, zoom: 1.45 },
   { id: 'c4_shelter4', kind: 'fx', frames: 55, shelter: 'greenhouse', weather: 'snow', hour: 11, sub: 'Shelter', yaw: 0.66, zoom: 1.4 },
-  { id: 'c5_cat', kind: 'cat', frames: 110, shelter: 'rooftop', weather: 'snow', hour: 20, sub: 'With Your Cat' },
-  { id: 'c6_survive', kind: 'aerial', frames: 200, shelter: 'rooftop', weather: 'snow', hour: 15, sub: 'Survive' },
+  // 클로즈업 카메라는 실시간 글라이드로 수렴하는 연출 — FX 동결에선 목표에 도달하지 못한다.
+  //   가상시간(vt) 경로로 돌리되 UI는 숨겨 씬만 남긴다.
+  { id: 'c5_cat', kind: 'cat', frames: 110, shelter: 'rooftop', weather: 'snow', hour: 20, sub: 'With Your Cat', vt: true, hideUI: true },
+  { id: 'c6_survive', kind: 'aerial', frames: 200, shelter: 'rooftop', weather: 'clear', hour: 17, sub: 'Survive' },
   { id: 'c7_title', kind: 'fx', frames: 130, shelter: 'rooftop', weather: 'snow', hour: 23, yaw: 0.62, zoom: 1.7, zoomOut: 0.85 },
 ];
 
@@ -52,6 +54,8 @@ function makeWin() {
 
 async function main() {
   app.commandLine.appendSwitch('no-sandbox'); app.disableHardwareAcceleration();
+  // 창을 파괴·재생성하는 순간 창 수가 0이 되면 Electron이 앱을 자동 종료한다(배치가 1컷 만에 exit 0으로 죽던 정체).
+  app.on('window-all-closed', () => { /* 배치 유지 — 종료는 명시적 app.quit()으로만 */ });
   app.setPath('userData', path.join(os.tmpdir(), 'nw-tr5-' + process.pid));
   setTimeout(() => { console.log('WATCHDOG'); process.exit(7); }, 3600000);
   await app.whenReady();
@@ -62,7 +66,7 @@ async function main() {
     if (FILTER && !FILTER.includes(sc.id)) continue;
     const outDir = path.join(OUTROOT, sc.id);
     fs.mkdirSync(outDir, { recursive: true });
-    const UI = sc.kind === 'ui' || sc.kind === 'aerial';
+    const UI = sc.kind === 'ui' || sc.kind === 'aerial' || sc.vt; // vt = 실시간 rAF가 필요한 연출도 가상시간 경로
     let vtOn = false;
     const vtAdvance = ms => new Promise((res, rej) => {
       const dbg = win.webContents.debugger;
@@ -105,7 +109,7 @@ async function main() {
       sub.style.cssText='position:fixed;left:0;right:0;bottom:8.5%;text-align:center;z-index:9999;'+
         'font-family:var(--f,inherit);font-size:56px;letter-spacing:6px;color:#f2ece0;opacity:0;'+
         'text-shadow:0 3px 0 #14110d,0 0 22px rgba(0,0,0,.85);pointer-events:none;';
-      ${UI ? `const oc=document.getElementById('shotcss'); if(oc)oc.remove();
+      ${(UI && !sc.hideUI) ? `const oc=document.getElementById('shotcss'); if(oc)oc.remove();
               const c2=document.createElement('style'); c2.id='notoast'; c2.textContent='#toast,#quest-card,#tip-note{display:none!important}';
               document.head.appendChild(c2);
               for(const p of document.querySelectorAll('.panel')){const w=document.createTreeWalker(p,NodeFilter.SHOW_TEXT);let n;
@@ -130,7 +134,16 @@ async function main() {
         const tb=document.getElementById('btn-build');if(tb)tb.click();await new Promise(r=>setTimeout(r,400));
         const lamp=(S.items||[]).find(i=>i.defId==='lamp');if(lamp&&S.select)S.select(lamp);return 1;})()`); await sleep(800);
     } else if (sc.kind === 'cat') {
-      await ev(`(()=>{const S=window.__shelter;S.enterCatCloseup&&S.enterCatCloseup();return 1;})()`);
+      // 러그와 찻상이 같은 좌표계 원점을 공유해 고양이·아바타가 포개진다 → 클로즈업이 아바타 다리를 잡았다.
+      //   아바타를 치우고 고양이를 러그 중앙에 단독으로 세운 뒤 클로즈업 진입.
+      await ev(`(()=>{const S=window.__shelter;
+        S.avatarDespawn&&S.avatarDespawn();
+        // 러그 중앙 = 찻상 바로 아래(두 가구가 같은 좌표) → 고양이가 상판에 가린다. 러그 앞 빈 바닥으로.
+        const rg=(S.items||[]).find(i=>i.defId==='rug');
+        if(rg&&S.qaPlaceCat)S.qaPlaceCat(rg.x-0.95,rg.z+0.75,'sprawl');
+        S.enterCatCloseup&&S.enterCatCloseup();
+        return S.qaCatInfo?S.qaCatInfo():1;})()`);
+      await sleep(1500); // 클로즈업 글라이드 수렴 대기(실시간) — 프레임 0부터 이미 붙어 있어야 한다
     } else if (sc.kind === 'aerial') {
       await ev(`(()=>{document.getElementById('btn-exp').click();return 1;})()`); await sleep(1200);
       // 파노라마: 사이드 패널 숨김 — 디오라마만 남긴다
@@ -176,7 +189,10 @@ async function main() {
       fs.writeFileSync(path.join(outDir, 'f' + String(f).padStart(4, '0') + '.png'), PNG.sync.write(png));
     }
     console.log('CLIP_DONE ' + sc.id + ' frames=' + sc.frames);
-    if (vtOn) { try { win.destroy(); } catch (e) { /* */ } win = makeWin(); }
+    // 가상 시계는 재로드해도 렌더러에 남아 다음 클립의 setTimeout을 영구 정지시킨다(FX 컷 0프레임 행의 정체).
+    //   디버거 분리·budget 재개로도 확실히 풀리지 않으므로 렌더러 자체를 교체한다.
+    //   순서가 핵심: 새 창을 먼저 만든 뒤 옛 창을 버린다 — 창 수가 0이 되는 순간이 없어야 앱이 안 죽는다.
+    if (vtOn) { const old = win; win = makeWin(); try { old.destroy(); } catch (e) { /* */ } vtOn = false; await sleep(600); }
   }
   console.log('ALL_DONE');
   app.quit(); process.exit(0);

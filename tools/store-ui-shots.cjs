@@ -45,7 +45,7 @@ const bgra = b => { const o = Buffer.alloc(b.length); for (let i = 0; i < b.leng
     for(let k=0;k<16;k++){S.clearGroundDrops&&S.clearGroundDrops();S.renderFrame&&S.renderFrame();await new Promise(r=>setTimeout(r,25));}
     const its=S.items||[];const tt=its.find(i=>i.defId==='teatable');
     const rg=its.find(i=>i.defId==='rug');
-    if(rg&&S.qaPlaceCat)S.qaPlaceCat(rg.x-0.55,rg.z+0.55,'sleep'); // 러그 앞 빈 바닥(방석/가구 위는 y 파묻힘·소파 뒤는 사각)
+    if(rg&&S.qaPlaceCat)S.qaPlaceCat(rg.x-0.55,rg.z+0.55,'sprawl'); // 러그 앞 빈 바닥(방석/가구 위는 y 파묻힘·소파 뒤는 사각)
     const g=S.avatarSys&&S.avatarSys.getGroup&&S.avatarSys.getGroup();
     if(g&&tt){g.position.x=tt.x-0.55;g.position.z=tt.z+0.35;g.rotation.y=-0.5;}
     for(let k=0;k<3;k++){S.renderFrame&&S.renderFrame();await new Promise(r=>setTimeout(r,25));}
