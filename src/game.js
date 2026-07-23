@@ -11777,6 +11777,7 @@ window.__shelter = {
   avatarState: () => avatarSys._debug(), // #86 QA 훅
   avatarSys, // 스토어 캡처용: getGroup().position 직접 배치(정착 후 고정 프레임 캡처)
   qaPlaceCat: (x, z, mode) => { const c = getCat(); if (!c) return false; c.g.position.set(x, c.baseY || 0.05, z); c.mode = mode || 'sleep'; c.timer = 99999; c.tgt = null; c.hop = null; return true; }, // 캡처용 고양이 고정 배치(웅크림)
+  qaCatInfo: () => { const c = getCat(); if (!c) return null; const p = c.g.position; let vis = true, inScene = false, n = c.g; while (n) { if (!n.visible) vis = false; if (!n.parent && n.isScene) inScene = true; n = n.parent; } return { x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2), vis, inScene, kids: c.g.children.length, sc: +c.g.scale.x.toFixed(2), mode: c.mode }; }, // 캡처 진단: 고양이 실좌표·가시성
   avatarRespawn: () => avatarSys.respawn(),
   avatarDespawn: () => avatarSys.despawn(), // #181 접지 캡처: 방문자 시트에서 아바타 제거
   // #181 방문자 복셀 접지 훅: 프리셋을 씬에 직접 스폰(연출 시스템 이전 룩 검증용)

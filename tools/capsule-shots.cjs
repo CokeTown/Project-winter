@@ -14,7 +14,7 @@ const W = PORT ? 1200 : 2560, HGT = PORT ? 1800 : 1440;
 // 시간대: 시각 + 날씨. 노을=맑은 하늘로 골든, 야간/주간=눈(겨울 정체성).
 const TIME = { night: { h: 22, wx: 'snow' }, sunset: { h: 16, wx: 'clear' }, day: { h: 11, wx: 'snow' } };
 // 카메라 프레이밍(오리엔트별)
-const CAM = PORT ? { yaw: 0.62, pitch: +(process.env.PPITCH || 0.60), zoom: +(process.env.PZOOM || 1.2), panz: process.env.PPANZ } : { yaw: 0.62, pitch: 0.50, zoom: 1.5 };
+const CAM = PORT ? { yaw: 0.62, pitch: +(process.env.PPITCH || 0.60), zoom: +(process.env.PZOOM || 1.2), panz: process.env.PPANZ } : { yaw: +(process.env.PYAW || 0.62), pitch: +(process.env.PPITCH || 0.50), zoom: +(process.env.PZOOM || 1.5), panz: process.env.PPANZ };
 const bgra = b => { const o = Buffer.alloc(b.length); for (let i = 0; i < b.length; i += 4) { o[i] = b[i + 2]; o[i + 1] = b[i + 1]; o[i + 2] = b[i]; o[i + 3] = 255; } return o; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const cozy = (w, d) => { const X = w / 2, Z = d / 2; const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -37,6 +37,7 @@ async function main() {
   for (const shelter of SHELTERS) for (const time of TIMES) {
     const T = TIME[time];
     await ev(`(()=>{const S=window.__shelter;S.simReset();S.hideTitle&&S.hideTitle();S.setPaused&&S.setPaused(true);
+      S.state.cat=true; // loadShelter가 state.cat을 보고 스폰 — 로드 후 세팅은 스폰 실기(spawnCat 미노출)
       S.state.current=${JSON.stringify(shelter)};S.loadShelter(${JSON.stringify(shelter)});
       S.setWeather(${JSON.stringify(T.wx)});S.setHour(${T.h});return 1;})()`);
     await sleep(500);
@@ -54,12 +55,15 @@ async function main() {
     // 1) 조명 정착(고양이·아바타는 이 동안 배회 — 무시)
     for (let k = 0; k < 16; k++) { await ev(`window.__shelter.clearGroundDrops&&window.__shelter.clearGroundDrops();window.__shelter.renderFrame&&window.__shelter.renderFrame()`); await sleep(30); }
     // 2) 고양이=방석 위 고정 웅크림, 아바타=찻상 옆 고정 배치(정착 후 배회 방지)
-    await ev(`(()=>{try{const S=window.__shelter,its=S.items||[];
-      const find=id=>its.find(i=>i.defId===id);const cu=find('cushion'),tt=find('teatable');
-      if(cu&&S.qaPlaceCat)S.qaPlaceCat(cu.x,cu.z,'sleep');
+    // 고양이=난로 앞 빈 바닥(y=0). 방석 위 좌표는 qaPlaceCat이 y를 못 올려 방석 지오에 파묻힌다(캡슐5 검거).
+    const catInfo = await ev(`(()=>{try{const S=window.__shelter,its=S.items||[];
+      const find=id=>its.find(i=>i.defId===id);const st=find('stove'),tt=find('teatable');
+      const rg=find("rug");const cx=rg?rg.x-0.55:-0.6, cz=rg?rg.z+0.55:1.4;
+      const placed=S.qaPlaceCat?S.qaPlaceCat(cx,cz,'sleep'):'noAPI';
       const g=S.avatarSys&&S.avatarSys.getGroup&&S.avatarSys.getGroup();
       if(g&&tt){g.position.x=tt.x-0.55;g.position.z=tt.z+0.35;g.rotation.y=-0.5;}
-      return 1;}catch(e){return 'ERR'+e;}})()`);
+      return {placed,catInfo:S.qaCatInfo&&S.qaCatInfo()};}catch(e){return 'ERR'+e;}})()`);
+    console.log('CAT ' + JSON.stringify(catInfo));
     for (let k = 0; k < 3; k++) { await ev(`window.__shelter.renderFrame&&window.__shelter.renderFrame()`); await sleep(30); }
     const buf = bgra((await win.webContents.capturePage()).toBitmap());
     const png = new PNG({ width: W, height: HGT }); buf.copy(png.data);
