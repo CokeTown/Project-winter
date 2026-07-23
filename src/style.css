@@ -427,7 +427,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   #pda { /* #199 3차(디렉터 에셋): PDA-04 픽셀아트가 하우징 — CSS 재현 폐기, 이미지 위에서 동작 */
     position: relative; zoom: var(--uiz);
-    height: min(720px, calc(88vh / var(--uiz, 1)), calc(92vw / var(--uiz, 1) * 1.7315)); /* 비율 잠금 — % 히트 좌표 보전 */
+    /* 디렉터 2026-07-23: "PDA를 2 정도 더 키우고, 그 키운 걸 기준으로 제작 탭을 맞춰라".
+       하우징 비율(391:677)이 세로로 길어 화면 세로가 물리 한계다 — 88→96vh가 실질 상한(그 이상은 위아래가 잘린다).
+       모자란 폭은 아래 body.pda-app에서 유리 안쪽 여백을 되돌려 벌충한다. */
+    height: min(860px, calc(96vh / var(--uiz, 1)), calc(96vw / var(--uiz, 1) * 1.7315)); /* 비율 잠금 — % 히트 좌표 보전 */
     aspect-ratio: 391 / 677; /* 트림된 에셋 비율 */
     background: center / contain no-repeat; /* 이미지는 JS 인라인(709행 교훈: CSS url()은 번들 후 /assets/ 기준으로 깨짐) */
     image-rendering: pixelated;
@@ -571,10 +574,14 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     #hud .btn-row.icons { grid-template-columns: repeat(auto-fit, minmax(58px, 1fr)); } /* 액션 한 줄 흡수 */
     #edge-dock { top: 40%; } /* 모바일: 자원 패널 이관 후에도 우중단 유지(엄지 리치) */
     .dk-body { width: 72px; padding: 8px; }
-    #pda { height: min(620px, calc(84vh / var(--uiz, 1)), calc(94vw / var(--uiz, 1) * 1.7315)); }
+    #pda { height: min(700px, calc(92vh / var(--uiz, 1)), calc(98vw / var(--uiz, 1) * 1.7315)); }
   }
   /* ── #199 5차-c: PDA 앱 모드 — 공용 모달(#modal-back)이 LCD 안으로 들어와 "기기 화면"이 된다 ── */
   body.pda-app #pda-screen, body.pda-app #pda-tabs { visibility: hidden; } /* 탭 UI는 앱 뒤로 */
+  /* 앱 모드 전용 유리 확장: 위 #pda-lcd의 안쪽 여백(#211)은 '탭 4개 + 게이지 바'가 베젤로 삐져나오는 걸 막으려던 것이다.
+     앱 모드엔 그 탭·게이지가 없고(위에서 visibility:hidden) 모달 자체가 6/9px 패딩을 갖는다 — 즉 여백의 이유가 없다.
+     유리 실경계(좌 8.2% / 폭 83.4%)까지 되돌려 폭을 벌었다. 일반 모드는 건드리지 않으므로 #211 회귀 없음. */
+  body.pda-app #pda-lcd { left: 8.6%; top: 15.4%; width: 82.8%; height: 65.6%; }
   body.pda-app #pda-lcd #modal-back { background: rgba(6, 10, 5, 0.55); z-index: 2; }
   body.pda-app #pda-lcd #modal {
     width: 100%; height: 100%; max-width: none;
@@ -582,18 +589,18 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     background: transparent; border: none; box-shadow: none;
     padding: 6px 9px 8px; overflow-y: auto; overscroll-behavior: contain;
     color: #f0f5ee; text-shadow: 0 0 4px rgba(120, 255, 150, 0.25);
-    font-size: 7px; word-break: keep-all; line-height: 1.5;   /* 디렉터 3차: PDA 앱 폰트 ~4pt 추가 축소 */
+    font-size: 8px; word-break: keep-all; line-height: 1.5;   /* 확장한 유리 폭만큼 되돌린 가독분(구 7px) */
   }
   body.pda-app #pda-lcd #modal::-webkit-scrollbar { width: 5px; }
   body.pda-app #pda-lcd #modal::-webkit-scrollbar-thumb { background: #3f5a35; border-radius: 3px; }
   body.pda-app #pda-lcd #modal h2 { /* 앱 헤더 — LCD 상단 세그먼트 톤 */
-    font-size: 8.5px; letter-spacing: 1px; color: #f0f5ee;
+    font-size: 9.5px; letter-spacing: 1px; color: #f0f5ee;
     border-bottom: 1px solid rgba(125, 168, 132, 0.5); padding-bottom: 4px;
     text-shadow: 0 0 6px rgba(120, 255, 150, 0.5);
   }
   /* 디렉터: 좁은 LCD에서 본문·버튼·수치도 함께 축소. 프로젝트 카드·제작·이주 공통 압축. */
-  body.pda-app #pda-lcd #modal .pixel-btn { font-size: 7px; padding: 2px 6px; }
-  body.pda-app #pda-lcd #modal p, body.pda-app #pda-lcd #modal .modal-body { font-size: 7px; line-height: 1.55; }
+  body.pda-app #pda-lcd #modal .pixel-btn { font-size: 8px; padding: 2px 6px; }
+  body.pda-app #pda-lcd #modal p, body.pda-app #pda-lcd #modal .modal-body { font-size: 8px; line-height: 1.55; }
   /* 디렉터: 붉은 섹션 헤더(가구·물품·큰 공사·꾸미기 등) 인라인 font-size:12px가 커서 인라인 이김 → 스코프 !important로 축소 */
   body.pda-app #pda-lcd #modal div[style*="var(--accent)"] { font-size: 8px !important; margin: 6px 0 3px !important; }
   /* 디렉터: 저널/도감/업적 모달이 좁은 LCD에 도킹될 때 .report-sec가 축소 규칙에서 누락돼 박스를 넘쳤다. */
@@ -601,7 +608,10 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   body.pda-app #pda-lcd #modal .report-sec .r-title { font-size: 9px; }
   /* 디렉터: 제작 상위 카테고리 탭바(가구·물품/복장/공사/꾸미기) — PDA 탭바 톤. 상단 고정. */
   body.pda-app #pda-lcd #modal .craft-tabs { display: flex; gap: 3px; margin: -2px 0 6px; position: sticky; top: -6px; background: rgba(6, 10, 5, 0.92); padding: 3px 0; z-index: 4; }
-  body.pda-app #pda-lcd #modal .craft-tab { flex: 1; font-size: 8px; padding: 3px 2px; background: rgba(170, 240, 185, 0.06); border: 1px solid #3f6a46; border-radius: 3px; color: #bcd0b6; cursor: pointer; white-space: nowrap; }
+  /* 탭 4개도 같은 병이었다 — flex:1로 균등 분할하니 「Furnishings & Goods」가 폭을 먹고 「Decor」가 "De"로 잘렸다(실측).
+     내용 폭 기준으로 두고 넘치면 둘째 줄로 접는다 = 언어 불문 안전. */
+  body.pda-app #pda-lcd #modal .craft-tabs { flex-wrap: wrap; row-gap: 3px; }
+  body.pda-app #pda-lcd #modal .craft-tab { flex: 0 1 auto; font-size: 8px; padding: 3px 5px; background: rgba(170, 240, 185, 0.06); border: 1px solid #3f6a46; border-radius: 3px; color: #bcd0b6; cursor: pointer; white-space: nowrap; }
   body.pda-app #pda-lcd #modal .craft-tab.active { background: rgba(120, 255, 150, 0.16); border-color: var(--accent); color: #f0f5ee; font-weight: bold; }
   body.pda-app #pda-lcd .prep-row, body.pda-app #pda-lcd .craft-row, body.pda-app #pda-lcd .li-row { padding: 3px 7px; gap: 2px 6px; }
   body.pda-app #pda-lcd .px-icon { width: 1.2em; height: 1.2em; }
@@ -611,17 +621,31 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     background: rgba(170, 240, 185, 0.04); border: 1px solid #3f6a46; border-radius: 3px;
   }
   body.pda-app #pda-lcd .prep-row > span:first-child { flex: 1 1 100%; min-width: 0; }
-  /* 제작 행 한 줄 압축(디렉터): 「붕대 ×1 ← 천 2 [제작]」 — 이름 전폭 점유 해제 + 랩 금지 */
-  body.pda-app #pda-lcd .craft-row { flex-wrap: nowrap; padding: 4px 8px; }
-  body.pda-app #pda-lcd .craft-row > span:first-child { flex: 0 1 auto; white-space: nowrap; }
-  body.pda-app #pda-lcd .craft-row .p-cost { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; font-size: var(--fs-s); }
+  /* 제작 행 한 줄 압축(디렉터): 「붕대 ×1 ← 천 2 [제작]」 — 이름 전폭 점유 해제 + 랩 금지
+     디렉터 2026-07-23 「세부 항목들 조회가 안 되잖아」 — 원인은 축소 우선순위가 없었던 것.
+       이름(0 1 auto)과 재료(1 1 auto + overflow:hidden)가 함께 깎여, 부모 .prep-row의 overflow:hidden이
+       깎인 만큼 글자를 그냥 잘라냈다(실측 Forest Parka 66→54px·재료 40→33px = 이름은 버튼에 먹히고 아이콘은 반쪽).
+     처방: 재료·버튼은 못 깎게 고정하고, 줄어드는 몫은 이름 하나가 지되 잘림이 아니라 말줄임으로 진다.
+       그래도 넘치면 wrap이 재료를 둘째 줄로 내려보낸다 — 어느 경우에도 정보가 사라지지 않는다. */
+  body.pda-app #pda-lcd .craft-row { flex-wrap: wrap; padding: 4px 8px; row-gap: 2px; }
+  /* basis를 0으로 두는 게 핵심이다. auto면 flex가 '줄바꿈 먼저, 축소 나중'으로 처리해 재료가 2종인 행에서
+     이름은 멀쩡한데 버튼만 아래로 떨어졌다(실측: Charcoal Coat). basis 0이면 넘칠 일이 없어 항상 한 줄이고,
+     남는 폭은 grow로 이름이 가져간다 — 정말 모자랄 때만 이름이 말줄임으로 양보한다. */
+  body.pda-app #pda-lcd .craft-row > span:first-child { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.pda-app #pda-lcd .craft-row .p-cost { flex: 0 0 auto; white-space: nowrap; overflow: visible; font-size: var(--fs-s); }
   body.pda-app #pda-lcd .craft-row .p-cost .px-icon { width: 12px; height: 12px; }
   body.pda-app #pda-lcd .craft-row .cr-arrow { width: 14px; height: 14px; flex: 0 0 auto; opacity: 0.7; }
   body.pda-app #pda-lcd .craft-row .pixel-btn { flex: 0 0 auto; padding: 3px 10px; }
   /* 옷장 행 한 줄 압축(디렉터 — craft-row 문법 일관 적용): 「코트 ▪▪ [입기]」 */
-  body.pda-app #pda-lcd .wd-row { flex-wrap: nowrap; padding: 4px 8px; }
-  body.pda-app #pda-lcd .wd-row > span:first-child { flex: 0 0 auto; white-space: nowrap; }
-  body.pda-app #pda-lcd .wd-row .p-eff { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+  /* 옷장도 같은 처방(디렉터 「옷도 지금 다 이따구고」): 색 스와치는 11px 고정 조각이라 깎이면 반쪽만 남는다
+     (실측 28→14px = 두 칸 중 한 칸 소실). 스와치·버튼을 고정하고 이름만 말줄임으로 양보시킨다. */
+  body.pda-app #pda-lcd .wd-row { flex-wrap: wrap; padding: 4px 8px; row-gap: 2px; }
+  /* 옷장은 제작과 달리 우측 칸의 길이가 항목마다 극단적으로 다르다 — 보유 항목은 스와치 두 칸,
+     미보유 항목은 거기에 「아직은 — 작업대에서」 안내문이 붙는다. 그래서 basis 0으로 두면
+     그 안내문이 폭을 독점해 이름이 한 글자로 짜부라졌다(실측 clientW 5px). 이름에 최소 몫(45%)을 쥐어주고,
+     안내문은 nowrap을 풀어 줄바꿈으로 흘려보낸다 — 스와치도 안내문도 잘리지 않는다. */
+  body.pda-app #pda-lcd .wd-row > span:first-child { flex: 1 1 auto; min-width: 4.5em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.pda-app #pda-lcd .wd-row .p-eff { flex: 0 1 auto; min-width: 0; white-space: normal; overflow: visible; text-align: right; }
   body.pda-app #pda-lcd .wd-row .pixel-btn { flex: 0 0 auto; padding: 3px 10px; }
   body.pda-app #pda-lcd .wd-row > span:last-child:not(.p-eff) { flex: 0 0 auto; white-space: nowrap; }
   /* li-row: [아이콘][이름][우측 힌트] 트리플 목록의 공용 한 줄 규칙 — 업적·도면 도감·기록. (셸터 카드 문법 순차 적용)
@@ -634,10 +658,12 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   /* 일지 탭 4개: 3+1 랩(기록 혼자 전폭) 대신 2×2 고정 — 언어 불문 안정 */
   body.pda-app #pda-lcd button[data-jtab] { min-width: 40%; }
   /* 이주 셸터 카드 — 좁은 LCD 정돈(디렉터): 헤더(아이콘+이름) 한 줄 + 본문 전폭 문단(들여쓰기 0) */
-  body.pda-app #pda-lcd .shelter-card { padding: 7px 9px; }
+  body.pda-app #pda-lcd .shelter-card { padding: 6px 7px; }
   body.pda-app #pda-lcd .shelter-card .s-emoji { font-size: 20px; }
   body.pda-app #pda-lcd .shelter-card .s-emoji .px-icon { width: 22px; height: 22px; vertical-align: -3px; }
-  body.pda-app #pda-lcd .shelter-card .s-desc { font-size: 11px; } /* 전폭 회복분만큼 본문 확대 */
+  /* 디렉터 「shelter도 지금 좁아 터진다」 — 11px는 이 유리 폭에 과대해 안내문이 줄당 8~9자로 흘렀다(실측).
+     본문만 한 단계 낮춰 한 줄에 담기는 양을 늘린다(폭 확장분과 합쳐 약 3배). */
+  body.pda-app #pda-lcd .shelter-card .s-desc { font-size: 9px; line-height: 1.5; }
   body.pda-app #pda-lcd .shelter-card .s-body .pixel-btn { padding: 3px 12px; }
   body.pda-app #pda-lcd .prep-row .p-eff { flex: 1 1 auto; min-width: 0; }
   body.pda-app #pda-lcd .prep-row .pixel-btn { margin-left: auto !important; } /* 인라인 margin 6px보다 우선 — 버튼 우측 정렬 */
