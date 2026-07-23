@@ -1,0 +1,427 @@
+{
+  "g.state.warn": {
+    "ko": "주의",
+    "en": "LOW",
+    "ja": "注意"
+  },
+  "g.state.crit": {
+    "ko": "위험",
+    "en": "CRIT",
+    "ja": "危険"
+  },
+  "btn.speed.title": {
+    "ko": "게임 배속 (엔딩 후 해금)",
+    "en": "Game speed (unlocks after an ending)",
+    "ja": "ゲーム速度（エンディング後に解放）"
+  },
+  "ctrl.act.hudExt": {
+    "ko": "정보 확장 (누르는 동안)",
+    "en": "Info overlay (hold)",
+    "ja": "情報表示（押している間）"
+  },
+  "opt.crtbulge": {
+    "ko": "CRT 곡률",
+    "en": "CRT Curvature",
+    "ja": "CRT曲率"
+  },
+  "opt.crtbulge.title": {
+    "ko": "UI 창을 브라운관 유리처럼 볼록하게 휘게 합니다. 저사양 모드에서는 자동으로 꺼집니다.",
+    "en": "Bends UI windows like curved CRT glass. Automatically disabled in low-spec mode.",
+    "ja": "UIウィンドウをブラウン管ガラスのように膨らませます。低スペックモードでは自動的にオフになります。"
+  },
+  "opt.crtbulge.strong": {
+    "ko": "강하게",
+    "en": "Strong",
+    "ja": "強め"
+  },
+  "opt.crtbulge.weak": {
+    "ko": "은은하게",
+    "en": "Subtle",
+    "ja": "ひかえめ"
+  },
+  "opt.crtbulge.off": {
+    "ko": "끄기",
+    "en": "Off",
+    "ja": "オフ"
+  },
+  "btn.edit.lbl": {
+    "ko": "편집",
+    "en": "Edit",
+    "ja": "編集"
+  },
+  "slot.metaWp": {
+    "ko": "배경화면 모드 · 저장 {saved}",
+    "en": "Wallpaper mode · saved {saved}",
+    "ja": "壁紙モード · セーブ {saved}"
+  },
+  "reclaimAll.investWarn": {
+    "ko": "손질·도색·조명 젤 가구 {n}개 포함 — 수거하면 전부 사라진다.",
+    "en": "Includes {n} pieces with tier work, paint, or light gels — reclaiming loses all of it.",
+    "ja": "手入れ・塗装・照明ジェル付きの家具{n}個を含む — 回収すると全て失われる。"
+  },
+  "city.home": {
+    "ko": "잿빛 도시",
+    "en": "Ashen City",
+    "ja": "灰色の街"
+  },
+  "city.east": {
+    "ko": "동녘 항구",
+    "en": "Eastern Harbor",
+    "ja": "東の港"
+  },
+  "map.cityHere": {
+    "ko": "· 현 위치",
+    "en": "· here",
+    "ja": "· 現在地"
+  },
+  "map.cityPull": {
+    "ko": "이 도시에서만: {items}",
+    "en": "Only in this city: {items}",
+    "ja": "この街だけ: {items}"
+  },
+  "map.cityPullDone": {
+    "ko": "이 도시의 시그니처는 전부 챙겼다.",
+    "en": "Every signature in this city is already mine.",
+    "ja": "この街のシグネチャーは全部そろえた。"
+  },
+  "map.otherCityPin": {
+    "ko": "여긴 이주해야 닿는 동네다 — 이주 지도에서 거처부터.",
+    "en": "I can only reach this place by moving — find a home on the migration map first.",
+    "ja": "ここへは移住しないと届かない — まず移住マップで住処を。"
+  },
+  "obs.title": {
+    "ko": "관측 회선",
+    "en": "OBSERVATION LINK",
+    "ja": "観測回線"
+  },
+  "obs.boot.ok": {
+    "ko": "수신 양호. 관측 회선에 연결되었습니다.",
+    "en": "Signal steady. Observation link established.",
+    "ja": "受信良好。観測回線に接続しました。"
+  },
+  "obs.boot.weak": {
+    "ko": "신호가 약합니다. 화면이 고르지 않습니다.",
+    "en": "Signal weak. The feed is unsteady.",
+    "ja": "信号が弱く、映像が乱れています。"
+  },
+  "obs.back": {
+    "ko": "전체 지도",
+    "en": "Full Map",
+    "ja": "全体地図"
+  },
+  "obs.exit": {
+    "ko": "나가기",
+    "en": "Exit",
+    "ja": "終了"
+  },
+  "inv.editDone": {
+    "ko": "배치 끝내기",
+    "en": "Done placing",
+    "ja": "配置終了"
+  },
+  "obs.pull": {
+    "ko": "여기서만: {items}",
+    "en": "Only here: {items}",
+    "ja": "ここだけ: {items}"
+  },
+  "obs.loot": {
+    "ko": "회수 가능 · {items}",
+    "en": "Salvage · {items}",
+    "ja": "回収可能 · {items}"
+  },
+  "obs.lootFurn": {
+    "ko": "가구 도면 {pct}%",
+    "en": "furniture blueprints {pct}%",
+    "ja": "家具の設計図 {pct}%"
+  },
+  "move.journeyCityNote": {
+    "ko": "국경을 넘어 {name}까지 6시간을 걸었다.",
+    "en": "Six hours on foot, across the border to {name}.",
+    "ja": "国境を越えて{name}まで6時間歩いた。"
+  },
+  "move.journeyCityTag": {
+    "ko": " (여정 6시간)",
+    "en": " (6h journey)",
+    "ja": " (旅程6時間)"
+  },
+  "craft.catBuild": {
+    "ko": "공사",
+    "en": "Works",
+    "ja": "工事"
+  },
+  "craft.catDeco": {
+    "ko": "꾸미기",
+    "en": "Decor",
+    "ja": "模様替え"
+  },
+  "col.gelBook": {
+    "ko": "젤 필터북",
+    "en": "Gel Filter Book",
+    "ja": "ジェルフィルターブック"
+  },
+  "reclaim.investConfirm": {
+    "ko": "{name} 회수 — 손질·도색·조명 젤은 수거하면 사라진다.",
+    "en": "Reclaim {name} — its tier work, paint, and light gel will be lost.",
+    "ja": "{name} 回収 — 手入れ・塗装・照明ジェルは失われる。"
+  },
+  "reclaim.investOk": {
+    "ko": "그래도 거둔다",
+    "en": "Reclaim anyway",
+    "ja": "それでも回収する"
+  },
+  "reclaim.investCancel": {
+    "ko": "그만둔다",
+    "en": "Leave it",
+    "ja": "やめておく"
+  },
+  "power.fuelLineEvery2": {
+    "ko": "{name} {have}개 보유 · 켜두면 이틀에 1개 소비 {status}",
+    "en": "{name} ×{have} · consumes 1 every 2 days while on {status}",
+    "ja": "{name} {have}個所持 · オンの間は2日に1個消費 {status}"
+  },
+  "power.freeTag": {
+    "ko": "<span style=\"color:var(--good)\">(급전 중 — 소비 없음)</span>",
+    "en": "<span style=\"color:var(--good)\">(powered — no drain)</span>",
+    "ja": "<span style=\"color:var(--good)\">(給電中 — 消費なし)</span>"
+  },
+  "day.powerOutGroup": {
+    "ko": "배터리가 바닥나 불이 꺼졌다 — {names}.",
+    "en": "The batteries ran dry — {names} went dark.",
+    "ja": "バッテリーが尽きて明かりが消えた — {names}。"
+  },
+  "day.gardenMiss": {
+    "ko": "텃밭이 말랐다 — 오늘은 거둘 게 없다.",
+    "en": "The garden's dry — nothing to pick today.",
+    "ja": "畑が乾いていた——今日は収穫なし。"
+  },
+  "gel.confirmUse": {
+    "ko": "{name} 도료 1통을 쓴다. 필터를 끼울까?",
+    "en": "This uses 1 can of {name} paint. Fit the filter?",
+    "ja": "{name}の塗料を1缶使う。フィルターを付ける?"
+  },
+  "gel.confirmYes": {
+    "ko": "끼운다",
+    "en": "Fit it",
+    "ja": "付ける"
+  },
+  "demo.regionLocked": {
+    "ko": "여긴 아직 잠겨 있다 — 생존 모드의 것.",
+    "en": "Still locked — it belongs to Survival mode.",
+    "ja": "ここはまだ閉ざされている — サバイバルモードのもの。"
+  },
+  "report.tip.candle": {
+    "ko": "양초가 다 떨어졌다 — 제작대에서 천 1+연료 1이면 2개가 나온다. 주거지역에서도 종종 줍는다.",
+    "en": "Out of candles — 1 cloth + 1 fuel at the workbench makes 2. The housing district drops them too.",
+    "ja": "ろうそくが切れた — 作業台で布1+燃料1から2個作れる。住宅区でも時々拾える。"
+  },
+  "ev.cat.coat.russianblue": {
+    "ko": "은청색 솔리드 털에 앰버빛 두 눈 — 서포터에게만 온다는 러시안블루였다.",
+    "en": "A solid silver-blue coat with amber eyes—a Russian Blue, the supporter's cat.",
+    "ja": "銀青色のソリッドな毛に琥珀色の瞳——サポーターにだけ来るというロシアンブルーだった。"
+  },
+  "proj.eastgate.name": {
+    "ko": "국경 길",
+    "en": "The Border Road",
+    "ja": "国境の道"
+  },
+  "proj.eastgate.stage1": {
+    "ko": "3년 치 잔해를 걷어낸다. 동쪽으로 가는 차선이 하나씩 드러난다.",
+    "en": "Clear three years of debris. One eastbound lane surfaces at a time.",
+    "ja": "3年分の瓦礫を取り除く。東へ向かう車線が少しずつ現れる。"
+  },
+  "proj.eastgate.stage2": {
+    "ko": "검문소를 손본다. 차단기를 올리고, 부스의 깨진 유리를 갈아 끼운다.",
+    "en": "Mend the checkpoint. Raise the barrier, replace the shattered booth glass.",
+    "ja": "検問所を直す。遮断機を上げ、ブースの割れたガラスを入れ替える。"
+  },
+  "proj.eastgate.stage3": {
+    "ko": "등을 걸고 표지를 세운다. 국경을 여는 건 결국 나 하나를 위해서다.",
+    "en": "Hang the lights, set the signs. In the end, this border opens for one.",
+    "ja": "灯りを掛け、標識を立てる。結局この国境は、私ひとりのために開く。"
+  },
+  "proj.eastgate.workNote": {
+    "ko": "국경 길을 조금 더 냈다.",
+    "en": "Cleared a little more of the border road.",
+    "ja": "国境の道を少し進めた。"
+  },
+  "proj.eastgate.doneToast": {
+    "ko": "국경이 열렸다. 동쪽 길 끝에 세관 청사가 서 있다.",
+    "en": "The border is open. At the end of the road stands the customs house.",
+    "ja": "国境が開いた。道の先に税関庁舎が立っている。"
+  },
+  "proj.eastgate.memoir": {
+    "ko": "{day}일째. 동쪽 국경 길을 다 냈다. 3년 만에 이 도시 밖으로 나가는 문이 생겼다 — 문 너머에 뭐가 있는지는, 가서 보면 안다.",
+    "en": "Day {day}. The border road east is finished. For the first time in three years there is a way out of this city — what waits beyond, I will see for myself.",
+    "ja": "{day}日目。東の国境の道が通った。3年ぶりに、この街の外へ出る扉ができた — その先に何があるかは、行けばわかる。"
+  },
+  "east.rumorNote": {
+    "ko": "수도의 기록에서 알게 됐다 — 동쪽 국경 검문소는 봉쇄가 아니라 그냥 버려졌다. 길만 낸다면, 지나갈 수 있다.",
+    "en": "The capital's records say the eastern checkpoint was never sealed — only abandoned. Clear the road, and it can be crossed.",
+    "ja": "首都の記録で知った — 東の国境検問所は封鎖ではなく、ただ捨てられていた。道さえ通せば、越えられる。"
+  },
+  "paint.confirmUse": {
+    "ko": "{name} 도료 1통을 쓴다. 칠할까?",
+    "en": "This uses 1 can of {name} paint. Paint it?",
+    "ja": "{name}の塗料を1缶使う。塗り替える?"
+  },
+  "paint.confirmYes": {
+    "ko": "칠한다",
+    "en": "Paint it",
+    "ja": "塗る"
+  },
+  "mastery.fullName": {
+    "ko": "{name} 정복 — 숙련 100%",
+    "en": "{name} Mastered — 100%",
+    "ja": "{name}制覇 — 熟練100%"
+  },
+  "mastery.fullNote": {
+    "ko": "이 동네는 이제 손금처럼 안다 — {name} 숙련 100%.",
+    "en": "I know this place like the back of my hand — {name} mastery 100%.",
+    "ja": "この界隈はもう手に取るように分かる — {name} 熟練100%。"
+  },
+  "map.masteryPct": {
+    "ko": "숙련 {p}%",
+    "en": "Mastery {p}%",
+    "ja": "熟練 {p}%"
+  },
+  "map.rateTip": {
+    "ko": "성공률 {p}%",
+    "en": "{p}% success",
+    "ja": "成功率 {p}%"
+  },
+  "map.blockedBlizzard": {
+    "ko": "폭설로 막힘",
+    "en": "Blocked by blizzard",
+    "ja": "大雪で通行止め"
+  },
+  "map.blockedAvalanche": {
+    "ko": "눈사태로 막힘",
+    "en": "Blocked by avalanche",
+    "ja": "雪崩で通行止め"
+  },
+  "map.dropsGel": {
+    "ko": "여기서만: 젤 필터북 — 조명에 색을 입히는 유품",
+    "en": "Only here: Gel Filter Book — an heirloom that tints your lights",
+    "ja": "ここだけ: ジェルフィルターブック — 照明に色を差す遺品"
+  },
+  "quest.skip": {
+    "ko": "건너뛰기",
+    "en": "Skip",
+    "ja": "スキップ"
+  },
+  "quest.skip.done": {
+    "ko": "할 일 목록을 접었다.",
+    "en": "Folded the checklist away.",
+    "ja": "やることリストを畳んだ。"
+  },
+  "craft.resTag": {
+    "ko": " · 자원",
+    "en": " · resource",
+    "ja": " · 資源"
+  },
+  "craft.candleHint": {
+    "ko": "양초는 놓는 가구가 아니라 연료다 — 캔들 스툴·랜턴·촛대가 태운다.",
+    "en": "Candles are fuel, not furniture to place — candle stools, lanterns and candelabras burn them.",
+    "ja": "ろうそくは置く家具ではなく燃料だ — キャンドルスツールやランタン、燭台が消費する。"
+  },
+  "inv.getByCraft": {
+    "ko": "제작대에서 만든다",
+    "en": "Craft it at the workbench",
+    "ja": "作業台で作る"
+  },
+  "place.noStockCraft": {
+    "ko": "{name}의 재고가 없다. 제작대에서 만들자.",
+    "en": "No {name} in stock. Craft one at the workbench.",
+    "ja": "{name}の在庫がない。作業台で作ろう。"
+  },
+  "tip.dark": {
+    "ko": "밤이 왔다. 광원이 없으면 방은 죽은 형광등뿐이다 — 인벤토리의 캔들 스툴을 놓자. 양초가 연료다.",
+    "en": "Night has come. Without a light source the room only has the dead fluorescent — place the candle stool from my inventory. Candles are its fuel.",
+    "ja": "夜が来た。光源がなければ部屋は死んだ蛍光灯だけだ — インベントリのキャンドルスツールを置こう。ろうそくが燃料だ。"
+  },
+  "pda.open": {
+    "ko": "PDA 단말 — 계측·지도·기록",
+    "en": "PDA — readouts, map, log",
+    "ja": "PDA端末 — 計測・地図・記録"
+  },
+  "pda.tab.status": {
+    "ko": "상태",
+    "en": "STATUS",
+    "ja": "状態"
+  },
+  "pda.tab.res": {
+    "ko": "자원",
+    "en": "SUPPLIES",
+    "ja": "物資"
+  },
+  "pda.tab.map": {
+    "ko": "지도",
+    "en": "MAP",
+    "ja": "地図"
+  },
+  "pda.tab.log": {
+    "ko": "기록",
+    "en": "LOG",
+    "ja": "記録"
+  },
+  "pda.day": {
+    "ko": "{n}일차",
+    "en": "DAY {n}",
+    "ja": "{n}日目"
+  },
+  "pda.g.hunger": {
+    "ko": "허기",
+    "en": "HUNGER",
+    "ja": "空腹"
+  },
+  "pda.g.thirst": {
+    "ko": "갈증",
+    "en": "THIRST",
+    "ja": "渇き"
+  },
+  "pda.g.energy": {
+    "ko": "기력",
+    "en": "ENERGY",
+    "ja": "体力"
+  },
+  "pda.clean": {
+    "ko": "청결",
+    "en": "CLEAN",
+    "ja": "清潔"
+  },
+  "pda.cond": {
+    "ko": "몸 상태",
+    "en": "CONDITION",
+    "ja": "体調"
+  },
+  "pda.noInjury": {
+    "ko": "부상 없음",
+    "en": "NO INJURIES",
+    "ja": "負傷なし"
+  },
+  "pda.injuryLeft": {
+    "ko": "회복까지 약 {h}시간",
+    "en": "~{h}H TO RECOVER",
+    "ja": "回復まで約{h}時間"
+  },
+  "pda.mood": {
+    "ko": "기분 보정 +{amt} · {d}일 남음",
+    "en": "MOOD +{amt} · {d}D LEFT",
+    "ja": "気分補正 +{amt}・残り{d}日"
+  },
+  "pda.openMap": {
+    "ko": "전도 펼치기",
+    "en": "OPEN FULL MAP",
+    "ja": "全図を開く"
+  },
+  "pda.here": {
+    "ko": "현재 위치",
+    "en": "POSITION",
+    "ja": "現在地"
+  },
+  "pda.noLog": {
+    "ko": "기록 없음",
+    "en": "NO ENTRIES",
+    "ja": "記録なし"
+  }
+}

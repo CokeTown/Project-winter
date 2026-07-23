@@ -202,6 +202,27 @@ export const BAL = {
     rooftopGardenMult: 2,               // 옥탑 퍽: 텃밭 수확 배수 (옥탑 텃밭 food +2/일). 현재 텃밭은 rooftop 전용이라 이 배수가 곧 옥탑 정체성
   },
 
+  /* ── 거처 개조 비용 (P2 외부화 — game.js SHELTER_MODS가 참조. 효과·설치 조건은 정의부 그대로) ── */
+  modCosts: {
+    raincatch: { material: 2, parts: 1 },
+    garden: { material: 2, water: 2 },
+    rooftopGarden: { material: 3, water: 2 },
+    mushroom: { material: 3, water: 3 },
+    insulation: { cloth: 3, material: 2 },
+    shelf: { material: 3, parts: 1 },
+    solar: { parts: 4, battery: 1 },
+    lighting: { parts: 3, battery: 1 },
+    roof: { material: 4 },
+    extension: { material: 6, parts: 2 },
+    onsen: { material: 4, parts: 2 },
+    insulationPlus: { cloth: 7, material: 5, parts: 1 },
+    customsClear: {},
+    customsSeal: { material: 3, cloth: 1 },
+    terminalPatch: { material: 4, cloth: 1 },
+    bigraincatch: { material: 5, parts: 2 },
+    radiostation: { parts: 3, material: 2 },
+  },
+
   /* ── #76 「지식과 사치」 — 장기 인플레 교정 + 책(지식)/사치 건축 싱크 ──
      문제(AUDIT-1.4 P1-3): 9겨울 완주(Day432) food+canned가 1291까지 무한 인플레 — 후반 자원이 의미를 잃는다.
      디렉터 결정: 목표 300~400 + 지식/사치 싱크. 방식(디렉터 승인): "암시장 확장".
@@ -363,6 +384,10 @@ export const BAL = {
      총점(score) 계산식은 불변 — 여기 표는 오직 "어느 축에 귀속시킬지" 매핑이다.
      (밸런스 diff 0 보장: score는 기존 그대로, 이 표는 UI 원인표시용 버킷팅) */
   comfort: {
+    // P2: 기본 안정감 단일 출처 — core/comfort.js 점수식의 18과 game.js 원인 로그의 '+18'이
+    //   별개 리터럴이라 한쪽만 바뀌면 화면이 거짓말하던 구조 봉합. (섹션 중복 함정: comfort 키는 여기 하나뿐이어야 한다 —
+    //   앞쪽에 또 만들면 이 객체가 그걸 통째로 덮는다. 실제로 한 번 밟았다.)
+    baseSecurity: 18,  // 빈 방에서도 "지붕이 있다"로 시작하는 안정감 기본치
     /* 조명 가구의 comfort 값을 온기(warmth) vs 분위기(mood)로 배분.
        열원(불꽃/발열) 계열은 온기, 전기 조명은 분위기. (합계는 원래 light 총점과 동일) */
     lightAxis: {

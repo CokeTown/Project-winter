@@ -1,0 +1,427 @@
+{
+  "pda.commLog": {
+    "ko": "회선 기록",
+    "en": "Comm log",
+    "ja": "回線記録"
+  },
+  "pda.gained": {
+    "ko": "오늘 얻은 것",
+    "en": "GAINED TODAY",
+    "ja": "本日の入手"
+  },
+  "g.clean.title": {
+    "ko": "청결 — 클릭하면 청소한다",
+    "en": "Cleanliness — click to clean up",
+    "ja": "清潔 — クリックで掃除する"
+  },
+  "pda.camp": {
+    "ko": "거점·진행",
+    "en": "CAMP / PROGRESS",
+    "ja": "拠点・進行"
+  },
+  "pda.comfort": {
+    "ko": "쾌적",
+    "en": "COMFORT",
+    "ja": "快適"
+  },
+  "pda.weatherPen": {
+    "ko": "날씨 페널티",
+    "en": "WEATHER PENALTY",
+    "ja": "天候ペナルティ"
+  },
+  "pda.exp": {
+    "ko": "오늘 탐험",
+    "en": "RUNS TODAY",
+    "ja": "本日の探索"
+  },
+  "pda.succ": {
+    "ko": "성공한 탐험",
+    "en": "SUCCESSFUL RUNS",
+    "ja": "成功した探索"
+  },
+  "pda.winters": {
+    "ko": "넘긴 겨울",
+    "en": "WINTERS SURVIVED",
+    "ja": "越えた冬"
+  },
+  "pda.close": {
+    "ko": "닫기",
+    "en": "Close",
+    "ja": "閉じる"
+  },
+  "nt.spent": {
+    "ko": "쓴 것",
+    "en": "Spent",
+    "ja": "消費"
+  },
+  "nt.settledDays": {
+    "ko": "정착 {n}일차",
+    "en": "Settled day {n}",
+    "ja": "定住{n}日目"
+  },
+  "data.bcast.obs_loop.name": {
+    "ko": "관측 회선 점검",
+    "en": "Observation Line Check",
+    "ja": "観測回線点検"
+  },
+  "data.bcast.obs_loop.air": {
+    "ko": "…관측 회선 점검 방송입니다. 응답하지 마십시오. 본 회선은 수신 전용입니다. …관측 회선 점검 방송입니다…",
+    "en": "…this is the observation-line check. Do not respond. This line is receive-only. …this is the observation-line check…",
+    "ja": "…観測回線の点検放送です。応答しないでください。本回線は受信専用です。…観測回線の点検放送です…"
+  },
+  "data.bcast.obs_loop.desc": {
+    "ko": "녹음된 목소리가 몇 년째 같은 문장을 돈다. 응답하지 말라는 당부만 남아서 돈다.",
+    "en": "A recorded voice has circled the same sentence for years. Only the plea not to answer keeps going round.",
+    "ja": "録音された声が何年も同じ文を回り続ける。応答するなという言葉だけが残って回る。"
+  },
+  "data.craft.customsvest.hint": {
+    "ko": "옷장에 추가 — 세관 검문대의 방수 우비",
+    "en": "Added to wardrobe — a customs checkpoint slicker",
+    "ja": "ワードローブに追加 — 税関検問所の防水コート"
+  },
+  "data.craft.hoodie.hint": {
+    "ko": "옷장에 추가 — 후드를 눌러쓴 실루엣",
+    "en": "Added to wardrobe — a hood-up silhouette",
+    "ja": "ワードローブに追加 — フードを被ったシルエット"
+  },
+  "data.craft.poncho.hint": {
+    "ko": "옷장에 추가 — 담요를 두른 듯한 판초",
+    "en": "Added to wardrobe — a blanket-like poncho",
+    "ja": "ワードローブに追加 — 毛布をまとったようなポンチョ"
+  },
+  "data.craft.puffer.hint": {
+    "ko": "옷장에 추가 — 누빔 충전재 빵빵한 점퍼",
+    "en": "Added to wardrobe — a quilted, puffed-up jacket",
+    "ja": "ワードローブに追加 — 中綿でふくらんだジャンパー"
+  },
+  "data.craft.riggerjacket.hint": {
+    "ko": "옷장에 추가 — 현수교 정비공의 작업 재킷",
+    "en": "Added to wardrobe — a bridge rigger's work jacket",
+    "ja": "ワードローブに追加 — 吊り橋整備工の作業ジャケット"
+  },
+  "data.craft.stationcoat.hint": {
+    "ko": "옷장에 추가 — 중앙역 역무원의 정복 코트",
+    "en": "Added to wardrobe — a stationmaster's uniform coat",
+    "ja": "ワードローブに追加 — 中央駅駅員の制服コート"
+  },
+  "data.craft.towncoat.hint": {
+    "ko": "옷장에 추가 — 백화점 진열장의 마지막 롱코트",
+    "en": "Added to wardrobe — the last longcoat from a department store window",
+    "ja": "ワードローブに追加 — デパートのショーウィンドウ最後のロングコート"
+  },
+  "data.craft.vest.hint": {
+    "ko": "옷장에 추가 — 팔이 가벼운 작업 조끼",
+    "en": "Added to wardrobe — a work vest, arms free",
+    "ja": "ワードローブに追加 — 腕が軽い作業ベスト"
+  },
+  "data.district.eastbridge.bonusLabel": {
+    "ko": "인터체인지·주거단지 접근성 +5%p",
+    "en": "Interchange & uptown access +5%p",
+    "ja": "インターチェンジ・住宅地アクセス +5%p"
+  },
+  "data.district.eastbridge.desc": {
+    "ko": "무너진 현수교 아래 강변. 끊긴 고속도로가 하늘에 걸려 있다.",
+    "en": "The riverside beneath a fallen suspension bridge. A severed highway hangs in the sky.",
+    "ja": "崩れた吊り橋の下の川辺。途切れたハイウェイが空に架かっている。"
+  },
+  "data.district.eastbridge.name": {
+    "ko": "다리 어귀",
+    "en": "Bridge Mouth",
+    "ja": "橋のたもと"
+  },
+  "data.district.eastcore.bonusLabel": {
+    "ko": "상가·백화점 접근성 +5%p",
+    "en": "Mall & department store access +5%p",
+    "ja": "商店街・百貨店アクセス +5%p"
+  },
+  "data.district.eastcore.desc": {
+    "ko": "고성 첨탑처럼 둘러선 마천루의 한가운데. 도시의 가장 높은 침묵.",
+    "en": "The heart of skyscrapers ringed like castle spires. The city's highest silence.",
+    "ja": "古城の尖塔のように立ち並ぶ摩天楼のただ中。都市で最も高い静寂。"
+  },
+  "data.district.eastcore.name": {
+    "ko": "마천루 심부",
+    "en": "Skyscraper Core",
+    "ja": "摩天楼の深部"
+  },
+  "data.district.eastgate.bonusLabel": {
+    "ko": "세관·항만 접근성 +5%p",
+    "en": "Customs & port access +5%p",
+    "ja": "税関・港湾アクセス +5%p"
+  },
+  "data.district.eastgate.desc": {
+    "ko": "국경 검문소 너머, 동쪽 대도시의 문턱. 3년 만에 다시 열린 길이다.",
+    "en": "Past the border checkpoint, the threshold of the eastern metropolis. The road has been shut for three years.",
+    "ja": "国境検問所の向こう、東の大都市の入り口。3年ぶりに再び開いた道だ。"
+  },
+  "data.district.eastgate.name": {
+    "ko": "동부 관문",
+    "en": "Eastern Gate",
+    "ja": "東部関門"
+  },
+  "data.district.eaststation.bonusLabel": {
+    "ko": "승강장·아웃포스트 접근성 +5%p",
+    "en": "Platform & outpost access +5%p",
+    "ja": "ホーム・前哨基地アクセス +5%p"
+  },
+  "data.district.eaststation.desc": {
+    "ko": "거대한 아치 지붕의 역. 떠나지 못한 여행이 승강장마다 멈춰 있다.",
+    "en": "A station under a vast arched roof. On every platform, a journey that never left.",
+    "ja": "巨大なアーチ屋根の駅。発てなかった旅がホームごとに止まっている。"
+  },
+  "data.district.eaststation.name": {
+    "ko": "중앙역 일대",
+    "en": "Central Station",
+    "ja": "中央駅界隈"
+  },
+  "data.memo.obs1.name": {
+    "ko": "수신 안내문",
+    "en": "Reception Note",
+    "ja": "受信案内のメモ"
+  },
+  "data.memo.obs1.desc": {
+    "ko": "옥상 안테나를 남쪽으로 3도. 새벽에만 잡힌다. 위에서 찍은 사진이 나온다 — 누가 보내는지는 모르겠고, 묻는 법도 없다.\n그냥 튼다. 우리 동네가 아직 있는지 보려고.",
+    "en": "Roof antenna, three degrees south. Only comes in before dawn. Pictures taken from above — no idea who sends them, and no way to ask.\nI tune in anyway. To see if our block is still there.",
+    "ja": "屋上のアンテナを南へ3度。夜明けにしか入らない。上から撮った写真が映る — 誰が送っているのかは知らないし、尋ねる術もない。\nそれでも点ける。うちの町がまだあるか、見るために。"
+  },
+  "data.memo.obs2.name": {
+    "ko": "관측 일지 — 발신 불명",
+    "en": "Observation Log — Unsigned",
+    "ja": "観測日誌 — 発信元不明"
+  },
+  "data.memo.obs2.desc": {
+    "ko": "D+214. 3번 격자 불빛 하나 유지. 명단에 추가함.\n서명은 없다.",
+    "en": "D+214. Grid 3, one light holding. Added to the list.\nThere is no signature.",
+    "ja": "D+214。第3グリッド、灯りひとつ維持。名簿に追加した。\n署名はない。"
+  },
+  "data.outfit.customsvest.name": {
+    "ko": "세관 우비",
+    "en": "Customs Slicker",
+    "ja": "税関のレインコート"
+  },
+  "data.outfit.hoodie.name": {
+    "ko": "잿빛 후드티",
+    "en": "Ash Hoodie",
+    "ja": "灰色のパーカー"
+  },
+  "data.outfit.poncho.name": {
+    "ko": "모래 판초",
+    "en": "Sand Poncho",
+    "ja": "砂色のポンチョ"
+  },
+  "data.outfit.puffer.name": {
+    "ko": "벽돌색 패딩",
+    "en": "Brick Puffer",
+    "ja": "レンガ色のダウン"
+  },
+  "data.outfit.riggerjacket.name": {
+    "ko": "정비공 재킷",
+    "en": "Rigger Jacket",
+    "ja": "整備工ジャケット"
+  },
+  "data.outfit.stationcoat.name": {
+    "ko": "역무원 코트",
+    "en": "Stationmaster Coat",
+    "ja": "駅員コート"
+  },
+  "data.outfit.towncoat.name": {
+    "ko": "마천루 롱코트",
+    "en": "Skyline Longcoat",
+    "ja": "摩天楼ロングコート"
+  },
+  "data.outfit.vest.name": {
+    "ko": "올리브 조끼",
+    "en": "Olive Vest",
+    "ja": "オリーブのベスト"
+  },
+  "data.region.containerport.desc": {
+    "ko": "컨테이너의 바다 · 건축재·부품의 광맥",
+    "en": "A sea of containers · a vein of material and parts",
+    "ja": "コンテナの海 · 建材・部品の鉱脈"
+  },
+  "data.region.containerport.name": {
+    "ko": "컨테이너항",
+    "en": "Container Port",
+    "ja": "コンテナ港"
+  },
+  "data.region.containerport.risk": {
+    "ko": "높음 — 장갑 권장",
+    "en": "High — gloves advised",
+    "ja": "高い — 手袋推奨"
+  },
+  "data.region.customsyard.desc": {
+    "ko": "통관을 못 넘은 화물의 무덤 · 뭐가 나올지 모른다",
+    "en": "A graveyard of cargo that never cleared customs · anything could surface",
+    "ja": "通関を越えられなかった貨物の墓場 · 何が出るかわからない"
+  },
+  "data.region.customsyard.name": {
+    "ko": "세관 압류창고",
+    "en": "Customs Impound",
+    "ja": "税関差押倉庫"
+  },
+  "data.region.customsyard.risk": {
+    "ko": "보통",
+    "en": "Medium",
+    "ja": "普通"
+  },
+  "data.region.deptstore.desc": {
+    "ko": "마천루 아래 사치의 전당 · 천·사치 가구 정점",
+    "en": "A palace of luxury beneath the towers · peak cloth and fine furniture",
+    "ja": "摩天楼の下の贅沢の殿堂 · 布・上等な家具の頂点"
+  },
+  "data.region.deptstore.name": {
+    "ko": "백화점",
+    "en": "Department Store",
+    "ja": "百貨店"
+  },
+  "data.region.deptstore.risk": {
+    "ko": "높음 — 응급키트 권장",
+    "en": "High — first-aid kit advised",
+    "ja": "高い — 救急キット推奨"
+  },
+  "data.region.grandplatform.desc": {
+    "ko": "떠나지 못한 기차와 짐가방들 · 매점과 대합실",
+    "en": "Trains that never left, luggage that stayed · kiosks and waiting halls",
+    "ja": "発てなかった列車と残された旅行鞄 · 売店と待合室"
+  },
+  "data.region.grandplatform.name": {
+    "ko": "대승강장",
+    "en": "Grand Platform",
+    "ja": "大ホーム"
+  },
+  "data.region.grandplatform.risk": {
+    "ko": "보통",
+    "en": "Medium",
+    "ja": "普通"
+  },
+  "data.region.interchange.desc": {
+    "ko": "고가 위에 멈춘 차들 · 연료·부품 회수",
+    "en": "Cars stalled on the overpass · fuel and parts salvage",
+    "ja": "高架の上で止まった車たち · 燃料・部品の回収"
+  },
+  "data.region.interchange.name": {
+    "ko": "인터체인지",
+    "en": "Interchange",
+    "ja": "インターチェンジ"
+  },
+  "data.region.interchange.risk": {
+    "ko": "보통",
+    "en": "Medium",
+    "ja": "普通"
+  },
+  "data.region.megamall.desc": {
+    "ko": "몇 블록째 이어지는 아케이드 · 잡화의 바다",
+    "en": "An arcade running block after block · a sea of goods",
+    "ja": "何ブロックも続くアーケード · 雑貨の海"
+  },
+  "data.region.megamall.name": {
+    "ko": "거대상가",
+    "en": "Grand Arcade",
+    "ja": "巨大商店街"
+  },
+  "data.region.megamall.risk": {
+    "ko": "보통",
+    "en": "Medium",
+    "ja": "普通"
+  },
+  "data.region.outpost.desc": {
+    "ko": "역을 지키던 부대의 마지막 진지 · 최상급 부품·의약",
+    "en": "The last position of the unit that held the station · top-grade parts and meds",
+    "ja": "駅を守った部隊の最後の陣地 · 最上級の部品・医薬"
+  },
+  "data.region.outpost.name": {
+    "ko": "군사 아웃포스트",
+    "en": "Military Outpost",
+    "ja": "軍前哨基地"
+  },
+  "data.region.outpost.risk": {
+    "ko": "매우 높음 — 응급키트 권장",
+    "en": "Very high — first-aid kit advised",
+    "ja": "非常に高い — 救急キット推奨"
+  },
+  "data.region.uptown.desc": {
+    "ko": "강변의 부촌 · 좋은 살림과 좋은 찬장",
+    "en": "Riverside wealth · fine households, fine pantries",
+    "ja": "川辺の富裕な街 · 良い暮らしと良い食料棚"
+  },
+  "data.region.uptown.name": {
+    "ko": "고급 주거단지",
+    "en": "Uptown Residences",
+    "ja": "高級住宅地"
+  },
+  "data.region.uptown.risk": {
+    "ko": "낮음",
+    "en": "Low",
+    "ja": "低い"
+  },
+  "exp.riskGain": {
+    "ko": "이벤트 발생으로 추가 획득:",
+    "en": "Extra from what happened out there:",
+    "ja": "出来事による追加の収穫:"
+  },
+  "power.needSource": {
+    "ko": "전력원이 없다 — 태양광 패널이나 발전기부터.",
+    "en": "No power source — install a solar panel or run the generator first.",
+    "ja": "電源がない — ソーラーパネルか発電機が先だ。"
+  },
+  "paint.applyBtn": {
+    "ko": "{name} 1통으로 확정",
+    "en": "Confirm with 1 {name}",
+    "ja": "{name}1本で確定"
+  },
+  "paint.applyFree": {
+    "ko": "이 색으로 확정 (무료)",
+    "en": "Confirm this color (free)",
+    "ja": "この色で確定（無料）"
+  },
+  "gel.applyBtn": {
+    "ko": "{name} 1통으로 빛 확정",
+    "en": "Confirm light with 1 {name}",
+    "ja": "{name}1本で光を確定"
+  },
+  "gel.applyFree": {
+    "ko": "원래 빛으로 (무료)",
+    "en": "Back to original light (free)",
+    "ja": "元の光に戻す（無料）"
+  },
+  "sel.previewHint": {
+    "ko": "눌러서 미리보기 — 확정 전엔 소모 없음",
+    "en": "Tap to preview — nothing spent until confirmed",
+    "ja": "押して試し見 — 確定まで消費なし"
+  },
+  "title.continue": {
+    "ko": "이어하기",
+    "en": "Continue",
+    "ja": "つづきから"
+  },
+  "title.new": {
+    "ko": "새 게임",
+    "en": "New Game",
+    "ja": "はじめから"
+  },
+  "title.load": {
+    "ko": "불러오기",
+    "en": "Load",
+    "ja": "ロード"
+  },
+  "title.help": {
+    "ko": "생존 수첩",
+    "en": "Survivor's Journal",
+    "ja": "生存手帳"
+  },
+  "title.quit": {
+    "ko": "게임 종료",
+    "en": "Quit Game",
+    "ja": "ゲーム終了"
+  },
+  "intro.next": {
+    "ko": "계속",
+    "en": "Continue",
+    "ja": "次へ"
+  },
+  "hud.shelter": {
+    "ko": "셸터",
+    "en": "Shelter",
+    "ja": "シェルター"
+  }
+}

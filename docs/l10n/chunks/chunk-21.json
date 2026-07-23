@@ -1,427 +1,427 @@
 {
- "data.district.city.name": {
-  "ko": "무너진 도심",
-  "en": "Fallen Downtown",
-  "ja": "崩れた都心"
- },
- "data.district.coast.bonusLabel": {
-  "ko": "슬럼가 접근성 +5%p",
-  "en": "Slum access +5%p",
-  "ja": "スラム街アクセス +5%p"
- },
- "data.district.coast.desc": {
-  "ko": "안개 낀 바닷가. 바다가 주는 것과 빼앗는 것이 있다.",
-  "en": "A fog-wrapped shore. The sea gives, and the sea takes.",
-  "ja": "霧の立ちこめる海辺。海には与えるものと、奪うものがある。"
- },
- "data.district.coast.name": {
-  "ko": "잿빛 해안",
-  "en": "Ashen Coast",
-  "ja": "灰色の海岸"
- },
- "data.district.eastcity.bonusLabel": {
-  "ko": "",
-  "en": "",
-  "ja": ""
- },
- "data.district.eastcity.desc": {
-  "ko": "국경 검문소 너머, 동쪽 대도시의 문턱. 3년 만에 다시 열린 길이다.",
-  "en": "Past the border checkpoint, the threshold of the eastern metropolis. The road has been shut for three years.",
-  "ja": "国境検問所の先、東の大都市への玄関口。三年ぶりに再び開かれた道だ。"
- },
- "data.district.eastcity.name": {
-  "ko": "동부 관문",
-  "en": "Eastern Gate",
-  "ja": "東部関門"
- },
- "data.district.forest.bonusLabel": {
-  "ko": "공업지대 접근성 +5%p",
-  "en": "Industrial access +5%p",
-  "ja": "工業地帯アクセス +5%p"
- },
- "data.district.forest.desc": {
-  "ko": "침엽수림 가장자리. 폐허에서 가장 먼 안식처.",
-  "en": "The edge of a conifer forest. The refuge farthest from the ruins.",
-  "ja": "針葉樹林の縁。廃墟から最も遠い安息の地。"
- },
- "data.district.forest.name": {
-  "ko": "숲과 산기슭",
-  "en": "Forest & Foothills",
-  "ja": "森と山裾"
- },
- "data.district.harbor.bonusLabel": {
-  "ko": "항구 지역 접근성 +5%p",
-  "en": "Harbor region access +5%p",
-  "ja": "港湾地域アクセス +5%p"
- },
- "data.district.harbor.desc": {
-  "ko": "강 하구의 죽은 항만. 바다는 얼었어도 죽지 않았다.",
-  "en": "A dead port at the river mouth. The sea is frozen, but not dead.",
-  "ja": "河口の死んだ港。海は凍っても、死んではいない。"
- },
- "data.district.harbor.name": {
-  "ko": "얼어붙은 항구",
-  "en": "Frozen Harbor",
-  "ja": "凍りついた港"
- },
- "data.district.highland.bonusLabel": {
-  "ko": "리조트 폐허 접근성 +5%p",
-  "en": "Resort ruins access +5%p",
-  "ja": "リゾート廃墟アクセス +5%p"
- },
- "data.district.highland.desc": {
-  "ko": "구름 위로 솟은 고원. 겨울이 더 혹독한 만큼, 남은 것도 더 값지다.",
-  "en": "A plateau above the clouds. The winters bite harder here, and what remains is worth more for it.",
-  "ja": "雲の上にそびえる高原。冬が厳しいぶん、残されたものの価値も高い。"
- },
- "data.district.highland.name": {
-  "ko": "고요한 고원",
-  "en": "Silent Highland",
-  "ja": "静寂の高原"
- },
- "data.district.meadow.bonusLabel": {
-  "ko": "주거지역 접근성 +5%p",
-  "en": "Residential access +5%p",
-  "ja": "住宅地アクセス +5%p"
- },
- "data.district.meadow.desc": {
-  "ko": "들풀이 무성한 벌판. 조용하고 흙이 살아있다.",
-  "en": "A field thick with wild grass. Quiet, and the soil is alive.",
-  "ja": "野草の生い茂る野原。静かで、土が生きている。"
- },
- "data.district.meadow.name": {
-  "ko": "초원 구릉지",
-  "en": "Meadow Hills",
-  "ja": "草原の丘陵"
- },
- "data.district.outskirts.bonusLabel": {
-  "ko": "주거지역 접근성 +3%p",
-  "en": "Residential access +3%p",
-  "ja": "住宅地アクセス +3%p"
- },
- "data.district.outskirts.desc": {
-  "ko": "도시 밖 황무지. 고속도로가 지나가 이동이 편하다.",
-  "en": "Wasteland beyond the city. A highway runs through, making travel easy.",
-  "ja": "都市の外の荒れ地。高速道路が通り、移動が楽だ。"
- },
- "data.district.outskirts.name": {
-  "ko": "잿빛 외곽",
-  "en": "Ashen Outskirts",
-  "ja": "灰色の郊外"
- },
- "data.district.research.bonusLabel": {
-  "ko": "",
-  "en": "",
-  "ja": ""
- },
- "data.district.research.desc": {
-  "ko": "군이 마지막까지 봉쇄한 폭심지. 방호복 없이는 한 걸음도 들일 수 없다.",
-  "en": "The blast core the army sealed to the last. Without a hazmat suit, not one step in.",
-  "ja": "軍が最後まで封鎖していた爆心地。防護服なしでは一歩も踏み込めない。"
- },
- "data.district.research.name": {
-  "ko": "금지 구역",
-  "en": "Forbidden Zone",
-  "ja": "禁止区域"
- },
- "data.injury.critical.name": {
-  "ko": "중상",
-  "en": "Critical Wound",
-  "ja": "重傷"
- },
- "data.injury.deep.name": {
-  "ko": "깊은 상처",
-  "en": "Deep Wound",
-  "ja": "深い傷"
- },
- "data.injury.infection.name": {
-  "ko": "감염 위험",
-  "en": "Infection Risk",
-  "ja": "感染の危険"
- },
- "data.injury.minor.name": {
-  "ko": "가벼운 부상",
-  "en": "Minor Injury",
-  "ja": "軽傷"
- },
- "data.injury.sprain.name": {
-  "ko": "염좌",
-  "en": "Sprain",
-  "ja": "捻挫"
- },
- "data.know.coziness.desc": {
-  "ko": "집을 집답게 하는 경지. 쾌적 +6.",
-  "en": "The art of a home that feels like one. Comfort +6.",
-  "ja": "家を家らしくする境地。快適 +6。"
- },
- "data.know.coziness.name": {
-  "ko": "아늑함",
-  "en": "Coziness",
-  "ja": "居心地"
- },
- "data.know.effHeating.desc": {
-  "ko": "적은 연료로 오래 데우는 법. 난방 연료 소비 −25%.",
-  "en": "More warmth from less fuel. Heating fuel use −25%.",
-  "ja": "少ない燃料で長く暖める術。暖房燃料の消費 −25%。"
- },
- "data.know.effHeating.name": {
-  "ko": "효율 난방",
-  "en": "Efficient Heating",
-  "ja": "効率暖房"
- },
- "data.know.forecasting.desc": {
-  "ko": "하늘을 미리 읽는 법. 한파·눈사태 예보 +1일.",
-  "en": "Reading the sky ahead. Cold-snap and avalanche forecast +1 day.",
-  "ja": "空を先に読む術。寒波・雪崩の予報 +1日。"
- },
- "data.know.forecasting.name": {
-  "ko": "예보",
-  "en": "Forecasting",
-  "ja": "予報"
- },
- "data.know.gardening.desc": {
-  "ko": "어디서든 기르는 법. 소형 텃밭 식량 +1/일, 수확 +1.",
-  "en": "Growing anywhere. A small garden yields food +1/day, harvests +1.",
-  "ja": "どこでも育てる術。小型菜園で食料 +1/日、収穫 +1。"
- },
- "data.know.gardening.name": {
-  "ko": "텃밭",
-  "en": "Gardening",
-  "ja": "菜園"
- },
- "data.know.handiness.desc": {
-  "ko": "아껴 만드는 솜씨. 제작 재료 −20%.",
-  "en": "Making do with less. Crafting materials −20%.",
-  "ja": "材料を節約して作る腕前。製作材料 −20%。"
- },
- "data.know.handiness.name": {
-  "ko": "손재주",
-  "en": "Handiness",
-  "ja": "器用さ"
- },
- "data.know.hearthCraft.desc": {
-  "ko": "어느 집에나 벽난로를 놓는 법. 겨울 온기와 한파 방어.",
-  "en": "Building a hearth in any home. Winter warmth and cold defense.",
-  "ja": "どんな家にも暖炉を据える術。冬の暖かさと寒波防御。"
- },
- "data.know.hearthCraft.name": {
-  "ko": "화덕",
-  "en": "Hearthcraft",
-  "ja": "炉づくり"
- },
- "data.know.insulation.desc": {
-  "ko": "벽과 창을 여며 냉기를 막는 법. 전 셸터가 단열된다.",
-  "en": "Sealing walls and windows against the cold. Every shelter gains insulation.",
-  "ja": "壁と窓の隙間をふさいで冷気を防ぐ術。全シェルターが断熱される。"
- },
- "data.know.insulation.name": {
-  "ko": "단열",
-  "en": "Insulation",
-  "ja": "断熱"
- },
- "data.know.preserve.desc": {
-  "ko": "상하지 않게 갈무리하는 법. 부패 −50%, 염장 +1.",
-  "en": "Keeping food from spoiling. Spoilage −50%, salt-cure +1.",
-  "ja": "傷まないように蓄える術。腐敗 −50%、塩漬け +1。"
- },
- "data.know.preserve.name": {
-  "ko": "보존",
-  "en": "Preservation",
-  "ja": "保存"
- },
- "data.know.purify.desc": {
-  "ko": "이슬과 빗물을 모아 거르는 법. 매일 깨끗한 물 +1.",
-  "en": "Gathering and filtering dew and rain. Clean water +1 daily.",
-  "ja": "露と雨水を集めて濾過する術。毎日きれいな水 +1。"
- },
- "data.know.purify.name": {
-  "ko": "정수",
-  "en": "Purification",
-  "ja": "浄水"
- },
- "data.know.radioKnow.desc": {
-  "ko": "전파로 세상에 닿는 법. 송출 도달 +1, 날씨 예보.",
-  "en": "Reaching the world by radio. Broadcast reach +1, weather forecast.",
-  "ja": "電波で世界に届く術。放送到達 +1、天気予報。"
- },
- "data.know.radioKnow.name": {
-  "ko": "무전",
-  "en": "Radiocraft",
-  "ja": "無線"
- },
- "data.know.scouting.desc": {
-  "ko": "길을 읽는 눈. 전 지역 탐험 성공률 +4%p.",
-  "en": "An eye for the way. Expedition success +4%p everywhere.",
-  "ja": "道を読む目。全地域の探索成功率 +4%p。"
- },
- "data.know.scouting.name": {
-  "ko": "정찰",
-  "en": "Scouting",
-  "ja": "偵察"
- },
- "data.know.tidiness.desc": {
-  "ko": "집을 늘 갈무리하는 손. 일일 청결 감소 −0.5.",
-  "en": "A hand that keeps a home in order. Daily grime −0.5.",
-  "ja": "家を常に整える手。毎日の清潔低下 −0.5。"
- },
- "data.know.tidiness.name": {
-  "ko": "정리",
-  "en": "Tidiness",
-  "ja": "整頓"
- },
- "data.knowbr.home.name": {
-  "ko": "살림",
-  "en": "Homemaking",
-  "ja": "暮らし"
- },
- "data.knowbr.lore.name": {
-  "ko": "앎",
-  "en": "Knowing",
-  "ja": "知"
- },
- "data.knowbr.supply.name": {
-  "ko": "자급",
-  "en": "Self-sufficiency",
-  "ja": "自給"
- },
- "data.knowbr.warmth.name": {
-  "ko": "온기",
-  "en": "Warmth",
-  "ja": "暖かさ"
- },
- "data.memo.com1.desc": {
-  "ko": "1인 1개. 새치기 신고 즉시 퇴장.\n팻말만 남고 진열대는 사흘 만에 뼈대뿐이었다.",
-  "en": "One per customer. Cutting the line means removal.\nThe sign stayed. The shelves were bones in three days.",
-  "ja": "お一人様1点。列の割り込みは通報のうえ即退場。\n札だけが残り、棚は三日で骨組みだけになった。"
- },
- "data.memo.com1.name": {
-  "ko": "텅 빈 진열대 팻말",
-  "en": "Empty Shelf Sign",
-  "ja": "空っぽの棚の札"
- },
- "data.memo.com2.desc": {
-  "ko": "직원들에게. 오늘 문을 닫는다. 남은 물건은 각자 가져가라.\n너희를 지켜주지 못해 미안하다.",
-  "en": "To my staff. We close today. Take what’s left, split it fairly.\nI’m sorry I couldn’t keep you safe.",
-  "ja": "従業員へ。今日で店を閉める。残った品は各自持っていけ。\nお前たちを守ってやれなくて、すまない。"
- },
- "data.memo.com2.name": {
-  "ko": "점장의 메모",
-  "en": "Manager’s Memo",
-  "ja": "店長のメモ"
- },
- "data.memo.com3.desc": {
-  "ko": "깨진 유리 위에 스프레이로 적혔다. \"여긴 이미 털렸다. 헛수고 마라.\"\n그 아래 누군가 덧썼다. \"그래도 확인했다.\"",
-  "en": "Sprayed across shattered glass: \"Already cleaned out. Don’t bother.\"\nBelow it someone added: \"Checked anyway.\"",
-  "ja": "割れたガラスの上にスプレーで書かれていた。「ここはもう漁られた。無駄足はよせ」\nその下に誰かが書き足した。「それでも確かめた」"
- },
- "data.memo.com3.name": {
-  "ko": "깨진 쇼윈도 낙서",
-  "en": "Graffiti on Broken Glass",
-  "ja": "割れたショーウィンドウの落書き"
- },
- "data.memo.com4.desc": {
-  "ko": "종이에 매직으로. 현금 안 받음. 물, 약, 연료만 교환.\n돈이 종이가 되는 데 일주일이 걸렸다.",
-  "en": "Marker on cardboard: No cash. Trade only — water, meds, fuel.\nIt took a week for money to become paper.",
-  "ja": "紙にマジックで。現金お断り。水、薬、燃料のみ交換。\n金がただの紙になるまで、一週間だった。"
- },
- "data.memo.com4.name": {
-  "ko": "현금은 안 받습니다",
-  "en": "No Cash Accepted",
-  "ja": "現金お断り"
- },
- "data.memo.com5.desc": {
-  "ko": "약이 필요하면 문을 두드리지 말고 목록을 적어 넣으세요. 있으면 내놓겠습니다.\n마지막 줄: 이제 아무것도 없습니다.",
-  "en": "Need meds? Don’t knock — slip a list under the door. If we have it, it’s yours.\nLast line: We have nothing left now.",
-  "ja": "薬が必要なら、ドアを叩かずにリストを書いて差し入れてください。あれば出します。\n最後の行:もう何もありません。"
- },
- "data.memo.com5.name": {
-  "ko": "약국 셔터의 호소",
-  "en": "Plea on the Pharmacy Shutter",
-  "ja": "薬局のシャッターの訴え"
- },
- "data.memo.com6.desc": {
-  "ko": "오늘 밤 배급소 앞으로. 더는 순서를 기다리지 않는다.\n전단은 젖어 뭉개졌고, 배급소는 그 밤 이후 불탔다.",
-  "en": "Tonight, at the ration depot. We wait our turn no longer.\nThe flyer is pulped with rain. The depot burned that night.",
-  "ja": "今夜、配給所の前へ。もう順番は待たない。\nビラは濡れてふやけ、配給所はその夜に焼け落ちた。"
- },
- "data.memo.com6.name": {
-  "ko": "폭동의 밤 전단",
-  "en": "Riot Night Flyer",
-  "ja": "暴動の夜のビラ"
- },
- "data.memo.com7.desc": {
-  "ko": "거래를 완료할 수 없습니다. 잠시 후 다시 시도해 주십시오.\n같은 문장이 몇 달째 켜져 있다.",
-  "en": "Transaction cannot be completed. Please try again later.\nThe same line, lit for months now.",
-  "ja": "お取引を完了できません。しばらくしてから、もう一度お試しください。\n同じ文面が、もう何か月も灯ったままだ。"
- },
- "data.memo.com7.name": {
-  "ko": "ATM 화면",
-  "en": "ATM Screen",
-  "ja": "ATMの画面"
- },
- "data.memo.com8.desc": {
-  "ko": "고객 여러분, 영업을 종료합니다. 침착하게 가까운 출구로.\n대본 여백에 손글씨. \"3번 출구 막힘. 통제 불가.\"",
-  "en": "Dear customers, we are closing. Calmly proceed to the nearest exit.\nHandwritten in the margin: \"Exit 3 blocked. No control.\"",
-  "ja": "お客様各位、営業を終了します。落ち着いて、お近くの出口へ。\n台本の余白に手書きで。「3番出口、封鎖。統制不能」"
- },
- "data.memo.com8.name": {
-  "ko": "백화점 안내방송 대본",
-  "en": "Department Store Script",
-  "ja": "デパートの館内放送台本"
- },
- "data.memo.ind1.desc": {
-  "ko": "본 공장은 정부 명령에 따라 조업을 전면 중단한다. 설비 전원을 내리고 즉시 귀가하라.\n도장이 찍힌 날 이후, 라인은 멈춘 채다.",
-  "en": "By government order, all operations cease. Power down and go home at once.\nSince the stamp on this page, the line has not moved.",
-  "ja": "本工場は政府命令により操業を全面停止する。設備の電源を落とし、直ちに帰宅せよ。\n判が押されたその日から、ラインは止まったままだ。"
- },
- "data.memo.ind1.name": {
-  "ko": "공장 폐쇄 명령서",
-  "en": "Plant Shutdown Order",
-  "ja": "工場閉鎖命令書"
- },
- "data.memo.ind2.desc": {
-  "ko": "야간조 3명 출근. 주간조 인수인계 없음 — 아무도 오지 않음.\n마지막 줄: 문 잠그고 나감. 불은 켜둔다.",
-  "en": "Night shift: 3 in. No day-shift handover — no one came.\nLast line: Locking up. Leaving a light on.",
-  "ja": "夜勤3名出勤。日勤への引き継ぎなし — 誰も来ず。\n最後の行:戸締まりして退出。明かりはつけておく。"
- },
- "data.memo.ind2.name": {
-  "ko": "마지막 교대 일지",
-  "en": "Last Shift Log",
-  "ja": "最後の交代日誌"
- },
- "data.memo.ind3.desc": {
-  "ko": "먼지 앉은 안전모 안쪽에 이름과 사번. 그 아래 작게. \"27년 근속. 이제 집에 간다.\"\n걸이엔 아직 열두 개가 그대로다.",
-  "en": "Name and badge number inside a dusty hard hat. Below, small: \"27 years. Going home now.\"\nTwelve more still hang on the pegs.",
-  "ja": "埃をかぶったヘルメットの内側に、名前と社員番号。その下に小さく。「勤続27年。もう家に帰る」\nフックにはまだ十二個が掛かったままだ。"
- },
- "data.memo.ind3.name": {
-  "ko": "안전모의 이름표",
-  "en": "Name on a Hard Hat",
-  "ja": "ヘルメットの名札"
- },
- "data.memo.ind4.desc": {
-  "ko": "이번 달 급여 지급이 불가함을 알린다. 회사가 존속하는 한 반드시 정산하겠다.\n회사는 존속하지 않았다.",
-  "en": "This month’s wages cannot be paid. So long as the company stands, you will be made whole.\nThe company did not stand.",
-  "ja": "今月分の給与が支給不能であることを通知する。会社が存続する限り、必ず清算する。\n会社は存続しなかった。"
- },
- "data.memo.ind4.name": {
-  "ko": "급여 미지급 공고",
-  "en": "Unpaid Wages Notice",
-  "ja": "給与未払いの公告"
- },
- "data.memo.ind5.desc": {
-  "ko": "배관공이 파이프에 분필로. \"밸브 잠갔음. 여기 온기는 내가 마지막까지 지켰다.\"\n온기는 오래전에 식었다.",
-  "en": "Chalked on a pipe by the fitter: \"Valves shut. I kept this heat going till the end.\"\nThe warmth went cold long ago.",
-  "ja": "配管工がパイプにチョークで。「バルブ閉鎖済み。ここの暖かさは俺が最後まで守った」\nその暖かさは、とうに冷めた。"
- },
- "data.memo.ind5.name": {
-  "ko": "보일러실 낙서",
-  "en": "Boiler Room Scrawl",
-  "ja": "ボイラー室の落書き"
- },
- "data.memo.ind6.desc": {
-  "ko": "타임카드가 한 날짜에서 멈췄다. 그날 이후로 찍힌 카드가 없다.\n기계는 아직 자정을 가리키고 있다.",
-  "en": "The time cards all stop on one date. None punched after.\nThe clock still points to midnight.",
-  "ja": "タイムカードはある日付で止まっている。その日を最後に、打刻されたカードはない。\n機械はまだ零時を指したままだ。"
- }
+  "data.craft.sofa.hint": {
+    "ko": "패브릭 소파",
+    "en": "Fabric sofa",
+    "ja": "ファブリックソファ"
+  },
+  "data.craft.stationcoat.hint": {
+    "ko": "옷장에 추가 — 중앙역 역무원의 정복 코트",
+    "en": "Added to wardrobe — a stationmaster's uniform coat",
+    "ja": "ワードローブに追加 — 中央駅駅員の制服コート"
+  },
+  "data.craft.stove.hint": {
+    "ko": "장작 난로 — 최고의 온기 (연료 1/일)",
+    "en": "Wood stove — the best warmth (fuel 1/day)",
+    "ja": "薪ストーブ — 最高の暖かさ（燃料1/日）"
+  },
+  "data.craft.suit.hint": {
+    "ko": "폐허 이전의 출근길",
+    "en": "A commute from before the ruin",
+    "ja": "廃墟になる前の通勤路"
+  },
+  "data.craft.supplyshelf.hint": {
+    "ko": "통조림·병을 채운 보급 선반",
+    "en": "A supply shelf stocked with cans and jars",
+    "ja": "缶詰・瓶を詰めた補給棚"
+  },
+  "data.craft.table.hint": {
+    "ko": "식탁",
+    "en": "Dining table",
+    "ja": "食卓"
+  },
+  "data.craft.teatable.hint": {
+    "ko": "낮은 찻상 — 따뜻한 한 잔",
+    "en": "A low tea table — a warm cup",
+    "ja": "低いティーテーブル — 温かい一杯"
+  },
+  "data.craft.towncoat.hint": {
+    "ko": "옷장에 추가 — 백화점 진열장의 마지막 롱코트",
+    "en": "Added to wardrobe — the last longcoat from a department store window",
+    "ja": "ワードローブに追加 — デパートのショーウィンドウ最後のロングコート"
+  },
+  "data.craft.vest.hint": {
+    "ko": "옷장에 추가 — 팔이 가벼운 작업 조끼",
+    "en": "Added to wardrobe — a work vest, arms free",
+    "ja": "ワードローブに追加 — 腕が軽い作業ベスト"
+  },
+  "data.craft.wine.hint": {
+    "ko": "옷장에 추가 — 소금 매염 와인빛",
+    "en": "Added to wardrobe — salt-mordant wine",
+    "ja": "ワードローブに追加 — 塩媒染のワイン色"
+  },
+  "data.def.autopurifier.appliance.label": {
+    "ko": "매일 깨끗한 물 +2 (배터리 1/일)",
+    "en": "Clean water +2 daily (battery 1/day)",
+    "ja": "毎日きれいな水+2（バッテリー1/日）"
+  },
+  "data.def.autopurifier.colorNames": {
+    "ko": "스틸|화이트|틸|네이비",
+    "en": "Steel|White|Teal|Navy",
+    "ja": "スチール|ホワイト|ティール|ネイビー"
+  },
+  "data.def.autopurifier.name": {
+    "ko": "자동 급수기",
+    "en": "Auto Water Station",
+    "ja": "自動給水器"
+  },
+  "data.def.barrelfire.colorNames": {
+    "ko": "방청 레드|올리브 드럼|재 그레이|슬레이트",
+    "en": "Red Oxide|Olive Drum|Ash Gray|Slate",
+    "ja": "防錆レッド|オリーブドラム|アッシュグレー|スレート"
+  },
+  "data.def.barrelfire.name": {
+    "ko": "드럼통 화로",
+    "en": "Barrel Fire",
+    "ja": "ドラム缶の焚き火"
+  },
+  "data.def.bed.colorNames": {
+    "ko": "와인레드|포레스트|네이비|크림",
+    "en": "Wine Red|Forest|Navy|Cream",
+    "ja": "ワインレッド|フォレスト|ネイビー|クリーム"
+  },
+  "data.def.bed.name": {
+    "ko": "침대",
+    "en": "Bed",
+    "ja": "ベッド"
+  },
+  "data.def.bookshelf.colorNames": {
+    "ko": "오크|월넛|화이트워시|블랙우드",
+    "en": "Oak|Walnut|Whitewash|Blackwood",
+    "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+  },
+  "data.def.bookshelf.name": {
+    "ko": "책장",
+    "en": "Bookshelf",
+    "ja": "本棚"
+  },
+  "data.def.bookstack.colorNames": {
+    "ko": "모험담|시집|도감|일기장",
+    "en": "Adventure|Poetry|Field Guide|Diary",
+    "ja": "冒険譚|詩集|図鑑|日記帳"
+  },
+  "data.def.bookstack.name": {
+    "ko": "책 더미",
+    "en": "Book Stack",
+    "ja": "本の山"
+  },
+  "data.def.candelabra.colorNames": {
+    "ko": "황동|실버|블랙|앤티크골드",
+    "en": "Brass|Silver|Black|Antique Gold",
+    "ja": "真鍮|シルバー|ブラック|アンティークゴールド"
+  },
+  "data.def.candelabra.name": {
+    "ko": "촛대",
+    "en": "Candelabra",
+    "ja": "燭台"
+  },
+  "data.def.candle.colorNames": {
+    "ko": "우드|화이트|블랙|라벤더",
+    "en": "Wood|White|Black|Lavender",
+    "ja": "ウッド|ホワイト|ブラック|ラベンダー"
+  },
+  "data.def.candle.name": {
+    "ko": "캔들 스툴",
+    "en": "Candle Stool",
+    "ja": "キャンドルスツール"
+  },
+  "data.def.chair.colorNames": {
+    "ko": "오크|월넛|화이트워시|블랙우드",
+    "en": "Oak|Walnut|Whitewash|Blackwood",
+    "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+  },
+  "data.def.chair.name": {
+    "ko": "의자",
+    "en": "Chair",
+    "ja": "椅子"
+  },
+  "data.def.clock.colorNames": {
+    "ko": "마호가니|오크|블랙|아이보리",
+    "en": "Mahogany|Oak|Black|Ivory",
+    "ja": "マホガニー|オーク|ブラック|アイボリー"
+  },
+  "data.def.clock.name": {
+    "ko": "괘종시계",
+    "en": "Grandfather Clock",
+    "ja": "振り子時計"
+  },
+  "data.def.crate.colorNames": {
+    "ko": "오크|월넛|화이트워시|블랙우드",
+    "en": "Oak|Walnut|Whitewash|Blackwood",
+    "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+  },
+  "data.def.crate.name": {
+    "ko": "나무상자",
+    "en": "Wooden Crate",
+    "ja": "木箱"
+  },
+  "data.def.cratestack.colorNames": {
+    "ko": "파인|올리브|러스트|애쉬",
+    "en": "Pine|Olive|Rust|Ash",
+    "ja": "パイン|オリーブ|ラスト|アッシュ"
+  },
+  "data.def.cratestack.name": {
+    "ko": "보급 상자",
+    "en": "Supply Crates",
+    "ja": "補給箱"
+  },
+  "data.def.curtain.colorNames": {
+    "ko": "리넨|세이지|버건디|머스터드",
+    "en": "Linen|Sage|Burgundy|Mustard",
+    "ja": "リネン|セージ|バーガンディ|マスタード"
+  },
+  "data.def.curtain.name": {
+    "ko": "커튼",
+    "en": "Curtain",
+    "ja": "カーテン"
+  },
+  "data.def.cushion.colorNames": {
+    "ko": "머스터드|와인|세이지|인디고",
+    "en": "Mustard|Wine|Sage|Indigo",
+    "ja": "マスタード|ワイン|セージ|インディゴ"
+  },
+  "data.def.cushion.name": {
+    "ko": "방석",
+    "en": "Cushion",
+    "ja": "座布団"
+  },
+  "data.def.desklamp.colorNames": {
+    "ko": "그린|블랙|브라스|크림",
+    "en": "Green|Black|Brass|Cream",
+    "ja": "グリーン|ブラック|ブラス|クリーム"
+  },
+  "data.def.desklamp.name": {
+    "ko": "책상 램프",
+    "en": "Desk Lamp",
+    "ja": "デスクランプ"
+  },
+  "data.def.dresser.colorNames": {
+    "ko": "내추럴|다크브라운|화이트|그레이",
+    "en": "Natural|Dark Brown|White|Gray",
+    "ja": "ナチュラル|ダークブラウン|ホワイト|グレー"
+  },
+  "data.def.dresser.name": {
+    "ko": "서랍장",
+    "en": "Dresser",
+    "ja": "チェスト"
+  },
+  "data.def.firstaidbox.colorNames": {
+    "ko": "화이트|레드|올리브|스틸",
+    "en": "White|Red|Olive|Steel",
+    "ja": "ホワイト|レッド|オリーブ|スチール"
+  },
+  "data.def.firstaidbox.name": {
+    "ko": "구급상자",
+    "en": "First-Aid Box",
+    "ja": "救急箱"
+  },
+  "data.def.frame.colorNames": {
+    "ko": "호두나무|골드|화이트|슬레이트",
+    "en": "Walnut|Gold|White|Slate",
+    "ja": "クルミ|ゴールド|ホワイト|スレート"
+  },
+  "data.def.frame.name": {
+    "ko": "액자",
+    "en": "Framed Picture",
+    "ja": "額縁"
+  },
+  "data.def.fridge.appliance.label": {
+    "ko": "음식 부패 방지",
+    "en": "Prevents food spoilage",
+    "ja": "食料の腐敗防止"
+  },
+  "data.def.fridge.colorNames": {
+    "ko": "체리레드|민트|크림|화이트",
+    "en": "Cherry Red|Mint|Cream|White",
+    "ja": "チェリーレッド|ミント|クリーム|ホワイト"
+  },
+  "data.def.fridge.name": {
+    "ko": "냉장고",
+    "en": "Fridge",
+    "ja": "冷蔵庫"
+  },
+  "data.def.fuelpile.colorNames": {
+    "ko": "참나무|자작|소나무|유목",
+    "en": "Oak|Birch|Pine|Driftwood",
+    "ja": "ナラ|シラカバ|マツ|流木"
+  },
+  "data.def.fuelpile.name": {
+    "ko": "장작 더미",
+    "en": "Firewood Pile",
+    "ja": "薪の山"
+  },
+  "data.def.generator.appliance.label": {
+    "ko": "가동 중엔 배터리 소비 무료 (연료 1/일)",
+    "en": "Free battery use while running (fuel 1/day)",
+    "ja": "稼働中はバッテリー消費なし（燃料1/日）"
+  },
+  "data.def.generator.colorNames": {
+    "ko": "레드|옐로우|올리브|그레이",
+    "en": "Red|Yellow|Olive|Gray",
+    "ja": "レッド|イエロー|オリーブ|グレー"
+  },
+  "data.def.generator.name": {
+    "ko": "발전기",
+    "en": "Generator",
+    "ja": "発電機"
+  },
+  "data.def.globe.colorNames": {
+    "ko": "오크|월넛|화이트워시|블랙우드",
+    "en": "Oak|Walnut|Whitewash|Blackwood",
+    "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+  },
+  "data.def.globe.name": {
+    "ko": "골동품 지구본",
+    "en": "Antique Globe",
+    "ja": "アンティーク地球儀"
+  },
+  "data.def.graffiti.colorNames": {
+    "ko": "네온 핑크|라임|시안|선셋 오렌지",
+    "en": "Neon Pink|Lime|Cyan|Sunset Orange",
+    "ja": "ネオンピンク|ライム|シアン|サンセットオレンジ"
+  },
+  "data.def.graffiti.name": {
+    "ko": "그래피티 패널",
+    "en": "Graffiti Panel",
+    "ja": "グラフィティパネル"
+  },
+  "data.def.heater.appliance.label": {
+    "ko": "한파 방어 + 겨울 쾌적 (연료 1/일)",
+    "en": "Cold-snap defense + winter comfort (fuel 1/day)",
+    "ja": "寒波防御＋冬の快適さ（燃料1/日）"
+  },
+  "data.def.heater.colorNames": {
+    "ko": "오렌지|크림|슬레이트|올리브",
+    "en": "Orange|Cream|Slate|Olive",
+    "ja": "オレンジ|クリーム|スレート|オリーブ"
+  },
+  "data.def.heater.name": {
+    "ko": "온풍기",
+    "en": "Space Heater",
+    "ja": "ファンヒーター"
+  },
+  "data.def.jugcluster.colorNames": {
+    "ko": "블루|레드|그린|앰버",
+    "en": "Blue|Red|Green|Amber",
+    "ja": "ブルー|レッド|グリーン|アンバー"
+  },
+  "data.def.jugcluster.name": {
+    "ko": "물·연료 비축",
+    "en": "Jug Cluster",
+    "ja": "水・燃料備蓄"
+  },
+  "data.def.lamp.colorNames": {
+    "ko": "웜화이트|세이지|로즈|스카이",
+    "en": "Warm White|Sage|Rose|Sky",
+    "ja": "ウォームホワイト|セージ|ローズ|スカイ"
+  },
+  "data.def.lamp.name": {
+    "ko": "스탠드 조명",
+    "en": "Floor Lamp",
+    "ja": "スタンドライト"
+  },
+  "data.def.lantern.colorNames": {
+    "ko": "황동|무쇠|레드|민트",
+    "en": "Brass|Cast Iron|Red|Mint",
+    "ja": "真鍮|鋳鉄|レッド|ミント"
+  },
+  "data.def.lantern.name": {
+    "ko": "걸이 랜턴",
+    "en": "Hanging Lantern",
+    "ja": "吊りランタン"
+  },
+  "data.def.ledbar.colorNames": {
+    "ko": "그래파이트|실버|화이트|네이비",
+    "en": "Graphite|Silver|White|Navy",
+    "ja": "グラファイト|シルバー|ホワイト|ネイビー"
+  },
+  "data.def.ledbar.name": {
+    "ko": "LED 라이트 바",
+    "en": "LED Light Bar",
+    "ja": "LEDライトバー"
+  },
+  "data.def.mirror.colorNames": {
+    "ko": "오크|월넛|화이트워시|블랙우드",
+    "en": "Oak|Walnut|Whitewash|Blackwood",
+    "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+  },
+  "data.def.mirror.name": {
+    "ko": "전신 거울",
+    "en": "Standing Mirror",
+    "ja": "姿見"
+  },
+  "data.def.neonair.colorNames": {
+    "ko": "일렉트릭 블루|시안|아쿠아|인디고",
+    "en": "Electric Blue|Cyan|Aqua|Indigo",
+    "ja": "エレクトリックブルー|シアン|アクア|インディゴ"
+  },
+  "data.def.neonair.name": {
+    "ko": "네온 사인 · ON AIR",
+    "en": "Neon Sign · ON AIR",
+    "ja": "ネオンサイン · ON AIR"
+  },
+  "data.def.neonvip.colorNames": {
+    "ko": "바이올렛|마젠타|핑크|블루 바이올렛",
+    "en": "Violet|Magenta|Pink|Blue Violet",
+    "ja": "バイオレット|マゼンタ|ピンク|ブルーバイオレット"
+  },
+  "data.def.neonvip.name": {
+    "ko": "네온 사인 · VIP ZONE",
+    "en": "Neon Sign · VIP ZONE",
+    "ja": "ネオンサイン · VIP ZONE"
+  },
+  "data.def.noticeboard.colorNames": {
+    "ko": "코르크|칠판|화이트|메탈",
+    "en": "Cork|Slate|White|Steel",
+    "ja": "コルク|黒板|ホワイト|メタル"
+  },
+  "data.def.noticeboard.name": {
+    "ko": "상황판",
+    "en": "Notice Board",
+    "ja": "掲示板"
+  },
+  "data.def.phonograph.colorNames": {
+    "ko": "오크|월넛|화이트워시|블랙우드",
+    "en": "Oak|Walnut|Whitewash|Blackwood",
+    "ja": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド"
+  },
+  "data.def.phonograph.name": {
+    "ko": "축음기",
+    "en": "Phonograph",
+    "ja": "蓄音機"
+  },
+  "data.def.plant.colorNames": {
+    "ko": "테라코타|화이트|블랙|민트",
+    "en": "Terracotta|White|Black|Mint",
+    "ja": "テラコッタ|ホワイト|ブラック|ミント"
+  },
+  "data.def.plant.name": {
+    "ko": "화분",
+    "en": "Potted Plant",
+    "ja": "鉢植え"
+  },
+  "data.def.purifier.appliance.label": {
+    "ko": "매일 깨끗한 물 +1",
+    "en": "Clean water +1 daily",
+    "ja": "毎日きれいな水 +1"
+  },
+  "data.def.purifier.colorNames": {
+    "ko": "스틸|화이트|올리브|네이비",
+    "en": "Steel|White|Olive|Navy",
+    "ja": "スチール|ホワイト|オリーブ|ネイビー"
+  },
+  "data.def.purifier.name": {
+    "ko": "정수기",
+    "en": "Water Purifier",
+    "ja": "浄水器"
+  },
+  "data.def.radio.colorNames": {
+    "ko": "체리레드|크림|민트|브라운",
+    "en": "Cherry Red|Cream|Mint|Brown",
+    "ja": "チェリーレッド|クリーム|ミント|ブラウン"
+  },
+  "data.def.radio.name": {
+    "ko": "라디오",
+    "en": "Radio",
+    "ja": "ラジオ"
+  }
 }

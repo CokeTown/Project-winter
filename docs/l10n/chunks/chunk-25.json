@@ -1,142 +1,427 @@
 {
- "data.sketch.meteor.name": {
-  "ko": "유성우 스케치",
-  "en": "Meteor Shower Sketch",
-  "ja": "流星群のスケッチ"
- },
- "data.sketch.milkyway.desc": {
-  "ko": "도시가 살아 있을 땐 이런 하늘을 본 적이 없다. 폐허가 준 것 중에 이건 나쁘지 않다.\n먼지 너머로, 강처럼 흐르는 별.",
-  "en": "When the city still lived I never saw a sky like this. Of what the ruin gave, this one isn’t bad.\nBeyond the dust, stars flowing like a river.",
-  "ja": "街が生きていた頃、こんな空を見たことはなかった。廃墟がくれたものの中で、これは悪くない。\n塵の向こうに、川のように流れる星。"
- },
- "data.sketch.milkyway.name": {
-  "ko": "은하수 스케치",
-  "en": "Milky Way Sketch",
-  "ja": "天の川のスケッチ"
- },
- "data.sketch.moonhalo.desc": {
-  "ko": "달 둘레에 흐린 고리가 걸렸다. 내일 눈이 온다는 뜻이라고, 누가 그랬던 것 같다.\n예보는 이제 하늘밖에 없다.",
-  "en": "A faint ring hung round the moon. Someone once said it means snow tomorrow.\nThe sky is the only forecast left now.",
-  "ja": "月のまわりに淡い輪がかかっていた。明日は雪が降る印だと、誰かが言っていた気がする。\n予報はもう、空しかない。"
- },
- "data.sketch.moonhalo.name": {
-  "ko": "달무리 스케치",
-  "en": "Moon Halo Sketch",
-  "ja": "月暈のスケッチ"
- },
- "data.sketch.satellite.desc": {
-  "ko": "별들 사이로 한 점이 일정한 속도로 미끄러졌다. 깜빡이지도, 떨어지지도 않았다.\n저건 별이 아니다. 누군가 아직 저 위에서 돌고 있다.",
-  "en": "A single point slid between the stars at a steady pace. It did not blink, and it did not fall.\nThat is no star. Someone up there is still going round.",
-  "ja": "星々の間を、一つの点が一定の速さで滑っていった。瞬きもせず、落ちもしなかった。\nあれは星じゃない。誰かがまだ、あの上を回っている。"
- },
- "data.sketch.satellite.name": {
-  "ko": "궤도의 불빛 스케치",
-  "en": "Orbiting Light Sketch",
-  "ja": "軌道の光のスケッチ"
- },
- "data.theme.bedroom.name": {
-  "ko": "따뜻한 침실",
-  "en": "Warm Bedroom",
-  "ja": "暖かな寝室"
- },
- "data.theme.greencorner.name": {
-  "ko": "녹색 구석",
-  "en": "Green Corner",
-  "ja": "緑の片隅"
- },
- "data.theme.parlor.name": {
-  "ko": "응접실",
-  "en": "Parlor",
-  "ja": "応接間"
- },
- "data.theme.workshop.name": {
-  "ko": "작업 공간",
-  "en": "Work Space",
-  "ja": "仕事部屋"
- },
- "data.weather.ash.name": {
-  "ko": "재",
-  "en": "Ash",
-  "ja": "灰"
- },
- "data.weather.clear.name": {
-  "ko": "맑음",
-  "en": "Clear",
-  "ja": "晴れ"
- },
- "data.weather.rain.name": {
-  "ko": "비",
-  "en": "Rain",
-  "ja": "雨"
- },
- "data.weather.snow.name": {
-  "ko": "눈",
-  "en": "Snow",
-  "ja": "雪"
- },
- "data.weather.storm.name": {
-  "ko": "폭우",
-  "en": "Downpour",
-  "ja": "豪雨"
- },
- "data.will.will1.desc": {
-  "ko": "더는 기다릴 힘이 없다. 창밖에 봄이 오면 누군가 이 방을 쓰길.\n미워하지 마라. 나는 오래 버텼다.",
-  "en": "No strength left to wait. When spring comes to that window, may someone use this room.\nDon’t hate me. I held on a long time.",
-  "ja": "もう待つ力が残っていない。窓の外に春が来たら、誰かこの部屋を使ってほしい。\n恨まないでくれ。私は長く持ちこたえた。"
- },
- "data.will.will1.name": {
-  "ko": "창턱의 유서",
-  "en": "Note on the Sill",
-  "ja": "窓辺の遺書"
- },
- "data.will.will2.desc": {
-  "ko": "아들아, 연료는 다락에 숨겨뒀다. 봄까지만 아끼면 산다.\n나는 너 몫까지 먹지 않으려 한다. 부디 살아라.",
-  "en": "Son, the fuel is hid in the attic. Ration it to spring and you’ll live.\nI won’t eat your share. Please — live.",
-  "ja": "息子よ、燃料は屋根裏に隠してある。春まで節約すれば生き延びられる。\nお前の分まで食べるつもりはない。どうか生きてくれ。"
- },
- "data.will.will2.name": {
-  "ko": "아버지의 마지막 말",
-  "en": "Father’s Last Words",
-  "ja": "父の最後の言葉"
- },
- "data.will.will3.desc": {
-  "ko": "우린 함께 가기로 했다. 따로 남는 것보다 낫다고.\n이 집을 찾은 당신은, 부디 혼자가 아니길.",
-  "en": "We chose to go together. Better than being left apart.\nWhoever finds this house — may you not be alone.",
-  "ja": "私たちは一緒に逝くことにした。離ればなれで残るよりはいいと。\nこの家を見つけたあなたが、どうか独りではありませんように。"
- },
- "data.will.will3.name": {
-  "ko": "두 사람의 편지",
-  "en": "Letter for Two",
-  "ja": "二人の手紙"
- },
- "data.will.will4.desc": {
-  "ko": "마지막 환자까지 곁을 지켰다. 약은 진작 떨어졌고, 손을 잡아주는 것밖엔 없었다.\n이제 내 차례다. 두렵지 않다면 거짓말이다.",
-  "en": "I stayed to the last patient. The medicine ran out long ago; all I had left was a held hand.\nNow it’s my turn. I’d be lying if I said I wasn’t afraid.",
-  "ja": "最後の患者まで、そばを離れなかった。薬はとっくに尽きて、手を握ってやることしかできなかった。\n今度は私の番だ。怖くないと言えば嘘になる。"
- },
- "data.will.will4.name": {
-  "ko": "간호사의 수첩",
-  "en": "The Nurse’s Notebook",
-  "ja": "看護師の手帳"
- },
- "data.will.will5.desc": {
-  "ko": "문은 열어뒀다. 너는 나보다 오래 살아라.\n누구든 이 녀석을 보거든, 착한 개다. 겁이 많을 뿐이다.",
-  "en": "I left the door open. Outlive me.\nWhoever meets this one — he’s a good dog. Just easily frightened.",
-  "ja": "扉は開けておいた。お前は私より長生きしろ。\n誰かがこいつに会ったら――いい犬だ。ただ臆病なだけだ。"
- },
- "data.will.will5.name": {
-  "ko": "개에게 남긴 말",
-  "en": "A Word for the Dog",
-  "ja": "犬に残した言葉"
- },
- "data.will.will6.desc": {
-  "ko": "네 편지 잘 받았다. 나도 보고 싶었다고, 그 말을 꼭 하고 싶었다.\n부칠 곳이 이제 없구나.",
-  "en": "I got your letter. I wanted to say I missed you too — I needed to say it.\nThere’s nowhere left to send this now.",
-  "ja": "君の手紙は確かに受け取った。私も会いたかったと、その言葉をどうしても伝えたかった。\nもう、出す宛てがないのだな。"
- },
- "data.will.will6.name": {
-  "ko": "전하지 못한 답장",
-  "en": "The Reply Never Sent",
-  "ja": "出せなかった返事"
- }
+  "data.region.checkpoint.name": {
+    "ko": "격리 검문소",
+    "en": "Quarantine Checkpoint",
+    "ja": "隔離検問所"
+  },
+  "data.region.checkpoint.risk": {
+    "ko": "보통 — 방호복 필수",
+    "en": "Medium — hazmat required",
+    "ja": "普通 — 防護服必須"
+  },
+  "data.region.citycore.desc": {
+    "ko": "수도의 심장 · 책 뭉치·의약 정점·희귀부품 (낙진이 걷힌 뒤에만)",
+    "en": "The capital’s heart · book caches, peak meds, rare parts (only after the fallout clears)",
+    "ja": "首都の心臓 · 本の束・医薬品の頂点・希少部品 (死の灰が晴れた後のみ)"
+  },
+  "data.region.citycore.name": {
+    "ko": "도심 중심지",
+    "en": "City Core",
+    "ja": "都心中枢"
+  },
+  "data.region.citycore.risk": {
+    "ko": "매우 높음 — 응급키트 권장",
+    "en": "Very high — first-aid kit advised",
+    "ja": "非常に高い — 救急キット推奨"
+  },
+  "data.region.commercial.desc": {
+    "ko": "배터리·의약품 · 상점 가구",
+    "en": "Batteries, medicine · store furniture",
+    "ja": "バッテリー・医薬品 · 店舗家具"
+  },
+  "data.region.commercial.name": {
+    "ko": "상업지구",
+    "en": "Commercial",
+    "ja": "商業地区"
+  },
+  "data.region.commercial.risk": {
+    "ko": "보통",
+    "en": "Medium",
+    "ja": "普通"
+  },
+  "data.region.containerport.desc": {
+    "ko": "컨테이너의 바다 · 건축재·부품의 광맥",
+    "en": "A sea of containers · a vein of material and parts",
+    "ja": "コンテナの海 · 建材・部品の鉱脈"
+  },
+  "data.region.containerport.name": {
+    "ko": "컨테이너항",
+    "en": "Container Port",
+    "ja": "コンテナ港"
+  },
+  "data.region.containerport.risk": {
+    "ko": "높음 — 장갑 권장",
+    "en": "High — gloves advised",
+    "ja": "高い — 手袋推奨"
+  },
+  "data.region.customsyard.desc": {
+    "ko": "통관을 못 넘은 화물의 무덤 · 뭐가 나올지 모른다",
+    "en": "A graveyard of cargo that never cleared customs · anything could surface",
+    "ja": "通関を越えられなかった貨物の墓場 · 何が出るかわからない"
+  },
+  "data.region.customsyard.name": {
+    "ko": "세관 압류창고",
+    "en": "Customs Impound",
+    "ja": "税関差押倉庫"
+  },
+  "data.region.customsyard.risk": {
+    "ko": "보통",
+    "en": "Medium",
+    "ja": "普通"
+  },
+  "data.region.deptstore.desc": {
+    "ko": "마천루 아래 사치의 전당 · 천·사치 가구 정점",
+    "en": "A palace of luxury beneath the towers · peak cloth and fine furniture",
+    "ja": "摩天楼の下の贅沢の殿堂 · 布・上等な家具の頂点"
+  },
+  "data.region.deptstore.name": {
+    "ko": "백화점",
+    "en": "Department Store",
+    "ja": "百貨店"
+  },
+  "data.region.deptstore.risk": {
+    "ko": "높음 — 응급키트 권장",
+    "en": "High — first-aid kit advised",
+    "ja": "高い — 救急キット推奨"
+  },
+  "data.region.fishMarket.desc": {
+    "ko": "신선식품 · 소금 산지 (겨울엔 결빙)",
+    "en": "Fresh food · salt source (frozen in winter)",
+    "ja": "生鮮食品 · 塩の産地 (冬は凍結)"
+  },
+  "data.region.fishMarket.name": {
+    "ko": "수산시장 폐허",
+    "en": "Fish Market Ruins",
+    "ja": "水産市場の廃墟"
+  },
+  "data.region.fishMarket.risk": {
+    "ko": "낮음",
+    "en": "Low",
+    "ja": "低い"
+  },
+  "data.region.grandplatform.desc": {
+    "ko": "떠나지 못한 기차와 짐가방들 · 매점과 대합실",
+    "en": "Trains that never left, luggage that stayed · kiosks and waiting halls",
+    "ja": "発てなかった列車と残された旅行鞄 · 売店と待合室"
+  },
+  "data.region.grandplatform.name": {
+    "ko": "대승강장",
+    "en": "Grand Platform",
+    "ja": "大ホーム"
+  },
+  "data.region.grandplatform.risk": {
+    "ko": "보통",
+    "en": "Medium",
+    "ja": "普通"
+  },
+  "data.region.harborYard.desc": {
+    "ko": "컨테이너 화물 · 오늘 바다가 준 것",
+    "en": "Container cargo · what the sea gave today",
+    "ja": "コンテナ貨物 · 今日海がくれたもの"
+  },
+  "data.region.harborYard.name": {
+    "ko": "항만 야적장",
+    "en": "Harbor Yard",
+    "ja": "港湾ヤード"
+  },
+  "data.region.harborYard.risk": {
+    "ko": "보통",
+    "en": "Medium",
+    "ja": "普通"
+  },
+  "data.region.industrial.desc": {
+    "ko": "부품·건축재·연료",
+    "en": "Parts, building material, fuel",
+    "ja": "部品・建材・燃料"
+  },
+  "data.region.industrial.name": {
+    "ko": "공업지대",
+    "en": "Industrial",
+    "ja": "工業地帯"
+  },
+  "data.region.industrial.risk": {
+    "ko": "높음 — 장갑 권장",
+    "en": "High — gloves advised",
+    "ja": "高い — 手袋推奨"
+  },
+  "data.region.interchange.desc": {
+    "ko": "고가 위에 멈춘 차들 · 연료·부품 회수",
+    "en": "Cars stalled on the overpass · fuel and parts salvage",
+    "ja": "高架の上で止まった車たち · 燃料・部品の回収"
+  },
+  "data.region.interchange.name": {
+    "ko": "인터체인지",
+    "en": "Interchange",
+    "ja": "インターチェンジ"
+  },
+  "data.region.interchange.risk": {
+    "ko": "보통",
+    "en": "Medium",
+    "ja": "普通"
+  },
+  "data.region.lab.desc": {
+    "ko": "폭심지 연구소 폐허 · 희귀부품 최다 · 세상의 답이 있는 곳 (방호복 필수)",
+    "en": "Ruins of the ground-zero lab · richest in rare parts · where the world’s answer lies (hazmat required)",
+    "ja": "爆心地の研究所廃墟 · 希少部品が最多 · 世界の答えがある場所 (防護服必須)"
+  },
+  "data.region.lab.name": {
+    "ko": "지하 연구동",
+    "en": "Underground Lab",
+    "ja": "地下研究棟"
+  },
+  "data.region.lab.risk": {
+    "ko": "매우 높음 — 방호복 필수",
+    "en": "Very high — hazmat required",
+    "ja": "非常に高い — 防護服必須"
+  },
+  "data.region.megamall.desc": {
+    "ko": "몇 블록째 이어지는 아케이드 · 잡화의 바다",
+    "en": "An arcade running block after block · a sea of goods",
+    "ja": "何ブロックも続くアーケード · 雑貨の海"
+  },
+  "data.region.megamall.name": {
+    "ko": "거대상가",
+    "en": "Grand Arcade",
+    "ja": "巨大商店街"
+  },
+  "data.region.megamall.risk": {
+    "ko": "보통",
+    "en": "Medium",
+    "ja": "普通"
+  },
+  "data.region.outpost.desc": {
+    "ko": "역을 지키던 부대의 마지막 진지 · 최상급 부품·의약",
+    "en": "The last position of the unit that held the station · top-grade parts and meds",
+    "ja": "駅を守った部隊の最後の陣地 · 最上級の部品・医薬"
+  },
+  "data.region.outpost.name": {
+    "ko": "군사 아웃포스트",
+    "en": "Military Outpost",
+    "ja": "軍前哨基地"
+  },
+  "data.region.outpost.risk": {
+    "ko": "매우 높음 — 응급키트 권장",
+    "en": "Very high — first-aid kit advised",
+    "ja": "非常に高い — 救急キット推奨"
+  },
+  "data.region.residential.desc": {
+    "ko": "음식·물·천·양초 · 생활 가구",
+    "en": "Food, water, cloth, candles · household furniture",
+    "ja": "食料・水・布・ろうそく · 生活家具"
+  },
+  "data.region.residential.name": {
+    "ko": "주거지역",
+    "en": "Residential",
+    "ja": "住宅地区"
+  },
+  "data.region.residential.risk": {
+    "ko": "낮음",
+    "en": "Low",
+    "ja": "低い"
+  },
+  "data.region.resort.desc": {
+    "ko": "산정 호텔의 잔해 · 두둑한 물자 (겨울엔 눈사태 위험)",
+    "en": "Ruins of a summit hotel · rich supplies (avalanche risk in winter)",
+    "ja": "山頂ホテルの残骸 · 潤沢な物資 (冬は雪崩の危険)"
+  },
+  "data.region.resort.name": {
+    "ko": "리조트 폐허",
+    "en": "Resort Ruins",
+    "ja": "リゾート廃墟"
+  },
+  "data.region.resort.risk": {
+    "ko": "높음 — 응급키트 권장",
+    "en": "High — first-aid kit advised",
+    "ja": "高い — 救急キット推奨"
+  },
+  "data.region.slum.desc": {
+    "ko": "뭐든 나올 수 있다 · 희귀 가구",
+    "en": "Anything might turn up · rare furniture",
+    "ja": "何が出てもおかしくない · 希少家具"
+  },
+  "data.region.slum.name": {
+    "ko": "슬럼가",
+    "en": "Slums",
+    "ja": "スラム街"
+  },
+  "data.region.slum.risk": {
+    "ko": "매우 높음 — 응급키트 권장",
+    "en": "Very high — first-aid kit advised",
+    "ja": "非常に高い — 救急キット推奨"
+  },
+  "data.region.slumdeep.desc": {
+    "ko": "슬럼의 안쪽 · 아무도 못 턴 방들",
+    "en": "The inside of the slums · rooms no one has looted",
+    "ja": "スラムの奥 · 誰も漁れなかった部屋"
+  },
+  "data.region.slumdeep.name": {
+    "ko": "뒷골목 심부",
+    "en": "Back-Alley Depths",
+    "ja": "路地裏の深部"
+  },
+  "data.region.slumdeep.risk": {
+    "ko": "극도로 높음 — 무너짐이 잦다",
+    "en": "Extreme — collapses are frequent",
+    "ja": "極めて高い — 崩落が多い"
+  },
+  "data.region.uptown.desc": {
+    "ko": "강변의 부촌 · 좋은 살림과 좋은 찬장",
+    "en": "Riverside wealth · fine households, fine pantries",
+    "ja": "川辺の富裕な街 · 良い暮らしと良い食料棚"
+  },
+  "data.region.uptown.name": {
+    "ko": "고급 주거단지",
+    "en": "Uptown Residences",
+    "ja": "高級住宅地"
+  },
+  "data.region.uptown.risk": {
+    "ko": "낮음",
+    "en": "Low",
+    "ja": "低い"
+  },
+  "data.res.antiseptic.name": {
+    "ko": "소독약",
+    "en": "Antiseptic",
+    "ja": "消毒薬"
+  },
+  "data.res.bandage.name": {
+    "ko": "붕대",
+    "en": "Bandage",
+    "ja": "包帯"
+  },
+  "data.res.battery.name": {
+    "ko": "배터리",
+    "en": "Battery",
+    "ja": "バッテリー"
+  },
+  "data.res.book.name": {
+    "ko": "책",
+    "en": "Book",
+    "ja": "本"
+  },
+  "data.res.candle.name": {
+    "ko": "양초",
+    "en": "Candle",
+    "ja": "ろうそく"
+  },
+  "data.res.canned.name": {
+    "ko": "통조림",
+    "en": "Canned Food",
+    "ja": "缶詰"
+  },
+  "data.res.cloth.name": {
+    "ko": "천",
+    "en": "Cloth",
+    "ja": "布"
+  },
+  "data.res.food.name": {
+    "ko": "신선식품",
+    "en": "Fresh Food",
+    "ja": "生鮮食品"
+  },
+  "data.res.fuel.name": {
+    "ko": "연료",
+    "en": "Fuel",
+    "ja": "燃料"
+  },
+  "data.res.material.name": {
+    "ko": "건축재",
+    "en": "Material",
+    "ja": "建材"
+  },
+  "data.res.painkiller.name": {
+    "ko": "진통제",
+    "en": "Painkiller",
+    "ja": "鎮痛剤"
+  },
+  "data.res.parts.name": {
+    "ko": "부품",
+    "en": "Parts",
+    "ja": "部品"
+  },
+  "data.res.salt.name": {
+    "ko": "소금",
+    "en": "Salt",
+    "ja": "塩"
+  },
+  "data.res.water.name": {
+    "ko": "깨끗한 물",
+    "en": "Clean Water",
+    "ja": "きれいな水"
+  },
+  "data.shelter.bridgehouse.desc": {
+    "ko": "무너진 현수교 옆 석조 관리소. 낮에는 끊어진 다리가, 밤에는 온 하늘의 별이 창밖에 걸린다.",
+    "en": "A stone keeper house beside the fallen span. By day the broken bridge hangs in the window; by night, every star in the sky.",
+    "ja": "崩れた吊り橋のそばに立つ石造りの管理所。昼は途切れた橋が、夜は満天の星が窓の外にかかる。"
+  },
+  "data.shelter.bridgehouse.limits": {
+    "ko": "협곡의 집 — 겨울 바람 소리가 크다",
+    "en": "A house over the gorge — the winter wind is loud",
+    "ja": "峡谷の家 — 冬の風の音が大きい"
+  },
+  "data.shelter.bridgehouse.name": {
+    "ko": "다리 관리소",
+    "en": "Bridge Keeper House",
+    "ja": "橋の管理所"
+  },
+  "data.shelter.bridgehouse.perk.label": {
+    "ko": "별의 관측석 — 밤하늘이 온전히 보인다",
+    "en": "A seat under the stars — the night sky, unbroken",
+    "ja": "星の観測席 — 夜空がまるごと見える"
+  },
+  "data.shelter.bunker.desc": {
+    "ko": "반쯤 무너진 돔형 벙커. 갈라진 외피 사이로 별이 보이지만, 두꺼운 벽 안쪽은 의외로 아늑하다.",
+    "en": "A half-collapsed dome bunker. Stars peek through the cracked shell, but inside the thick walls it is surprisingly snug.",
+    "ja": "半ば崩れたドーム型バンカー。ひび割れた外殻の隙間から星が見えるが、厚い壁の内側は意外と心地よい。"
+  },
+  "data.shelter.bunker.limits": {
+    "ko": "밀폐 구조 — 전력이 끊기면 거처 보너스·특성 정지",
+    "en": "Sealed structure — losing power halts shelter bonuses & traits",
+    "ja": "密閉構造 — 電力が切れるとシェルターボーナス・特性が停止"
+  },
+  "data.shelter.bunker.name": {
+    "ko": "돔 벙커",
+    "en": "Dome Bunker",
+    "ja": "ドームバンカー"
+  },
+  "data.shelter.bunker.perk.label": {
+    "ko": "두꺼운 외피 — 부상 회복 2배 빠름",
+    "en": "Thick shell — injuries heal twice as fast",
+    "ja": "厚い外殻 — 負傷の回復が2倍速い"
+  },
+  "data.shelter.bunker.upkeep.label": {
+    "ko": "배터리 1 / 일 (환기 전력)",
+    "en": "Battery 1 / day (ventilation)",
+    "ja": "バッテリー 1 / 日 (換気の電力)"
+  },
+  "data.shelter.bus.desc": {
+    "ko": "고속도로 위에 멈춰 선 스쿨버스. 좁지만 어디로든 갈 수 있을 것 같은 기분이 든다.",
+    "en": "A school bus stalled on the highway. Cramped, but it feels like it could take you anywhere.",
+    "ja": "高速道路の上で止まったままのスクールバス。狭いが、どこへでも行けそうな気がする。"
+  },
+  "data.shelter.bus.limits": {
+    "ko": "좁은 실내 — 가구 최대 8개",
+    "en": "Tight interior — max 8 furniture",
+    "ja": "狭い室内 — 家具は最大8個"
+  },
+  "data.shelter.bus.name": {
+    "ko": "버려진 스쿨버스",
+    "en": "Abandoned School Bus",
+    "ja": "廃スクールバス"
+  },
+  "data.shelter.bus.perk.label": {
+    "ko": "이동형 거점 — 탐험 소요 시간 -25%",
+    "en": "Mobile base — expedition time -25%",
+    "ja": "移動式拠点 — 探索の所要時間 -25%"
+  },
+  "data.shelter.bus.upkeep.label": {
+    "ko": "연료 1 / 2일",
+    "en": "Fuel 1 / 2 days",
+    "ja": "燃料 1 / 2日"
+  },
+  "data.shelter.cabin.desc": {
+    "ko": "숲 가장자리의 오두막. 폐허가 된 세상에서 찾아낸 가장 아늑한 은신처.",
+    "en": "A cabin on the forest’s edge. The coziest refuge you have found in this ruined world.",
+    "ja": "森のはずれの小屋。廃墟と化した世界で見つけた、いちばん心地よい隠れ家。"
+  }
 }

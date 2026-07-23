@@ -1,0 +1,87 @@
+{
+  "data.will.will2.desc": {
+    "ko": "아들아, 연료는 다락에 숨겨뒀다. 봄까지만 아끼면 산다.\n나는 너 몫까지 먹지 않으려 한다. 부디 살아라.",
+    "en": "Son, the fuel is hid in the attic. Ration it to spring and you’ll live.\nI won’t eat your share. Please — live.",
+    "ja": "息子よ、燃料は屋根裏に隠してある。春まで節約すれば生き延びられる。\nお前の分まで食べるつもりはない。どうか生きてくれ。"
+  },
+  "data.will.will2.name": {
+    "ko": "아버지의 마지막 말",
+    "en": "Father’s Last Words",
+    "ja": "父の最後の言葉"
+  },
+  "data.will.will3.desc": {
+    "ko": "우린 함께 가기로 했다. 따로 남는 것보다 낫다고.\n이 집을 찾은 당신은, 부디 혼자가 아니길.",
+    "en": "We chose to go together. Better than being left apart.\nWhoever finds this house — may you not be alone.",
+    "ja": "私たちは一緒に逝くことにした。離ればなれで残るよりはいいと。\nこの家を見つけたあなたが、どうか独りではありませんように。"
+  },
+  "data.will.will3.name": {
+    "ko": "두 사람의 편지",
+    "en": "Letter for Two",
+    "ja": "二人の手紙"
+  },
+  "data.will.will4.desc": {
+    "ko": "마지막 환자까지 곁을 지켰다. 약은 진작 떨어졌고, 손을 잡아주는 것밖엔 없었다.\n이제 내 차례다. 두렵지 않다면 거짓말이다.",
+    "en": "I stayed to the last patient. The medicine ran out long ago; all I had left was a held hand.\nNow it’s my turn. I’d be lying if I said I wasn’t afraid.",
+    "ja": "最後の患者まで、そばを離れなかった。薬はとっくに尽きて、手を握ってやることしかできなかった。\n今度は私の番だ。怖くないと言えば嘘になる。"
+  },
+  "data.will.will4.name": {
+    "ko": "간호사의 수첩",
+    "en": "The Nurse’s Notebook",
+    "ja": "看護師の手帳"
+  },
+  "data.will.will5.desc": {
+    "ko": "문은 열어뒀다. 너는 나보다 오래 살아라.\n누구든 이 녀석을 보거든, 착한 개다. 겁이 많을 뿐이다.",
+    "en": "I left the door open. Outlive me.\nWhoever meets this one — he’s a good dog. Just easily frightened.",
+    "ja": "扉は開けておいた。お前は私より長生きしろ。\n誰かがこいつに会ったら――いい犬だ。ただ臆病なだけだ。"
+  },
+  "data.will.will5.name": {
+    "ko": "개에게 남긴 말",
+    "en": "A Word for the Dog",
+    "ja": "犬に残した言葉"
+  },
+  "data.will.will6.desc": {
+    "ko": "네 편지 잘 받았다. 나도 보고 싶었다고, 그 말을 꼭 하고 싶었다.\n부칠 곳이 이제 없구나.",
+    "en": "I got your letter. I wanted to say I missed you too — I needed to say it.\nThere’s nowhere left to send this now.",
+    "ja": "君の手紙は確かに受け取った。私も会いたかったと、その言葉をどうしても伝えたかった。\nもう、出す宛てがないのだな。"
+  },
+  "data.will.will6.name": {
+    "ko": "전하지 못한 답장",
+    "en": "The Reply Never Sent",
+    "ja": "出せなかった返事"
+  },
+  "exp.riskGain": {
+    "ko": "이벤트 발생으로 추가 획득:",
+    "en": "Extra from what happened out there:",
+    "ja": "出来事による追加の収穫:"
+  },
+  "power.needSource": {
+    "ko": "전력원이 없다 — 태양광 패널이나 발전기부터.",
+    "en": "No power source — install a solar panel or run the generator first.",
+    "ja": "電源がない — ソーラーパネルか発電機が先だ。"
+  },
+  "paint.applyBtn": {
+    "ko": "{name} 1통으로 확정",
+    "en": "Confirm with 1 {name}",
+    "ja": "{name}1本で確定"
+  },
+  "paint.applyFree": {
+    "ko": "이 색으로 확정 (무료)",
+    "en": "Confirm this color (free)",
+    "ja": "この色で確定（無料）"
+  },
+  "gel.applyBtn": {
+    "ko": "{name} 1통으로 빛 확정",
+    "en": "Confirm light with 1 {name}",
+    "ja": "{name}1本で光を確定"
+  },
+  "gel.applyFree": {
+    "ko": "원래 빛으로 (무료)",
+    "en": "Back to original light (free)",
+    "ja": "元の光に戻す（無料）"
+  },
+  "sel.previewHint": {
+    "ko": "눌러서 미리보기 — 확정 전엔 소모 없음",
+    "en": "Tap to preview — nothing spent until confirmed",
+    "ja": "押して試し見 — 確定まで消費なし"
+  }
+}

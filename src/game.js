@@ -60,7 +60,7 @@ import { districtOf, cityOf, rateParts, expActualRate, setExpeditionWeather, mas
 import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
 import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEncounterEvents } from './core/encounter.js'; // 인카운터 술어 (Tier3)
 import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsAutoAvoid, falloutCleared, regionReachable, regionCityOf } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0) + 도시 필터(2.0-b) + 도시뷰(2.0-f)
-import { initVignettes, playVignette, playGeigerVignette, playEastGateVignette, playJungleSunVignette, playGoldenGateVignette, buildGoldenGateScene, showDiscoveryVignette, vignetteBusy, claimVignette, releaseVignette } from './render/vignettes.js'; // 시네마틱 비네트 (Tier5·6a — 발견 컷 포함)
+import { initVignettes, playVignette, playGeigerVignette, playEastGateVignette, playJungleSunVignette, playGoldenGateVignette, buildGoldenGateScene, buildJungleSunScene, showDiscoveryVignette, vignetteBusy, claimVignette, releaseVignette } from './render/vignettes.js'; // 시네마틱 비네트 (Tier5·6a — 발견 컷 포함)
 initVignettes({ addMoodBuff, jackpotToast, scheduleSave, gameHour, disposeDeep }); // 함수 선언 호이스팅 전제 — 게임 측 헬퍼 단방향 주입
 import { initNotebook, openJournalPages, openHelpModal, showMemoPage, showSketchPage, showTruthPage } from './ui/notebook.js'; // 수첩 페이지 (Tier7)
 // setJournalOpen: journalOpen(let, 아래 선언)은 렌더 루프 게이트 14곳이 읽는 잔류 전역 — 클로저는 호출 시점 참조라 TDZ 무관.
@@ -943,7 +943,7 @@ function comfortBreakdown() {
   // 청결
   if (cd.cleanMod) logs.clean.push({ name: t('comfort.log.cleanState', { n: Math.round(cd.clean) }), v: `${cd.cleanMod > 0 ? '+' : ''}${cd.cleanMod}` });
   // 안정감
-  logs.security.push({ name: t('comfort.log.base'), v: '+18' });
+  logs.security.push({ name: t('comfort.log.base'), v: '+' + BAL.comfort.baseSecurity }); // P2: comfort.js 점수식과 동일 상수 — 표시가 실값을 따라간다
   if (cd.shelterMod) logs.security.push({ name: t('comfort.log.shelter'), v: `+${cd.shelterMod}` });
   if (cd.settled) logs.security.push({ name: t('comfort.log.settled', { n: cd.settled }), v: `+${cd.settled}` });
   if (cd.injuryMod) logs.security.push({ name: t('comfort.log.injury'), v: `${cd.injuryMod}` });
@@ -1454,6 +1454,10 @@ const SHELTERS = {
   bridgehouse: {
     ...SHELTER_META.bridgehouse, // build 함수 → render/shelters.js
     ..._shelterBuilders.bridgehouse,
+    // #146 「불타는 해협」 지역 결선(디렉터 2026-07-23: "다리 보이는 맵에서 노을 질 때 다리쪽 클릭").
+    //   무너진 현수교 실루엣의 히트 평면 — shelters.js bridgehouse env의 BZ2=-22·주탑 x[-18,14]·데크 y=-1과 정합.
+    //   z는 다리 앞면(BZ2+1), x/y는 주탑 바깥 케이블 늘어짐까지 여유.
+    bridgeSight: { z: -21, x0: -26, x1: 20, y0: -7, y1: 19 },
   },
 
   /* ── 2.0 동부 「대도시」 셸터 3: 역 대합실 (§6.0.5 — 신광+빛 웅덩이의 나무, TLOU 아트리움) ── */
@@ -4876,36 +4880,36 @@ function hideEventChip() {
 ============================================================ */
 /* ── 거처 개조 (기지 커스터마이징: 빗물받이·텃밭·증축 등) ── */
 const SHELTER_MODS = {
-  raincatch:  { name: '빗물받이',    nameEn: 'Rain Catch',   emoji: '', cost: { material: 2, parts: 1 }, desc: '비/눈 오는 날 깨끗한 물 +1', descEn: 'Clean water +1 on rainy/snowy days', not: ['lighthouse'] },
-  garden:     { name: '텃밭 상자',   nameEn: 'Garden Box',   emoji: '', cost: { material: 2, water: 2 }, desc: '이틀에 한 번 음식 +1 (겨울 제외)', descEn: 'Food +1 every other day (except winter)', not: ['subway', 'rooftop'] },
+  raincatch:  { name: '빗물받이',    nameEn: 'Rain Catch',   emoji: '', cost: BAL.modCosts.raincatch, desc: '비/눈 오는 날 깨끗한 물 +1', descEn: 'Clean water +1 on rainy/snowy days', not: ['lighthouse'] },
+  garden:     { name: '텃밭 상자',   nameEn: 'Garden Box',   emoji: '', cost: BAL.modCosts.garden, desc: '이틀에 한 번 음식 +1 (겨울 제외)', descEn: 'Food +1 every other day (except winter)', not: ['subway', 'rooftop'] },
   // 옥상 텃밭 (#53) — rooftop 전용. 마당을 텃밭으로 개조. 매일 음식 생산(겨울 0), 옥탑 퍽 gardenMult로 2배.
   //   현재 텃밭은 rooftop 전용이라 퍽이 곧 정체성 — 다른 셸터로의 확장은 향후.
-  rooftopGarden: { name: '옥상 텃밭', nameEn: 'Rooftop Garden', emoji: '', cost: { material: 3, water: 2 }, desc: '마당을 텃밭으로 — 매일 음식 +2 (겨울 휴면)', descEn: 'Turn the yard into a garden — food +2 daily (dormant in winter)', only: ['rooftop'] },
+  rooftopGarden: { name: '옥상 텃밭', nameEn: 'Rooftop Garden', emoji: '', cost: BAL.modCosts.rooftopGarden, desc: '마당을 텃밭으로 — 매일 음식 +2 (겨울 휴면)', descEn: 'Turn the yard into a garden — food +2 daily (dormant in winter)', only: ['rooftop'] },
   // 1.2 버섯 재배칸 (subway 전용) — 어둠에서 자라는 식량. 옥탑 텃밭(볕/여름)의 대칭축(어둠/연중).
   //   매일 음식 +1(겨울 포함 연중), 이틀에 한 번 물 1 소모. 옥탑보다 산출 절반이되 계절을 타지 않는다.
-  mushroom: { name: '버섯 재배칸', nameEn: 'Mushroom Bed', emoji: '', cost: { material: 3, water: 3 }, desc: '어둠 속 균상 — 매일 음식 +1 (연중, 물 소모)', descEn: 'A mushroom bed in the dark — food +1 daily year-round (uses water)', only: ['subway'] },
-  insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '', cost: { cloth: 3, material: 2 }, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
-  shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
+  mushroom: { name: '버섯 재배칸', nameEn: 'Mushroom Bed', emoji: '', cost: BAL.modCosts.mushroom, desc: '어둠 속 균상 — 매일 음식 +1 (연중, 물 소모)', descEn: 'A mushroom bed in the dark — food +1 daily year-round (uses water)', only: ['subway'] },
+  insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '', cost: BAL.modCosts.insulation, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
+  shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '', cost: BAL.modCosts.shelf, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
   // #189 P2 지속 급전 승격: 설치 시 조명·가전 전력 무료 + 기존 발전(이틀 배터리 +1) 유지.
-  solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '', cost: { parts: 4, battery: 1 },  desc: '조명·가전 전력 무료 (지속 급전) · 이틀에 한 번 배터리 +1', descEn: 'Free power for lights & appliances (steady supply) · battery +1 every other day', not: ['subway'] },
+  solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '', cost: BAL.modCosts.solar,  desc: '조명·가전 전력 무료 (지속 급전) · 이틀에 한 번 배터리 +1', descEn: 'Free power for lights & appliances (steady supply) · battery +1 every other day', not: ['subway'] },
   // #189 P1 조명 설비 — 어둠(무비용·우울) ↔ 화기(연료·온기·흔들림) ↔ 전기조명(전력·안정) 밸런스 축의 세 번째 기둥.
   //   rebuild: 설치 즉시 loadShelter 재실행 → 천장 펜던트 소품+전등 점등. 전력은 processDay가 매일 배터리 1 소비.
-  lighting:   { name: '조명 설비',   nameEn: 'Electric Lighting', emoji: '', cost: { parts: 3, battery: 1 }, desc: '천장에 전등을 매단다 — 방이 밝아진다 (배터리 1/일, 발전기 가동 중엔 무료)', descEn: 'Hang an electric light from the ceiling — the room brightens (battery 1/day, free while the generator runs)', rebuild: true },
-  roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '', cost: { material: 4 },      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
-  extension:  { name: '증축',        nameEn: 'Extension',    emoji: '', cost: { material: 6, parts: 2 },  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
+  lighting:   { name: '조명 설비',   nameEn: 'Electric Lighting', emoji: '', cost: BAL.modCosts.lighting, desc: '천장에 전등을 매단다 — 방이 밝아진다 (배터리 1/일, 발전기 가동 중엔 무료)', descEn: 'Hang an electric light from the ceiling — the room brightens (battery 1/day, free while the generator runs)', rebuild: true },
+  roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '', cost: BAL.modCosts.roof,      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
+  extension:  { name: '증축',        nameEn: 'Extension',    emoji: '', cost: BAL.modCosts.extension,  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
   // 1.3 온천 (lodge 전용) — 고원 발견물을 개조로 개방. cozy의 정점: 쾌적 온기 대형 + 취침 에너지 회복 보너스.
   //   고양이/개가 온천 옆에서 조는 전용 포즈(연출은 아트 폴백 — addModProp 소품 + 절차 김 파티클).
-  onsen: { name: '온천', nameEn: 'Hot Spring', emoji: '', cost: { material: 4, parts: 2 }, desc: '고원의 온천을 끌어들여 — 쾌적함 대폭 + 취침 회복 보너스', descEn: 'Tap the highland hot spring — big comfort boost + restful sleep bonus', only: ['lodge'] },
+  onsen: { name: '온천', nameEn: 'Hot Spring', emoji: '', cost: BAL.modCosts.onsen, desc: '고원의 온천을 끌어들여 — 쾌적함 대폭 + 취침 회복 보너스', descEn: 'Tap the highland hot spring — big comfort boost + restful sleep bonus', only: ['lodge'] },
   // Phase B 개조 2단계 (비용 곡선 상향: 1단계의 2~2.5배)
-  insulationPlus: { name: '강화 단열재', nameEn: 'Reinforced Insulation', emoji: '', cost: { cloth: 7, material: 5, parts: 1 }, desc: '한파 방어 강화 (단열재 위에)', descEn: 'Stronger cold-snap defense (over insulation)', req: 'insulation' },
+  insulationPlus: { name: '강화 단열재', nameEn: 'Reinforced Insulation', emoji: '', cost: BAL.modCosts.insulationPlus, desc: '한파 방어 강화 (단열재 위에)', descEn: 'Stronger cold-snap defense (over insulation)', req: 'insulation' },
   // 2.0 동부 세관 (디렉터 2026-07-09: "shelter라고 하면 응당 안전해야 하니까") — buildRoom 지오 분기라 rebuild 플래그.
-  customsClear: { name: '선반 철거', nameEn: 'Clear the Shelves', emoji: '', cost: {}, desc: '압수품 선반을 뜯어낸다 — 벽이 비고, 내 것을 놓을 자리가 생긴다', descEn: 'Tear out the seizure shelves — the wall clears for things of your own', only: ['customs'], rebuild: true },
-  customsSeal: { name: '창구 봉쇄', nameEn: 'Seal the Booths', emoji: '', cost: { material: 3, cloth: 1 }, desc: '심사 창구를 판자로 막는다 — 외풍이 멎는다 (악천후 쾌적 하락 해소)', descEn: 'Board up the inspection booths — the draft stops (no comfort loss in bad weather)', only: ['customs'], rebuild: true },
-  terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '', cost: { material: 4, cloth: 1 }, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
-  bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
+  customsClear: { name: '선반 철거', nameEn: 'Clear the Shelves', emoji: '', cost: BAL.modCosts.customsClear, desc: '압수품 선반을 뜯어낸다 — 벽이 비고, 내 것을 놓을 자리가 생긴다', descEn: 'Tear out the seizure shelves — the wall clears for things of your own', only: ['customs'], rebuild: true },
+  customsSeal: { name: '창구 봉쇄', nameEn: 'Seal the Booths', emoji: '', cost: BAL.modCosts.customsSeal, desc: '심사 창구를 판자로 막는다 — 외풍이 멎는다 (악천후 쾌적 하락 해소)', descEn: 'Board up the inspection booths — the draft stops (no comfort loss in bad weather)', only: ['customs'], rebuild: true },
+  terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '', cost: BAL.modCosts.terminalPatch, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
+  bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '', cost: BAL.modCosts.bigraincatch, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
   // 무전 기지 개조 (디렉터: "무선기지국 설치 가능한 집엔 개조 기능") — 개척 프로젝트 「무전 기지 복구」 완공(radioBaseDone) 후
   //   지상 셸터에 실체(지붕 송신 안테나)를 세운다. gate=radioBaseDone → 프로젝트 완공과 연동. 지하(subway)는 하늘 미접근이라 제외.
-  radiostation: { name: '무전 기지', nameEn: 'Radio Base', emoji: '', cost: { parts: 3, material: 2 }, desc: '지붕에 송신 안테나를 세운다 — 무전 기지의 실체 (붉은 항공등이 밤을 깜빡인다)', descEn: 'Raise the transmitter antenna on the roof — the radio base made real (a red beacon blinks through the night)', not: ['subway'], gate: 'radioBaseDone' },
+  radiostation: { name: '무전 기지', nameEn: 'Radio Base', emoji: '', cost: BAL.modCosts.radiostation, desc: '지붕에 송신 안테나를 세운다 — 무전 기지의 실체 (붉은 항공등이 밤을 깜빡인다)', descEn: 'Raise the transmitter antenna on the roof — the radio base made real (a red beacon blinks through the night)', not: ['subway'], gate: 'radioBaseDone' },
 };
 // 개조 앵커 참조표 (문서 전용 — 런타임 미소비. 디스패치는 addModProp의 id 하드코딩 분기가 직접 수행).
 // roof=지붕면 브래킷 · eave=처마 홈통+파이프+물통 · wall=외벽 덧댐 · ground=지면(마당) 배치.
@@ -6788,12 +6792,62 @@ addEventListener('pointermove', e => {
       over = px >= bal.x0 && px <= bal.x1 && pz >= bal.z0 && pz <= bal.z1;
     }
   }
+  // #146 다리 조망 호버 — 노을 창에서만 (bridgeSightHit이 시간·셸터 게이트를 겸한다)
+  if (!over && !vignetteBusy() && !editMode && !paused && !titleVisible && bridgeSightHit(e)) over = true;
   if (over !== _balHover) { canvas.style.cursor = over ? 'pointer' : ''; _balHover = over; }
 });
 
 // 「불타는 해협」 — 아포칼립스 금문교 노을 (#146, 디렉터 레퍼런스 대조 리워크).
 //   평면 측면 실루엣 폐기 → 3/4 후퇴 원근(다리 축을 따라 내려다봄) + 초목의 잠식 + 따뜻한 앰버 팔레트
 //   + 전경 서사(부서진 차·접근 고가·침몰선·도심 실루엣). 박스/스프라이트/캔버스 관용구만(셰이더/에셋 없음).
+
+// #146 지역 결선 (디렉터 2026-07-23): 다리 관리소에서 노을 질 때 무너진 현수교를 클릭 → 「불타는 해협」.
+//   판정 = 다리 실루엣 평면(z=bridgeSight.z)과의 레이 교차 — 발코니의 y=0 평면 문법을 수직판으로 돌린 것.
+//   노을 창 = 저녁~어스름 초입(16.5~20시, timeLabel 경계와 동일 축). 창 밖에선 트리거·커서·글린트 전부 침묵.
+//   발동은 단일 클릭(디렉터 원문 "다리쪽 클릭이 트리거야") — 발코니 더블탭과 달리 커서+글린트가 어포던스를 이미 준다.
+//   부작용 승인 전제: 노을 동안 다리 영역에서 드래그-팬 시작이 비네트로 이어진다(팬은 화면 다른 곳에서 가능).
+function bridgeSightRect() {
+  const bs = SHELTERS[state.current] && SHELTERS[state.current].bridgeSight;
+  if (!bs) return null;
+  const h = gameHour();
+  return (h >= 16.5 && h < 20) ? bs : null;
+}
+function bridgeSightHit(e) {
+  const bs = bridgeSightRect();
+  if (!bs) return false;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  const dz = raycaster.ray.direction.z;
+  if (Math.abs(dz) < 1e-6) return false;
+  const tr = (bs.z - raycaster.ray.origin.z) / dz;
+  if (!(tr > 0)) return false;
+  const px = raycaster.ray.origin.x + raycaster.ray.direction.x * tr;
+  const py = raycaster.ray.origin.y + raycaster.ray.direction.y * tr;
+  return px >= bs.x0 && px <= bs.x1 && py >= bs.y0 && py <= bs.y1;
+}
+function pickBridgeSight(e) {
+  if (vignetteBusy() || paused) return false;
+  if (!bridgeSightHit(e)) return false;
+  playGoldenGateVignette();
+  return true;
+}
+// 은근한 신호 — 발코니와 동일 문법(글린트 펄스 + 호버 커서), 골든 동결 중 숨김(비결정 배제).
+//   위치 = 끊긴 상판 사이 허공(협곡 중앙) — 노을빛이 새는 자리라는 픽션.
+let _bridgeHint = null;
+function tickBridgeHint(t) {
+  if (!_bridgeHint) {
+    _bridgeHint = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTexOnce(), color: 0xffb066, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    _bridgeHint.raycast = () => {}; // Sprite raycast noop 필수 (카메라 미설정 레이 크래시 함정 — 프로젝트 룰)
+    _bridgeHint.scale.set(1.6, 1.6, 1.6); _bridgeHint.renderOrder = 4; scene.add(_bridgeHint);
+  }
+  const bs = bridgeSightRect();
+  const show = !!bs && !isGoldenFrozen() && !vignetteBusy() && !editMode && !paused && !titleVisible;
+  _bridgeHint.visible = show;
+  if (show) {
+    _bridgeHint.position.set((bs.x0 + bs.x1) * 0.5 + 4, 0.4, bs.z - 0.5); // 끊긴 구간(-4..8) 중앙께
+    _bridgeHint.material.opacity = 0.16 + 0.11 * (0.5 + 0.5 * Math.sin(t * 1.3));
+  }
+}
 
 let hiddenTapAt = 0;
 function pickHidden(e) {
@@ -7067,7 +7121,7 @@ canvas.addEventListener('pointerdown', e => {
     };
   } else {
     // §9.6 「침묵」 히든 지점 — 모든 픽 미스 후의 최하위 히트 (시각 표시 0, 소비 시 팬/회전도 시작 안 함)
-    if (!editMode && (pickHidden(e) || pickBalconyView(e))) return;
+    if (!editMode && (pickHidden(e) || pickBalconyView(e) || pickBridgeSight(e))) return; // #146 다리 조망은 최하위 히트 축에 합류
     // #70 빈 공간 드래그: 비배치·비클로즈업이면 클램프 팬, 배치 모드/클로즈업 중엔 기존 yaw 회전(팬 비활성 스펙).
     //   팬은 최저 우선순위 — 계단/고양이/가구 픽이 전부 미스인 이 else에서만 시작(select 레이캐스트 경로 불변).
     //   데드존: 팬은 8px(탭 상호작용 보호 스펙), 회전은 기존 7px 유지.
@@ -10817,6 +10871,16 @@ renderQuestCard();
   });
   document.addEventListener('mousedown', hide, true); // 클릭(모달 열림 등) 시 즉시 숨김
 })();
+// ── 웹 잔재 차단(렌더러 측 — 2026-07-23 전수 감사, Electron·PWA 공통) ──
+//   본체는 웹앱이라 브라우저 기본 동작이 그대로 새어 나온다. 이미 막힌 것(user-select·img user-drag·
+//   캔버스 우클릭)외 잔여 3종을 여기서 끊는다. main.cjs의 메뉴 제거·will-navigate 가드와 한 쌍.
+// ① 파일 드롭 = "문서 열기" 기본값 차단 — 복사 커서·게임 이탈 시도 자체를 없앤다(메인 가드와 이중벽).
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => e.preventDefault());
+// ② Ctrl+휠 = 브라우저 페이지 줌 차단 — 픽셀 스냅이 깨지고 카메라 줌(무보조 휠)과 혼선. 캡처는 안 막으므로 게임 휠 줌은 그대로.
+window.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false, capture: true });
+// ③ 가운데 클릭 오토스크롤 위젯 차단 — 스크롤 가능한 모달(PDA 등) 위에서 브라우저 팬 커서가 떴다.
+document.addEventListener('mousedown', e => { if (e.button === 1) e.preventDefault(); });
 // 웹: 설치본 fetch로 loose locales 병합(비동기 베스트에포트) — 적용되면 화면 재치환. (Electron은 위 applyLocaleOverrides 동기 처리)
 loadLocaleOverridesWeb().then(a => { if (a) { applyStaticI18n(); updateHud(); renderResBar(); renderQuestCard(); } });
 if (state.minimizedEvent && EVENTS[state.minimizedEvent]) showEventChip(state.minimizedEvent); // 로드 후 내려둔 이벤트 칩 복원
@@ -11290,6 +11354,7 @@ function renderFrame(ctx = renderCtx) {
   tickVisitor(t, dt); // #181 방문자 걸어옴/글로우/퇴장 + 카메라 추적
   tickDropSpots(t); // #182 B0 동물 드랍 지면 반짝임 펄스
   tickBalconyHint(t); // 2.0 발코니 조망 은근한 신호 (펜트하우스 「콘크리트 정글의 해」 어포던스)
+  tickBridgeHint(t); // #146 다리 조망 은근한 신호 (다리 관리소 「불타는 해협」 — 노을 창에서만)
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
   // #228③: 편집 미니 카드 매 프레임 재투영 제거 — 우하단 고정 도킹(positionSelPanel 폐기 주석 참조)
   // #189 P1: 광원 레지스트리 동기화(전원 토글·연료 소진·설치 자동 반영) + 폴백 형광등 점멸.
@@ -11732,8 +11797,10 @@ window.__shelter = {
   select, deselect, positionSelPanel, // 편집 미니 카드 A안 (접지 프로브용)
   clampToRoom, // 발코니 배치 칸 (접지 프로브용)
   playJungleSunVignette, pickBalconyView, vignetteState: () => vignetteBusy(), // 비네트 러너 (접지 프로브용 — Tier5: 플래그는 vignettes.js 소유)
-  playGoldenGateVignette, // #146 「불타는 해협」 금문교 노을 비네트 (QA·지역 결선 전 트리거)
+  playGoldenGateVignette, // #146 「불타는 해협」 금문교 노을 비네트
+  pickBridgeSight, bridgeSightHit, // #146 지역 결선 트리거 (QA 프로브 — 노을 창·히트 평면 실측)
   buildGoldenGateScene, // 트레일러 하네스 전용: {scene,camera,update(t)} 결정론 렌더 — Tier5: vignettes.js에서 import 재수출
+  buildJungleSunScene, // 컷씬 타임랩스 하네스(디렉터 2026-07-23 "비네트 구도에서 지나는 24시간") — 동일 계약
   showDiscoveryVignette, queueDiscovery, drainDiscoveryQueue, discoveryQueueLen: () => discoveryQueue.length, // #150 희귀템 발견 컷 (QA)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
   //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).
@@ -11776,7 +11843,11 @@ window.__shelter = {
   wildlifeRespawn: (id) => wildlifeSys.respawn(id || state.current),
   avatarState: () => avatarSys._debug(), // #86 QA 훅
   avatarSys, // 스토어 캡처용: getGroup().position 직접 배치(정착 후 고정 프레임 캡처)
-  qaPlaceCat: (x, z, mode) => { const c = getCat(); if (!c) return false; c.g.position.set(x, c.baseY || 0.05, z); c.mode = mode || 'sleep'; c.timer = 99999; c.tgt = null; c.hop = null; return true; }, // 캡처용 고양이 고정 배치(웅크림)
+  // 캡처용 고양이 고정 배치. 'sleep'(식빵)은 디렉터 오더로 풀에서 제거된 폐기 포즈이고
+  //   이후 다리·피벗이 sprawl 기준으로 정리돼 강제 호출 시 배를 까뒤집은 듯 깨져 보인다(스토어 에셋 오염 사고).
+  //   폐기 모드는 여기서 sprawl로 접어 캡처 경로가 다시 밟지 못하게 한다.
+  qaPlaceCat: (x, z, mode, rotY) => { const c = getCat(); if (!c) return false; const m = (!mode || mode === 'sleep') ? 'sprawl' : mode; c.g.position.set(x, c.baseY || 0.05, z); if (rotY != null) c.g.rotation.y = rotY; c.mode = m; c.timer = 99999; c.tgt = null; c.hop = null; c.sprawlFor = 14; return true; },
+  qaCatInfo: () => { const c = getCat(); if (!c) return null; const p = c.g.position; let vis = true, inScene = false, n = c.g; while (n) { if (!n.visible) vis = false; if (!n.parent && n.isScene) inScene = true; n = n.parent; } return { x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2), vis, inScene, kids: c.g.children.length, sc: +c.g.scale.x.toFixed(2), mode: c.mode }; }, // 캡처 진단: 고양이 실좌표·가시성
   avatarRespawn: () => avatarSys.respawn(),
   avatarDespawn: () => avatarSys.despawn(), // #181 접지 캡처: 방문자 시트에서 아바타 제거
   // #181 방문자 복셀 접지 훅: 프리셋을 씬에 직접 스폰(연출 시스템 이전 룩 검증용)

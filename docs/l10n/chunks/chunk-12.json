@@ -1,427 +1,427 @@
 {
- "record.regionWill": {
-  "ko": "남겨진 글",
-  "en": "Last Words",
-  "ja": "遺された言葉"
- },
- "record.locked": {
-  "ko": "…아직 찾지 못함",
-  "en": "…not yet found",
-  "ja": "…まだ見つからない"
- },
- "record.empty": {
-  "ko": "아직 아무것도 모으지 못했다.",
-  "en": "Nothing gathered yet.",
-  "ja": "まだ何も集められていない。"
- },
- "record.readHint": {
-  "ko": "펼쳐 읽기",
-  "en": "Read",
-  "ja": "開いて読む"
- },
- "bunker.roofTitle": {
-  "ko": "천장 구멍",
-  "en": "The Hole in the Ceiling",
-  "ja": "天井の穴"
- },
- "bunker.roofHole": {
-  "ko": "갈라진 천장으로 비가 샌다. 별은 보이지만, 비 오는 날엔 대가를 치른다.",
-  "en": "Rain leaks through the cracked ceiling. You can see the stars — but rainy days cost you.",
-  "ja": "ひび割れた天井から雨が漏れる。星は見えるが、雨の日は高くつく。"
- },
- "bunker.roofTemp": {
-  "ko": "임시 덮개를 씌웠다. 비는 더 새지 않는다. 아직 완전하진 않다.",
-  "en": "A makeshift cover is up. No more leaks. Not quite whole yet.",
-  "ja": "仮の覆いをかけた。雨はもう漏れない。まだ完全ではない。"
- },
- "bunker.roofFull": {
-  "ko": "천장을 완전히 수리했다. 벙커가 처음으로 온전히 아늑하다. <b>(쾌적 +4)</b>",
-  "en": "The ceiling is fully repaired. For the first time the bunker feels wholly snug. <b>(comfort +4)</b>",
-  "ja": "天井を完全に修理した。バンカーが初めて、まるごと居心地よくなった。<b>(快適 +4)</b>"
- },
- "bunker.roofStage1Btn": {
-  "ko": "🛠️ 임시 덮개 씌우기 (건축재 1)",
-  "en": "🛠️ Put up a cover (1 material)",
-  "ja": "🛠️ 仮の覆いをかける (建材 1)"
- },
- "bunker.roofStage2Btn": {
-  "ko": "🛠️ 완전 수리 (건축재 3)",
-  "en": "🛠️ Full repair (3 material)",
-  "ja": "🛠️ 完全修理 (建材 3)"
- },
- "bunker.roofDoneStage1": {
-  "ko": "천장에 임시 덮개를 씌웠다. 이제 비가 새지 않는다.",
-  "en": "Covered the ceiling for now. No more leaking rain.",
-  "ja": "天井に仮の覆いをかけた。もう雨は漏れない。"
- },
- "bunker.roofDoneStage2": {
-  "ko": "천장을 완전히 수리했다. 벙커가 온전해졌다.",
-  "en": "Fully repaired the ceiling. The bunker is whole now.",
-  "ja": "天井を完全に修理した。これでバンカーは万全だ。"
- },
- "bunker.backdoorFound": {
-  "ko": "절단기를 손에 넣었다. 뒷벽을 뚫으면 그 너머 공간이 드러난다.",
-  "en": "Got hold of a cutter. Breach the back wall and the space beyond opens up.",
-  "ja": "切断機を手に入れた。裏の壁を突き破れば、その向こうの空間が姿を現す。"
- },
- "bunker.backdoorBtn": {
-  "ko": "🔩 뒷문 개방 (건축재 3)",
-  "en": "🔩 Open the back door (3 material)",
-  "ja": "🔩 裏口を開く (建材 3)"
- },
- "bunker.backdoorDone": {
-  "ko": "뒷벽을 갈라 문을 열었다. 콘크리트 전실과, 그 바닥으로 이어지는 하강 계단이 드러났다. <b>(쾌적 +4)</b>",
-  "en": "Cut the back wall open. A concrete anteroom — and stairs descending from its floor. <b>(comfort +4)</b>",
-  "ja": "裏の壁を切り開き、扉を通した。コンクリートの前室と、その床から下へ降りる階段が姿を現した。<b>(快適 +4)</b>"
- },
- "bunker.stairToast": {
-  "ko": "내려가 봤자 어둠뿐이다. …아직은.",
-  "en": "Nothing down there but darkness. …For now.",
-  "ja": "降りたところで闇しかない。…今はまだ。"
- },
- "bunker.roofNote": {
-  "ko": "천장 구멍으로 비가 들이쳤다.",
-  "en": "Rain drove in through the ceiling hole.",
-  "ja": "天井の穴から雨が吹き込んだ。"
- },
- "rooftop.slateTitle": {
-  "ko": "빠진 슬레이트",
-  "en": "The Missing Slates",
-  "ja": "抜けたスレート"
- },
- "rooftop.slateGapped": {
-  "ko": "지붕에서 두 장이 빠져 하늘이 보인다. 비 오는 날엔 대가를 치른다.",
-  "en": "Two slates are gone; you can see sky. Rainy days cost you.",
-  "ja": "屋根から二枚抜けて、空が見える。雨の日は高くつく。"
- },
- "rooftop.slateFull": {
-  "ko": "슬레이트를 채워 지붕이 온전해졌다.",
-  "en": "The slates are filled in; the roof is whole.",
-  "ja": "スレートを埋めて、屋根は元どおりになった。"
- },
- "rooftop.slateBtn": {
-  "ko": "🪨 슬레이트 보수 (건축재 1)",
-  "en": "🪨 Patch the slates (1 material)",
-  "ja": "🪨 スレート補修 (建材 1)"
- },
- "rooftop.slateDone": {
-  "ko": "빠진 슬레이트를 채웠다. 이제 비가 새지 않는다.",
-  "en": "Filled in the missing slates. No more leaking rain.",
-  "ja": "抜けたスレートを埋めた。もう雨は漏れない。"
- },
- "rooftop.slateNote": {
-  "ko": "빠진 슬레이트 사이로 빗물이 스몄다.",
-  "en": "Rainwater seeped through the gaps in the slates.",
-  "ja": "抜けたスレートの隙間から雨水が染みてきた。"
- },
- "rooftop.gardenHarvest": {
-  "ko": "🌱 옥상 텃밭에서 먹을 것을 거뒀다 (+{n})",
-  "en": "🌱 Harvested food from the rooftop garden (+{n})",
-  "ja": "🌱 屋上菜園で食べ物を収穫した (+{n})"
- },
- "rooftop.gardenDormant": {
-  "ko": "🌱 겨울 — 옥상 텃밭이 잠들어 있다.",
-  "en": "🌱 Winter — the rooftop garden lies dormant.",
-  "ja": "🌱 冬 — 屋上菜園は眠っている。"
- },
- "cutter.foundNote": {
-  "ko": "🔩 공업지대에서 절단기를 찾았다.",
-  "en": "🔩 Found a cutter in the industrial zone.",
-  "ja": "🔩 工業地帯で切断機を見つけた。"
- },
- "gun.foundNote": {
-  "ko": "🔫 무너진 초소에서 쓸 만한 총을 찾았다. 탄환 {dur}발.",
-  "en": "🔫 Found a working gun in a collapsed guard post. {dur} rounds.",
-  "ja": "🔫 崩れた哨所で使えそうな銃を見つけた。弾丸 {dur}発。"
- },
- "gun.emptyNote": {
-  "ko": "🔫 탄창이 비었다. 제작대에서 손봐야 한다.",
-  "en": "🔫 The magazine is empty. Needs servicing at the workbench.",
-  "ja": "🔫 弾倉が空だ。作業台で手入れしないと。"
- },
- "hostile.soundNote": {
-  "ko": "🌫️ 폐허 안쪽에서 인기척이 들렸다. 마주치지 않고 돌아왔다.",
-  "en": "🌫️ Heard someone moving deeper in the ruins. Came back without crossing paths.",
-  "ja": "🌫️ 廃墟の奥で人の気配がした。出くわさずに引き返した。"
- },
- "hostile.traceNote": {
-  "ko": "🔥 식은 모닥불 자리를 지났다. 누가 먼저 다녀갔다.",
-  "en": "🔥 Passed a cold campfire. Someone was here first.",
-  "ja": "🔥 冷えた焚き火の跡を通り過ぎた。誰かが先に来ていた。"
- },
- "hostile.robbedNote": {
-  "ko": "🕶️ 길목을 막은 자들에게 전리품 일부를 내주고 몸을 뺐다.",
-  "en": "🕶️ Men blocking the road took part of the haul. You backed away.",
-  "ja": "🕶️ 道を塞ぐ連中に戦利品の一部を渡して、その場を切り抜けた。"
- },
- "hostile.metNote": {
-  "ko": "🕶️ 길목에서 낯선 자들과 마주쳤다. 빈손인 걸 보고 길을 내줬다.",
-  "en": "🕶️ Ran into strangers on the road. Seeing you empty-handed, they let you pass.",
-  "ja": "🕶️ 道の途中で見知らぬ者たちと出くわした。手ぶらなのを見て、道を空けてくれた。"
- },
- "hostile.gunNote": {
-  "ko": "🔫 총구를 들어 보이자 물러섰다. 남은 탄환 {dur}발.",
-  "en": "🔫 You raised the gun and they backed off. {dur} rounds left.",
-  "ja": "🔫 銃口を向けると、連中は引き下がった。残弾 {dur}発。"
- },
- "hostile.hurtNote": {
-  "ko": "🩸 놈들을 뿌리치다 크게 다쳤다.",
-  "en": "🩸 You broke free, but it cost you.",
-  "ja": "🩸 連中を振り切る途中で、ひどい傷を負った。"
- },
- "proj.header": {
-  "ko": "큰 공사",
-  "en": "The Big Work",
-  "ja": "大工事"
- },
- "proj.intro": {
-  "ko": "여러 날에 걸쳐 자재를 조금씩 붓는 일이다. 하루에 손이 닿는 만큼만 나아간다.",
-  "en": "Work that takes days — a little material at a time. Each day I get only as far as my hands reach.",
-  "ja": "何日もかけて、資材を少しずつ注ぎ込む仕事だ。一日に進むのは、手の届く分だけ。"
- },
- "proj.done": {
-  "ko": "끝냈다.",
-  "en": "Finished.",
-  "ja": "終えた。"
- },
- "proj.stageOf": {
-  "ko": "{cur}/{total}단계",
-  "en": "stage {cur}/{total}",
-  "ja": "{cur}/{total}段階"
- },
- "proj.progress": {
-  "ko": "{pct}% ({inv}/{need})",
-  "en": "{pct}% ({inv}/{need})",
-  "ja": "{pct}% ({inv}/{need})"
- },
- "proj.stageRemain": {
-  "ko": "이 단계 {n}번 더",
-  "en": "{n} more this stage",
-  "ja": "この段階あと{n}回"
- },
- "proj.workBtn": {
-  "ko": "🛠️ 손대기",
-  "en": "🛠️ Work on it",
-  "ja": "🛠️ 手をつける"
- },
- "proj.worked": {
-  "ko": "오늘도 조금 나아갔다.",
-  "en": "A little further along today.",
-  "ja": "今日も少し前へ進んだ。"
- },
- "proj.stageDone": {
-  "ko": "한 단계를 넘겼다.",
-  "en": "One stage done.",
-  "ja": "一つの段階を終えた。"
- },
- "proj.memoir.title": {
-  "ko": "그 해의 공사",
-  "en": "The Year’s Work",
-  "ja": "あの年の工事"
- },
- "proj.clearPassage.name": {
-  "ko": "막힌 통로 정리",
-  "en": "Clearing the Blocked Passage",
-  "ja": "塞がれた通路の整理"
- },
- "proj.clearPassage.stage1": {
-  "ko": "계단 아래를 큰 돌덩이가 막고 있다. 하나씩 굴려 치운다.",
-  "en": "Big stones block the foot of the stairs. I roll them aside, one by one.",
-  "ja": "階段の下を大きな石塊が塞いでいる。一つずつ転がしてどける。"
- },
- "proj.clearPassage.stage2": {
-  "ko": "남은 잔해와 부스러기를 쓸어낸다. 통로의 윤곽이 드러난다.",
-  "en": "I sweep out the last rubble and grit. The passage begins to take shape.",
-  "ja": "残った瓦礫と屑を掃き出す。通路の輪郭が見えてくる。"
- },
- "proj.clearPassage.workNote": {
-  "ko": "지하 계단 아래 돌무더기를 하나씩 걷어냈다.",
-  "en": "Cleared the rubble at the foot of the undercroft stairs, stone by stone.",
-  "ja": "地下階段の下の石の山を、一つずつ取り除いた。"
- },
- "proj.clearPassage.doneToast": {
-  "ko": "돌무더기를 다 치웠다. 통로 저편에서 서늘한 바람이 새어 든다. …아직 들어갈 순 없다.",
-  "en": "The rubble is all cleared. A cold draft seeps from beyond the passage. …I can’t go in yet.",
-  "ja": "石の山をすべて片付けた。通路の向こうから冷たい風が忍び込んでくる。…まだ中へは入れない。"
- },
- "proj.clearPassage.memoir": {
-  "ko": "{day}일째. 지하 계단 아래를 막고 있던 돌무더기를 며칠에 걸쳐 다 걷어냈다. 통로 저편은 아직 어둠이지만, 이제 바람이 지나간다. 언젠가 저 아래로 내려갈 날이 올까.",
-  "en": "Day {day}. Over several days I cleared the rubble that blocked the foot of the undercroft stairs. Beyond is still dark, but now the air moves through. Will there come a day I go down there?",
-  "ja": "{day}日目。地下階段の下を塞いでいた石の山を、数日かけてすべて取り除いた。通路の向こうはまだ闇だが、今は風が通っていく。いつか、あの下へ降りる日が来るだろうか。"
- },
- "proj.breakwaterHut.name": {
-  "ko": "방파제 오두막",
-  "en": "Breakwater Hut",
-  "ja": "防波堤の小屋"
- },
- "proj.breakwaterHut.stage1": {
-  "ko": "방파제 끝에 밀려온 잔해를 걷어낸다. 터를 고르는 일부터다.",
-  "en": "I clear the debris washed up at the breakwater’s end. First, level the ground.",
-  "ja": "防波堤の先に打ち上げられた瓦礫を取り除く。まずは地ならしからだ。"
- },
- "proj.breakwaterHut.stage2": {
-  "ko": "주워 모은 각목으로 뼈대를 세운다. 바닷바람에 흔들리지 않게.",
-  "en": "I raise a frame from salvaged timber — braced against the sea wind.",
-  "ja": "拾い集めた角材で骨組みを立てる。海風に揺れないように。"
- },
- "proj.breakwaterHut.stage3": {
-  "ko": "벽을 두르고 지붕을 인다. 방수천을 덧대 마감한다.",
-  "en": "I wall it in and lay the roof, sealing it with tarp.",
-  "ja": "壁を張り、屋根を葺く。防水布を重ねて仕上げる。"
- },
- "proj.breakwaterHut.workNote": {
-  "ko": "방파제 끝 오두막 공사를 조금 진척시켰다.",
-  "en": "Made some progress on the hut at the breakwater’s end.",
-  "ja": "防波堤の先の小屋の工事を少し進めた。"
- },
- "proj.breakwaterHut.doneToast": {
-  "ko": "방파제 오두막을 완성했다. 이제 부두 일이 한결 빨라지고, 얼음낚시 구멍도 하나 더 뚫을 수 있다.",
-  "en": "The breakwater hut is done. Dock work goes faster now, and I can cut one more ice-fishing hole.",
-  "ja": "防波堤の小屋が完成した。これで波止場の仕事がぐっと速くなり、氷上釣りの穴ももう一つ開けられる。"
- },
- "proj.breakwaterHut.memoir": {
-  "ko": "{day}일째. 방파제 끝에 작은 오두막을 세웠다. 잔해를 고르고, 뼈대를 세우고, 지붕을 이는 데 며칠이 걸렸다. 이제 이 항구는 조금 더 내 것 같다.",
-  "en": "Day {day}. I built a small hut at the end of the breakwater. Days of leveling rubble, raising a frame, laying a roof. This harbor feels a little more like mine now.",
-  "ja": "{day}日目。防波堤の先に小さな小屋を建てた。瓦礫をならし、骨組みを立て、屋根を葺くのに数日かかった。この港が、少しだけ自分のものになった気がする。"
- },
- "map.regionUnlockHarbor": {
-  "ko": "항구 구역이 지도에 나타났다.",
-  "en": "The harbor district appears on the map.",
-  "ja": "港湾地区が地図に現れた。"
- },
- "icefish.title": {
-  "ko": "얼음낚시",
-  "en": "Ice Fishing",
-  "ja": "氷上釣り"
- },
- "icefish.action": {
-  "ko": "빙판에 구멍을 뚫고 낚싯줄을 드리운다",
-  "en": "Cut a hole in the ice and drop a line",
-  "ja": "氷に穴を開け、釣り糸を垂らす"
- },
- "icefish.hint": {
-  "ko": "에너지 {e} · 스팟 {left}/{spots}",
-  "en": "Energy {e} · spots {left}/{spots}",
-  "ja": "エネルギー {e} · スポット {left}/{spots}"
- },
- "icefish.go": {
-  "ko": "🎣 낚시",
-  "en": "🎣 Fish",
-  "ja": "🎣 釣る"
- },
- "icefish.caught": {
-  "ko": "얼음 구멍에서 물고기를 {n} 낚았다.",
-  "en": "Pulled {n} fish from the ice hole.",
-  "ja": "氷の穴から魚を{n}匹釣り上げた。"
- },
- "icefish.salt": {
-  "ko": "구멍 가장자리에서 소금 결정을 {n} 긁어냈다.",
-  "en": "Scraped {n} salt crystal from the hole’s rim.",
-  "ja": "穴の縁から塩の結晶を{n}個削り取った。"
- },
- "icefish.bottle": {
-  "ko": "낚싯줄에 낡은 병이 걸려 올라왔다. 안에 젖은 쪽지가 들어 있다.",
-  "en": "An old bottle came up on the line. A damp note inside.",
-  "ja": "釣り糸に古い瓶が掛かって上がってきた。中に濡れたメモが入っている。"
- },
- "icefish.noSpot": {
-  "ko": "오늘은 더 뚫을 구멍이 없다.",
-  "en": "No more holes to cut today.",
-  "ja": "今日はもう開けられる穴がない。"
- },
- "ev.smuggler.title": {
-  "ko": "밀수꾼",
-  "en": "The Smuggler",
-  "ja": "密輸屋"
- },
- "ev.smuggler.text": {
-  "ko": "부두에 낯선 배가 잠깐 닿는다. 후드를 쓴 사내가 짐을 풀며 나를 힐끗 본다. 오래 머물 사람은 아니다.",
-  "en": "A strange boat touches the pier a moment. A hooded man unpacks his cargo, glancing at me. Not one to linger.",
-  "ja": "桟橋に見慣れない船がつかの間着く。フードをかぶった男が荷を解きながら、こちらをちらりと見る。長居する人間ではない。"
- },
- "ev.smuggler.c0": {
-  "ko": "연료를 산다 (배터리)",
-  "en": "Buy fuel (batteries)",
-  "ja": "燃料を買う (バッテリー)"
- },
- "ev.smuggler.c1": {
-  "ko": "소금 3으로 부품을 바꾼다",
-  "en": "Trade 3 salt for parts",
-  "ja": "塩3で部品と交換する"
- },
- "ev.smuggler.c2": {
-  "ko": "고개만 젓는다",
-  "en": "Just shake my head",
-  "ja": "ただ首を横に振る"
- },
- "ev.smuggler.r0": {
-  "ko": "연료 한 통을 받아 들었다. 그는 값을 세더니 배로 돌아간다.",
-  "en": "I take a can of fuel. He counts his price and heads back to the boat.",
-  "ja": "燃料を一缶受け取った。男は代金を数えると、船へ戻っていく。"
- },
- "ev.smuggler.r0winter": {
-  "ko": "겨울값이라며 그가 배를 세 배로 부른다. 연료 한 통이 이렇게 비쌌던 적은 없다.",
-  "en": "Winter rates, he says — triple the price. Fuel has never cost me this much.",
-  "ja": "冬の値段だと、男は三倍の値を吹っかけてくる。燃料一缶がこれほど高かったことはない。"
- },
- "ev.smuggler.r1": {
-  "ko": "소금 자루를 넘기자 그가 부품 두 개를 던져준다. 항구의 소금은 값이 나간다.",
-  "en": "I hand over the salt; he tosses me two parts. Harbor salt is worth something.",
-  "ja": "塩の袋を渡すと、男は部品を二つ放ってよこす。港の塩は値が張る。"
- },
- "ev.smuggler.r2": {
-  "ko": "그는 어깨를 으쓱하곤 닻을 올린다. 배는 안개 속으로 사라진다.",
-  "en": "He shrugs and weighs anchor. The boat vanishes into the fog.",
-  "ja": "男は肩をすくめ、錨を上げる。船は霧の中へ消えていく。"
- },
- "subway.hubTitle": {
-  "ko": "지하철 허브 승격",
-  "en": "Promote to Subway Hub",
-  "ja": "地下鉄ハブ昇格"
- },
- "subway.hubDesc": {
-  "ko": "핸드카를 손보고 노선도를 복원한다 — 선로 복구와 암시장이 열린다",
-  "en": "Repair the hand-car and restore the route map — unlocks rail recovery and the black market",
-  "ja": "ハンドカーを直し、路線図を復元する — 線路の復旧と闇市が解放される"
- },
- "subway.hubBtn": {
-  "ko": "승격",
-  "en": "Promote",
-  "ja": "昇格"
- },
- "subway.hubDone": {
-  "ko": "이 승강장은 이제 허브다",
-  "en": "This platform is a hub now",
-  "ja": "このホームは今やハブだ"
- },
- "subway.hubDoneToast": {
-  "ko": "승강장을 허브로 손봤다. 먼지 앉은 노선도를 다시 벽에 걸었다. 이제 선로를 되살리면, 저 어둠이 길이 된다.",
-  "en": "I fixed the platform into a hub. Hung the dusty route map back on the wall. Bring the rails back to life, and that dark becomes a road.",
-  "ja": "ホームをハブに仕立てた。埃をかぶった路線図をまた壁に掛けた。あとは線路を蘇らせれば、あの闇が道になる。"
- },
- "subway.blizzardBlocked": {
-  "ko": "폭설로 지상 길이 파묻혔다. 개통한 지하 노선으로만 오갈 수 있다.",
-  "en": "Snow has buried the surface routes. Only opened subway lines get through.",
-  "ja": "大雪で地上の道が埋もれた。開通した地下路線でしか行き来できない。"
- },
- "subway.mushroomHarvest": {
-  "ko": "🍄 어둠 속 균상에서 버섯을 {n} 땄다.",
-  "en": "🍄 Picked {n} mushroom from the bed in the dark.",
-  "ja": "🍄 闇の中の菌床からキノコを{n}個採った。"
- },
- "subway.mushroomWater": {
-  "ko": "균상에 물을 {n} 주었다.",
-  "en": "Watered the mushroom bed ({n}).",
-  "ja": "菌床に水を{n}与えた。"
- },
- "subway.mushroomDry": {
-  "ko": "물이 없어 균상이 말랐다. 오늘은 딸 것이 없다.",
-  "en": "No water — the bed dried out. Nothing to pick today.",
-  "ja": "水がなくて菌床が乾いてしまった。今日は採れるものがない。"
- },
- "subway.marketTitle": {
-  "ko": "암시장 교환대",
-  "en": "Black-Market Counter",
-  "ja": "闇市の交換所"
- }
+  "ev.distantlight.r0.bunker": {
+    "ko": "깨진 외피 틈으로 벌판 끝을 봤다. 폐허 도시 쪽에 불빛 하나가 켜져 있다.<br>여기까지 오려면 며칠은 걸릴 거리다. 그래도, 저기 누군가 있다.",
+    "en": "Through a crack in the shell I looked to the far field. Toward the ruined city, one light burns.<br>Days of walking away, at least. Still — someone is out there.",
+    "ja": "割れた外殻の隙間から、野原の果てを見た。廃墟の街のほうに、灯りがひとつともっている。<br>ここまで来るには何日もかかる距離だ。それでも、あそこに誰かがいる。"
+  },
+  "ev.radioghost.title": {
+    "ko": "주파수 사이의 목소리",
+    "en": "A Voice Between Frequencies",
+    "ja": "周波数の狭間の声"
+  },
+  "ev.radioghost.text": {
+    "ko": "늦은 밤, 라디오 다이얼을 돌리다 잡음 사이에 사람 목소리가 걸린다.<br>말인지 노래인지, 끊겼다 이어진다.",
+    "en": "Late at night, turning the dial, a human voice catches between the static.<br>Speech or song, I can’t tell — it breaks and returns.",
+    "ja": "夜更け、ラジオのダイヤルを回していると、雑音の合間に人の声が引っかかる。<br>言葉なのか歌なのか、途切れては続く。"
+  },
+  "ev.radioghost.c0": {
+    "ko": "주파수를 붙잡아 본다",
+    "en": "Try to hold the frequency",
+    "ja": "周波数をつかまえてみる"
+  },
+  "ev.radioghost.c1": {
+    "ko": "다이얼을 끈다",
+    "en": "Turn the dial off",
+    "ja": "ダイヤルを切る"
+  },
+  "ev.radioghost.r0": {
+    "ko": "잡음을 헤치자 방송 하나가 또렷해졌다. — {title}<br>수첩 라디오 기록에 남겨두었다.",
+    "en": "Cutting through the static, one broadcast came clear. — {title}<br>I set it down in the journal’s radio log.",
+    "ja": "雑音をかき分けると、ひとつの放送がはっきり聞こえてきた。— {title}<br>手帳のラジオ記録に残しておいた。"
+  },
+  "ev.radioghost.r0none": {
+    "ko": "주파수를 붙잡았지만 이미 들어본 것들뿐이다. 목소리는 곧 잡음에 묻혔다.",
+    "en": "I held the frequency, but it was all things I’d heard before. The voice sank back into static.",
+    "ja": "周波数はつかまえたが、もう聞いたことのあるものばかりだった。声はすぐ雑音に埋もれた。"
+  },
+  "ev.radioghost.r1": {
+    "ko": "다이얼을 끄자 방은 다시 조용해졌다. 무슨 말이었는지는 끝내 알 수 없었다.",
+    "en": "I killed the dial and the room went quiet again. What it said, I’ll never know.",
+    "ja": "ダイヤルを切ると、部屋はまた静かになった。何を言っていたのかは、ついにわからなかった。"
+  },
+  "ev.oldcalendar.title": {
+    "ko": "벽에 걸린 달력",
+    "en": "A Calendar on the Wall",
+    "ja": "壁のカレンダー"
+  },
+  "ev.oldcalendar.text": {
+    "ko": "벽 틈에서 오래된 달력 한 장을 찾았다. 붕괴 이전의 날짜에 동그라미가 그려져 있다.<br>무슨 날이었는지는 적혀 있지 않다.",
+    "en": "I found an old calendar page in a gap in the wall. A date from before the fall is circled.<br>What day it was, no one wrote down.",
+    "ja": "壁の隙間から古いカレンダーを一枚見つけた。崩壊前の日付に丸がつけてある。<br>何の日だったのかは書かれていない。"
+  },
+  "ev.oldcalendar.c0": {
+    "ko": "달력을 살펴본다",
+    "en": "Look the calendar over",
+    "ja": "カレンダーを調べる"
+  },
+  "ev.oldcalendar.r0": {
+    "ko": "달력 뒷면에 빼곡한 메모가 있다. — {title}<br>수첩 기록에 옮겨 적었다.",
+    "en": "The back of the calendar is dense with notes. — {title}<br>I copied it into the journal.",
+    "ja": "カレンダーの裏にびっしりとメモが残っていた。— {title}<br>手帳の記録に書き写した。"
+  },
+  "ev.oldcalendar.r0none": {
+    "ko": "달력 뒷면은 이미 옮겨 적은 것과 같은 내용이었다. 벽에 도로 끼워두었다.",
+    "en": "The back held the same notes I’d already copied. I tucked it back into the wall.",
+    "ja": "カレンダーの裏は、もう書き写したものと同じ内容だった。壁に戻して挟んでおいた。"
+  },
+  "ev.catgift.title": {
+    "ko": "고양이의 선물",
+    "en": "The Cat’s Gift",
+    "ja": "猫の贈り物"
+  },
+  "ev.catgift.text": {
+    "ko": "고양이가 뭔가를 입에 물고 와 발치에 툭 떨어뜨린다. 뿌듯한 얼굴이다.",
+    "en": "The cat trots up with something in its mouth and drops it at my feet. A very proud face.",
+    "ja": "猫が何かをくわえてきて、足元にぽとりと落とす。得意げな顔だ。"
+  },
+  "ev.catgift.c0": {
+    "ko": "뭔지 살펴본다",
+    "en": "See what it is",
+    "ja": "何なのか確かめる"
+  },
+  "ev.catgift.r0rare": {
+    "ko": "어디서 물어왔는지 쓸 만한 부품 두 개다. 머리를 쓰다듬어줬다. <b>(부품 +2)</b>",
+    "en": "Two decent parts, from who knows where. I scratched its head. <b>(parts +2)</b>",
+    "ja": "どこでくわえてきたのか、使えそうな部品がふたつ。頭を撫でてやった。<b>(部品 +2)</b>"
+  },
+  "ev.catgift.r0junk": {
+    "ko": "낡은 헝겊 조각이다. 그래도 천은 천이다. <b>(천 +1)</b>",
+    "en": "A ragged scrap of cloth. Still, cloth is cloth. <b>(cloth +1)</b>",
+    "ja": "古びた布きれだ。それでも布は布だ。<b>(布 +1)</b>"
+  },
+  "ev.catgift.r0rat": {
+    "ko": "죽은 쥐다. 고양이는 자랑스러운 눈치다. 나는 웃어야 할지 울어야 할지 모르겠다.",
+    "en": "A dead rat. The cat looks immensely proud. I don’t know whether to laugh or cry.",
+    "ja": "死んだネズミだ。猫は誇らしげだ。笑えばいいのか泣けばいいのか、わからない。"
+  },
+  "ev.frozenpipe.title": {
+    "ko": "얼어붙은 수도관",
+    "en": "A Frozen Pipe",
+    "ja": "凍りついた水道管"
+  },
+  "ev.frozenpipe.text": {
+    "ko": "밤새 기온이 뚝 떨어져 수도관이 얼어붙었다. 두드리니 안에서 얼음이 걸리는 소리가 난다.<br>이대로 두면 갈라질지도 모른다.",
+    "en": "The temperature dropped hard overnight and the pipe froze solid. Tapping it, I hear ice catch inside.<br>Left alone, it might crack.",
+    "ja": "夜のうちに気温が急に下がり、水道管が凍りついた。叩くと、中で氷が引っかかる音がする。<br>このままでは割れてしまうかもしれない。"
+  },
+  "ev.frozenpipe.c0": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">부품 1로 손본다",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">Fix it with 1 parts",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">部品1で直す"
+  },
+  "ev.frozenpipe.c1": {
+    "ko": "녹기를 기다린다",
+    "en": "Wait for it to thaw",
+    "ja": "溶けるのを待つ"
+  },
+  "ev.frozenpipe.r0": {
+    "ko": "이음매를 갈고 단열재를 감았다. 물이 다시 흐른다.",
+    "en": "I replaced the joint and wrapped it in insulation. The water runs again.",
+    "ja": "継ぎ目を替え、断熱材を巻いた。水がまた流れる。"
+  },
+  "ev.frozenpipe.r1": {
+    "ko": "그냥 두었다. 관이 녹을 때까지 정수기는 며칠 멎어 있을 것이다. <b>(정수기 3일 정지)</b>",
+    "en": "I left it. Until the pipe thaws, the purifier will sit dead for a few days. <b>(purifier stalled 3 days)</b>",
+    "ja": "そのままにした。管が溶けるまで、浄水器は数日止まったままだろう。<b>(浄水器 3日停止)</b>"
+  },
+  "ev.frozenpipe.note1": {
+    "ko": "수도관을 방치했다 — 정수기가 며칠 멎는다.",
+    "en": "Left the pipe frozen — the purifier stalls for days.",
+    "ja": "水道管を放置した — 浄水器が数日止まる。"
+  },
+  "ev.caravanpass.title": {
+    "ko": "지나가는 행렬",
+    "en": "A Procession Passing",
+    "ja": "通り過ぎる行列"
+  },
+  "ev.caravanpass.text": {
+    "ko": "멀리 능선을 따라 사람들의 행렬이 지나간다. 짐수레와 등짐, 아이의 손을 잡은 어른.<br>이쪽을 알아채지 못한 채, 그저 지나간다.",
+    "en": "Far along the ridge, a line of people passes. Carts and packs, a grown-up holding a child’s hand.<br>Never noticing me, they simply move on.",
+    "ja": "遠く尾根に沿って、人々の行列が通り過ぎていく。荷車と背負い荷、子どもの手を引く大人。<br>こちらに気づかないまま、ただ過ぎていく。"
+  },
+  "ev.caravanpass.c0": {
+    "ko": "지나갈 때까지 지켜본다",
+    "en": "Watch until they’ve gone",
+    "ja": "通り過ぎるまで見守る"
+  },
+  "ev.caravanpass.r0": {
+    "ko": "행렬은 능선 너머로 사라질 때까지 한 번도 멈추지 않았다.<br>부르지 않았고, 그들도 돌아보지 않았다. 그게 맞는 것 같았다.",
+    "en": "The line never once stopped before it vanished over the ridge.<br>I didn’t call out, and they didn’t look back. It felt right that way.",
+    "ja": "行列は尾根の向こうへ消えるまで、一度も止まらなかった。<br>呼びかけなかったし、彼らも振り返らなかった。それでいい気がした。"
+  },
+  "ev.caravanpass.r0detail": {
+    "ko": "망원경으로 오래 지켜봤다. 지친 얼굴들, 그래도 앞선 이가 이따금 뒤를 챙긴다.<br>어디로 가는지는 모른다. 다만 함께 간다는 것만은 분명했다.",
+    "en": "I watched a long while through the scope. Weary faces — yet the one in front keeps glancing back for the others.<br>Where they go, I can’t say. That they go together was the one clear thing.",
+    "ja": "望遠鏡で長いこと見ていた。疲れた顔ぶれ。それでも先頭の者が、時折後ろを気にかけている。<br>どこへ行くのかはわからない。ただ、共に行くということだけは確かだった。"
+  },
+  "ev.doctor.textFrag": {
+    "ko": "…그 일지를 들었다면, 이제 이해했을 것이다. 아홉 해를 버틴 불빛 하나면 충분하다는 걸.",
+    "en": "…if you heard those logs, you understand now. One light that lasts nine years is enough.",
+    "ja": "…あの日誌を聞いたのなら、もうわかっているだろう。九年を耐えた灯りがひとつあれば、それで十分だということを。"
+  },
+  "memo.foundNote": {
+    "ko": "기록을 하나 찾았다 — {title}",
+    "en": "Found a record — {title}",
+    "ja": "記録をひとつ見つけた — {title}"
+  },
+  "memo.foundWillNote": {
+    "ko": "누군가의 마지막 글을 찾았다 — {title}",
+    "en": "Found someone’s last words — {title}",
+    "ja": "誰かの最後の言葉を見つけた — {title}"
+  },
+  "memo.tagWill": {
+    "ko": "남겨진 마지막 글",
+    "en": "Someone’s last words",
+    "ja": "残された最後の言葉"
+  },
+  "memo.tagRegion.residential": {
+    "ko": "주거지역에서 — 무너진 일상",
+    "en": "From the residential zone — a daily life undone",
+    "ja": "住宅地区にて — 崩れた日常"
+  },
+  "memo.tagRegion.commercial": {
+    "ko": "상업지구에서 — 사재기와 폭동",
+    "en": "From the commercial zone — hoarding and riots",
+    "ja": "商業地区にて — 買い占めと暴動"
+  },
+  "memo.tagRegion.industrial": {
+    "ko": "공업지대에서 — 폐쇄 명령",
+    "en": "From the industrial zone — the shutdown order",
+    "ja": "工業地帯にて — 閉鎖命令"
+  },
+  "memo.tagRegion.slum": {
+    "ko": "슬럼가에서 — 남겨진 사람들",
+    "en": "From the slums — those left behind",
+    "ja": "スラム街にて — 残された人々"
+  },
+  "memo.tagRegion.bunker": {
+    "ko": "벙커 하강 계단에서 — 아래로 난 자국",
+    "en": "From the bunker stairs — marks leading down",
+    "ja": "バンカーの下り階段にて — 下へ続く跡"
+  },
+  "memo.tagRegion.subway": {
+    "ko": "지하 승강장에서 — 내려간 사람들",
+    "en": "From the underground platform — those who went below",
+    "ja": "地下ホームにて — 下りていった人々"
+  },
+  "memo.tagRegion.resort": {
+    "ko": "고원 리조트에서 — 마지막 휴가객들",
+    "en": "From the highland resort — the last vacationers",
+    "ja": "高原リゾートにて — 最後の行楽客たち"
+  },
+  "radio.heardNote": {
+    "ko": "라디오에서 방송을 하나 들었다 — {title}",
+    "en": "Heard a broadcast on the radio — {title}",
+    "ja": "ラジオで放送をひとつ聞いた — {title}"
+  },
+  "radio.logged": {
+    "ko": "수첩에 기록했다",
+    "en": "Logged in the journal",
+    "ja": "手帳に記録した"
+  },
+  "record.tabTitle": {
+    "ko": "기록",
+    "en": "Records",
+    "ja": "記録"
+  },
+  "record.memoTitle": {
+    "ko": "세계의 조각 ({n}/{total})",
+    "en": "Fragments of the World ({n}/{total})",
+    "ja": "世界のかけら ({n}/{total})"
+  },
+  "record.radioTitle": {
+    "ko": "라디오 기록 ({n}/{total})",
+    "en": "Radio Log ({n}/{total})",
+    "ja": "ラジオ記録 ({n}/{total})"
+  },
+  "record.distantTitle": {
+    "ko": "먼 불빛 목격 {n}회",
+    "en": "Distant light sighted {n} time(s)",
+    "ja": "遠い灯り 目撃{n}回"
+  },
+  "record.regionRes": {
+    "ko": "주거지역",
+    "en": "Residential",
+    "ja": "住宅地区"
+  },
+  "record.regionCom": {
+    "ko": "상업지구",
+    "en": "Commercial",
+    "ja": "商業地区"
+  },
+  "record.regionInd": {
+    "ko": "공업지대",
+    "en": "Industrial",
+    "ja": "工業地帯"
+  },
+  "record.regionSlum": {
+    "ko": "슬럼가",
+    "en": "Slums",
+    "ja": "スラム街"
+  },
+  "record.regionBunker": {
+    "ko": "벙커 지하 통로",
+    "en": "Bunker Undercroft",
+    "ja": "バンカー地下通路"
+  },
+  "record.regionWill": {
+    "ko": "남겨진 글",
+    "en": "Last Words",
+    "ja": "遺された言葉"
+  },
+  "record.locked": {
+    "ko": "…아직 찾지 못함",
+    "en": "…not yet found",
+    "ja": "…まだ見つからない"
+  },
+  "record.empty": {
+    "ko": "아직 아무것도 모으지 못했다.",
+    "en": "Nothing gathered yet.",
+    "ja": "まだ何も集められていない。"
+  },
+  "record.readHint": {
+    "ko": "펼쳐 읽기",
+    "en": "Read",
+    "ja": "開いて読む"
+  },
+  "bunker.roofTitle": {
+    "ko": "천장 구멍",
+    "en": "The Hole in the Ceiling",
+    "ja": "天井の穴"
+  },
+  "bunker.roofHole": {
+    "ko": "갈라진 천장으로 비가 샌다. 별은 보이지만, 비 오는 날엔 대가를 치른다.",
+    "en": "Rain leaks through the cracked ceiling. You can see the stars — but rainy days cost you.",
+    "ja": "ひび割れた天井から雨が漏れる。星は見えるが、雨の日は高くつく。"
+  },
+  "bunker.roofTemp": {
+    "ko": "임시 덮개를 씌웠다. 비는 더 새지 않는다. 아직 완전하진 않다.",
+    "en": "A makeshift cover is up. No more leaks. Not quite whole yet.",
+    "ja": "仮の覆いをかけた。雨はもう漏れない。まだ完全ではない。"
+  },
+  "bunker.roofFull": {
+    "ko": "천장을 완전히 수리했다. 벙커가 처음으로 온전히 아늑하다. <b>(쾌적 +4)</b>",
+    "en": "The ceiling is fully repaired. For the first time the bunker feels wholly snug. <b>(comfort +4)</b>",
+    "ja": "天井を完全に修理した。バンカーが初めて、まるごと居心地よくなった。<b>(快適 +4)</b>"
+  },
+  "bunker.roofStage1Btn": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">임시 덮개 씌우기 (건축재 1)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">Put up a cover (1 material)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">仮の覆いをかける (建材 1)"
+  },
+  "bunker.roofStage2Btn": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">완전 수리 (건축재 3)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">Full repair (3 material)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">完全修理 (建材 3)"
+  },
+  "bunker.roofDoneStage1": {
+    "ko": "천장에 임시 덮개를 씌웠다. 이제 비가 새지 않는다.",
+    "en": "Covered the ceiling for now. No more leaking rain.",
+    "ja": "天井に仮の覆いをかけた。もう雨は漏れない。"
+  },
+  "bunker.roofDoneStage2": {
+    "ko": "천장을 완전히 수리했다. 벙커가 온전해졌다.",
+    "en": "Fully repaired the ceiling. The bunker is whole now.",
+    "ja": "天井を完全に修理した。これでバンカーは万全だ。"
+  },
+  "bunker.backdoorFound": {
+    "ko": "절단기를 손에 넣었다. 뒷벽을 뚫으면 그 너머 공간이 드러난다.",
+    "en": "Got hold of a cutter. Breach the back wall and the space beyond opens up.",
+    "ja": "切断機を手に入れた。裏の壁を突き破れば、その向こうの空間が姿を現す。"
+  },
+  "bunker.backdoorBtn": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">뒷문 개방 (건축재 3)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">Open the back door (3 material)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">裏口を開く (建材 3)"
+  },
+  "bunker.backdoorDone": {
+    "ko": "뒷벽을 갈라 문을 열었다. 콘크리트 전실과, 그 바닥으로 이어지는 하강 계단이 드러났다. <b>(쾌적 +4)</b>",
+    "en": "Cut the back wall open. A concrete anteroom — and stairs descending from its floor. <b>(comfort +4)</b>",
+    "ja": "裏の壁を切り開き、扉を通した。コンクリートの前室と、その床から下へ降りる階段が姿を現した。<b>(快適 +4)</b>"
+  },
+  "bunker.stairToast": {
+    "ko": "내려가 봤자 어둠뿐이다. …아직은.",
+    "en": "Nothing down there but darkness. …For now.",
+    "ja": "降りたところで闇しかない。…今はまだ。"
+  },
+  "bunker.roofNote": {
+    "ko": "천장 구멍으로 비가 들이쳤다.",
+    "en": "Rain drove in through the ceiling hole.",
+    "ja": "天井の穴から雨が吹き込んだ。"
+  },
+  "rooftop.slateTitle": {
+    "ko": "빠진 슬레이트",
+    "en": "The Missing Slates",
+    "ja": "抜けたスレート"
+  },
+  "rooftop.slateGapped": {
+    "ko": "지붕에서 두 장이 빠져 하늘이 보인다. 비 오는 날엔 대가를 치른다.",
+    "en": "Two slates are gone; you can see sky. Rainy days cost you.",
+    "ja": "屋根から二枚抜けて、空が見える。雨の日は高くつく。"
+  },
+  "rooftop.slateFull": {
+    "ko": "슬레이트를 채워 지붕이 온전해졌다.",
+    "en": "The slates are filled in; the roof is whole.",
+    "ja": "スレートを埋めて、屋根は元どおりになった。"
+  },
+  "rooftop.slateBtn": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">슬레이트 보수 (건축재 1)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">Patch the slates (1 material)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">スレート補修 (建材 1)"
+  },
+  "rooftop.slateDone": {
+    "ko": "빠진 슬레이트를 채웠다. 이제 비가 새지 않는다.",
+    "en": "Filled in the missing slates. No more leaking rain.",
+    "ja": "抜けたスレートを埋めた。もう雨は漏れない。"
+  },
+  "rooftop.slateNote": {
+    "ko": "빠진 슬레이트 사이로 빗물이 스몄다.",
+    "en": "Rainwater seeped through the gaps in the slates.",
+    "ja": "抜けたスレートの隙間から雨水が染みてきた。"
+  },
+  "rooftop.gardenHarvest": {
+    "ko": "옥상 텃밭에서 먹을 것을 거뒀다 (+{n})",
+    "en": "Harvested food from the rooftop garden (+{n})",
+    "ja": "屋上菜園で食べ物を収穫した (+{n})"
+  },
+  "rooftop.gardenDormant": {
+    "ko": "겨울 — 옥상 텃밭이 잠들어 있다.",
+    "en": "Winter — the rooftop garden lies dormant.",
+    "ja": "冬 — 屋上菜園は眠っている。"
+  },
+  "cutter.foundNote": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">공업지대에서 절단기를 찾았다.",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">Found a cutter in the industrial zone.",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">工業地帯で切断機を見つけた。"
+  },
+  "gun.foundNote": {
+    "ko": "무너진 초소에서 쓸 만한 총을 찾았다. 탄환 {dur}발.",
+    "en": "Found a working gun in a collapsed guard post. {dur} rounds.",
+    "ja": "崩れた哨所で使えそうな銃を見つけた。弾丸 {dur}発。"
+  },
+  "gun.emptyNote": {
+    "ko": "탄창이 비었다. 제작대에서 손봐야 한다.",
+    "en": "The magazine is empty. Needs servicing at the workbench.",
+    "ja": "弾倉が空だ。作業台で手入れしないと。"
+  },
+  "hostile.soundNote": {
+    "ko": "폐허 안쪽에서 인기척이 들렸다. 마주치지 않고 돌아왔다.",
+    "en": "Heard someone moving deeper in the ruins. Came back without crossing paths.",
+    "ja": "廃墟の奥で人の気配がした。出くわさずに引き返した。"
+  },
+  "hostile.traceNote": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">식은 모닥불 자리를 지났다. 누가 먼저 다녀갔다.",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">Passed a cold campfire. Someone was here first.",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">冷えた焚き火の跡を通り過ぎた。誰かが先に来ていた。"
+  },
+  "hostile.robbedNote": {
+    "ko": "길목을 막은 자들에게 전리품 일부를 내주고 몸을 뺐다.",
+    "en": "Men blocking the road took part of the haul. You backed away.",
+    "ja": "道を塞ぐ連中に戦利品の一部を渡して、その場を切り抜けた。"
+  },
+  "hostile.metNote": {
+    "ko": "길목에서 낯선 자들과 마주쳤다. 빈손인 걸 보고 길을 내줬다.",
+    "en": "Ran into strangers on the road. Seeing you empty-handed, they let you pass.",
+    "ja": "道の途中で見知らぬ者たちと出くわした。手ぶらなのを見て、道を空けてくれた。"
+  }
 }

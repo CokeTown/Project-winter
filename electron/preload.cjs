@@ -46,6 +46,13 @@ contextBridge.exposeInMainWorld('nineSteam', {
 function readLocaleOverrides() {
   if (!fs || !path) return { ko: null, en: null, ja: null, dir: null }; // sandbox 폴백
   const dirs = [];
+  // 1순위: %APPDATA%/Nine Winters/locales — 포터블 exe도 통하는 유일한 자리.
+  //   포터블은 resources가 실행마다 %TEMP%에 새로 풀려 그쪽 편집이 다음 실행에서 증발한다.
+  //   여기는 설치판·포터블 공통이고 게임 업데이트에도 살아남는다. 폴더를 만들어 두어야 유저가 찾는다.
+  try {
+    const ud = ipcRenderer.sendSync('paths:user-data');
+    if (ud) { const d = path.join(ud, 'locales'); try { fs.mkdirSync(d, { recursive: true }); } catch (e) { /* */ } dirs.push(d); }
+  } catch (e) { /* 구 main·하네스 등 핸들러 부재 — 무해 */ }
   try { if (process.resourcesPath) dirs.push(path.join(process.resourcesPath, 'locales')); } catch (e) { /* */ }
   dirs.push(path.join(__dirname, '..', 'dist', 'locales')); // 언팩/개발 폴백
   const load = (dir, name) => {

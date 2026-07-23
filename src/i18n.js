@@ -161,6 +161,11 @@ export function applyLocaleOverrides() {
   return false;
 }
 export async function loadLocaleOverridesWeb() {
+  // Electron에선 이 웹 폴백을 타면 안 된다 (2026-07-23 실증): file:// 페이지의 fetch('locales/…')가
+  //   조용히 성공(200)해 asar '내장 기본' 번역 전체를 다시 병합 — preload가 얹은 유저 편집이
+  //   부팅 한 프레임 뒤 원복된다(x1 직후 오버라이드 확인 → 최종 기본값, 탐침으로 특정).
+  //   Electron의 정본은 preload 동기 경로(applyLocaleOverrides)이므로 브릿지가 있으면 여기서 끝.
+  if (typeof window !== 'undefined' && window.nineLocale) return false;
   if (typeof fetch === 'undefined') return false;
   try {
     const [ko, en, ja] = await Promise.all([

@@ -1,10 +1,28 @@
-const { app, BrowserWindow, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Menu, shell } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 
 // userData 폴더명을 productName으로 고정 — app.getName()이 dev('nine-winters')/packaged 간 갈리는 걸 막아
 // Steam Auto-Cloud 경로(%APPDATA%/Nine Winters/steamcloud)를 결정론적으로 만든다. getPath 호출 전에 세팅.
 app.setName('Nine Winters');
+
+// ── 웹 잔재 차단 (2026-07-23 전수 감사 — "웹을 Electron으로 싼 티" 소거) ─────────
+// ① 기본 메뉴 제거. autoHideMenuBar는 '숨김'일 뿐이라 Alt로 메뉴바가 튀어나오고,
+//    메뉴에 딸린 브라우저 단축키(Ctrl+R 리로드 · Ctrl+Shift+I 개발자도구 · Ctrl+W 즉시 닫기 ·
+//    Ctrl+±/0 페이지 줌 · F11)가 전부 살아 있었다. 메뉴를 없애면 단축키도 함께 죽는다.
+//    개발 실행(SHELTER_DEV_URL)에선 유지 — 리로드·개발자도구가 작업 도구다.
+const IS_DEV = !!process.env.SHELTER_DEV_URL;
+if (!IS_DEV) Menu.setApplicationMenu(null);
+// ② 내비게이션 가드. 창에 파일·링크를 떨어뜨리면 게임이 그 문서로 '이동'해 버리는 게 웹 셸의 기본값이다.
+//    같은 URL 재진입(= location.reload() — 언어 전환·타이틀 복귀 등 6곳이 쓴다)만 허용하고 나머지는 차단.
+//    window.open류 새 창은 전부 거부하되, http(s)면 시스템 브라우저로 넘긴다(향후 위시리스트 링크 대비).
+app.on('web-contents-created', (ev, wc) => {
+  wc.on('will-navigate', (e, url) => { if (url !== wc.getURL()) e.preventDefault(); });
+  wc.setWindowOpenHandler(({ url }) => {
+    if (/^https?:/i.test(url)) { try { shell.openExternal(url); } catch (e) { /* */ } }
+    return { action: 'deny' };
+  });
+});
 
 let mainWin = null;
 
@@ -28,6 +46,9 @@ function cloudReadAll() {
 }
 // 부팅 하이드레이션용 동기 읽기 (preload가 sendSync로 호출).
 ipcMain.on('cloud:read-all', (evt) => { try { evt.returnValue = cloudReadAll(); } catch (e) { evt.returnValue = {}; } });
+// 번역 오버라이드 폴더용 userData 경로 (preload가 sendSync로 호출) — 포터블 exe는 resources가
+// 실행마다 %TEMP%에 새로 풀려 편집이 증발하므로, 항상 같은 자리(%APPDATA%/Nine Winters)를 알려준다.
+ipcMain.on('paths:user-data', (evt) => { try { evt.returnValue = app.getPath('userData'); } catch (e) { evt.returnValue = null; } });
 
 // ── Steamworks (#34 언어 연동 · #117 DLC 게이트) ─────────────────────────────
 // Steam 클라이언트 밖(웹/포터블/개발/캡처 하네스)에선 init이 던진다 — null 폴백으로 전 기능 무해.
@@ -67,13 +88,17 @@ const MINI_W = 480;
 const MINI_H = 300;
 
 function createWindow() {
+  // QA 하네스가 '실제 main.cjs' 경로를 검증할 때 화면 플래시·스피커 유출 없이 부팅하기 위한 숨김 모드.
+  // (기존 하네스는 자체 창을 만들어 main.cjs의 메뉴·내비 가드가 검증 사각이었다 — probe-webisms가 이 플래그로 실앱을 연다)
+  const QA_HIDDEN = !!process.env.NW_QA_HIDDEN;
   const win = new BrowserWindow({
+    show: !QA_HIDDEN,
     width: 1280,
     height: 800,
     minWidth: 960,
     minHeight: 600,
     backgroundColor: '#0e1014',
-    title: 'Project Shelter',
+    title: 'Nine Winters', // 구명 'Project Shelter' 잔재 검거(#9 리브랜딩 누락) — 로드 전 타이틀바·작업표시줄에 잠깐 노출되던 값. 로드 후엔 index.html <title>이 덮는다.
     autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,
@@ -93,6 +118,12 @@ function createWindow() {
   } else {
     win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }
+  // ③ 핀치 줌 고정 (웹 잔재 감사) — 트랙패드/터치 핀치가 게임 화면을 웹페이지처럼 확대하던 것.
+  //    Ctrl+휠 페이지 줌은 렌더러 wheel 가드가, 키보드 줌(Ctrl+±/0)은 메뉴 제거가 각각 담당.
+  win.webContents.on('did-finish-load', () => {
+    win.webContents.setVisualZoomLevelLimits(1, 1).catch(() => { /* */ });
+  });
+  if (QA_HIDDEN) win.webContents.setAudioMuted(true); // 숨김 QA 중 BGM 스피커 유출 방지(하네스 상시 룰과 동일)
 
   mainWin = win;
   win.on('closed', () => { mainWin = null; });

@@ -25,3 +25,6 @@ builds/
 *-verify.txt
 demo-build-out.txt
 Pixel_Fixed_Capsule/
+
+# 트레일러 드래프트 영상 — 검수는 로컬 파일/릴리스로, 저장소엔 담지 않는다(74MB+/편)
+docs/steam/trailer/*.mp4

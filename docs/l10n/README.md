@@ -1,16 +1,36 @@
 # 번역 추출 패키지 — Gemini 번역 워크플로용 (#191)
 
 > 디렉터가 Gemini 등 외부 LLM으로 UI·게임플레이 번역을 직접 돌리기 위한 추출본.
-> 게임에 반영되는 정본은 `src/locales/*.json`이며, 이 폴더는 **스냅샷**이다(재추출로 갱신).
+> 게임에 반영되는 정본은 `src/locales/*.json`이며, 이 폴더는 **스냅샷**이다.
+
+## 갱신 (자동 아님 — 이 명령을 돌려야 최신이 된다)
+
+```powershell
+node tools/export-l10n-pack.mjs
+```
+
+`full` · `chunks` · `delta` · `translation-sheet.tsv` · `CHANGES.md`가 한 번에 다시 쓰인다.
+게임에서 언어를 바꾸는 것과는 무관하고, 문자열이 늘거나 원문이 바뀌어도 자동으로 따라오지 않는다 —
+그래서 07-17 추출본이 2,068키에 멈춘 채 현행 2,227키와 어긋나 있었다(생성기가 저장소에 없었던 탓).
 
 ## 구성
 
 | 경로 | 내용 |
 |---|---|
-| `full/ko.json` | 한국어 원문 전체 (2,068키 — 번역의 기준) |
-| `full/en.json` | 현행 영어 번역 전체 |
-| `full/ja.json` | 현행 일본어 번역 전체 (2026-07-16 Fable 초벌 — Gemini로 다듬어도 됨) |
-| `chunks/chunk-01~25.json` | Gemini 투입용 85키 단위 청크 — `{ "키": { "ko", "en", "ja" } }` |
+| `CHANGES.md` | **먼저 볼 것** — 신규/변경/삭제 키 수와 목록 |
+| `delta/delta-*.json` | **작업 대상** — 기준선 이후 새로 생기거나 원문이 바뀐 키만 |
+| `full/{ko,en,ja}.json` | 현행 전체 (ko가 번역의 기준) |
+| `chunks/chunk-*.json` | 전량 청크 85키 단위 — 통번역을 다시 할 때만 |
+| `translation-sheet.tsv` | 시트/CAT 도구용 탭 구분 표 |
+
+### 기준선(델타의 시작점)
+
+`.baseline-ko.json`이 "마지막으로 번역을 반영한 시점의 원문"이다. 재추출을 몇 번 하든 델타는 그대로 남고,
+번역을 실제로 역수입한 뒤에만 기준선을 옮긴다:
+
+```powershell
+node tools/export-l10n-pack.mjs --set-baseline
+```
 
 ## Gemini에 넣을 때 지켜야 할 규칙 (프롬프트에 포함 권장)
 

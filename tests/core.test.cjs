@@ -5,7 +5,7 @@ const { boot, evalJs, call, check, near, report, app } = require('./harness.cjs'
 
 const ROT = "['residential','commercial','industrial','slum']";
 // SHELTERS 전 필드 해시 핀 (SHELTERS 분리 안전망). 불일치 시 SHELTER_HASH(actual) 로그로 재핀.
-const SHELTER_HASH = -1377374676; // 2026-07-22 재핀: #213 이모지 전멸 — limits/emoji 필드 컬러 이모지 소거 (직전: #209 F44 발코니)
+const SHELTER_HASH = -870366249; // 2026-07-23 재핀: #146 bridgehouse.bridgeSight 신설 — 「불타는 해협」 지역 결선 히트 평면 (직전: #213 이모지 전멸)
 // 구세이브 마이그레이션 정적 기본값 포괄 스냅샷 해시 (core/save.js 추출 안전망). 불일치 시 MIG_HASH(actual) 재핀.
 const MIG_HASH = -1042252206; // 2026-07-17 재핀: 2.0-α 4도시 가산 필드 4종(citiesReached·cityWinters·finalWinterCity·homeStay) 스냅샷 편입 (직전: 시그니처 도면)
 // 암시장(scale 오퍼) 모드별 해결값 스냅샷 해시 (인카운터 밸런스 안전망). 불일치 시 MARKET_HASH(actual) 재핀.

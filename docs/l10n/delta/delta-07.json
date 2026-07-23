@@ -1,0 +1,157 @@
+{
+  "data.shelter.bus.limits": {
+    "ko": "좁은 실내 — 가구 최대 8개",
+    "en": "Tight interior — max 8 furniture",
+    "ja": "狭い室内 — 家具は最大8個"
+  },
+  "data.shelter.bus.perk.label": {
+    "ko": "이동형 거점 — 탐험 소요 시간 -25%",
+    "en": "Mobile base — expedition time -25%",
+    "ja": "移動式拠点 — 探索の所要時間 -25%"
+  },
+  "data.shelter.cabin.limits": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">목조 지붕 — 악천후엔 매일 건축재 1로 누수 수리 (없으면 청결 -8)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">Timber roof — bad weather needs 1 material/day for leak repair (else cleanliness -8)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">木の屋根 — 悪天候の日は毎日建材1で雨漏りを修理 (なければ清潔 -8)"
+  },
+  "data.shelter.cabin.perk.label": {
+    "ko": "아늑한 구조 — 쾌적함 효과 1.5배",
+    "en": "Cozy layout — comfort effects ×1.5",
+    "ja": "居心地のよい造り — 快適さ効果1.5倍"
+  },
+  "data.shelter.container.limits": {
+    "ko": "얇은 철판 — 비/눈 오는 날 쾌적함 -8",
+    "en": "Thin steel — comfort -8 on rainy/snowy days",
+    "ja": "薄い鉄板 — 雨/雪の日は快適さ -8"
+  },
+  "data.shelter.container.perk.label": {
+    "ko": "길목의 거점 — 탐험 성공률 +5%p",
+    "en": "Crossroads outpost — expedition success +5%p",
+    "ja": "街道の拠点 — 探索成功率 +5%p"
+  },
+  "data.shelter.controltower.limits": {
+    "ko": "사방 유리 — 비/눈 오는 날 쾌적함 -6",
+    "en": "Glass on all sides — comfort -6 on rainy/snowy days",
+    "ja": "四方ガラス張り — 雨/雪の日は快適さ -6"
+  },
+  "data.shelter.controltower.perk.label": {
+    "ko": "고층 전망 — 날씨 예보· 한파 예보 +1일· 성공률 +2%p",
+    "en": "High vantage — weather forecast· cold-snap lead +1 day· success +2%p",
+    "ja": "高層の眺望 — 天気予報 ・ 寒波予報 +1日 ・ 成功率 +2%p"
+  },
+  "data.shelter.customs.limits": {
+    "ko": "심사 창구로 바람이 든다 — 악천후 쾌적 -5 (창구 봉쇄로 해소)",
+    "en": "Wind slips through the booths — comfort -5 in bad weather (fix by sealing them)",
+    "ja": "審査窓口から風が入る — 悪天候時は快適さ -5 (窓口の封鎖で解消)"
+  },
+  "data.shelter.customs.perk.label": {
+    "ko": "관문의 집 — 동부 대도시의 문턱",
+    "en": "Home at the gate — threshold of the eastern metropolis",
+    "ja": "関門の家 — 東部大都市の玄関口"
+  },
+  "data.shelter.greenhouse.limits": {
+    "ko": "유리 지붕 — 눈 오는 날엔 건축재 1로 보수 (없으면 청결 -8)",
+    "en": "Glass roof — snowy days need 1 material to patch (else cleanliness -8)",
+    "ja": "ガラスの屋根 — 雪の日は建材1で補修 (なければ清潔 -8)"
+  },
+  "data.shelter.greenhouse.perk.label": {
+    "ko": "텃밭 — 매일 음식 +1",
+    "en": "Garden — food +1 daily",
+    "ja": "菜園 — 毎日食料 +1"
+  },
+  "data.shelter.greenhouse.perk.produceNote": {
+    "ko": "온실 텃밭에서 수확했습니다",
+    "en": "Harvested from the greenhouse garden",
+    "ja": "温室の菜園から収穫しました"
+  },
+  "data.shelter.lighthouse.limits": {
+    "ko": "옥상 빗물받이 — 비/눈 오는 날 깨끗한 물 +2 (자급 가능)",
+    "en": "Rooftop rain catch — clean water +2 on rainy/snowy days (self-sufficient)",
+    "ja": "屋上の雨どい — 雨/雪の日はきれいな水 +2 (自給可能)"
+  },
+  "data.shelter.lighthouse.perk.label": {
+    "ko": "탐조등 — 모든 지역 성공률 +3%p· 날씨 예보 제공",
+    "en": "Searchlight — success +3%p in all regions· weather forecast",
+    "ja": "探照灯 — 全地域の成功率 +3%p ・ 天気予報"
+  },
+  "data.shelter.lodge.limits": {
+    "ko": "고도 — 연료 소모 +30%· 한파가 더 잦다 (로지 단열·벽난로가 상쇄)",
+    "en": "Altitude — fuel use +30%· cold snaps more frequent (offset by lodge insulation & hearth)",
+    "ja": "高地 — 燃料消費 +30% ・ 寒波が起きやすい (ロッジの断熱・暖炉で相殺)"
+  },
+  "data.shelter.lodge.perk.label": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">벽난로 로지 — 쾌적 효과 1.3배· 날씨 예보",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">Hearth lodge — comfort effects ×1.3· weather forecast",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">暖炉のロッジ — 快適さ効果1.3倍 ・ 天気予報"
+  },
+  "data.shelter.penthouse.limits": {
+    "ko": "고층 강풍 — 겨울 바람이 유리를 두드린다",
+    "en": "High-rise wind — winter rattles the glass",
+    "ja": "高層の強風 — 冬の風がガラスを叩く"
+  },
+  "data.shelter.penthouse.perk.label": {
+    "ko": "첨탑들의 왕좌 — 도시 전체가 창밖에 있다",
+    "en": "A throne among spires — the whole city hangs in the window",
+    "ja": "尖塔たちの玉座 — 都市全体が窓の外にある"
+  },
+  "data.shelter.rooftop.limits": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">슬레이트 지붕에 두 장이 빠져 있다 — 보수 전까지 비/눈 오는 날 청결 소폭 감소",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">Two slates are missing from the roof — until repaired, cleanliness dips a little on rainy/snowy days",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">スレート屋根が2枚欠けている — 補修まで雨/雪の日は清潔が少し下がる"
+  },
+  "data.shelter.rooftop.perk.label": {
+    "ko": "탁 트인 시야 — 부분 성공 시 가구 1개 회수· 옥상 텃밭 수확 2배",
+    "en": "Clear vantage — salvage 1 furniture on partial success· rooftop garden yields ×2",
+    "ja": "開けた視界 — 部分成功時に家具1個回収 ・ 屋上菜園の収穫2倍"
+  },
+  "data.shelter.ship.limits": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">바다의 습기 — 청결이 매일 2 더 빨리 떨어짐",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">Sea damp — cleanliness drops 2 faster each day",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">海の湿気 — 清潔が毎日2多く下がる"
+  },
+  "data.shelter.ship.perk.label": {
+    "ko": "낚시 — 매일 음식 +1· 탐험 실패에도 자원 일부 회수",
+    "en": "Fishing — food +1 daily· salvage some resources even on failed expeditions",
+    "ja": "釣り — 毎日食料 +1 ・ 探索失敗でも資源を一部回収"
+  },
+  "data.shelter.ship.perk.produceNote": {
+    "ko": "밤낚시로 물고기를 잡았습니다",
+    "en": "Caught a fish with night fishing",
+    "ja": "夜釣りで魚を釣りました"
+  },
+  "data.shelter.subway.limits": {
+    "ko": "완전한 어둠 — 켜진 조명이 하나도 없으면 쾌적함 -12",
+    "en": "Total darkness — comfort -12 if no light is lit",
+    "ja": "完全な闇 — 点いている照明がひとつもないと快適さ -12"
+  },
+  "data.shelter.subway.perk.label": {
+    "ko": "어둠 속 안식 — 조명 쾌적함 효과 1.5배",
+    "en": "Rest in the dark — lighting comfort effect ×1.5",
+    "ja": "闇の中の安らぎ — 照明の快適さ効果1.5倍"
+  },
+  "data.shelter.terminal.limits": {
+    "ko": "무너진 천장 — 악천후 쾌적 -4 (지붕 틈을 막으면 해소)",
+    "en": "Broken ceiling — comfort -4 in bad weather (fix by patching the gap)",
+    "ja": "崩れた天井 — 悪天候時は快適さ -4 (屋根の隙間を塞げば解消)"
+  },
+  "data.shelter.terminal.perk.label": {
+    "ko": "빛 웅덩이의 홀 — 도시 한가운데의 성소",
+    "en": "A hall with a pool of light — a sanctuary mid-city",
+    "ja": "光だまりのホール — 都市の真ん中の聖域"
+  },
+  "data.shelter.tugboat.limits": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">뱃전의 습기 — 청결이 매일 2 더 빨리 떨어짐",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">Deck damp — cleanliness drops 2 faster each day",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">船べりの湿気 — 清潔が毎日2多く下がる"
+  },
+  "data.shelter.tugboat.perk.label": {
+    "ko": "물 위의 거처 — 매일 음식 +1 (얼음낚시 가능)",
+    "en": "Home on the water — food +1 daily (ice fishing available)",
+    "ja": "水上のシェルター — 毎日食料 +1 (氷上釣り可能)"
+  },
+  "data.shelter.tugboat.perk.produceNote": {
+    "ko": "뱃전에서 물고기를 낚았습니다",
+    "en": "Caught a fish off the gunwale",
+    "ja": "船べりで魚を釣りました"
+  }
+}

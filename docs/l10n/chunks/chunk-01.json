@@ -1,427 +1,427 @@
 {
- "doc.title": {
-  "ko": "Nine Winters",
-  "en": "Nine Winters",
-  "ja": "Nine Winters"
- },
- "title.continue": {
-  "ko": "▶ 이어하기",
-  "en": "▶ Continue",
-  "ja": "▶ つづきから"
- },
- "title.new": {
-  "ko": "✚ 새 게임",
-  "en": "✚ New Game",
-  "ja": "✚ はじめから"
- },
- "title.load": {
-  "ko": "💾 불러오기",
-  "en": "💾 Load",
-  "ja": "💾 ロード"
- },
- "title.help": {
-  "ko": "📖 생존 수첩",
-  "en": "📖 Survivor's Journal",
-  "ja": "📖 生存手帳"
- },
- "title.quit": {
-  "ko": "✖ 게임 종료",
-  "en": "✖ Quit Game",
-  "ja": "✖ ゲーム終了"
- },
- "title.quit.confirm": {
-  "ko": "게임을 종료할까요?",
-  "en": "Quit the game?",
-  "ja": "ゲームを終了しますか？"
- },
- "title.tools.export": {
-  "ko": "세이브 내보내기",
-  "en": "Export save",
-  "ja": "セーブ書き出し"
- },
- "title.tools.import": {
-  "ko": "세이브 가져오기",
-  "en": "Import save",
-  "ja": "セーブ取り込み"
- },
- "title.tools.settings": {
-  "ko": "설정",
-  "en": "Settings",
-  "ja": "設定"
- },
- "intro.next": {
-  "ko": "계속 ▸",
-  "en": "Continue ▸",
-  "ja": "次へ ▸"
- },
- "loading": {
-  "ko": "SHELTER LOADING . . .",
-  "en": "SHELTER LOADING . . .",
-  "ja": "SHELTER LOADING . . ."
- },
- "hud.shelter": {
-  "ko": "🏚️ 셸터",
-  "en": "🏚️ Shelter",
-  "ja": "🏚️ シェルター"
- },
- "hud.stat": {
-  "ko": "성공한 탐험 0회",
-  "en": "0 successful expeditions",
-  "ja": "探索成功 0回"
- },
- "g.hunger.title": {
-  "ko": "배고픔 — 클릭해서 먹기",
-  "en": "Hunger — click to eat food",
-  "ja": "空腹 — クリックで食べる"
- },
- "g.thirst.title": {
-  "ko": "갈증 — 클릭해서 마시기",
-  "en": "Thirst — click to drink water",
-  "ja": "渇き — クリックで飲む"
- },
- "g.energy.title": {
-  "ko": "에너지 — 탐험에 쓰고, 잠으로 채운다",
-  "en": "Energy — spent on expeditions, restored by sleep",
-  "ja": "エネルギー — 探索で消費、睡眠で回復"
- },
- "btn.exp.title": {
-  "ko": "탐험 (지도)",
-  "en": "Expedition (map)",
-  "ja": "探索 (地図)"
- },
- "btn.move.title": {
-  "ko": "이주",
-  "en": "Relocate",
-  "ja": "移住"
- },
- "btn.craft.title": {
-  "ko": "제작대",
-  "en": "Workbench",
-  "ja": "作業台"
- },
- "btn.knowledge.title": {
-  "ko": "지식 (테크트리)",
-  "en": "Knowledge (tech tree)",
-  "ja": "知識 (テックツリー)"
- },
- "btn.clean.title": {
-  "ko": "청소 (물 1 → 청결 +20)",
-  "en": "Clean (water 1 → cleanliness +20)",
-  "ja": "掃除 (水1 → 清潔+20)"
- },
- "know.title": {
-  "ko": "지식",
-  "en": "Knowledge",
-  "ja": "知識"
- },
- "know.books": {
-  "ko": "📚 책 {n}권 — 지식을 배워 살림을 키운다",
-  "en": "📚 {n} books — learn to better your home",
-  "ja": "📚 本{n}冊 — 知識を学んで暮らしを育てる"
- },
- "know.cost": {
-  "ko": "{n}권",
-  "en": "{n} bk",
-  "ja": "{n}冊"
- },
- "know.learn": {
-  "ko": "배우기 ({n}권)",
-  "en": "Learn ({n} bk)",
-  "ja": "学ぶ ({n}冊)"
- },
- "know.learned": {
-  "ko": "✓ 익힘",
-  "en": "✓ Learned",
-  "ja": "✓ 習得"
- },
- "know.locked": {
-  "ko": "🔒 선행 필요",
-  "en": "🔒 Prereq needed",
-  "ja": "🔒 前提が必要"
- },
- "btn.sleep.title": {
-  "ko": "취침 — 내일 아침까지 자고 에너지 회복",
-  "en": "Sleep — rest until morning and restore energy",
-  "ja": "就寝 — 朝まで眠ってエネルギー回復"
- },
- "btn.journal.title": {
-  "ko": "일지 (도감·업적·통계)",
-  "en": "Journal (collection · achievements · stats)",
-  "ja": "日誌 (図鑑・実績・統計)"
- },
- "btn.help.title": {
-  "ko": "생존 수첩 — 이전 거주자의 기록",
-  "en": "Survivor's Journal — notes from the previous occupant",
-  "ja": "生存手帳 — 前の住人の記録"
- },
- "btn.exp.lbl": {
-  "ko": "탐험",
-  "en": "Explore",
-  "ja": "探索"
- },
- "btn.move.lbl": {
-  "ko": "이주",
-  "en": "Move",
-  "ja": "移住"
- },
- "btn.craft.lbl": {
-  "ko": "제작",
-  "en": "Craft",
-  "ja": "製作"
- },
- "btn.knowledge.lbl": {
-  "ko": "지식",
-  "en": "Tech",
-  "ja": "知識"
- },
- "btn.clean.lbl": {
-  "ko": "청소",
-  "en": "Clean",
-  "ja": "掃除"
- },
- "btn.wardrobe.lbl": {
-  "ko": "옷장",
-  "en": "Wardrobe",
-  "ja": "衣装"
- },
- "btn.sleep.lbl": {
-  "ko": "취침",
-  "en": "Sleep",
-  "ja": "就寝"
- },
- "btn.journal.lbl": {
-  "ko": "일지",
-  "en": "Journal",
-  "ja": "日誌"
- },
- "btn.help.lbl": {
-  "ko": "도움",
-  "en": "Help",
-  "ja": "ヘルプ"
- },
- "cam.rotl.title": {
-  "ko": "시점 좌회전 (Q)",
-  "en": "Rotate view left (Q)",
-  "ja": "視点左回転 (Q)"
- },
- "cam.rotr.title": {
-  "ko": "시점 우회전 (E)",
-  "en": "Rotate view right (E)",
-  "ja": "視点右回転 (E)"
- },
- "cam.zin.title": {
-  "ko": "줌 인",
-  "en": "Zoom in",
-  "ja": "ズームイン"
- },
- "cam.zout.title": {
-  "ko": "줌 아웃",
-  "en": "Zoom out",
-  "ja": "ズームアウト"
- },
- "cam.home.title": {
-  "ko": "시점 초기화",
-  "en": "Reset view",
-  "ja": "視点リセット"
- },
- "btn.pause.title": {
-  "ko": "일시정지 (P)",
-  "en": "Pause (P)",
-  "ja": "一時停止 (P)"
- },
- "btn.gear.title": {
-  "ko": "설정",
-  "en": "Settings",
-  "ja": "設定"
- },
- "pause.ind": {
-  "ko": "⏸ 일시정지",
-  "en": "⏸ Paused",
-  "ja": "⏸ 一時停止"
- },
- "btn.cancelPlace": {
-  "ko": "✖ 배치 취소",
-  "en": "✖ Cancel placement",
-  "ja": "✖ 配置キャンセル"
- },
- "exp.panel.title": {
-  "ko": "■ 지역 탐험",
-  "en": "■ Regional Expedition",
-  "ja": "■ 地域探索"
- },
- "settings.title": {
-  "ko": "⚙️ 환경설정",
-  "en": "⚙️ Settings",
-  "ja": "⚙️ 環境設定"
- },
- "settings.tab.graphics": {
-  "ko": "그래픽",
-  "en": "Graphics",
-  "ja": "グラフィック"
- },
- "settings.tab.sound": {
-  "ko": "사운드",
-  "en": "Sound",
-  "ja": "サウンド"
- },
- "settings.tab.gameplay": {
-  "ko": "게임 플레이",
-  "en": "Gameplay",
-  "ja": "ゲームプレイ"
- },
- "settings.tab.controls": {
-  "ko": "컨트롤",
-  "en": "Controls",
-  "ja": "操作"
- },
- "settings.default": {
-  "ko": "↺ 기본값",
-  "en": "↺ Defaults",
-  "ja": "↺ 初期値"
- },
- "settings.defaultDone": {
-  "ko": "이 탭 설정을 기본값으로 되돌렸다.",
-  "en": "Restored this tab to defaults.",
-  "ja": "このタブの設定を初期値に戻した。"
- },
- "settings.close": {
-  "ko": "닫기",
-  "en": "Close",
-  "ja": "閉じる"
- },
- "ctrl.esc": {
-  "ko": "환경설정 열기 / 닫기",
-  "en": "Open / close settings",
-  "ja": "環境設定を開く / 閉じる"
- },
- "ctrl.pause": {
-  "ko": "일시정지",
-  "en": "Pause",
-  "ja": "一時停止"
- },
- "ctrl.rotview": {
-  "ko": "시점 회전 (좌 / 우)",
-  "en": "Rotate view (left / right)",
-  "ja": "視点回転 (左 / 右)"
- },
- "ctrl.rotate": {
-  "ko": "가구 회전 (배치 중)",
-  "en": "Rotate furniture (while placing)",
-  "ja": "家具回転 (配置中)"
- },
- "ctrl.reclaim": {
-  "ko": "선택한 가구 회수",
-  "en": "Reclaim selected furniture",
-  "ja": "選択した家具を回収"
- },
- "ctrl.tap": {
-  "ko": "가구 선택 · 기능 사용",
-  "en": "Select furniture · use function",
-  "ja": "家具選択 · 機能使用"
- },
- "ctrl.tap.k": {
-  "ko": "탭",
-  "en": "Tap",
-  "ja": "タップ"
- },
- "ctrl.drag": {
-  "ko": "시점 회전 · 가구 이동(배치 모드)",
-  "en": "Rotate view · move furniture (edit mode)",
-  "ja": "視点回転 · 家具移動(配置モード)"
- },
- "ctrl.drag.k": {
-  "ko": "드래그",
-  "en": "Drag",
-  "ja": "ドラッグ"
- },
- "ctrl.pinch": {
-  "ko": "줌 · 화면 이동",
-  "en": "Zoom · pan",
-  "ja": "ズーム · 画面移動"
- },
- "ctrl.pinch.k": {
-  "ko": "두 손가락",
-  "en": "Two fingers",
-  "ja": "二本指"
- },
- "ctrl.reserved": {
-  "ko": "(시스템 예약)",
-  "en": "(system-reserved)",
-  "ja": "(システム予約)"
- },
- "ctrl.pressKey": {
-  "ko": "키 입력 대기…",
-  "en": "Press a key…",
-  "ja": "キー入力待ち…"
- },
- "ctrl.rebindDefault": {
-  "ko": "↺ 기본 키",
-  "en": "↺ Default keys",
-  "ja": "↺ 初期キー"
- },
- "ctrl.rebindDone": {
-  "ko": "키를 저장했다.",
-  "en": "Key binding saved.",
-  "ja": "キーを保存した。"
- },
- "ctrl.swap": {
-  "ko": "교체",
-  "en": "Swap",
-  "ja": "入れ替え"
- },
- "ctrl.swapConfirm": {
-  "ko": "{key} 키는 이미 \"{from}\"에 배정되어 있다. \"{to}\"와 서로 바꿀까?",
-  "en": "The {key} key is already bound to \"{from}\". Swap it with \"{to}\"?",
-  "ja": "{key}キーはすでに「{from}」に割り当てられている。「{to}」と入れ替えるか？"
- },
- "ctrl.mobileNote": {
-  "ko": "터치 조작은 재설정 대상이 아닙니다.",
-  "en": "Touch controls are not rebindable.",
-  "ja": "タッチ操作は再設定の対象外です。"
- },
- "ctrl.act.map": {
-  "ko": "탐험 지도",
-  "en": "Expedition map",
-  "ja": "探索地図"
- },
- "ctrl.act.migrate": {
-  "ko": "이주",
-  "en": "Migrate",
-  "ja": "移住"
- },
- "ctrl.act.craft": {
-  "ko": "제작대",
-  "en": "Crafting",
-  "ja": "作業台"
- },
- "ctrl.act.clean": {
-  "ko": "청소",
-  "en": "Clean",
-  "ja": "掃除"
- },
- "ctrl.act.sleep": {
-  "ko": "취침",
-  "en": "Sleep",
-  "ja": "就寝"
- },
- "ctrl.act.journal": {
-  "ko": "일지",
-  "en": "Journal",
-  "ja": "日誌"
- },
- "ctrl.act.pause": {
-  "ko": "일시정지",
-  "en": "Pause",
-  "ja": "一時停止"
- },
- "ctrl.act.editMode": {
-  "ko": "배치 모드",
-  "en": "Edit mode",
-  "ja": "配置モード"
- },
- "ctrl.act.rotViewL": {
-  "ko": "시점 회전 (좌)",
-  "en": "Rotate view (left)",
-  "ja": "視点回転 (左)"
- }
+  "doc.title": {
+    "ko": "Nine Winters",
+    "en": "Nine Winters",
+    "ja": "Nine Winters"
+  },
+  "title.continue": {
+    "ko": "이어하기",
+    "en": "Continue",
+    "ja": "つづきから"
+  },
+  "title.new": {
+    "ko": "새 게임",
+    "en": "New Game",
+    "ja": "はじめから"
+  },
+  "title.load": {
+    "ko": "불러오기",
+    "en": "Load",
+    "ja": "ロード"
+  },
+  "title.help": {
+    "ko": "생존 수첩",
+    "en": "Survivor's Journal",
+    "ja": "生存手帳"
+  },
+  "title.quit": {
+    "ko": "게임 종료",
+    "en": "Quit Game",
+    "ja": "ゲーム終了"
+  },
+  "title.quit.confirm": {
+    "ko": "게임을 종료할까요?",
+    "en": "Quit the game?",
+    "ja": "ゲームを終了しますか？"
+  },
+  "title.tools.export": {
+    "ko": "세이브 내보내기",
+    "en": "Export save",
+    "ja": "セーブ書き出し"
+  },
+  "title.tools.import": {
+    "ko": "세이브 가져오기",
+    "en": "Import save",
+    "ja": "セーブ取り込み"
+  },
+  "title.tools.settings": {
+    "ko": "설정",
+    "en": "Settings",
+    "ja": "設定"
+  },
+  "intro.next": {
+    "ko": "계속",
+    "en": "Continue",
+    "ja": "次へ"
+  },
+  "loading": {
+    "ko": "SHELTER LOADING . . .",
+    "en": "SHELTER LOADING . . .",
+    "ja": "SHELTER LOADING . . ."
+  },
+  "hud.shelter": {
+    "ko": "셸터",
+    "en": "Shelter",
+    "ja": "シェルター"
+  },
+  "g.state.warn": {
+    "ko": "주의",
+    "en": "LOW",
+    "ja": "注意"
+  },
+  "g.state.crit": {
+    "ko": "위험",
+    "en": "CRIT",
+    "ja": "危険"
+  },
+  "hud.stat": {
+    "ko": "성공한 탐험 0회",
+    "en": "0 successful expeditions",
+    "ja": "探索成功 0回"
+  },
+  "g.hunger.title": {
+    "ko": "배고픔 — 클릭해서 먹기",
+    "en": "Hunger — click to eat food",
+    "ja": "空腹 — クリックで食べる"
+  },
+  "g.thirst.title": {
+    "ko": "갈증 — 클릭해서 마시기",
+    "en": "Thirst — click to drink water",
+    "ja": "渇き — クリックで飲む"
+  },
+  "g.energy.title": {
+    "ko": "에너지 — 탐험에 쓰고, 잠으로 채운다",
+    "en": "Energy — spent on expeditions, restored by sleep",
+    "ja": "エネルギー — 探索で消費、睡眠で回復"
+  },
+  "btn.exp.title": {
+    "ko": "탐험 (지도)",
+    "en": "Expedition (map)",
+    "ja": "探索 (地図)"
+  },
+  "btn.move.title": {
+    "ko": "이주",
+    "en": "Relocate",
+    "ja": "移住"
+  },
+  "btn.craft.title": {
+    "ko": "제작대",
+    "en": "Workbench",
+    "ja": "作業台"
+  },
+  "btn.knowledge.title": {
+    "ko": "지식 (테크트리)",
+    "en": "Knowledge (tech tree)",
+    "ja": "知識 (テックツリー)"
+  },
+  "btn.clean.title": {
+    "ko": "청소 (물 1 → 청결 +20)",
+    "en": "Clean (water 1 → cleanliness +20)",
+    "ja": "掃除 (水1 → 清潔+20)"
+  },
+  "know.title": {
+    "ko": "지식",
+    "en": "Knowledge",
+    "ja": "知識"
+  },
+  "know.books": {
+    "ko": "책 {n}권 — 지식을 배워 살림을 키운다",
+    "en": "{n} books — learn to better your home",
+    "ja": "本{n}冊 — 知識を学んで暮らしを育てる"
+  },
+  "know.cost": {
+    "ko": "{n}권",
+    "en": "{n} bk",
+    "ja": "{n}冊"
+  },
+  "know.learn": {
+    "ko": "배우기 ({n}권)",
+    "en": "Learn ({n} bk)",
+    "ja": "学ぶ ({n}冊)"
+  },
+  "know.learned": {
+    "ko": "익힘",
+    "en": "Learned",
+    "ja": "習得"
+  },
+  "know.locked": {
+    "ko": "선행 필요",
+    "en": "Prereq needed",
+    "ja": "前提が必要"
+  },
+  "btn.sleep.title": {
+    "ko": "취침 — 내일 아침까지 자고 에너지 회복",
+    "en": "Sleep — rest until morning and restore energy",
+    "ja": "就寝 — 朝まで眠ってエネルギー回復"
+  },
+  "btn.help.title": {
+    "ko": "생존 수첩 — 이전 거주자의 기록",
+    "en": "Survivor's Journal — notes from the previous occupant",
+    "ja": "生存手帳 — 前の住人の記録"
+  },
+  "btn.exp.lbl": {
+    "ko": "탐험",
+    "en": "Explore",
+    "ja": "探索"
+  },
+  "btn.move.lbl": {
+    "ko": "이주",
+    "en": "Move",
+    "ja": "移住"
+  },
+  "btn.craft.lbl": {
+    "ko": "제작",
+    "en": "Craft",
+    "ja": "製作"
+  },
+  "btn.knowledge.lbl": {
+    "ko": "지식",
+    "en": "Tech",
+    "ja": "知識"
+  },
+  "btn.clean.lbl": {
+    "ko": "청소",
+    "en": "Clean",
+    "ja": "掃除"
+  },
+  "btn.wardrobe.lbl": {
+    "ko": "옷장",
+    "en": "Wardrobe",
+    "ja": "衣装"
+  },
+  "btn.sleep.lbl": {
+    "ko": "취침",
+    "en": "Sleep",
+    "ja": "就寝"
+  },
+  "btn.journal.lbl": {
+    "ko": "일지",
+    "en": "Journal",
+    "ja": "日誌"
+  },
+  "btn.help.lbl": {
+    "ko": "도움",
+    "en": "Help",
+    "ja": "ヘルプ"
+  },
+  "cam.rotl.title": {
+    "ko": "시점 좌회전 (Q)",
+    "en": "Rotate view left (Q)",
+    "ja": "視点左回転 (Q)"
+  },
+  "cam.rotr.title": {
+    "ko": "시점 우회전 (E)",
+    "en": "Rotate view right (E)",
+    "ja": "視点右回転 (E)"
+  },
+  "cam.zin.title": {
+    "ko": "줌 인",
+    "en": "Zoom in",
+    "ja": "ズームイン"
+  },
+  "cam.zout.title": {
+    "ko": "줌 아웃",
+    "en": "Zoom out",
+    "ja": "ズームアウト"
+  },
+  "cam.home.title": {
+    "ko": "시점 초기화",
+    "en": "Reset view",
+    "ja": "視点リセット"
+  },
+  "btn.pause.title": {
+    "ko": "일시정지 (P)",
+    "en": "Pause (P)",
+    "ja": "一時停止 (P)"
+  },
+  "btn.speed.title": {
+    "ko": "게임 배속 (엔딩 후 해금)",
+    "en": "Game speed (unlocks after an ending)",
+    "ja": "ゲーム速度（エンディング後に解放）"
+  },
+  "btn.gear.title": {
+    "ko": "설정",
+    "en": "Settings",
+    "ja": "設定"
+  },
+  "pause.ind": {
+    "ko": "일시정지",
+    "en": "Paused",
+    "ja": "一時停止"
+  },
+  "btn.cancelPlace": {
+    "ko": "배치 취소",
+    "en": "Cancel placement",
+    "ja": "配置キャンセル"
+  },
+  "exp.panel.title": {
+    "ko": "지역 탐험",
+    "en": "Regional Expedition",
+    "ja": "地域探索"
+  },
+  "settings.title": {
+    "ko": "환경설정",
+    "en": "Settings",
+    "ja": "環境設定"
+  },
+  "settings.tab.graphics": {
+    "ko": "그래픽",
+    "en": "Graphics",
+    "ja": "グラフィック"
+  },
+  "settings.tab.sound": {
+    "ko": "사운드",
+    "en": "Sound",
+    "ja": "サウンド"
+  },
+  "settings.tab.gameplay": {
+    "ko": "게임 플레이",
+    "en": "Gameplay",
+    "ja": "ゲームプレイ"
+  },
+  "settings.tab.controls": {
+    "ko": "컨트롤",
+    "en": "Controls",
+    "ja": "操作"
+  },
+  "settings.default": {
+    "ko": "기본값",
+    "en": "Defaults",
+    "ja": "初期値"
+  },
+  "settings.defaultDone": {
+    "ko": "이 탭 설정을 기본값으로 되돌렸다.",
+    "en": "Restored this tab to defaults.",
+    "ja": "このタブの設定を初期値に戻した。"
+  },
+  "settings.close": {
+    "ko": "닫기",
+    "en": "Close",
+    "ja": "閉じる"
+  },
+  "ctrl.esc": {
+    "ko": "환경설정 열기 / 닫기",
+    "en": "Open / close settings",
+    "ja": "環境設定を開く / 閉じる"
+  },
+  "ctrl.pause": {
+    "ko": "일시정지",
+    "en": "Pause",
+    "ja": "一時停止"
+  },
+  "ctrl.rotview": {
+    "ko": "시점 회전 (좌 / 우)",
+    "en": "Rotate view (left / right)",
+    "ja": "視点回転 (左 / 右)"
+  },
+  "ctrl.rotate": {
+    "ko": "가구 회전 (배치 중)",
+    "en": "Rotate furniture (while placing)",
+    "ja": "家具回転 (配置中)"
+  },
+  "ctrl.reclaim": {
+    "ko": "선택한 가구 회수",
+    "en": "Reclaim selected furniture",
+    "ja": "選択した家具を回収"
+  },
+  "ctrl.tap": {
+    "ko": "가구 선택 · 기능 사용",
+    "en": "Select furniture · use function",
+    "ja": "家具選択 · 機能使用"
+  },
+  "ctrl.tap.k": {
+    "ko": "탭",
+    "en": "Tap",
+    "ja": "タップ"
+  },
+  "ctrl.drag": {
+    "ko": "시점 회전 · 가구 이동(배치 모드)",
+    "en": "Rotate view · move furniture (edit mode)",
+    "ja": "視点回転 · 家具移動(配置モード)"
+  },
+  "ctrl.drag.k": {
+    "ko": "드래그",
+    "en": "Drag",
+    "ja": "ドラッグ"
+  },
+  "ctrl.pinch": {
+    "ko": "줌 · 화면 이동",
+    "en": "Zoom · pan",
+    "ja": "ズーム · 画面移動"
+  },
+  "ctrl.pinch.k": {
+    "ko": "두 손가락",
+    "en": "Two fingers",
+    "ja": "二本指"
+  },
+  "ctrl.reserved": {
+    "ko": "(시스템 예약)",
+    "en": "(system-reserved)",
+    "ja": "(システム予約)"
+  },
+  "ctrl.pressKey": {
+    "ko": "키 입력 대기…",
+    "en": "Press a key…",
+    "ja": "キー入力待ち…"
+  },
+  "ctrl.rebindDefault": {
+    "ko": "기본 키",
+    "en": "Default keys",
+    "ja": "初期キー"
+  },
+  "ctrl.rebindDone": {
+    "ko": "키를 저장했다.",
+    "en": "Key binding saved.",
+    "ja": "キーを保存した。"
+  },
+  "ctrl.swap": {
+    "ko": "교체",
+    "en": "Swap",
+    "ja": "入れ替え"
+  },
+  "ctrl.swapConfirm": {
+    "ko": "{key} 키는 이미 \"{from}\"에 배정되어 있다. \"{to}\"와 서로 바꿀까?",
+    "en": "The {key} key is already bound to \"{from}\". Swap it with \"{to}\"?",
+    "ja": "{key}キーはすでに「{from}」に割り当てられている。「{to}」と入れ替えるか？"
+  },
+  "ctrl.mobileNote": {
+    "ko": "터치 조작은 재설정 대상이 아닙니다.",
+    "en": "Touch controls are not rebindable.",
+    "ja": "タッチ操作は再設定の対象外です。"
+  },
+  "ctrl.act.map": {
+    "ko": "탐험 지도",
+    "en": "Expedition map",
+    "ja": "探索地図"
+  },
+  "ctrl.act.migrate": {
+    "ko": "이주",
+    "en": "Migrate",
+    "ja": "移住"
+  },
+  "ctrl.act.craft": {
+    "ko": "제작대",
+    "en": "Crafting",
+    "ja": "作業台"
+  },
+  "ctrl.act.clean": {
+    "ko": "청소",
+    "en": "Clean",
+    "ja": "掃除"
+  },
+  "ctrl.act.sleep": {
+    "ko": "취침",
+    "en": "Sleep",
+    "ja": "就寝"
+  },
+  "ctrl.act.journal": {
+    "ko": "일지",
+    "en": "Journal",
+    "ja": "日誌"
+  },
+  "ctrl.act.pause": {
+    "ko": "일시정지",
+    "en": "Pause",
+    "ja": "一時停止"
+  }
 }

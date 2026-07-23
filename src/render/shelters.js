@@ -86,11 +86,17 @@ export function makeShelterBuilders(ctx) {
           const crand = seededRand(77);
           // 지붕 위 접힌 방수포 (한쪽으로 쏠려 늘어짐) — 실내를 덮으므로 천장 컬링 그룹에 묶는다(⑥-a).
           const roofG = new THREE.Group();
+          // 컨테이너 뚜껑 (디렉터 신고 2026-07-23): 지붕이 방수포 두 장뿐이라 상면 우측 ~30%가 뚫려 있었다.
+          //   타이틀 외경(closedHome)에선 천장을 숨기지 않으므로 그 구멍으로 실내가 그대로 보였다.
+          //   강판 뚜껑을 깔고 그 위에 방수포를 얹는다 — 뚜껑도 같은 천장 컬링 그룹이라 인게임 부감에선 함께 열린다.
+          const lid = new THREE.Mesh(new THREE.BoxGeometry(w + 0.22, 0.08, d + 0.22), wallPhong({ map: metalTex }));
+          lid.position.set(0, h + 0.02, 0); lid.castShadow = true; lid.receiveShadow = true;
+          roofG.add(lid);
           const tarp = new THREE.Mesh(new THREE.BoxGeometry(w * 0.62, 0.05, d + 0.5), lamb(0x4a5560));
-          tarp.position.set(-w * 0.12, h + 0.03, 0.1); tarp.rotation.z = 0.03; tarp.castShadow = true;
+          tarp.position.set(-w * 0.12, h + 0.10, 0.1); tarp.rotation.z = 0.03; tarp.castShadow = true; // 뚜껑 위로 올림
           roofG.add(tarp);
           const tarp2 = new THREE.Mesh(new THREE.BoxGeometry(w * 0.22, 0.06, d + 0.6), lamb(0x3f4954));
-          tarp2.position.set(-w * 0.32, h + 0.06, 0); tarp2.rotation.z = 0.16; tarp2.castShadow = true; // 접힌 자락
+          tarp2.position.set(-w * 0.32, h + 0.13, 0); tarp2.rotation.z = 0.16; tarp2.castShadow = true; // 접힌 자락
           tagSway(tarp2, 0.16); // F-1a [B]: 늘어진 방수포 자락 미세 sway (있는 소품만)
           roofG.add(tarp2);
           tagCeiling(roofG, h + 0.02); roomGroup.add(roofG);
@@ -282,18 +288,21 @@ export function makeShelterBuilders(ctx) {
           return g;
         };
         // 문은 앞(+z) 벽에. 컬링을 위해 makeWalls 계약(그룹+법선)으로 등록.
+        // 콘크리트 옥탑 뼈대 기둥 4개 (모서리) — 코너는 인접 두 벽(±x·±z)의 공유물이라 한 벽 소속(attachToWall)이면
+        //   다른 쪽 벽이 컬링될 때 홀로 잔류한다(±x벽 페이드 시 -z 소속 기둥이 허공에 남던 칩의 정체).
+        //   대각 법선의 독립 컬링 항목으로 등록 — show 판정(normal·dir < 0.25)에서 cos45°≈0.71이라
+        //   인접 벽 어느 쪽이 카메라 정면이어도 벽과 함께 페이드된다.
+        const mkCornerPost = () => { const g = new THREE.Group(); B(g, 0.18, h + 0.1, 0.18, 0x5a5a57, 0, (h + 0.1) / 2, 0); return g; };
         makeWalls([
           { group: mkPatchWall(w, 0.5), pos: [0, 0, d / 2 + 0.09], rotY: 0, normal: new THREE.Vector3(0, 0, 1) },
           { group: mkPatchWall(w), pos: [0, 0, -d / 2 - 0.09], rotY: 0, normal: new THREE.Vector3(0, 0, -1) },
           { group: mkPatchWall(d), pos: [-w / 2 - 0.09, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(-1, 0, 0) },
           { group: mkPatchWall(d), pos: [w / 2 + 0.09, 0, 0], rotY: Math.PI / 2, normal: new THREE.Vector3(1, 0, 0) },
+          ...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sz]) => ({
+            group: mkCornerPost(), pos: [sx * (w / 2 + 0.09), 0, sz * (d / 2 + 0.09)], rotY: 0,
+            normal: new THREE.Vector3(sx, 0, sz).normalize(),
+          })),
         ]);
-        // 콘크리트 옥탑 뼈대 기둥 4개 (모서리) — 칩 task_ad77c624 본수정: 종전엔 makeWalls 이전에
-        //   roomGroup 직속 생성이라 컬링 미편입 → 전면 벽이 페이드돼도 검은 막대 2개가 시야 정중앙에
-        //   남던 것(트레일러 B0 신고의 원인). 앞(+z)/뒤(-z) 벽 컬링에 편입해 벽과 함께 페이드한다.
-        for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]])
-          attachToWall(0, 0, sz,
-            B(roomGroup, 0.18, h + 0.1, 0.18, 0x5a5a57, sx * (w / 2 + 0.09), (h + 0.1) / 2, sz * (d / 2 + 0.09)));
         // 문틀 (개구부 테두리) — ⑤ 앞(+z)벽 부착물 → +z 벽 컬링과 동기화(허공 부유 방지)
         const doorX = 0; // 앞벽 중앙
         attachToWall(0, 0, 1,
