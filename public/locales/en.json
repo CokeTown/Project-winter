@@ -2263,5 +2263,11 @@
   "demo.autoLocked": "Auto-play belongs to the full game — these fifteen days are your own hands.",
   "demo.credits.4": "<b>Nine Winters</b><br><br>Q4 2026 · Steam<br><br>The cat is still asleep by the stove.<br>These fifteen days stay right here.<br><br>Add it to your wishlist —<br>we will let you know when it is time to come home.",
   "intro.skip": "Skip ▸▸",
-  "exp.riskGain": "Extra from what happened out there:"
+  "exp.riskGain": "Extra from what happened out there:",
+  "power.needSource": "No power source — install a solar panel or run the generator first.",
+  "paint.applyBtn": "Confirm with 1 {name}",
+  "paint.applyFree": "Confirm this color (free)",
+  "gel.applyBtn": "Confirm light with 1 {name}",
+  "gel.applyFree": "Back to original light (free)",
+  "sel.previewHint": "Tap to preview — nothing spent until confirmed"
 }

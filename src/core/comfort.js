@@ -66,7 +66,8 @@ export function comfortDetail() {
   const cleanMod = clean >= 80 ? 5 : clean >= 50 ? 0 : clean >= 20 ? -5 : -10;
   const sh = SHELTER_META[state.current];
   const shelterMod = state.upkeepOk ? (sh.baseComfort || 0) : 0;
-  const injuryMod = (state.injury ? -5 : 0) + ((state.hunger < 25 || state.thirst < 25) ? -5 : 0);
+  // P2: 25 리터럴 → BAL.gauges.sev.crit (gaugeSev와 같은 '위험' 임계 개념 — 비교 연산자(<)는 기존 거동 유지)
+  const injuryMod = (state.injury ? -5 : 0) + ((state.hunger < BAL.gauges.sev.crit || state.thirst < BAL.gauges.sev.crit) ? -5 : 0);
   // 정든 집: 한 거처에 연속으로 머물수록 아늑해진다 (하루 +1, 최대 +8)
   const settled = Math.min(8, state.stayDays || 0);
   const catMod = (state.cat && !state.catHungry) ? 6 : 0; // 고양이가 있는 집은 따뜻하다 (배고파하면 정지)
@@ -97,7 +98,8 @@ export function comfortDetail() {
   const bunkerMod = bunkerComfortBonus(); // 돔 벙커 천장/저장고 가산
   const themeMod = activeThemeSets().length * DECO_THEME_COMFORT; // 테마 세트(#13) 분위기 가산
   const knowMod = knowComfortBonus(); // 아늑함 지식(§9) 상시 쾌적 가산
-  const score = clamp(18 + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod + heatMod + moodMod + bunkerMod + themeMod + knowMod, 0, 100);
+  // P2: 기본 안정감 = BAL 단일 출처 — game.js 원인 로그('+18' 표시)와 같은 상수를 읽는다(표시-실값 분리 봉합)
+  const score = clamp(BAL.comfort.baseSecurity + furn + light + cleanMod + shelterMod + injuryMod + limitMod + settled + catMod + heatMod + moodMod + bunkerMod + themeMod + knowMod, 0, 100);
   return { furn, light, cleanMod, shelterMod, injuryMod, limitMod, settled, catMod, heatMod, moodMod, bunkerMod, themeMod, knowMod, clean, score };
 }
 

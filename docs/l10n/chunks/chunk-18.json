@@ -1,427 +1,427 @@
 {
- "end3.inv.title": {
-  "ko": "탁자 위의 초대장",
-  "en": "The Invitation on the Table",
-  "ja": "テーブルの上の招待状"
- },
- "end3.inv.text": {
-  "ko": "초대장은 밤새 탁자 위에서 움직이지 않았다. 좌표 한 줄, 날짜 하나. 사흘 뒤다.<br>그들은 문을 두드리지 않는다. 두드릴 필요가 없는 사람들이다.",
-  "en": "The invitation hasn't moved from the table all night. One line of coordinates, one date. Three days from now.<br>They don't knock on doors. They're the kind of people who never have to.",
-  "ja": "招待状は一晩中、テーブルの上から動かなかった。座標が一行、日付がひとつ。三日後だ。<br>彼らは戸を叩かない。叩く必要のない人間たちだ。"
- },
- "end3.inv.c0": {
-  "ko": "좌표로 간다",
-  "en": "Go to the coordinates",
-  "ja": "座標へ向かう"
- },
- "end3.inv.c1": {
-  "ko": "난로에 넣는다",
-  "en": "Put it in the stove",
-  "ja": "ストーブにくべる"
- },
- "end3.inv.c2": {
-  "ko": "서랍에 넣어 둔다",
-  "en": "Keep it in the drawer",
-  "ja": "引き出しにしまっておく"
- },
- "end3.inv.r0": {
-  "ko": "짐은 금방 쌌다. 난로 앞에서만 오래 서 있었다.",
-  "en": "Packing took no time at all. It was the stove I stood in front of for a while.",
-  "ja": "荷造りはすぐに済んだ。ストーブの前でだけ、長いこと立っていた。"
- },
- "end3.inv.r1": {
-  "ko": "초대장은 불쏘시개가 됐다. 종이 한 장만큼의 온기만 남기고.",
-  "en": "The invitation made decent kindling. It left about as much warmth as a single sheet of paper.",
-  "ja": "招待状は焚き付けになった。紙一枚ぶんの暖かさだけを残して。"
- },
- "end3.inv.r2": {
-  "ko": "서랍을 닫았다. 사흘이면 답이 나오겠지.",
-  "en": "I closed the drawer. Three days should be enough to know.",
-  "ja": "引き出しを閉めた。三日もあれば答えは出るだろう。"
- },
- "end3.inv.note": {
-  "ko": "초대장은 불쏘시개가 됐다. 답은 이 집이다.",
-  "en": "The invitation made decent kindling. The answer is this house.",
-  "ja": "招待状は焚き付けになった。答えはこの家だ。"
- },
- "end3.due.title": {
-  "ko": "사흘째 아침",
-  "en": "The Third Morning",
-  "ja": "三日目の朝"
- },
- "end3.due.text": {
-  "ko": "오늘이 그 날짜다. 지금 나서면 해 지기 전에 닿는다.<br>서랍 속에서 종이가 기다리고 있다. 재촉하는 기색도 없이.",
-  "en": "Today is the date. If I leave now, I'd make it before dark.<br>The paper is waiting in the drawer. Not rushing me in the slightest.",
-  "ja": "今日がその日付だ。今出れば、日が沈む前に着く。<br>引き出しの中で紙が待っている。急かす気配もなく。"
- },
- "end3.due.c0": {
-  "ko": "지금 나선다",
-  "en": "Set out now",
-  "ja": "今すぐ発つ"
- },
- "end3.due.c1": {
-  "ko": "보내준다",
-  "en": "Let it go",
-  "ja": "見送る"
- },
- "end3.due.r0": {
-  "ko": "종이를 주머니에 넣고 문을 나섰다. 고작 종이 한 장이 제일 무거운 짐이었다.",
-  "en": "I put the paper in my pocket and stepped out. A single sheet of paper, and it was the heaviest thing I carried.",
-  "ja": "紙をポケットに入れて、戸口を出た。たかが紙一枚が、一番重い荷物だった。"
- },
- "end3.due.r1": {
-  "ko": "정오가 지났다. 오후 내내 장작을 팼다. 도끼질은 잡생각을 지우는 데 좋다.",
-  "en": "Noon came and went. I split firewood all afternoon. An axe is good for clearing the head.",
-  "ja": "正午が過ぎた。午後じゅう薪を割った。斧を振るうのは、雑念を払うのにいい。"
- },
- "end3.call.title": {
-  "ko": "밤의 교신",
-  "en": "Transmission at Night",
-  "ja": "夜の交信"
- },
- "end3.call.text": {
-  "ko": "자정 무렵, 라디오가 혼자 살아났다. 박사였다. 한참을 잡음만 흘려보내다가 겨우 말을 이었다.<br>\"…개방 기록이 잡혔다. 네 좌표 근처더군.\" 그러고는 아무것도 묻지 않았다.<br>\"항로는 아직 살아 있다. 마지막으로 한 번만 묻지. 올 텐가.\"",
-  "en": "Near midnight, the radio came alive on its own. The doctor. A long stretch of nothing but static before the words came.<br>\"…An opening record came through. Near your coordinates.\" And then no questions at all.<br>\"The route is still alive. I'll ask just once more. Will you come?\"",
-  "ja": "真夜中ごろ、ラジオがひとりでに息を吹き返した。博士だった。しばらく雑音ばかりを流したあと、ようやく言葉を継いだ。<br>「…開放記録を拾った。君の座標の近くだった。」そのまま、何も訊かなかった。<br>「航路はまだ生きている。最後に一度だけ訊く。来るか。」"
- },
- "end3.call.c0": {
-  "ko": "간다",
-  "en": "Go",
-  "ja": "行く"
- },
- "end3.call.c1": {
-  "ko": "남는다",
-  "en": "Stay",
-  "ja": "残る"
- },
- "end3.call.r0": {
-  "ko": "좌표를 받아 적었다. 연필 쥔 손이 말을 잘 안 들었다.",
-  "en": "I wrote down the coordinates. The pencil didn't sit right in my hand.",
-  "ja": "座標を書き取った。鉛筆を握る手が、うまく言うことを聞かなかった。"
- },
- "end3.call.r1": {
-  "ko": "박사는 한동안 말이 없었다. \"…그래. 불이나 꺼뜨리지 마라.\" 그게 마지막이었다.",
-  "en": "The doctor was quiet for a long while. \"…All right. Just keep the fire lit.\" That was the last of it.",
-  "ja": "博士はしばらく黙っていた。「…そうか。火だけは絶やすな。」それが最後だった。"
- },
- "end3.rb.title": {
-  "ko": "아홉 번째 봄",
-  "en": "The Ninth Spring",
-  "ja": "九度目の春"
- },
- "end3.rb.text": {
-  "ko": "겨울이 물러간 아침. 그런데 라디오가 아침부터 부산스럽다.<br>창으로 드는 빛부터가 어제와 다르다.",
-  "en": "A morning with winter gone. And the radio has been restless since dawn.<br>Even the light through the window is different from yesterday.",
-  "ja": "冬が退いた朝。なのにラジオが朝から騒がしい。<br>窓から差し込む光からして、昨日と違う。"
- },
- "end3.rb.c0": {
-  "ko": "문을 열어 본다",
-  "en": "Open the door",
-  "ja": "ドアを開けてみる"
- },
- "end3.rb.r0": {
-  "ko": "문고리가 차갑지 않았다.",
-  "en": "The door handle wasn't cold.",
-  "ja": "ドアノブが冷たくなかった。"
- },
- "end3.rebuild.line0": {
-  "ko": "아홉 번째 겨울이 지났다. 봄은 늘 조용히 왔는데, 이번 봄은 시끄럽다.",
-  "en": "The ninth winter has passed. Spring always arrived quietly. This one is loud.",
-  "ja": "九度目の冬が過ぎた。春はいつも静かに来ていたのに、今度の春は騒がしい。"
- },
- "end3.rebuild.line1": {
-  "ko": "라디오에서 모르는 목소리들이 겹친다. 서로를 부르고, 말이 끊기고, 누군가 웃는다. 웃음소리를 들은 게 얼마 만인지 모르겠다.",
-  "en": "Unknown voices overlap on the radio. Calling each other, cutting out, someone laughing. I can't remember the last time I heard laughter.",
-  "ja": "ラジオで知らない声が重なる。互いを呼び、言葉が途切れ、誰かが笑う。笑い声を聞いたのはいつ以来だろう。"
- },
- "end3.rebuild.line2": {
-  "ko": "지도를 폈다. 어제까지 캄캄하던 자리마다 불이 하나씩 켜져 있다. 세다가 그만뒀다.",
-  "en": "I spread the map. Every place that was dark yesterday has a light in it. I stopped counting.",
-  "ja": "地図を広げた。昨日まで真っ暗だった場所のひとつひとつに、明かりが灯っている。数えかけて、やめた。"
- },
- "end3.rebuild.line3": {
-  "ko": "철새가 돌아왔다. 하늘이 옅어진 걸 나보다 먼저 안 모양이다.",
-  "en": "The migratory birds are back. Seems they knew before I did that the sky had thinned.",
-  "ja": "渡り鳥が帰ってきた。空の翳りが薄らいだのを、私より先に知っていたらしい。"
- },
- "end3.rebuild.line4": {
-  "ko": "세상은 끝난 게 아니었다. 다만 겨울이 아주 길었을 뿐이다.",
-  "en": "The world hadn't ended. The winter was just very, very long.",
-  "ja": "世界は終わっていなかった。ただ、冬がとても長かっただけだ。"
- },
- "end3.rebuild.note": {
-  "ko": "아홉 번째 겨울이 지났다. 지도에 불빛이 돌아오고 있다.",
-  "en": "The ninth winter has passed. The lights are coming back to the map.",
-  "ja": "九度目の冬が過ぎた。地図に明かりが戻りつつある。"
- },
- "hidden.silo.leave": {
-  "ko": "돌아선다",
-  "en": "Turn away",
-  "ja": "背を向ける"
- },
- "map.deepOpen": {
-  "ko": "슬럼 골목이 눈에 익었다. 막다른 줄 알았던 담 뒤로, 안쪽으로 이어지는 길이 보이기 시작한다.",
-  "en": "The slum alleys are familiar now. Behind a wall I took for a dead end, a way deeper in is starting to show.",
-  "ja": "スラムの路地が目に馴染んできた。行き止まりだと思っていた塀の向こうに、奥へ続く道が見え始めている。"
- },
- "map.deepOpenToast": {
-  "ko": "🕳️ 새 지역이 지도에 표시됩니다: 뒷골목 심부",
-  "en": "🕳️ New area on the map: Back-Alley Depths",
-  "ja": "🕳️ 新しいエリアが地図に表示されます: 裏路地深部"
- },
- "btn.uiPin.title": {
-  "ko": "UI 배치 고정",
-  "en": "Lock UI layout",
-  "ja": "UI配置固定"
- },
- "ui.pinned": {
-  "ko": "📌 UI 배치가 고정됐습니다. 패널을 옮기려면 다시 눌러 푸십시오.",
-  "en": "📌 UI layout locked. Press again to unlock and move panels.",
-  "ja": "📌 UI配置を固定しました。パネルを動かすには、もう一度押して解除してください。"
- },
- "ui.unpinned": {
-  "ko": "📌 UI 배치 고정이 풀렸습니다.",
-  "en": "📌 UI layout unlocked.",
-  "ja": "📌 UI配置の固定を解除しました。"
- },
- "data.ach.cat.desc": {
-  "ko": "길고양이를 가족으로 맞이하다",
-  "en": "Welcome a stray cat as family",
-  "ja": "野良猫を家族に迎える"
- },
- "data.ach.cat.name": {
-  "ko": "고양이 집사",
-  "en": "Cat Servant",
-  "ja": "猫の下僕"
- },
- "data.ach.col21.desc": {
-  "ko": "도감 25% (가구 색상 21종)",
-  "en": "Collection 25% (21 furniture colors)",
-  "ja": "図鑑25% (家具カラー21種)"
- },
- "data.ach.col21.name": {
-  "ko": "수집가",
-  "en": "Collector",
-  "ja": "コレクター"
- },
- "data.ach.col42.desc": {
-  "ko": "도감 50%",
-  "en": "Collection 50%",
-  "ja": "図鑑50%"
- },
- "data.ach.col42.name": {
-  "ko": "큐레이터",
-  "en": "Curator",
-  "ja": "キュレーター"
- },
- "data.ach.colAll.desc": {
-  "ko": "도감 100% (84색상)",
-  "en": "Collection 100% (84 colors)",
-  "ja": "図鑑100% (84色)"
- },
- "data.ach.colAll.name": {
-  "ko": "폐허의 박물관장",
-  "en": "Museum Keeper of the Ruins",
-  "ja": "廃墟の博物館長"
- },
- "data.ach.comfort90.desc": {
-  "ko": "쾌적함 90 달성",
-  "en": "Reach comfort 90",
-  "ja": "快適さ90を達成"
- },
- "data.ach.comfort90.name": {
-  "ko": "완벽한 안식처",
-  "en": "Perfect Refuge",
-  "ja": "完璧な安息所"
- },
- "data.ach.craft20.desc": {
-  "ko": "제작 20회",
-  "en": "Craft 20 times",
-  "ja": "クラフト20回"
- },
- "data.ach.craft20.name": {
-  "ko": "폐허의 장인",
-  "en": "Ruins Artisan",
-  "ja": "廃墟の職人"
- },
- "data.ach.craft5.desc": {
-  "ko": "제작 5회",
-  "en": "Craft 5 times",
-  "ja": "クラフト5回"
- },
- "data.ach.craft5.name": {
-  "ko": "손재주",
-  "en": "Handy",
-  "ja": "器用な手"
- },
- "data.ach.ending.desc": {
-  "ko": "박사와 함께, 폐허 너머로",
-  "en": "With the doctor, beyond the ruins",
-  "ja": "博士とともに、廃墟の向こうへ"
- },
- "data.ach.ending.name": {
-  "ko": "폐허 너머로",
-  "en": "Beyond the Ruins",
-  "ja": "廃墟の向こうへ"
- },
- "data.ach.exp10.desc": {
-  "ko": "탐험 성공 10회",
-  "en": "10 successful expeditions",
-  "ja": "探索成功10回"
- },
- "data.ach.exp10.name": {
-  "ko": "베테랑 스캐빈저",
-  "en": "Veteran Scavenger",
-  "ja": "ベテラン・スカベンジャー"
- },
- "data.ach.exp30.desc": {
-  "ko": "탐험 성공 30회",
-  "en": "30 successful expeditions",
-  "ja": "探索成功30回"
- },
- "data.ach.exp30.name": {
-  "ko": "폐허의 주인",
-  "en": "Lord of the Ruins",
-  "ja": "廃墟の主"
- },
- "data.ach.first.desc": {
-  "ko": "첫 탐험 성공",
-  "en": "First successful expedition",
-  "ja": "初の探索成功"
- },
- "data.ach.first.name": {
-  "ko": "첫 발걸음",
-  "en": "First Steps",
-  "ja": "最初の一歩"
- },
- "data.ach.mods3.desc": {
-  "ko": "거처 개조 3개 설치",
-  "en": "Install 3 shelter mods",
-  "ja": "シェルター改修を3つ設置"
- },
- "data.ach.mods3.name": {
-  "ko": "개조 기술자",
-  "en": "Modder",
-  "ja": "改修技師"
- },
- "data.ach.nine_winters.desc": {
-  "ko": "아홉 번의 겨울을 넘기다",
-  "en": "Weather nine winters",
-  "ja": "九度の冬を越える"
- },
- "data.ach.nine_winters.name": {
-  "ko": "아홉 번째 겨울",
-  "en": "Nine Winters",
-  "ja": "九度目の冬"
- },
- "data.ach.renov3.desc": {
-  "ko": "거처 3곳 정비",
-  "en": "Refit 3 shelters",
-  "ja": "シェルター3か所を整備"
- },
- "data.ach.renov3.name": {
-  "ko": "개척자",
-  "en": "Pioneer",
-  "ja": "開拓者"
- },
- "data.ach.renovAll.desc": {
-  "ko": "거처 9곳 전부 정비",
-  "en": "Refit all 9 shelters",
-  "ja": "シェルター9か所すべてを整備"
- },
- "data.ach.renovAll.name": {
-  "ko": "모든 곳이 집",
-  "en": "Everywhere Is Home",
-  "ja": "すべてが我が家"
- },
- "data.ach.settled8.desc": {
-  "ko": "한 거처에 8일 연속 거주",
-  "en": "Live 8 days straight in one shelter",
-  "ja": "同じシェルターに8日連続で居住"
- },
- "data.ach.settled8.name": {
-  "ko": "정든 집",
-  "en": "Settled Home",
-  "ja": "住み慣れた家"
- },
- "data.ach.silence.desc": {
-  "ko": "…",
-  "en": "…",
-  "ja": "…"
- },
- "data.ach.silence.name": {
-  "ko": "침묵",
-  "en": "Silence",
-  "ja": "沈黙"
- },
- "data.ach.winter.desc": {
-  "ko": "Day 48 도달 (사계절 생존)",
-  "en": "Reach Day 48 (survive all seasons)",
-  "ja": "Day 48に到達 (四季を生き延びる)"
- },
- "data.ach.winter.name": {
-  "ko": "첫 겨울을 넘다",
-  "en": "Past the First Winter",
-  "ja": "最初の冬を越えて"
- },
- "data.bcast.auto_beacon.air": {
-  "ko": "…관측소 자동 송신. 좌표 기록 중. 신호 감지 시 보고. …자동 송신—",
-  "en": "…observatory auto-transmit. Logging coordinates. Report on signal. …auto-transmit—",
-  "ja": "…観測所自動送信。座標記録中。信号検知時に報告。…自動送信—"
- },
- "data.bcast.auto_beacon.desc": {
-  "ko": "…관측소 자동 송신. 좌표 기록 중. 지상 신호 감지 시 보고. 사람의 목소리는 한 마디도 섞이지 않는다.",
-  "en": "…observatory auto-transmit. Logging coordinates. Report on surface-signal detection. Not one human word in it.",
-  "ja": "…観測所自動送信。座標記録中。地上信号の検知時に報告。人の声はひと言も混じらない。"
- },
- "data.bcast.auto_beacon.name": {
-  "ko": "자동 관측 신호",
-  "en": "Automated Beacon",
-  "ja": "自動観測信号"
- },
- "data.bcast.doctor1.air": {
-  "ko": "…겨울 아홉 번이면 대기가 가라앉는다. 그때까지 버틴 신호는— 우연이 아니다. 계속 관측한다. 끝.",
-  "en": "…nine winters, and the air settles. A signal that holds that long— no accident. Still watching. Out.",
-  "ja": "…九度の冬で大気は静まる。そこまで持ちこたえた信号は—偶然じゃない。観測を続ける。以上。"
- },
- "data.bcast.doctor1.desc": {
-  "ko": "\"…겨울이 아홉 번 지나면, 대기가 가라앉는다고 계산했다. 그 전까지 버틴 신호가 있다면, 그건 우연이 아니다. — 계속 관측한다.\"",
-  "en": "\"…by my count, after nine winters the air settles. If a signal holds out that long, it is no accident. — I keep watching.\"",
-  "ja": "「…九度の冬が過ぎれば、大気は静まると計算した。それまで持ちこたえた信号があるなら、それは偶然ではない。— 観測を続ける。」"
- },
- "data.bcast.doctor1.name": {
-  "ko": "박사의 일지 · 조각 하나",
-  "en": "Doctor’s Log · Fragment One",
-  "ja": "博士の日誌 · 断片一"
- },
- "data.bcast.doctor2.air": {
-  "ko": "…위성은 아직 돈다. 불빛 하나가 아홉 해를 버티면— 내려갈 이유가 된다. …기다린다. 끝.",
-  "en": "…the satellite still turns. One light, nine years— reason enough to come down. …I wait. Out.",
-  "ja": "…衛星はまだ回っている。ひとつの明かりが九年持ちこたえれば—降りる理由になる。…待つ。以上。"
- },
- "data.bcast.doctor2.desc": {
-  "ko": "\"관측 위성은 아직 돈다. 지상에 불빛 하나가 아홉 해를 버티면, 우리는 내려갈 이유를 얻는다. 그 하나를 기다린다.\"",
-  "en": "\"The satellite still turns. If one light on the ground lasts nine years, we are given a reason to come down. I wait for that one.\"",
-  "ja": "「観測衛星はまだ回っている。地上でひとつの明かりが九年持ちこたえれば、我々は降りる理由を得る。そのひとつを待っている。」"
- },
- "data.bcast.doctor2.name": {
-  "ko": "박사의 일지 · 조각 둘",
-  "en": "Doctor’s Log · Fragment Two",
-  "ja": "博士の日誌 · 断片二"
- },
- "data.bcast.fc_spring.air": {
-  "ko": "…기온 오름. 해빙, 길 질척임. 파종 서두를 것. …반복한다. 파종—",
-  "en": "…temps rising. Thaw, mud roads. Sow early. …repeat. Sow—",
-  "ja": "…気温上昇。解氷、道ぬかるみ。播種を急ぐこと。…繰り返す。播種—"
- },
- "data.bcast.fc_spring.desc": {
-  "ko": "…낮 기온 오름. 남은 눈 녹아 길 질척임. 이른 풀 돋음. 파종을 서두르라는 옛 방송의 잔향뿐이다.",
-  "en": "…daytime warming. What snow remains melts to mud. Early grass. Only the echo of an old broadcast urging you to sow.",
-  "ja": "…日中の気温上昇。残雪が解け、道はぬかるむ。早い草が芽吹く。播種を急げと告げる、古い放送の残響だけだ。"
- },
- "data.bcast.fc_spring.name": {
-  "ko": "봄 기상 안내",
-  "en": "Spring Weather Notice",
-  "ja": "春の気象案内"
- }
+  "ev.lootedcache.c0": {
+    "ko": "받아들인다",
+    "en": "Let it go",
+    "ja": "受け入れる"
+  },
+  "ev.lootedcache.c1": {
+    "ko": "흔적을 쫓는다",
+    "en": "Follow the trail",
+    "ja": "痕跡を追う"
+  },
+  "ev.lootedcache.r0": {
+    "ko": "가져간 쪽도 급했을 것이다. 그렇게 생각하는 편이 낫다. <b>({name} -1)</b>",
+    "en": "Whoever took it must have needed it badly. Better to think of it that way. <b>({name} -1)</b>",
+    "ja": "持っていった側も切羽詰まっていたのだろう。そう思うほうがいい。<b>({name} -1)</b>"
+  },
+  "ev.lootedcache.r0none": {
+    "ko": "상자는 원래 비어 있었다는 걸 뒤늦게 떠올렸다. 채울 것이 없어서 못 채웠던 상자다.",
+    "en": "Then I remembered — the box was already empty. I never had anything to put in it.",
+    "ja": "箱がもともと空だったことを、遅れて思い出した。入れるものがなくて、満たせなかった箱だ。"
+  },
+  "ev.lootedcache.r1good": {
+    "ko": "발자국이 개천가에서 끊겼고, 그 옆 덤불에 상자 속 것이 버려져 있었다. 급하게 도망친 모양이다. 되찾았다.",
+    "en": "The footprints ended at the creek, and beside them in the brush — my things, dropped. They fled in a hurry. Recovered.",
+    "ja": "足跡は小川のほとりで途切れ、そばの茂みに箱の中身が捨てられていた。慌てて逃げたらしい。取り戻した。"
+  },
+  "ev.lootedcache.r1bad": {
+    "ko": "한나절을 쫓았지만 흔적은 도심 쪽에서 사라졌다. 빈손으로, 더 지쳐서 돌아왔다. <b>({name} -1)</b>",
+    "en": "Tracked it half a day before the trail died toward downtown. Came back empty, and more tired. <b>({name} -1)</b>",
+    "ja": "半日追ったが、痕跡は都心の方で消えた。手ぶらで、前より疲れて帰ってきた。<b>({name} -1)</b>"
+  },
+  "ev.desperateknock.title": {
+    "ko": "문 너머의 목소리",
+    "en": "A Voice Through the Door",
+    "ja": "扉の向こうの声"
+  },
+  "ev.desperateknock.text": {
+    "ko": "밤. 문 두드리는 소리 — 두 번, 멈추고, 두 번. \"…아무거나. 먹을 수 있는 거면 아무거나요.\" 목소리가 문에 기대 있다.",
+    "en": "Night. A knock — twice, a pause, twice. \"…Anything. Anything you can eat.\" The voice is leaning against the door.",
+    "ja": "夜。扉を叩く音——二回、止んで、二回。「…なんでも。食べられるものなら、なんでもいいんです」声が扉にもたれている。"
+  },
+  "ev.desperateknock.c0": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">통조림 하나를 문틈으로 민다 (통조림 1)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">Slide a can under the door (canned 1)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">缶詰をひとつ扉の隙間から差し入れる (缶詰 1)"
+  },
+  "ev.desperateknock.c1": {
+    "ko": "숨을 죽인다",
+    "en": "Hold your breath",
+    "ja": "息を殺す"
+  },
+  "ev.desperateknock.r0": {
+    "ko": "캔이 문턱을 넘자 발소리가 급하게 멀어졌다. 고맙다는 말은 없었다. 그럴 힘도 아꼈을 것이다.",
+    "en": "The can crossed the threshold and footsteps hurried away. No thanks came. They were saving even that much strength.",
+    "ja": "缶が敷居を越えると、足音が急いで遠ざかった。礼の言葉はなかった。その力さえ惜しんだのだろう。"
+  },
+  "ev.desperateknock.note0": {
+    "ko": "문 너머의 목소리에 통조림 하나를 내밀었다.",
+    "en": "Slid a can to the voice beyond the door.",
+    "ja": "扉の向こうの声に缶詰をひとつ差し出した。"
+  },
+  "ev.desperateknock.r1": {
+    "ko": "움직이지 않았다. 한참 뒤에 발소리가 멀어졌다. 그날 밤 내 몫의 저녁은 아무 맛이 나지 않았다.",
+    "en": "Did not move. After a long while the footsteps faded. Dinner that night — my rightful dinner — tasted of nothing.",
+    "ja": "動かなかった。しばらくして足音が遠ざかった。その夜、自分の分の夕食は何の味もしなかった。"
+  },
+  "ev.desperateknock.note1": {
+    "ko": "문 너머의 목소리를 못 들은 척했다.",
+    "en": "Pretended not to hear the voice beyond the door.",
+    "ja": "扉の向こうの声に、聞こえないふりをした。"
+  },
+  "ev.strippeddistrict.title": {
+    "ko": "앞서 다녀간 손",
+    "en": "Hands That Came First",
+    "ja": "先に来た手"
+  },
+  "ev.strippeddistrict.text": {
+    "ko": "찬장이 전부 열려 있고, 서랍이 바닥에 엎어져 있다. 누군가 이 구역을 먼저, 그리고 급하게 훑었다. 남은 건 부스러기뿐.",
+    "en": "Every cupboard hangs open, drawers dumped on the floor. Someone went through this block first, and fast. Crumbs are what is left.",
+    "ja": "戸棚は全部開いていて、引き出しは床にひっくり返っている。誰かがこの区域を先に、しかも急いで漁っていった。残っているのはくずばかり。"
+  },
+  "ev.strippeddistrict.c0": {
+    "ko": "더 깊이 뒤진다",
+    "en": "Dig deeper",
+    "ja": "さらに深く探る"
+  },
+  "ev.strippeddistrict.c1": {
+    "ko": "물러난다",
+    "en": "Back away",
+    "ja": "引き下がる"
+  },
+  "ev.strippeddistrict.r0good": {
+    "ko": "마루장 밑, 앞선 손이 놓친 틈에서 쓸 만한 게 나왔다. <b>(부품 +1)</b>",
+    "en": "Under a floorboard, in a gap the first hands missed — something worth keeping. <b>(parts +1)</b>",
+    "ja": "床板の下、先の手が見落とした隙間から、使えるものが出てきた。<b>(部品 +1)</b>"
+  },
+  "ev.strippeddistrict.r0bad": {
+    "ko": "무너진 선반 밑을 더듬다 못을 짚었다. 앞선 손은 좋은 건 다 가져갔고, 나쁜 것만 남겨 뒀다.",
+    "en": "Reaching under a fallen shelf, my palm found a nail. The first hands took everything good and left the bad.",
+    "ja": "崩れた棚の下を探っていて、釘に手をついた。先の手は良いものを全部持ち去り、悪いものだけを残していった。"
+  },
+  "ev.strippeddistrict.r1": {
+    "ko": "빈 구역을 빈 가방으로 걸어 나왔다. 이 도시에 손 대지 않은 곳이 줄고 있다.",
+    "en": "Walked out of the empty block with an empty bag. Fewer and fewer corners of this city are untouched.",
+    "ja": "空っぽの区域を、空っぽのかばんで歩き出た。この街に手つかずの場所が減っていく。"
+  },
+  "ev.harshbarter.title": {
+    "ko": "겨울의 값",
+    "en": "Winter Prices",
+    "ja": "冬の値段"
+  },
+  "ev.harshbarter.text": {
+    "ko": "다리 밑 행상인의 수레가 반나마 비어 있다. 연료 한 통을 가리키자 손가락 세 개를 편다. 통조림 셋. 작년의 세 배다.",
+    "en": "The peddler's cart under the bridge is half empty. I point at a can of fuel; three fingers come up. Three cans of food. Triple last year's price.",
+    "ja": "橋の下の行商人の荷車は半分がた空だ。燃料をひと缶指さすと、指が三本立った。缶詰三つ。去年の三倍だ。"
+  },
+  "ev.harshbarter.c0": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">응한다 (통조림 3)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">Pay it (canned 3)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">応じる (缶詰 3)"
+  },
+  "ev.harshbarter.c1": {
+    "ko": "고개를 젓는다",
+    "en": "Shake my head",
+    "ja": "首を横に振る"
+  },
+  "ev.harshbarter.r0": {
+    "ko": "통조림 셋이 연료 하나가 됐다. 수레가 멀어질 때까지 그 등에 대고 아무 말도 못 했다. 그쪽도 살아야 하니까. <b>(연료 +1)</b>",
+    "en": "Three cans became one of fuel. Said nothing to the cart's back as it rolled off. They have a winter too. <b>(fuel +1)</b>",
+    "ja": "缶詰三つが燃料ひとつになった。荷車が遠ざかるまで、その背中に何も言えなかった。向こうも生きていかなければならないのだから。<b>(燃料 +1)</b>"
+  },
+  "ev.harshbarter.r1": {
+    "ko": "수레는 미련 없이 멀어졌다. 겨울값은 깎이지 않는다. 둘 다 안다.",
+    "en": "The cart moved on without a second look. Winter prices do not bend. We both know it.",
+    "ja": "荷車は未練なく遠ざかった。冬の値段は値切れない。互いに分かっている。"
+  },
+  "ev.collapse.title": {
+    "ko": "무너진 입구",
+    "en": "A Collapsed Opening",
+    "ja": "崩れた入口"
+  },
+  "ev.collapse.text": {
+    "ko": "앞서가던 길에서 굉음 — 낡은 건물 한쪽이 주저앉으며 안쪽으로 통하는 틈이 열렸다. 먼지가 가라앉는다. 들어갈 수 있는 건 지금뿐일 것이다.",
+    "en": "A roar up the road — one side of an old building slumps, opening a gap that leads inside. The dust is settling. Now is likely the only time this can be entered.",
+    "ja": "行く手で轟音——古い建物の片側が崩れ落ち、中へ通じる隙間が開いた。埃が収まっていく。入れるのは今だけだろう。"
+  },
+  "ev.collapse.text.slum": {
+    "ko": "판자 벽이 와르르 무너지며 골목 안쪽, 막혀 있던 가게 하나가 드러났다. 셔터 틈으로 어둠이 보인다. 들어갈 수 있는 건 지금뿐일 것이다.",
+    "en": "A plank wall crashes down, revealing a sealed-off shop deep in the alley. Darkness shows through the shutter gap. Now is likely the only time this can be entered.",
+    "ja": "板壁がどっと崩れ、路地の奥、塞がれていた店がひとつ現れた。シャッターの隙間から闇が見える。入れるのは今だけだろう。"
+  },
+  "ev.collapse.text.residential": {
+    "ko": "담이 내려앉으며 뒤편의 반지하 창이 드러났다. 커튼이 그대로 걸려 있는 집이다. 들어갈 수 있는 건 지금뿐일 것이다.",
+    "en": "A garden wall gives way, exposing a half-basement window behind it. The curtains are still hanging. Now is likely the only time this can be entered.",
+    "ja": "塀が崩れ落ち、裏手の半地下の窓が現れた。カーテンがそのまま掛かっている家だ。入れるのは今だけだろう。"
+  },
+  "ev.collapse.text.industrial": {
+    "ko": "녹슨 비계가 무너지며 공장 옆구리에 구멍이 났다. 안쪽에서 찬 기계 냄새가 흘러나온다. 들어갈 수 있는 건 지금뿐일 것이다.",
+    "en": "Rusted scaffolding folds and punches a hole in the factory's flank. Cold machine air drifts out. Now is likely the only time this can be entered.",
+    "ja": "錆びた足場が崩れ、工場の脇腹に穴が開いた。中から冷たい機械の匂いが流れてくる。入れるのは今だけだろう。"
+  },
+  "ev.collapse.text.harbor": {
+    "ko": "기울어진 크레인이 마저 넘어가며 컨테이너 하나가 찢어졌다. 벌어진 틈 안쪽이 보인다. 들어갈 수 있는 건 지금뿐일 것이다.",
+    "en": "The leaning crane finally goes over, tearing a container open. The gap shows the inside. Now is likely the only time this can be entered.",
+    "ja": "傾いていたクレーンがついに倒れ、コンテナがひとつ裂けた。開いた隙間の奥が見える。入れるのは今だけだろう。"
+  },
+  "ev.collapse.c0": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">들어가 본다",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">Go in",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">入ってみる"
+  },
+  "ev.collapse.c1": {
+    "ko": "지나친다",
+    "en": "Walk past",
+    "ja": "通り過ぎる"
+  },
+  "ev.collapse.rCat": {
+    "ko": "어둠 속에서 야옹. 랜턴 빛에 눈 두 개가 반짝인다 — 작은 그림자가 잔해를 넘어 조심스럽게 다가온다.",
+    "en": "A meow from the dark. Two eyes catch the lantern light — a small shadow picks its way over the rubble, coming closer.",
+    "ja": "闇の中でニャア。ランタンの光に目がふたつ光る——小さな影が瓦礫を越えて、そっと近づいてくる。"
+  },
+  "ev.collapse.rPaint": {
+    "ko": "먼지 쌓인 공구함 — 뜯지도 않은 도료가 들어 있었다. <b>({name} +1)</b>",
+    "en": "A dusty toolbox — with an unopened tin of paint inside. <b>({name} +1)</b>",
+    "ja": "埃をかぶった工具箱——未開封の塗料が入っていた。<b>({name} +1)</b>"
+  },
+  "ev.collapse.rBp": {
+    "ko": "무너진 선반 밑에서 접힌 도면 한 장. 펼치자 손이 조금 떨렸다. <b>({name} 도면)</b>",
+    "en": "Under a fallen shelf, a folded blueprint. My hands shook a little unfolding it. <b>({name} blueprint)</b>",
+    "ja": "崩れた棚の下に、折り畳まれた設計図が一枚。広げると手が少し震えた。<b>({name}の設計図)</b>"
+  },
+  "ev.collapse.rJunk": {
+    "ko": "쓸 만한 건 이미 다 쓸려 간 뒤였다. 그래도 빈손은 아니다. <b>({name} +1)</b>",
+    "en": "Anything worth taking was long gone. Still, not empty-handed. <b>({name} +1)</b>",
+    "ja": "使えるものはとっくに持ち去られた後だった。それでも手ぶらではない。<b>({name} +1)</b>"
+  },
+  "ev.collapse.rHurt": {
+    "ko": "나오는 길에 잔해가 미끄러졌다. 발목이 시큰하다. <b>(부상)</b>",
+    "en": "On the way out the rubble shifted underfoot. My ankle throbs. <b>(injured)</b>",
+    "ja": "出る途中で瓦礫が滑った。足首がずきずきする。<b>(負傷)</b>"
+  },
+  "ev.collapse.r1": {
+    "ko": "구조가 미덥지 않다. 오늘은 원래 하려던 일이나 하자. 저 틈은 다음 비에 도로 묻힐 것이다.",
+    "en": "The structure looks untrustworthy. Today, stick to the plan. The next rain will bury that gap again.",
+    "ja": "構造が信用ならない。今日は本来やるはずだったことをやろう。あの隙間は次の雨でまた埋もれるだろう。"
+  },
+  "spot.pawnshop": {
+    "ko": "무너진 전당포",
+    "en": "The Collapsed Pawnshop",
+    "ja": "崩れた質屋"
+  },
+  "spot.nightmarket": {
+    "ko": "하룻밤 야시장 흔적",
+    "en": "Traces of a One-Night Market",
+    "ja": "一夜の夜市の跡"
+  },
+  "spot.movinghouse": {
+    "ko": "이삿짐 그대로인 집",
+    "en": "The House Left Mid-Move",
+    "ja": "引っ越し荷物そのままの家"
+  },
+  "spot.pharmacy": {
+    "ko": "잠겨 있던 약국",
+    "en": "The Locked Pharmacy",
+    "ja": "鍵のかかっていた薬局"
+  },
+  "spot.container": {
+    "ko": "뜯지 않은 컨테이너",
+    "en": "The Unopened Container",
+    "ja": "未開封のコンテナ"
+  },
+  "spot.generator": {
+    "ko": "아직 도는 발전기",
+    "en": "The Generator Still Running",
+    "ja": "まだ回る発電機"
+  },
+  "spot.deptfloor": {
+    "ko": "셔터 내린 백화점 한 층",
+    "en": "A Shuttered Department Floor",
+    "ja": "シャッターの下りたデパートの一フロア"
+  },
+  "spot.vendingroom": {
+    "ko": "자판기 보관 창고",
+    "en": "The Vending Machine Depot",
+    "ja": "自販機の保管倉庫"
+  },
+  "spot.coldstore": {
+    "ko": "항만 냉동창고",
+    "en": "The Harbor Cold Store",
+    "ja": "港湾の冷凍倉庫"
+  },
+  "spot.saltshed": {
+    "ko": "어시장 소금 창고",
+    "en": "The Fish Market Salt Shed",
+    "ja": "魚市場の塩倉庫"
+  },
+  "spot.skirental": {
+    "ko": "스키 대여점",
+    "en": "The Ski Rental Shop",
+    "ja": "スキーレンタル店"
+  },
+  "spot.studio": {
+    "ko": "방송국 소품실",
+    "en": "The Station Prop Room",
+    "ja": "放送局の小道具室"
+  },
+  "spot.appeared": {
+    "ko": "{region} 쪽에 소문 하나 — {name}. 오래 있진 않을 것이다.",
+    "en": "Word from {region} — {name}. It will not stay long.",
+    "ja": "{region}の方に噂がひとつ——{name}。長くはもたないだろう。"
+  },
+  "spot.gone": {
+    "ko": "{name} — 소문이 잦아들었다. 이제 늦었다.",
+    "en": "{name} — the word has gone quiet. Too late now.",
+    "ja": "{name}——噂は途絶えた。もう遅い。"
+  },
+  "spot.explored": {
+    "ko": "{name} — 소문이 사실이었다. 챙길 수 있는 건 다 챙겼다.",
+    "en": "{name} — the rumor was true. Took everything worth taking.",
+    "ja": "{name}——噂は本当だった。持ち出せるものは全部持ち出した。"
+  },
+  "spot.jackpot": {
+    "ko": "{name} 발견",
+    "en": "{name} found",
+    "ja": "{name}発見"
+  },
+  "spot.mapHint": {
+    "ko": "이 지역 탐험으로 회수 — 곧 사라진다",
+    "en": "Recover by scavenging this region — it will not last",
+    "ja": "この地域の探索で回収——まもなく消える"
+  },
+  "map.cond.rich": {
+    "ko": "풍",
+    "en": "rich",
+    "ja": "豊"
+  },
+  "map.cond.lean": {
+    "ko": "마름",
+    "en": "lean",
+    "ja": "枯れ"
+  },
+  "map.cond.richTip": {
+    "ko": "요즘 수확이 좋다 (+25%)",
+    "en": "Yields are good these days (+25%)",
+    "ja": "このところ収穫がいい (+25%)"
+  },
+  "map.cond.leanTip": {
+    "ko": "요즘 말랐다 (-20%)",
+    "en": "Picked thin these days (-20%)",
+    "ja": "このところ枯れている (-20%)"
+  },
+  "end3.inv.title": {
+    "ko": "탁자 위의 초대장",
+    "en": "The Invitation on the Table",
+    "ja": "テーブルの上の招待状"
+  },
+  "end3.inv.text": {
+    "ko": "초대장은 밤새 탁자 위에서 움직이지 않았다. 좌표 한 줄, 날짜 하나. 사흘 뒤다.<br>그들은 문을 두드리지 않는다. 두드릴 필요가 없는 사람들이다.",
+    "en": "The invitation hasn't moved from the table all night. One line of coordinates, one date. Three days from now.<br>They don't knock on doors. They're the kind of people who never have to.",
+    "ja": "招待状は一晩中、テーブルの上から動かなかった。座標が一行、日付がひとつ。三日後だ。<br>彼らは戸を叩かない。叩く必要のない人間たちだ。"
+  },
+  "end3.inv.c0": {
+    "ko": "좌표로 간다",
+    "en": "Go to the coordinates",
+    "ja": "座標へ向かう"
+  },
+  "end3.inv.c1": {
+    "ko": "난로에 넣는다",
+    "en": "Put it in the stove",
+    "ja": "ストーブにくべる"
+  },
+  "end3.inv.c2": {
+    "ko": "서랍에 넣어 둔다",
+    "en": "Keep it in the drawer",
+    "ja": "引き出しにしまっておく"
+  },
+  "end3.inv.r0": {
+    "ko": "짐은 금방 쌌다. 난로 앞에서만 오래 서 있었다.",
+    "en": "Packing took no time at all. It was the stove I stood in front of for a while.",
+    "ja": "荷造りはすぐに済んだ。ストーブの前でだけ、長いこと立っていた。"
+  },
+  "end3.inv.r1": {
+    "ko": "초대장은 불쏘시개가 됐다. 종이 한 장만큼의 온기만 남기고.",
+    "en": "The invitation made decent kindling. It left about as much warmth as a single sheet of paper.",
+    "ja": "招待状は焚き付けになった。紙一枚ぶんの暖かさだけを残して。"
+  },
+  "end3.inv.r2": {
+    "ko": "서랍을 닫았다. 사흘이면 답이 나오겠지.",
+    "en": "I closed the drawer. Three days should be enough to know.",
+    "ja": "引き出しを閉めた。三日もあれば答えは出るだろう。"
+  },
+  "end3.inv.note": {
+    "ko": "초대장은 불쏘시개가 됐다. 답은 이 집이다.",
+    "en": "The invitation made decent kindling. The answer is this house.",
+    "ja": "招待状は焚き付けになった。答えはこの家だ。"
+  },
+  "end3.due.title": {
+    "ko": "사흘째 아침",
+    "en": "The Third Morning",
+    "ja": "三日目の朝"
+  },
+  "end3.due.text": {
+    "ko": "오늘이 그 날짜다. 지금 나서면 해 지기 전에 닿는다.<br>서랍 속에서 종이가 기다리고 있다. 재촉하는 기색도 없이.",
+    "en": "Today is the date. If I leave now, I'd make it before dark.<br>The paper is waiting in the drawer. Not rushing me in the slightest.",
+    "ja": "今日がその日付だ。今出れば、日が沈む前に着く。<br>引き出しの中で紙が待っている。急かす気配もなく。"
+  },
+  "end3.due.c0": {
+    "ko": "지금 나선다",
+    "en": "Set out now",
+    "ja": "今すぐ発つ"
+  },
+  "end3.due.c1": {
+    "ko": "보내준다",
+    "en": "Let it go",
+    "ja": "見送る"
+  },
+  "end3.due.r0": {
+    "ko": "종이를 주머니에 넣고 문을 나섰다. 고작 종이 한 장이 제일 무거운 짐이었다.",
+    "en": "I put the paper in my pocket and stepped out. A single sheet of paper, and it was the heaviest thing I carried.",
+    "ja": "紙をポケットに入れて、戸口を出た。たかが紙一枚が、一番重い荷物だった。"
+  },
+  "end3.due.r1": {
+    "ko": "정오가 지났다. 오후 내내 장작을 팼다. 도끼질은 잡생각을 지우는 데 좋다.",
+    "en": "Noon came and went. I split firewood all afternoon. An axe is good for clearing the head.",
+    "ja": "正午が過ぎた。午後じゅう薪を割った。斧を振るうのは、雑念を払うのにいい。"
+  },
+  "end3.call.title": {
+    "ko": "밤의 교신",
+    "en": "Transmission at Night",
+    "ja": "夜の交信"
+  },
+  "end3.call.text": {
+    "ko": "자정 무렵, 라디오가 혼자 살아났다. 박사였다. 한참을 잡음만 흘려보내다가 겨우 말을 이었다.<br>\"…개방 기록이 잡혔다. 네 좌표 근처더군.\" 그러고는 아무것도 묻지 않았다.<br>\"항로는 아직 살아 있다. 마지막으로 한 번만 묻지. 올 텐가.\"",
+    "en": "Near midnight, the radio came alive on its own. The doctor. A long stretch of nothing but static before the words came.<br>\"…An opening record came through. Near your coordinates.\" And then no questions at all.<br>\"The route is still alive. I'll ask just once more. Will you come?\"",
+    "ja": "真夜中ごろ、ラジオがひとりでに息を吹き返した。博士だった。しばらく雑音ばかりを流したあと、ようやく言葉を継いだ。<br>「…開放記録を拾った。君の座標の近くだった。」そのまま、何も訊かなかった。<br>「航路はまだ生きている。最後に一度だけ訊く。来るか。」"
+  },
+  "end3.call.c0": {
+    "ko": "간다",
+    "en": "Go",
+    "ja": "行く"
+  },
+  "end3.call.c1": {
+    "ko": "남는다",
+    "en": "Stay",
+    "ja": "残る"
+  },
+  "end3.call.r0": {
+    "ko": "좌표를 받아 적었다. 연필 쥔 손이 말을 잘 안 들었다.",
+    "en": "I wrote down the coordinates. The pencil didn't sit right in my hand.",
+    "ja": "座標を書き取った。鉛筆を握る手が、うまく言うことを聞かなかった。"
+  },
+  "end3.call.r1": {
+    "ko": "박사는 한동안 말이 없었다. \"…그래. 불이나 꺼뜨리지 마라.\" 그게 마지막이었다.",
+    "en": "The doctor was quiet for a long while. \"…All right. Just keep the fire lit.\" That was the last of it.",
+    "ja": "博士はしばらく黙っていた。「…そうか。火だけは絶やすな。」それが最後だった。"
+  },
+  "end3.rb.title": {
+    "ko": "아홉 번째 봄",
+    "en": "The Ninth Spring",
+    "ja": "九度目の春"
+  },
+  "end3.rb.text": {
+    "ko": "겨울이 물러간 아침. 그런데 라디오가 아침부터 부산스럽다.<br>창으로 드는 빛부터가 어제와 다르다.",
+    "en": "A morning with winter gone. And the radio has been restless since dawn.<br>Even the light through the window is different from yesterday.",
+    "ja": "冬が退いた朝。なのにラジオが朝から騒がしい。<br>窓から差し込む光からして、昨日と違う。"
+  }
 }

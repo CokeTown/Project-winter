@@ -1,427 +1,427 @@
 {
- "ev.leakyroof.c1": {
-  "ko": "양동이만 받쳐둔다",
-  "en": "Just set a bucket under it",
-  "ja": "バケツだけ置いておく"
- },
- "ev.leakyroof.r0": {
-  "ko": "천장에 자재를 덧대 물길을 막았다. 빗소리가 다시 바깥의 것이 되었다.",
-  "en": "I braced the ceiling with scrap and cut off the trickle. The rain became an outside sound again.",
-  "ja": "天井に資材を当てて水漏れを塞いだ。雨音がまた外のものになった。"
- },
- "ev.leakyroof.r1": {
-  "ko": "밤새 물이 새 방 안이 눅눅해졌다. 벽에 곰팡이 냄새가 밴다. <b>(청결 -12)</b>",
-  "en": "Water seeped all night and the room turned damp. The walls carry a mildew smell now. <b>(cleanliness -12)</b>",
-  "ja": "一晩中水が漏れ、部屋がじめじめしてしまった。壁にカビの臭いが染みつく。<b>(清潔 -12)</b>"
- },
- "ev.snowprints.title": {
-  "ko": "밤사이 발자국",
-  "en": "Prints in the Night Snow",
-  "ja": "夜のあいだの足跡"
- },
- "ev.snowprints.text": {
-  "ko": "아침에 문을 여니 눈밭에 발자국이 거처를 빙 둘러 나 있다.<br>안을 들여다본 흔적은 없다. 그저 한 바퀴 돌고 저편으로 이어진다.",
-  "en": "I open the door to find prints circling the shelter through the snow.<br>No sign anyone looked in. They just went around once and trailed off yonder.",
-  "ja": "朝、扉を開けると、雪原にシェルターをぐるりと囲む足跡が残っていた。<br>中を覗いた形跡はない。ただ一周して、向こうへと続いている。"
- },
- "ev.snowprints.c0": {
-  "ko": "발자국을 따라가 본다",
-  "en": "Follow the tracks",
-  "ja": "足跡をたどってみる"
- },
- "ev.snowprints.c1": {
-  "ko": "쓸어 지운다",
-  "en": "Sweep them away",
-  "ja": "掃き消す"
- },
- "ev.snowprints.r0good": {
-  "ko": "발자국은 눈 속에 묻힌 보따리 하나로 이어졌다. 주인은 이미 멀리 갔다. <b>(통조림 +1, 천 +1)</b>",
-  "en": "The tracks led to a bundle half-buried in snow. Its owner was long gone. <b>(canned +1, cloth +1)</b>",
-  "ja": "足跡は雪に埋もれた包みひとつへと続いていた。持ち主はもう遠くへ行ったのだろう。<b>(缶詰 +1、布 +1)</b>"
- },
- "ev.snowprints.note0": {
-  "ko": "발자국을 따라가 버려진 보따리를 주웠다.",
-  "en": "Followed the tracks to an abandoned bundle.",
-  "ja": "足跡をたどり、置き去りの包みを拾った。"
- },
- "ev.snowprints.r0bad": {
-  "ko": "발자국을 따라가다 빙판에 미끄러졌다. 발목이 시큰하다. 주인은 끝내 보이지 않았다.",
-  "en": "Following the tracks, I slipped on ice. My ankle throbs. I never did see who left them.",
-  "ja": "足跡をたどる途中、氷の上で滑った。足首がずきずきする。持ち主の姿はついに見えなかった。"
- },
- "ev.snowprints.r1": {
-  "ko": "발자국을 말끔히 쓸어냈다. 누가 다녀갔든, 이제 없던 일이다.",
-  "en": "I swept the prints clean. Whoever passed, it never happened now.",
-  "ja": "足跡をきれいに掃き消した。誰が来ていたにせよ、もうなかったことだ。"
- },
- "ev.lighthouseship.title": {
-  "ko": "먼바다의 신호",
-  "en": "A Signal Far Out at Sea",
-  "ja": "沖の信号"
- },
- "ev.lighthouseship.text": {
-  "ko": "한밤, 먼바다에서 불빛이 두 번 깜빡였다. 잠시 뒤 다시 두 번.<br>누군가 등대를 보고 있다.",
-  "en": "Deep in the night, a light blinks twice, far out at sea. A pause, then twice more.<br>Someone out there is watching the lighthouse.",
-  "ja": "真夜中、沖で光が二度またたいた。少しして、また二度。<br>誰かが灯台を見ている。"
- },
- "ev.lighthouseship.c0": {
-  "ko": "🔥 등을 밝혀 응답한다 (연료 1)",
-  "en": "🔥 Light the lamp and answer (1 fuel)",
-  "ja": "🔥 灯りをともして応える (燃料 1)"
- },
- "ev.lighthouseship.c1": {
-  "ko": "지켜보기만 한다",
-  "en": "Only watch",
-  "ja": "見守るだけにする"
- },
- "ev.lighthouseship.r0": {
-  "ko": "등을 크게 밝혀 두 번 깜빡였다. 먼 불빛도 두 번 답하고는, 천천히 수평선 너머로 사라졌다.<br>이름도 모르고, 만나지도 못했다. 그래도 밤바다가 조금 덜 넓어졌다.",
-  "en": "I flared the lamp and blinked twice. The far light answered twice, then slid slowly past the horizon.<br>No name, no meeting. Still, the night sea felt a little less wide.",
-  "ja": "灯りを大きくともし、二度またたかせた。遠い光も二度応え、ゆっくりと水平線の向こうへ消えていった。<br>名前も知らず、会うこともなかった。それでも、夜の海が少しだけ狭くなった。"
- },
- "ev.lighthouseship.note0": {
-  "ko": "먼바다의 불빛에 등을 밝혀 답했다.",
-  "en": "Answered the far sea-light with the lamp.",
-  "ja": "沖の光に灯りをともして応えた。"
- },
- "ev.lighthouseship.r1": {
-  "ko": "불빛은 얼마간 더 깜빡이다 잦아들었다. 이윽고 바다는 다시 캄캄해졌다.",
-  "en": "The light blinked a while longer, then dimmed. Before long the sea went black again.",
-  "ja": "光はしばらくまたたいてから、静かに消えていった。やがて海はまた真っ暗になった。"
- },
- "ev.greenhousebirds.title": {
-  "ko": "씨앗 도둑",
-  "en": "Seed Thieves",
-  "ja": "種泥棒"
- },
- "ev.greenhousebirds.text": {
-  "ko": "깨진 유리 틈으로 새 몇 마리가 들어와 텃밭 씨앗을 쪼고 있다.<br>날 보고도 달아나지 않는다. 오래 굶은 눈치다.",
-  "en": "A few birds have slipped through the cracked glass to peck at the garden seeds.<br>They don’t flee when they see me. They have the look of long hunger.",
-  "ja": "割れたガラスの隙間から鳥が数羽入り込み、菜園の種をついばんでいる。<br>こちらを見ても逃げない。長く飢えているようだ。"
- },
- "ev.greenhousebirds.c0": {
-  "ko": "팔을 저어 쫓는다",
-  "en": "Wave them off",
-  "ja": "腕を振って追い払う"
- },
- "ev.greenhousebirds.c1": {
-  "ko": "🍎 씨앗을 조금 나눠준다 (음식 1)",
-  "en": "🍎 Share a little seed (1 food)",
-  "ja": "🍎 種を少し分けてやる (食料 1)"
- },
- "ev.greenhousebirds.r0": {
-  "ko": "새들은 푸드덕 날아 유리 밖으로 사라졌다. 텃밭은 지켰다.",
-  "en": "The birds burst up and vanished past the glass. The garden’s safe.",
-  "ja": "鳥たちは羽ばたいてガラスの外へ消えた。菜園は守った。"
- },
- "ev.greenhousebirds.r1": {
-  "ko": "씨앗을 한 줌 흩뿌리자 새들이 모여들었다. 배를 채운 뒤에도 한참을 머물다 떠났다.",
-  "en": "I scattered a handful and the birds gathered close. Fed, they lingered a long while before leaving.",
-  "ja": "種をひとつかみ撒くと、鳥たちが集まってきた。腹を満たしたあとも、しばらく留まってから去っていった。"
- },
- "ev.greenhousebirds.r1shiny": {
-  "ko": "씨앗을 흩뿌리자 새 한 마리가 반짝이는 것을 떨어뜨리고 갔다. 작은 부품이다. <b>(부품 +1)</b>",
-  "en": "As I scattered the seed, one bird dropped something bright and flew off. A small part. <b>(parts +1)</b>",
-  "ja": "種を撒くと、一羽が光るものを落としていった。小さな部品だ。<b>(部品 +1)</b>"
- },
- "ev.greenhousebirds.note1": {
-  "ko": "새가 반짝이는 부품을 물어다 떨궜다.",
-  "en": "A bird dropped a shiny part behind.",
-  "ja": "鳥が光る部品をくわえてきて落としていった。"
- },
- "ev.distantlight.title": {
-  "ko": "먼 불빛",
-  "en": "A Distant Light",
-  "ja": "遠い灯り"
- },
- "ev.distantlight.text": {
-  "ko": "맑은 밤, 폐허 너머 어딘가에 불빛 하나가 켜져 있다.<br>깜빡이지도, 다가오지도 않는다. 그저 저기 있다.",
-  "en": "A clear night. Somewhere beyond the ruins, a single light is lit.<br>It doesn’t blink, doesn’t draw nearer. It just is there.",
-  "ja": "晴れた夜、廃墟の向こうのどこかに、灯りがひとつともっている。<br>またたきも、近づきもしない。ただ、そこにある。"
- },
- "ev.distantlight.c0": {
-  "ko": "한참을 바라본다",
-  "en": "Watch it a long while",
-  "ja": "しばらく見つめる"
- },
- "ev.distantlight.r0": {
-  "ko": "한참을 바라봤다. 누가 켰는지, 왜 켜져 있는지 알 길이 없다.<br>그래도 저 불빛이 있는 동안은, 이 폐허에 나 혼자만은 아니었다.",
-  "en": "I watched a long time. No way to know who lit it, or why.<br>Still — while that light burns, I am not the only one left in these ruins.",
-  "ja": "長いこと見つめていた。誰がともしたのか、なぜともっているのか、知るすべはない。<br>それでもあの灯りがある間は、この廃墟に独りきりではなかった。"
- },
- "ev.distantlight.r0.rooftop": {
-  "ko": "옥상 난간에 기대 한참을 바라봤다. 무너진 빌딩숲 너머, 창문 하나에 불이 켜져 있다.<br>손을 흔들 뻔했다. 그래봐야 닿지 않을 텐데.",
-  "en": "Leaning on the rooftop rail, I watched a long while. Past the fallen skyline, one window is lit.<br>I nearly waved. It would never reach, of course.",
-  "ja": "屋上の手すりにもたれて、長いこと眺めていた。崩れたビル群の向こう、窓ひとつに灯りがともっている。<br>手を振りかけた。届くはずもないのに。"
- },
- "ev.distantlight.r0.cabin": {
-  "ko": "숲 나무 사이로 저 아래 골짜기에 불빛 하나가 깜빡인다. 사람일까, 짐승의 눈일까.<br>내려가 보진 않았다. 어떤 불빛은 멀리 둘 때 더 오래 남는다.",
-  "en": "Through the trees, a light flickers down in the valley. A person, or an animal’s eyes?<br>I didn’t go down. Some lights last longer kept at a distance.",
-  "ja": "木々の間から、下の谷間に灯りがひとつまたたいている。人か、それとも獣の目か。<br>下りてはみなかった。灯りには、遠くに置いたままのほうが長く残るものもある。"
- },
- "ev.distantlight.r0.bunker": {
-  "ko": "깨진 외피 틈으로 벌판 끝을 봤다. 폐허 도시 쪽에 불빛 하나가 켜져 있다.<br>여기까지 오려면 며칠은 걸릴 거리다. 그래도, 저기 누군가 있다.",
-  "en": "Through a crack in the shell I looked to the far field. Toward the ruined city, one light burns.<br>Days of walking away, at least. Still — someone is out there.",
-  "ja": "割れた外殻の隙間から、野原の果てを見た。廃墟の街のほうに、灯りがひとつともっている。<br>ここまで来るには何日もかかる距離だ。それでも、あそこに誰かがいる。"
- },
- "ev.radioghost.title": {
-  "ko": "주파수 사이의 목소리",
-  "en": "A Voice Between Frequencies",
-  "ja": "周波数の狭間の声"
- },
- "ev.radioghost.text": {
-  "ko": "늦은 밤, 라디오 다이얼을 돌리다 잡음 사이에 사람 목소리가 걸린다.<br>말인지 노래인지, 끊겼다 이어진다.",
-  "en": "Late at night, turning the dial, a human voice catches between the static.<br>Speech or song, I can’t tell — it breaks and returns.",
-  "ja": "夜更け、ラジオのダイヤルを回していると、雑音の合間に人の声が引っかかる。<br>言葉なのか歌なのか、途切れては続く。"
- },
- "ev.radioghost.c0": {
-  "ko": "주파수를 붙잡아 본다",
-  "en": "Try to hold the frequency",
-  "ja": "周波数をつかまえてみる"
- },
- "ev.radioghost.c1": {
-  "ko": "다이얼을 끈다",
-  "en": "Turn the dial off",
-  "ja": "ダイヤルを切る"
- },
- "ev.radioghost.r0": {
-  "ko": "잡음을 헤치자 방송 하나가 또렷해졌다. — {title}<br>수첩 라디오 기록에 남겨두었다.",
-  "en": "Cutting through the static, one broadcast came clear. — {title}<br>I set it down in the journal’s radio log.",
-  "ja": "雑音をかき分けると、ひとつの放送がはっきり聞こえてきた。— {title}<br>手帳のラジオ記録に残しておいた。"
- },
- "ev.radioghost.r0none": {
-  "ko": "주파수를 붙잡았지만 이미 들어본 것들뿐이다. 목소리는 곧 잡음에 묻혔다.",
-  "en": "I held the frequency, but it was all things I’d heard before. The voice sank back into static.",
-  "ja": "周波数はつかまえたが、もう聞いたことのあるものばかりだった。声はすぐ雑音に埋もれた。"
- },
- "ev.radioghost.r1": {
-  "ko": "다이얼을 끄자 방은 다시 조용해졌다. 무슨 말이었는지는 끝내 알 수 없었다.",
-  "en": "I killed the dial and the room went quiet again. What it said, I’ll never know.",
-  "ja": "ダイヤルを切ると、部屋はまた静かになった。何を言っていたのかは、ついにわからなかった。"
- },
- "ev.oldcalendar.title": {
-  "ko": "벽에 걸린 달력",
-  "en": "A Calendar on the Wall",
-  "ja": "壁のカレンダー"
- },
- "ev.oldcalendar.text": {
-  "ko": "벽 틈에서 오래된 달력 한 장을 찾았다. 붕괴 이전의 날짜에 동그라미가 그려져 있다.<br>무슨 날이었는지는 적혀 있지 않다.",
-  "en": "I found an old calendar page in a gap in the wall. A date from before the fall is circled.<br>What day it was, no one wrote down.",
-  "ja": "壁の隙間から古いカレンダーを一枚見つけた。崩壊前の日付に丸がつけてある。<br>何の日だったのかは書かれていない。"
- },
- "ev.oldcalendar.c0": {
-  "ko": "달력을 살펴본다",
-  "en": "Look the calendar over",
-  "ja": "カレンダーを調べる"
- },
- "ev.oldcalendar.r0": {
-  "ko": "달력 뒷면에 빼곡한 메모가 있다. — {title}<br>수첩 기록에 옮겨 적었다.",
-  "en": "The back of the calendar is dense with notes. — {title}<br>I copied it into the journal.",
-  "ja": "カレンダーの裏にびっしりとメモが残っていた。— {title}<br>手帳の記録に書き写した。"
- },
- "ev.oldcalendar.r0none": {
-  "ko": "달력 뒷면은 이미 옮겨 적은 것과 같은 내용이었다. 벽에 도로 끼워두었다.",
-  "en": "The back held the same notes I’d already copied. I tucked it back into the wall.",
-  "ja": "カレンダーの裏は、もう書き写したものと同じ内容だった。壁に戻して挟んでおいた。"
- },
- "ev.catgift.title": {
-  "ko": "고양이의 선물",
-  "en": "The Cat’s Gift",
-  "ja": "猫の贈り物"
- },
- "ev.catgift.text": {
-  "ko": "고양이가 뭔가를 입에 물고 와 발치에 툭 떨어뜨린다. 뿌듯한 얼굴이다.",
-  "en": "The cat trots up with something in its mouth and drops it at my feet. A very proud face.",
-  "ja": "猫が何かをくわえてきて、足元にぽとりと落とす。得意げな顔だ。"
- },
- "ev.catgift.c0": {
-  "ko": "뭔지 살펴본다",
-  "en": "See what it is",
-  "ja": "何なのか確かめる"
- },
- "ev.catgift.r0rare": {
-  "ko": "어디서 물어왔는지 쓸 만한 부품 두 개다. 머리를 쓰다듬어줬다. <b>(부품 +2)</b>",
-  "en": "Two decent parts, from who knows where. I scratched its head. <b>(parts +2)</b>",
-  "ja": "どこでくわえてきたのか、使えそうな部品がふたつ。頭を撫でてやった。<b>(部品 +2)</b>"
- },
- "ev.catgift.r0junk": {
-  "ko": "낡은 헝겊 조각이다. 그래도 천은 천이다. <b>(천 +1)</b>",
-  "en": "A ragged scrap of cloth. Still, cloth is cloth. <b>(cloth +1)</b>",
-  "ja": "古びた布きれだ。それでも布は布だ。<b>(布 +1)</b>"
- },
- "ev.catgift.r0rat": {
-  "ko": "죽은 쥐다. 고양이는 자랑스러운 눈치다. 나는 웃어야 할지 울어야 할지 모르겠다.",
-  "en": "A dead rat. The cat looks immensely proud. I don’t know whether to laugh or cry.",
-  "ja": "死んだネズミだ。猫は誇らしげだ。笑えばいいのか泣けばいいのか、わからない。"
- },
- "ev.frozenpipe.title": {
-  "ko": "얼어붙은 수도관",
-  "en": "A Frozen Pipe",
-  "ja": "凍りついた水道管"
- },
- "ev.frozenpipe.text": {
-  "ko": "밤새 기온이 뚝 떨어져 수도관이 얼어붙었다. 두드리니 안에서 얼음이 걸리는 소리가 난다.<br>이대로 두면 갈라질지도 모른다.",
-  "en": "The temperature dropped hard overnight and the pipe froze solid. Tapping it, I hear ice catch inside.<br>Left alone, it might crack.",
-  "ja": "夜のうちに気温が急に下がり、水道管が凍りついた。叩くと、中で氷が引っかかる音がする。<br>このままでは割れてしまうかもしれない。"
- },
- "ev.frozenpipe.c0": {
-  "ko": "⚙️ 부품 1로 손본다",
-  "en": "⚙️ Fix it with 1 parts",
-  "ja": "⚙️ 部品1で直す"
- },
- "ev.frozenpipe.c1": {
-  "ko": "녹기를 기다린다",
-  "en": "Wait for it to thaw",
-  "ja": "溶けるのを待つ"
- },
- "ev.frozenpipe.r0": {
-  "ko": "이음매를 갈고 단열재를 감았다. 물이 다시 흐른다.",
-  "en": "I replaced the joint and wrapped it in insulation. The water runs again.",
-  "ja": "継ぎ目を替え、断熱材を巻いた。水がまた流れる。"
- },
- "ev.frozenpipe.r1": {
-  "ko": "그냥 두었다. 관이 녹을 때까지 정수기는 며칠 멎어 있을 것이다. <b>(정수기 3일 정지)</b>",
-  "en": "I left it. Until the pipe thaws, the purifier will sit dead for a few days. <b>(purifier stalled 3 days)</b>",
-  "ja": "そのままにした。管が溶けるまで、浄水器は数日止まったままだろう。<b>(浄水器 3日停止)</b>"
- },
- "ev.frozenpipe.note1": {
-  "ko": "수도관을 방치했다 — 정수기가 며칠 멎는다.",
-  "en": "Left the pipe frozen — the purifier stalls for days.",
-  "ja": "水道管を放置した — 浄水器が数日止まる。"
- },
- "ev.caravanpass.title": {
-  "ko": "지나가는 행렬",
-  "en": "A Procession Passing",
-  "ja": "通り過ぎる行列"
- },
- "ev.caravanpass.text": {
-  "ko": "멀리 능선을 따라 사람들의 행렬이 지나간다. 짐수레와 등짐, 아이의 손을 잡은 어른.<br>이쪽을 알아채지 못한 채, 그저 지나간다.",
-  "en": "Far along the ridge, a line of people passes. Carts and packs, a grown-up holding a child’s hand.<br>Never noticing me, they simply move on.",
-  "ja": "遠く尾根に沿って、人々の行列が通り過ぎていく。荷車と背負い荷、子どもの手を引く大人。<br>こちらに気づかないまま、ただ過ぎていく。"
- },
- "ev.caravanpass.c0": {
-  "ko": "지나갈 때까지 지켜본다",
-  "en": "Watch until they’ve gone",
-  "ja": "通り過ぎるまで見守る"
- },
- "ev.caravanpass.r0": {
-  "ko": "행렬은 능선 너머로 사라질 때까지 한 번도 멈추지 않았다.<br>부르지 않았고, 그들도 돌아보지 않았다. 그게 맞는 것 같았다.",
-  "en": "The line never once stopped before it vanished over the ridge.<br>I didn’t call out, and they didn’t look back. It felt right that way.",
-  "ja": "行列は尾根の向こうへ消えるまで、一度も止まらなかった。<br>呼びかけなかったし、彼らも振り返らなかった。それでいい気がした。"
- },
- "ev.caravanpass.r0detail": {
-  "ko": "망원경으로 오래 지켜봤다. 지친 얼굴들, 그래도 앞선 이가 이따금 뒤를 챙긴다.<br>어디로 가는지는 모른다. 다만 함께 간다는 것만은 분명했다.",
-  "en": "I watched a long while through the scope. Weary faces — yet the one in front keeps glancing back for the others.<br>Where they go, I can’t say. That they go together was the one clear thing.",
-  "ja": "望遠鏡で長いこと見ていた。疲れた顔ぶれ。それでも先頭の者が、時折後ろを気にかけている。<br>どこへ行くのかはわからない。ただ、共に行くということだけは確かだった。"
- },
- "ev.doctor.textFrag": {
-  "ko": "…그 일지를 들었다면, 이제 이해했을 것이다. 아홉 해를 버틴 불빛 하나면 충분하다는 걸.",
-  "en": "…if you heard those logs, you understand now. One light that lasts nine years is enough.",
-  "ja": "…あの日誌を聞いたのなら、もうわかっているだろう。九年を耐えた灯りがひとつあれば、それで十分だということを。"
- },
- "memo.foundNote": {
-  "ko": "📄 기록을 하나 찾았다 — {title}",
-  "en": "📄 Found a record — {title}",
-  "ja": "📄 記録をひとつ見つけた — {title}"
- },
- "memo.foundWillNote": {
-  "ko": "✉️ 누군가의 마지막 글을 찾았다 — {title}",
-  "en": "✉️ Found someone’s last words — {title}",
-  "ja": "✉️ 誰かの最後の言葉を見つけた — {title}"
- },
- "memo.tagWill": {
-  "ko": "남겨진 마지막 글",
-  "en": "Someone’s last words",
-  "ja": "残された最後の言葉"
- },
- "memo.tagRegion.residential": {
-  "ko": "주거지역에서 — 무너진 일상",
-  "en": "From the residential zone — a daily life undone",
-  "ja": "住宅地区にて — 崩れた日常"
- },
- "memo.tagRegion.commercial": {
-  "ko": "상업지구에서 — 사재기와 폭동",
-  "en": "From the commercial zone — hoarding and riots",
-  "ja": "商業地区にて — 買い占めと暴動"
- },
- "memo.tagRegion.industrial": {
-  "ko": "공업지대에서 — 폐쇄 명령",
-  "en": "From the industrial zone — the shutdown order",
-  "ja": "工業地帯にて — 閉鎖命令"
- },
- "memo.tagRegion.slum": {
-  "ko": "슬럼가에서 — 남겨진 사람들",
-  "en": "From the slums — those left behind",
-  "ja": "スラム街にて — 残された人々"
- },
- "memo.tagRegion.bunker": {
-  "ko": "벙커 하강 계단에서 — 아래로 난 자국",
-  "en": "From the bunker stairs — marks leading down",
-  "ja": "バンカーの下り階段にて — 下へ続く跡"
- },
- "memo.tagRegion.subway": {
-  "ko": "지하 승강장에서 — 내려간 사람들",
-  "en": "From the underground platform — those who went below",
-  "ja": "地下ホームにて — 下りていった人々"
- },
- "memo.tagRegion.resort": {
-  "ko": "고원 리조트에서 — 마지막 휴가객들",
-  "en": "From the highland resort — the last vacationers",
-  "ja": "高原リゾートにて — 最後の行楽客たち"
- },
- "radio.heardNote": {
-  "ko": "📻 라디오에서 방송을 하나 들었다 — {title}",
-  "en": "📻 Heard a broadcast on the radio — {title}",
-  "ja": "📻 ラジオで放送をひとつ聞いた — {title}"
- },
- "radio.logged": {
-  "ko": "📻 수첩에 기록했다",
-  "en": "📻 Logged in the journal",
-  "ja": "📻 手帳に記録した"
- },
- "record.tabTitle": {
-  "ko": "기록",
-  "en": "Records",
-  "ja": "記録"
- },
- "record.memoTitle": {
-  "ko": "세계의 조각 ({n}/{total})",
-  "en": "Fragments of the World ({n}/{total})",
-  "ja": "世界のかけら ({n}/{total})"
- },
- "record.radioTitle": {
-  "ko": "라디오 기록 ({n}/{total})",
-  "en": "Radio Log ({n}/{total})",
-  "ja": "ラジオ記録 ({n}/{total})"
- },
- "record.distantTitle": {
-  "ko": "먼 불빛 목격 {n}회",
-  "en": "Distant light sighted {n} time(s)",
-  "ja": "遠い灯り 目撃{n}回"
- },
- "record.regionRes": {
-  "ko": "주거지역",
-  "en": "Residential",
-  "ja": "住宅地区"
- },
- "record.regionCom": {
-  "ko": "상업지구",
-  "en": "Commercial",
-  "ja": "商業地区"
- },
- "record.regionInd": {
-  "ko": "공업지대",
-  "en": "Industrial",
-  "ja": "工業地帯"
- },
- "record.regionSlum": {
-  "ko": "슬럼가",
-  "en": "Slums",
-  "ja": "スラム街"
- },
- "record.regionBunker": {
-  "ko": "벙커 지하 통로",
-  "en": "Bunker Undercroft",
-  "ja": "バンカー地下通路"
- }
+  "hidden.silo.confirm": {
+    "ko": "좌표까지는 꼬박 하루 거리다. 간다면, 지금이다.",
+    "en": "The coordinates are a full day's walk. If you're going, it's now.",
+    "ja": "座標までは丸一日の距離だ。行くなら、今だ。"
+  },
+  "hidden.silo.go": {
+    "ko": "간다",
+    "en": "Go",
+    "ja": "行く"
+  },
+  "hidden.silo.stay": {
+    "ko": "덮어둔다",
+    "en": "Put it away",
+    "ja": "伏せておく"
+  },
+  "hidden.silo.line0": {
+    "ko": "사다리 아래는 생각보다 깊었다. 내려가는 동안 아무 소리도 나지 않았다.",
+    "en": "The way down was deeper than you expected. Nothing made a sound as you went.",
+    "ja": "はしごの下は思ったより深かった。降りるあいだ、何の音もしなかった。"
+  },
+  "hidden.silo.line1": {
+    "ko": "터널 끝, 무거운 문. 문 너머는 어둠 — 그리고 어둠 속에서 계기판 하나가 살아 있었다.",
+    "en": "At the tunnel's end, a heavy door. Beyond it, dark — and in the dark, one console still alive.",
+    "ja": "トンネルの果てに、重い扉。その向こうは闇 — そして闇の中で、計器盤がひとつ生きていた。"
+  },
+  "hidden.silo.line2": {
+    "ko": "좌표를 넣는 손이 떨리지 않았다. 그게 제일 이상했다.",
+    "en": "Your hands didn't shake as you entered the coordinates. That was the strangest part.",
+    "ja": "座標を打ち込む手は震えなかった。それが一番奇妙だった。"
+  },
+  "hidden.silo.line3": {
+    "ko": "덮개 아래 버튼 하나. 그뿐이다.",
+    "en": "Under the cover, one button. That's all.",
+    "ja": "カバーの下にボタンがひとつ。それだけだ。"
+  },
+  "hidden.silo.press": {
+    "ko": "버튼을 누른다",
+    "en": "Press it",
+    "ja": "ボタンを押す"
+  },
+  "paint.foundNote": {
+    "ko": "무너진 선반 아래에서 페인트 한 통을 건졌다 — {name}. 아직 쓸 만하다.",
+    "en": "Salvaged a can of paint from under a fallen shelf — {name}. Still good.",
+    "ja": "崩れた棚の下からペンキを一缶拾い上げた — {name}。まだ使えそうだ。"
+  },
+  "paint.jackpot": {
+    "ko": "페인트 통을 찾았다 — {name}",
+    "en": "Found a can of paint — {name}",
+    "ja": "ペンキの缶を見つけた — {name}"
+  },
+  "paint.need": {
+    "ko": "{name} 도료가 필요하다. 탐험에서 가끔 나온다.",
+    "en": "Needs {name} paint. Expeditions turn it up now and then.",
+    "ja": "{name}の塗料が必要だ。探索でたまに手に入る。"
+  },
+  "paint.used": {
+    "ko": "{name} 도료로 칠했다. 남은 {left}통.",
+    "en": "Painted with {name}. {left} left.",
+    "ja": "{name}の塗料で塗った。残り{left}缶。"
+  },
+  "paint.haveN": {
+    "ko": "{n}통",
+    "en": "×{n}",
+    "ja": "{n}缶"
+  },
+  "paint.confirmUse": {
+    "ko": "{name} 도료 1통을 쓴다. 칠할까?",
+    "en": "This uses 1 can of {name} paint. Paint it?",
+    "ja": "{name}の塗料を1缶使う。塗り替える?"
+  },
+  "paint.confirmYes": {
+    "ko": "칠한다",
+    "en": "Paint it",
+    "ja": "塗る"
+  },
+  "paint.neonNote": {
+    "ko": "무너진 간판 가게 안쪽에서 네온 안료 한 통을 건졌다. 도심에서만 나는 물건이다.",
+    "en": "Salvaged a can of neon pigment from the back of a wrecked sign shop. Only turns up in the city core.",
+    "ja": "潰れた看板屋の奥からネオン顔料を一缶拾った。都心でしか手に入らない代物だ。"
+  },
+  "paint.neonJackpot": {
+    "ko": "네온 안료를 찾았다 — 도심의 색",
+    "en": "Found neon pigment — the color of the city",
+    "ja": "ネオン顔料を見つけた — 都心の色"
+  },
+  "bp.foundNote": {
+    "ko": "무너진 서랍 틈에서 접힌 도면을 찾았다 — {name}. 만드는 법이 그려져 있다.",
+    "en": "Found a folded blueprint in a broken drawer — {name}. The how-to is all there.",
+    "ja": "壊れた引き出しの隙間から折りたたまれた設計図を見つけた — {name}。作り方が描かれている。"
+  },
+  "bp.jackpot": {
+    "ko": "도면 발견 — {name}",
+    "en": "Blueprint found — {name}",
+    "ja": "設計図発見 — {name}"
+  },
+  "bp.lootLabel": {
+    "ko": "{name} 도면",
+    "en": "{name} Blueprint",
+    "ja": "{name}の設計図"
+  },
+  "offline.catGift": {
+    "ko": "자리를 비운 사이, 고양이가 문가에 천 조각을 물어다 뒀다. 어디서 났는지는 묻지 않기로 했다.",
+    "en": "While you were away, the cat left a scrap of cloth by the door. Better not to ask where it came from.",
+    "ja": "留守のあいだに、猫が扉のそばに布切れをくわえてきていた。どこで手に入れたのかは、訊かないことにした。"
+  },
+  "offline.birdGift": {
+    "ko": "창턱에 새가 다녀간 자국. 부스러기 대신 도토리 몇 알이 놓여 있었다.",
+    "en": "Traces of a bird on the sill. Instead of crumbs, a few acorns were left behind.",
+    "ja": "窓辺に鳥の立ち寄った跡。パンくずの代わりに、どんぐりがいくつか置かれていた。"
+  },
+  "frame.default": {
+    "ko": "풍경화",
+    "en": "Landscape",
+    "ja": "風景画"
+  },
+  "frame.hung": {
+    "ko": "{name} — 액자에 걸었다.",
+    "en": "{name} — hung in the frame.",
+    "ja": "{name} — 額縁に飾った。"
+  },
+  "dye.title": {
+    "ko": "염료 상인",
+    "en": "The Dye Peddler",
+    "ja": "染料商人"
+  },
+  "dye.text": {
+    "ko": "슬럼 골목 어귀, 페인트 통을 실은 손수레가 서 있다. 상인이 말없이 천을 걷는다.<br>오늘의 통 — {names}.<br>값은 하나에 통조림 {n}개. 흥정이 통할 얼굴이 아니다.",
+    "en": "At the mouth of a slum alley stands a handcart loaded with paint cans. The peddler pulls back the cloth without a word.<br>Today's cans — {names}.<br>The price is {n} canned food apiece. Not a face that haggles.",
+    "ja": "スラムの路地の入り口に、ペンキの缶を積んだ手押し車が停まっている。商人が無言で布をめくる。<br>今日の缶 — {names}。<br>値は一缶につき缶詰{n}個。値切りが通じる顔ではない。"
+  },
+  "dye.c0": {
+    "ko": "1번 통을 산다",
+    "en": "Buy can no. 1",
+    "ja": "1番の缶を買う"
+  },
+  "dye.c1": {
+    "ko": "2번 통을 산다",
+    "en": "Buy can no. 2",
+    "ja": "2番の缶を買う"
+  },
+  "dye.c2": {
+    "ko": "3번 통을 산다",
+    "en": "Buy can no. 3",
+    "ja": "3番の缶を買う"
+  },
+  "dye.pass": {
+    "ko": "지나친다",
+    "en": "Walk on",
+    "ja": "通り過ぎる"
+  },
+  "dye.r.bought": {
+    "ko": "통조림 {n}개를 건넸다. {name} 한 통이 손에 들어왔다.",
+    "en": "Handed over {n} cans of food. A can of {name} is yours.",
+    "ja": "缶詰{n}個を手渡した。{name}が一缶、手に入った。"
+  },
+  "dye.r.noGoods": {
+    "ko": "통조림이 모자라다. 상인은 어깨를 으쓱하고 천을 덮었다.",
+    "en": "Not enough canned food. The peddler shrugged and covered the cart.",
+    "ja": "缶詰が足りない。商人は肩をすくめ、布をかぶせ直した。"
+  },
+  "dye.r.pass": {
+    "ko": "고개만 까딱하고 지나쳤다. 등 뒤로 손수레 바퀴 소리가 멀어졌다.",
+    "en": "A small nod, nothing more. The cart wheels faded behind you.",
+    "ja": "会釈だけして通り過ぎた。背後で手押し車の車輪の音が遠ざかった。"
+  },
+  "ev.noResource": {
+    "ko": " (자원 부족)",
+    "en": " (not enough)",
+    "ja": " (資源不足)"
+  },
+  "ev.coldstranger.title": {
+    "ko": "문밖의 온기",
+    "en": "Warmth Beyond the Door",
+    "ja": "扉の外の暖かさ"
+  },
+  "ev.coldstranger.text": {
+    "ko": "한파가 몰아치는 밤. 문 밖에 누군가 웅크린 채 쓰러져 있다. 숨은 붙어 있다.<br>깨워도 말이 없다. 그저 떨고 있을 뿐이다.",
+    "en": "A cold-snap night. Someone lies curled and fallen beyond the door, still breathing.<br>They don’t answer when I shake them. They only shiver.",
+    "ja": "寒波の吹き荒れる夜。扉の外に、誰かがうずくまったまま倒れている。息はある。<br>揺すっても答えはない。ただ震えているだけだ。"
+  },
+  "ev.coldstranger.c0": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">안으로 들여 불을 나눈다 (연료 2)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">Bring them in, share the fire (2 fuel)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">中に入れて火を分ける (燃料2)"
+  },
+  "ev.coldstranger.c1": {
+    "ko": "문을 닫는다",
+    "en": "Close the door",
+    "ja": "扉を閉める"
+  },
+  "ev.coldstranger.r0": {
+    "ko": "난롯가에 앉혀 언 몸을 녹였다. 아침이 오자 자리엔 아무도 없었다.<br>문틈에 쪽지 한 장. 고맙다는 한 줄. 이름은 없다.",
+    "en": "I set them by the stove until the frost left their skin. By morning the spot was empty.<br>A note wedged in the doorframe. One line of thanks. No name.",
+    "ja": "ストーブのそばに座らせ、凍えた体を温めた。朝になると、そこには誰もいなかった。<br>扉の隙間にメモが一枚。感謝の一行。名前はない。"
+  },
+  "ev.coldstranger.note0": {
+    "ko": "문밖의 사람을 들여 불을 나눴다.",
+    "en": "Took in the one outside and shared the fire.",
+    "ja": "扉の外の人を招き入れ、火を分けた。"
+  },
+  "ev.coldstranger.r1": {
+    "ko": "문을 닫았다. 바람 소리에 다른 소리는 묻혔다.<br>날이 밝고 문을 열었을 때, 그 자리엔 눌린 눈자국만 남아 있었다.",
+    "en": "I closed the door. The wind swallowed whatever sound was left.<br>When light came and I opened it, only a pressed shape in the snow remained.",
+    "ja": "扉を閉めた。風の音が、ほかの音をかき消した。<br>夜が明けて扉を開けたとき、そこには押しつぶされた雪の跡だけが残っていた。"
+  },
+  "ev.coldstranger.note1": {
+    "ko": "문밖의 사람을 못 본 척했다.",
+    "en": "Pretended I never saw the one outside.",
+    "ja": "扉の外の人を、見なかったことにした。"
+  },
+  "ev.spoilmerchant.title": {
+    "ko": "반값의 상인",
+    "en": "The Half-Price Trader",
+    "ja": "半額の商人"
+  },
+  "ev.spoilmerchant.text": {
+    "ko": "한 사람이 수레를 끌고 왔다. 통조림을 반값에 넘기겠단다.<br>웃는 낯이 지나치게 붙임성 있다. 캔 몇 개는 이음매가 부풀어 있다.",
+    "en": "Someone rolls up a cart. Canned goods, half price, they say.<br>The smile is a touch too eager. A few of the cans bulge at the seams.",
+    "ja": "荷車を引いた者が現れた。缶詰を半額で譲るという。<br>笑顔が愛想よすぎる。缶のいくつかは継ぎ目が膨らんでいる。"
+  },
+  "ev.spoilmerchant.c0": {
+    "ko": "부푼 캔을 짚어 돌려보낸다",
+    "en": "Point at the swollen cans, wave them off",
+    "ja": "膨らんだ缶を指さして追い返す"
+  },
+  "ev.spoilmerchant.c1": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_battery.png\" alt=\"\">배터리 1로 두 개 산다",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_battery.png\" alt=\"\">Buy two for 1 battery",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_battery.png\" alt=\"\">バッテリー1で2個買う"
+  },
+  "ev.spoilmerchant.r0": {
+    "ko": "부푼 이음매를 손끝으로 짚자, 상인은 말없이 수레를 돌렸다.<br>속지 않았다. 그거면 됐다.",
+    "en": "I press a swollen seam. The trader turns the cart without a word.<br>Not fooled. That’s enough.",
+    "ja": "膨らんだ継ぎ目を指先で示すと、商人は無言で荷車の向きを変えた。<br>騙されなかった。それで十分だ。"
+  },
+  "ev.spoilmerchant.note0": {
+    "ko": "상한 통조림을 간파해 돌려보냈다.",
+    "en": "Spotted the spoiled cans and sent them off.",
+    "ja": "傷んだ缶詰を見抜き、追い返した。"
+  },
+  "ev.spoilmerchant.r1ok": {
+    "ko": "통조림 두 개를 받았다. 흔들어보니 멀쩡한 것 같다. 운이 좋았다. <b>(통조림 +2)</b>",
+    "en": "Two cans in hand. A shake says they’re fine. Lucky. <b>(canned +2)</b>",
+    "ja": "缶詰を2個受け取った。振ってみたところ、無事なようだ。運が良かった。 <b>(缶詰 +2)</b>"
+  },
+  "ev.spoilmerchant.r1bad": {
+    "ko": "통조림 두 개를 받았다. 그날 밤부터 속이 뒤집혔다. 하나가 상해 있었다. <b>(감염 위험)</b>",
+    "en": "Two cans in hand. By nightfall my gut turned. One of them was rotten. <b>(infection risk)</b>",
+    "ja": "缶詰を2個受け取った。その夜から腹の具合がひっくり返った。ひとつが傷んでいた。 <b>(感染の危険)</b>"
+  },
+  "ev.leakyroof.title": {
+    "ko": "천장에서 떨어지는 것",
+    "en": "Something Drips from the Ceiling",
+    "ja": "天井から落ちてくるもの"
+  },
+  "ev.leakyroof.text": {
+    "ko": "빗줄기가 굵어지자 천장 한구석에서 물이 떨어지기 시작한다.<br>바닥에 고인 자국이 점점 넓어진다.",
+    "en": "As the rain thickens, water begins to fall from one corner of the ceiling.<br>The pool on the floor spreads, wider and wider.",
+    "ja": "雨脚が強まると、天井の隅から水が落ち始める。<br>床にたまった染みが、少しずつ広がっていく。"
+  },
+  "ev.leakyroof.c0": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">건축재 1로 급히 막는다",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">Patch it fast with 1 material",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_material.png\" alt=\"\">建材1で急いでふさぐ"
+  },
+  "ev.leakyroof.c1": {
+    "ko": "양동이만 받쳐둔다",
+    "en": "Just set a bucket under it",
+    "ja": "バケツだけ置いておく"
+  },
+  "ev.leakyroof.r0": {
+    "ko": "천장에 자재를 덧대 물길을 막았다. 빗소리가 다시 바깥의 것이 되었다.",
+    "en": "I braced the ceiling with scrap and cut off the trickle. The rain became an outside sound again.",
+    "ja": "天井に資材を当てて水漏れを塞いだ。雨音がまた外のものになった。"
+  },
+  "ev.leakyroof.r1": {
+    "ko": "밤새 물이 새 방 안이 눅눅해졌다. 벽에 곰팡이 냄새가 밴다. <b>(청결 -12)</b>",
+    "en": "Water seeped all night and the room turned damp. The walls carry a mildew smell now. <b>(cleanliness -12)</b>",
+    "ja": "一晩中水が漏れ、部屋がじめじめしてしまった。壁にカビの臭いが染みつく。<b>(清潔 -12)</b>"
+  },
+  "ev.snowprints.title": {
+    "ko": "밤사이 발자국",
+    "en": "Prints in the Night Snow",
+    "ja": "夜のあいだの足跡"
+  },
+  "ev.snowprints.text": {
+    "ko": "아침에 문을 여니 눈밭에 발자국이 거처를 빙 둘러 나 있다.<br>안을 들여다본 흔적은 없다. 그저 한 바퀴 돌고 저편으로 이어진다.",
+    "en": "I open the door to find prints circling the shelter through the snow.<br>No sign anyone looked in. They just went around once and trailed off yonder.",
+    "ja": "朝、扉を開けると、雪原にシェルターをぐるりと囲む足跡が残っていた。<br>中を覗いた形跡はない。ただ一周して、向こうへと続いている。"
+  },
+  "ev.snowprints.c0": {
+    "ko": "발자국을 따라가 본다",
+    "en": "Follow the tracks",
+    "ja": "足跡をたどってみる"
+  },
+  "ev.snowprints.c1": {
+    "ko": "쓸어 지운다",
+    "en": "Sweep them away",
+    "ja": "掃き消す"
+  },
+  "ev.snowprints.r0good": {
+    "ko": "발자국은 눈 속에 묻힌 보따리 하나로 이어졌다. 주인은 이미 멀리 갔다. <b>(통조림 +1, 천 +1)</b>",
+    "en": "The tracks led to a bundle half-buried in snow. Its owner was long gone. <b>(canned +1, cloth +1)</b>",
+    "ja": "足跡は雪に埋もれた包みひとつへと続いていた。持ち主はもう遠くへ行ったのだろう。<b>(缶詰 +1、布 +1)</b>"
+  },
+  "ev.snowprints.note0": {
+    "ko": "발자국을 따라가 버려진 보따리를 주웠다.",
+    "en": "Followed the tracks to an abandoned bundle.",
+    "ja": "足跡をたどり、置き去りの包みを拾った。"
+  },
+  "ev.snowprints.r0bad": {
+    "ko": "발자국을 따라가다 빙판에 미끄러졌다. 발목이 시큰하다. 주인은 끝내 보이지 않았다.",
+    "en": "Following the tracks, I slipped on ice. My ankle throbs. I never did see who left them.",
+    "ja": "足跡をたどる途中、氷の上で滑った。足首がずきずきする。持ち主の姿はついに見えなかった。"
+  },
+  "ev.snowprints.r1": {
+    "ko": "발자국을 말끔히 쓸어냈다. 누가 다녀갔든, 이제 없던 일이다.",
+    "en": "I swept the prints clean. Whoever passed, it never happened now.",
+    "ja": "足跡をきれいに掃き消した。誰が来ていたにせよ、もうなかったことだ。"
+  },
+  "ev.lighthouseship.title": {
+    "ko": "먼바다의 신호",
+    "en": "A Signal Far Out at Sea",
+    "ja": "沖の信号"
+  },
+  "ev.lighthouseship.text": {
+    "ko": "한밤, 먼바다에서 불빛이 두 번 깜빡였다. 잠시 뒤 다시 두 번.<br>누군가 등대를 보고 있다.",
+    "en": "Deep in the night, a light blinks twice, far out at sea. A pause, then twice more.<br>Someone out there is watching the lighthouse.",
+    "ja": "真夜中、沖で光が二度またたいた。少しして、また二度。<br>誰かが灯台を見ている。"
+  },
+  "ev.lighthouseship.c0": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">등을 밝혀 응답한다 (연료 1)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">Light the lamp and answer (1 fuel)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_fuel.png\" alt=\"\">灯りをともして応える (燃料 1)"
+  },
+  "ev.lighthouseship.c1": {
+    "ko": "지켜보기만 한다",
+    "en": "Only watch",
+    "ja": "見守るだけにする"
+  },
+  "ev.lighthouseship.r0": {
+    "ko": "등을 크게 밝혀 두 번 깜빡였다. 먼 불빛도 두 번 답하고는, 천천히 수평선 너머로 사라졌다.<br>이름도 모르고, 만나지도 못했다. 그래도 밤바다가 조금 덜 넓어졌다.",
+    "en": "I flared the lamp and blinked twice. The far light answered twice, then slid slowly past the horizon.<br>No name, no meeting. Still, the night sea felt a little less wide.",
+    "ja": "灯りを大きくともし、二度またたかせた。遠い光も二度応え、ゆっくりと水平線の向こうへ消えていった。<br>名前も知らず、会うこともなかった。それでも、夜の海が少しだけ狭くなった。"
+  },
+  "ev.lighthouseship.note0": {
+    "ko": "먼바다의 불빛에 등을 밝혀 답했다.",
+    "en": "Answered the far sea-light with the lamp.",
+    "ja": "沖の光に灯りをともして応えた。"
+  },
+  "ev.lighthouseship.r1": {
+    "ko": "불빛은 얼마간 더 깜빡이다 잦아들었다. 이윽고 바다는 다시 캄캄해졌다.",
+    "en": "The light blinked a while longer, then dimmed. Before long the sea went black again.",
+    "ja": "光はしばらくまたたいてから、静かに消えていった。やがて海はまた真っ暗になった。"
+  },
+  "ev.greenhousebirds.title": {
+    "ko": "씨앗 도둑",
+    "en": "Seed Thieves",
+    "ja": "種泥棒"
+  },
+  "ev.greenhousebirds.text": {
+    "ko": "깨진 유리 틈으로 새 몇 마리가 들어와 텃밭 씨앗을 쪼고 있다.<br>날 보고도 달아나지 않는다. 오래 굶은 눈치다.",
+    "en": "A few birds have slipped through the cracked glass to peck at the garden seeds.<br>They don’t flee when they see me. They have the look of long hunger.",
+    "ja": "割れたガラスの隙間から鳥が数羽入り込み、菜園の種をついばんでいる。<br>こちらを見ても逃げない。長く飢えているようだ。"
+  },
+  "ev.greenhousebirds.c0": {
+    "ko": "팔을 저어 쫓는다",
+    "en": "Wave them off",
+    "ja": "腕を振って追い払う"
+  },
+  "ev.greenhousebirds.c1": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_food.png\" alt=\"\">씨앗을 조금 나눠준다 (음식 1)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_food.png\" alt=\"\">Share a little seed (1 food)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_food.png\" alt=\"\">種を少し分けてやる (食料 1)"
+  },
+  "ev.greenhousebirds.r0": {
+    "ko": "새들은 푸드덕 날아 유리 밖으로 사라졌다. 텃밭은 지켰다.",
+    "en": "The birds burst up and vanished past the glass. The garden’s safe.",
+    "ja": "鳥たちは羽ばたいてガラスの外へ消えた。菜園は守った。"
+  },
+  "ev.greenhousebirds.r1": {
+    "ko": "씨앗을 한 줌 흩뿌리자 새들이 모여들었다. 배를 채운 뒤에도 한참을 머물다 떠났다.",
+    "en": "I scattered a handful and the birds gathered close. Fed, they lingered a long while before leaving.",
+    "ja": "種をひとつかみ撒くと、鳥たちが集まってきた。腹を満たしたあとも、しばらく留まってから去っていった。"
+  },
+  "ev.greenhousebirds.r1shiny": {
+    "ko": "씨앗을 흩뿌리자 새 한 마리가 반짝이는 것을 떨어뜨리고 갔다. 작은 부품이다. <b>(부품 +1)</b>",
+    "en": "As I scattered the seed, one bird dropped something bright and flew off. A small part. <b>(parts +1)</b>",
+    "ja": "種を撒くと、一羽が光るものを落としていった。小さな部品だ。<b>(部品 +1)</b>"
+  },
+  "ev.greenhousebirds.note1": {
+    "ko": "새가 반짝이는 부품을 물어다 떨궜다.",
+    "en": "A bird dropped a shiny part behind.",
+    "ja": "鳥が光る部品をくわえてきて落としていった。"
+  },
+  "ev.distantlight.title": {
+    "ko": "먼 불빛",
+    "en": "A Distant Light",
+    "ja": "遠い灯り"
+  },
+  "ev.distantlight.text": {
+    "ko": "맑은 밤, 폐허 너머 어딘가에 불빛 하나가 켜져 있다.<br>깜빡이지도, 다가오지도 않는다. 그저 저기 있다.",
+    "en": "A clear night. Somewhere beyond the ruins, a single light is lit.<br>It doesn’t blink, doesn’t draw nearer. It just is there.",
+    "ja": "晴れた夜、廃墟の向こうのどこかに、灯りがひとつともっている。<br>またたきも、近づきもしない。ただ、そこにある。"
+  },
+  "ev.distantlight.c0": {
+    "ko": "한참을 바라본다",
+    "en": "Watch it a long while",
+    "ja": "しばらく見つめる"
+  },
+  "ev.distantlight.r0": {
+    "ko": "한참을 바라봤다. 누가 켰는지, 왜 켜져 있는지 알 길이 없다.<br>그래도 저 불빛이 있는 동안은, 이 폐허에 나 혼자만은 아니었다.",
+    "en": "I watched a long time. No way to know who lit it, or why.<br>Still — while that light burns, I am not the only one left in these ruins.",
+    "ja": "長いこと見つめていた。誰がともしたのか、なぜともっているのか、知るすべはない。<br>それでもあの灯りがある間は、この廃墟に独りきりではなかった。"
+  },
+  "ev.distantlight.r0.rooftop": {
+    "ko": "옥상 난간에 기대 한참을 바라봤다. 무너진 빌딩숲 너머, 창문 하나에 불이 켜져 있다.<br>손을 흔들 뻔했다. 그래봐야 닿지 않을 텐데.",
+    "en": "Leaning on the rooftop rail, I watched a long while. Past the fallen skyline, one window is lit.<br>I nearly waved. It would never reach, of course.",
+    "ja": "屋上の手すりにもたれて、長いこと眺めていた。崩れたビル群の向こう、窓ひとつに灯りがともっている。<br>手を振りかけた。届くはずもないのに。"
+  },
+  "ev.distantlight.r0.cabin": {
+    "ko": "숲 나무 사이로 저 아래 골짜기에 불빛 하나가 깜빡인다. 사람일까, 짐승의 눈일까.<br>내려가 보진 않았다. 어떤 불빛은 멀리 둘 때 더 오래 남는다.",
+    "en": "Through the trees, a light flickers down in the valley. A person, or an animal’s eyes?<br>I didn’t go down. Some lights last longer kept at a distance.",
+    "ja": "木々の間から、下の谷間に灯りがひとつまたたいている。人か、それとも獣の目か。<br>下りてはみなかった。灯りには、遠くに置いたままのほうが長く残るものもある。"
+  }
 }

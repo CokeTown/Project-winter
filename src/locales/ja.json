@@ -2263,5 +2263,11 @@
   "demo.hardPerk": "デモ・チャレンジモード: 探索地域に商業地区が追加で開く。",
   "demo.autoLocked": "自動進行は製品版のもの — この十五日は、この手で。",
   "intro.skip": "スキップ ▸▸",
-  "exp.riskGain": "出来事による追加の収穫:"
+  "exp.riskGain": "出来事による追加の収穫:",
+  "power.needSource": "電源がない — ソーラーパネルか発電機が先だ。",
+  "paint.applyBtn": "{name}1本で確定",
+  "paint.applyFree": "この色で確定（無料）",
+  "gel.applyBtn": "{name}1本で光を確定",
+  "gel.applyFree": "元の光に戻す（無料）",
+  "sel.previewHint": "押して試し見 — 確定まで消費なし"
 }

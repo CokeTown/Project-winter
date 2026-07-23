@@ -19,6 +19,9 @@ export const BAL = {
     drinkRestore: 45,      // 수동 drinkWater 회복량
     eatFullGate: 85,       // hunger 이 값 초과면 수동 섭취 거부 ("배부름")
     drinkFullGate: 85,     // thirst 이 값 초과면 수동 음용 거부
+    // P2(REFACTOR-GUIDE §3): 심각도 임계 — 단일 출처. gaugeSev(HUD 색·도크 LED·PDA 바)와
+    //   comfort.js 부상·허기 페널티 게이트가 같은 상수를 읽는다(한쪽만 바뀌어 조용히 갈라지던 구조 봉합).
+    sev: { crit: 25, warn: 50 },
   },
 
   /* ── 취침 / 에너지 (restEnergyValue / sleepUntilMorning) ── */
@@ -44,6 +47,12 @@ export const BAL = {
   },
 
   /* ── 탐험 (startExpedition / _simDaysInner 탐험 비용) ── */
+  // P2: 청소 비용 — 구 game.js cleanShelter 리터럴(10/5). (주의: 상위 키 신설 전 중복 검색 필수 —
+  //   gauges 중복 선언이 감쇠 수치를 통째로 덮어 diff-0가 깨진 실측 사고 있음. clean은 유일 키 확인됨.)
+  clean: {
+    minEnergy: 10,       // 청소 최소 에너지
+    energyCost: 5,       // 청소 1회 에너지 소모
+  },
   exp: {
     perDay: 5,           // EXP_PER_DAY: 하루 탐험 가능 횟수
     /* 탐험 시간 개편 (디렉터 2026-07-08): 탐험 소요(인게임) = expDuration(실대기 초) × timeScale(분).
@@ -52,8 +61,9 @@ export const BAL = {
     timeScale: 4,        // 탐험 중 시간 배속 (실1초 = 게임4분)
     idleTimeScale: 3.2,  // 평시(비탐험) 시계 배속 — 탐험(4)의 80% (디렉터 확정 2026-07-08)
     energyCost: 20,      // 탐험 1회 에너지 소모
-    hungerCost: 4,       // 탐험 1회 배고픔 소모 (sim 경로)
-    thirstCost: 5,       // 탐험 1회 갈증 소모 (sim 경로)
+    hungerCost: 4,       // 탐험 1회 배고픔 소모 (P2: 실경로 departExpedition·sim 공용 — 리터럴 이원화 해소)
+    thirstCost: 5,       // 탐험 1회 갈증 소모 (P2: 실경로·sim 공용)
+    thirstCostBottle: 3, // 물병 준비물 지참 시 갈증 소모 (departExpedition — 구 리터럴 3)
     minEnergy: 20,       // 탐험 출발 최소 에너지 (startExpedition 게이트)
     midRest: 20,         // 탐험 사이 energy<20 시 간이 회복 (sim 경로)
     hungryPenGate: 25,   // hunger/thirst 이 값 미만이면 성공률 페널티 (rateParts)
@@ -193,6 +203,27 @@ export const BAL = {
     rooftopSlateDirtPerDay: 2,          // 슬레이트 빠진 상태로 비/눈 오는 날 청결 추가 감소 (구 weatherDirt 3보다 완화 — 지붕 일부 존재)
     rooftopGardenFoodPerDay: 1,         // 옥상 텃밭 기본 일일 음식 생산 (겨울 0). 실제 생산 = 기본 × 셸터 perk.gardenMult
     rooftopGardenMult: 2,               // 옥탑 퍽: 텃밭 수확 배수 (옥탑 텃밭 food +2/일). 현재 텃밭은 rooftop 전용이라 이 배수가 곧 옥탑 정체성
+  },
+
+  /* ── 거처 개조 비용 (P2 외부화 — game.js SHELTER_MODS가 참조. 효과·설치 조건은 정의부 그대로) ── */
+  modCosts: {
+    raincatch: { material: 2, parts: 1 },
+    garden: { material: 2, water: 2 },
+    rooftopGarden: { material: 3, water: 2 },
+    mushroom: { material: 3, water: 3 },
+    insulation: { cloth: 3, material: 2 },
+    shelf: { material: 3, parts: 1 },
+    solar: { parts: 4, battery: 1 },
+    lighting: { parts: 3, battery: 1 },
+    roof: { material: 4 },
+    extension: { material: 6, parts: 2 },
+    onsen: { material: 4, parts: 2 },
+    insulationPlus: { cloth: 7, material: 5, parts: 1 },
+    customsClear: {},
+    customsSeal: { material: 3, cloth: 1 },
+    terminalPatch: { material: 4, cloth: 1 },
+    bigraincatch: { material: 5, parts: 2 },
+    radiostation: { parts: 3, material: 2 },
   },
 
   /* ── #76 「지식과 사치」 — 장기 인플레 교정 + 책(지식)/사치 건축 싱크 ──
@@ -356,6 +387,10 @@ export const BAL = {
      총점(score) 계산식은 불변 — 여기 표는 오직 "어느 축에 귀속시킬지" 매핑이다.
      (밸런스 diff 0 보장: score는 기존 그대로, 이 표는 UI 원인표시용 버킷팅) */
   comfort: {
+    // P2: 기본 안정감 단일 출처 — core/comfort.js 점수식의 18과 game.js 원인 로그의 '+18'이
+    //   별개 리터럴이라 한쪽만 바뀌면 화면이 거짓말하던 구조 봉합. (섹션 중복 함정: comfort 키는 여기 하나뿐이어야 한다 —
+    //   앞쪽에 또 만들면 이 객체가 그걸 통째로 덮는다. 실제로 한 번 밟았다.)
+    baseSecurity: 18,  // 빈 방에서도 "지붕이 있다"로 시작하는 안정감 기본치
     /* 조명 가구의 comfort 값을 온기(warmth) vs 분위기(mood)로 배분.
        열원(불꽃/발열) 계열은 온기, 전기 조명은 분위기. (합계는 원래 light 총점과 동일) */
     lightAxis: {

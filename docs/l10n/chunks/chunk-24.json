@@ -1,427 +1,427 @@
 {
- "data.res.parts.name": {
-  "ko": "부품",
-  "en": "Parts",
-  "ja": "部品"
- },
- "data.res.salt.name": {
-  "ko": "소금",
-  "en": "Salt",
-  "ja": "塩"
- },
- "data.res.water.name": {
-  "ko": "깨끗한 물",
-  "en": "Clean Water",
-  "ja": "きれいな水"
- },
- "data.shelter.bridgehouse.desc": {
-  "ko": "무너진 현수교 옆 석조 관리소. 낮에는 끊어진 다리가, 밤에는 온 하늘의 별이 창밖에 걸린다.",
-  "en": "A stone keeper house beside the fallen span. By day the broken bridge hangs in the window; by night, every star in the sky.",
-  "ja": "崩れた吊り橋のそばに立つ石造りの管理所。昼は途切れた橋が、夜は満天の星が窓の外にかかる。"
- },
- "data.shelter.bridgehouse.limits": {
-  "ko": "🌉 협곡의 집 — 겨울 바람 소리가 크다",
-  "en": "🌉 A house over the gorge — the winter wind is loud",
-  "ja": "🌉 峡谷の家 — 冬の風の音が大きい"
- },
- "data.shelter.bridgehouse.name": {
-  "ko": "다리 관리소",
-  "en": "Bridge Keeper House",
-  "ja": "橋の管理所"
- },
- "data.shelter.bridgehouse.perk.label": {
-  "ko": "🌌 별의 관측석 — 밤하늘이 온전히 보인다",
-  "en": "🌌 A seat under the stars — the night sky, unbroken",
-  "ja": "🌌 星の観測席 — 夜空がまるごと見える"
- },
- "data.shelter.bunker.desc": {
-  "ko": "반쯤 무너진 돔형 벙커. 갈라진 외피 사이로 별이 보이지만, 두꺼운 벽 안쪽은 의외로 아늑하다.",
-  "en": "A half-collapsed dome bunker. Stars peek through the cracked shell, but inside the thick walls it is surprisingly snug.",
-  "ja": "半ば崩れたドーム型バンカー。ひび割れた外殻の隙間から星が見えるが、厚い壁の内側は意外と心地よい。"
- },
- "data.shelter.bunker.limits": {
-  "ko": "🔌 밀폐 구조 — 전력이 끊기면 거처 보너스·특성 정지",
-  "en": "🔌 Sealed structure — losing power halts shelter bonuses & traits",
-  "ja": "🔌 密閉構造 — 電力が切れるとシェルターボーナス・特性が停止"
- },
- "data.shelter.bunker.name": {
-  "ko": "돔 벙커",
-  "en": "Dome Bunker",
-  "ja": "ドームバンカー"
- },
- "data.shelter.bunker.perk.label": {
-  "ko": "🛡️ 두꺼운 외피 — 부상 회복 2배 빠름",
-  "en": "🛡️ Thick shell — injuries heal twice as fast",
-  "ja": "🛡️ 厚い外殻 — 負傷の回復が2倍速い"
- },
- "data.shelter.bunker.upkeep.label": {
-  "ko": "배터리 1 / 일 (환기·조명 전력)",
-  "en": "Battery 1 / day (ventilation & lighting)",
-  "ja": "バッテリー 1 / 日 (換気・照明の電力)"
- },
- "data.shelter.bus.desc": {
-  "ko": "고속도로 위에 멈춰 선 스쿨버스. 좁지만 어디로든 갈 수 있을 것 같은 기분이 든다.",
-  "en": "A school bus stalled on the highway. Cramped, but it feels like it could take you anywhere.",
-  "ja": "高速道路の上で止まったままのスクールバス。狭いが、どこへでも行けそうな気がする。"
- },
- "data.shelter.bus.limits": {
-  "ko": "📦 좁은 실내 — 가구 최대 8개",
-  "en": "📦 Tight interior — max 8 furniture",
-  "ja": "📦 狭い室内 — 家具は最大8個"
- },
- "data.shelter.bus.name": {
-  "ko": "버려진 스쿨버스",
-  "en": "Abandoned School Bus",
-  "ja": "廃スクールバス"
- },
- "data.shelter.bus.perk.label": {
-  "ko": "🚌 이동형 거점 — 탐험 소요 시간 -25%",
-  "en": "🚌 Mobile base — expedition time -25%",
-  "ja": "🚌 移動式拠点 — 探索の所要時間 -25%"
- },
- "data.shelter.bus.upkeep.label": {
-  "ko": "연료 1 / 2일",
-  "en": "Fuel 1 / 2 days",
-  "ja": "燃料 1 / 2日"
- },
- "data.shelter.cabin.desc": {
-  "ko": "숲 가장자리의 오두막. 폐허가 된 세상에서 찾아낸 가장 아늑한 은신처.",
-  "en": "A cabin on the forest’s edge. The coziest refuge you have found in this ruined world.",
-  "ja": "森のはずれの小屋。廃墟と化した世界で見つけた、いちばん心地よい隠れ家。"
- },
- "data.shelter.cabin.limits": {
-  "ko": "🪵 목조 지붕 — 악천후엔 매일 건축재 1로 누수 수리 (없으면 청결 -8)",
-  "en": "🪵 Timber roof — bad weather needs 1 material/day for leak repair (else cleanliness -8)",
-  "ja": "🪵 木の屋根 — 悪天候の日は毎日建材1で雨漏りを修理 (なければ清潔 -8)"
- },
- "data.shelter.cabin.name": {
-  "ko": "숲속 오두막",
-  "en": "Forest Cabin",
-  "ja": "森の小屋"
- },
- "data.shelter.cabin.perk.label": {
-  "ko": "🕯️ 아늑한 구조 — 쾌적함 효과 1.5배",
-  "en": "🕯️ Cozy layout — comfort effects ×1.5",
-  "ja": "🕯️ 居心地のよい造り — 快適さ効果1.5倍"
- },
- "data.shelter.cabin.upkeep.label": {
-  "ko": "건축재 1 / 3일",
-  "en": "Building material 1 / 3 days",
-  "ja": "建材 1 / 3日"
- },
- "data.shelter.container.desc": {
-  "ko": "황무지 한가운데 버려진 화물 컨테이너. 좁지만 비바람은 막아준다.",
-  "en": "A cargo container abandoned in the middle of the wasteland. Cramped, but it keeps out the wind and rain.",
-  "ja": "荒野のただ中に打ち捨てられた貨物コンテナ。狭いが、風雨はしのげる。"
- },
- "data.shelter.container.limits": {
-  "ko": "🥶 얇은 철판 — 비/눈 오는 날 쾌적함 -8",
-  "en": "🥶 Thin steel — comfort -8 on rainy/snowy days",
-  "ja": "🥶 薄い鉄板 — 雨/雪の日は快適さ -8"
- },
- "data.shelter.container.name": {
-  "ko": "버려진 컨테이너",
-  "en": "Abandoned Container",
-  "ja": "廃コンテナ"
- },
- "data.shelter.container.perk.label": {
-  "ko": "🧭 길목의 거점 — 탐험 성공률 +5%p",
-  "en": "🧭 Crossroads outpost — expedition success +5%p",
-  "ja": "🧭 街道の拠点 — 探索成功率 +5%p"
- },
- "data.shelter.controltower.desc": {
-  "ko": "항구를 내려다보는 관제탑 꼭대기. 사방이 유리라 바람 소리가 크지만, 다가오는 날씨가 가장 먼저 보인다.",
-  "en": "The top of a control tower over the harbor. Glass on all sides makes the wind loud, but the coming weather shows here first.",
-  "ja": "港を見下ろす管制塔のてっぺん。四方がガラスで風の音は大きいが、近づく天気がいちばん早く見える。"
- },
- "data.shelter.controltower.limits": {
-  "ko": "🌬️ 사방 유리 — 비/눈 오는 날 쾌적함 -6",
-  "en": "🌬️ Glass on all sides — comfort -6 on rainy/snowy days",
-  "ja": "🌬️ 四方ガラス張り — 雨/雪の日は快適さ -6"
- },
- "data.shelter.controltower.name": {
-  "ko": "항만 관제탑",
-  "en": "Harbor Control Tower",
-  "ja": "港湾管制塔"
- },
- "data.shelter.controltower.perk.label": {
-  "ko": "🔭 고층 전망 — 날씨 예보 · 한파 예보 +1일 · 성공률 +2%p",
-  "en": "🔭 High vantage — weather forecast · cold-snap lead +1 day · success +2%p",
-  "ja": "🔭 高層の眺望 — 天気予報 ・ 寒波予報 +1日 ・ 成功率 +2%p"
- },
- "data.shelter.controltower.upkeep.label": {
-  "ko": "배터리 1 / 일 (관제 콘솔)",
-  "en": "Battery 1 / day (control console)",
-  "ja": "バッテリー 1 / 日 (管制コンソール)"
- },
- "data.shelter.customs.desc": {
-  "ko": "국경 검문소의 심사 홀. 통과하지 못한 짐들이 아직 컨베이어 위에 놓여 있다 — 이제 국경은 나 하나를 위해 열려 있다.",
-  "en": "The inspection hall of a border checkpoint. Luggage that never cleared still sits on the belt — now the border stands open for one.",
-  "ja": "国境検問所の審査ホール。通れなかった荷物がまだコンベアの上に残っている — いま、国境は私ひとりのために開いている。"
- },
- "data.shelter.customs.limits": {
-  "ko": "🏙️ 심사 창구로 바람이 든다 — 악천후 쾌적 -5 (창구 봉쇄로 해소)",
-  "en": "🏙️ Wind slips through the booths — comfort -5 in bad weather (fix by sealing them)",
-  "ja": "🏙️ 審査窓口から風が入る — 悪天候時は快適さ -5 (窓口の封鎖で解消)"
- },
- "data.shelter.customs.name": {
-  "ko": "세관",
-  "en": "Customs House",
-  "ja": "税関"
- },
- "data.shelter.customs.perk.label": {
-  "ko": "🛃 관문의 집 — 동부 대도시의 문턱",
-  "en": "🛃 Home at the gate — threshold of the eastern metropolis",
-  "ja": "🛃 関門の家 — 東部大都市の玄関口"
- },
- "data.shelter.greenhouse.desc": {
-  "ko": "기적처럼 남아 있는 유리 온실. 세상이 멸망해도 흙에서는 여전히 싹이 튼다.",
-  "en": "A glass greenhouse that survived as if by miracle. Even at the end of the world, seeds still sprout from the soil.",
-  "ja": "奇跡のように残ったガラスの温室。世界が滅んでも、土からは変わらず芽が出る。"
- },
- "data.shelter.greenhouse.limits": {
-  "ko": "❄️ 유리 지붕 — 눈 오는 날엔 건축재 1로 보수 (없으면 청결 -8)",
-  "en": "❄️ Glass roof — snowy days need 1 material to patch (else cleanliness -8)",
-  "ja": "❄️ ガラスの屋根 — 雪の日は建材1で補修 (なければ清潔 -8)"
- },
- "data.shelter.greenhouse.name": {
-  "ko": "온실",
-  "en": "Greenhouse",
-  "ja": "温室"
- },
- "data.shelter.greenhouse.perk.label": {
-  "ko": "🌿 텃밭 — 매일 음식 +1",
-  "en": "🌿 Garden — food +1 daily",
-  "ja": "🌿 菜園 — 毎日食料 +1"
- },
- "data.shelter.greenhouse.perk.produceNote": {
-  "ko": "🌿 온실 텃밭에서 수확했습니다",
-  "en": "🌿 Harvested from the greenhouse garden",
-  "ja": "🌿 温室の菜園から収穫しました"
- },
- "data.shelter.greenhouse.upkeep.label": {
-  "ko": "깨끗한 물 1 / 일 (급수)",
-  "en": "Clean water 1 / day (irrigation)",
-  "ja": "きれいな水 1 / 日 (給水)"
- },
- "data.shelter.lighthouse.desc": {
-  "ko": "절벽 끝 등대의 꼭대기 층. 두꺼운 벽 안은 아늑하고, 옥상 랜턴 옆 빗물받이가 물을 모아준다.",
-  "en": "The top floor of a lighthouse at the cliff’s edge. Snug within thick walls, with a rain catch beside the rooftop lantern.",
-  "ja": "崖の先に立つ灯台の最上階。厚い壁の中は心地よく、屋上のランタン脇の雨どいが水を集めてくれる。"
- },
- "data.shelter.lighthouse.limits": {
-  "ko": "🌧️ 옥상 빗물받이 — 비/눈 오는 날 깨끗한 물 +2 (자급 가능)",
-  "en": "🌧️ Rooftop rain catch — clean water +2 on rainy/snowy days (self-sufficient)",
-  "ja": "🌧️ 屋上の雨どい — 雨/雪の日はきれいな水 +2 (自給可能)"
- },
- "data.shelter.lighthouse.name": {
-  "ko": "등대 등탑 거실",
-  "en": "Lighthouse Lamp Room",
-  "ja": "灯台の灯室"
- },
- "data.shelter.lighthouse.perk.label": {
-  "ko": "🔦 탐조등 — 모든 지역 성공률 +3%p · 날씨 예보 제공",
-  "en": "🔦 Searchlight — success +3%p in all regions · weather forecast",
-  "ja": "🔦 探照灯 — 全地域の成功率 +3%p ・ 天気予報"
- },
- "data.shelter.lighthouse.upkeep.label": {
-  "ko": "연료 1 / 2일 (등불)",
-  "en": "Fuel 1 / 2 days (beacon)",
-  "ja": "燃料 1 / 2日 (灯り)"
- },
- "data.shelter.lodge.desc": {
-  "ko": "고원 리조트의 통나무 로지. 바깥은 세상에서 가장 혹독한 겨울이지만, 벽난로 앞은 어디보다 따뜻하다.",
-  "en": "A timber lodge at the highland resort. Outside is the harshest winter in the world; before the hearth, it is warmer than anywhere.",
-  "ja": "高原リゾートのログロッジ。外は世界でいちばん厳しい冬だが、暖炉の前はどこよりも暖かい。"
- },
- "data.shelter.lodge.limits": {
-  "ko": "🏔️ 고도 — 연료 소모 +30% · 한파가 더 잦다 (로지 단열·벽난로가 상쇄)",
-  "en": "🏔️ Altitude — fuel use +30% · cold snaps more frequent (offset by lodge insulation & hearth)",
-  "ja": "🏔️ 高地 — 燃料消費 +30% ・ 寒波が起きやすい (ロッジの断熱・暖炉で相殺)"
- },
- "data.shelter.lodge.name": {
-  "ko": "스키 로지",
-  "en": "Ski Lodge",
-  "ja": "スキーロッジ"
- },
- "data.shelter.lodge.perk.label": {
-  "ko": "🔥 벽난로 로지 — 쾌적 효과 1.3배 · 날씨 예보",
-  "en": "🔥 Hearth lodge — comfort effects ×1.3 · weather forecast",
-  "ja": "🔥 暖炉のロッジ — 快適さ効果1.3倍 ・ 天気予報"
- },
- "data.shelter.lodge.upkeep.label": {
-  "ko": "연료 1 / 일 (벽난로·고도 난방)",
-  "en": "Fuel 1 / day (hearth & altitude heating)",
-  "ja": "燃料 1 / 日 (暖炉・高地暖房)"
- },
- "data.shelter.penthouse.desc": {
-  "ko": "구름 높이의 펜트하우스. 사방의 마천루가 고성의 첨탑처럼 나를 둘러싸고, 발밑엔 안개에 잠긴 도시가 있다.",
-  "en": "A penthouse at cloud height. The towers stand around you like castle spires, and below, a city drowned in fog.",
-  "ja": "雲の高さのペントハウス。四方の摩天楼が古城の尖塔のように私を囲み、足元には霧に沈んだ都市がある。"
- },
- "data.shelter.penthouse.limits": {
-  "ko": "🌬️ 고층 강풍 — 겨울 바람이 유리를 두드린다",
-  "en": "🌬️ High-rise wind — winter rattles the glass",
-  "ja": "🌬️ 高層の強風 — 冬の風がガラスを叩く"
- },
- "data.shelter.penthouse.name": {
-  "ko": "펜트하우스",
-  "en": "Penthouse",
-  "ja": "ペントハウス"
- },
- "data.shelter.penthouse.perk.label": {
-  "ko": "🏙️ 첨탑들의 왕좌 — 도시 전체가 창밖에 있다",
-  "en": "🏙️ A throne among spires — the whole city hangs in the window",
-  "ja": "🏙️ 尖塔たちの玉座 — 都市全体が窓の外にある"
- },
- "data.shelter.rooftop.desc": {
-  "ko": "무너진 도시의 빌딩 옥상. 콘크리트 슬래브 위, 주워 모은 판자로 잇댄 가벽 방과 텃밭으로 개조할 수 있는 마당이 있다.",
-  "en": "Atop a fallen city building. A crude room walled with scavenged panels sits on the concrete slab, beside a yard you can turn into a garden.",
-  "ja": "崩れた都市のビルの屋上。コンクリートスラブの上に、拾い集めた板でつぎはぎした仮壁の部屋と、菜園に改修できる庭がある。"
- },
- "data.shelter.rooftop.limits": {
-  "ko": "🪨 슬레이트 지붕에 두 장이 빠져 있다 — 보수 전까지 비/눈 오는 날 청결 소폭 감소",
-  "en": "🪨 Two slates are missing from the roof — until repaired, cleanliness dips a little on rainy/snowy days",
-  "ja": "🪨 スレート屋根が2枚欠けている — 補修まで雨/雪の日は清潔が少し下がる"
- },
- "data.shelter.rooftop.name": {
-  "ko": "도시 옥탑방",
-  "en": "City Rooftop",
-  "ja": "都市の屋上部屋"
- },
- "data.shelter.rooftop.perk.label": {
-  "ko": "📡 탁 트인 시야 — 부분 성공 시 가구 1개 회수 · 🌱 옥상 텃밭 수확 2배",
-  "en": "📡 Clear vantage — salvage 1 furniture on partial success · 🌱 rooftop garden yields ×2",
-  "ja": "📡 開けた視界 — 部分成功時に家具1個回収 ・ 🌱 屋上菜園の収穫2倍"
- },
- "data.shelter.ship.desc": {
-  "ko": "해안에 좌초된 여객선의 갑판. 파도 소리와 함께 잠들고, 아침엔 낚싯대를 드리운다.",
-  "en": "The deck of a passenger liner run aground on the coast. You sleep to the sound of waves and cast a line at dawn.",
-  "ja": "海岸に座礁した客船のデッキ。波の音とともに眠り、朝には釣り竿を垂らす。"
- },
- "data.shelter.ship.limits": {
-  "ko": "💧 바다의 습기 — 청결이 매일 2 더 빨리 떨어짐",
-  "en": "💧 Sea damp — cleanliness drops 2 faster each day",
-  "ja": "💧 海の湿気 — 清潔が毎日2多く下がる"
- },
- "data.shelter.ship.name": {
-  "ko": "여객선 선실",
-  "en": "Liner Cabin",
-  "ja": "客船キャビン"
- },
- "data.shelter.ship.perk.label": {
-  "ko": "🎣 낚시 — 매일 음식 +1 · 탐험 실패에도 자원 일부 회수",
-  "en": "🎣 Fishing — food +1 daily · salvage some resources even on failed expeditions",
-  "ja": "🎣 釣り — 毎日食料 +1 ・ 探索失敗でも資源を一部回収"
- },
- "data.shelter.ship.perk.produceNote": {
-  "ko": "🎣 밤낚시로 물고기를 잡았습니다",
-  "en": "🎣 Caught a fish with night fishing",
-  "ja": "🎣 夜釣りで魚を釣りました"
- },
- "data.shelter.ship.upkeep.label": {
-  "ko": "부품 1 / 3일 (배수 펌프)",
-  "en": "Parts 1 / 3 days (bilge pump)",
-  "ja": "部品 1 / 3日 (排水ポンプ)"
- },
- "data.shelter.subway.desc": {
-  "ko": "무너진 도시 아래 잠든 승강장. 날씨도 계절도 닿지 않는 곳 — 어둠만 잘 다스리면 최고의 요새다.",
-  "en": "A platform sleeping beneath the fallen city. Untouched by weather or season — master the dark and it becomes the finest fortress.",
-  "ja": "崩れた都市の下に眠るプラットホーム。天気も季節も届かない場所 — 闇さえ手なずければ最高の要塞だ。"
- },
- "data.shelter.subway.limits": {
-  "ko": "🌑 완전한 어둠 — 켜진 조명이 하나도 없으면 쾌적함 -12",
-  "en": "🌑 Total darkness — comfort -12 if no light is lit",
-  "ja": "🌑 完全な闇 — 点いている照明がひとつもないと快適さ -12"
- },
- "data.shelter.subway.name": {
-  "ko": "지하철 역사",
-  "en": "Subway Station",
-  "ja": "地下鉄の駅"
- },
- "data.shelter.subway.perk.label": {
-  "ko": "🕯️ 어둠 속 안식 — 조명 쾌적함 효과 1.5배",
-  "en": "🕯️ Rest in the dark — lighting comfort effect ×1.5",
-  "ja": "🕯️ 闇の中の安らぎ — 照明の快適さ効果1.5倍"
- },
- "data.shelter.subway.upkeep.label": {
-  "ko": "배터리 1 / 일 (환기 팬)",
-  "en": "Battery 1 / day (ventilation fan)",
-  "ja": "バッテリー 1 / 日 (換気ファン)"
- },
- "data.shelter.terminal.desc": {
-  "ko": "거대한 아치 천장 아래, 매표소 옆 한 칸이 나의 집. 무너진 지붕 틈으로 해가 들고, 그 빛 웅덩이에서 나무 한 그루가 자란다.",
-  "en": "One corner beneath the great arched ceiling, beside the ticket booths. Sun falls through the broken roof, and in that pool of light a tree grows.",
-  "ja": "巨大なアーチ天井の下、切符売り場の隣のひと区画が私の家。崩れた屋根の隙間から日が差し、その光だまりで一本の木が育つ。"
- },
- "data.shelter.terminal.limits": {
-  "ko": "🕳️ 무너진 천장 — 악천후 쾌적 -4 (지붕 틈을 막으면 해소)",
-  "en": "🕳️ Broken ceiling — comfort -4 in bad weather (fix by patching the gap)",
-  "ja": "🕳️ 崩れた天井 — 悪天候時は快適さ -4 (屋根の隙間を塞げば解消)"
- },
- "data.shelter.terminal.name": {
-  "ko": "역 대합실",
-  "en": "Grand Terminal Hall",
-  "ja": "駅の待合室"
- },
- "data.shelter.terminal.perk.label": {
-  "ko": "🚉 빛 웅덩이의 홀 — 도시 한가운데의 성소",
-  "en": "🚉 A hall with a pool of light — a sanctuary mid-city",
-  "ja": "🚉 光だまりのホール — 都市の真ん中の聖域"
- },
- "data.shelter.tugboat.desc": {
-  "ko": "부두에 매인 낡은 요트. 살롱은 좁아도 온기가 돌고, 물 위에서는 낚싯줄이 마르지 않는다.",
-  "en": "An old yacht moored at the pier. The saloon is snug but warm, and on the water the line never runs dry.",
-  "ja": "埠頭につながれた古いヨット。サロンは狭くても温もりが巡り、水の上では釣り糸が乾かない。"
- },
- "data.shelter.tugboat.limits": {
-  "ko": "💧 뱃전의 습기 — 청결이 매일 2 더 빨리 떨어짐",
-  "en": "💧 Deck damp — cleanliness drops 2 faster each day",
-  "ja": "💧 船べりの湿気 — 清潔が毎日2多く下がる"
- },
- "data.shelter.tugboat.name": {
-  "ko": "요트",
-  "en": "Yacht",
-  "ja": "ヨット"
- },
- "data.shelter.tugboat.perk.label": {
-  "ko": "🎣 물 위의 거처 — 매일 음식 +1 (얼음낚시 가능)",
-  "en": "🎣 Home on the water — food +1 daily (ice fishing available)",
-  "ja": "🎣 水上のシェルター — 毎日食料 +1 (氷上釣り可能)"
- },
- "data.shelter.tugboat.perk.produceNote": {
-  "ko": "🎣 뱃전에서 물고기를 낚았습니다",
-  "en": "🎣 Caught a fish off the gunwale",
-  "ja": "🎣 船べりで魚を釣りました"
- },
- "data.shelter.tugboat.upkeep.label": {
-  "ko": "연료 1 / 2일 (엔진 예열)",
-  "en": "Fuel 1 / 2 days (engine warmup)",
-  "ja": "燃料 1 / 2日 (エンジン暖機)"
- },
- "data.sketch.aurora.desc": {
-  "ko": "초록 커튼이 산등성이 위로 천천히 흘렀다. 소리는 없었다.\n이렇게 조용한 것이 이렇게 넓을 수 있다는 게, 오늘은 위로가 됐다.",
-  "en": "A green curtain drifted slow above the ridgeline. There was no sound.\nThat something so quiet could be so vast — tonight, that was a comfort.",
-  "ja": "緑のカーテンが尾根の上をゆっくり流れていった。音はなかった。\nこんなに静かなものが、こんなに広くありえるということが、今日は慰めになった。"
- },
- "data.sketch.aurora.name": {
-  "ko": "오로라 스케치",
-  "en": "Aurora Sketch",
-  "ja": "オーロラのスケッチ"
- },
- "data.sketch.comet.desc": {
-  "ko": "꼬리를 끌고 서쪽으로 낮게 지났다. 다음에 돌아올 땐 내가 없을 것이다.\n그래도 오늘 밤 그것을 본 사람이 하나는 있었다고, 적어둔다.",
-  "en": "It passed low to the west, dragging its tail. When it swings back, I won’t be here.\nStill — I write it down: tonight, at least one person saw it.",
-  "ja": "尾を引いて西へ低く過ぎていった。次に戻ってくるころ、私はもういないだろう。\nそれでも今夜、あれを見た者がひとりはいたと、書き残しておく。"
- },
- "data.sketch.comet.name": {
-  "ko": "혜성 스케치",
-  "en": "Comet Sketch",
-  "ja": "彗星のスケッチ"
- },
- "data.sketch.meteor.desc": {
-  "ko": "몇 개나 셌는지 모르겠다. 세다가 그만두고, 그냥 오래 서서 하늘을 봤다.\n떨어지는 것들에게도 소원을 빌 사람이 필요했을 텐데.",
-  "en": "I lost count of how many. I stopped counting and just stood a long while, watching.\nEven the falling ones must have wanted someone to wish on them.",
-  "ja": "いくつ数えたか分からない。数えるのをやめて、ただ長いこと立って空を見ていた。\n落ちていくものたちにも、願いをかけてくれる誰かが必要だっただろうに。"
- }
+  "data.memo.rsc9.name": {
+    "ko": "박사의 개인 노트",
+    "en": "The Doctor’s Personal Note",
+    "ja": "博士の個人ノート"
+  },
+  "data.memo.rst1.desc": {
+    "ko": "데스크 컴퓨터 화면이 아직 켜져 있다. 마지막 예약: 2박, 스위트, 두 사람.\n체크아웃란은 비어 있다. 그들은 끝내 내려가지 않았다.",
+    "en": "The front-desk screen still glows. Last booking: two nights, a suite, for two.\nThe check-out field is blank. They never went back down.",
+    "ja": "フロントのパソコンの画面が、まだ点いている。最後の予約:2泊、スイート、2名。\nチェックアウト欄は空白のまま。彼らは、ついに下りなかった。"
+  },
+  "data.memo.rst1.name": {
+    "ko": "프런트의 마지막 예약",
+    "en": "The Last Booking",
+    "ja": "フロントの最後の予約"
+  },
+  "data.memo.rst2.desc": {
+    "ko": "거치대에 스키 여남은 켤레가 그대로 꽂혀 있다. 이름표가 달린 것도 있다.\n마지막으로 슬로프를 탄 사람이 누구였는지, 이제 알 길이 없다.",
+    "en": "A dozen pairs of skis still stand in the rack, some with name tags.\nWho last rode the slope, there’s no way to know now.",
+    "ja": "ラックにスキー板が十数組、そのまま挿さっている。名札が付いたものもある。\n最後にゲレンデを滑ったのが誰だったのか、もう知るすべはない。"
+  },
+  "data.memo.rst2.name": {
+    "ko": "눈에 묻힌 스키",
+    "en": "Skis Under the Snow",
+    "ja": "雪の下のスキー"
+  },
+  "data.memo.rst3.desc": {
+    "ko": "난롯가 방명록에 적힌 인사들. \"다시 오겠습니다.\" \"잊지 못할 겨울.\"\n마지막 장엔 다른 필체. \"여기 갇혔다. 그래도 따뜻하다.\"",
+    "en": "Greetings in the guestbook by the hearth. \"We’ll be back.\" \"An unforgettable winter.\"\nThe last page, another hand: \"Snowed in. Still — it’s warm here.\"",
+    "ja": "暖炉のそばの芳名録に並ぶ挨拶。「また来ます。」「忘れられない冬。」\n最後のページには、別の筆跡。「ここに閉じ込められた。それでも、暖かい。」"
+  },
+  "data.memo.rst3.name": {
+    "ko": "라운지의 방명록",
+    "en": "The Lounge Guestbook",
+    "ja": "ラウンジの芳名録"
+  },
+  "data.memo.rst4.desc": {
+    "ko": "승강장에 붙은 안내문. 폭설로 케이블카 운행을 중단합니다. 복구 시 재개.\n복구는 오지 않았다. 산은 그대로 사람들을 품었다.",
+    "en": "A notice at the platform: Cable car suspended due to heavy snow. Service resumes when restored.\nRestoration never came. The mountain kept its people as they were.",
+    "ja": "乗り場に貼られた案内。大雪のため、ロープウェイの運行を休止します。復旧次第、再開。\n復旧は来なかった。山はそのまま、人々を抱いた。"
+  },
+  "data.memo.rst4.name": {
+    "ko": "케이블카 운행 중지 안내",
+    "en": "Cable Car Suspended",
+    "ja": "ロープウェイ運休の案内"
+  },
+  "data.memo.rst5.desc": {
+    "ko": "작은 트리 하나가 창가에 서 있다. 전구는 꺼졌지만 장식은 그대로다.\n선물 하나가 아직 안 뜯긴 채, 그 아래 놓여 있다.",
+    "en": "A small tree stands by the window. The bulbs are dark, the ornaments intact.\nOne gift, still unopened, waits beneath it.",
+    "ja": "小さなツリーが窓辺に立っている。電飾は消えたが、飾りはそのままだ。\nプレゼントがひとつ、開けられないまま、その下に置かれている。"
+  },
+  "data.memo.rst5.name": {
+    "ko": "객실의 크리스마스 트리",
+    "en": "A Room’s Christmas Tree",
+    "ja": "客室のクリスマスツリー"
+  },
+  "data.memo.rst6.desc": {
+    "ko": "오전반 다섯 명, 오후반 취소. 눈이 너무 많이 온다.\n마지막 줄: 손님들을 라운지로 모았다. 내려갈 길이 막혔다. 겁주지 말자.",
+    "en": "Morning class of five, afternoon cancelled. Too much snow.\nLast line: Gathered the guests in the lounge. The way down is closed. Don’t frighten them.",
+    "ja": "午前の組は五名、午後の組は中止。雪が多すぎる。\n最後の行:客をラウンジに集めた。下りる道は塞がれた。怖がらせないようにしよう。"
+  },
+  "data.memo.rst6.name": {
+    "ko": "스키 강사의 수첩",
+    "en": "The Ski Instructor’s Notebook",
+    "ja": "スキー講師の手帳"
+  },
+  "data.memo.rst7.desc": {
+    "ko": "노천탕 옆에 개켜진 수건이 아직 쌓여 있다. 김은 오래전에 걷혔다.\n누군가는 여기서, 세상이 끝나는 걸 따뜻한 물속에서 지켜봤을 것이다.",
+    "en": "Folded towels still stack beside the open-air bath. The steam lifted long ago.\nSomeone, maybe, watched the world end from the warm water here.",
+    "ja": "露天風呂のそばに、畳まれたタオルがまだ積まれている。湯気はとうの昔に消えた。\n誰かはここで、世界が終わるのを温かい湯の中から見ていたのだろう。"
+  },
+  "data.memo.rst7.name": {
+    "ko": "온천 옆 수건 바구니",
+    "en": "Towel Basket by the Spring",
+    "ja": "温泉のタオル籠"
+  },
+  "data.memo.rst8.desc": {
+    "ko": "동전 넣는 유료 망원경이 계곡을 향해 있다. 마지막으로 넣은 동전이 아직 걸려 있다.\n무엇을 보려 했을까. 아래 도시엔 이제 불빛이 없다.",
+    "en": "A coin-op telescope points down the valley, the last coin still lodged in it.\nWhat did they hope to see? There are no lights in the city below now.",
+    "ja": "コイン式の望遠鏡が、谷の方を向いている。最後に入れた硬貨が、まだ中で引っかかっている。\n何を見ようとしたのだろう。眼下の街には、もう灯りがない。"
+  },
+  "data.memo.rst8.name": {
+    "ko": "전망대의 망원경",
+    "en": "The Overlook Telescope",
+    "ja": "展望台の望遠鏡"
+  },
+  "data.memo.shp1.desc": {
+    "ko": "잠긴 철문에 못으로 박아둔 쪽지. \"아래층엔 물이 찼다. 펌프로는 못 당한다. 문은 잠갔다.\"\n갑판 위 판잣집은 그 사람이 지었을 것이다. 차라리 이쪽이 아늑하다.",
+    "en": "A note nailed to the locked steel door. \"The lower decks are flooded. The pump can’t keep up. I’ve locked the door.\"\nThe shanty on the deck must have been theirs. Honestly, it’s snugger out here.",
+    "ja": "施錠された鉄の扉に、釘で打ち付けられたメモ。「下の階は水に浸かった。ポンプでは追いつかない。扉は施錠した。」\n甲板の上の掘っ立て小屋は、その人が建てたのだろう。むしろこっちの方が居心地がいい。"
+  },
+  "data.memo.shp1.name": {
+    "ko": "선실 철문의 쪽지",
+    "en": "Note on the Cabin Door",
+    "ja": "船室の鉄扉のメモ"
+  },
+  "data.memo.slum1.desc": {
+    "ko": "이름 옆에 체크. 절반쯤에서 펜이 멈췄다. 그 아래는 줄만 그어져 있다.\n명단에 없는 사람은 받지 못했다.",
+    "en": "Checkmarks beside names. The pen stops halfway. Below, only ruled lines.\nThose not on the list got nothing.",
+    "ja": "名前の横にチェック。半分ほどでペンは止まっている。その下は、罫線だけだ。\n名簿にない者は、受け取れなかった。"
+  },
+  "data.memo.slum1.name": {
+    "ko": "배급 명단",
+    "en": "Ration List",
+    "ja": "配給名簿"
+  },
+  "data.memo.slum2.desc": {
+    "ko": "\"우리는 명단에 없었다.\"\n페인트가 흘러내린 채 굳었다.",
+    "en": "\"We were not on the list.\"\nThe paint ran and set that way.",
+    "ja": "「俺たちは名簿に載っていなかった。」\nペンキは流れ落ちたまま、固まっている。"
+  },
+  "data.memo.slum2.name": {
+    "ko": "판자벽 낙서",
+    "en": "Scrawl on the Plank Wall",
+    "ja": "板壁の落書き"
+  },
+  "data.memo.slum3.desc": {
+    "ko": "진짜와 똑같이 인쇄된 배급표. 뒷면에 손글씨. \"이거 열 장에 물 한 통. 속는 셈 치고.\"\n결국 아무 데서도 통하지 않았다.",
+    "en": "A ration coupon printed to look real. On the back: \"Ten of these for a jug of water. Worth a shot.\"\nIn the end they were good nowhere.",
+    "ja": "本物そっくりに刷られた配給券。裏に手書きの文字。「これ十枚で水一本。騙されたと思って。」\n結局、どこでも通用しなかった。"
+  },
+  "data.memo.slum3.name": {
+    "ko": "가짜 배급표",
+    "en": "Forged Ration Coupon",
+    "ja": "偽の配給券"
+  },
+  "data.memo.slum4.desc": {
+    "ko": "크레용으로 그린 집과 사람 넷. 그 위에 회색으로 온통 덧칠했다.\n한 귀퉁이에 삐뚤빼뚤. \"우리 집.\"",
+    "en": "A house and four people in crayon, painted over all in grey.\nIn one corner, uneven letters: \"Our home.\"",
+    "ja": "クレヨンで描かれた、家と四人の人。その上から、灰色で一面に塗りつぶされている。\n隅っこに、たどたどしい字で。「ぼくたちのおうち。」"
+  },
+  "data.memo.slum4.name": {
+    "ko": "아이의 그림",
+    "en": "A Child’s Drawing",
+    "ja": "子どもの絵"
+  },
+  "data.memo.slum5.desc": {
+    "ko": "해당 구역은 지원 대상에서 제외되었습니다. 자력으로 이동하십시오.\n어디로 가라는 말은 없었다.",
+    "en": "This zone is excluded from assistance. Relocate by your own means.\nIt never said where to go.",
+    "ja": "当該区域は支援対象から除外されました。自力で移動してください。\nどこへ行けとは、書かれていなかった。"
+  },
+  "data.memo.slum5.name": {
+    "ko": "대피령 벽보",
+    "en": "Evacuation Notice",
+    "ja": "避難命令の貼り紙"
+  },
+  "data.memo.slum6.desc": {
+    "ko": "한 집에 하루 한 통. 순서 지킬 것. 싸우지 말 것.\n맨 아래 다른 글씨. \"우물 말랐음. 미안.\"",
+    "en": "One jug per household a day. Keep the order. No fighting.\nIn a different hand at the bottom: \"Well’s dry. Sorry.\"",
+    "ja": "一世帯、一日ひと桶。順番を守ること。争わないこと。\n一番下に、別の筆跡。「井戸、涸れた。すまない。」"
+  },
+  "data.memo.slum6.name": {
+    "ko": "공동 우물의 규칙",
+    "en": "Rules of the Shared Well",
+    "ja": "共同井戸の決まり"
+  },
+  "data.memo.slum7.desc": {
+    "ko": "골목 끝에 개켜진 담요 한 장과 빈 그릇. 누군가 여기 오래 앉아 있었다.\n일어나 어디로 갔는지는 아무도 모른다.",
+    "en": "A folded blanket and an empty bowl at the alley’s end. Someone sat here a long while.\nWhere they rose and went, no one knows.",
+    "ja": "路地の突き当たりに、畳まれた毛布一枚と空の器。誰かがここに、長く座っていた。\n立ち上がってどこへ行ったのかは、誰も知らない。"
+  },
+  "data.memo.slum7.name": {
+    "ko": "남겨진 담요",
+    "en": "The Left-Behind Blanket",
+    "ja": "残された毛布"
+  },
+  "data.memo.stair1.desc": {
+    "ko": "이 통로는 어디로 이어질까. 군화 자국은 아래로만 나 있다.",
+    "en": "Where does this passage lead? The boot prints go only downward.",
+    "ja": "この通路はどこへ続くのだろう。軍靴の跡は、下へ向かってだけ残っている。"
+  },
+  "data.memo.stair1.name": {
+    "ko": "계단참의 낙서",
+    "en": "Scrawl on the Landing",
+    "ja": "踊り場の落書き"
+  },
+  "data.memo.sub1.desc": {
+    "ko": "열차 운행이 전면 중단되었습니다. 승강장에서 대기하지 마시고 지상 대피소로 이동하십시오.\n같은 방송이 반복되다, 어느 순간 뚝 끊겼다.",
+    "en": "All train service has stopped. Do not wait on the platform — proceed to a surface shelter.\nThe same message looped, then cut off mid-sentence.",
+    "ja": "列車の運行は全面的に停止しました。ホームで待機せず、地上の避難所へ移動してください。\n同じ放送が繰り返され、ある瞬間、ぷつりと途切れた。"
+  },
+  "data.memo.sub1.name": {
+    "ko": "승강장 안내 방송문",
+    "en": "Platform Announcement",
+    "ja": "ホームの案内放送"
+  },
+  "data.memo.sub2.desc": {
+    "ko": "개찰구 셔터 앞에 분필로 그은 줄, 번호가 삼백을 넘는다.\n맨 끝 번호 옆에 작게. \"여기까지. 안은 다 찼다.\"",
+    "en": "Chalk numbers queued before the gate shutter, past three hundred.\nBy the last number, small: \"This far. Inside is full.\"",
+    "ja": "改札のシャッター前にチョークで引かれた行列、番号は三百を超えている。\n最後の番号の横に小さく。「ここまで。中はもう満杯だ。」"
+  },
+  "data.memo.sub2.name": {
+    "ko": "셔터 앞의 줄",
+    "en": "The Line at the Shutter",
+    "ja": "シャッター前の列"
+  },
+  "data.memo.sub3.desc": {
+    "ko": "선로 자갈 위에 빈 유모차 하나가 모로 넘어져 있다. 담요는 아직 개켜진 채다.\n왜 여기 두고 갔는지는, 아무도 적어두지 않았다.",
+    "en": "An empty pram lies on its side in the track gravel. The blanket is still folded.\nWhy it was left here, no one wrote down.",
+    "ja": "線路の砕石の上に、空のベビーカーが一台、横倒しになっている。毛布はまだ畳まれたままだ。\nなぜここに置いていったのかは、誰も書き残していない。"
+  },
+  "data.memo.sub3.name": {
+    "ko": "궤도 위의 유모차",
+    "en": "A Pram on the Tracks",
+    "ja": "線路の上のベビーカー"
+  },
+  "data.memo.sub4.desc": {
+    "ko": "벽에 붙은 시각표에 누군가 빨간 펜으로 한 줄만 크게 동그라미 쳤다. 막차 23:40.\n그 밑에. \"이걸 놓치면 걸어서 내려와라.\"",
+    "en": "On the wall timetable, one line is circled hard in red pen: last train, 23:40.\nBeneath it: \"Miss this and walk down.\"",
+    "ja": "壁に貼られた時刻表に、誰かが赤ペンで一行だけ、大きく丸をつけていた。終電 23:40。\nその下に。「これを逃したら、歩いて下りてこい。」"
+  },
+  "data.memo.sub4.name": {
+    "ko": "마지막 열차 시각표",
+    "en": "Last Train Timetable",
+    "ja": "最終列車の時刻表"
+  },
+  "data.memo.sub5.desc": {
+    "ko": "먼지 앉은 승강장 끝, 발자국이 어둠 속 터널로 줄지어 이어진다. 돌아 나온 자국은 없다.\n그들이 지하에서 무엇을 찾으려 했는지, 나는 이제 조금 알 것 같다.",
+    "en": "At the dusty platform’s end, footprints file into the dark of the tunnel. None come back.\nWhat they hoped to find underground — I think I’m beginning to understand.",
+    "ja": "埃の積もったホームの端、足跡が闇のトンネルへと列をなして続いている。引き返した跡はない。\n彼らが地下で何を探そうとしていたのか、今なら少し分かる気がする。"
+  },
+  "data.memo.sub5.name": {
+    "ko": "터널로 이어진 발자국",
+    "en": "Footprints into the Tunnel",
+    "ja": "トンネルへ続く足跡"
+  },
+  "data.outfit.charcoal.name": {
+    "ko": "차콜 코트",
+    "en": "Charcoal Coat",
+    "ja": "チャコールコート"
+  },
+  "data.outfit.cream.name": {
+    "ko": "크림 파카",
+    "en": "Cream Parka",
+    "ja": "クリームパーカ"
+  },
+  "data.outfit.customsvest.name": {
+    "ko": "세관 우비",
+    "en": "Customs Slicker",
+    "ja": "税関のレインコート"
+  },
+  "data.outfit.default.name": {
+    "ko": "방한 코트",
+    "en": "Winter Coat",
+    "ja": "防寒コート"
+  },
+  "data.outfit.forest.name": {
+    "ko": "숲 파카",
+    "en": "Forest Parka",
+    "ja": "フォレストパーカ"
+  },
+  "data.outfit.hoodie.name": {
+    "ko": "잿빛 후드티",
+    "en": "Ash Hoodie",
+    "ja": "灰色のパーカー"
+  },
+  "data.outfit.navy.name": {
+    "ko": "네이비 코트",
+    "en": "Navy Coat",
+    "ja": "ネイビーコート"
+  },
+  "data.outfit.poncho.name": {
+    "ko": "모래 판초",
+    "en": "Sand Poncho",
+    "ja": "砂色のポンチョ"
+  },
+  "data.outfit.puffer.name": {
+    "ko": "벽돌색 패딩",
+    "en": "Brick Puffer",
+    "ja": "レンガ色のダウン"
+  },
+  "data.outfit.riggerjacket.name": {
+    "ko": "정비공 재킷",
+    "en": "Rigger Jacket",
+    "ja": "整備工ジャケット"
+  },
+  "data.outfit.stationcoat.name": {
+    "ko": "역무원 코트",
+    "en": "Stationmaster Coat",
+    "ja": "駅員コート"
+  },
+  "data.outfit.towncoat.name": {
+    "ko": "마천루 롱코트",
+    "en": "Skyline Longcoat",
+    "ja": "摩天楼ロングコート"
+  },
+  "data.outfit.vest.name": {
+    "ko": "올리브 조끼",
+    "en": "Olive Vest",
+    "ja": "オリーブのベスト"
+  },
+  "data.outfit.wine.name": {
+    "ko": "와인 코트",
+    "en": "Wine Coat",
+    "ja": "ワインコート"
+  },
+  "data.paintfam.ashgray.name": {
+    "ko": "재 그레이",
+    "en": "Ash Gray",
+    "ja": "アッシュグレー"
+  },
+  "data.paintfam.charcoal.name": {
+    "ko": "목탄",
+    "en": "Charcoal",
+    "ja": "木炭"
+  },
+  "data.paintfam.lavender.name": {
+    "ko": "라벤더",
+    "en": "Lavender",
+    "ja": "ラベンダー"
+  },
+  "data.paintfam.mustard.name": {
+    "ko": "머스터드",
+    "en": "Mustard",
+    "ja": "マスタード"
+  },
+  "data.paintfam.oakStain.name": {
+    "ko": "오크 스테인",
+    "en": "Oak Stain",
+    "ja": "オークステイン"
+  },
+  "data.paintfam.olive.name": {
+    "ko": "올리브",
+    "en": "Olive Drab",
+    "ja": "オリーブ"
+  },
+  "data.paintfam.redOxide.name": {
+    "ko": "방청 레드",
+    "en": "Red Oxide",
+    "ja": "防錆レッド"
+  },
+  "data.paintfam.sage.name": {
+    "ko": "세이지",
+    "en": "Sage",
+    "ja": "セージ"
+  },
+  "data.paintfam.slateBlue.name": {
+    "ko": "슬레이트 블루",
+    "en": "Slate Blue",
+    "ja": "スレートブルー"
+  },
+  "data.paintfam.terracotta.name": {
+    "ko": "테라코타",
+    "en": "Terracotta",
+    "ja": "テラコッタ"
+  },
+  "data.paintfam.walnutStain.name": {
+    "ko": "월넛 스테인",
+    "en": "Walnut Stain",
+    "ja": "ウォルナットステイン"
+  },
+  "data.paintfam.whitewash.name": {
+    "ko": "화이트워시",
+    "en": "Whitewash",
+    "ja": "ホワイトウォッシュ"
+  },
+  "data.paintrare.neonPigment.name": {
+    "ko": "네온 안료",
+    "en": "Neon Pigment",
+    "ja": "ネオン顔料"
+  },
+  "data.prep.bottle.eff": {
+    "ko": "갈증 절반 · 회복 가속",
+    "en": "Thirst -50% · quick heal",
+    "ja": "渇き半減 · 回復加速"
+  },
+  "data.prep.bottle.name": {
+    "ko": "물병",
+    "en": "Bottle",
+    "ja": "水筒"
+  },
+  "data.prep.canned.eff": {
+    "ko": "공업/슬럼 +5%p",
+    "en": "Ind/slum +5%p",
+    "ja": "工業/スラム+5%p"
+  },
+  "data.prep.canned.name": {
+    "ko": "통조림",
+    "en": "Canned Food",
+    "ja": "缶詰"
+  },
+  "data.prep.firstaid.eff": {
+    "ko": "깊은 상처 완화",
+    "en": "Deep wound → minor",
+    "ja": "深い傷→軽傷"
+  },
+  "data.prep.firstaid.name": {
+    "ko": "응급키트",
+    "en": "Medkit",
+    "ja": "救急キット"
+  },
+  "data.prep.flashlight.eff": {
+    "ko": "상업/슬럼 +10%p",
+    "en": "Com/slum +10%p",
+    "ja": "商業/スラム+10%p"
+  },
+  "data.prep.flashlight.name": {
+    "ko": "손전등",
+    "en": "Flashlight",
+    "ja": "懐中電灯"
+  },
+  "data.prep.gloves.eff": {
+    "ko": "부상 -30%",
+    "en": "Injury -30%",
+    "ja": "負傷 -30%"
+  },
+  "data.prep.gloves.name": {
+    "ko": "장갑",
+    "en": "Gloves",
+    "ja": "手袋"
+  },
+  "data.prep.raincoat.eff": {
+    "ko": "날씨 페널티 -70%",
+    "en": "Weather -70%",
+    "ja": "悪天候 -70%"
+  },
+  "data.prep.raincoat.name": {
+    "ko": "우의",
+    "en": "Raincoat",
+    "ja": "レインコート"
+  },
+  "data.region.checkpoint.desc": {
+    "ko": "봉쇄선의 첫 관문 · 부품·건축재 (방호복 필수)",
+    "en": "The first gate of the cordon · parts, material (hazmat required)",
+    "ja": "封鎖線の最初の関門 · 部品・建材 (防護服必須)"
+  }
 }

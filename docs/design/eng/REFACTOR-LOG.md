@@ -136,3 +136,21 @@ tests/            ← [신설] 회귀 그물: harness.cjs(오프스크린 Electr
 ```
 
 그물 확장: 새 순수 모듈을 추출할 때마다 그 모듈의 유닛 테스트를 `tests/`에 추가하면, 점차 "오프스크린 Electron 특성화"에서 "플레인 Node 유닛테스트(빠름)"로 옮겨갈 수 있다.
+
+## P1 — 렌더 컨텍스트 객체 (2026-07-23 · refactor-render-ctx)
+
+- ✅ **renderCtx Parameter Object** — 흩어진 렌더 모드 플래그 9개(`_golden`·`_goldenT`·`_goldenHid`·`_goldenDt`·`_goldenAcc`·`_goldenKeep`·`_goldenSeed`·`_goldenS`·`_cine`)를 단일 객체로 수렴. `renderFrame(ctx = renderCtx)` + 서두에서 `ctx.dt/ctx.t` 확정 기록(프레임 시간 SSOT). 외부 API(freezeForGolden/stepGolden/cineOn·cineOff — 골든 러너·트레일러 하네스 소비자)는 시그니처·거동 불변.
+- ✅ **GOLDEN_HIDE 선언 목록** — 골든 동결이 숨기는 동적 요소 6종(cat·wildlife·avatar·weatherParticles·wetOverlays·dust)을 이름+사유+once 여부로 1곳에. 신규 동적 요소는 여기 한 줄 추가가 규약 — "무엇이 숨겨지는가"의 누락을 눈으로 점검 가능(#212 계열 관문).
+- ✅ **산발 게이트 술어화** — bakeWaterReflection·tickBalconyHint의 `_golden` 리터럴 참조 → `isGoldenFrozen()`.
+- **각색 판단**: 가이드의 `mode:'live'|'golden'|'cine'` 단일 enum 대신 **직교 2축**(`frozen`×`cam`) — 트레일러 캡처가 freeze(keepEntities)+cineOn을 동시에 쓰는 실체를 따름. `applyTimeLighting(scene,ctx)` 인자화(D1 잔류)는 **보류**: 실측 결과 렌더 모드 플래그를 전혀 참조하지 않는 게임 시각 함수라 ctx 인자화의 이득이 없음(§5 과설계 방지).
+- **무손실 증명**: 배터리 102/102 · 골든 19장 **재고정 없이 0.000%**(4회 중 그린 3, 2연속 그린 충족) · 모달 DOM 7/7 · 외부 API 4종+keepEntities 스테핑 실주행 무에러(probe-renderctx).
+- **#212 lodge 판정(정직 기록)**: 리팩터 후에도 동일 수치(3.43%/6%)로 간헐 재현 — **숨김 누락이 원인이 아님**이 확정됨. 항상 같은 diff 크기 = 특정 요소의 이항 토글 패턴. GOLDEN_HIDE 관문은 마련됐고, lodge 원인 규명은 별도 조사(골든 결정론 후속)로 이관.
+- 지표: 모듈 let 92→**88** · `_golden` 코드 참조 22→**0**(주석 표기 9 잔존).
+
+## P2 — 매직 넘버 → BAL 외부화 1차 (2026-07-23 · refactor-p2-balance)
+
+- ✅ **게이지 심각도 임계 단일 출처** — `BAL.gauges.sev = { crit:25, warn:50 }` 신설(기존 gauges 블록 안에 병합). `gaugeSev`(HUD 색·도크 LED·PDA 바)와 `comfort.js` 부상·허기 페널티 게이트(구 리터럴 25)가 같은 상수를 읽는다 — 가이드가 지목한 "같은 개념·별개 리터럴" 드리프트 봉합. 비교 연산자(<= vs <)는 각자 유지(거동 불변).
+- ✅ **탐험 소모 리터럴 이원화 봉합** — `departExpedition`(실경로)의 4/5/3/20/20 리터럴을 기왕의 `BAL.exp.hungerCost/thirstCost/energyCost/minEnergy`로 배선(+`thirstCostBottle:3` 신설). sim(_simDaysInner)만 BAL을 읽고 실경로는 리터럴이던 구조 — 한쪽만 바뀌는 사고 원천 차단.
+- ✅ **청소 비용 외부화** — `BAL.clean = { minEnergy:10, energyCost:5 }` (구 cleanShelter 리터럴).
+- **⚠️ 사고·검거 기록(재발 방지)**: `BAL.gauges`를 하위에 중복 선언 → JS 객체 리터럴 중복 키는 **뒤가 앞을 덮어** 감쇠 수치(hungerPerMin 등)가 통째 증발 → 소크 hard 161/182→157/243 변동. **diff-0 검증이 정확히 검거** — 상위 키 신설 전 중복 grep이 규약(§3-1 중복 키 함정의 BAL판). comfort.js BAL import도 중복 추가(16행에 기존) → 빌드 에러로 즉검.
+- **무손실 증명**: 소크 diff-0(hard 161/182 · hardcore 147/65 — #90 재오디트 원본과 동일) · 배터리 102/102 · 골든 19장 0.000% · check-hardcode 후보 26→**19**(베이스라인 재고정).

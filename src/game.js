@@ -61,7 +61,7 @@ import { districtOf, cityOf, rateParts, expActualRate, setExpeditionWeather, mas
 import { districtRegionOf, projectAvailable, projectRec, projectDone, projectSiteStage } from './core/projects.js'; // 프로젝트 술어 (Tier3)
 import { eventMatches, eventWeight, eventThreePeatBlocked, pushEvHistory, setEncounterEvents } from './core/encounter.js'; // 인카운터 술어 (Tier3)
 import { regionUnlocked, isForbiddenRegion, subwayReaches, blizzardBlocks, pickAutoRegion, setRegionsWeather, setRegionsAutoAvoid, falloutCleared, regionReachable, regionCityOf, setRegionsDemo } from './core/regions.js'; // 지역 게이트+자동선택 (Tier3) + 낙진 시계(2.0) + 도시 필터(2.0-b) + 도시뷰(2.0-f) + 데모 게이트
-import { initVignettes, playVignette, playGeigerVignette, playEastGateVignette, playJungleSunVignette, playGoldenGateVignette, buildGoldenGateScene, showDiscoveryVignette, vignetteBusy, claimVignette, releaseVignette } from './render/vignettes.js'; // 시네마틱 비네트 (Tier5·6a — 발견 컷 포함)
+import { initVignettes, playVignette, playGeigerVignette, playEastGateVignette, playJungleSunVignette, playGoldenGateVignette, buildGoldenGateScene, buildJungleSunScene, showDiscoveryVignette, vignetteBusy, claimVignette, releaseVignette } from './render/vignettes.js'; // 시네마틱 비네트 (Tier5·6a — 발견 컷 포함 + 컷씬 타임랩스 하네스)
 initVignettes({ addMoodBuff, jackpotToast, scheduleSave, gameHour, disposeDeep }); // 함수 선언 호이스팅 전제 — 게임 측 헬퍼 단방향 주입
 import { initNotebook, openJournalPages, openHelpModal, showMemoPage, showSketchPage, showTruthPage } from './ui/notebook.js'; // 수첩 페이지 (Tier7)
 // setJournalOpen: journalOpen(let, 아래 선언)은 렌더 루프 게이트 14곳이 읽는 잔류 전역 — 클로저는 호출 시점 참조라 TDZ 무관.
@@ -228,9 +228,29 @@ const camPanApplied = { x: 0, z: 0 };
 
 // ── 시네마틱 원근 카메라 (스토리 트레일러 전용 — 게임은 텍스트/UI 기반이라 연출 컷을 직접 렌더한다).
 //   실제 씬(옥탑·라디오·눈·스카이라인)을 오쏘가 아닌 원근으로 날며 진짜 시네마 무빙(푸시인·달리·룩앳)을 낸다.
-//   프로덕션 무해: _cine=false면 렌더 경로는 기존 오쏘와 100% 동일(플래그가 꺼진 채 부팅). __shelter.cine* 로만 켠다.
+//   프로덕션 무해: cam='ortho'면 렌더 경로는 기존 오쏘와 100% 동일(꺼진 채 부팅). __shelter.cine* 로만 켠다.
 const cineCam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.05, 400);
-let _cine = false;
+
+/* ── P1 렌더 컨텍스트 (REFACTOR-GUIDE §3-P1: Parameter Object) ──
+   흩어져 있던 렌더 모드 플래그(_golden 계열 8개 let + _cine)를 단일 객체로 수렴 — 어떤 함수가
+   어떤 모드에 의존하는지 renderCtx 참조로 가시화한다. 단일 인스턴스 재사용(핫패스 할당 회피).
+   · frozen / cam 은 직교 2축: 트레일러 캡처가 freeze(keepEntities)+cineOn을 동시에 쓰므로
+     'live|golden|cine' 단일 enum은 실체와 어긋난다(가이드의 mode 제안을 실측으로 각색).
+   · 외부 API(freezeForGolden/stepGolden/cineOn·cineOff — 골든 러너·트레일러 하네스가 호출)는
+     시그니처·거동 불변, 내부 구현만 이 객체를 조작한다. */
+const renderCtx = {
+  frozen: false,        // 골든 동결(구 _golden): 시드 고정 + dt=0 정지 + 동적 요소 숨김
+  cam: 'ortho',         // 'ortho' | 'cine' (구 _cine): renderFrame의 카메라 선택
+  dt: 0, t: 0,          // 이번 프레임 확정값 — renderFrame 서두에서 기록(프레임 시간의 SSOT)
+  goldenT: 5.0,         // 골든 기준 시각(고정 — 구 _goldenT)
+  goldenDt: 0,          // 동역학 스테핑 중에만 >0 (구 _goldenDt)
+  goldenAcc: 0,         // 결정론 누적 시간 (구 _goldenAcc)
+  keepEntities: false,  // 트레일러: 엔티티 살린 채 고정 dt 스테핑 (구 _goldenKeep)
+  seed: 12345,          // LCG 시드 (구 _goldenSeed)
+  lcgS: 12345,          // LCG 진행 상태 (구 _goldenS — #212: 언제든 시드로 되감기 가능해야 결정론)
+  hidApplied: false,    // once 성 숨김(고양이 despawn)의 1회 적용 플래그 (구 _goldenHid)
+};
+const isGoldenFrozen = () => renderCtx.frozen; // 산발 게이트용 술어 — 리터럴 플래그 접근 금지, 의미로 읽는다
 
 // ④ 고양이 클로즈업 카메라 — 비배치 모드에서 고양이 탭 시 얼굴로 글라이드. 드래그/ESC/빈곳 탭으로 복원.
 //   활성 중엔 카메라 타겟을 고양이(눈높이 살짝 위)로 옮기고 거리/줌/앙각을 클로즈업 프로필로 보간(지연 추적).
@@ -932,7 +952,7 @@ function comfortBreakdown() {
   // 청결
   if (cd.cleanMod) logs.clean.push({ name: t('comfort.log.cleanState', { n: Math.round(cd.clean) }), v: `${cd.cleanMod > 0 ? '+' : ''}${cd.cleanMod}` });
   // 안정감
-  logs.security.push({ name: t('comfort.log.base'), v: '+18' });
+  logs.security.push({ name: t('comfort.log.base'), v: '+' + BAL.comfort.baseSecurity }); // P2: comfort.js 점수식과 동일 상수 — 표시가 실값을 따라간다
   if (cd.shelterMod) logs.security.push({ name: t('comfort.log.shelter'), v: `+${cd.shelterMod}` });
   if (cd.settled) logs.security.push({ name: t('comfort.log.settled', { n: cd.settled }), v: `+${cd.settled}` });
   if (cd.injuryMod) logs.security.push({ name: t('comfort.log.injury'), v: `${cd.injuryMod}` });
@@ -1443,6 +1463,10 @@ const SHELTERS = {
   bridgehouse: {
     ...SHELTER_META.bridgehouse, // build 함수 → render/shelters.js
     ..._shelterBuilders.bridgehouse,
+    // #146 「불타는 해협」 지역 결선(디렉터 2026-07-23: "다리 보이는 맵에서 노을 질 때 다리쪽 클릭").
+    //   무너진 현수교 실루엣의 히트 평면 — shelters.js bridgehouse env의 BZ2=-22·주탑 x[-18,14]·데크 y=-1과 정합.
+    //   z는 다리 앞면(BZ2+1), x/y는 주탑 바깥 케이블 늘어짐까지 여유.
+    bridgeSight: { z: -21, x0: -26, x1: 20, y0: -7, y1: 19 },
   },
 
   /* ── 2.0 동부 「대도시」 셸터 3: 역 대합실 (§6.0.5 — 신광+빛 웅덩이의 나무, TLOU 아트리움) ── */
@@ -2335,6 +2359,7 @@ function buildItemGroup(item) {
     const sc = Math.max(0.85, def.light.dist * 0.16);
     sp.scale.set(sc, sc, 1);
     sp.position.set(_lx, _ly, 0); // #196: 헤일로도 티어 앵커 공유
+    sp.raycast = () => {}; // #228②: 헤일로가 픽킹 히트를 넓힘(가구 밖 클릭=선택 오발) — 장식 잎과 동일 처방
     g.add(sp);
     item.glowSprite = sp;
     item.glowBase = 0.3;
@@ -2349,6 +2374,7 @@ function buildItemGroup(item) {
     pool.position.set(0, 0.025, 0);
     pool.scale.setScalar(Math.max(0.9, def.light.dist * 0.42));
     pool.renderOrder = 1; // 러그 등 얇은 바닥재 위에 확실히 얹히게
+    pool.raycast = () => {}; // #228②: 빛 웅덩이 원판(지름 수 유닛)이 히트 영역을 삼킴 — 시각 메시만 픽킹
     g.add(pool);
     item.lightPool = pool;
     if (item.gel) applyGel(item); // #189 P3: 재빌드(recolorItem·도색 등) 시 젤 색 유지 — 리그 완성 후 적용
@@ -2358,16 +2384,28 @@ function buildItemGroup(item) {
 }
 // #189 P3 조명 젤: 광원·헤일로·발광 메시를 도료 계열 색으로 틴트. item.gel=null이면 원색 복원.
 //   화기(불꽃)는 def.light.gelable이 없어 UI에서 걸러진다 — 이 함수는 값 적용만 담당.
-function applyGel(item) {
+// #228⑥: 도료 스와치는 화면용 톤이라 원색(웜 화이트 계열)보다 시감 휘도가 낮아 PointLight에 그대로
+//   곱하면 방이 침침해진다(디렉터 실기 신고). 색(hue·무드)은 스와치 그대로 두고 — 젤의 목적은 색감이다 —
+//   광원 강도(lightBase)를 시감 휘도비로 보상한다. flicker 루프가 lightBase 기준이라 매 프레임 덮여도 정합.
+//   (1차 시도였던 HSL 명도 승격은 무채 스와치(목탄)에서 시감 휘도를 못 따라가 실캡처 기각 — luma 보상으로 교체.)
+const _gelC = new THREE.Color();
+function gelBoost(swatchHex, baseHex) {
+  const luma = h => { _gelC.setHex(h); return 0.2126 * _gelC.r + 0.7152 * _gelC.g + 0.0722 * _gelC.b; };
+  const ls = luma(swatchHex), lb = luma(baseHex);
+  return ls > 0.02 ? Math.min(2.4, Math.max(1, lb / ls)) : 2.4; // 상한 2.4 — 극저휘도 스와치 폭주 방지
+}
+function applyGel(item, previewFam) {
   const def = DEFS[item.defId];
   if (!def?.light) return;
-  const hex = (item.gel && PAINT_ALL[item.gel]?.swatch != null) ? PAINT_ALL[item.gel].swatch : def.light.color;
-  if (item.lightObj) item.lightObj.color.setHex(hex);
+  const fam = previewFam !== undefined ? previewFam : (item.gel || null); // #228⑦: 미리보기 오버라이드
+  const hex = (fam && PAINT_ALL[fam]?.swatch != null) ? PAINT_ALL[fam].swatch : def.light.color;
+  item.lightBase = def.light.intensity * (fam ? gelBoost(hex, def.light.color) : 1); // 시감 휘도 보상(원색=1)
+  if (item.lightObj) { item.lightObj.color.setHex(hex); item.lightObj.intensity = item.lightBase; }
   if (item.glowSprite) item.glowSprite.material.color.setHex(hex);
   if (item.lightPool) item.lightPool.material.color.setHex(hex); // #189 P4: 바닥 풀도 함께 물든다
   for (const m of item.glowMeshes || []) {
     if (!m.material?.emissive) continue;
-    m.material.emissive.setHex(item.gel ? hex : m.userData.origEmissive);
+    m.material.emissive.setHex(fam ? hex : m.userData.origEmissive);
   }
 }
 function syncTransform(item) {
@@ -2388,7 +2426,20 @@ function addItem(defId, colorIdx, x, z, rot, on = true, y = 0, tier = 0) {
 // 조명 전원 (기획서 v0.2: 조명 ON/OFF + 일일 소비)
 // silent=false(사용자가 직접 토글할 때만)이면 촛불류(candle/lantern) 켜고 끌 때 성냥음 재생.
 // 연료 부족 자동 꺼짐(processDay)이나 배치/로드 시 초기화에서는 silent 기본값(true)이라 재생되지 않는다.
+// #228⑤: 전력원 술어 — 배터리 구동 설비(전기등·LED·가전)는 태양광 개조 또는 가동 중 발전기(연료 보유)가
+//   있어야 켤 수 있다(디렉터: "led등 같이 전기를 사용하는 건 태양열을 달아야지만"). 설치 자체는 허용(꾸미기
+//   자유·수거 없이 준비 가능) — 게이트는 '통전'이다. 배경화면 모드는 관전용이라 면제.
+function powerAvailable() {
+  return isWallpaper() || hasMod('solar')
+    || items.some(i2 => DEFS[i2.defId].appliance?.effect === 'power' && i2.on !== false && (state.res.fuel || 0) > 0);
+}
 function setItemPower(item, on, { silent = true } = {}) {
+  const fuel = DEFS[item.defId].light?.fuel || DEFS[item.defId].appliance?.fuel;
+  if (on && fuel === 'battery' && !powerAvailable()) {
+    item.on = false; // 전력원 없음 — 통전 거부(로드·재빌드 경로도 동일하게 소등돼 구세이브가 새 규칙에 수렴)
+    if (!silent) toast(t('power.needSource'), 'warn');
+    on = false;
+  }
   item.on = on;
   if (item.lightObj) item.lightObj.visible = on;
   if (item.glowSprite) item.glowSprite.visible = on;
@@ -2595,12 +2646,12 @@ function addDistantSmoke() {
 }
 
 // #2 물 반사(디렉터): 수변 셸터 수면에 하늘·스카이라인을 큐브맵으로 1회 베이크해 반사.
-//   실기(하드웨어 GPU)에서만 — _golden/lowSpec 제외. cam.update가 던져도 try/finally로 sea.visible 복원 +
+//   실기(하드웨어 GPU)에서만 — 골든 동결/lowSpec 제외. cam.update가 던져도 try/finally로 sea.visible 복원 +
 //   씬에서 CubeCamera 제거 보장(고아 카메라가 후속 렌더 오염 방지). 라이브 렌더 1회뿐이라 방치/배터리 무해.
 let _seaCubeRT = null;
 function bakeWaterReflection() {
   const sea = envDyn && envDyn.sea;
-  if (!sea || _golden || opts.lowSpec) return;
+  if (!sea || isGoldenFrozen() || opts.lowSpec) return;
   if (_seaCubeRT) { _seaCubeRT.dispose(); _seaCubeRT = null; }
   const rt = new THREE.WebGLCubeRenderTarget(128, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter });
   const cam = new THREE.CubeCamera(0.5, 1400, rt);
@@ -3528,7 +3579,7 @@ async function departExpedition(regionId, prep, opts2 = {}) {
   if (state.exp) return;
   // 준비 모달을 열어둔 사이 상태가 나빠졌을 수도 있다 — 출발 직전 재검사
   if (isExhausted()) { toast(t('toast.exhausted'), 'warn'); closeModal(); return; }
-  if (state.energy < 20) { toast(t('toast.tooTired'), 'warn'); closeModal(); return; }
+  if (state.energy < BAL.exp.minEnergy) { toast(t('toast.tooTired'), 'warn'); closeModal(); return; }
   // #199 5차-c(디렉터): 일일 상한 차단 폐지(출발 재검사도) — 과로 페널티(expFatigue)는 존치
   const r = REGIONS[regionId];
   const p = rateParts(regionId, prep);
@@ -3540,10 +3591,11 @@ async function departExpedition(regionId, prep, opts2 = {}) {
   const dur = expDuration(r) * 1000;
   // 탐험도 몸을 쓴다 (소모 절반으로 완화) + 에너지 소모
   const expMul = isHard() ? 1.5 : 1; // 하드: 탐험 게이지 소모 +50%
-  state.hunger = Math.max(0, state.hunger - 4 * expMul);
-  state.thirst = Math.max(0, state.thirst - (prep.includes('bottle') ? 3 : 5) * expMul);
-  state.energy = Math.max(0, state.energy - 20);
-  if (state.energy < 20) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
+  // P2: 소모량은 BAL.exp 단일 출처 — sim(_simDaysInner)과 실경로가 같은 상수를 읽는다(리터럴 이원화 봉합)
+  state.hunger = Math.max(0, state.hunger - BAL.exp.hungerCost * expMul);
+  state.thirst = Math.max(0, state.thirst - (prep.includes('bottle') ? BAL.exp.thirstCostBottle : BAL.exp.thirstCost) * expMul);
+  state.energy = Math.max(0, state.energy - BAL.exp.energyCost);
+  if (state.energy < BAL.exp.minEnergy) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
   // 성공률 버프/디버프는 이번 출발에 반영되어 소진 (물자 좌표 버프는 정산 시)
   if (state.buff?.exp) state.buff = null;
   // #94(디렉터): 출발 시각 기록 — 귀환 정산이 '대기 중 이미 흐른 게임 시간'을 차감해 이중 계산을 없앤다.
@@ -4849,36 +4901,36 @@ function hideEventChip() {
 ============================================================ */
 /* ── 거처 개조 (기지 커스터마이징: 빗물받이·텃밭·증축 등) ── */
 const SHELTER_MODS = {
-  raincatch:  { name: '빗물받이',    nameEn: 'Rain Catch',   emoji: '', cost: { material: 2, parts: 1 }, desc: '비/눈 오는 날 깨끗한 물 +1', descEn: 'Clean water +1 on rainy/snowy days', not: ['lighthouse'] },
-  garden:     { name: '텃밭 상자',   nameEn: 'Garden Box',   emoji: '', cost: { material: 2, water: 2 }, desc: '이틀에 한 번 음식 +1 (겨울 제외)', descEn: 'Food +1 every other day (except winter)', not: ['subway', 'rooftop'] },
+  raincatch:  { name: '빗물받이',    nameEn: 'Rain Catch',   emoji: '', cost: BAL.modCosts.raincatch, desc: '비/눈 오는 날 깨끗한 물 +1', descEn: 'Clean water +1 on rainy/snowy days', not: ['lighthouse'] },
+  garden:     { name: '텃밭 상자',   nameEn: 'Garden Box',   emoji: '', cost: BAL.modCosts.garden, desc: '이틀에 한 번 음식 +1 (겨울 제외)', descEn: 'Food +1 every other day (except winter)', not: ['subway', 'rooftop'] },
   // 옥상 텃밭 (#53) — rooftop 전용. 마당을 텃밭으로 개조. 매일 음식 생산(겨울 0), 옥탑 퍽 gardenMult로 2배.
   //   현재 텃밭은 rooftop 전용이라 퍽이 곧 정체성 — 다른 셸터로의 확장은 향후.
-  rooftopGarden: { name: '옥상 텃밭', nameEn: 'Rooftop Garden', emoji: '', cost: { material: 3, water: 2 }, desc: '마당을 텃밭으로 — 매일 음식 +2 (겨울 휴면)', descEn: 'Turn the yard into a garden — food +2 daily (dormant in winter)', only: ['rooftop'] },
+  rooftopGarden: { name: '옥상 텃밭', nameEn: 'Rooftop Garden', emoji: '', cost: BAL.modCosts.rooftopGarden, desc: '마당을 텃밭으로 — 매일 음식 +2 (겨울 휴면)', descEn: 'Turn the yard into a garden — food +2 daily (dormant in winter)', only: ['rooftop'] },
   // 1.2 버섯 재배칸 (subway 전용) — 어둠에서 자라는 식량. 옥탑 텃밭(볕/여름)의 대칭축(어둠/연중).
   //   매일 음식 +1(겨울 포함 연중), 이틀에 한 번 물 1 소모. 옥탑보다 산출 절반이되 계절을 타지 않는다.
-  mushroom: { name: '버섯 재배칸', nameEn: 'Mushroom Bed', emoji: '', cost: { material: 3, water: 3 }, desc: '어둠 속 균상 — 매일 음식 +1 (연중, 물 소모)', descEn: 'A mushroom bed in the dark — food +1 daily year-round (uses water)', only: ['subway'] },
-  insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '', cost: { cloth: 3, material: 2 }, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
-  shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
+  mushroom: { name: '버섯 재배칸', nameEn: 'Mushroom Bed', emoji: '', cost: BAL.modCosts.mushroom, desc: '어둠 속 균상 — 매일 음식 +1 (연중, 물 소모)', descEn: 'A mushroom bed in the dark — food +1 daily year-round (uses water)', only: ['subway'] },
+  insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '', cost: BAL.modCosts.insulation, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
+  shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '', cost: BAL.modCosts.shelf, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
   // #189 P2 지속 급전 승격: 설치 시 조명·가전 전력 무료 + 기존 발전(이틀 배터리 +1) 유지.
-  solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '', cost: { parts: 4, battery: 1 },  desc: '조명·가전 전력 무료 (지속 급전) · 이틀에 한 번 배터리 +1', descEn: 'Free power for lights & appliances (steady supply) · battery +1 every other day', not: ['subway'] },
+  solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '', cost: BAL.modCosts.solar,  desc: '조명·가전 전력 무료 (지속 급전) · 이틀에 한 번 배터리 +1', descEn: 'Free power for lights & appliances (steady supply) · battery +1 every other day', not: ['subway'] },
   // #189 P1 조명 설비 — 어둠(무비용·우울) ↔ 화기(연료·온기·흔들림) ↔ 전기조명(전력·안정) 밸런스 축의 세 번째 기둥.
   //   rebuild: 설치 즉시 loadShelter 재실행 → 천장 펜던트 소품+전등 점등. 전력은 processDay가 매일 배터리 1 소비.
-  lighting:   { name: '조명 설비',   nameEn: 'Electric Lighting', emoji: '', cost: { parts: 3, battery: 1 }, desc: '천장에 전등을 매단다 — 방이 밝아진다 (배터리 1/일, 발전기 가동 중엔 무료)', descEn: 'Hang an electric light from the ceiling — the room brightens (battery 1/day, free while the generator runs)', rebuild: true },
-  roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '', cost: { material: 4 },      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
-  extension:  { name: '증축',        nameEn: 'Extension',    emoji: '', cost: { material: 6, parts: 2 },  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
+  lighting:   { name: '조명 설비',   nameEn: 'Electric Lighting', emoji: '', cost: BAL.modCosts.lighting, desc: '천장에 전등을 매단다 — 방이 밝아진다 (배터리 1/일, 발전기 가동 중엔 무료)', descEn: 'Hang an electric light from the ceiling — the room brightens (battery 1/day, free while the generator runs)', rebuild: true },
+  roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '', cost: BAL.modCosts.roof,      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
+  extension:  { name: '증축',        nameEn: 'Extension',    emoji: '', cost: BAL.modCosts.extension,  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
   // 1.3 온천 (lodge 전용) — 고원 발견물을 개조로 개방. cozy의 정점: 쾌적 온기 대형 + 취침 에너지 회복 보너스.
   //   고양이/개가 온천 옆에서 조는 전용 포즈(연출은 아트 폴백 — addModProp 소품 + 절차 김 파티클).
-  onsen: { name: '온천', nameEn: 'Hot Spring', emoji: '', cost: { material: 4, parts: 2 }, desc: '고원의 온천을 끌어들여 — 쾌적함 대폭 + 취침 회복 보너스', descEn: 'Tap the highland hot spring — big comfort boost + restful sleep bonus', only: ['lodge'] },
+  onsen: { name: '온천', nameEn: 'Hot Spring', emoji: '', cost: BAL.modCosts.onsen, desc: '고원의 온천을 끌어들여 — 쾌적함 대폭 + 취침 회복 보너스', descEn: 'Tap the highland hot spring — big comfort boost + restful sleep bonus', only: ['lodge'] },
   // Phase B 개조 2단계 (비용 곡선 상향: 1단계의 2~2.5배)
-  insulationPlus: { name: '강화 단열재', nameEn: 'Reinforced Insulation', emoji: '', cost: { cloth: 7, material: 5, parts: 1 }, desc: '한파 방어 강화 (단열재 위에)', descEn: 'Stronger cold-snap defense (over insulation)', req: 'insulation' },
+  insulationPlus: { name: '강화 단열재', nameEn: 'Reinforced Insulation', emoji: '', cost: BAL.modCosts.insulationPlus, desc: '한파 방어 강화 (단열재 위에)', descEn: 'Stronger cold-snap defense (over insulation)', req: 'insulation' },
   // 2.0 동부 세관 (디렉터 2026-07-09: "shelter라고 하면 응당 안전해야 하니까") — buildRoom 지오 분기라 rebuild 플래그.
-  customsClear: { name: '선반 철거', nameEn: 'Clear the Shelves', emoji: '', cost: {}, desc: '압수품 선반을 뜯어낸다 — 벽이 비고, 내 것을 놓을 자리가 생긴다', descEn: 'Tear out the seizure shelves — the wall clears for things of your own', only: ['customs'], rebuild: true },
-  customsSeal: { name: '창구 봉쇄', nameEn: 'Seal the Booths', emoji: '', cost: { material: 3, cloth: 1 }, desc: '심사 창구를 판자로 막는다 — 외풍이 멎는다 (악천후 쾌적 하락 해소)', descEn: 'Board up the inspection booths — the draft stops (no comfort loss in bad weather)', only: ['customs'], rebuild: true },
-  terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '', cost: { material: 4, cloth: 1 }, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
-  bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
+  customsClear: { name: '선반 철거', nameEn: 'Clear the Shelves', emoji: '', cost: BAL.modCosts.customsClear, desc: '압수품 선반을 뜯어낸다 — 벽이 비고, 내 것을 놓을 자리가 생긴다', descEn: 'Tear out the seizure shelves — the wall clears for things of your own', only: ['customs'], rebuild: true },
+  customsSeal: { name: '창구 봉쇄', nameEn: 'Seal the Booths', emoji: '', cost: BAL.modCosts.customsSeal, desc: '심사 창구를 판자로 막는다 — 외풍이 멎는다 (악천후 쾌적 하락 해소)', descEn: 'Board up the inspection booths — the draft stops (no comfort loss in bad weather)', only: ['customs'], rebuild: true },
+  terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '', cost: BAL.modCosts.terminalPatch, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
+  bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '', cost: BAL.modCosts.bigraincatch, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
   // 무전 기지 개조 (디렉터: "무선기지국 설치 가능한 집엔 개조 기능") — 개척 프로젝트 「무전 기지 복구」 완공(radioBaseDone) 후
   //   지상 셸터에 실체(지붕 송신 안테나)를 세운다. gate=radioBaseDone → 프로젝트 완공과 연동. 지하(subway)는 하늘 미접근이라 제외.
-  radiostation: { name: '무전 기지', nameEn: 'Radio Base', emoji: '', cost: { parts: 3, material: 2 }, desc: '지붕에 송신 안테나를 세운다 — 무전 기지의 실체 (붉은 항공등이 밤을 깜빡인다)', descEn: 'Raise the transmitter antenna on the roof — the radio base made real (a red beacon blinks through the night)', not: ['subway'], gate: 'radioBaseDone' },
+  radiostation: { name: '무전 기지', nameEn: 'Radio Base', emoji: '', cost: BAL.modCosts.radiostation, desc: '지붕에 송신 안테나를 세운다 — 무전 기지의 실체 (붉은 항공등이 밤을 깜빡인다)', descEn: 'Raise the transmitter antenna on the roof — the radio base made real (a red beacon blinks through the night)', not: ['subway'], gate: 'radioBaseDone' },
 };
 // 개조 앵커 참조표 (문서 전용 — 런타임 미소비. 디스패치는 addModProp의 id 하드코딩 분기가 직접 수행).
 // roof=지붕면 브래킷 · eave=처마 홈통+파이프+물통 · wall=외벽 덧댐 · ground=지면(마당) 배치.
@@ -6756,8 +6808,8 @@ function pickBalconyView(e) {
 }
 
 // 발코니 조망 은근한 신호 (디렉터 2026-07-18): 더블탭 발동은 그대로(발견의 결) — 여기 조망 포인트가 있다는
-//   최소 어포던스만 얹는다. ① 데크에 희미한 앰버 글린트 펄스 ② 호버 시 커서 포인터(데스크톱). 글린트는 _golden
-//   중 숨겨(비결정 배제) 펜트하우스 골든 레퍼런스 불변 — 실플레이에서만 보인다.
+//   최소 어포던스만 얹는다. ① 데크에 희미한 앰버 글린트 펄스 ② 호버 시 커서 포인터(데스크톱). 글린트는 골든
+//   동결 중 숨겨(비결정 배제) 펜트하우스 골든 레퍼런스 불변 — 실플레이에서만 보인다.
 let _balHint = null, _balHover = false;
 function tickBalconyHint(t) {
   const bal = SHELTERS[state.current] && SHELTERS[state.current].balcony;
@@ -6765,7 +6817,7 @@ function tickBalconyHint(t) {
     _balHint = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTexOnce(), color: 0xffce94, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
     _balHint.scale.set(0.5, 0.5, 0.5); _balHint.renderOrder = 4; scene.add(_balHint);
   }
-  const show = !!bal && !_golden && !vignetteBusy() && !editMode && !paused && !titleVisible;
+  const show = !!bal && !isGoldenFrozen() && !vignetteBusy() && !editMode && !paused && !titleVisible;
   _balHint.visible = show;
   if (show) {
     _balHint.position.set((bal.x0 + bal.x1) / 2, 1.02, bal.z0 + 0.35);
@@ -6785,12 +6837,62 @@ addEventListener('pointermove', e => {
       over = px >= bal.x0 && px <= bal.x1 && pz >= bal.z0 && pz <= bal.z1;
     }
   }
+  // #146 다리 조망 호버 — 노을 창에서만 (bridgeSightHit이 시간·셸터 게이트를 겸한다)
+  if (!over && !vignetteBusy() && !editMode && !paused && !titleVisible && bridgeSightHit(e)) over = true;
   if (over !== _balHover) { canvas.style.cursor = over ? 'pointer' : ''; _balHover = over; }
 });
 
 // 「불타는 해협」 — 아포칼립스 금문교 노을 (#146, 디렉터 레퍼런스 대조 리워크).
 //   평면 측면 실루엣 폐기 → 3/4 후퇴 원근(다리 축을 따라 내려다봄) + 초목의 잠식 + 따뜻한 앰버 팔레트
 //   + 전경 서사(부서진 차·접근 고가·침몰선·도심 실루엣). 박스/스프라이트/캔버스 관용구만(셰이더/에셋 없음).
+
+// #146 지역 결선 (디렉터 2026-07-23): 다리 관리소에서 노을 질 때 무너진 현수교를 클릭 → 「불타는 해협」.
+//   판정 = 다리 실루엣 평면(z=bridgeSight.z)과의 레이 교차 — 발코니의 y=0 평면 문법을 수직판으로 돌린 것.
+//   노을 창 = 저녁~어스름 초입(16.5~20시, timeLabel 경계와 동일 축). 창 밖에선 트리거·커서·글린트 전부 침묵.
+//   발동은 단일 클릭(디렉터 원문 "다리쪽 클릭이 트리거야") — 발코니 더블탭과 달리 커서+글린트가 어포던스를 이미 준다.
+//   부작용 승인 전제: 노을 동안 다리 영역에서 드래그-팬 시작이 비네트로 이어진다(팬은 화면 다른 곳에서 가능).
+function bridgeSightRect() {
+  const bs = SHELTERS[state.current] && SHELTERS[state.current].bridgeSight;
+  if (!bs) return null;
+  const h = gameHour();
+  return (h >= 16.5 && h < 20) ? bs : null;
+}
+function bridgeSightHit(e) {
+  const bs = bridgeSightRect();
+  if (!bs) return false;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  const dz = raycaster.ray.direction.z;
+  if (Math.abs(dz) < 1e-6) return false;
+  const tr = (bs.z - raycaster.ray.origin.z) / dz;
+  if (!(tr > 0)) return false;
+  const px = raycaster.ray.origin.x + raycaster.ray.direction.x * tr;
+  const py = raycaster.ray.origin.y + raycaster.ray.direction.y * tr;
+  return px >= bs.x0 && px <= bs.x1 && py >= bs.y0 && py <= bs.y1;
+}
+function pickBridgeSight(e) {
+  if (vignetteBusy() || paused) return false;
+  if (!bridgeSightHit(e)) return false;
+  playGoldenGateVignette();
+  return true;
+}
+// 은근한 신호 — 발코니와 동일 문법(글린트 펄스 + 호버 커서), 골든 동결 중 숨김(비결정 배제).
+//   위치 = 끊긴 상판 사이 허공(협곡 중앙) — 노을빛이 새는 자리라는 픽션.
+let _bridgeHint = null;
+function tickBridgeHint(t) {
+  if (!_bridgeHint) {
+    _bridgeHint = new THREE.Sprite(new THREE.SpriteMaterial({ map: glintTexOnce(), color: 0xffb066, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    _bridgeHint.raycast = () => {}; // Sprite raycast noop 필수 (카메라 미설정 레이 크래시 함정 — 프로젝트 룰)
+    _bridgeHint.scale.set(1.6, 1.6, 1.6); _bridgeHint.renderOrder = 4; scene.add(_bridgeHint);
+  }
+  const bs = bridgeSightRect();
+  const show = !!bs && !isGoldenFrozen() && !vignetteBusy() && !editMode && !paused && !titleVisible;
+  _bridgeHint.visible = show;
+  if (show) {
+    _bridgeHint.position.set((bs.x0 + bs.x1) * 0.5 + 4, 0.4, bs.z - 0.5); // 끊긴 구간(-4..8) 중앙께
+    _bridgeHint.material.opacity = 0.16 + 0.11 * (0.5 + 0.5 * Math.sin(t * 1.3));
+  }
+}
 
 let hiddenTapAt = 0;
 function pickHidden(e) {
@@ -7064,7 +7166,7 @@ canvas.addEventListener('pointerdown', e => {
     };
   } else {
     // §9.6 「침묵」 히든 지점 — 모든 픽 미스 후의 최하위 히트 (시각 표시 0, 소비 시 팬/회전도 시작 안 함)
-    if (!editMode && (pickHidden(e) || pickBalconyView(e))) return;
+    if (!editMode && (pickHidden(e) || pickBalconyView(e) || pickBridgeSight(e))) return; // #146 다리 조망은 최하위 히트 축에 합류
     // #70 빈 공간 드래그: 비배치·비클로즈업이면 클램프 팬, 배치 모드/클로즈업 중엔 기존 yaw 회전(팬 비활성 스펙).
     //   팬은 최저 우선순위 — 계단/고양이/가구 픽이 전부 미스인 이 else에서만 시작(select 레이캐스트 경로 불변).
     //   데드존: 팬은 8px(탭 상호작용 보호 스펙), 회전은 기존 7px 유지.
@@ -8084,7 +8186,7 @@ function updateHud() {
 }
 // HUD-SPEC-RECON §1.1 (기획서 8.5·HUD-A02·ACC-04): 색=심각도 + 수치 병기 + 상태 문자.
 //   임계 = 스펙 준수(0~25 위험 / 26~50 주의 / 51~ 정상). 구 "수치=PDA 전용" 오더는 본 스펙이 대체.
-function gaugeSev(v) { return v <= 25 ? 'crit' : v <= 50 ? 'warn' : ''; }
+function gaugeSev(v) { return v <= BAL.gauges.sev.crit ? 'crit' : v <= BAL.gauges.sev.warn ? 'warn' : ''; } // P2: 임계 단일 출처(BAL) — comfort.js 페널티 게이트와 공유
 // 충전(회복) 연출 — 1.9.10 게이지 문법 복원(디렉터 2026-07-22): 값이 오르는 동안 .up(밝은 스윕+글로우 서지).
 //   updateHud가 0.5s마다 재호출되며 증가가 이어지면 계속 갱신 — "충전 중" 지속 연출. 멈추면 1.1s 후 소등.
 const _gaugePrev = {}, _gaugeUpT = {};
@@ -8318,11 +8420,11 @@ async function cleanShelter(auto = false) {
   if (paused) { toast(t('pause.blocked')); return; }
   const c = state.cleanBy[state.current] ?? 70;
   if (c >= 100) { if (!auto) toast(t('clean.already')); return; }
-  if (state.energy < 10) { if (!auto) toast(t('clean.tooTired')); return; }
+  if (state.energy < BAL.clean.minEnergy) { if (!auto) toast(t('clean.tooTired')); return; }
   if (!auto && !(await confirmAct('confirm.clean'))) return;
   if (!resConsume('water', 1)) { if (!auto) toast(t('clean.needWater')); return; }
-  state.energy = Math.max(0, state.energy - 5);
-  if (state.energy < 20) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
+  state.energy = Math.max(0, state.energy - BAL.clean.energyCost);
+  if (state.energy < BAL.exp.minEnergy) tipOnce('tip.energy'); // 찢어진 쪽지: 에너지 첫 20 미만
   state.cleanBy[state.current] = Math.min(100, c + 20);
   toast(t('clean.done', { n: Math.round(state.cleanBy[state.current]) }));
   state.dayLog.notes.push(t('clean.note'));
@@ -9487,55 +9589,72 @@ const selPanel = $('sel-panel');
 //   radioBubble과 동일한 투영·uiz 보정(패널은 zoom:--uiz 컨텍스트라 좌표를 uiz로 나눈다).
 //   우측 우선 배치, 오른쪽이 모자라면 좌측 플립, 상하는 클램프. 데스크톱 전용 —
 //   모바일 미디어 쿼리가 --sel-x/y를 무시하고 하단 시트로 강제한다(카메라 추적 불필요).
-function positionSelPanel() {
-  if (!selected || !selected.group || !selPanel.classList.contains('show')) return;
-  const p = new THREE.Vector3();
-  selected.group.getWorldPosition(p);
-  p.y += 0.5; // 가구 몸통 높이
-  p.project(camera);
-  const uiz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--uiz')) || 1;
-  const w = selPanel.offsetWidth * uiz, h = selPanel.offsetHeight * uiz, m = 8, gap = 30;
-  const ax = (p.x * 0.5 + 0.5) * innerWidth, ay = (-p.y * 0.5 + 0.5) * innerHeight;
-  let x = ax + gap;                                   // 기본: 가구 오른쪽
-  if (x + w > innerWidth - m) x = ax - gap - w;       // 오른쪽이 모자라면 왼쪽으로 플립
-  x = Math.max(m, Math.min(innerWidth - w - m, x));
-  let y = Math.max(m, Math.min(innerHeight - h - m, ay - h / 2)); // 가구 세로 중앙 정렬
-  selPanel.style.setProperty('--sel-x', (x / uiz) + 'px');
-  selPanel.style.setProperty('--sel-y', (y / uiz) + 'px');
+// #228③: 가구 추적(매 프레임 재투영) 폐기 — 팬/줌마다 출렁이고 스와치를 누르는 손 밑에서 카드가
+//   움직여 UX를 저해(디렉터). 카드=화면 우하단 고정 도킹(터미널 문법), 가구와의 연결은 선택 링이 담당.
+//   (검토한 대안 B: 선택 순간 위치 고정 — 출렁임은 없지만 카메라 팬 시 가구와 어긋난 채 씬을 가림 → 기각.)
+function positionSelPanel() { /* 고정 도킹 — 좌표 주입 불요. QA 프로브 호환용 잔류. */ }
+// #228⑦: 스와치 = 미리보기(무소모 둘러보기) → 「적용」 버튼으로 확정·소모 (디렉터: "그전까지는 눌러보면서 둘러보기").
+//   _selPreview가 미확정 상태를 소유 — 패널 닫힘·선택 해제·가구 전환 시 revertSelPreview()가 커밋 상태로 원복한다.
+let _selPreview = null; // { item, colorIdx(커밋), gel(커밋) } — 미리보기 중인 가구의 원상
+function revertSelPreview() {
+  const p = _selPreview;
+  if (!p) return;
+  _selPreview = null; // 재진입 가드 (recolorItem→showSelPanel 경로 방지: 원복은 시각만)
+  if (p.item.colorIdx !== p.colorIdx) recolorItem(p.item, p.colorIdx);
+  applyGel(p.item); // gel은 item.gel(커밋값) 기준 재적용 — 미리보기 오버라이드 해제
 }
 function showSelPanel(item) {
+  if (_selPreview && _selPreview.item !== item) revertSelPreview(); // 다른 가구로 전환 — 이전 미리보기 원복
+  if (!_selPreview) _selPreview = { item, colorIdx: item.colorIdx, gel: item.gel || null };
   const def = DEFS[item.defId];
   $('sel-name').innerHTML = `${furnIcon(item.defId)} ${LName(def)}`;
   const sw = $('sel-swatches');
   sw.innerHTML = '';
+  let previewIdx = item.colorIdx; // 이번 렌더의 미리보기 대상(= 현재 그룹 색)
+  const committedIdx = _selPreview.colorIdx;
   def.colors.forEach((c, i) => {
     const s = document.createElement('div');
-    // 도료 게이트 (REWARD-LOOP ②): 기본색(0)·현재색은 무료, 다른 색은 그 계열 도료 1통 소모.
+    // 도료 게이트 (REWARD-LOOP ②): 기본색(0)·커밋색은 무료, 다른 색은 그 계열 도료 1통 소모(적용 시점에).
     //   시그니처 발광 가구(네온)는 hex 계열이 아니라 도심 전용 '네온 안료'를 요구한다(paintFamilyRequired).
     const fam = paintFamilyRequired(item.defId, c);
     const have = state.paints[fam] || 0;
-    const needsPaint = i !== 0 && i !== item.colorIdx;
+    const needsPaint = i !== 0 && i !== committedIdx;
     const locked = needsPaint && have < 1;
-    s.className = 'swatch' + (i === item.colorIdx ? ' active' : '') + (locked ? ' locked' : '');
+    s.className = 'swatch' + (i === previewIdx ? ' active' : '') + (locked ? ' locked' : '');
     s.style.background = '#' + c.toString(16).padStart(6, '0');
     s.title = LColor(def, i) + (i === 0 ? '' : ` — ${LName(PAINT_ALL[fam])} ${t('paint.haveN', { n: have })}`);
     // #194: hover title은 터치에서 안 뜬다 — 도료 보유 수량을 스와치 우상단 상시 배지로 병기(title은 유지)
     if (i !== 0) { const bd = document.createElement('span'); bd.className = 'sw-cnt'; bd.textContent = have; s.appendChild(bd); }
-    s.addEventListener('click', async () => {
-      if (i === item.colorIdx) return;
-      if (needsPaint) {
-        if (have < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
-        // #194: 터치(coarse)는 스와치 오탭 1회 = 도료 1통 — 소모 동작만 1단계 확인(무소모 복원·기본색은 그대로)
-        if (matchMedia('(pointer: coarse)').matches
-          && !(await gameConfirm(t('paint.confirmUse', { name: LName(PAINT_ALL[fam]) }), t('paint.confirmYes'), t('confirm.no')))) return;
-        if ((state.paints[fam] || 0) < 1) return; // 확인 대기 동안 재고가 바뀔 수 있다 — 재검사
-        state.paints[fam] = (state.paints[fam] || 0) - 1;
-        toast(t('paint.used', { name: LName(PAINT_ALL[fam]), left: state.paints[fam] }));
-      }
-      recolorItem(item, i); markCollection(item.defId, i); showSelPanel(item); scheduleSave();
+    s.addEventListener('click', () => {
+      if (i === item.colorIdx) return; // 이미 이 색을 보는 중
+      recolorItem(item, i); // 미리보기 — 소모·콜렉션 마킹 없음(확정은 아래 「적용」)
+      showSelPanel(item);   // 스와치 active·적용 버튼 상태 재렌더
     });
     sw.appendChild(s);
   });
+  // 도색 확정 버튼 — 미리보기가 커밋색과 다를 때만 노출. 무료(기본색·복원)는 즉시 확정 문구.
+  { const oldAp = $('sel-color-apply'); if (oldAp) oldAp.remove(); }
+  if (previewIdx !== committedIdx) {
+    const fam = paintFamilyRequired(item.defId, def.colors[previewIdx]);
+    const needsPaint = previewIdx !== 0;
+    const have = state.paints[fam] || 0;
+    const div = document.createElement('div');
+    div.id = 'sel-color-apply';
+    div.style.cssText = 'margin-bottom:8px';
+    div.innerHTML = `<button class="pixel-btn primary" style="width:100%" ${needsPaint && have < 1 ? 'disabled' : ''}>${needsPaint ? t('paint.applyBtn', { name: LName(PAINT_ALL[fam]) }) : t('paint.applyFree')}</button>
+      <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${t('sel.previewHint')}</div>`;
+    sw.after(div);
+    div.querySelector('button').addEventListener('click', () => {
+      if (needsPaint) {
+        if ((state.paints[fam] || 0) < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
+        state.paints[fam] = (state.paints[fam] || 0) - 1;
+        toast(t('paint.used', { name: LName(PAINT_ALL[fam]), left: state.paints[fam] }));
+      }
+      _selPreview.colorIdx = previewIdx; // 커밋
+      markCollection(item.defId, previewIdx);
+      showSelPanel(item); scheduleSave();
+    });
+  }
   // DDD-2 수집품 전시: 액자에 밤하늘 스케치를 건다 — 수집(SKETCHES)의 두 번째 보상 (수집한 것만 노출)
   { const oldSk = $('sel-sketch'); if (oldSk) oldSk.remove(); }
   if (item.defId === 'frame' && Object.keys(state.sketches || {}).length) {
@@ -9577,36 +9696,51 @@ function showSelPanel(item) {
       showSelPanel(item); renderResBar(); scheduleSave();
     });
   }
-  // #189 P3 조명 젤: 필터북 보유 + gelable 광원이면 빛 색 스와치 행 — 도료 1통 = 1회 틴트(도색 게이트 문법).
+  // #189 P3 조명 젤 → #228⑦ 미리보기+확정: 스와치 클릭=빛만 바꿔 봄(무소모), 「적용」=도료 소모·커밋.
   { const oldGel = $('sel-gel'); if (oldGel) oldGel.remove(); }
   if (def.light?.gelable && state.lightGels) {
+    if (_selPreview.previewGel === undefined) _selPreview.previewGel = item.gel || null;
+    applyGel(item, _selPreview.previewGel); // recolorItem 재빌드가 커밋 젤로 되돌린 뒤에도 미리보기 유지
+    const cur = _selPreview.previewGel || '';
+    const committedGel = _selPreview.gel || '';
     const div = document.createElement('div');
     div.id = 'sel-gel';
     div.style.cssText = 'margin-bottom:8px';
-    const cur = item.gel || '';
     // #194: 배지(sw-cnt)로 보유 수량 상시 병기 + gap 3→6px (밀집 13스와치 오탭 완화)
     const gsw = (fam, hex, title, free) =>
       `<div class="swatch${cur === fam ? ' active' : ''}${!free && !(state.paints[fam] > 0) ? ' locked' : ''}" data-gel="${fam}" title="${title}" style="background:#${hex.toString(16).padStart(6, '0')}">${free ? '' : `<span class="sw-cnt">${state.paints[fam] || 0}</span>`}</div>`;
     div.innerHTML = `<div style="font-size:10px;color:var(--text-dim);margin-bottom:3px">${t('gel.rowTitle')}</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">${gsw('', def.light.color, t('gel.original'), true)}${Object.entries(PAINT_FAMILIES).map(([f, d]) => gsw(f, d.swatch, `${LName(d)} ${t('paint.haveN', { n: state.paints[f] || 0 })}`)).join('')}</div>`;
     $('sel-swatches').after(div);
-    div.querySelectorAll('[data-gel]').forEach(b => b.addEventListener('click', async () => {
+    div.querySelectorAll('[data-gel]').forEach(b => b.addEventListener('click', () => {
       const fam = b.dataset.gel || null;
-      if ((item.gel || null) === fam) return;
-      if (fam) { // 원색 복원은 무료 — 틴트만 도료 소모
-        const have = state.paints[fam] || 0;
-        if (have < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
-        // #194: 터치(coarse) 오탭 = 도료 1통 — 소모 동작만 1단계 확인(무소모 원색 복원은 그대로)
-        if (matchMedia('(pointer: coarse)').matches
-          && !(await gameConfirm(t('gel.confirmUse', { name: LName(PAINT_ALL[fam]) }), t('gel.confirmYes'), t('confirm.no')))) return;
-        if ((state.paints[fam] || 0) < 1) return; // 확인 대기 동안 재고가 바뀔 수 있다 — 재검사
-        state.paints[fam] = (state.paints[fam] || 0) - 1;
-        toast(t('gel.applied', { name: LName(PAINT_ALL[fam]) }));
-      } else toast(t('gel.reset'));
-      item.gel = fam;
-      applyGel(item);
-      showSelPanel(item); scheduleSave();
+      if ((_selPreview.previewGel || null) === fam) return;
+      _selPreview.previewGel = fam;
+      applyGel(item, fam); // 미리보기 — item.gel 무변·소모 없음
+      showSelPanel(item);
     }));
+    // 젤 확정 버튼 — 미리보기가 커밋과 다를 때만
+    if (cur !== committedGel) {
+      const fam = _selPreview.previewGel;
+      const have = fam ? (state.paints[fam] || 0) : 1;
+      const ap = document.createElement('div');
+      ap.id = 'sel-gel-apply';
+      ap.style.cssText = 'margin-top:6px';
+      ap.innerHTML = `<button class="pixel-btn primary" style="width:100%" ${fam && have < 1 ? 'disabled' : ''}>${fam ? t('gel.applyBtn', { name: LName(PAINT_ALL[fam]) }) : t('gel.applyFree')}</button>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${t('sel.previewHint')}</div>`;
+      div.appendChild(ap);
+      ap.querySelector('button').addEventListener('click', () => {
+        if (fam) {
+          if ((state.paints[fam] || 0) < 1) { toast(t('paint.need', { name: LName(PAINT_ALL[fam]) })); return; }
+          state.paints[fam] = (state.paints[fam] || 0) - 1;
+          toast(t('gel.applied', { name: LName(PAINT_ALL[fam]) }));
+        } else toast(t('gel.reset'));
+        item.gel = fam;
+        _selPreview.gel = fam; // 커밋
+        applyGel(item);
+        showSelPanel(item); scheduleSave();
+      });
+    }
   }
   // 조명/가전: 전원 토글 + 연료 잔량 (기획서 v0.2 UI: "양초 3개 보유 / 1일 1개 소비")
   const old = $('sel-power'); if (old) old.remove();
@@ -9635,10 +9769,9 @@ function showSelPanel(item) {
       toast(item.on ? t('power.turnedOn', { name: LName(def) }) : t('power.turnedOff', { name: LName(def) }));
     });
   }
-  selPanel.classList.add('show');
-  positionSelPanel(); // 내용 구성 후 크기 확정 상태에서 1차 배치 (이후 매 프레임 재투영)
+  selPanel.classList.add('show'); // #228③: 우하단 고정 도킹 — 좌표 계산 불요
 }
-function hideSelPanel() { selPanel.classList.remove('show'); }
+function hideSelPanel() { revertSelPreview(); selPanel.classList.remove('show'); } // #228⑦: 미확정 미리보기는 닫힐 때 원복
 
 let modalKind = null; // 마지막으로 연 모달 종류 (닫힘 시 퀘스트 훅 판별용, 예: 'report')
 function openModal(title, html, kind = null) {
@@ -10155,6 +10288,10 @@ function tipOnce(id) {
   if (!tutorialEligible()) return; // 튜토리얼 쪽지도 노말 전용 (디렉터 오더)
   if (_simRunning) return; // F1(헤르메틱): 시뮬 중엔 종이 팁 렌더 금지. showTipNote→applyPaperBg가 절차적 종이 텍스처를
   //   Math.random으로 생성(첫 호출 캐시=첫-run 래치)해 시드 시퀀스를 ~9600 소비·desync시켰다. 팁은 순수 시각.
+  // #212 근원 치료: 골든 동결 중에도 금지 — 로드 시 날씨 롤(시드 고정=snow 확정)이 tip.snow를 발화시키고,
+  //   소멸이 실시간 15s 타이머라 러너 진행 속도에 따라 캡처 순간과 교차(lodge 3.43% 이항 플레이키의 정체).
+  //   팁은 게이트가 검증할 대상(지오·조명)이 아닌 순수 UI — sim 가드와 같은 사유로 차단한다.
+  if (isGoldenFrozen()) return;
   if (state.tipsSeen[id]) return;
   state.tipsSeen[id] = true;
   tipQueue.push(id);
@@ -10933,6 +11070,16 @@ renderQuestCard();
   });
   document.addEventListener('mousedown', hide, true); // 클릭(모달 열림 등) 시 즉시 숨김
 })();
+// ── 웹 잔재 차단(렌더러 측 — 2026-07-23 전수 감사, Electron·PWA 공통) ──
+//   본체는 웹앱이라 브라우저 기본 동작이 그대로 새어 나온다. 이미 막힌 것(user-select·img user-drag·
+//   캔버스 우클릭)외 잔여 3종을 여기서 끊는다. main.cjs의 메뉴 제거·will-navigate 가드와 한 쌍.
+// ① 파일 드롭 = "문서 열기" 기본값 차단 — 복사 커서·게임 이탈 시도 자체를 없앤다(메인 가드와 이중벽).
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => e.preventDefault());
+// ② Ctrl+휠 = 브라우저 페이지 줌 차단 — 픽셀 스냅이 깨지고 카메라 줌(무보조 휠)과 혼선. 캡처는 안 막으므로 게임 휠 줌은 그대로.
+window.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false, capture: true });
+// ③ 가운데 클릭 오토스크롤 위젯 차단 — 스크롤 가능한 모달(PDA 등) 위에서 브라우저 팬 커서가 떴다.
+document.addEventListener('mousedown', e => { if (e.button === 1) e.preventDefault(); });
 // 웹: 설치본 fetch로 loose locales 병합(비동기 베스트에포트) — 적용되면 화면 재치환. (Electron은 위 applyLocaleOverrides 동기 처리)
 loadLocaleOverridesWeb().then(a => { if (a) { applyStaticI18n(); updateHud(); renderResBar(); renderQuestCard(); } });
 if (state.minimizedEvent && EVENTS[state.minimizedEvent]) showEventChip(state.minimizedEvent); // 로드 후 내려둔 이벤트 칩 복원
@@ -11339,20 +11486,15 @@ addEventListener('pointermove', () => { if (padState.active) showPadCursor(false
 //   범인 = 매 프레임 Math.random으로 배회하는 고양이/야생동물/아바타(별도 모듈, Phase1 렌더 리팩토링 대상 아님) — 실시간 프레임 수 지터로 로드마다 위치가 어긋난다.
 //   해법: freezeForGolden = ①Math.random 시드 고정 ②렌더 시간 동결(dt=0) ③배회 엔티티 업데이트 스킵+숨김.
 //   그러면 골든 캡처 = 순수 정적 지오메트리+조명+날씨FX(=리팩토링 대상 코드)만 남아 로드 간 결정론적.
-let _golden = false; const _goldenT = 5.0; let _goldenHid = false;
-let _goldenDt = 0, _goldenAcc = 0; // 동역학 게이트: 스테핑 중에만 dt>0, t는 _goldenAcc로 결정론적 누적
-// 트레일러 캡처(#172): 골든의 고정 dt 스테핑을 엔티티 살린 채 쓴다 — 오프스크린 캡처는 프레임당 실시간
-// ~0.2s가 흘러 애니메이션이 수 배속으로 보이므로, keepEntities 스테핑이 정속(1/30s/frame)의 유일한 경로.
-let _goldenKeep = false;
-// #212: LCG 상태 s를 모듈 변수로 승격해 언제든 시드로 되돌릴 수 있게 한다(_goldenReseed).
+// 상태는 renderCtx(파일 상단 P1 Parameter Object)가 소유 — 여기는 조작 함수만 남는다.
+// #212: LCG 상태(lcgS)를 ctx 필드로 두어 언제든 시드로 되돌릴 수 있게 한다(goldenReseed).
 //   구버전은 s가 Math.random 클로저 안에 갇혀, freeze 이후 settleCapture가 소비한 난수만큼 상태가
 //   밀린 채 stepGolden에 진입 → 누적 시작점이 로드마다 달라 d_snow/d_rain 골든이 플레이키였다.
-let _goldenSeed = 12345, _goldenS = 12345;
-function _goldenReseed() { _goldenS = _goldenSeed >>> 0; }
+function goldenReseed() { renderCtx.lcgS = renderCtx.seed >>> 0; }
 function freezeForGolden(seed = 12345, keepEntities = false) {
-  _goldenSeed = seed >>> 0; _goldenReseed();
-  Math.random = function () { let s = (_goldenS + 0x6D2B79F5) | 0; _goldenS = s; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
-  windLevel = 1; _golden = true; _goldenHid = false; _goldenDt = 0; _goldenAcc = 0;
+  renderCtx.seed = seed >>> 0; goldenReseed();
+  Math.random = function () { let s = (renderCtx.lcgS + 0x6D2B79F5) | 0; renderCtx.lcgS = s; let x = Math.imul(s ^ (s >>> 15), 1 | s); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+  windLevel = 1; renderCtx.frozen = true; renderCtx.hidApplied = false; renderCtx.goldenDt = 0; renderCtx.goldenAcc = 0;
   // CSS 무한 애니(LED·crit 블링크·CRT 플리커)는 dt 동결과 무관하게 실시간으로 돈다 — 캡처 순간의
   //   위상이 곧 플레이크다(crtFlicker 딥 프레임 ~6% 확률 실측 우려). reduce-motion 클래스로 전부 정지.
   document.body.classList.add('reduce-motion');
@@ -11360,44 +11502,56 @@ function freezeForGolden(seed = 12345, keepEntities = false) {
   //   남겨, d_rain_wet(비)이 직전 d_snow_accum(눈)의 적설을 물려받아 결정론이 깨졌다(로드 간 70% 흔들림).
   //   각 골든 씬은 깨끗한 날씨에서 시작해야 dt 스테핑이 순수 재현된다. (설정 씬은 이후 setSnow가 덮어씀.)
   snowCover = 0; wetness = 0; wetApplied = -1;
-  _goldenKeep = !!keepEntities; // 트레일러 캡처: 고정 dt 스테핑 + 엔티티(고양이/아바타) 유지 — 정속 애니메이션 캡처
+  // 트레일러 캡처(#172): 골든의 고정 dt 스테핑을 엔티티 살린 채 쓴다 — 오프스크린 캡처는 프레임당 실시간
+  //   ~0.2s가 흘러 애니메이션이 수 배속으로 보이므로, keepEntities 스테핑이 정속(1/30s/frame)의 유일한 경로.
+  renderCtx.keepEntities = !!keepEntities;
 }
 // 동역학 게이트: renderFrame을 동기 루프로 frames번 호출(rAF 개입 없음=결정론) → 눈 누적·젖음/성에 페이드가
 //   고정 dt로 확정 진행. 캡처 전 호출해 dt구동 날씨 상태를 박제한다. 루프 후 dt=0 복귀(rAF 프레임은 정지 유지).
 function stepGolden(frames = 200, dtSec = 0.1) {
-  _goldenReseed(); // 정착이 소비한 난수 오프셋 제거 → 누적 시작점을 시드로 고정(로드 간 결정론)
-  _goldenDt = dtSec;
+  goldenReseed(); // 정착이 소비한 난수 오프셋 제거 → 누적 시작점을 시드로 고정(로드 간 결정론)
+  renderCtx.goldenDt = dtSec;
   for (let i = 0; i < frames; i++) renderFrame();
-  _goldenDt = 0;
+  renderCtx.goldenDt = 0;
 }
-function renderFrame() {
+/* ── 골든 동결이 숨기는 동적 요소 — 선언 목록 (REFACTOR-GUIDE P1: hideDynamic) ──
+   "무엇이 골든에서 숨겨지는가"가 코드 전역에 흩어져 누락을 눈으로 못 찾던 문제(#212 계열)의 관문.
+   새 동적 요소(파티클·배회체·반투명 오버레이)를 추가하면 여기에 한 줄을 추가하는 것이 규약.
+   · once: true = 1회 적용(despawn류). 나머지는 매 프레임 재적용 — 스폰/재생성 재발을 억제한다. */
+const GOLDEN_HIDE = [
+  { name: 'cat', once: true, why: '배회 Math.random — 로드마다 위치 상이', apply() { try { despawnCat(); } catch (e) { /* 씬에 없음 */ } } },
+  { name: 'wildlife', why: '배회 엔티티(로밍·개막 연출)', apply() { const g = wildlifeSys.getGroup && wildlifeSys.getGroup(); if (g) g.visible = false; } },
+  { name: 'avatar', why: '실내 생활 배회(#86)', apply() { const g = avatarSys.getGroup && avatarSys.getGroup(); if (g) g.visible = false; } },
+  // #212: 낙하 날씨 파티클(눈·비). 입자 위치는 씬 간 이월돼(리셋 안 됨) 프레임/로드마다 달라 ~19% 렌더
+  //   흔들림을 냈다 — 동역학 골든의 목적은 '적설/젖음 누적'(지면 셰이더=결정론)이지 낙하 입자가 아니다.
+  { name: 'weatherParticles', why: '낙하 입자 위치 씬 간 이월(비결정)', apply() { if (weather.pts) weather.pts.visible = false; } },
+  // 젖은 반사 오버레이(웅덩이·글린트): 반투명(depthWrite off)이라 SwiftShader 스레드 정렬이 프로세스마다
+  //   뒤집혀(빔과 동일 계열) cross-load 흔들림. 젖음의 '누적'은 재질 톤 다크닝(applyWetness, 결정론)이 담당.
+  { name: 'wetOverlays', why: '반투명 정렬 프로세스 비결정', apply() { if (weatherFx.puddles) for (const p of weatherFx.puddles) p.visible = false; if (weatherFx.glints) for (const gl of weatherFx.glints) gl.visible = false; } },
+  { name: 'dust', why: '부유 먼지 — Math.random 배치·반투명', apply() { if (dust && dust.pts) dust.pts.visible = false; } },
+];
+function applyGoldenHiding(ctx) {
+  for (const h of GOLDEN_HIDE) { if (h.once && ctx.hidApplied) continue; h.apply(); }
+  ctx.hidApplied = true;
+}
+function renderFrame(ctx = renderCtx) {
   let dt = Math.min(clock.getDelta(), 0.1);
   let t = clock.elapsedTime;
-  if (_golden) { dt = _goldenDt; if (_goldenDt > 0) _goldenAcc += _goldenDt; t = _goldenT + _goldenAcc; } // 골든: dt=0 정지 / 스테핑 시 고정 dt 결정론 진행
+  if (ctx.frozen) { dt = ctx.goldenDt; if (ctx.goldenDt > 0) ctx.goldenAcc += ctx.goldenDt; t = ctx.goldenT + ctx.goldenAcc; } // 골든: dt=0 정지 / 스테핑 시 고정 dt 결정론 진행
+  ctx.dt = dt; ctx.t = t; // 프레임 확정값 기록 — 이후 하위/외부가 조회하는 SSOT (지역 t/dt와 동일 값)
   pollGamepad(dt);
   if (!titleVisible && !paused && !endingActive && !creditsActive) tickTime(dt); // 타이틀·일시정지·엔딩 중엔 시간 정지
   else if (state.exp) state.exp.end += dt * 1000; // 탐험 실시간 타이머도 함께 멈춘다
   applyTimeLighting();
-  if (!_cine) updateCamera(); // 시네마틱 중엔 오쏘 갱신 스킵 — camera.position은 cineSet이 동기화(컬링 기준 유지)
+  if (ctx.cam !== 'cine') updateCamera(); // 시네마틱 중엔 오쏘 갱신 스킵 — camera.position은 cineSet이 동기화(컬링 기준 유지)
   updateWallCulling(dt);
   updateEnvironment(t, dt);
   updateWeather(dt, t);
   maybeRunDemoCredits(); // #74 데모: 첫눈 크레딧 발화/재개 — 모달 닫히고 첫눈 보일 때(중단 재입장도 자동 재개)
-  if (_golden && !_goldenKeep) {
-    // 배회 엔티티 동결·숨김 (한 번 despawn/숨김 → 업데이트 스킵으로 재배회 없음)
-    if (!_goldenHid) { try { despawnCat(); } catch (e) {} _goldenHid = true; }
-    const wg = wildlifeSys.getGroup && wildlifeSys.getGroup(); if (wg) wg.visible = false;
-    const ag = avatarSys.getGroup && avatarSys.getGroup(); if (ag) ag.visible = false;
-    // #212: 낙하 날씨 파티클(눈·비)도 숨긴다. 입자 위치는 씬 간 이월돼(리셋 안 됨) 프레임/로드마다 달라
-    //   ~19% 렌더 흔들림을 냈다 — 동역학 골든의 목적은 '적설/젖음 누적'(지면 셰이더=결정론)이지 낙하 입자가
-    //   아니므로, 배회 엔티티와 같은 논리로 숨겨 결정론을 회복한다. 지면 snowCover/wetness는 그대로 캡처된다.
-    if (weather.pts) weather.pts.visible = false;
-    // 젖은 반사 오버레이(웅덩이·글린트)도 숨긴다. 반투명(depthWrite off)이라 SwiftShader 스레드 정렬이
-    //   프로세스마다 뒤집혀(빔과 동일 계열) cross-load 흔들림을 냈다. 젖음의 '누적'은 재질 톤 다크닝
-    //   (applyWetness, 결정론)이 담당하므로, 반사 오버레이만 숨겨도 동역학 골든의 취지는 보존된다.
-    if (weatherFx.puddles) for (const p of weatherFx.puddles) p.visible = false;
-    if (weatherFx.glints) for (const gl of weatherFx.glints) gl.visible = false;
-    if (dust && dust.pts) dust.pts.visible = false; // 부유 먼지(Math.random 배치·반투명)도 골든에서 숨김
+  // 재수렴: 구 인라인 골든 숨김(_golden/_goldenHid)은 트렁크 P1(renderCtx)로 대체 — GOLDEN_HIDE 선언 목록이 정본
+  if (ctx.frozen && !ctx.keepEntities) {
+    // 동결·숨김 대상은 GOLDEN_HIDE 선언 목록 1곳(renderFrame 위)이 정본 — 여기는 적용만 한다.
+    applyGoldenHiding(ctx);
   } else {
     updateCat(t, dt);
     tickCatPurr(dt);           // #93: 방석 골골 기믹 (잠든 고양이 + 방석)
@@ -11408,8 +11562,9 @@ function renderFrame() {
   tickVisitor(t, dt); // #181 방문자 걸어옴/글로우/퇴장 + 카메라 추적
   tickDropSpots(t); // #182 B0 동물 드랍 지면 반짝임 펄스
   tickBalconyHint(t); // 2.0 발코니 조망 은근한 신호 (펜트하우스 「콘크리트 정글의 해」 어포던스)
+  tickBridgeHint(t); // #146 다리 조망 은근한 신호 (다리 관리소 「불타는 해협」 — 노을 창에서만)
   tickRadioBubble(); // 라디오 방송 자막 버블 재투영/페이드 (#12)
-  positionSelPanel(); // 편집 미니 카드 재투영 — 카메라 팬/줌/드래그를 따라간다 (A안)
+  // #228③: 편집 미니 카드 매 프레임 재투영 제거 — 우하단 고정 도킹(positionSelPanel 폐기 주석 참조)
   // #189 P1: 광원 레지스트리 동기화(전원 토글·연료 소진·설치 자동 반영) + 폴백 형광등 점멸.
   //   폴백(광원 0)일 때만 점멸이 보인다 — 조명 설비 전등은 안정(전기 vs 화기 대비축).
   updateLightingRig();
@@ -11441,8 +11596,8 @@ function renderFrame() {
   if (t - uiTick > 0.5) { uiTick = t; tickExpeditionUI(); updateHud(); updateClock(); renderResBar(); if (pdaVisible() && pdaTab === 'status') renderPDA(true); if (hudExtOn) renderHudExt(); syncBgm(); syncSfxAmbience(); drainDiscoveryQueue(); } // 디렉터: PDA 상태탭도 0.5s 실시간 갱신(탐험 진행바·게이지) — quiet=플리커 생략, 지도/자원탭은 이벤트 갱신(맵 재생성 비용 회피)
   // 항공뷰 프로토 활성 시: 같은 rt→post 파이프로 디오라마 씬을 대신 렌더 (픽셀 룩 동일 보장).
   //   위의 시뮬 틱은 그대로 돌므로 시간·날씨가 실시간으로 디오라마에 반영된다 (AERIAL-MAP 개정 1차).
-  // #217 CRT 시간 공급: 골든/캡처 결정론 — freeze(_golden) 중엔 고정값(위상 동결, crtFlicker와 같은 사상)
-  postMat.uniforms.uCrtT.value = _golden ? 12.345 : performance.now() / 1000;
+  // #217 CRT 시간 공급: 골든/캡처 결정론 — 동결 중엔 고정값(위상 동결, crtFlicker와 같은 사상)
+  postMat.uniforms.uCrtT.value = ctx.frozen ? 12.345 : performance.now() / 1000;
   const _aa = activeAerial();
   if (_aa) {
     _aa.update(dt, { hour: aerialHourOverride ?? gameHour(), weather: weather.type });
@@ -11454,7 +11609,7 @@ function renderFrame() {
     return;
   }
   renderer.setRenderTarget(rt);
-  renderer.render(scene, _cine ? cineCam : camera);
+  renderer.render(scene, ctx.cam === 'cine' ? cineCam : camera);
   renderer.setRenderTarget(null);
   renderer.render(postScene, postCam);
   updateScreenFx(dt, t);
@@ -11851,8 +12006,10 @@ window.__shelter = {
   select, deselect, positionSelPanel, // 편집 미니 카드 A안 (접지 프로브용)
   clampToRoom, // 발코니 배치 칸 (접지 프로브용)
   playJungleSunVignette, pickBalconyView, vignetteState: () => vignetteBusy(), // 비네트 러너 (접지 프로브용 — Tier5: 플래그는 vignettes.js 소유)
-  playGoldenGateVignette, // #146 「불타는 해협」 금문교 노을 비네트 (QA·지역 결선 전 트리거)
+  playGoldenGateVignette, // #146 「불타는 해협」 금문교 노을 비네트
+  pickBridgeSight, bridgeSightHit, // #146 지역 결선 트리거 (QA 프로브 — 노을 창·히트 평면 실측)
   buildGoldenGateScene, // 트레일러 하네스 전용: {scene,camera,update(t)} 결정론 렌더 — Tier5: vignettes.js에서 import 재수출
+  buildJungleSunScene, // 컷씬 타임랩스 하네스(디렉터 2026-07-23 "비네트 구도에서 지나는 24시간") — 동일 계약
   showDiscoveryVignette, queueDiscovery, drainDiscoveryQueue, discoveryQueueLen: () => discoveryQueue.length, // #150 희귀템 발견 컷 (QA)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
   //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).
@@ -11862,8 +12019,8 @@ window.__shelter = {
   // ── 시네마틱 원근 카메라 훅 (스토리 트레일러 하네스 전용) ──
   //   cineOn: 시네마틱 모드 진입(이후 렌더는 원근 cineCam). cineOff: 오쏘 복귀.
   //   cineSet: 카메라를 (px,py,pz)에 두고 (lx,ly,lz)를 바라보게. fov 지정 가능. camera.position도 동기화해 벽 컬링이 원근 시점을 따른다.
-  cineOn: (fov) => { _cine = true; if (fov) cineCam.fov = fov; cineCam.aspect = innerWidth / innerHeight; cineCam.updateProjectionMatrix(); },
-  cineOff: () => { _cine = false; },
+  cineOn: (fov) => { renderCtx.cam = 'cine'; if (fov) cineCam.fov = fov; cineCam.aspect = innerWidth / innerHeight; cineCam.updateProjectionMatrix(); },
+  cineOff: () => { renderCtx.cam = 'ortho'; },
   cineSet: (px, py, pz, lx, ly, lz, fov) => {
     cineCam.position.set(px, py, pz);
     cineCam.up.set(0, 1, 0);
@@ -11895,7 +12052,11 @@ window.__shelter = {
   wildlifeRespawn: (id) => wildlifeSys.respawn(id || state.current),
   avatarState: () => avatarSys._debug(), // #86 QA 훅
   avatarSys, // 스토어 캡처용: getGroup().position 직접 배치(정착 후 고정 프레임 캡처)
-  qaPlaceCat: (x, z, mode) => { const c = getCat(); if (!c) return false; c.g.position.set(x, c.baseY || 0.05, z); c.mode = mode || 'sleep'; c.timer = 99999; c.tgt = null; c.hop = null; return true; }, // 캡처용 고양이 고정 배치(웅크림)
+  // 캡처용 고양이 고정 배치. 'sleep'(식빵)은 디렉터 오더로 풀에서 제거된 폐기 포즈이고
+  //   이후 다리·피벗이 sprawl 기준으로 정리돼 강제 호출 시 배를 까뒤집은 듯 깨져 보인다(스토어 에셋 오염 사고).
+  //   폐기 모드는 여기서 sprawl로 접어 캡처 경로가 다시 밟지 못하게 한다.
+  qaPlaceCat: (x, z, mode, rotY) => { const c = getCat(); if (!c) return false; const m = (!mode || mode === 'sleep') ? 'sprawl' : mode; c.g.position.set(x, c.baseY || 0.05, z); if (rotY != null) c.g.rotation.y = rotY; c.mode = m; c.timer = 99999; c.tgt = null; c.hop = null; c.sprawlFor = 14; return true; },
+  qaCatInfo: () => { const c = getCat(); if (!c) return null; const p = c.g.position; let vis = true, inScene = false, n = c.g; while (n) { if (!n.visible) vis = false; if (!n.parent && n.isScene) inScene = true; n = n.parent; } return { x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2), vis, inScene, kids: c.g.children.length, sc: +c.g.scale.x.toFixed(2), mode: c.mode }; }, // 캡처 진단: 고양이 실좌표·가시성
   avatarRespawn: () => avatarSys.respawn(),
   avatarDespawn: () => avatarSys.despawn(), // #181 접지 캡처: 방문자 시트에서 아바타 제거
   // #181 방문자 복셀 접지 훅: 프리셋을 씬에 직접 스폰(연출 시스템 이전 룩 검증용)
