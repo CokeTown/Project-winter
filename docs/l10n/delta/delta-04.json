@@ -1,0 +1,427 @@
+{
+  "prep.bagCraft": {
+    "ko": "가방",
+    "en": "Bag",
+    "ja": "バッグ"
+  },
+  "exp.start": {
+    "ko": "{name} 탐험 시작 — 성공률 {pct}%",
+    "en": "{name} expedition started — success {pct}%",
+    "ja": "{name} 探索開始 — 成功率 {pct}%"
+  },
+  "exp.inProgress": {
+    "ko": "{name} 탐험 중...",
+    "en": "{name} — exploring...",
+    "ja": "{name} 探索中..."
+  },
+  "exp.openMap": {
+    "ko": "탐험 지도 열기",
+    "en": "Open expedition map",
+    "ja": "探索マップを開く"
+  },
+  "exp.successTitle": {
+    "ko": "{name} 탐험 성공",
+    "en": "{name} expedition succeeded!",
+    "ja": "{name} 探索成功"
+  },
+  "exp.partialTitle": {
+    "ko": "{name} — 겨우 빠져나왔다",
+    "en": "{name} — you barely made it out",
+    "ja": "{name} — かろうじて抜け出した"
+  },
+  "exp.failTitle": {
+    "ko": "{name} 탐험 실패",
+    "en": "{name} expedition failed",
+    "ja": "{name} 探索失敗"
+  },
+  "exp.note.bag": {
+    "ko": "가방 덕에 빈손은 면했다.",
+    "en": "Thanks to the bag, you didn’t come back empty.",
+    "ja": "バッグのおかげで手ぶらは免れた。"
+  },
+  "exp.note.loot2": {
+    "ko": "방송의 좌표가 정확했다 — 은닉처에서 두 배로 거뒀다.",
+    "en": "The broadcast’s coordinates were true — you recovered double the supplies from the cache!",
+    "ja": "放送の座標は正確だった — 隠し場所から倍の物資を回収した。"
+  },
+  "exp.note.furniture": {
+    "ko": "폐허에서 온전한 가구를 건졌다. 흔치 않은 운이다.",
+    "en": "You found an intact piece of furniture in the ruins — a rare stroke of luck!",
+    "ja": "廃墟から無傷の家具を引き揚げた。めったにない幸運だ。"
+  },
+  "exp.note.book": {
+    "ko": "물에 젖지 않은 책 한 권을 챙겼다 — 폐허에 남은 지식.",
+    "en": "You salvaged a book that survived the damp — knowledge left in the ruins.",
+    "ja": "水に濡れていない本を一冊持ち帰った — 廃墟に残された知識。"
+  },
+  "exp.note.rooftopSalvage": {
+    "ko": "옥탑의 시야 덕에 가구를 건졌다.",
+    "en": "Thanks to the rooftop’s vantage, you salvaged a piece of furniture.",
+    "ja": "屋上の見晴らしのおかげで家具を引き揚げた。"
+  },
+  "exp.note.shipSalvage": {
+    "ko": "구명창고 덕에 실패한 날에도 얼마간 건졌다.",
+    "en": "Lifeboat locker trait — recovered some supplies even in failure.",
+    "ja": "救命倉庫のおかげで、失敗した日でもいくらか拾えた。"
+  },
+  "exp.note.dirty5": {
+    "ko": "흙투성이로 돌아왔다. (청결 -5)",
+    "en": "You came back covered in dirt and cleanliness dropped. (-5)",
+    "ja": "泥だらけで帰ってきた。(清潔 -5)"
+  },
+  "exp.note.firstaid": {
+    "ko": "응급키트가 깊은 상처를 막아 줬다.",
+    "en": "The first-aid kit turned a deep wound into a minor injury.",
+    "ja": "応急キットが深手を防いでくれた。"
+  },
+  "exp.note.gloves": {
+    "ko": "장갑 덕에 손은 성하다.",
+    "en": "The gloves kept you from getting hurt.",
+    "ja": "手袋のおかげで手は無事だ。"
+  },
+  "exp.note.wet3": {
+    "ko": "젖은 채로 돌아왔다. (청결 -3)",
+    "en": "You came back soaked and cleanliness dropped. (-3)",
+    "ja": "濡れたまま帰ってきた。(清潔 -3)"
+  },
+  "exp.unlock": {
+    "ko": "<div style=\"margin-top:10px;color:var(--accent)\">새 거처 발견: <b>{name}</b>— [ 이주] 메뉴에서 갈 수 있다</div>",
+    "en": "<div style=\"margin-top:10px;color:var(--accent)\">New shelter discovered: <b>{name}</b>— relocate via the [ Relocate] menu!</div>",
+    "ja": "<div style=\"margin-top:10px;color:var(--accent)\">新しいシェルターを発見: <b>{name}</b>— [ 移住] メニューから行ける</div>"
+  },
+  "exp.cause.injured": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_bandage.png\" alt=\"\">다친 몸이 내내 발목을 잡았다.",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_bandage.png\" alt=\"\">The injury dragged at you the whole way.",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_bandage.png\" alt=\"\">怪我した体がずっと足かせになった。"
+  },
+  "exp.cause.coldsnap": {
+    "ko": "얼어붙은 손이 좀처럼 말을 듣지 않았다.",
+    "en": "Frozen fingers barely obeyed you.",
+    "ja": "かじかんだ手がなかなか言うことを聞かなかった。"
+  },
+  "exp.cause.flashlight": {
+    "ko": "손전등으로 어두운 구석까지 뒤질 수 있었다.",
+    "en": "The flashlight let you search every dark corner.",
+    "ja": "懐中電灯で暗い隅まで探せた。"
+  },
+  "exp.cause.raincoat": {
+    "ko": "우의가 궂은 날씨를 대신 맞아 주었다.",
+    "en": "The raincoat took the worst of the weather for you.",
+    "ja": "雨合羽が荒れた天気を代わりに受けてくれた。"
+  },
+  "exp.cause.bottle": {
+    "ko": "물병 덕분에 목이 타들어 가진 않았다.",
+    "en": "The water bottle kept your throat from burning dry.",
+    "ja": "水筒のおかげで喉が焼けつくことはなかった。"
+  },
+  "exp.cause.canned": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">통조림으로 허기를 눌러 두고 버텼다.",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">Canned rations held the hunger back.",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">缶詰で空腹を抑えて持ちこたえた。"
+  },
+  "injury.applied": {
+    "ko": "<b>{name}</b>을(를) 입었다 — 탐험 성공률 -{pen}%p, 나으려면 약 {h}시간(게임).",
+    "en": "You suffered <b>{name}</b> — expedition success -{pen}%p, ~{h}h (game) until natural recovery.",
+    "ja": "<b>{name}</b>を負った — 探索成功率 -{pen}%p、治るまで約{h}時間(ゲーム内)。"
+  },
+  "injury.treated": {
+    "ko": "{name}을(를) 치료했다 ({cost} 사용)",
+    "en": "{name} treated ({cost} used)",
+    "ja": "{name}を治療した ({cost} 使用)"
+  },
+  "injury.recovered": {
+    "ko": "{name}이(가) 다 나았다",
+    "en": "{name} healed on its own",
+    "ja": "{name}がすっかり治った"
+  },
+  "injury.card": {
+    "ko": "<span class=\"i-name\">{name}</span> — 탐험 성공률 -{pen}%p{time}<br>자연 회복까지 약 <span id=\"injury-eta\">{h}</span> (휴식)",
+    "en": "<span class=\"i-name\">{name}</span> — expedition success -{pen}%p{time}<br>~<span id=\"injury-eta\">{h}</span> until natural recovery (rest)",
+    "ja": "<span class=\"i-name\">{name}</span> — 探索成功率 -{pen}%p{time}<br>自然回復まで約 <span id=\"injury-eta\">{h}</span> (休息)"
+  },
+  "injury.treat": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_painkiller.png\" alt=\"\">치료 ({cost})",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_painkiller.png\" alt=\"\">Treat ({cost})",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_painkiller.png\" alt=\"\">治療 ({cost})"
+  },
+  "move.renovNote": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">{name}{josa} 정비했다 ({cost})",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">{name} refit complete ({cost})",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">{name}を整備した ({cost})"
+  },
+  "move.journeyNote": {
+    "ko": "{name}까지 3시간을 걸었다.",
+    "en": "Traveled to {name} — the journey took 3 hours.",
+    "ja": "{name}まで3時間歩いた。"
+  },
+  "move.done": {
+    "ko": "{name}{josa} 이주했다{journey}",
+    "en": "Relocated to {name}{journey}",
+    "ja": "{name}に移住した{journey}"
+  },
+  "move.newShelter": {
+    "ko": "새 거처 발견 — 이주 지도를 확인하자",
+    "en": "New shelter found — check the relocation map",
+    "ja": "新しいシェルターを発見 — 移住マップを確認しよう"
+  },
+  "edit.enterYes": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">배치 모드 켜기",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">Enter placement mode",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">配置モード開始"
+  },
+  "edit.enterHint": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">배치 모드에서 옮길 수 있다",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">You can move it in placement mode",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">配置モードで動かせる"
+  },
+  "shelter.modalTitle": {
+    "ko": "구역과 거처",
+    "en": "Districts & Shelters",
+    "ja": "地区とシェルター"
+  },
+  "shelter.intro": {
+    "ko": "같은 구역 안에서는 자유롭게 오간다. <b>다른 구역으로 넘어가려면 물자(<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">1+<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">1)와 시간(3시간)</b>이 든다. 처음 들어가는 거처는 <b>정비 자원</b>부터 든다. 놓아둔 가구는 그 거처에 남고, 인벤토리는 어디서나 같다.",
+    "en": "You can move freely within a district, but <b>relocating to another district costs supplies (<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">1+<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">1) and time (3h)</b>. Moving into a shelter for the first time requires <b>refit resources</b>. Placed furniture stays with each shelter; your inventory is shared.",
+    "ja": "同じ地区の中は自由に行き来できる。<b>別の地区へ移るには物資(<img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">1+<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">1)と時間(3時間)</b>がかかる。初めて入るシェルターはまず<b>整備資源</b>が要る。置いた家具はそのシェルターに残り、インベントリはどこでも共通だ。"
+  },
+  "shelter.districtHeader": {
+    "ko": "<b>{name}</b>{here}<span style=\"font-size:10px\"> · {bonus}</span><br><span style=\"font-size:10px;color:var(--text-dim)\">{desc}</span>",
+    "en": "<b>{name}</b>{here}<span style=\"font-size:10px\"> · {bonus}</span><br><span style=\"font-size:10px;color:var(--text-dim)\">{desc}</span>",
+    "ja": "<b>{name}</b>{here}<span style=\"font-size:10px\"> · {bonus}</span><br><span style=\"font-size:10px;color:var(--text-dim)\">{desc}</span>"
+  },
+  "shelter.refitPart": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">정비 {cost}",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">Refit {cost}",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">整備 {cost}"
+  },
+  "shelter.journeyPart": {
+    "ko": "여정 <img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">1+<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">1· 3시간",
+    "en": "Journey <img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">1+<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">1· 3h",
+    "ja": "旅程 <img class=\"px-icon\" src=\"img/icons/icon_res_canned.png\" alt=\"\">1+<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">1· 3時間"
+  },
+  "craft.title": {
+    "ko": "제작대",
+    "en": "Workbench",
+    "ja": "作業台"
+  },
+  "craft.modHeader": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">거처 개조 — {name}",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">Shelter Modifications — {name}",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">シェルター改修 — {name}"
+  },
+  "sel.upgrade": {
+    "ko": "손질해서 개선 (T{n})",
+    "en": "Mend & Upgrade (T{n})",
+    "ja": "手入れして改良 (T{n})"
+  },
+  "craft.installed": {
+    "ko": "설치됨",
+    "en": "Installed",
+    "ja": "設置済み"
+  },
+  "craft.doneRes": {
+    "ko": "{name} ×{n} 만들었다",
+    "en": "{name} ×{n} crafted",
+    "ja": "{name} ×{n} 作った"
+  },
+  "craft.doneFurn": {
+    "ko": "{name} 완성 — 인벤토리에 넣어 뒀다",
+    "en": "{name} crafted — added to inventory",
+    "ja": "{name} 完成 — インベントリに入れておいた"
+  },
+  "craft.doneOutfit": {
+    "ko": "{name} 완성 — 바로 갈아입었다",
+    "en": "{name} finished — worn right away",
+    "ja": "{name} 完成 — さっそく着替えた"
+  },
+  "craft.owned": {
+    "ko": "옷장에 있음",
+    "en": "In wardrobe",
+    "ja": "クローゼットにあり"
+  },
+  "wardrobe.wearing": {
+    "ko": "입는 중",
+    "en": "Wearing",
+    "ja": "着用中"
+  },
+  "wardrobe.worn": {
+    "ko": "{name} — 갈아입었다",
+    "en": "Changed into {name}",
+    "ja": "{name} — 着替えた"
+  },
+  "craft.noteRes": {
+    "ko": "제작: {name}",
+    "en": "Crafted: {name}",
+    "ja": "製作: {name}"
+  },
+  "craft.modDone": {
+    "ko": "{name} 설치 완료!",
+    "en": "{name} installed!",
+    "ja": "{name} 設置完了！"
+  },
+  "craft.modNote": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">거처 개조: {name} 설치",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">Shelter mod: installed {name}",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_parts.png\" alt=\"\">シェルター改修: {name} 設置"
+  },
+  "journal.title": {
+    "ko": "생존 일지",
+    "en": "Survival Journal",
+    "ja": "サバイバル日誌"
+  },
+  "journal.achTab": {
+    "ko": "업적",
+    "en": "Achievements",
+    "ja": "実績"
+  },
+  "journal.colTab": {
+    "ko": "도감",
+    "en": "Collections",
+    "ja": "図鑑"
+  },
+  "deco.header": {
+    "ko": "꾸미기 — 벽지· 바닥재",
+    "en": "Decorate — Wallpaper & Flooring",
+    "ja": "模様替え — 壁紙· 床材"
+  },
+  "deco.applied": {
+    "ko": "{name} 적용",
+    "en": "Applied {name}",
+    "ja": "{name} 適用"
+  },
+  "deco.themeHeader": {
+    "ko": "테마 세트",
+    "en": "Theme Sets",
+    "ja": "テーマセット"
+  },
+  "deco.themeDone": {
+    "ko": "완성",
+    "en": "Complete",
+    "ja": "完成"
+  },
+  "ach.unlocked": {
+    "ko": "업적 달성 — {name}",
+    "en": "Achievement unlocked — {name}",
+    "ja": "実績達成 — {name}"
+  },
+  "ach.note": {
+    "ko": "업적: {name}",
+    "en": "Achievement: {name}",
+    "ja": "実績: {name}"
+  },
+  "event.metNote": {
+    "ko": "{title} — 만남이 있었다.",
+    "en": "{title} — an encounter.",
+    "ja": "{title} — 出会いがあった。"
+  },
+  "event.minimize": {
+    "ko": "잠시 내려두기",
+    "en": "Set aside",
+    "ja": "一旦保留"
+  },
+  "place.noStock": {
+    "ko": "{name}이(가) 없다 — 탐험에서 구해 오자",
+    "en": "No {name} in stock — obtain it on an expedition",
+    "ja": "{name}がない — 探索で手に入れよう"
+  },
+  "power.on": {
+    "ko": "켜짐 — 끄기",
+    "en": "On — turn off",
+    "ja": "オン — 消す"
+  },
+  "power.off": {
+    "ko": "꺼짐 — 켜기",
+    "en": "Off — turn on",
+    "ja": "オフ — つける"
+  },
+  "power.fuelLine": {
+    "ko": "{name} {have}개 보유 · 켜두면 1일 1개 소비 {status}",
+    "en": "{name} ×{have} · consumes 1/day while on {status}",
+    "ja": "{name} {have}個所持 · オンの間は1日1個消費 {status}"
+  },
+  "hud.cleanTip": {
+    "ko": "청결도 — 청소로 회복",
+    "en": "Cleanliness — restore with cleaning",
+    "ja": "清潔度 — 掃除で回復"
+  },
+  "season.arrived": {
+    "ko": "{name}이 왔다 — {desc}.",
+    "en": "{name} has arrived — {desc}.",
+    "ja": "{name}が来た — {desc}。"
+  },
+  "season.changed": {
+    "ko": "계절이 바뀌었다: {name}",
+    "en": "The season has turned: {name}",
+    "ja": "季節が変わった: {name}"
+  },
+  "settled.3": {
+    "ko": "이 집이 조금씩 손에 익는다. (정든 집 +3)",
+    "en": "This home grows more comfortable. (settled +3)",
+    "ja": "この家が少しずつ手に馴染んでくる。(馴染んだ家 +3)"
+  },
+  "settled.8": {
+    "ko": "이제 여기가 진짜 집 같다. (정든 집 +8, 최대)",
+    "en": "Now it truly feels like home. (settled +8, max)",
+    "ja": "もうここが本当の家みたいだ。(馴染んだ家 +8, 最大)"
+  },
+  "day.genRun": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_g_energy.png\" alt=\"\">발전기를 돌렸다 — 오늘 배터리는 공짜다. (연료 -1)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_g_energy.png\" alt=\"\">Generator running — battery use is free today. (fuel -1)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_g_energy.png\" alt=\"\">発電機を回した — 今日のバッテリーはタダだ。(燃料 -1)"
+  },
+  "day.genStop": {
+    "ko": "연료가 떨어져 발전기가 멈췄다.",
+    "en": "Out of fuel — the generator stopped.",
+    "ja": "燃料が切れて発電機が止まった。"
+  },
+  "day.fuelOut": {
+    "ko": "{fuel}이 떨어져 {name}이(가) 꺼졌다. 다시 켜려면 가구를 눌러 불을 붙인다.",
+    "en": "Out of {fuel} — {name} turned off. Tap it to relight once resupplied.",
+    "ja": "{fuel}が切れて{name}が消えた。補充したら家具をタップして再点灯。"
+  },
+  "day.purifier": {
+    "ko": "정수기가 물 한 통을 걸렀다. (+1)",
+    "en": "The purifier produced clean water. (+1)",
+    "ja": "浄水器が飲み水を一本ろ過した。(+1)"
+  },
+  "day.autopurifier": {
+    "ko": "자동 급수기가 물을 끌어올렸다. (+{n})",
+    "en": "The auto water station drew up water. (+{n})",
+    "ja": "自動給水機が水を汲み上げた。(+{n})"
+  },
+  "day.knowWater": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">이슬과 빗물을 받아 걸렀다. (+{n})",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">Gathered and filtered dew and rain. (+{n})",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_water.png\" alt=\"\">露と雨水を集めてろ過した。(+{n})"
+  },
+  "day.knowGarden": {
+    "ko": "작은 텃밭에서 거뒀다. (+{n})",
+    "en": "Harvested from your small garden. (+{n})",
+    "ja": "小さな菜園から収穫した。(+{n})"
+  },
+  "day.gardenFrozen": {
+    "ko": "겨울 — 텃밭이 얼어 거둘 게 없다.",
+    "en": "Winter — the garden is frozen; no harvest.",
+    "ja": "冬 — 菜園が凍って収穫はない。"
+  },
+  "day.produce": {
+    "ko": "{note} (+{n})",
+    "en": "{note} (+{n})",
+    "ja": "{note} (+{n})"
+  },
+  "day.foodSpoiled": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_food.png\" alt=\"\">냉장고가 없어 신선식품이 상했다. (-1)",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_food.png\" alt=\"\">Without a fridge, fresh food spoiled. (-1)",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_food.png\" alt=\"\">冷蔵庫がなくて生鮮食品が傷んだ。(-1)"
+  },
+  "day.foodSpoiledSummer": {
+    "ko": "<img class=\"px-icon\" src=\"img/icons/icon_res_food.png\" alt=\"\">여름 더위에 신선식품이 더 빨리 상했다.",
+    "en": "<img class=\"px-icon\" src=\"img/icons/icon_res_food.png\" alt=\"\">In the summer heat, fresh food spoiled faster.",
+    "ja": "<img class=\"px-icon\" src=\"img/icons/icon_res_food.png\" alt=\"\">夏の暑さで生鮮食品がより早く傷んだ。"
+  },
+  "day.foodFresh": {
+    "ko": "냉장고 덕에 음식이 성하다.",
+    "en": "Thanks to the fridge, food stayed fresh.",
+    "ja": "冷蔵庫のおかげで食べ物は無事だ。"
+  }
+}

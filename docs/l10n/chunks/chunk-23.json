@@ -1,427 +1,427 @@
 {
- "data.memo.sub1.desc": {
-  "ko": "열차 운행이 전면 중단되었습니다. 승강장에서 대기하지 마시고 지상 대피소로 이동하십시오.\n같은 방송이 반복되다, 어느 순간 뚝 끊겼다.",
-  "en": "All train service has stopped. Do not wait on the platform — proceed to a surface shelter.\nThe same message looped, then cut off mid-sentence.",
-  "ja": "列車の運行は全面的に停止しました。ホームで待機せず、地上の避難所へ移動してください。\n同じ放送が繰り返され、ある瞬間、ぷつりと途切れた。"
- },
- "data.memo.sub1.name": {
-  "ko": "승강장 안내 방송문",
-  "en": "Platform Announcement",
-  "ja": "ホームの案内放送"
- },
- "data.memo.sub2.desc": {
-  "ko": "개찰구 셔터 앞에 분필로 그은 줄, 번호가 삼백을 넘는다.\n맨 끝 번호 옆에 작게. \"여기까지. 안은 다 찼다.\"",
-  "en": "Chalk numbers queued before the gate shutter, past three hundred.\nBy the last number, small: \"This far. Inside is full.\"",
-  "ja": "改札のシャッター前にチョークで引かれた行列、番号は三百を超えている。\n最後の番号の横に小さく。「ここまで。中はもう満杯だ。」"
- },
- "data.memo.sub2.name": {
-  "ko": "셔터 앞의 줄",
-  "en": "The Line at the Shutter",
-  "ja": "シャッター前の列"
- },
- "data.memo.sub3.desc": {
-  "ko": "선로 자갈 위에 빈 유모차 하나가 모로 넘어져 있다. 담요는 아직 개켜진 채다.\n왜 여기 두고 갔는지는, 아무도 적어두지 않았다.",
-  "en": "An empty pram lies on its side in the track gravel. The blanket is still folded.\nWhy it was left here, no one wrote down.",
-  "ja": "線路の砕石の上に、空のベビーカーが一台、横倒しになっている。毛布はまだ畳まれたままだ。\nなぜここに置いていったのかは、誰も書き残していない。"
- },
- "data.memo.sub3.name": {
-  "ko": "궤도 위의 유모차",
-  "en": "A Pram on the Tracks",
-  "ja": "線路の上のベビーカー"
- },
- "data.memo.sub4.desc": {
-  "ko": "벽에 붙은 시각표에 누군가 빨간 펜으로 한 줄만 크게 동그라미 쳤다. 막차 23:40.\n그 밑에. \"이걸 놓치면 걸어서 내려와라.\"",
-  "en": "On the wall timetable, one line is circled hard in red pen: last train, 23:40.\nBeneath it: \"Miss this and walk down.\"",
-  "ja": "壁に貼られた時刻表に、誰かが赤ペンで一行だけ、大きく丸をつけていた。終電 23:40。\nその下に。「これを逃したら、歩いて下りてこい。」"
- },
- "data.memo.sub4.name": {
-  "ko": "마지막 열차 시각표",
-  "en": "Last Train Timetable",
-  "ja": "最終列車の時刻表"
- },
- "data.memo.sub5.desc": {
-  "ko": "먼지 앉은 승강장 끝, 발자국이 어둠 속 터널로 줄지어 이어진다. 돌아 나온 자국은 없다.\n그들이 지하에서 무엇을 찾으려 했는지, 나는 이제 조금 알 것 같다.",
-  "en": "At the dusty platform’s end, footprints file into the dark of the tunnel. None come back.\nWhat they hoped to find underground — I think I’m beginning to understand.",
-  "ja": "埃の積もったホームの端、足跡が闇のトンネルへと列をなして続いている。引き返した跡はない。\n彼らが地下で何を探そうとしていたのか、今なら少し分かる気がする。"
- },
- "data.memo.sub5.name": {
-  "ko": "터널로 이어진 발자국",
-  "en": "Footprints into the Tunnel",
-  "ja": "トンネルへ続く足跡"
- },
- "data.outfit.charcoal.name": {
-  "ko": "차콜 코트",
-  "en": "Charcoal Coat",
-  "ja": "チャコールコート"
- },
- "data.outfit.cream.name": {
-  "ko": "크림 파카",
-  "en": "Cream Parka",
-  "ja": "クリームパーカ"
- },
- "data.outfit.default.name": {
-  "ko": "방한 코트",
-  "en": "Winter Coat",
-  "ja": "防寒コート"
- },
- "data.outfit.forest.name": {
-  "ko": "숲 파카",
-  "en": "Forest Parka",
-  "ja": "フォレストパーカ"
- },
- "data.outfit.navy.name": {
-  "ko": "네이비 코트",
-  "en": "Navy Coat",
-  "ja": "ネイビーコート"
- },
- "data.outfit.wine.name": {
-  "ko": "와인 코트",
-  "en": "Wine Coat",
-  "ja": "ワインコート"
- },
- "data.paintfam.ashgray.name": {
-  "ko": "재 그레이",
-  "en": "Ash Gray",
-  "ja": "アッシュグレー"
- },
- "data.paintfam.charcoal.name": {
-  "ko": "목탄",
-  "en": "Charcoal",
-  "ja": "木炭"
- },
- "data.paintfam.lavender.name": {
-  "ko": "라벤더",
-  "en": "Lavender",
-  "ja": "ラベンダー"
- },
- "data.paintfam.mustard.name": {
-  "ko": "머스터드",
-  "en": "Mustard",
-  "ja": "マスタード"
- },
- "data.paintfam.oakStain.name": {
-  "ko": "오크 스테인",
-  "en": "Oak Stain",
-  "ja": "オークステイン"
- },
- "data.paintfam.olive.name": {
-  "ko": "올리브",
-  "en": "Olive Drab",
-  "ja": "オリーブ"
- },
- "data.paintfam.redOxide.name": {
-  "ko": "방청 레드",
-  "en": "Red Oxide",
-  "ja": "防錆レッド"
- },
- "data.paintfam.sage.name": {
-  "ko": "세이지",
-  "en": "Sage",
-  "ja": "セージ"
- },
- "data.paintfam.slateBlue.name": {
-  "ko": "슬레이트 블루",
-  "en": "Slate Blue",
-  "ja": "スレートブルー"
- },
- "data.paintfam.terracotta.name": {
-  "ko": "테라코타",
-  "en": "Terracotta",
-  "ja": "テラコッタ"
- },
- "data.paintfam.walnutStain.name": {
-  "ko": "월넛 스테인",
-  "en": "Walnut Stain",
-  "ja": "ウォルナットステイン"
- },
- "data.paintfam.whitewash.name": {
-  "ko": "화이트워시",
-  "en": "Whitewash",
-  "ja": "ホワイトウォッシュ"
- },
- "data.paintrare.neonPigment.name": {
-  "ko": "네온 안료",
-  "en": "Neon Pigment",
-  "ja": "ネオン顔料"
- },
- "data.prep.bottle.eff": {
-  "ko": "탐험 갈증 소모 절반 · 부상 회복 -20%",
-  "en": "Halves thirst use on expeditions · injury recovery -20%",
-  "ja": "探索中の渇き消費半減 · 負傷回復 -20%"
- },
- "data.prep.bottle.name": {
-  "ko": "물병",
-  "en": "Water Bottle",
-  "ja": "水筒"
- },
- "data.prep.canned.eff": {
-  "ko": "공업/슬럼 성공률 +5%p",
-  "en": "Industrial/slum success +5%p",
-  "ja": "工業/スラム成功率 +5%p"
- },
- "data.prep.canned.name": {
-  "ko": "통조림",
-  "en": "Canned Food",
-  "ja": "缶詰"
- },
- "data.prep.firstaid.eff": {
-  "ko": "깊은 상처 → 가벼운 부상으로 완화",
-  "en": "Softens deep wounds into minor injuries",
-  "ja": "深い傷 → 軽い負傷に緩和"
- },
- "data.prep.firstaid.name": {
-  "ko": "응급키트",
-  "en": "First-Aid Kit",
-  "ja": "救急キット"
- },
- "data.prep.flashlight.eff": {
-  "ko": "상업/슬럼 성공률 +10%p",
-  "en": "Commercial/slum success +10%p",
-  "ja": "商業/スラム成功率 +10%p"
- },
- "data.prep.flashlight.name": {
-  "ko": "손전등",
-  "en": "Flashlight",
-  "ja": "懐中電灯"
- },
- "data.prep.gloves.eff": {
-  "ko": "부상 확률 -30%",
-  "en": "Injury chance -30%",
-  "ja": "負傷確率 -30%"
- },
- "data.prep.gloves.name": {
-  "ko": "장갑",
-  "en": "Gloves",
-  "ja": "手袋"
- },
- "data.prep.raincoat.eff": {
-  "ko": "날씨 페널티 -70%",
-  "en": "Weather penalty -70%",
-  "ja": "天候ペナルティ -70%"
- },
- "data.prep.raincoat.name": {
-  "ko": "우의",
-  "en": "Raincoat",
-  "ja": "レインコート"
- },
- "data.region.checkpoint.desc": {
-  "ko": "봉쇄선의 첫 관문 · 부품·건축재 (방호복 필수)",
-  "en": "The first gate of the cordon · parts, material (hazmat required)",
-  "ja": "封鎖線の最初の関門 · 部品・建材 (防護服必須)"
- },
- "data.region.checkpoint.name": {
-  "ko": "격리 검문소",
-  "en": "Quarantine Checkpoint",
-  "ja": "隔離検問所"
- },
- "data.region.checkpoint.risk": {
-  "ko": "보통 — 방호복 필수",
-  "en": "Medium — hazmat required",
-  "ja": "普通 — 防護服必須"
- },
- "data.region.citycore.desc": {
-  "ko": "수도의 심장 · 책 뭉치·의약 정점·희귀부품 (낙진이 걷힌 뒤에만)",
-  "en": "The capital’s heart · book caches, peak meds, rare parts (only after the fallout clears)",
-  "ja": "首都の心臓 · 本の束・医薬品の頂点・希少部品 (死の灰が晴れた後のみ)"
- },
- "data.region.citycore.name": {
-  "ko": "도심 중심지",
-  "en": "City Core",
-  "ja": "都心中枢"
- },
- "data.region.citycore.risk": {
-  "ko": "매우 높음 — 응급키트 권장",
-  "en": "Very high — first-aid kit advised",
-  "ja": "非常に高い — 救急キット推奨"
- },
- "data.region.commercial.desc": {
-  "ko": "배터리·의약품 · 상점 가구",
-  "en": "Batteries, medicine · store furniture",
-  "ja": "バッテリー・医薬品 · 店舗家具"
- },
- "data.region.commercial.name": {
-  "ko": "상업지구",
-  "en": "Commercial",
-  "ja": "商業地区"
- },
- "data.region.commercial.risk": {
-  "ko": "보통",
-  "en": "Medium",
-  "ja": "普通"
- },
- "data.region.fishMarket.desc": {
-  "ko": "신선식품 · 소금 산지 (겨울엔 결빙)",
-  "en": "Fresh food · salt source (frozen in winter)",
-  "ja": "生鮮食品 · 塩の産地 (冬は凍結)"
- },
- "data.region.fishMarket.name": {
-  "ko": "수산시장 폐허",
-  "en": "Fish Market Ruins",
-  "ja": "水産市場の廃墟"
- },
- "data.region.fishMarket.risk": {
-  "ko": "낮음",
-  "en": "Low",
-  "ja": "低い"
- },
- "data.region.harborYard.desc": {
-  "ko": "컨테이너 화물 · 오늘 바다가 준 것",
-  "en": "Container cargo · what the sea gave today",
-  "ja": "コンテナ貨物 · 今日海がくれたもの"
- },
- "data.region.harborYard.name": {
-  "ko": "항만 야적장",
-  "en": "Harbor Yard",
-  "ja": "港湾ヤード"
- },
- "data.region.harborYard.risk": {
-  "ko": "보통",
-  "en": "Medium",
-  "ja": "普通"
- },
- "data.region.industrial.desc": {
-  "ko": "부품·건축재·연료",
-  "en": "Parts, building material, fuel",
-  "ja": "部品・建材・燃料"
- },
- "data.region.industrial.name": {
-  "ko": "공업지대",
-  "en": "Industrial",
-  "ja": "工業地帯"
- },
- "data.region.industrial.risk": {
-  "ko": "높음 — 장갑 권장",
-  "en": "High — gloves advised",
-  "ja": "高い — 手袋推奨"
- },
- "data.region.lab.desc": {
-  "ko": "폭심지 연구소 폐허 · 희귀부품 최다 · 세상의 답이 있는 곳 (방호복 필수)",
-  "en": "Ruins of the ground-zero lab · richest in rare parts · where the world’s answer lies (hazmat required)",
-  "ja": "爆心地の研究所廃墟 · 希少部品が最多 · 世界の答えがある場所 (防護服必須)"
- },
- "data.region.lab.name": {
-  "ko": "지하 연구동",
-  "en": "Underground Lab",
-  "ja": "地下研究棟"
- },
- "data.region.lab.risk": {
-  "ko": "매우 높음 — 방호복 필수",
-  "en": "Very high — hazmat required",
-  "ja": "非常に高い — 防護服必須"
- },
- "data.region.residential.desc": {
-  "ko": "음식·물·천·양초 · 생활 가구",
-  "en": "Food, water, cloth, candles · household furniture",
-  "ja": "食料・水・布・ろうそく · 生活家具"
- },
- "data.region.residential.name": {
-  "ko": "주거지역",
-  "en": "Residential",
-  "ja": "住宅地区"
- },
- "data.region.residential.risk": {
-  "ko": "낮음",
-  "en": "Low",
-  "ja": "低い"
- },
- "data.region.resort.desc": {
-  "ko": "산정 호텔의 잔해 · 두둑한 물자 (겨울엔 눈사태 위험)",
-  "en": "Ruins of a summit hotel · rich supplies (avalanche risk in winter)",
-  "ja": "山頂ホテルの残骸 · 潤沢な物資 (冬は雪崩の危険)"
- },
- "data.region.resort.name": {
-  "ko": "리조트 폐허",
-  "en": "Resort Ruins",
-  "ja": "リゾート廃墟"
- },
- "data.region.resort.risk": {
-  "ko": "높음 — 응급키트 권장",
-  "en": "High — first-aid kit advised",
-  "ja": "高い — 救急キット推奨"
- },
- "data.region.slum.desc": {
-  "ko": "뭐든 나올 수 있다 · 희귀 가구",
-  "en": "Anything might turn up · rare furniture",
-  "ja": "何が出てもおかしくない · 希少家具"
- },
- "data.region.slum.name": {
-  "ko": "슬럼가",
-  "en": "Slums",
-  "ja": "スラム街"
- },
- "data.region.slum.risk": {
-  "ko": "매우 높음 — 응급키트 권장",
-  "en": "Very high — first-aid kit advised",
-  "ja": "非常に高い — 救急キット推奨"
- },
- "data.region.slumdeep.desc": {
-  "ko": "슬럼의 안쪽 · 아무도 못 턴 방들",
-  "en": "The inside of the slums · rooms no one has looted",
-  "ja": "スラムの奥 · 誰も漁れなかった部屋"
- },
- "data.region.slumdeep.name": {
-  "ko": "뒷골목 심부",
-  "en": "Back-Alley Depths",
-  "ja": "路地裏の深部"
- },
- "data.region.slumdeep.risk": {
-  "ko": "극도로 높음 — 무너짐이 잦다",
-  "en": "Extreme — collapses are frequent",
-  "ja": "極めて高い — 崩落が多い"
- },
- "data.res.antiseptic.name": {
-  "ko": "소독약",
-  "en": "Antiseptic",
-  "ja": "消毒薬"
- },
- "data.res.bandage.name": {
-  "ko": "붕대",
-  "en": "Bandage",
-  "ja": "包帯"
- },
- "data.res.battery.name": {
-  "ko": "배터리",
-  "en": "Battery",
-  "ja": "バッテリー"
- },
- "data.res.book.name": {
-  "ko": "책",
-  "en": "Book",
-  "ja": "本"
- },
- "data.res.candle.name": {
-  "ko": "양초",
-  "en": "Candle",
-  "ja": "ろうそく"
- },
- "data.res.canned.name": {
-  "ko": "통조림",
-  "en": "Canned Food",
-  "ja": "缶詰"
- },
- "data.res.cloth.name": {
-  "ko": "천",
-  "en": "Cloth",
-  "ja": "布"
- },
- "data.res.food.name": {
-  "ko": "신선식품",
-  "en": "Fresh Food",
-  "ja": "生鮮食品"
- },
- "data.res.fuel.name": {
-  "ko": "연료",
-  "en": "Fuel",
-  "ja": "燃料"
- },
- "data.res.material.name": {
-  "ko": "건축재",
-  "en": "Material",
-  "ja": "建材"
- },
- "data.res.painkiller.name": {
-  "ko": "진통제",
-  "en": "Painkiller",
-  "ja": "鎮痛剤"
- }
+  "data.knowbr.home.name": {
+    "ko": "살림",
+    "en": "Homemaking",
+    "ja": "暮らし"
+  },
+  "data.knowbr.lore.name": {
+    "ko": "앎",
+    "en": "Knowing",
+    "ja": "知"
+  },
+  "data.knowbr.supply.name": {
+    "ko": "자급",
+    "en": "Self-sufficiency",
+    "ja": "自給"
+  },
+  "data.knowbr.warmth.name": {
+    "ko": "온기",
+    "en": "Warmth",
+    "ja": "暖かさ"
+  },
+  "data.memo.com1.desc": {
+    "ko": "1인 1개. 새치기 신고 즉시 퇴장.\n팻말만 남고 진열대는 사흘 만에 뼈대뿐이었다.",
+    "en": "One per customer. Cutting the line means removal.\nThe sign stayed. The shelves were bones in three days.",
+    "ja": "お一人様1点。列の割り込みは通報のうえ即退場。\n札だけが残り、棚は三日で骨組みだけになった。"
+  },
+  "data.memo.com1.name": {
+    "ko": "텅 빈 진열대 팻말",
+    "en": "Empty Shelf Sign",
+    "ja": "空っぽの棚の札"
+  },
+  "data.memo.com2.desc": {
+    "ko": "직원들에게. 오늘 문을 닫는다. 남은 물건은 각자 가져가라.\n너희를 지켜주지 못해 미안하다.",
+    "en": "To my staff. We close today. Take what’s left, split it fairly.\nI’m sorry I couldn’t keep you safe.",
+    "ja": "従業員へ。今日で店を閉める。残った品は各自持っていけ。\nお前たちを守ってやれなくて、すまない。"
+  },
+  "data.memo.com2.name": {
+    "ko": "점장의 메모",
+    "en": "Manager’s Memo",
+    "ja": "店長のメモ"
+  },
+  "data.memo.com3.desc": {
+    "ko": "깨진 유리 위에 스프레이로 적혔다. \"여긴 이미 털렸다. 헛수고 마라.\"\n그 아래 누군가 덧썼다. \"그래도 확인했다.\"",
+    "en": "Sprayed across shattered glass: \"Already cleaned out. Don’t bother.\"\nBelow it someone added: \"Checked anyway.\"",
+    "ja": "割れたガラスの上にスプレーで書かれていた。「ここはもう漁られた。無駄足はよせ」\nその下に誰かが書き足した。「それでも確かめた」"
+  },
+  "data.memo.com3.name": {
+    "ko": "깨진 쇼윈도 낙서",
+    "en": "Graffiti on Broken Glass",
+    "ja": "割れたショーウィンドウの落書き"
+  },
+  "data.memo.com4.desc": {
+    "ko": "종이에 매직으로. 현금 안 받음. 물, 약, 연료만 교환.\n돈이 종이가 되는 데 일주일이 걸렸다.",
+    "en": "Marker on cardboard: No cash. Trade only — water, meds, fuel.\nIt took a week for money to become paper.",
+    "ja": "紙にマジックで。現金お断り。水、薬、燃料のみ交換。\n金がただの紙になるまで、一週間だった。"
+  },
+  "data.memo.com4.name": {
+    "ko": "현금은 안 받습니다",
+    "en": "No Cash Accepted",
+    "ja": "現金お断り"
+  },
+  "data.memo.com5.desc": {
+    "ko": "약이 필요하면 문을 두드리지 말고 목록을 적어 넣으세요. 있으면 내놓겠습니다.\n마지막 줄: 이제 아무것도 없습니다.",
+    "en": "Need meds? Don’t knock — slip a list under the door. If we have it, it’s yours.\nLast line: We have nothing left now.",
+    "ja": "薬が必要なら、ドアを叩かずにリストを書いて差し入れてください。あれば出します。\n最後の行:もう何もありません。"
+  },
+  "data.memo.com5.name": {
+    "ko": "약국 셔터의 호소",
+    "en": "Plea on the Pharmacy Shutter",
+    "ja": "薬局のシャッターの訴え"
+  },
+  "data.memo.com6.desc": {
+    "ko": "오늘 밤 배급소 앞으로. 더는 순서를 기다리지 않는다.\n전단은 젖어 뭉개졌고, 배급소는 그 밤 이후 불탔다.",
+    "en": "Tonight, at the ration depot. We wait our turn no longer.\nThe flyer is pulped with rain. The depot burned that night.",
+    "ja": "今夜、配給所の前へ。もう順番は待たない。\nビラは濡れてふやけ、配給所はその夜に焼け落ちた。"
+  },
+  "data.memo.com6.name": {
+    "ko": "폭동의 밤 전단",
+    "en": "Riot Night Flyer",
+    "ja": "暴動の夜のビラ"
+  },
+  "data.memo.com7.desc": {
+    "ko": "거래를 완료할 수 없습니다. 잠시 후 다시 시도해 주십시오.\n같은 문장이 몇 달째 켜져 있다.",
+    "en": "Transaction cannot be completed. Please try again later.\nThe same line, lit for months now.",
+    "ja": "お取引を完了できません。しばらくしてから、もう一度お試しください。\n同じ文面が、もう何か月も灯ったままだ。"
+  },
+  "data.memo.com7.name": {
+    "ko": "ATM 화면",
+    "en": "ATM Screen",
+    "ja": "ATMの画面"
+  },
+  "data.memo.com8.desc": {
+    "ko": "고객 여러분, 영업을 종료합니다. 침착하게 가까운 출구로.\n대본 여백에 손글씨. \"3번 출구 막힘. 통제 불가.\"",
+    "en": "Dear customers, we are closing. Calmly proceed to the nearest exit.\nHandwritten in the margin: \"Exit 3 blocked. No control.\"",
+    "ja": "お客様各位、営業を終了します。落ち着いて、お近くの出口へ。\n台本の余白に手書きで。「3番出口、封鎖。統制不能」"
+  },
+  "data.memo.com8.name": {
+    "ko": "백화점 안내방송 대본",
+    "en": "Department Store Script",
+    "ja": "デパートの館内放送台本"
+  },
+  "data.memo.ind1.desc": {
+    "ko": "본 공장은 정부 명령에 따라 조업을 전면 중단한다. 설비 전원을 내리고 즉시 귀가하라.\n도장이 찍힌 날 이후, 라인은 멈춘 채다.",
+    "en": "By government order, all operations cease. Power down and go home at once.\nSince the stamp on this page, the line has not moved.",
+    "ja": "本工場は政府命令により操業を全面停止する。設備の電源を落とし、直ちに帰宅せよ。\n判が押されたその日から、ラインは止まったままだ。"
+  },
+  "data.memo.ind1.name": {
+    "ko": "공장 폐쇄 명령서",
+    "en": "Plant Shutdown Order",
+    "ja": "工場閉鎖命令書"
+  },
+  "data.memo.ind2.desc": {
+    "ko": "야간조 3명 출근. 주간조 인수인계 없음 — 아무도 오지 않음.\n마지막 줄: 문 잠그고 나감. 불은 켜둔다.",
+    "en": "Night shift: 3 in. No day-shift handover — no one came.\nLast line: Locking up. Leaving a light on.",
+    "ja": "夜勤3名出勤。日勤への引き継ぎなし — 誰も来ず。\n最後の行:戸締まりして退出。明かりはつけておく。"
+  },
+  "data.memo.ind2.name": {
+    "ko": "마지막 교대 일지",
+    "en": "Last Shift Log",
+    "ja": "最後の交代日誌"
+  },
+  "data.memo.ind3.desc": {
+    "ko": "먼지 앉은 안전모 안쪽에 이름과 사번. 그 아래 작게. \"27년 근속. 이제 집에 간다.\"\n걸이엔 아직 열두 개가 그대로다.",
+    "en": "Name and badge number inside a dusty hard hat. Below, small: \"27 years. Going home now.\"\nTwelve more still hang on the pegs.",
+    "ja": "埃をかぶったヘルメットの内側に、名前と社員番号。その下に小さく。「勤続27年。もう家に帰る」\nフックにはまだ十二個が掛かったままだ。"
+  },
+  "data.memo.ind3.name": {
+    "ko": "안전모의 이름표",
+    "en": "Name on a Hard Hat",
+    "ja": "ヘルメットの名札"
+  },
+  "data.memo.ind4.desc": {
+    "ko": "이번 달 급여 지급이 불가함을 알린다. 회사가 존속하는 한 반드시 정산하겠다.\n회사는 존속하지 않았다.",
+    "en": "This month’s wages cannot be paid. So long as the company stands, you will be made whole.\nThe company did not stand.",
+    "ja": "今月分の給与が支給不能であることを通知する。会社が存続する限り、必ず清算する。\n会社は存続しなかった。"
+  },
+  "data.memo.ind4.name": {
+    "ko": "급여 미지급 공고",
+    "en": "Unpaid Wages Notice",
+    "ja": "給与未払いの公告"
+  },
+  "data.memo.ind5.desc": {
+    "ko": "배관공이 파이프에 분필로. \"밸브 잠갔음. 여기 온기는 내가 마지막까지 지켰다.\"\n온기는 오래전에 식었다.",
+    "en": "Chalked on a pipe by the fitter: \"Valves shut. I kept this heat going till the end.\"\nThe warmth went cold long ago.",
+    "ja": "配管工がパイプにチョークで。「バルブ閉鎖済み。ここの暖かさは俺が最後まで守った」\nその暖かさは、とうに冷めた。"
+  },
+  "data.memo.ind5.name": {
+    "ko": "보일러실 낙서",
+    "en": "Boiler Room Scrawl",
+    "ja": "ボイラー室の落書き"
+  },
+  "data.memo.ind6.desc": {
+    "ko": "타임카드가 한 날짜에서 멈췄다. 그날 이후로 찍힌 카드가 없다.\n기계는 아직 자정을 가리키고 있다.",
+    "en": "The time cards all stop on one date. None punched after.\nThe clock still points to midnight.",
+    "ja": "タイムカードはある日付で止まっている。その日を最後に、打刻されたカードはない。\n機械はまだ零時を指したままだ。"
+  },
+  "data.memo.ind6.name": {
+    "ko": "출근 카드 뭉치",
+    "en": "Stack of Time Cards",
+    "ja": "タイムカードの束"
+  },
+  "data.memo.ind7.desc": {
+    "ko": "연료 드럼 40 → 6. 부품 상자 전량 반출.\n표 맨 아래: \"가져갈 수 있는 건 다 가져갔다. 미안.\"",
+    "en": "Fuel drums 40 → 6. Parts crates all removed.\nBottom of the sheet: \"Took everything we could carry. Sorry.\"",
+    "ja": "燃料ドラム40 → 6。部品箱は全量搬出。\n表の一番下に:「持てるものは全部持っていった。すまない。」"
+  },
+  "data.memo.ind7.name": {
+    "ko": "창고 재고표",
+    "en": "Warehouse Inventory",
+    "ja": "倉庫の在庫表"
+  },
+  "data.memo.nw1.desc": {
+    "ko": "무너진 통신국 지하의 서류철. 지상 신호마다 번호와 좌표, 버틴 날수가 나란히 적혀 있다.\n한 줄에서 오래 눈이 멎었다. 좌표가 낯익다 — 내 겨울들이 거기 있었다.",
+    "en": "A file binder from beneath the collapsed relay station. Each surface signal has a number, coordinates, days endured.\nMy eyes stopped long on one line. I know those coordinates — my winters are written there.",
+    "ja": "崩れた通信局の地下で見つけた書類の綴り。地上の信号ごとに、番号と座標、持ちこたえた日数が並んで記されている。\nある一行で、長く目が止まった。座標に見覚えがある — 私が越えてきた冬が、そこにあった。"
+  },
+  "data.memo.nw1.name": {
+    "ko": "관측 대상 대장",
+    "en": "Ledger of Observed Subjects",
+    "ja": "観測対象台帳"
+  },
+  "data.memo.nw2.desc": {
+    "ko": "타이핑된 각서. 스스로 버틴 자. 기록을 남기는 자. 불을 지킨 자 — '데려갈 가치'의 기준이 항목으로 늘어서 있다.\n여백에 도장 하나가 찍혀 있다. \"합격.\"",
+    "en": "A typed memorandum. Those who endured alone. Those who kept records. Those who tended a fire — the criteria of \"worth taking,\" set down item by item.\nIn the margin, a single stamp: \"Selected.\"",
+    "ja": "タイプ打ちの覚書。自力で持ちこたえた者。記録を残す者。火を守った者 — 「連れて行く価値」の基準が、項目として並んでいる。\n余白に判がひとつ押されている。「合格。」"
+  },
+  "data.memo.nw2.name": {
+    "ko": "선별 기준 각서",
+    "en": "Memorandum of Selection",
+    "ja": "選別基準の覚書"
+  },
+  "data.memo.nw3.desc": {
+    "ko": "제본된 개요서. 남은 생존자를 한 곳에 모아 '다음 인류'를 시작한다는 계획 — 지도부와 규범, 자리 배치까지 이미 정해져 있다.\n우리가 함께 지을 세상이 아니라, 그들이 먼저 설계해 둔 세상이었다.",
+    "en": "A bound brief. A plan to gather the remaining survivors in one place and begin the \"next humanity\" — leadership, rules, even seating already decided.\nNot a world we would build together. A world they had already drawn.",
+    "ja": "製本された概要書。残った生存者を一箇所に集め、「次の人類」を始めるという計画 — 指導部と規範、席の配置まで、すでに決められている。\n私たちが共に築く世界ではなく、彼らが先に設計しておいた世界だった。"
+  },
+  "data.memo.nw3.name": {
+    "ko": "규합 계획 개요",
+    "en": "Assembly Plan Brief",
+    "ja": "集結計画の概要"
+  },
+  "data.memo.nw4.desc": {
+    "ko": "봉투도 없이 놓인 한 장. 좌표와 날짜, 그리고 짧은 문장.\n\"우리는 당신을 오래 지켜봤습니다. 자리는 비워 두었습니다.\" — 초대인지, 소환인지.",
+    "en": "A single sheet, left without an envelope. Coordinates, a date, and one short sentence.\n\"We have watched you for a long time. Your place is kept.\" — An invitation, or a summons.",
+    "ja": "封筒もなく置かれた一枚。座標と日付、そして短い一文。\n「私たちは長いあいだ、あなたを見てきました。席は空けてあります。」 — 招待なのか、召喚なのか。"
+  },
+  "data.memo.nw4.name": {
+    "ko": "초대장",
+    "en": "The Invitation",
+    "ja": "招待状"
+  },
+  "data.memo.obs1.name": {
+    "ko": "수신 안내문",
+    "en": "Reception Note",
+    "ja": "受信案内のメモ"
+  },
+  "data.memo.obs1.desc": {
+    "ko": "옥상 안테나를 남쪽으로 3도. 새벽에만 잡힌다. 위에서 찍은 사진이 나온다 — 누가 보내는지는 모르겠고, 묻는 법도 없다.\n그냥 튼다. 우리 동네가 아직 있는지 보려고.",
+    "en": "Roof antenna, three degrees south. Only comes in before dawn. Pictures taken from above — no idea who sends them, and no way to ask.\nI tune in anyway. To see if our block is still there.",
+    "ja": "屋上のアンテナを南へ3度。夜明けにしか入らない。上から撮った写真が映る — 誰が送っているのかは知らないし、尋ねる術もない。\nそれでも点ける。うちの町がまだあるか、見るために。"
+  },
+  "data.memo.obs2.name": {
+    "ko": "관측 일지 — 발신 불명",
+    "en": "Observation Log — Unsigned",
+    "ja": "観測日誌 — 発信元不明"
+  },
+  "data.memo.obs2.desc": {
+    "ko": "D+214. 3번 격자 불빛 하나 유지. 명단에 추가함.\n서명은 없다.",
+    "en": "D+214. Grid 3, one light holding. Added to the list.\nThere is no signature.",
+    "ja": "D+214。第3グリッド、灯りひとつ維持。名簿に追加した。\n署名はない。"
+  },
+  "data.memo.res1.desc": {
+    "ko": "우유 사올 것. 애들 학원비. 다음 주 부모님 생신.\n적어둔 목록은 그대로인데, 마트는 열흘째 문을 닫았다.",
+    "en": "Buy milk. Kids’ tuition. Mom’s birthday next week.\nThe list is still here. The store has been shut ten days.",
+    "ja": "牛乳を買うこと。子どもたちの塾代。来週、両親の誕生日。\n書き留めたリストはそのままなのに、スーパーはもう十日も閉まったままだ。"
+  },
+  "data.memo.res1.name": {
+    "ko": "냉장고 쪽지",
+    "en": "Fridge Note",
+    "ja": "冷蔵庫のメモ"
+  },
+  "data.memo.res2.desc": {
+    "ko": "아이 운동화가 문 앞에 그대로 있다. 사이즈가 작아 새로 사주기로 했었다.\n결국 못 사줬다.",
+    "en": "A child’s sneakers, still by the door. Too small — we meant to buy new ones.\nWe never did.",
+    "ja": "子どもの運動靴が、玄関にそのまま残っている。サイズが小さくなって、新しいものを買ってやるはずだった。\n結局、買ってやれなかった。"
+  },
+  "data.memo.res2.name": {
+    "ko": "현관의 신발",
+    "en": "Shoes at the Door",
+    "ja": "玄関の靴"
+  },
+  "data.memo.res3.desc": {
+    "ko": "봉쇄 첫날. 다들 며칠이면 끝난다고 했다.\n베란다에서 옆 동 사람과 손을 흔들었다. 그게 마지막 인사였다.",
+    "en": "First day of lockdown. Everyone said a few days, that’s all.\nWaved to a neighbor across the way. That was the last hello.",
+    "ja": "封鎖初日。みんな、数日で終わると言っていた。\nベランダから隣の棟の人と手を振り合った。それが最後の挨拶だった。"
+  },
+  "data.memo.res3.name": {
+    "ko": "봉쇄 첫날 일기",
+    "en": "Lockdown Day One",
+    "ja": "封鎖初日の日記"
+  },
+  "data.memo.res4.desc": {
+    "ko": "주민 여러분께. 엘리베이터 운행을 중단합니다. 물은 하루 두 시간만 나옵니다.\n관리사무소는 오늘부로 비웁니다. 부디 몸조심하십시오.",
+    "en": "To all residents. The elevator is stopped. Water runs two hours a day.\nThe office closes today. Please, take care of yourselves.",
+    "ja": "住民の皆様へ。エレベーターの運行を停止します。水は一日二時間しか出ません。\n管理事務所は本日をもって引き払います。どうか、お体を大切に。"
+  },
+  "data.memo.res4.name": {
+    "ko": "아파트 방송문",
+    "en": "Building Announcement",
+    "ja": "館内放送文"
+  },
+  "data.memo.res5.desc": {
+    "ko": "문틀에 연필로 그은 키 눈금. 작년 봄까지는 촘촘하다.\n그 위로는 없다.",
+    "en": "Pencil height marks on the door frame, close together — until last spring.\nNothing above them.",
+    "ja": "ドア枠に鉛筆で刻んだ背丈の目盛り。去年の春までは細かく並んでいる。\nその上には、何もない。"
+  },
+  "data.memo.res5.name": {
+    "ko": "벽에 그은 키",
+    "en": "Height Marks",
+    "ja": "壁の背丈の印"
+  },
+  "data.memo.res6.desc": {
+    "ko": "옷 몇 벌, 사진첩, 여권. 떠날 준비를 하다 멈춘 가방.\n어디로 가려 했는지는 적혀 있지 않다.",
+    "en": "A few clothes, a photo album, passports. A bag packed halfway, then abandoned.\nWhere they meant to go isn’t written anywhere.",
+    "ja": "服が数着、アルバム、パスポート。発つ支度の途中で止まった鞄。\nどこへ行くつもりだったのかは、書かれていない。"
+  },
+  "data.memo.res6.name": {
+    "ko": "반쯤 싼 이민 가방",
+    "en": "Half-Packed Suitcase",
+    "ja": "荷造り半ばの鞄"
+  },
+  "data.memo.res7.desc": {
+    "ko": "먼저 간다. 물자 받으러 갔다가 자리가 나면 연락할게.\n식탁 위에 그대로 놓여 있다. 답장은 없다.",
+    "en": "Going ahead. I’ll send word once I find us a spot at the supply line.\nStill on the table. No reply ever came.",
+    "ja": "先に行く。物資をもらいに行って、居場所が見つかったら連絡する。\n食卓の上にそのまま置かれている。返事はない。"
+  },
+  "data.memo.res7.name": {
+    "ko": "식탁 위 편지",
+    "en": "Letter on the Table",
+    "ja": "食卓の上の手紙"
+  },
+  "data.memo.res8.desc": {
+    "ko": "쌀 10kg, 생수 두 박스, 통조림. 배달 완료.\n영수증 날짜 이후로 이 집에서 나간 사람은 없다.",
+    "en": "10kg rice, two cases of water, canned goods. Delivered.\nAfter this date, no one left this house.",
+    "ja": "米10kg、飲み水二箱、缶詰。配達完了。\nレシートの日付以降、この家を出た者はいない。"
+  },
+  "data.memo.res8.name": {
+    "ko": "마지막 배달 영수증",
+    "en": "Last Delivery Slip",
+    "ja": "最後の配達伝票"
+  },
+  "data.memo.rsc1.desc": {
+    "ko": "차단봉 옆 철제 캐비닛에서 나온 일지. 첫 장: 감염 의심자 격리, 통행 전면 차단. 마지막 장은 며칠 뒤다.\n\"우리도 안에 갇혔다. 밖에서 문을 잠갔다.\"",
+    "en": "A logbook from the steel cabinet by the barrier. First page: isolate suspected cases, seal all passage. The last page is days later.\n\"We are shut in too. They locked the door from outside.\"",
+    "ja": "遮断棒の脇の鉄製キャビネットから出てきた日誌。最初のページ:感染疑いの者を隔離、通行を全面遮断。最後のページは、その数日後だ。\n「我々も中に閉じ込められた。扉は外から施錠された。」"
+  },
+  "data.memo.rsc1.name": {
+    "ko": "검문소 통제 일지",
+    "en": "Checkpoint Control Log",
+    "ja": "検問所の統制日誌"
+  },
+  "data.memo.rsc10.desc": {
+    "ko": "단말 화면을 옮겨 적은 종이. 궤도 관측소와의 정기 교신 기록. 대부분 \"지상 신호 없음\".\n맨 아래 한 줄만 다르다. \"신호 하나 감지. 좌표 기록. — 계속 지켜본다.\"",
+    "en": "A page transcribed from a terminal. Logs of regular contact with the orbital station. Most read \"no surface signal.\"\nOnly the bottom line differs: \"One signal detected. Coordinates logged. — Keep watching.\"",
+    "ja": "端末の画面を書き写した紙。軌道観測所との定期交信の記録。ほとんどは「地上信号なし」。\n一番下の一行だけが違う。「信号一つを検知。座標を記録。 — 監視を続ける。」"
+  },
+  "data.memo.rsc10.name": {
+    "ko": "위성 교신 로그",
+    "en": "Satellite Uplink Log",
+    "ja": "衛星交信ログ"
+  },
+  "data.memo.rsc11.desc": {
+    "ko": "접힌 청사진. 지상에서 궤도 관측소로 신호를 되쏘는 송신 기지의 도면이다. 안테나·송신기·전원 계통이 나뉘어 있다.\n여백에 손글씨. \"누군가 이걸 다시 세운다면, 위에서 응답할 것이다.\"",
+    "en": "A folded blueprint. Plans for a ground station that beams a signal back up to the orbital post. Antenna, transmitter, power — each drawn apart.\nIn the margin, by hand: \"If someone raises this again, there will be an answer from above.\"",
+    "ja": "折り畳まれた青写真。地上から軌道観測所へ信号を撃ち返す、送信基地の設計図だ。アンテナ・送信機・電源系統が分けて描かれている。\n余白に手書きの文字。「誰かがこれを再び建てるなら、上から応答があるはずだ。」"
+  },
+  "data.memo.rsc11.name": {
+    "ko": "무전 기지 설계도",
+    "en": "Radio Base Schematic",
+    "ja": "無線基地の設計図"
+  },
+  "data.memo.rsc12.desc": {
+    "ko": "노트의 마지막 장. \"아홉 번의 겨울이면 대기가 가라앉는다. 나는 거기까진 못 본다.\n하지만 그때까지 버틴 불빛이 하나라도 있다면, 부디 이 기지를 다시 켜다오. 그게 내가 남길 수 있는 전부다. — Dr. ___\"",
+    "en": "The notebook’s last page. \"Nine winters, and the air will settle. I won’t see that far.\nBut if even one light lasts that long — please, switch this station back on. It is all I can leave. — Dr. ___\"",
+    "ja": "ノートの最後のページ。「九度の冬が過ぎれば、大気は静まる。私はそこまでは見られない。\nだが、そのときまで持ちこたえた灯りが一つでもあるなら、どうかこの基地をもう一度灯してくれ。それが私に残せるすべてだ。 — Dr. ___」"
+  },
+  "data.memo.rsc12.name": {
+    "ko": "마지막 기록",
+    "en": "The Last Entry",
+    "ja": "最後の記録"
+  },
+  "data.memo.rsc2.desc": {
+    "ko": "벽에 붙은 코팅된 지침. 방호복 없이 이 선을 넘지 말 것. 노출 시 되돌릴 수 없음.\n누군가 아래에 유성펜으로 적었다. \"그래도 넘어야 할 사람이 있다.\"",
+    "en": "A laminated notice on the wall. Do not cross this line without a suit. Exposure cannot be undone.\nBeneath it, in marker: \"Even so, someone has to cross.\"",
+    "ja": "壁に貼られたラミネート加工の指針。防護服なしでこの線を越えないこと。曝露した場合、元には戻れない。\n誰かがその下に、油性ペンで書いている。「それでも、越えねばならない者がいる。」"
+  },
+  "data.memo.rsc2.name": {
+    "ko": "방호 지침 게시물",
+    "en": "Protective Protocol Notice",
+    "ja": "防護指針の掲示"
+  },
+  "data.memo.rsc3.desc": {
+    "ko": "찢긴 보고서 한 장. 전파 속도가 모형을 앞질렀다. 도시 봉쇄로는 늦었다는 판단.\n표 여백에 흐린 글씨. \"봉쇄가 사람을 살리려는 것이었는지, 가두려는 것이었는지 이제 모르겠다.\"",
+    "en": "A torn report page. Spread outran the models. Lockdown, it concludes, came too late.\nIn the margin, faint: \"I no longer know if the cordon was to save people, or to hold them in.\"",
+    "ja": "破れた報告書の一枚。伝播の速さは予測モデルを追い越した。都市封鎖では遅すぎたという判断。\n表の余白に、かすれた文字。「封鎖は人を生かすためだったのか、閉じ込めるためだったのか、もう分からない。」"
+  },
+  "data.memo.rsc3.name": {
+    "ko": "초기 역학 보고 조각",
+    "en": "Early Epidemiology Fragment",
+    "ja": "初期疫学報告の断片"
+  },
+  "data.memo.rsc4.desc": {
+    "ko": "벽 한 면을 채운 지도. 도시들이 동심원으로 그어져 있고, 가장 안쪽 원에 굵은 빨간 표시.\n범례에 적힌 한 단어를 오래 들여다봤다. \"소각(燒却).\"",
+    "en": "A map filling one wall. Cities ringed in concentric circles, the innermost marked thick in red.\nI stared a long time at the one word in the legend: \"Incineration.\"",
+    "ja": "壁一面を埋める地図。都市が同心円で囲われ、一番内側の円には太い赤の印。\n凡例に記された一語を、長く見つめた。「焼却。」"
+  },
+  "data.memo.rsc4.name": {
+    "ko": "봉쇄선 지도",
+    "en": "The Cordon Map",
+    "ja": "封鎖線の地図"
+  },
+  "data.memo.rsc5.desc": {
+    "ko": "회의록. 확산을 멈출 방법은 하나뿐이라는 데 다수가 동의. 반대 세 명의 이름은 지워졌다.\n마지막 줄: \"겨울을 앞당기더라도. 남은 이들이 버틸 수 있도록.\"",
+    "en": "Meeting minutes. A majority agreed there was only one way to stop the spread. The names of the three who dissented are struck out.\nLast line: \"Even if it brings winter early. So that those who remain might endure.\"",
+    "ja": "会議録。拡散を止める方法は一つしかないという点で、多数が同意。反対した三人の名前は消されている。\n最後の行:「冬を早めることになっても。残された者が持ちこたえられるように。」"
+  },
+  "data.memo.rsc5.name": {
+    "ko": "결정 회의록",
+    "en": "Minutes of the Decision",
+    "ja": "決定の会議録"
+  },
+  "data.memo.rsc6.desc": {
+    "ko": "두꺼운 부록의 접힌 페이지. 대규모 소각 이후 대기 그을음이 햇빛을 가려 수년간 겨울이 이어질 것이라는 예측.\n\"인류가 스스로 부른 겨울. 우리는 그것을 알고도 눌렀다.\"",
+    "en": "A folded page in a thick annex. It predicts that soot from mass incineration would veil the sun, and winter would last years.\n\"A winter mankind called down upon itself. We knew, and we pressed it anyway.\"",
+    "ja": "分厚い付録の、折り目のついたページ。大規模焼却の後、大気の煤が日差しを遮り、冬が数年続くという予測。\n「人類が自ら招いた冬。我々はそれを知りながら押した。」"
+  },
+  "data.memo.rsc6.name": {
+    "ko": "기상 예측 부록",
+    "en": "Climate Forecast Annex",
+    "ja": "気象予測の付録"
+  },
+  "data.memo.rsc7.desc": {
+    "ko": "지하 연구동 출입 단말의 마지막 기록들. 대부분 퇴근 표시가 없다. 한 사람만 며칠 더 드나든다.\n식별번호 뒤 직함: 관측 프로그램 책임. 이름 자리엔 이니셜 하나뿐이다.",
+    "en": "The last entries from the undercroft lab’s access terminal. Most have no clock-out. One person keeps coming and going for days more.\nAfter the ID, a title: Head, Observation Program. Where the name should be, a single initial.",
+    "ja": "地下研究棟の入退室端末に残った、最後の記録。ほとんどに退室の記録がない。一人だけ、数日あとまで出入りしている。\n識別番号の後ろの肩書き:観測プログラム責任者。名前の欄には、イニシャルが一つあるだけだ。"
+  },
+  "data.memo.rsc7.name": {
+    "ko": "연구소 출입 기록",
+    "en": "Lab Access Log",
+    "ja": "研究所入退室記録"
+  },
+  "data.memo.rsc8.desc": {
+    "ko": "표지에 도장. 소각 이후 지상에 남은 생존 신호를 위성으로 관측·기록하는 계획.\n\"우리는 내려갈 수 없다. 그러니 위에서 지켜본다. 버티는 불빛이 있는 한, 이건 실패가 아니다.\"",
+    "en": "A stamped cover sheet. A plan to track and log surviving signals on the ground by satellite, after the burning.\n\"We cannot come down. So we watch from above. As long as a light holds out, this is not a failure.\"",
+    "ja": "表紙に判。焼却の後、地上に残った生存信号を衛星で観測・記録する計画。\n「我々は降りられない。だから、上から見守る。持ちこたえる灯りがある限り、これは失敗ではない。」"
+  },
+  "data.memo.rsc8.name": {
+    "ko": "관측 프로그램 개요",
+    "en": "Observation Program Brief",
+    "ja": "観測プログラム概要"
+  },
+  "data.memo.rsc9.desc": {
+    "ko": "연구용 노트 사이에 끼워진 사적인 쪽지. \"나는 이 결정에 서명한 세 사람 중 하나였다. 반대편에.\n그래서 나는 여기 남아, 내가 막지 못한 겨울을 끝까지 지켜보기로 했다.\"",
+    "en": "A private note tucked among the research pads. \"I was one of the three who signed against this.\nSo I chose to stay here, and watch to the end the winter I could not stop.\"",
+    "ja": "研究ノートの間に挟まれた、私的なメモ。「私はこの決定に署名した三人の一人だった。反対の側で。\nだから私はここに残り、止められなかった冬を最後まで見届けることにした。」"
+  }
 }

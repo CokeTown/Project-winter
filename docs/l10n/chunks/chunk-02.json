@@ -1,427 +1,427 @@
 {
- "ctrl.act.rotViewR": {
-  "ko": "시점 회전 (우)",
-  "en": "Rotate view (right)",
-  "ja": "視点回転 (右)"
- },
- "ctrl.act.rotateItem": {
-  "ko": "가구 회전",
-  "en": "Rotate furniture",
-  "ja": "家具を回転"
- },
- "ctrl.act.reclaim": {
-  "ko": "선택 가구 회수",
-  "en": "Reclaim selected",
-  "ja": "選択家具を回収"
- },
- "acc.title": {
-  "ko": "♿ 접근성",
-  "en": "♿ Accessibility",
-  "ja": "♿ アクセシビリティ"
- },
- "opt.fontscale": {
-  "ko": "글자 크기",
-  "en": "Font size",
-  "ja": "文字サイズ"
- },
- "acc.font.normal": {
-  "ko": "보통",
-  "en": "Normal",
-  "ja": "標準"
- },
- "acc.font.large": {
-  "ko": "크게",
-  "en": "Large",
-  "ja": "大きめ"
- },
- "acc.font.max": {
-  "ko": "최대",
-  "en": "Largest",
-  "ja": "最大"
- },
- "opt.colorblind": {
-  "ko": "색약 팔레트",
-  "en": "Colorblind palette",
-  "ja": "色覚サポート"
- },
- "opt.colorblind.title": {
-  "ko": "게이지와 요구 표시의 초록/빨강을 파랑/주황으로 바꾼다",
-  "en": "Swaps green/red in gauges and requirement chips for blue/orange",
-  "ja": "ゲージや要求表示の緑/赤を青/オレンジに置き換える"
- },
- "opt.reducemotion": {
-  "ko": "흔들림 · 깜빡임 감소",
-  "en": "Reduce motion",
-  "ja": "揺れ・点滅の軽減"
- },
- "opt.reducemotion.title": {
-  "ko": "게이지 깜빡임·배지 흔들림 같은 반복 애니메이션을 멈춘다",
-  "en": "Stops looping animations like gauge blinking and badge pulsing",
-  "ja": "ゲージの点滅やバッジの揺れといった繰り返しアニメーションを止める"
- },
- "opt.pixel": {
-  "ko": "픽셀 크기",
-  "en": "Pixel size",
-  "ja": "ピクセルサイズ"
- },
- "opt.quant": {
-  "ko": "색상 양자화",
-  "en": "Color quantize",
-  "ja": "色の量子化"
- },
- "opt.dither": {
-  "ko": "디더링",
-  "en": "Dithering",
-  "ja": "ディザリング"
- },
- "opt.ditheramt": {
-  "ko": "디더 강도",
-  "en": "Dither Strength",
-  "ja": "ディザ強度"
- },
- "opt.ditheramt.title": {
-  "ko": "디더 점무늬의 세기입니다. 낮추면 카메라를 움직일 때 화면이 덜 지글거립니다.",
-  "en": "How strong the dither dots are. Lower it and the screen shimmers less when the camera moves.",
-  "ja": "ディザの点模様の強さです。下げると、カメラを動かしたときの画面のちらつきが減ります。"
- },
- "opt.ditheramt.full": {
-  "ko": "진하게",
-  "en": "Full",
-  "ja": "濃いめ"
- },
- "opt.ditheramt.mid": {
-  "ko": "보통",
-  "en": "Medium",
-  "ja": "標準"
- },
- "opt.ditheramt.soft": {
-  "ko": "은은하게",
-  "en": "Soft",
-  "ja": "控えめ"
- },
- "opt.aa": {
-  "ko": "안티에일리어싱",
-  "en": "Anti-aliasing",
-  "ja": "アンチエイリアス"
- },
- "opt.aa.title": {
-  "ko": "도트 느낌은 유지하면서 계단 현상(들쭉날쭉한 가장자리)만 매끄럽게 다듬습니다.",
-  "en": "Keeps the pixel look while smoothing out the jagged, stair-stepped edges.",
-  "ja": "ドット感は保ったまま、ジャギー（ギザギザした縁）だけを滑らかに整えます。"
- },
- "opt.ceil": {
-  "ko": "실내 조명",
-  "en": "Indoor light",
-  "ja": "室内照明"
- },
- "opt.autoeat": {
-  "ko": "자동 섭취",
-  "en": "Auto-eat",
-  "ja": "自動飲食"
- },
- "opt.autoeat.title": {
-  "ko": "배고픔/갈증이 40 아래로 내려가면 알아서 먹고 마신다",
-  "en": "Automatically eat and drink when hunger/thirst drops below 40",
-  "ja": "空腹/渇きが40を下回ったら自動で食べて飲む"
- },
- "opt.fps": {
-  "ko": "FPS 제한",
-  "en": "FPS cap",
-  "ja": "FPS上限"
- },
- "opt.lowspec": {
-  "ko": "저사양 모드",
-  "en": "Low-spec mode",
-  "ja": "低スペックモード"
- },
- "opt.bgidle": {
-  "ko": "백그라운드 소리",
-  "en": "Background sound",
-  "ja": "バックグラウンド音"
- },
- "opt.bgm": {
-  "ko": "BGM",
-  "en": "BGM",
-  "ja": "BGM"
- },
- "opt.bgmvol": {
-  "ko": "🔊 음량",
-  "en": "🔊 Volume",
-  "ja": "🔊 音量"
- },
- "opt.sfxvol": {
-  "ko": "🔔 효과음",
-  "en": "🔔 Sound FX",
-  "ja": "🔔 効果音"
- },
- "opt.lang": {
-  "ko": "언어 / Language",
-  "en": "Language / 언어",
-  "ja": "언어 / Language"
- },
- "btn.saveExp": {
-  "ko": "💾 내보내기",
-  "en": "💾 Export",
-  "ja": "💾 書き出し"
- },
- "btn.saveImp": {
-  "ko": "📂 가져오기",
-  "en": "📂 Import",
-  "ja": "📂 読み込み"
- },
- "btn.reset": {
-  "ko": "🚪 타이틀로",
-  "en": "🚪 To Title",
-  "ja": "🚪 タイトルへ"
- },
- "sel.name": {
-  "ko": "아이템",
-  "en": "Item",
-  "ja": "アイテム"
- },
- "btn.rotate": {
-  "ko": "회전 (R)",
-  "en": "Rotate (R)",
-  "ja": "回転 (R)"
- },
- "btn.delete": {
-  "ko": "회수 (Del)",
-  "en": "Reclaim (Del)",
-  "ja": "回収 (Del)"
- },
- "modal.close": {
-  "ko": "닫기",
-  "en": "Close",
-  "ja": "閉じる"
- },
- "lcd.sub": {
-  "ko": "🌅 아침 · 🌤️",
-  "en": "🌅 Morning · 🌤️",
-  "ja": "🌅 朝 · 🌤️"
- },
- "lang.confirm": {
-  "ko": "언어를 바꾸면 게임을 다시 불러옵니다. 계속할까요?",
-  "en": "Changing the language will reload the game. Continue?",
-  "ja": "言語を変更するとゲームを再読み込みします。続けますか？"
- },
- "auto.unlocked.title": {
-  "ko": "🤖 자동 진행 해금",
-  "en": "🤖 Auto-Play Unlocked",
-  "ja": "🤖 自動進行アンロック"
- },
- "auto.unlocked.body": {
-  "ko": "열흘을 버텨냈다. 이제 몸이 루틴을 기억한다.<br><br>자동 진행을 켜면 매 정시마다 <b>치료 → 청소 → 최적 지역 탐험</b>을 알아서 처리한다. 우측의 🤖 버튼이나 설정에서 언제든 켜고 끌 수 있다.",
-  "en": "Ten days survived. The routine lives in your hands now.<br><br>With auto-play on, every hour handles <b>treating → cleaning → the best expedition</b> for you. Toggle it anytime with the 🤖 button or in settings.",
-  "ja": "十日を耐え抜いた。もう体がルーチンを覚えている。<br><br>自動進行をオンにすると、毎正時に<b>治療 → 掃除 → 最適な地域の探索</b>を自動でこなしてくれる。右の🤖ボタンか設定でいつでも切り替えられる。"
- },
- "auto.unlocked.on": {
-  "ko": "🤖 지금 켠다",
-  "en": "🤖 Turn it on now",
-  "ja": "🤖 今すぐオンにする"
- },
- "auto.unlocked.toast": {
-  "ko": "🤖 자동 진행 시작 — 이제 거처가 스스로 굴러간다",
-  "en": "🤖 Auto-play on — the shelter runs itself now",
-  "ja": "🤖 自動進行開始 — もうシェルターはひとりでに回る"
- },
- "confirm.yes": {
-  "ko": "그렇게 한다",
-  "en": "Do it",
-  "ja": "そうする"
- },
- "confirm.no": {
-  "ko": "그만둔다",
-  "en": "Never mind",
-  "ja": "やめておく"
- },
- "confirm.dontAsk": {
-  "ko": "다음부터 묻지 않기",
-  "en": "Don’t ask again",
-  "ja": "次から確認しない"
- },
- "confirm.eat": {
-  "ko": "지금 먹을까?",
-  "en": "Eat now?",
-  "ja": "今食べようか？"
- },
- "confirm.drink": {
-  "ko": "지금 마실까?",
-  "en": "Drink now?",
-  "ja": "今飲もうか？"
- },
- "confirm.clean": {
-  "ko": "지금 청소할까?",
-  "en": "Clean up now?",
-  "ja": "今掃除しようか？"
- },
- "confirm.move": {
-  "ko": "이주한다",
-  "en": "Move",
-  "ja": "移住する"
- },
- "confirm.stay": {
-  "ko": "남는다",
-  "en": "Stay",
-  "ja": "残る"
- },
- "confirm.depart": {
-  "ko": "출발한다",
-  "en": "Set out",
-  "ja": "出発する"
- },
- "confirm.delete": {
-  "ko": "삭제한다",
-  "en": "Delete",
-  "ja": "削除する"
- },
- "confirm.overwrite": {
-  "ko": "덮어쓴다",
-  "en": "Overwrite",
-  "ja": "上書きする"
- },
- "confirm.cancel": {
-  "ko": "취소",
-  "en": "Cancel",
-  "ja": "キャンセル"
- },
- "confirm.change": {
-  "ko": "바꾼다",
-  "en": "Change",
-  "ja": "変える"
- },
- "confirm.enable": {
-  "ko": "켠다",
-  "en": "Turn on",
-  "ja": "オンにする"
- },
- "display.title": {
-  "ko": "🖥️ 디스플레이",
-  "en": "🖥️ Display",
-  "ja": "🖥️ ディスプレイ"
- },
- "opt.dispmode": {
-  "ko": "화면 모드",
-  "en": "Screen mode",
-  "ja": "画面モード"
- },
- "disp.windowed": {
-  "ko": "창 화면",
-  "en": "Windowed",
-  "ja": "ウィンドウ"
- },
- "disp.fullscreen": {
-  "ko": "전체화면",
-  "en": "Fullscreen",
-  "ja": "全画面"
- },
- "disp.borderless": {
-  "ko": "창없는 전체화면",
-  "en": "Borderless fullscreen",
-  "ja": "ボーダーレス全画面"
- },
- "opt.dispres": {
-  "ko": "해상도",
-  "en": "Resolution",
-  "ja": "解像度"
- },
- "disp.apply": {
-  "ko": "✓ 적용",
-  "en": "✓ Apply",
-  "ja": "✓ 適用"
- },
- "disp.applied": {
-  "ko": "🖥️ 디스플레이 설정 적용됨",
-  "en": "🖥️ Display settings applied",
-  "ja": "🖥️ ディスプレイ設定を適用しました"
- },
- "widget.title": {
-  "ko": "🪟 위젯 모드",
-  "en": "🪟 Widget Mode",
-  "ja": "🪟 ウィジェットモード"
- },
- "widget.opacity": {
-  "ko": "투명도",
-  "en": "Opacity",
-  "ja": "透明度"
- },
- "widget.alwaysontop": {
-  "ko": "항상 위",
-  "en": "Always on top",
-  "ja": "常に最前面"
- },
- "widget.mini": {
-  "ko": "미니 창",
-  "en": "Mini window",
-  "ja": "ミニウィンドウ"
- },
- "widget.clickthrough": {
-  "ko": "클릭 통과",
-  "en": "Click-through",
-  "ja": "クリック透過"
- },
- "widget.clickthrough.title": {
-  "ko": "켜면 게임 조작이 불가능해집니다. 해제는 트레이 또는 작업표시줄에서 할 수 있습니다.",
-  "en": "While on, you cannot interact with the game. Turn it off from the tray/taskbar.",
-  "ja": "オンにするとゲームを操作できなくなります。解除はトレイまたはタスクバーから行えます。"
- },
- "widget.clickthrough.confirm": {
-  "ko": "클릭 통과를 켜면 마우스 조작이 게임을 그대로 통과합니다. 10초 후 안전을 위해 자동으로 꺼집니다. 계속할까요?",
-  "en": "Turning on click-through lets mouse clicks pass through the game. It will auto-disable after 10 seconds for safety. Continue?",
-  "ja": "クリック透過をオンにすると、マウス操作がゲームをそのまま通り抜けます。安全のため10秒後に自動でオフになります。続けますか？"
- },
- "widget.clickthrough.toast": {
-  "ko": "10초 후 클릭 통과가 자동으로 해제됩니다",
-  "en": "Click-through will auto-disable in 10 seconds",
-  "ja": "10秒後にクリック透過が自動で解除されます"
- },
- "widget.clickthrough.restored": {
-  "ko": "클릭 통과가 자동으로 해제되었습니다",
-  "en": "Click-through has been auto-disabled",
-  "ja": "クリック透過が自動で解除されました"
- },
- "time.night": {
-  "ko": "밤",
-  "en": "Night",
-  "ja": "夜"
- },
- "time.dawn": {
-  "ko": "새벽",
-  "en": "Dawn",
-  "ja": "夜明け"
- },
- "time.morning": {
-  "ko": "아침",
-  "en": "Morning",
-  "ja": "朝"
- },
- "time.day": {
-  "ko": "낮",
-  "en": "Day",
-  "ja": "昼"
- },
- "time.evening": {
-  "ko": "저녁",
-  "en": "Evening",
-  "ja": "夕方"
- },
- "time.dusk": {
-  "ko": "황혼",
-  "en": "Dusk",
-  "ja": "黄昏"
- },
- "intro.start": {
-  "ko": "▶ 시작하기",
-  "en": "▶ Begin",
-  "ja": "▶ はじめる"
- },
- "intro.0": {
-  "ko": "세상이 무너진 지 3년, 겨울의 끝자락.\n녹다 만 눈이 갈라진 도로 틈에 남아 있고,\n그 틈으로 이른 봄풀이 고개를 내밀었다.",
-  "en": "Three years since the world fell, at the tail end of winter.\nHalf-melted snow still clings to the cracked roads,\nwhere early spring grass has just begun to push through.",
-  "ja": "世界が崩れて3年、冬の終わり際。\n溶けきらない雪がひび割れた道路の隙間に残り、\nその隙間から早春の草が顔をのぞかせていた。"
- },
- "intro.1": {
-  "ko": "나는 살아남았다.\n그리고 깨달았다 —\n살아남는 것만으로는 부족하다는 걸.",
-  "en": "I survived.\nAnd then I realized —\nsurviving alone is not enough.",
-  "ja": "私は生き残った。\nそして気づいた —\n生き残るだけでは足りないのだと。"
- }
+  "ctrl.act.editMode": {
+    "ko": "배치 모드",
+    "en": "Edit mode",
+    "ja": "配置モード"
+  },
+  "ctrl.act.rotViewL": {
+    "ko": "시점 회전 (좌)",
+    "en": "Rotate view (left)",
+    "ja": "視点回転 (左)"
+  },
+  "ctrl.act.rotViewR": {
+    "ko": "시점 회전 (우)",
+    "en": "Rotate view (right)",
+    "ja": "視点回転 (右)"
+  },
+  "ctrl.act.rotateItem": {
+    "ko": "가구 회전",
+    "en": "Rotate furniture",
+    "ja": "家具を回転"
+  },
+  "ctrl.act.reclaim": {
+    "ko": "선택 가구 회수",
+    "en": "Reclaim selected",
+    "ja": "選択家具を回収"
+  },
+  "ctrl.act.hudExt": {
+    "ko": "정보 확장 (누르는 동안)",
+    "en": "Info overlay (hold)",
+    "ja": "情報表示（押している間）"
+  },
+  "acc.title": {
+    "ko": "접근성",
+    "en": "Accessibility",
+    "ja": "アクセシビリティ"
+  },
+  "opt.fontscale": {
+    "ko": "글자 크기",
+    "en": "Font size",
+    "ja": "文字サイズ"
+  },
+  "acc.font.normal": {
+    "ko": "보통",
+    "en": "Normal",
+    "ja": "標準"
+  },
+  "acc.font.large": {
+    "ko": "크게",
+    "en": "Large",
+    "ja": "大きめ"
+  },
+  "acc.font.max": {
+    "ko": "최대",
+    "en": "Largest",
+    "ja": "最大"
+  },
+  "opt.colorblind": {
+    "ko": "색약 팔레트",
+    "en": "Colorblind palette",
+    "ja": "色覚サポート"
+  },
+  "opt.colorblind.title": {
+    "ko": "게이지와 요구 표시의 초록/빨강을 파랑/주황으로 바꾼다",
+    "en": "Swaps green/red in gauges and requirement chips for blue/orange",
+    "ja": "ゲージや要求表示の緑/赤を青/オレンジに置き換える"
+  },
+  "opt.reducemotion": {
+    "ko": "흔들림 · 깜빡임 감소",
+    "en": "Reduce motion",
+    "ja": "揺れ・点滅の軽減"
+  },
+  "opt.reducemotion.title": {
+    "ko": "게이지 깜빡임·배지 흔들림 같은 반복 애니메이션을 멈춘다",
+    "en": "Stops looping animations like gauge blinking and badge pulsing",
+    "ja": "ゲージの点滅やバッジの揺れといった繰り返しアニメーションを止める"
+  },
+  "opt.pixel": {
+    "ko": "픽셀 크기",
+    "en": "Pixel size",
+    "ja": "ピクセルサイズ"
+  },
+  "opt.quant": {
+    "ko": "색상 양자화",
+    "en": "Color quantize",
+    "ja": "色の量子化"
+  },
+  "opt.dither": {
+    "ko": "디더링",
+    "en": "Dithering",
+    "ja": "ディザリング"
+  },
+  "opt.ditheramt": {
+    "ko": "디더 강도",
+    "en": "Dither Strength",
+    "ja": "ディザ強度"
+  },
+  "opt.ditheramt.title": {
+    "ko": "디더 점무늬의 세기입니다. 낮추면 카메라를 움직일 때 화면이 덜 지글거립니다.",
+    "en": "How strong the dither dots are. Lower it and the screen shimmers less when the camera moves.",
+    "ja": "ディザの点模様の強さです。下げると、カメラを動かしたときの画面のちらつきが減ります。"
+  },
+  "opt.ditheramt.full": {
+    "ko": "진하게",
+    "en": "Full",
+    "ja": "濃いめ"
+  },
+  "opt.ditheramt.mid": {
+    "ko": "보통",
+    "en": "Medium",
+    "ja": "標準"
+  },
+  "opt.ditheramt.soft": {
+    "ko": "은은하게",
+    "en": "Soft",
+    "ja": "控えめ"
+  },
+  "opt.aa": {
+    "ko": "안티에일리어싱",
+    "en": "Anti-aliasing",
+    "ja": "アンチエイリアス"
+  },
+  "opt.aa.title": {
+    "ko": "도트 느낌은 유지하면서 계단 현상(들쭉날쭉한 가장자리)만 매끄럽게 다듬습니다.",
+    "en": "Keeps the pixel look while smoothing out the jagged, stair-stepped edges.",
+    "ja": "ドット感は保ったまま、ジャギー（ギザギザした縁）だけを滑らかに整えます。"
+  },
+  "opt.crtbulge": {
+    "ko": "CRT 곡률",
+    "en": "CRT Curvature",
+    "ja": "CRT曲率"
+  },
+  "opt.crtbulge.title": {
+    "ko": "UI 창을 브라운관 유리처럼 볼록하게 휘게 합니다. 저사양 모드에서는 자동으로 꺼집니다.",
+    "en": "Bends UI windows like curved CRT glass. Automatically disabled in low-spec mode.",
+    "ja": "UIウィンドウをブラウン管ガラスのように膨らませます。低スペックモードでは自動的にオフになります。"
+  },
+  "opt.crtbulge.strong": {
+    "ko": "강하게",
+    "en": "Strong",
+    "ja": "強め"
+  },
+  "opt.crtbulge.weak": {
+    "ko": "은은하게",
+    "en": "Subtle",
+    "ja": "ひかえめ"
+  },
+  "opt.crtbulge.off": {
+    "ko": "끄기",
+    "en": "Off",
+    "ja": "オフ"
+  },
+  "opt.ceil": {
+    "ko": "실내 조명",
+    "en": "Indoor light",
+    "ja": "室内照明"
+  },
+  "opt.autoeat": {
+    "ko": "자동 섭취",
+    "en": "Auto-eat",
+    "ja": "自動飲食"
+  },
+  "opt.autoeat.title": {
+    "ko": "배고픔/갈증이 40 아래로 내려가면 알아서 먹고 마신다",
+    "en": "Automatically eat and drink when hunger/thirst drops below 40",
+    "ja": "空腹/渇きが40を下回ったら自動で食べて飲む"
+  },
+  "opt.fps": {
+    "ko": "FPS 제한",
+    "en": "FPS cap",
+    "ja": "FPS上限"
+  },
+  "opt.lowspec": {
+    "ko": "저사양 모드",
+    "en": "Low-spec mode",
+    "ja": "低スペックモード"
+  },
+  "opt.bgidle": {
+    "ko": "백그라운드 소리",
+    "en": "Background sound",
+    "ja": "バックグラウンド音"
+  },
+  "opt.bgm": {
+    "ko": "BGM",
+    "en": "BGM",
+    "ja": "BGM"
+  },
+  "opt.bgmvol": {
+    "ko": "음량",
+    "en": "Volume",
+    "ja": "音量"
+  },
+  "opt.sfxvol": {
+    "ko": "효과음",
+    "en": "Sound FX",
+    "ja": "効果音"
+  },
+  "opt.lang": {
+    "ko": "언어 / Language",
+    "en": "Language / 언어",
+    "ja": "언어 / Language"
+  },
+  "btn.saveExp": {
+    "ko": "내보내기",
+    "en": "Export",
+    "ja": "書き出し"
+  },
+  "btn.saveImp": {
+    "ko": "가져오기",
+    "en": "Import",
+    "ja": "読み込み"
+  },
+  "btn.reset": {
+    "ko": "타이틀로",
+    "en": "To Title",
+    "ja": "タイトルへ"
+  },
+  "sel.name": {
+    "ko": "아이템",
+    "en": "Item",
+    "ja": "アイテム"
+  },
+  "btn.rotate": {
+    "ko": "회전 (R)",
+    "en": "Rotate (R)",
+    "ja": "回転 (R)"
+  },
+  "btn.delete": {
+    "ko": "회수 (Del)",
+    "en": "Reclaim (Del)",
+    "ja": "回収 (Del)"
+  },
+  "modal.close": {
+    "ko": "닫기",
+    "en": "Close",
+    "ja": "閉じる"
+  },
+  "lcd.sub": {
+    "ko": "아침",
+    "en": "Morning",
+    "ja": "朝"
+  },
+  "lang.confirm": {
+    "ko": "언어를 바꾸면 게임을 다시 불러옵니다. 계속할까요?",
+    "en": "Changing the language will reload the game. Continue?",
+    "ja": "言語を変更するとゲームを再読み込みします。続けますか？"
+  },
+  "auto.unlocked.title": {
+    "ko": "자동 진행 해금",
+    "en": "Auto-Play Unlocked",
+    "ja": "自動進行アンロック"
+  },
+  "auto.unlocked.body": {
+    "ko": "열흘을 버텨냈다. 이제 몸이 루틴을 기억한다.<br><br>자동 진행을 켜면 매 정시마다 <b>치료 → 청소 → 최적 지역 탐험</b>을 알아서 처리한다. 우측의 버튼이나 설정에서 언제든 켜고 끌 수 있다.",
+    "en": "Ten days survived. The routine lives in your hands now.<br><br>With auto-play on, every hour handles <b>treating → cleaning → the best expedition</b>for you. Toggle it anytime with the button or in settings.",
+    "ja": "十日を耐え抜いた。もう体がルーチンを覚えている。<br><br>自動進行をオンにすると、毎正時に<b>治療 → 掃除 → 最適な地域の探索</b>を自動でこなしてくれる。右のボタンか設定でいつでも切り替えられる。"
+  },
+  "auto.unlocked.on": {
+    "ko": "지금 켠다",
+    "en": "Turn it on now",
+    "ja": "今すぐオンにする"
+  },
+  "auto.unlocked.toast": {
+    "ko": "자동 진행 시작 — 이제 거처가 스스로 굴러간다",
+    "en": "Auto-play on — the shelter runs itself now",
+    "ja": "自動進行開始 — もうシェルターはひとりでに回る"
+  },
+  "confirm.yes": {
+    "ko": "그렇게 한다",
+    "en": "Do it",
+    "ja": "そうする"
+  },
+  "confirm.no": {
+    "ko": "그만둔다",
+    "en": "Never mind",
+    "ja": "やめておく"
+  },
+  "confirm.dontAsk": {
+    "ko": "다음부터 묻지 않기",
+    "en": "Don’t ask again",
+    "ja": "次から確認しない"
+  },
+  "confirm.eat": {
+    "ko": "지금 먹을까?",
+    "en": "Eat now?",
+    "ja": "今食べようか？"
+  },
+  "confirm.drink": {
+    "ko": "지금 마실까?",
+    "en": "Drink now?",
+    "ja": "今飲もうか？"
+  },
+  "confirm.clean": {
+    "ko": "지금 청소할까?",
+    "en": "Clean up now?",
+    "ja": "今掃除しようか？"
+  },
+  "confirm.move": {
+    "ko": "이주한다",
+    "en": "Move",
+    "ja": "移住する"
+  },
+  "confirm.stay": {
+    "ko": "남는다",
+    "en": "Stay",
+    "ja": "残る"
+  },
+  "confirm.depart": {
+    "ko": "출발한다",
+    "en": "Set out",
+    "ja": "出発する"
+  },
+  "confirm.delete": {
+    "ko": "삭제한다",
+    "en": "Delete",
+    "ja": "削除する"
+  },
+  "confirm.overwrite": {
+    "ko": "덮어쓴다",
+    "en": "Overwrite",
+    "ja": "上書きする"
+  },
+  "confirm.cancel": {
+    "ko": "취소",
+    "en": "Cancel",
+    "ja": "キャンセル"
+  },
+  "confirm.change": {
+    "ko": "바꾼다",
+    "en": "Change",
+    "ja": "変える"
+  },
+  "confirm.enable": {
+    "ko": "켠다",
+    "en": "Turn on",
+    "ja": "オンにする"
+  },
+  "display.title": {
+    "ko": "디스플레이",
+    "en": "Display",
+    "ja": "ディスプレイ"
+  },
+  "opt.dispmode": {
+    "ko": "화면 모드",
+    "en": "Screen mode",
+    "ja": "画面モード"
+  },
+  "disp.windowed": {
+    "ko": "창 화면",
+    "en": "Windowed",
+    "ja": "ウィンドウ"
+  },
+  "disp.fullscreen": {
+    "ko": "전체화면",
+    "en": "Fullscreen",
+    "ja": "全画面"
+  },
+  "disp.borderless": {
+    "ko": "창없는 전체화면",
+    "en": "Borderless fullscreen",
+    "ja": "ボーダーレス全画面"
+  },
+  "opt.dispres": {
+    "ko": "해상도",
+    "en": "Resolution",
+    "ja": "解像度"
+  },
+  "disp.apply": {
+    "ko": "적용",
+    "en": "Apply",
+    "ja": "適用"
+  },
+  "disp.applied": {
+    "ko": "디스플레이 설정 적용됨",
+    "en": "Display settings applied",
+    "ja": "ディスプレイ設定を適用しました"
+  },
+  "widget.title": {
+    "ko": "위젯 모드",
+    "en": "Widget Mode",
+    "ja": "ウィジェットモード"
+  },
+  "widget.opacity": {
+    "ko": "투명도",
+    "en": "Opacity",
+    "ja": "透明度"
+  },
+  "widget.alwaysontop": {
+    "ko": "항상 위",
+    "en": "Always on top",
+    "ja": "常に最前面"
+  },
+  "widget.mini": {
+    "ko": "미니 창",
+    "en": "Mini window",
+    "ja": "ミニウィンドウ"
+  },
+  "widget.clickthrough": {
+    "ko": "클릭 통과",
+    "en": "Click-through",
+    "ja": "クリック透過"
+  },
+  "widget.clickthrough.title": {
+    "ko": "켜면 게임 조작이 불가능해집니다. 해제는 트레이 또는 작업표시줄에서 할 수 있습니다.",
+    "en": "While on, you cannot interact with the game. Turn it off from the tray/taskbar.",
+    "ja": "オンにするとゲームを操作できなくなります。解除はトレイまたはタスクバーから行えます。"
+  },
+  "widget.clickthrough.confirm": {
+    "ko": "클릭 통과를 켜면 마우스 조작이 게임을 그대로 통과합니다. 10초 후 안전을 위해 자동으로 꺼집니다. 계속할까요?",
+    "en": "Turning on click-through lets mouse clicks pass through the game. It will auto-disable after 10 seconds for safety. Continue?",
+    "ja": "クリック透過をオンにすると、マウス操作がゲームをそのまま通り抜けます。安全のため10秒後に自動でオフになります。続けますか？"
+  },
+  "widget.clickthrough.toast": {
+    "ko": "10초 후 클릭 통과가 자동으로 해제됩니다",
+    "en": "Click-through will auto-disable in 10 seconds",
+    "ja": "10秒後にクリック透過が自動で解除されます"
+  },
+  "widget.clickthrough.restored": {
+    "ko": "클릭 통과가 자동으로 해제되었습니다",
+    "en": "Click-through has been auto-disabled",
+    "ja": "クリック透過が自動で解除されました"
+  },
+  "time.night": {
+    "ko": "밤",
+    "en": "Night",
+    "ja": "夜"
+  }
 }
