@@ -54,9 +54,12 @@ const bgra = b => { const o = Buffer.alloc(b.length); for (let i = 0; i < b.leng
     : `((c,p)=>{c.position.z=42-3.5*p;c.lookAt(0,22,-80);})`;
 
   for (let f = 0; f < FRAMES; f++) {
-    const h = (f / FRAMES) * 24, p = f / FRAMES;
-    await H.evalJs(`(()=>{const C=window.__cine; const t=(${MAP})(${h.toFixed(4)}) + 0.006*Math.sin(${f}*0.7);
-      C.v.update(${SHOT === 'jungle' ? 'Math.max(0,Math.min(1,t))' : 't'});
+    const h = (f / FRAMES) * 24, p = f / FRAMES, ta = (f / 30).toFixed(3); // ta=애니 시계(초) — 일렁임·점멸용
+    // gate = 씬 내장 24h 스크립트(atHour: 5키프레임 심야~어스름) · jungle = 구 t 매핑(atHour 미보유)
+    await H.evalJs(`(()=>{const C=window.__cine;
+      ${SHOT === 'gate'
+    ? `C.v.atHour(${h.toFixed(4)}, ${ta});`
+    : `const t=(${MAP})(${h.toFixed(4)}) + 0.006*Math.sin(${f}*0.7); C.v.update(Math.max(0,Math.min(1,t)));`}
       (${CAM})(C.v.camera, ${p.toFixed(4)});
       C.vr.render(C.v.scene, C.v.camera); return 1;})()`);
     await shot('f' + String(f).padStart(4, '0') + '.png');

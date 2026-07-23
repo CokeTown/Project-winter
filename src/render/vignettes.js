@@ -658,8 +658,9 @@ export function buildGoldenGateScene() {
   crg.addColorStop(0, 'rgba(255,250,232,0.98)'); crg.addColorStop(0.5, 'rgba(255,232,180,0.5)'); crg.addColorStop(1, 'rgba(255,210,140,0)');
   cg2.fillStyle = crg; cg2.fillRect(0, 0, 128, 128);
   const hotCore = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(coreCv), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false })); hotCore.scale.set(34, 34, 1); scene.add(hotCore);
-  // 신의 광선(수평 팬) — 두꺼운 먼지 대기
-  for (const [gy, gz, gsc] of [[6, -150, 200], [3, -210, 260]]) { const gr = new THREE.Mesh(new THREE.PlaneGeometry(gsc, gsc * 0.5), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); gr.position.set(70, gy, gz); scene.add(gr); }
+  // 신의 광선(수평 팬) — 두꺼운 먼지 대기. (24h 모드가 밤에 끄도록 참조 보관)
+  const rayPans = [];
+  for (const [gy, gz, gsc] of [[6, -150, 200], [3, -210, 260]]) { const gr = new THREE.Mesh(new THREE.PlaneGeometry(gsc, gsc * 0.5), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); gr.position.set(70, gy, gz); scene.add(gr); rayPans.push(gr.material); }
   // ── 지형: 마린 헤드랜드(원경) + 도심 스카이라인 밴드(해 밑, 무명 블록 — 콘텐츠 게이트) ──
   const hillShape = new THREE.Shape(); hillShape.moveTo(-300, -30);
   for (let x = -300; x <= 300; x += 11) { const hy = 12 + Math.sin(x * 0.017) * 12 + Math.sin(x * 0.05 + 1) * 6 + Math.sin(x * 0.19 + 2) * 2.4 + srand() * 5; hillShape.lineTo(x, hy); } // 고주파 항 + 잔 노이즈 → 매끈한 언덕 탈피
@@ -740,7 +741,26 @@ export function buildGoldenGateScene() {
   for (let i = 0; i < 38; i++) { const bx = -74 + srand() * 158, bz = 4 + srand() * 28; mkCanopy(bx, 1.3 + srand() * 3.2, bz, 1.6 + srand() * 2.4, srand() < 0.3 ? vegRim : vegSil); }
   for (let i = 0; i < 5; i++) { const bx = -64 + srand() * 138; mkCanopy(bx, 4.5 + srand() * 4, 8 + srand() * 14, 2 + srand() * 1.8, srand() < 0.4 ? vegRim : vegSil); }
   // ── 전경: 젖은 습지 둑 + 웅덩이 반사 ──
-  const bank = new THREE.Mesh(new THREE.PlaneGeometry(320, 90), new THREE.MeshBasicMaterial({ color: 0x181109, fog: false })); bank.rotation.x = -Math.PI / 2; bank.position.set(-10, 0.25, 24); scene.add(bank);
+  const bankMat = new THREE.MeshBasicMaterial({ color: 0x181109, fog: false }); // 24h 모드가 주간 톤으로 올리도록 참조 보관
+  const bank = new THREE.Mesh(new THREE.PlaneGeometry(320, 90), bankMat); bank.rotation.x = -Math.PI / 2; bank.position.set(-10, 0.25, 24); scene.add(bank);
+  // ── 해안 지형 (디렉터 2026-07-23: "바닥이 없어서 건물들이 물에 있는 것처럼 보여") ──
+  //   물 평면(900×520)이 전 영역을 덮는데 뭍은 위 둑 한 장뿐 — 콜로네이드·차·표지판이 물 위에 서 있었다.
+  //   근좌측 해안(다리가 물로 들어가는 선까지)과 원안 해안 밴드(도심 실루엣 발밑)를 깐다.
+  //   노을 실루엣에선 어두워 티가 안 났지만 밝은 시각(24h 주간)에 치명적 — 비네트 자체의 접지 결함 수리.
+  const shoreMat = new THREE.MeshBasicMaterial({ color: 0x1a1209, fog: false });
+  const shoreShape = new THREE.Shape(); // XZ 폴리곤(회전 -90°) — 해안선: 둑 우단 → 근탑 앞 → 콜로네이드 밖으로 후퇴
+  const COAST = [[150, 100], [150, 12], [24, -16], [-12, -46], [-38, -88], [-90, -130], [-180, -152], [-460, -160], [-460, 100]];
+  shoreShape.moveTo(COAST[0][0], -COAST[0][1]); // Shape는 XY — z를 -y로 뒤집어 넣고 회전으로 복원
+  for (let i = 1; i < COAST.length; i++) shoreShape.lineTo(COAST[i][0], -COAST[i][1]);
+  const shore = new THREE.Mesh(new THREE.ShapeGeometry(shoreShape), shoreMat);
+  shore.rotation.x = -Math.PI / 2; shore.position.y = 0.34; scene.add(shore); // 반사 스트릭(0.32) 위
+  const farShore = new THREE.Mesh(new THREE.PlaneGeometry(640, 76), shoreMat); // 원안 밴드 — 도심·능선 발밑
+  farShore.rotation.x = -Math.PI / 2; farShore.position.set(20, 0.34, -290); scene.add(farShore);
+  // 해안선을 따라 물가 덤불 — 직선 경계 은폐
+  for (let i = 1; i < COAST.length - 2; i++) {
+    const [ax, az] = COAST[i], [bx2, bz2] = COAST[i + 1];
+    for (let s = 0.1; s < 1; s += 0.22) { if (srand() < 0.35) continue; mkCanopy(ax + (bx2 - ax) * s + (srand() - 0.5) * 4, 0.7 + srand() * 1.2, az + (bz2 - az) * s + (srand() - 0.5) * 4, 1.0 + srand() * 1.3, vegSil); }
+  }
   for (let i = 0; i < 8; i++) { const pd = new THREE.Mesh(new THREE.PlaneGeometry(6 + srand() * 6, 3 + srand() * 3), new THREE.MeshBasicMaterial({ color: 0xff8a3e, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); pd.rotation.x = -Math.PI / 2; pd.position.set(-60 + srand() * 100, 0.3, 14 + srand() * 24); scene.add(pd); }
   // ── 접근 고가 콜로네이드(좌측 프레임) — 3/4 후퇴의 최대 동인 ──
   for (let i = 0; i < 6; i++) {
@@ -802,19 +822,22 @@ export function buildGoldenGateScene() {
   // 2겹 가산 기둥: 좁고 진한 코어 + 넓고 옅은 브로드 — 헤이즈 밴드 위에서도 '불타는' 반사가 살아남는다
   const mkStreak = (w2, len, op, z) => { const st = new THREE.Mesh(new THREE.PlaneGeometry(w2, len), new THREE.MeshBasicMaterial({ map: refTex, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); st.rotation.x = -Math.PI / 2; st.position.set(72, 0.32, z); scene.add(st); return st; };
   const streakCore = mkStreak(26, 330, 0.72, -190), streakBroad = mkStreak(64, 300, 0.3, -180); // update에서 일렁임
-  const drawWater = (kn, t) => {
-    wg.fillStyle = '#160f0a'; wg.fillRect(0, 0, 256, 256);
+  // cool 0=앰버(비네트 원본) 1=한랭(24h 주간·심야) — 물빛을 슬레이트로 민다. 기본값이 원본이라 비네트 무변.
+  const _wmix = (a, b, k) => Math.round(a + (b - a) * k);
+  const drawWater = (kn, t, cool = 0) => {
+    const C = (wr, wgn, wb, cr, cg2b, cb) => _wmix(wr, cr, cool) + ',' + _wmix(wgn, cg2b, cool) + ',' + _wmix(wb, cb, cool);
+    wg.fillStyle = cool < 0.5 ? '#160f0a' : '#0e1216'; wg.fillRect(0, 0, 256, 256);
     const wgr = wg.createLinearGradient(0, 0, 0, 256);
-    wgr.addColorStop(0, 'rgba(70,46,28,' + (0.5 + 0.3 * kn) + ')'); wgr.addColorStop(0.5, 'rgba(40,28,18,0.5)'); wgr.addColorStop(1, 'rgba(14,10,8,0.9)');
+    wgr.addColorStop(0, 'rgba(' + C(70, 46, 28, 56, 68, 76) + ',' + (0.5 + 0.3 * kn) + ')'); wgr.addColorStop(0.5, 'rgba(' + C(40, 28, 18, 32, 40, 46) + ',0.5)'); wgr.addColorStop(1, 'rgba(' + C(14, 10, 8, 10, 13, 16) + ',0.9)');
     wg.fillStyle = wgr; wg.fillRect(0, 0, 256, 256);
     // 수평선 워터라인 — 해수면이 하늘 광휘를 되받는 밝은 띠(제목의 '불타는'을 물에 싣는다)
     const wl = wg.createLinearGradient(0, 0, 0, 10);
-    wl.addColorStop(0, 'rgba(255,196,96,' + (0.75 * kn) + ')'); wl.addColorStop(1, 'rgba(255,150,60,0)');
+    wl.addColorStop(0, 'rgba(' + C(255, 196, 96, 190, 205, 214) + ',' + (0.75 * kn) + ')'); wl.addColorStop(1, 'rgba(' + C(255, 150, 60, 150, 170, 184) + ',0)');
     wg.fillStyle = wl; wg.fillRect(96, 0, 150, 10);
     // 주 글린트 기둥(해 아래) — 폭·밀도·알파 증폭 + 잔물결 지그재그
-    for (let i = 0; i < 58; i++) { const ry = 4 + i * 4.3, rw = 1.6 + Math.sin(i * 0.7 + t * 5) * 1.3; wg.globalAlpha = 0.72 * (1 - i / 62); wg.fillStyle = 'rgba(255,190,84,' + (0.8 * kn) + ')'; const jw = 42 + rw * 9; wg.fillRect(145 + Math.sin(i * 0.9 + t * 6) * 7 - jw / 2 + 21, ry, jw, 2.6); }
+    for (let i = 0; i < 58; i++) { const ry = 4 + i * 4.3, rw = 1.6 + Math.sin(i * 0.7 + t * 5) * 1.3; wg.globalAlpha = 0.72 * (1 - i / 62); wg.fillStyle = 'rgba(' + C(255, 190, 84, 185, 200, 210) + ',' + (0.8 * kn) + ')'; const jw = 42 + rw * 9; wg.fillRect(145 + Math.sin(i * 0.9 + t * 6) * 7 - jw / 2 + 21, ry, jw, 2.6); }
     // 흩어진 파편 글린트(기둥 밖) — 해협 전체가 낱낱이 탄다
-    for (let i = 0; i < 26; i++) { const sy = 8 + ((i * 47) % 120), sx = 60 + ((i * 83) % 150); wg.globalAlpha = 0.3 * (1 - sy / 150); wg.fillStyle = 'rgba(255,170,70,' + (0.55 * kn) + ')'; wg.fillRect(sx + Math.sin(i * 2.1 + t * 4) * 4, sy, 7 + ((i * 13) % 12), 1.6); }
+    for (let i = 0; i < 26; i++) { const sy = 8 + ((i * 47) % 120), sx = 60 + ((i * 83) % 150); wg.globalAlpha = 0.3 * (1 - sy / 150); wg.fillStyle = 'rgba(' + C(255, 170, 70, 170, 186, 198) + ',' + (0.55 * kn) + ')'; wg.fillRect(sx + Math.sin(i * 2.1 + t * 4) * 4, sy, 7 + ((i * 13) % 12), 1.6); }
     wg.globalAlpha = 1; waterTex.needsUpdate = true;
   };
   // ── 재/불씨(따뜻한 금빛 재) ──
@@ -840,6 +863,14 @@ export function buildGoldenGateScene() {
   // ── 하늘 램프(6스톱, 따뜻한 앰버 — 절대 보라로 가지 않는다) ──
   const SKY = [[0x140e09, 0x1e130c, 0.0], [0x261810, 0x50301c, 0.22], [0x4e2a14, 0xa8481e, 0.46], [0x702e14, 0xd85c20, 0.66], [0x883818, 0xef8830, 0.83], [0x9a5a28, 0xffe6a0, 1.0]]; // 상단=묵직한 역광 폭풍 천장 — 중단을 크림슨으로(레퍼런스 '붉은' 푸시, 보라 금지 유지)
   const skyC = SKY.map(() => new THREE.Color());
+  // ── 24h 모드 전용 오브젝트(비네트 기본값 = 꺼짐) — 별밭 + 주탑 항공등 ──
+  const ggStGeo = new THREE.BufferGeometry(); const ggStPos = [];
+  for (let i = 0; i < 260; i++) ggStPos.push(-300 + srand() * 620, 30 + srand() * 170, -338);
+  ggStGeo.setAttribute('position', new THREE.Float32BufferAttribute(ggStPos, 3));
+  const ggStMat = new THREE.PointsMaterial({ color: 0xcdd8ff, size: 1.3, transparent: true, opacity: 0, fog: false, sizeAttenuation: false });
+  const ggStars = new THREE.Points(ggStGeo, ggStMat); ggStars.raycast = () => {}; scene.add(ggStars);
+  const bcnMat = new THREE.MeshBasicMaterial({ color: 0xff3826, transparent: true, opacity: 0, fog: false });
+  for (const [bx3, by3, bz3] of [[-23, 41.5, -64], [46, 35.8, -210]]) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 6), bcnMat); b.position.set(bx3, by3, bz3); scene.add(b); }
 
   const update = (t) => {
     const kn = 1 - t * 0.62; // 1=만개한 노을 → 0.38 짙은 어스름
@@ -873,8 +904,57 @@ export function buildGoldenGateScene() {
     streakBroad.material.opacity = (0.26 + 0.08 * Math.sin(t * 16)) * (0.4 + 0.6 * kn);
     drawWater(kn, t);
   };
+  // ── 24h 하네스 모드 (디렉터 2026-07-23: "이 각도에서 진짜 24시간 — 해 뜨고 지는 게 아니라") ──
+  //   인게임 비네트(update)는 불변. 5키프레임(심야·여명·주간·골든·어스름) 팔레트를 시각으로 블렌드.
+  //   주간 = 저채도 한랭 겨울광(씬의 앰버는 골든아워에만) · 심야 = 별밭+항공등 · 물빛은 cool 축으로 동행.
+  const KEY = {
+    night: { sky: [0x05070c, 0x070a12, 0x0a0e18, 0x0d1220, 0x101626, 0x141a2e], fog: 0x0a0e16, steelLit: 0x10141c, vegSil: 0x0a0e0a, vegRim: 0x141810, leafSil: 0x0a0e0a, leafRim: 0x12160e, propRust: 0x12100c, concLit: 0x14120e, city: 0x0c0a12, hill: 0x0a0c10, shore: 0x0b0a08, haze: [0x0c1018, 0x0a0d14, 0x080b10], gold: 0x0a0c12, sunY: -12, sunOp: 0, glow: [0, 0, 0], hot: 0, stars: 0.9, bcn: 1, waterKn: 0.03, cool: 0.9, storm: 0.22, ember: 0.1, rays: 0 },
+    dawn: { sky: [0x1c161e, 0x322026, 0x543438, 0x84483a, 0xb06a40, 0xe09a5c], fog: 0x3a2e30, // 장미-앰버 여명(씬 규율 '보라 금지' 준수 — 자주 스톱 제거) steelLit: 0x2e2430, vegSil: 0x16200f, vegRim: 0x2c3018, leafSil: 0x121a0e, leafRim: 0x2a2c16, propRust: 0x2c2018, concLit: 0x2a2220, city: 0x1e1626, hill: 0x1c161a, shore: 0x201a14, haze: [0x503a44, 0x3e2e3c, 0x2c2230], gold: 0x8a5a4c, sunY: -1.5, sunOp: 0.9, glow: [0.5, 0.35, 0.2], hot: 0.35, stars: 0.12, bcn: 0.3, waterKn: 0.3, cool: 0.45, storm: 0.4, ember: 0.15, rays: 0.05 },
+    day: { sky: [0x4e5c68, 0x6a7a84, 0x8c9aa0, 0xa2aeac, 0xb2bab2, 0xc2c8bc], fog: 0x8e9890, steelLit: 0x6a5f4e, vegSil: 0x2e3a20, vegRim: 0x5a6030, leafSil: 0x28321c, leafRim: 0x525a2c, propRust: 0x5c4430, concLit: 0x6a5c48, city: 0x3e3a44, hill: 0x3a3630, shore: 0x4a4234, haze: [0x9aa49c, 0x8a948e, 0x7a847e], gold: 0x9aa4a2, sunY: 30, sunOp: 0.35, glow: [0.18, 0.1, 0.05], hot: 0.12, stars: 0, bcn: 0, waterKn: 0.22, cool: 0.85, storm: 0.5, ember: 0.06, rays: 0.03 },
+    golden: { sky: [0x1e130c, 0x50301c, 0xa8481e, 0xd85c20, 0xef8830, 0xffe6a0], fog: 0x8a5a30, steelLit: 0x6a4426, vegSil: 0x1a2010, vegRim: 0x4a3a1a, leafSil: 0x1c2612, leafRim: 0x483a1c, propRust: 0x5a2c18, concLit: 0x4a2e1e, city: 0x3a2028, hill: 0x2a1e16, shore: 0x241812, haze: [0xff9a4e, 0xe07a34, 0xc86028], gold: 0xff9a4c, sunY: 4, sunOp: 1, glow: [0.9, 0.9, 0.48], hot: 0.95, stars: 0, bcn: 0, waterKn: 1, cool: 0, storm: 0.85, ember: 0.4, rays: 0.16 },
+    dusk: { sky: [0x140e09, 0x261810, 0x4e2a14, 0x702e14, 0x883818, 0x9a5a28], fog: 0x2a1c12, steelLit: 0x1a0f08, vegSil: 0x0e110a, vegRim: 0x1e1808, leafSil: 0x0d120a, leafRim: 0x201808, propRust: 0x140b08, concLit: 0x1a1009, city: 0x1c0d14, hill: 0x180f0a, shore: 0x120d08, haze: [0x6a3a1e, 0x52281a, 0x3a1c14], gold: 0x241a12, sunY: -6, sunOp: 0.5, glow: [0.55, 0.7, 0.4], hot: 0.3, stars: 0.25, bcn: 0.6, waterKn: 0.25, cool: 0.25, storm: 0.7, ember: 0.35, rays: 0.05 },
+  };
+  const SCHED = [[0, 'night', 'night'], [4.8, 'night', 'dawn'], [6.8, 'dawn', 'day'], [8.8, 'day', 'day'], [15.2, 'day', 'golden'], [17.0, 'golden', 'dusk'], [19.2, 'dusk', 'night'], [21.2, 'night', 'night'], [24, 'night', 'night']];
+  const _hc1 = new THREE.Color(), _hc2 = new THREE.Color(), _hOut = new THREE.Color();
+  const hlerp = (h1, h2, k, tgt) => { _hc1.setHex(h1); _hc2.setHex(h2); tgt.copy(_hc1).lerp(_hc2, k); return tgt; };
+  const nlerp = (a, b, k) => a + (b - a) * k;
+  const atHour = (h, t) => {
+    let A = KEY.night, B = KEY.night, k = 0;
+    for (let i = 0; i < SCHED.length - 1; i++) { if (h >= SCHED[i][0] && h < SCHED[i + 1][0]) { A = KEY[SCHED[i][1]]; B = KEY[SCHED[i][2]]; k = (h - SCHED[i][0]) / (SCHED[i + 1][0] - SCHED[i][0]); break; } }
+    const g2 = skyCv.getContext('2d'); const gr2 = g2.createLinearGradient(0, 0, 0, 1024);
+    for (let i = 0; i < 6; i++) { hlerp(A.sky[i], B.sky[i], k, _hOut); gr2.addColorStop(SKY[i][2], '#' + _hOut.getHexString()); }
+    g2.fillStyle = gr2; g2.fillRect(0, 0, 2, 1024); skyTex.needsUpdate = true;
+    const sunY = nlerp(A.sunY, B.sunY, k), sunOp = nlerp(A.sunOp, B.sunOp, k);
+    sun.position.y = sunY; sunMat.transparent = true; sunMat.opacity = sunOp;
+    sunMat.color.setHex(sunY > 12 ? 0xf2ece0 : 0xffd23e); // 높은 해 = 창백한 겨울 원반
+    const gy2 = Math.max(sunY, -2);
+    glowCore.position.set(80, gy2, -329); glowMid.position.set(80, gy2, -329); glowWide.position.set(80, gy2, -329); hotCore.position.set(80, sunY, -328);
+    glowCore.material.opacity = nlerp(A.glow[0], B.glow[0], k) * (1 + 0.08 * Math.sin(t * 40));
+    glowMid.material.opacity = nlerp(A.glow[1], B.glow[1], k);
+    glowWide.material.opacity = nlerp(A.glow[2], B.glow[2], k);
+    hotCore.material.opacity = nlerp(A.hot, B.hot, k);
+    hlerp(A.fog, B.fog, k, scene.fog.color);
+    hlerp(A.steelLit, B.steelLit, k, steelLit.color); hlerp(A.vegSil, B.vegSil, k, vegSil.color); hlerp(A.vegRim, B.vegRim, k, vegRim.color);
+    hlerp(A.leafSil, B.leafSil, k, leafSil.color); hlerp(A.leafRim, B.leafRim, k, leafRim.color);
+    hlerp(A.propRust, B.propRust, k, propRust.color); hlerp(A.concLit, B.concLit, k, concLit.color);
+    hlerp(A.city, B.city, k, cityMat.color); hlerp(A.hill, B.hill, k, hillMat.color);
+    hlerp(A.shore, B.shore, k, shoreMat.color); hlerp(A.shore, B.shore, k, bankMat.color);
+    for (let i = 0; i < 3; i++) hlerp(A.haze[i], B.haze[i], k, hazeMats[i].color);
+    hlerp(A.gold, B.gold, k, goldCloudMat.color);
+    stormMat.opacity = nlerp(A.storm, B.storm, k);
+    ggStMat.opacity = nlerp(A.stars, B.stars, k) * (0.8 + 0.2 * Math.sin(t * 9));
+    bcnMat.opacity = nlerp(A.bcn, B.bcn, k) * (Math.sin(t * 14) > 0 ? 0.95 : 0.2); // 항공등 점멸
+    for (const rp of rayPans) rp.opacity = nlerp(A.rays, B.rays, k);
+    for (let i = 0; i < emN; i++) { emArr[i * 3 + 1] += 0.05; emArr[i * 3] += Math.sin(t * 6 + emSeed[i]) * 0.06; if (emArr[i * 3 + 1] > 28) emArr[i * 3 + 1] = 1; }
+    emGeo.attributes.position.needsUpdate = true; emMat.opacity = nlerp(A.ember, B.ember, k) * (0.75 + 0.25 * Math.sin(t * 26));
+    for (const v of swayG) v.g.rotation.z = Math.sin(t * 1.3 + v.seed) * v.amp;
+    const wkn = nlerp(A.waterKn, B.waterKn, k), cool = nlerp(A.cool, B.cool, k);
+    streakCore.scale.x = 1 + Math.sin(t * 34) * 0.07; streakCore.material.opacity = (0.5 + 0.1 * Math.sin(t * 27)) * wkn;
+    streakBroad.scale.x = 1 + Math.sin(t * 21 + 2) * 0.05; streakBroad.material.opacity = 0.3 * wkn;
+    drawWater(wkn, t, cool);
+  };
   update(0);
-  return { scene, camera, update };
+  return { scene, camera, update, atHour };
 }
 export function playGoldenGateVignette() {
   playVignette(() => buildGoldenGateScene(), 12000, () => {
