@@ -10817,6 +10817,16 @@ renderQuestCard();
   });
   document.addEventListener('mousedown', hide, true); // 클릭(모달 열림 등) 시 즉시 숨김
 })();
+// ── 웹 잔재 차단(렌더러 측 — 2026-07-23 전수 감사, Electron·PWA 공통) ──
+//   본체는 웹앱이라 브라우저 기본 동작이 그대로 새어 나온다. 이미 막힌 것(user-select·img user-drag·
+//   캔버스 우클릭)외 잔여 3종을 여기서 끊는다. main.cjs의 메뉴 제거·will-navigate 가드와 한 쌍.
+// ① 파일 드롭 = "문서 열기" 기본값 차단 — 복사 커서·게임 이탈 시도 자체를 없앤다(메인 가드와 이중벽).
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => e.preventDefault());
+// ② Ctrl+휠 = 브라우저 페이지 줌 차단 — 픽셀 스냅이 깨지고 카메라 줌(무보조 휠)과 혼선. 캡처는 안 막으므로 게임 휠 줌은 그대로.
+window.addEventListener('wheel', e => { if (e.ctrlKey) e.preventDefault(); }, { passive: false, capture: true });
+// ③ 가운데 클릭 오토스크롤 위젯 차단 — 스크롤 가능한 모달(PDA 등) 위에서 브라우저 팬 커서가 떴다.
+document.addEventListener('mousedown', e => { if (e.button === 1) e.preventDefault(); });
 // 웹: 설치본 fetch로 loose locales 병합(비동기 베스트에포트) — 적용되면 화면 재치환. (Electron은 위 applyLocaleOverrides 동기 처리)
 loadLocaleOverridesWeb().then(a => { if (a) { applyStaticI18n(); updateHud(); renderResBar(); renderQuestCard(); } });
 if (state.minimizedEvent && EVENTS[state.minimizedEvent]) showEventChip(state.minimizedEvent); // 로드 후 내려둔 이벤트 칩 복원
