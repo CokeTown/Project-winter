@@ -587,11 +587,23 @@ const sunMotes = [];
 // ③ 한파 실내 침투(GD-THESIS L2): 무방비 한파 시 창유리 안쪽에 성에 오버레이. loadShelter마다 재수집.
 //   updateEnvironment가 coldSnapNetSeverity로 목표 투명도를 구하고 서서히 페이드(종료 시 서서히 사라짐).
 const winFrostMats = [];
+// #229 벽 컬링 페이드 동조 (디렉터 신고: "창문이 아닌데 한낮의 햇살 광원/텍스처가 들어온다"):
+//   cullFadeSkip 재질(빛기둥·착지광·먼지·창하늘 사각·성에)은 컬링의 페이드 재질 수집에서 제외되므로
+//   (외부 추적·클론 금지), 벽이 녹는 175ms 동안 전광으로 허공에 남고 페이드 인에선 벽보다 먼저 팝인한다.
+//   특히 창하늘은 불투명한 밝은 사각이라 정오엔 정확히 "창 없는 햇살 텍스처"로 보인다.
+//   해법: 각 구동부(updateSunShafts/updateWindowSkies/성에)가 소속 벽 그룹의 fade를 직접 곱한다.
+function wallCullFade(ud) {
+  const g = ud.wallG;
+  if (!g) return 1;
+  if (!g.visible) return 0;
+  const cs = g.userData.cull;
+  return cs ? cs.fade : 1;
+}
 function updateSunShafts() {
   if (!sunShafts.length && !sunMotes.length) return;
   const s = (weather.type === 'clear' && !opts.lowSpec) ? dayness : 0;
-  for (const b of sunShafts) { b.material.opacity = 0.26 * s * (b.userData.opMul ?? 1); b.visible = s > 0.02; }
-  for (const p of sunMotes) { p.material.opacity = 0.55 * s; p.visible = s > 0.02; }
+  for (const b of sunShafts) { const wf = wallCullFade(b.userData); b.material.opacity = 0.26 * s * (b.userData.opMul ?? 1) * wf; b.visible = s > 0.02 && wf > 0.01; }
+  for (const p of sunMotes) { const wf = wallCullFade(p.userData); p.material.opacity = 0.55 * s * wf; p.visible = s > 0.02 && wf > 0.01; }
 }
 function updateWindowSkies() {
   if (!winSkyMats.length) return;
@@ -605,6 +617,10 @@ function updateWindowSkies() {
   for (const m of winSkyMats) {
     _tc.b.setHex(m.userData.baseHex);
     m.color.copy(_tc.b).lerp(_tc.a, dayness * dark);
+    // #229: 하늘판(불투명)이 벽 페이드 중 허공에 떠 보이던 본체 — 벽 fade에 맞춰 투명화, 완료 시 원복
+    const wf = wallCullFade(m.userData);
+    if (wf < 0.999) { m.transparent = true; m.opacity = wf; m.depthWrite = false; }
+    else if (m.transparent) { m.transparent = false; m.opacity = 1; m.depthWrite = true; }
   }
 }
 function gameHour() { return (state.gameMin % 1440) / 60; }
@@ -1095,6 +1111,7 @@ function stdWall(len, h, mat, opts = {}) {
     // 창밖 하늘은 시간대에 따라 밝아져야 한다 (낮인데 창이 깜깜하면 뒤집힌 느낌)
     sky.material.userData.baseHex = opts.skyColor ?? 0x36435c;
     sky.material.userData.cullFadeSkip = true; // ① 외부(winSkyMats)에서 추적하는 재질 — 클론 금지
+    sky.material.userData.wallG = g; // #229 벽 컬링 페이드 동조
     winSkyMats.push(sky.material);
     sky.position.set(winX, winY, -0.02);
     g.add(sky);
@@ -1103,6 +1120,7 @@ function stdWall(len, h, mat, opts = {}) {
     const frost = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH),
       new THREE.MeshBasicMaterial({ map: frostTex(), transparent: true, opacity: 0, depthWrite: false, fog: false }));
     frost.material.userData.cullFadeSkip = true;
+    frost.userData.wallG = g; // #229 벽 컬링 페이드 동조
     frost.position.set(winX, winY, 0.03); // 유리(-0.02)보다 방 안쪽으로 — 실내에서 보이게
     frost.visible = false;
     g.add(frost);
@@ -1129,6 +1147,7 @@ function stdWall(len, h, mat, opts = {}) {
       }));
       beam.visible = false;
       beam.userData.opMul = opMul;
+      beam.userData.wallG = g; // #229 벽 컬링 페이드 동조
       beam.material.userData.cullFadeSkip = true; // ① sunShafts에서 추적 — 클론 금지
       g.add(beam);
       sunShafts.push(beam);
@@ -1142,6 +1161,7 @@ function stdWall(len, h, mat, opts = {}) {
     pool.position.set(cx, 0.025, zL * 0.82);
     pool.visible = false;
     pool.userData.opMul = 0.8;
+    pool.userData.wallG = g; // #229 벽 컬링 페이드 동조
     pool.material.userData.cullFadeSkip = true; // ① sunShafts에서 추적 — 클론 금지
     g.add(pool);
     sunShafts.push(pool);
@@ -1161,6 +1181,7 @@ function stdWall(len, h, mat, opts = {}) {
     }));
     motes.visible = false;
     motes.userData.phase = Math.random() * Math.PI * 2;
+    motes.userData.wallG = g; // #229 벽 컬링 페이드 동조
     g.add(motes);
     sunMotes.push(motes);
   }
@@ -1371,6 +1392,14 @@ const _shelterBuilders = makeShelterBuilders({
   setSubwayHidden: (v) => { subwayHiddenObj = v; }, // §9.6 히든 지점 히트 대상 (subway buildEnv가 세팅)
   wallPhong, stdWall, makeWalls, tagCeiling, tagSway, attachToWall,
   wlBlock, ogGround, ogAttach, ogRock, ogZone, BP,
+  // #229 커스텀 유리(관제탑 파노라마 등)를 시간 연동 하늘판으로 등록 — 정적 유리는 정오에도 밤색(실캡처 검거).
+  //   baseHex=밤 유리색, 낮에 계절 하늘색으로 밝아짐(updateWindowSkies). wallG로 벽 페이드 동조까지.
+  regWinSky: (mat, baseHex, wallG) => {
+    mat.userData.baseHex = baseHex;
+    mat.userData.cullFadeSkip = true; // 외부(winSkyMats) 추적 — 컬링 페이드 클론 금지
+    if (wallG) mat.userData.wallG = wallG;
+    winSkyMats.push(mat);
+  },
   buildCarWreck, buildPowerPole, buildRuinCity, buildRooftopSlate, buildRailSegments,
 });
 const SHELTERS = {
@@ -7489,8 +7518,9 @@ function updateEnvironment(t, dt) {
     frostLevel += (frostTarget - frostLevel) * Math.min(1, dt * (frostTarget > frostLevel ? 0.2 : 0.35));
     if (frostLevel < 0.004) frostLevel = 0;
     for (const fm of winFrostMats) {
-      fm.material.opacity = frostLevel;
-      fm.visible = frostLevel > 0.004;
+      const wf = wallCullFade(fm.userData); // #229 벽 컬링 페이드 동조
+      fm.material.opacity = frostLevel * wf;
+      fm.visible = frostLevel > 0.004 && wf > 0.01;
     }
   }
   if (envDyn.trees || envDyn.buildings) {
@@ -11801,6 +11831,7 @@ window.__shelter = {
   pickBridgeSight, bridgeSightHit, // #146 지역 결선 트리거 (QA 프로브 — 노을 창·히트 평면 실측)
   buildGoldenGateScene, // 트레일러 하네스 전용: {scene,camera,update(t)} 결정론 렌더 — Tier5: vignettes.js에서 import 재수출
   buildJungleSunScene, // 컷씬 타임랩스 하네스(디렉터 2026-07-23 "비네트 구도에서 지나는 24시간") — 동일 계약
+  __sunShafts: sunShafts, __winSkyMats: winSkyMats, // #229 광원 찐빠 감사 프로브(결선 방향·페이드 동조 실측)
   showDiscoveryVignette, queueDiscovery, drainDiscoveryQueue, discoveryQueueLen: () => discoveryQueue.length, // #150 희귀템 발견 컷 (QA)
   // 카메라 QA 훅 (⑥-b): 하네스가 후면 등 임의 앵글을 확보하도록 yaw/pitch/zoom setter를 영구 노출.
   //  setYaw는 targetYaw와 yaw를 함께 세팅해 다음 프레임 즉시 반영(보간 대기 없이 스크린샷 가능).

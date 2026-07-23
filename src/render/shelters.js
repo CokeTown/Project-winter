@@ -17,7 +17,7 @@ export function makeShelterBuilders(ctx) {
   const {
     roomGroup, envRoot, state, getROOM, setBlockers, setEnvDyn, getEnvDyn, getWallList, setWallList, setBunkerStairs, setSubwayHidden,
     wallPhong, stdWall, makeWalls, tagCeiling, tagSway, attachToWall,
-    wlBlock, ogGround, ogAttach, ogRock, ogZone, BP,
+    wlBlock, ogGround, ogAttach, ogRock, ogZone, BP, regWinSky,
     buildCarWreck, buildPowerPole, buildRuinCity, buildRooftopSlate, buildRailSegments,
   } = ctx;
   // ── 공용 잎 클러스터 스프라이트 (동부 셸터 엘리베이션: 골든게이트/펜트하우스 기준의 부드러운 잎.
@@ -1367,7 +1367,15 @@ export function makeShelterBuilders(ctx) {
         // 유리 전망 벽 4면 (프레임 + 어두운 유리) — 컬링 대상
         const mkGlassWall = (len) => {
           const g = new THREE.Group();
-          BP(g, len, h, 0.1, 0x2a343e, 0, h / 2, 0); // 유리판
+          // #229: 정적 어두운 유리는 정오에도 밤처럼 보였다(실캡처 검거) — 시간 연동 하늘판으로 등록.
+          //   Basic(무조명)이 stdWall 창하늘과 동일 문법: 색 자체가 "유리 너머 하늘". 그림자 플래그는 BP와 동일 유지
+          //   (#97 섀도 프록시가 숨은 벽을 대행하므로, 보이는 벽도 캐스트해야 회전 시 실내 광량이 안 튄다).
+          const glassMat = new THREE.MeshBasicMaterial({ color: 0x2a343e });
+          const glass = new THREE.Mesh(new THREE.BoxGeometry(len, h, 0.1), glassMat);
+          glass.position.set(0, h / 2, 0);
+          glass.castShadow = glass.receiveShadow = true;
+          g.add(glass);
+          regWinSky(glassMat, 0x2a343e, g);
           BP(g, len, 0.14, 0.16, 0x55504a, 0, h - 0.05, 0); // 상부 프레임
           BP(g, len, 0.16, 0.16, 0x55504a, 0, 0.08, 0);      // 하부 프레임
           const nMul = Math.max(2, Math.floor(len / 1.6));
