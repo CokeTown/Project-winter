@@ -2148,7 +2148,7 @@ function doSaveNow() {
     try { localStorage.setItem('nw-opts', JSON.stringify(opts)); } catch (e) { /* 저장 불가 무시 */ }
     return;
   }
-  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0, w: i.wear || 0 }));
   state.savedAt = Date.now();
   // REQ-STEAM-01: 세이브 경로를 클라우드 어댑터 경유 (현재 localStorage 위임 — 동작 불변, Steam Cloud 미러 지점).
   // 슬롯 저장 실패(quota 초과 등)는 조용히 삼키지 않는다 — 세션당 1회 고지 (스팸 방지, 진행은 계속).
@@ -2838,6 +2838,7 @@ function loadShelter(id) {
     const restored = addItem(it.d, it.c ?? 0, cx, cz, it.r ?? 0, it.o !== 0, it.y || 0, it.t ?? 3);
     if (it.s && restored) { restored.sketch = it.s; recolorItem(restored, restored.colorIdx); } // DDD-2: 걸어둔 스케치 복원(재빌드)
     if (it.ge && restored) { restored.gel = it.ge; applyGel(restored); } // #189 P3: 조명 젤 색 복원
+    if (it.w && restored) restored.wear = it.w; // #230 스크래처 마모 복원
   }
   for (const it of items) {
     // #209 러그 바닥 올림: y=0 항목도 러그가 밑에 있으면 재계산 대상이다(구 세이브엔 러그 위 가구가 0으로
@@ -2904,7 +2905,7 @@ async function moveToShelter(id) {
     const dn = LName(DISTRICTS[districtOf(id)]);
     state.dayLog.notes.push(t(cityCross ? 'move.journeyCityNote' : 'move.journeyNote', { name: dn, josa: josa(dn, '으로/로') }));
   }
-  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 }));
+  state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0, w: i.wear || 0 }));
   state.stayDays = 0; // 새 집은 아직 낯설다
   state.lightingOut = false; // #195: 전 셸터의 단전 이력을 끌고 오지 않는다 — 도착 셸터 기준으로 다음 결산이 재판정
   loadShelter(id);
@@ -5908,7 +5909,7 @@ function openCraftModal() {
         state.rooftopSlate = 'full';
         toast(t('rooftop.slateDone')); state.dayLog.notes.push(t('rooftop.slateDone'));
         // 지붕 지오메트리를 다시 짓는다 (가구 보존 — 벙커 재빌드와 동일 패턴)
-        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일) — 빠지면 재빌드 시 표면 위 소품이 바닥으로 침몰
+        state.layouts.rooftop = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0, w: i.wear || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일) — 빠지면 재빌드 시 표면 위 소품이 바닥으로 침몰
         loadShelter('rooftop');
         closeModal();
         playSfx('craft'); scheduleSave(); renderResBar(); updateHud();
@@ -6041,7 +6042,7 @@ function openCraftModal() {
       state.dayLog.notes.push(t('craft.modNote', { name: LName(m) }));
       if (id === 'extension' || m.rebuild) {
         // 방 구조가 바뀌므로 거처를 다시 짓는다 (rebuild: buildRoom 지오 분기 개조 — 세관 선반 철거/창구 봉쇄)
-        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
+        state.layouts[state.current] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0, w: i.wear || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
         loadShelter(state.current);
         closeModal();
       } else {
@@ -6058,7 +6059,7 @@ function openCraftModal() {
 // 벙커 지오메트리 재빌드 (#36) — 천장 수리/뒷문 상태를 반영해 방을 다시 짓는다 (extension 개조와 동일 패턴).
 function rebuildBunkerGeometry() {
   if (state.current !== 'bunker') return;
-  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
+  state.layouts.bunker = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0, w: i.wear || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
   loadShelter('bunker');
   closeModal();
   shadowDirty();
@@ -6066,7 +6067,7 @@ function rebuildBunkerGeometry() {
 // 1.1: 현재 셸터 지오메트리 재빌드 (현장 오브젝트 단계 교체용, 벙커 외 항구 셸터). 배치 보존 후 loadShelter.
 function rebuildShelterGeometry() {
   const id = state.current;
-  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
+  state.layouts[id] = items.map(i => ({ d: i.defId, c: i.colorIdx, x: +i.x.toFixed(3), z: +i.z.toFixed(3), r: i.rot, o: i.on === false ? 0 : 1, y: +(i.y || 0).toFixed(2), s: i.sketch || 0, t: i.tier || 0, ge: i.gel || 0, w: i.wear || 0 })); // #193: 스태킹 y 누락 보수(doSaveNow 스키마 동일)
   loadShelter(id);
   closeModal();
   shadowDirty();
@@ -7000,7 +7001,7 @@ function tickCatPurr(dt) {
   _purrNext -= dt;
   if (_purrNext > 0) return;
   _purrNext = 11 + Math.random() * 6;
-  const onCushion = items.some(it => /cushion/i.test(it.defId)
+  const onCushion = items.some(it => /cushion|cathammock/i.test(it.defId) // #230: 해먹 낮잠도 골골(방석 기믹 확장)
     && Math.hypot((it.x ?? 0) - c.g.position.x, (it.z ?? 0) - c.g.position.z) < 0.5);
   if (onCushion) playSfx('purr', { vol: 0.28, rate: 0.95, jitter: 0.03, dur: 6, fade: 1.4 });
 }
@@ -8748,6 +8749,17 @@ function processDay() {
   }
   if (batteryOut.length === 1) notes.push(t('day.fuelOut', { fuel: LName(RESOURCES.battery), name: batteryOut[0] }));
   else if (batteryOut.length > 1) notes.push(t('day.powerOutGroup', { names: batteryOut.join(' · ') }));
+  // #230 스크래처 마모: 고양이가 사는 집에서만 닳는다 — 수명 도달 시 부서져 소멸(회수 불가, 재제작 루프).
+  //   임박(잔여 2일)에 예고 노트 1줄 — 소리 없이 사라지면 "가구가 증발했다" 신고가 된다.
+  if (state.cat) {
+    for (const it of [...items]) {
+      if (it.defId !== 'catscratcher') continue;
+      it.wear = (it.wear || 0) + 1;
+      const life = BAL.catset.scratcherLifeDays;
+      if (it.wear >= life) { removeItem(it); notes.push(t('day.scratcherGone')); }
+      else if (it.wear === life - 2) notes.push(t('day.scratcherWorn'));
+    }
+  }
   // #189 P1: 조명 설비 전력 — 전등은 배터리를 먹는다(발전기 가동 시 무료). 끊기면 소등 → 폴백 어둠.
   //   재급전은 다음 날 자동 재시도(수동 조작 불요) — 복구/단전 전이 시에만 노트 1줄.
   if (hasMod('lighting')) {

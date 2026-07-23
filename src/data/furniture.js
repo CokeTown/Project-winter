@@ -867,6 +867,90 @@ const DEFS = {
       return g;
     }
   },
+  // ── #230 고양이 세트 (FURNITURE-EXPANSION 1차 배치 — 코지 정체성·펫 문법·스토어 컷) ──
+  cattower: {
+    name: '캣타워', nameEn: 'Cat Tower', emoji: '', fp: { w: 0.7, d: 0.66 },
+    colorNames: ['오트밀', '그레이', '와인', '포레스트'],
+    colorNamesEn: ['Oatmeal', 'Gray', 'Wine', 'Forest'],
+    colors: [0xc4b295, 0x8a8f96, 0x8f4a4a, 0x6a7f5b],
+    tiered: true, // T1 골판지 성 → T2 외기둥 낡은 타워 → T3 2기둥+꼭대기 패드
+    // 고양이 퍼치 전용 높이 채널 — TIER_TOP_Y에 넣으면 avatar.js seatOf가 착석 대상으로 오인(#209 F04 러그 선례).
+    //   값은 아래 build 지오 실측: T1 담요 상면 0.55 / T2 플랫폼 상면 0.86 / T3 꼭대기 패드 상면 1.21.
+    floorTopByTier: { 1: 0.55, 2: 0.86, 3: 1.21 },
+    build(c, ci, sk, tier) {
+      const g = new THREE.Group();
+      if (tier === 1) {
+        const cb = 0xb0916a; // 골판지
+        B(g, 0.56, 0.3, 0.46, cb, 0, 0.15, 0);                        // 큰 상자 (top 0.30)
+        B(g, 0.4, 0.2, 0.34, shade(cb, 0.92), -0.05, 0.4, -0.03);     // 위 상자 (top 0.50)
+        B(g, 0.34, 0.05, 0.3, shade(c, 0.8), -0.05, 0.525, -0.03);    // 담요 (top 0.55 = 퍼치)
+        B(g, 0.16, 0.14, 0.02, 0x4a3c2c, 0.1, 0.16, 0.235);           // 정면 입구 구멍
+        const ramp = B(g, 0.34, 0.02, 0.14, shade(cb, 0.8), 0.31, 0.17, 0.12); // 기운 판자 램프
+        ramp.rotation.z = -0.55;
+        return g;
+      }
+      if (tier === 2) {
+        const wd = 0x7a6446;
+        B(g, 0.6, 0.05, 0.55, shade(wd, 0.85), 0, 0.025, 0);          // 받침 (top 0.05)
+        Cyl(g, 0.055, 0.055, 0.76, 0xa8956a, 0, 0.43, 0, 10);         // 사이잘 기둥 (top 0.81)
+        for (let i = 0; i < 4; i++) Cyl(g, 0.058, 0.058, 0.018, 0x92804e, 0, 0.16 + i * 0.17, 0, 10); // 로프 골
+        B(g, 0.42, 0.05, 0.36, shade(c, 0.82), 0, 0.835, 0);          // 낡은 플랫폼 (top 0.86 = 퍼치)
+        B(g, 0.14, 0.02, 0.12, shade(c, 1.15), 0.1, 0.87, 0.05);      // 헝겊 패치
+        return g;
+      }
+      const wd = 0x7a6446;
+      B(g, 0.66, 0.05, 0.6, shade(wd, 0.9), 0, 0.025, 0);             // 받침판 (top 0.05)
+      Cyl(g, 0.055, 0.055, 1.07, 0xb9a071, -0.16, 0.585, -0.12, 10);  // 긴 기둥 (top 1.12)
+      for (let i = 0; i < 5; i++) Cyl(g, 0.058, 0.058, 0.02, 0xa08a5c, -0.16, 0.2 + i * 0.2, -0.12, 10); // 로프 골
+      Cyl(g, 0.055, 0.055, 0.53, 0xb9a071, 0.18, 0.315, 0.14, 10);    // 짧은 기둥 (top 0.58)
+      B(g, 0.4, 0.05, 0.34, c, 0.16, 0.605, 0.12);                    // 중단 플랫폼 (top 0.63)
+      B(g, 0.46, 0.05, 0.4, c, -0.14, 1.145, -0.1);                   // 상단 플랫폼 (top 1.17)
+      Cyl(g, 0.15, 0.16, 0.04, shade(c, 1.12), -0.14, 1.19, -0.1, 12); // 꼭대기 패드 (top 1.21 = 퍼치)
+      B(g, 0.012, 0.14, 0.012, 0x5a4a34, 0.05, 0.51, 0.2);            // 매달린 끈
+      B(g, 0.05, 0.05, 0.05, shade(c, 1.2), 0.05, 0.42, 0.2);         // 끈 끝 장난감 공
+      return g;
+    }
+  },
+  cathammock: {
+    name: '고양이 해먹', nameEn: 'Cat Hammock', emoji: '', fp: { w: 0.9, d: 0.5 },
+    // 스펙 원안은 '창가 해먹'(창 좌표 앵커) — 창 부착은 셸터별 앵커(#51) 확장이 필요해 v1은 자립 스탠드.
+    //   창가에 붙여 놓는 그림은 배치 자유도로 성립(힌트 카피가 유도). 창 앵커 승격은 후속 결정.
+    colorNames: ['리넨', '세이지', '테라코타', '인디고'],
+    colorNamesEn: ['Linen', 'Sage', 'Terracotta', 'Indigo'],
+    colors: [0xd6c9ab, 0x8a9a78, 0xb0623e, 0x4a5680],
+    build(c) {
+      const g = new THREE.Group();
+      const wd = 0x8a7550;
+      for (const sx of [-0.36, 0.36]) {                               // A-프레임 다리 2쌍
+        const l1 = B(g, 0.05, 0.62, 0.05, wd, sx, 0.295, -0.14); l1.rotation.x = 0.4;
+        const l2 = B(g, 0.05, 0.62, 0.05, shade(wd, 0.9), sx, 0.295, 0.14); l2.rotation.x = -0.4;
+      }
+      B(g, 0.86, 0.045, 0.045, shade(wd, 1.05), 0, 0.585, 0);         // 가로 행어봉 (A꼭지)
+      B(g, 0.5, 0.02, 0.34, c, 0, 0.46, 0);                           // 슬링 바닥 (top 0.47 — 퍼치 0.48)
+      const s1 = B(g, 0.2, 0.02, 0.34, shade(c, 0.9), -0.3, 0.51, 0); s1.rotation.z = 0.5;  // 좌 플랩
+      const s2 = B(g, 0.2, 0.02, 0.34, shade(c, 0.9), 0.3, 0.51, 0); s2.rotation.z = -0.5;  // 우 플랩
+      B(g, 0.014, 0.16, 0.014, 0x5a4a34, -0.37, 0.53, 0);             // 끈 좌
+      B(g, 0.014, 0.16, 0.014, 0x5a4a34, 0.37, 0.53, 0);              // 끈 우
+      return g;
+    }
+  },
+  catscratcher: {
+    name: '스크래처', nameEn: 'Scratching Post', emoji: '', fp: { w: 0.4, d: 0.4 },
+    colorNames: ['내추럴', '차콜', '와인', '세이지'],
+    colorNamesEn: ['Natural', 'Charcoal', 'Wine', 'Sage'],
+    colors: [0xb9a071, 0x4a4d52, 0x8f4a4a, 0x8a9a78],
+    build(c) {
+      const g = new THREE.Group();
+      const wd = 0x7a6446;
+      B(g, 0.4, 0.05, 0.4, shade(wd, 0.9), 0, 0.025, 0);              // 받침 (top 0.05)
+      Cyl(g, 0.06, 0.06, 0.5, c, 0, 0.3, 0, 10);                      // 로프 기둥 (top 0.55)
+      for (let i = 0; i < 6; i++) Cyl(g, 0.063, 0.063, 0.016, shade(c, 0.86), 0, 0.12 + i * 0.075, 0, 10); // 로프 골
+      B(g, 0.12, 0.07, 0.12, shade(wd, 1.1), 0, 0.585, 0);            // 상단 캡 (top 0.62)
+      B(g, 0.012, 0.16, 0.012, shade(c, 1.35), 0.055, 0.3, 0.02);     // 긁힌 자국 ①
+      B(g, 0.012, 0.12, 0.012, shade(c, 1.35), -0.04, 0.24, 0.045);   // 긁힌 자국 ②
+      return g;
+    }
+  },
   teatable: {
     name: '찻상', nameEn: 'Tea Table', emoji: '', fp: { w: 0.95, d: 0.6 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,

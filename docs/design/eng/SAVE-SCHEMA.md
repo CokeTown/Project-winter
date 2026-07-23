@@ -23,7 +23,7 @@
 | `successes` | int | 0 | 누적 탐험 성공. |
 | `inventory` | {id:count} | {bed,rug,candle} | 미배치 보유 가구 수량. |
 | `res` | {id:number} | 초기 자원표 | 자원 보유량. 신규 자원(salt 등)은 로드 시 0으로 보정. |
-| `layouts` | {shelterId:[…]} | 셸터별 배열 | 셸터별 배치된 가구 레이아웃. 없는 셸터 키는 로드 시 `[]`. |
+| `layouts` | {shelterId:[…]} | 셸터별 배열 | 셸터별 배치된 가구 레이아웃 `{d,c,x,z,r,o,y,s,t,ge,w}`. 없는 셸터 키는 로드 시 `[]`. `w`=#230 스크래처 마모(그 외 가구 0, 구세이브 미존재 시 0 보정). |
 | `exp` | object\|null | null | 진행 중 탐험 { region, end, rate, prep }. |
 | `injury` | object\|null | null | 현재 부상 { type, untilMin }. |
 | `gameMin` | int | 480 | 게임 내 분(하루=1440). Day1 08:00 시작. |

@@ -96,7 +96,7 @@ export const CAT_POSES = {
   // hop: 가구 오르내리는 점프 중 — 네 다리 웅크림 + 꼬리 들어 균형
   hop:     { by: 0.13,  brx: -0.12, hrx: -0.1, legF: -0.85, legB: -0.85, t1: 0.35 },
 };
-export const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2, teddybear: 0.2, moodlantern: 0.37 }; // #119 곰인형·무드등: 고양이가 웅크린다(무드등=나무 뚜껑 위, 온기를 쬔다)
+export const CAT_PERCH_Y = { bed: 0.63, sofa: 0.56, rug: 0.05, cushion: 0.2, teddybear: 0.2, moodlantern: 0.37, cattower: 1.21, cathammock: 0.48 }; // #119 곰인형·무드등: 고양이가 웅크린다(무드등=나무 뚜껑 위, 온기를 쬔다) · #230 캣타워(티어 높이는 floorTopByTier 우선)·해먹
 // #193: 침대는 티어가 곧 높이(#157 — sofa/chair와 달리 좌면 높이가 티어 정체성)라 퍼치·착석 y도 티어를 따라야 한다.
 //   실측(furniture.js bed build): T1 매트리스 상면 0.16·담요 상면 0.22 걸침 → 중앙 0.19(#209 F26: 베개 0.245 단독 기준 폐기) / T2 싱글 매트리스 상면 0.38+0.075≈0.46 / T3 이불 상면 0.64≈0.63
 export const BED_TOP_Y = { 1: 0.19, 2: 0.46, 3: 0.63 };
@@ -174,6 +174,10 @@ export const CRAFTS = [
   { out: { furn: 'fuelpile' }, bp: 'fuelpile', cost: { material: 1, fuel: 2 }, hint: '난롯가에 쌓아 둔 장작 더미', hintEn: 'A firewood pile stacked by the stove' },
   { out: { furn: 'noticeboard' }, bp: 'noticeboard', cost: { material: 2, cloth: 1 }, hint: '지도·메모를 꽂은 상황판', hintEn: 'A board pinned with maps and notes' },
   { out: { furn: 'jugcluster' }, bp: 'jugcluster', cost: { material: 2 }, hint: '물·연료를 담은 통 무더기', hintEn: 'Clustered jugs of water and fuel' },
+  // #230 고양이 세트 — 코지 정체성 직격. 비용은 BAL.catset(디렉터 JSON 튜닝 채널 — P2 modCosts 문법).
+  { out: { furn: 'cattower' }, cost: BAL.catset.cattower, hint: '고양이 전망대 — 높은 곳이 필요하다', hintEn: 'A lookout for the cat — height is a need' },
+  { out: { furn: 'cathammock' }, cost: BAL.catset.cathammock, hint: '낮잠 해먹 — 창가에 두면 햇살이 든다', hintEn: 'A nap hammock — put it by a window for the sun' },
+  { out: { furn: 'catscratcher' }, cost: BAL.catset.catscratcher, hint: '스크래처 — 닳으면 새로 만들어 준다', hintEn: 'A scratcher — make a new one when it wears out' },
   { out: { furn: 'chair' }, cost: { material: 2 }, hint: '나무 의자', hintEn: 'Wooden chair' },
   { out: { furn: 'candle' }, cost: { material: 1, candle: 1 }, hint: '캔들 스툴 (양초 격일)', hintEn: 'Candle stool (candle every 2 days)' },
   { out: { furn: 'teatable' }, cost: { material: 2, cloth: 1 }, hint: '낮은 찻상 — 따뜻한 한 잔', hintEn: 'A low tea table — a warm cup' },

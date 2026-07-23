@@ -904,7 +904,7 @@ const KNOWLEDGE_HASH = -451536973;
     const tj = JSON.parse(tt);
     if (tj.error) check('#157 가구 티어 (예외 없이)', false, tj.error);
     else {
-      check('#157 티어 17종 완성 (tiered 플래그 정확히 17)', tj.tieredAll && tj.tieredCount === 17, JSON.stringify({ all: tj.tieredAll, n: tj.tieredCount }));
+      check('#157 티어 18종 완성 (tiered 플래그 정확히 18 — #230 캣타워 합류)', tj.tieredAll && tj.tieredCount === 18, JSON.stringify({ all: tj.tieredAll, n: tj.tieredCount }));
       check('#157 티어 복셀 실분기 (17종 T1≠T2≠T3)', tj.branchOk === true, `branchOk ${tj.branchOk}`);
       check('#157 쾌적 티어 스케일 (T1 < T3, furn·light)', tj.loFurn < tj.hiFurn && tj.loLight < tj.hiLight,
         JSON.stringify({ furn: [tj.loFurn, tj.hiFurn], light: [tj.loLight, tj.hiLight] }));

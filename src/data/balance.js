@@ -223,6 +223,14 @@ export const BAL = {
     radiostation: { parts: 3, material: 2 },
   },
 
+  /* ── #230 고양이 세트 (FURNITURE-EXPANSION 1차 — 신규 가구 비용은 modCosts 문법으로 BAL에서 시작) ── */
+  catset: {
+    cattower: { material: 3, cloth: 2 },      // 티어드(T1~3) — 손질 업그레이드는 기존 티어 규약
+    cathammock: { cloth: 3, material: 1 },    // 천 위주 — 햇살 낮잠 앵커
+    catscratcher: { material: 1, cloth: 1 },  // 싸게, 대신 닳는다(아래 수명) — 재제작 루프
+    scratcherLifeDays: 12,                    // 고양이가 있는 날만 마모 +1 — 도달 시 부서져 소멸(회수 불가)
+  },
+
   /* ── #76 「지식과 사치」 — 장기 인플레 교정 + 책(지식)/사치 건축 싱크 ──
      문제(AUDIT-1.4 P1-3): 9겨울 완주(Day432) food+canned가 1291까지 무한 인플레 — 후반 자원이 의미를 잃는다.
      디렉터 결정: 목표 300~400 + 지식/사치 싱크. 방식(디렉터 승인): "암시장 확장".
