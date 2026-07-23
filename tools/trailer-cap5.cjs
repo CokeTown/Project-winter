@@ -43,7 +43,19 @@ const CLIPS = [
   //   가상시간 경로는 이 클립에서 예산 만료 이벤트가 오지 않아 행(실측) → **늦은 동결**로 해결:
   //   실시간으로 카메라를 수렴시킨 뒤 그 상태에서 freezeForGolden → 이후는 FX 정속 스테핑.
   { id: 'c5_cat', kind: 'cat', frames: 110, shelter: 'rooftop', weather: 'snow', hour: 20, sub: 'With Your Cat', lateFreeze: true },
-  { id: 'c6_survive', kind: 'aerial', frames: 200, shelter: 'rooftop', weather: 'clear', hour: 17, sub: 'Survive' },
+  // Survive — 여러 장소를 비트에 스냅해 촤라락(디렉터). Main_theme 실측 78BPM → 비트 23f.
+  //   장소 1곳 = 반박자(12f). 10곳 × 12f = 120f. 각 컷은 독립 촬영본이라 컷 경계가 곧 비트.
+  ...(() => {
+    const M = [['subway', 'snow', 8], ['lighthouse', 'clear', 17], ['tugboat', 'snow', 20], ['greenhouse', 'clear', 12],
+      ['bunker', 'snow', 22], ['lodge', 'clear', 16], ['cabin', 'snow', 21], ['container', 'clear', 9],
+      ['rooftop', 'snow', 13], ['lighthouse', 'snow', 23]];
+    return M.map(([sh, wx, hr], i) => ({
+      id: 'c6_m' + String(i).padStart(2, '0'), kind: 'fx', frames: 12, shelter: sh, weather: wx, hour: hr,
+      sub: 'Survive', // 몽타주 내내 유지 — 첫 컷만 페이드인, 마지막 컷만 페이드아웃(컷마다 깜빡이면 산만)
+      subFade: i === 0 ? 'in' : (i === M.length - 1 ? 'out' : 'none'),
+      yaw: 0.5 + (i % 3) * 0.12, zoom: 1.35 + (i % 4) * 0.08,
+    }));
+  })(),
   { id: 'c7_title', kind: 'fx', frames: 130, shelter: 'rooftop', weather: 'snow', hour: 23, yaw: 0.62, zoom: 1.7, zoomOut: 0.85 },
 ];
 
@@ -140,8 +152,11 @@ async function main() {
       await ev(`(()=>{const S=window.__shelter;
         S.avatarDespawn&&S.avatarDespawn();
         // 러그 중앙 = 찻상 바로 아래(두 가구가 같은 좌표) → 고양이가 상판에 가린다. 러그 앞 빈 바닥으로.
+        // 얼굴을 보이려면: 클로즈업은 카메라 yaw를 facing±0.9(3/4각)로 잡되 현재 yaw에서 ±45°까지만 돈다.
+        //   → 고양이 facing을 카메라 yaw에서 역산해 두면 클로즈업이 의도한 정면 3/4각에 정확히 안착한다.
+        S.setYaw&&S.setYaw(0.62); S.setPitch&&S.setPitch(0.5);
         const rg=(S.items||[]).find(i=>i.defId==='rug');
-        if(rg&&S.qaPlaceCat)S.qaPlaceCat(rg.x-0.95,rg.z+0.75,'sprawl');
+        if(rg&&S.qaPlaceCat)S.qaPlaceCat(rg.x-0.95,rg.z+0.75,'sprawl',0.62-0.9);
         S.enterCatCloseup&&S.enterCatCloseup();
         return S.qaCatInfo?S.qaCatInfo():1;})()`);
       await sleep(1800); // 클로즈업 글라이드 수렴 대기(실시간) — 프레임 0부터 이미 붙어 있어야 한다
@@ -163,7 +178,11 @@ async function main() {
     for (let f = 0; f < sc.frames; f++) {
       const t = f / sc.frames;
       // 자막 페이드: 8f 인 / 12f 아웃
-      const subA = sc.sub ? Math.min(1, f / 8, Math.max(0, (sc.frames - f) / 12)) : 0;
+      const subA = !sc.sub ? 0
+        : sc.subFade === 'none' ? 1
+          : sc.subFade === 'in' ? Math.min(1, f / 8)
+            : sc.subFade === 'out' ? Math.max(0, (sc.frames - f) / 8)
+              : Math.min(1, f / 8, Math.max(0, (sc.frames - f) / 12));
       await ev(`(()=>{const s=document.getElementById('tsub');if(s)s.style.opacity='${subA.toFixed(3)}';return 1;})()`);
       // 카메라 드리프트 (FX/cat)
       if (sc.kind === 'fx') {

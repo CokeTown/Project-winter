@@ -8,10 +8,14 @@ import path from 'path';
 const FFMPEG = process.env.FFMPEG || 'C:/Users/mhdmj/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-8.1.2-full_build/bin/ffmpeg.exe';
 const SRC = process.argv[2] || 'scratchpad/trailer5';
 const OUT = process.argv[3] || 'scratchpad/trailer5/nine-winters-gameplay-v5.mp4';
-const MUSIC = 'docs/steam/trailer/music/Main_Theme_Orchestra2.mp3';
+// 음악은 게임 본편 메인 테마(디렉터: "왜 main theme이 아니라 다른거지?").
+//   docs/.../Main_Theme_Orchestra2.mp3는 오케스트라 편곡본으로 인게임 테마와 다른 곡이다.
+const MUSIC = process.env.MUSIC || 'public/BGM/Main_theme.mp3';
+const MUSIC_AT = +(process.env.MUSIC_AT || 0); // 곡 시작 오프셋(초) — 훅 구간을 쓰고 싶을 때
 const LOGO = 'docs/steam/capsules/v6/library_logo.png'; // 투명 워드마크
 const FPS = 30;
-const ORDER = ['c1_search', 'c2_build', 'c3_decorate', 'c4_shelter1', 'c4_shelter2', 'c4_shelter3', 'c4_shelter4', 'c5_cat', 'c6_survive', 'c7_title'];
+const ORDER = ['c1_search', 'c2_build', 'c3_decorate', 'c4_shelter1', 'c4_shelter2', 'c4_shelter3', 'c4_shelter4', 'c5_cat',
+  ...Array.from({ length: 10 }, (_, i) => 'c6_m' + String(i).padStart(2, '0')), 'c7_title'];
 
 const tmp = path.join(SRC, '_seq');
 fs.rmSync(tmp, { recursive: true, force: true });
@@ -19,9 +23,11 @@ fs.mkdirSync(tmp, { recursive: true });
 
 // 컷들을 하나의 연속 시퀀스로 하드링크/복사 (concat demuxer보다 안정적 — 프레임 번호가 전역 단조)
 let n = 0, missing = [];
+const cutAt = []; // 컷 경계(초) — 여기에 키프레임을 강제해 장면 전환 블록 노이즈를 없앤다
 for (const id of ORDER) {
   const dir = path.join(SRC, id);
   if (!fs.existsSync(dir)) { missing.push(id); continue; }
+  if (n) cutAt.push((n / FPS).toFixed(3));
   for (const f of fs.readdirSync(dir).filter(x => x.endsWith('.png')).sort()) {
     fs.copyFileSync(path.join(dir, f), path.join(tmp, 'f' + String(n++).padStart(5, '0') + '.png'));
   }
@@ -43,9 +49,14 @@ const args = [
   `[0:v]fps=${FPS},format=yuv420p[base];` +
   `[base][lgf]overlay=(W-w)/2:(H-h)/2-40:enable='gte(t,${endcardIn})'[ov];` +
   `[ov]fade=t=in:st=0:d=0.5,fade=t=out:st=${fadeOutStart}:d=1.4[v];` +
-  `[1:a]atrim=0:${dur},afade=t=in:st=0:d=1.2,afade=t=out:st=${fadeOutStart}:d=1.4,volume=0.85[a]`,
+  `[1:a]atrim=${MUSIC_AT}:${MUSIC_AT + dur},asetpts=PTS-STARTPTS,afade=t=in:st=0:d=1.2,afade=t=out:st=${fadeOutStart}:d=1.4,volume=0.85[a]`,
   '-map', '[v]', '-map', '[a]',
-  '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p',
+  // 디렉터 신고 "셸터 전환에 노이즈" — 소스 프레임은 깨끗했다. 원인은 인코딩: 디더가 강한 픽셀 화면에서
+  //   컷 직후 P프레임이 이전 장면을 예측하려다 실패해 블록 노이즈가 뜬다.
+  //   → 컷 시각마다 키프레임 강제 + 화질 상향(crf 15) + 장면전환 감지 강화로 원천 차단.
+  '-force_key_frames', cutAt.join(','),
+  '-c:v', 'libx264', '-preset', 'slow', '-crf', '15', '-pix_fmt', 'yuv420p',
+  '-x264-params', 'scenecut=60:aq-mode=3:deblock=-1,-1',
   '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-shortest', OUT,
 ];
 console.log('ffmpeg 인코딩…');
