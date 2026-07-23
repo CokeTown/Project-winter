@@ -943,7 +943,7 @@ function comfortBreakdown() {
   // 청결
   if (cd.cleanMod) logs.clean.push({ name: t('comfort.log.cleanState', { n: Math.round(cd.clean) }), v: `${cd.cleanMod > 0 ? '+' : ''}${cd.cleanMod}` });
   // 안정감
-  logs.security.push({ name: t('comfort.log.base'), v: '+18' });
+  logs.security.push({ name: t('comfort.log.base'), v: '+' + BAL.comfort.baseSecurity }); // P2: comfort.js 점수식과 동일 상수 — 표시가 실값을 따라간다
   if (cd.shelterMod) logs.security.push({ name: t('comfort.log.shelter'), v: `+${cd.shelterMod}` });
   if (cd.settled) logs.security.push({ name: t('comfort.log.settled', { n: cd.settled }), v: `+${cd.settled}` });
   if (cd.injuryMod) logs.security.push({ name: t('comfort.log.injury'), v: `${cd.injuryMod}` });
@@ -4880,36 +4880,36 @@ function hideEventChip() {
 ============================================================ */
 /* ── 거처 개조 (기지 커스터마이징: 빗물받이·텃밭·증축 등) ── */
 const SHELTER_MODS = {
-  raincatch:  { name: '빗물받이',    nameEn: 'Rain Catch',   emoji: '', cost: { material: 2, parts: 1 }, desc: '비/눈 오는 날 깨끗한 물 +1', descEn: 'Clean water +1 on rainy/snowy days', not: ['lighthouse'] },
-  garden:     { name: '텃밭 상자',   nameEn: 'Garden Box',   emoji: '', cost: { material: 2, water: 2 }, desc: '이틀에 한 번 음식 +1 (겨울 제외)', descEn: 'Food +1 every other day (except winter)', not: ['subway', 'rooftop'] },
+  raincatch:  { name: '빗물받이',    nameEn: 'Rain Catch',   emoji: '', cost: BAL.modCosts.raincatch, desc: '비/눈 오는 날 깨끗한 물 +1', descEn: 'Clean water +1 on rainy/snowy days', not: ['lighthouse'] },
+  garden:     { name: '텃밭 상자',   nameEn: 'Garden Box',   emoji: '', cost: BAL.modCosts.garden, desc: '이틀에 한 번 음식 +1 (겨울 제외)', descEn: 'Food +1 every other day (except winter)', not: ['subway', 'rooftop'] },
   // 옥상 텃밭 (#53) — rooftop 전용. 마당을 텃밭으로 개조. 매일 음식 생산(겨울 0), 옥탑 퍽 gardenMult로 2배.
   //   현재 텃밭은 rooftop 전용이라 퍽이 곧 정체성 — 다른 셸터로의 확장은 향후.
-  rooftopGarden: { name: '옥상 텃밭', nameEn: 'Rooftop Garden', emoji: '', cost: { material: 3, water: 2 }, desc: '마당을 텃밭으로 — 매일 음식 +2 (겨울 휴면)', descEn: 'Turn the yard into a garden — food +2 daily (dormant in winter)', only: ['rooftop'] },
+  rooftopGarden: { name: '옥상 텃밭', nameEn: 'Rooftop Garden', emoji: '', cost: BAL.modCosts.rooftopGarden, desc: '마당을 텃밭으로 — 매일 음식 +2 (겨울 휴면)', descEn: 'Turn the yard into a garden — food +2 daily (dormant in winter)', only: ['rooftop'] },
   // 1.2 버섯 재배칸 (subway 전용) — 어둠에서 자라는 식량. 옥탑 텃밭(볕/여름)의 대칭축(어둠/연중).
   //   매일 음식 +1(겨울 포함 연중), 이틀에 한 번 물 1 소모. 옥탑보다 산출 절반이되 계절을 타지 않는다.
-  mushroom: { name: '버섯 재배칸', nameEn: 'Mushroom Bed', emoji: '', cost: { material: 3, water: 3 }, desc: '어둠 속 균상 — 매일 음식 +1 (연중, 물 소모)', descEn: 'A mushroom bed in the dark — food +1 daily year-round (uses water)', only: ['subway'] },
-  insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '', cost: { cloth: 3, material: 2 }, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
-  shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '', cost: { material: 3, parts: 1 }, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
+  mushroom: { name: '버섯 재배칸', nameEn: 'Mushroom Bed', emoji: '', cost: BAL.modCosts.mushroom, desc: '어둠 속 균상 — 매일 음식 +1 (연중, 물 소모)', descEn: 'A mushroom bed in the dark — food +1 daily year-round (uses water)', only: ['subway'] },
+  insulation: { name: '단열재',      nameEn: 'Insulation',   emoji: '', cost: BAL.modCosts.insulation, desc: '악천후에도 쾌적함이 떨어지지 않음', descEn: 'Comfort no longer drops in bad weather', only: ['container', 'bus'] },
+  shelf:      { name: '증축 선반',   nameEn: 'Extra Shelving', emoji: '', cost: BAL.modCosts.shelf, desc: '가구 배치 한도 +4', descEn: 'Furniture limit +4', only: ['bus'] },
   // #189 P2 지속 급전 승격: 설치 시 조명·가전 전력 무료 + 기존 발전(이틀 배터리 +1) 유지.
-  solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '', cost: { parts: 4, battery: 1 },  desc: '조명·가전 전력 무료 (지속 급전) · 이틀에 한 번 배터리 +1', descEn: 'Free power for lights & appliances (steady supply) · battery +1 every other day', not: ['subway'] },
+  solar:      { name: '태양광 패널', nameEn: 'Solar Panel',  emoji: '', cost: BAL.modCosts.solar,  desc: '조명·가전 전력 무료 (지속 급전) · 이틀에 한 번 배터리 +1', descEn: 'Free power for lights & appliances (steady supply) · battery +1 every other day', not: ['subway'] },
   // #189 P1 조명 설비 — 어둠(무비용·우울) ↔ 화기(연료·온기·흔들림) ↔ 전기조명(전력·안정) 밸런스 축의 세 번째 기둥.
   //   rebuild: 설치 즉시 loadShelter 재실행 → 천장 펜던트 소품+전등 점등. 전력은 processDay가 매일 배터리 1 소비.
-  lighting:   { name: '조명 설비',   nameEn: 'Electric Lighting', emoji: '', cost: { parts: 3, battery: 1 }, desc: '천장에 전등을 매단다 — 방이 밝아진다 (배터리 1/일, 발전기 가동 중엔 무료)', descEn: 'Hang an electric light from the ceiling — the room brightens (battery 1/day, free while the generator runs)', rebuild: true },
-  roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '', cost: { material: 4 },      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
-  extension:  { name: '증축',        nameEn: 'Extension',    emoji: '', cost: { material: 6, parts: 2 },  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
+  lighting:   { name: '조명 설비',   nameEn: 'Electric Lighting', emoji: '', cost: BAL.modCosts.lighting, desc: '천장에 전등을 매단다 — 방이 밝아진다 (배터리 1/일, 발전기 가동 중엔 무료)', descEn: 'Hang an electric light from the ceiling — the room brightens (battery 1/day, free while the generator runs)', rebuild: true },
+  roof:       { name: '지붕 보강',   nameEn: 'Roof Reinforcement', emoji: '', cost: BAL.modCosts.roof,      desc: '악천후 수리 자재가 더 이상 들지 않음', descEn: 'Bad-weather repairs no longer cost materials', only: ['cabin', 'greenhouse'] },
+  extension:  { name: '증축',        nameEn: 'Extension',    emoji: '', cost: BAL.modCosts.extension,  desc: '거처 폭 +2m — 벽을 허물고 더 넓게', descEn: 'Shelter width +2m — tear down a wall for more room', only: ['container', 'cabin', 'greenhouse', 'rooftop', 'subway', 'ship'] },
   // 1.3 온천 (lodge 전용) — 고원 발견물을 개조로 개방. cozy의 정점: 쾌적 온기 대형 + 취침 에너지 회복 보너스.
   //   고양이/개가 온천 옆에서 조는 전용 포즈(연출은 아트 폴백 — addModProp 소품 + 절차 김 파티클).
-  onsen: { name: '온천', nameEn: 'Hot Spring', emoji: '', cost: { material: 4, parts: 2 }, desc: '고원의 온천을 끌어들여 — 쾌적함 대폭 + 취침 회복 보너스', descEn: 'Tap the highland hot spring — big comfort boost + restful sleep bonus', only: ['lodge'] },
+  onsen: { name: '온천', nameEn: 'Hot Spring', emoji: '', cost: BAL.modCosts.onsen, desc: '고원의 온천을 끌어들여 — 쾌적함 대폭 + 취침 회복 보너스', descEn: 'Tap the highland hot spring — big comfort boost + restful sleep bonus', only: ['lodge'] },
   // Phase B 개조 2단계 (비용 곡선 상향: 1단계의 2~2.5배)
-  insulationPlus: { name: '강화 단열재', nameEn: 'Reinforced Insulation', emoji: '', cost: { cloth: 7, material: 5, parts: 1 }, desc: '한파 방어 강화 (단열재 위에)', descEn: 'Stronger cold-snap defense (over insulation)', req: 'insulation' },
+  insulationPlus: { name: '강화 단열재', nameEn: 'Reinforced Insulation', emoji: '', cost: BAL.modCosts.insulationPlus, desc: '한파 방어 강화 (단열재 위에)', descEn: 'Stronger cold-snap defense (over insulation)', req: 'insulation' },
   // 2.0 동부 세관 (디렉터 2026-07-09: "shelter라고 하면 응당 안전해야 하니까") — buildRoom 지오 분기라 rebuild 플래그.
-  customsClear: { name: '선반 철거', nameEn: 'Clear the Shelves', emoji: '', cost: {}, desc: '압수품 선반을 뜯어낸다 — 벽이 비고, 내 것을 놓을 자리가 생긴다', descEn: 'Tear out the seizure shelves — the wall clears for things of your own', only: ['customs'], rebuild: true },
-  customsSeal: { name: '창구 봉쇄', nameEn: 'Seal the Booths', emoji: '', cost: { material: 3, cloth: 1 }, desc: '심사 창구를 판자로 막는다 — 외풍이 멎는다 (악천후 쾌적 하락 해소)', descEn: 'Board up the inspection booths — the draft stops (no comfort loss in bad weather)', only: ['customs'], rebuild: true },
-  terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '', cost: { material: 4, cloth: 1 }, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
-  bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '', cost: { material: 5, parts: 2 }, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
+  customsClear: { name: '선반 철거', nameEn: 'Clear the Shelves', emoji: '', cost: BAL.modCosts.customsClear, desc: '압수품 선반을 뜯어낸다 — 벽이 비고, 내 것을 놓을 자리가 생긴다', descEn: 'Tear out the seizure shelves — the wall clears for things of your own', only: ['customs'], rebuild: true },
+  customsSeal: { name: '창구 봉쇄', nameEn: 'Seal the Booths', emoji: '', cost: BAL.modCosts.customsSeal, desc: '심사 창구를 판자로 막는다 — 외풍이 멎는다 (악천후 쾌적 하락 해소)', descEn: 'Board up the inspection booths — the draft stops (no comfort loss in bad weather)', only: ['customs'], rebuild: true },
+  terminalPatch: { name: '지붕 틈 막기', nameEn: 'Patch the Roof Gap', emoji: '', cost: BAL.modCosts.terminalPatch, desc: '무너진 천장 틈을 덮는다 — 신광은 사라지지만, 비는 더 이상 들이치지 않는다', descEn: 'Cover the broken ceiling — the light shafts fade, but the rain stays out', only: ['terminal'], rebuild: true },
+  bigraincatch:   { name: '대형 빗물받이', nameEn: 'Large Rain Catch', emoji: '', cost: BAL.modCosts.bigraincatch, desc: '비/눈 오는 날 물 +2 (빗물받이 위에)', descEn: 'Water +2 on rainy/snowy days (over rain catch)', req: 'raincatch', not: ['lighthouse'] },
   // 무전 기지 개조 (디렉터: "무선기지국 설치 가능한 집엔 개조 기능") — 개척 프로젝트 「무전 기지 복구」 완공(radioBaseDone) 후
   //   지상 셸터에 실체(지붕 송신 안테나)를 세운다. gate=radioBaseDone → 프로젝트 완공과 연동. 지하(subway)는 하늘 미접근이라 제외.
-  radiostation: { name: '무전 기지', nameEn: 'Radio Base', emoji: '', cost: { parts: 3, material: 2 }, desc: '지붕에 송신 안테나를 세운다 — 무전 기지의 실체 (붉은 항공등이 밤을 깜빡인다)', descEn: 'Raise the transmitter antenna on the roof — the radio base made real (a red beacon blinks through the night)', not: ['subway'], gate: 'radioBaseDone' },
+  radiostation: { name: '무전 기지', nameEn: 'Radio Base', emoji: '', cost: BAL.modCosts.radiostation, desc: '지붕에 송신 안테나를 세운다 — 무전 기지의 실체 (붉은 항공등이 밤을 깜빡인다)', descEn: 'Raise the transmitter antenna on the roof — the radio base made real (a red beacon blinks through the night)', not: ['subway'], gate: 'radioBaseDone' },
 };
 // 개조 앵커 참조표 (문서 전용 — 런타임 미소비. 디스패치는 addModProp의 id 하드코딩 분기가 직접 수행).
 // roof=지붕면 브래킷 · eave=처마 홈통+파이프+물통 · wall=외벽 덧댐 · ground=지면(마당) 배치.
