@@ -2250,5 +2250,17 @@
   "data.def.teddybear.name": "テディベア",
   "data.outfit.camoparka.name": "迷彩パーカー",
   "data.outfit.denim.name": "ジーンズ",
-  "data.outfit.suit.name": "黒いスーツ"
+  "data.outfit.suit.name": "黒いスーツ",
+  "data.def.counter.name": "キッチンカウンター",
+  "data.def.counter.colorNames": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド",
+  "data.craft.counter.hint": "カウンター——上に暮らしの道具を置ける",
+  "data.def.kettle.name": "やかん",
+  "data.def.kettle.colorNames": "スチール|カッパー|ブラック|クリーム",
+  "data.craft.kettle.hint": "やかん——カウンターやテーブルの上に",
+  "data.def.dinnerset.name": "ダイニングセット",
+  "data.def.dinnerset.colorNames": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド",
+  "data.craft.dinnerset.hint": "ダイニングセット——食器まで揃った一卓",
+  "data.def.cupboard.name": "食器棚",
+  "data.def.cupboard.colorNames": "オーク|ウォールナット|ホワイトウォッシュ|ブラックウッド",
+  "data.craft.cupboard.hint": "食器棚——ガラス戸の向こうの暮らし"
 }

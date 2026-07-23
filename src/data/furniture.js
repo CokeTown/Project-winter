@@ -951,6 +951,110 @@ const DEFS = {
       return g;
     }
   },
+  // ── #231 주방 세트 (FURNITURE-EXPANSION 2차 배치 — "밥 짓는 집" 그림 완성. 아침 보고 연출 앵커) ──
+  counter: {
+    name: '조리대', nameEn: 'Kitchen Counter', emoji: '', fp: { w: 1.3, d: 0.65 },
+    surface: { y: 0.9, w: 1.16, d: 0.52 }, // 상판 스태킹 — 티어 무관 0.9 통일(teatable 규약: 상판 높이 동일)
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
+    tiered: true, // T1 드럼통+판자 급조대 → T2 낡은 작업대(얼룩·빈 선반) → T3 캐비닛 조리대(도마·서랍)
+    build(c, ci, sk, tier) {
+      const g = new THREE.Group();
+      if (tier === 1) {
+        for (const sx of [-0.42, 0.42]) {                                 // 드럼통 2 (top 0.83)
+          Cyl(g, 0.24, 0.26, 0.82, 0x4a5a66, sx, 0.41, 0, 12);
+          Cyl(g, 0.25, 0.25, 0.03, shade(0x4a5a66, 0.8), sx, 0.28, 0, 12); // 몸통 골
+          Cyl(g, 0.25, 0.25, 0.03, shade(0x4a5a66, 0.8), sx, 0.62, 0, 12);
+        }
+        for (const [pz, sh] of [[-0.2, 0.92], [0, 1.0], [0.2, 0.85]])     // 판자 3장 (top 0.9)
+          B(g, 1.3, 0.06, 0.19, shade(c, sh), 0, 0.87, pz);
+        return g;
+      }
+      if (tier === 2) {
+        for (const sx of [-0.58, 0.58]) for (const pz of [-0.24, 0.24])
+          B(g, 0.07, 0.84, 0.07, shade(c, 0.8), sx, 0.42, pz);            // 다리 4
+        B(g, 1.3, 0.06, 0.62, shade(c, 0.85), 0, 0.87, 0);                // 바랜 상판 (top 0.9)
+        B(g, 0.4, 0.015, 0.3, shade(c, 0.62), 0.22, 0.905, 0.05);         // 얼룩
+        B(g, 1.16, 0.04, 0.5, shade(c, 0.72), 0, 0.3, 0);                 // 하단 선반(휑함)
+        Cyl(g, 0.06, 0.05, 0.1, 0x8a8f96, -0.4, 0.36, 0.1, 8);            // 선반 위 양철통 하나
+        return g;
+      }
+      B(g, 1.0, 0.08, 0.58, shade(c, 0.75), 0, 0.06, 0);                  // 받침대
+      B(g, 1.22, 0.7, 0.58, c, 0, 0.48, 0);                               // 캐비닛 몸통 (top 0.83)
+      B(g, 1.3, 0.07, 0.64, shade(c, 1.18), 0, 0.865, 0);                 // 밝은 상판 (top 0.9)
+      B(g, 0.02, 0.5, 0.02, shade(c, 0.7), -0.3, 0.5, 0.3);               // 문 분할선
+      for (const sx of [-0.62, 0.02]) B(g, 0.16, 0.03, 0.03, 0x55504a, sx + 0.34, 0.62, 0.3); // 손잡이 2
+      B(g, 0.34, 0.03, 0.24, shade(c, 1.35), -0.32, 0.915, 0.02);         // 도마 (top 0.945)
+      B(g, 0.05, 0.015, 0.2, 0x9aa0a8, 0.36, 0.91, -0.12);                // 칼 (몸)
+      B(g, 0.06, 0.02, 0.05, 0x4a3c2c, 0.36, 0.91, 0.0);                  // 칼 손잡이
+      return g;
+    }
+  },
+  kettle: {
+    name: '주전자', nameEn: 'Kettle', emoji: '', fp: { w: 0.3, d: 0.3 },
+    stackable: true, // 조리대·테이블·서랍장 위 — 김 연기는 B3(상시 미세 모션) 트랙으로 이연
+    colorNames: ['스틸', '코퍼', '블랙', '크림'],
+    colorNamesEn: ['Steel', 'Copper', 'Black', 'Cream'],
+    colors: [0x9aa0a8, 0xa8663e, 0x3c3a38, 0xd4cfc2],
+    build(c) {
+      const g = new THREE.Group();
+      Cyl(g, 0.095, 0.115, 0.14, c, 0, 0.08, 0, 12);                  // 몸통 (top 0.15)
+      Cyl(g, 0.055, 0.09, 0.05, shade(c, 1.1), 0, 0.175, 0, 12);      // 어깨
+      Cyl(g, 0.03, 0.03, 0.03, shade(c, 0.8), 0, 0.215, 0, 8);        // 뚜껑 꼭지
+      const sp = B(g, 0.05, 0.1, 0.04, shade(c, 0.95), 0.13, 0.13, 0); sp.rotation.z = -0.6; // 주둥이
+      const h1 = B(g, 0.16, 0.025, 0.03, 0x3c3a38, 0, 0.24, 0);       // 손잡이 가로
+      const h2 = B(g, 0.025, 0.07, 0.03, 0x3c3a38, -0.08, 0.2, 0); const h3 = B(g, 0.025, 0.07, 0.03, 0x3c3a38, 0.08, 0.2, 0);
+      void h1; void h2; void h3;
+      return g;
+    }
+  },
+  dinnerset: {
+    name: '식탁 세트', nameEn: 'Dining Set', emoji: '', fp: { w: 1.4, d: 0.9 },
+    // 식기가 고정 세트인 게 정체성 — 상판 스태킹은 조리대·찬장 몫(surface 없음)
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
+    build(c) {
+      const g = new THREE.Group();
+      for (const sx of [-0.6, 0.6]) for (const pz of [-0.35, 0.35])
+        B(g, 0.08, 0.7, 0.08, shade(c, 0.85), sx, 0.35, pz);           // 다리 4
+      B(g, 1.36, 0.06, 0.84, c, 0, 0.73, 0);                           // 상판 (top 0.76)
+      B(g, 0.9, 0.02, 0.4, shade(c, 1.25), 0, 0.77, 0);                // 러너 천
+      for (const sx of [-0.38, 0.38]) {
+        Cyl(g, 0.11, 0.13, 0.02, 0xd8d2c4, sx, 0.775, 0.16, 12);       // 접시 2
+        Cyl(g, 0.045, 0.05, 0.07, shade(0xd8d2c4, 0.9), sx, 0.8, -0.2, 10); // 컵 2
+        B(g, 0.02, 0.008, 0.14, 0x8a8f96, sx + 0.16, 0.77, 0.16);      // 수저
+      }
+      Cyl(g, 0.14, 0.16, 0.1, 0x55504a, 0, 0.815, -0.02, 12);          // 중앙 냄비
+      Cyl(g, 0.15, 0.15, 0.02, shade(0x55504a, 1.2), 0, 0.87, -0.02, 12); // 냄비 뚜껑
+      B(g, 0.04, 0.03, 0.04, shade(0x55504a, 1.4), 0, 0.895, -0.02);   // 뚜껑 손잡이
+      return g;
+    }
+  },
+  cupboard: {
+    name: '찬장', nameEn: 'Cupboard', emoji: '', fp: { w: 1.0, d: 0.45 },
+    surface: { y: 1.6, w: 0.9, d: 0.36 }, // 찬장 위 스태킹 (dresser 1.13 문법의 키 큰 판)
+    colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,
+    build(c) {
+      const g = new THREE.Group();
+      B(g, 1.0, 0.08, 0.44, shade(c, 0.8), 0, 0.04, 0);                // 받침 (top 0.08)
+      B(g, 0.96, 1.46, 0.4, c, 0, 0.81, 0);                            // 몸통 (top 1.54)
+      B(g, 1.0, 0.06, 0.44, shade(c, 1.1), 0, 1.57, 0);                // 상판 트림 (top 1.6)
+      B(g, 0.96, 0.05, 0.4, shade(c, 0.9), 0, 0.86, 0.01);             // 상·하부 분할대
+      // 상부 유리문 2 — 반투명 유리 너머 살림 실루엣(그린하우스 유리 문법)
+      for (const sx of [-0.235, 0.235]) {
+        const gl = B(g, 0.4, 0.56, 0.02, 0x9fb4b8, sx, 1.19, 0.205);
+        gl.material.transparent = true; gl.material.opacity = 0.4;
+        B(g, 0.44, 0.02, 0.02, shade(c, 0.75), sx, 0.9, 0.21);         // 문틀 하
+        B(g, 0.44, 0.02, 0.02, shade(c, 0.75), sx, 1.48, 0.21);        // 문틀 상
+        B(g, 0.02, 0.6, 0.02, shade(c, 0.75), sx - 0.21, 1.19, 0.21); B(g, 0.02, 0.6, 0.02, shade(c, 0.75), sx + 0.21, 1.19, 0.21);
+      }
+      B(g, 0.86, 0.03, 0.3, shade(c, 0.82), 0, 1.19, 0.02);            // 유리 안 중간 선반
+      for (let i = 0; i < 3; i++) Cyl(g, 0.04, 0.05, 0.16, [0x6a7f5b, 0xa8663e, 0x8a8f96][i], -0.26 + i * 0.26, 1.31, 0.06, 8); // 병 3
+      for (let i = 0; i < 2; i++) Cyl(g, 0.07, 0.08, 0.03, 0xd8d2c4, -0.15 + i * 0.3, 1.0, 0.06, 10); // 접시 더미 2
+      // 하부 여닫이문 2 + 손잡이
+      B(g, 0.02, 0.68, 0.02, shade(c, 0.7), 0, 0.46, 0.21);            // 문 분할선
+      for (const sx of [-0.09, 0.09]) B(g, 0.03, 0.12, 0.03, 0x55504a, sx, 0.46, 0.215); // 손잡이 2
+      return g;
+    }
+  },
   teatable: {
     name: '찻상', nameEn: 'Tea Table', emoji: '', fp: { w: 0.95, d: 0.6 },
     colorNames: WOODS.names, colorNamesEn: WOODS.namesEn, colors: WOODS.colors,

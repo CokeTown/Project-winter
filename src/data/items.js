@@ -178,6 +178,11 @@ export const CRAFTS = [
   { out: { furn: 'cattower' }, cost: BAL.catset.cattower, hint: '고양이 전망대 — 높은 곳이 필요하다', hintEn: 'A lookout for the cat — height is a need' },
   { out: { furn: 'cathammock' }, cost: BAL.catset.cathammock, hint: '낮잠 해먹 — 창가에 두면 햇살이 든다', hintEn: 'A nap hammock — put it by a window for the sun' },
   { out: { furn: 'catscratcher' }, cost: BAL.catset.catscratcher, hint: '스크래처 — 닳으면 새로 만들어 준다', hintEn: 'A scratcher — make a new one when it wears out' },
+  // #231 주방 세트 — "밥 짓는 집" 코너. 비용은 BAL.kitchen(디렉터 JSON 튜닝 채널).
+  { out: { furn: 'counter' }, cost: BAL.kitchen.counter, hint: '조리대 — 위에 살림을 올릴 수 있다', hintEn: 'A kitchen counter — you can set things on top' },
+  { out: { furn: 'kettle' }, cost: BAL.kitchen.kettle, hint: '주전자 — 조리대나 테이블 위에', hintEn: 'A kettle — for the counter or table' },
+  { out: { furn: 'dinnerset' }, cost: BAL.kitchen.dinnerset, hint: '식탁 세트 — 그릇까지 차려진 한 상', hintEn: 'A dining set — table laid out, dishes and all' },
+  { out: { furn: 'cupboard' }, cost: BAL.kitchen.cupboard, hint: '찬장 — 유리문 너머 살림살이', hintEn: 'A cupboard — housewares behind glass doors' },
   { out: { furn: 'chair' }, cost: { material: 2 }, hint: '나무 의자', hintEn: 'Wooden chair' },
   { out: { furn: 'candle' }, cost: { material: 1, candle: 1 }, hint: '캔들 스툴 (양초 격일)', hintEn: 'Candle stool (candle every 2 days)' },
   { out: { furn: 'teatable' }, cost: { material: 2, cloth: 1 }, hint: '낮은 찻상 — 따뜻한 한 잔', hintEn: 'A low tea table — a warm cup' },

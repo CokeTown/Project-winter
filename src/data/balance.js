@@ -231,6 +231,14 @@ export const BAL = {
     scratcherLifeDays: 12,                    // 고양이가 있는 날만 마모 +1 — 도달 시 부서져 소멸(회수 불가)
   },
 
+  /* ── #231 주방 세트 (FURNITURE-EXPANSION 2차 — "밥 짓는 집" 코너 완성) ── */
+  kitchen: {
+    counter: { material: 3 },                 // 티어드(T1~3) — 표면 스태킹 소비처
+    kettle: { parts: 1, material: 1 },        // 스태킹 잔소품
+    dinnerset: { material: 3, cloth: 1 },     // 식탁+식기 일체
+    cupboard: { material: 4 },                // 대형 수납 — 상판 스태킹
+  },
+
   /* ── #76 「지식과 사치」 — 장기 인플레 교정 + 책(지식)/사치 건축 싱크 ──
      문제(AUDIT-1.4 P1-3): 9겨울 완주(Day432) food+canned가 1291까지 무한 인플레 — 후반 자원이 의미를 잃는다.
      디렉터 결정: 목표 300~400 + 지식/사치 싱크. 방식(디렉터 승인): "암시장 확장".
