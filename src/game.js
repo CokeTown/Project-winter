@@ -715,7 +715,24 @@ function applyTimeLighting() {
   if (indoorSh) stars.material.opacity = 0; // 실내: 별도 숨김(위 starsBase 계산 무시)
   updateWindowSkies();
   updateSunShafts();
+  updateGrade();
 }
+// 퀄업 A2: 시각 → 그레이딩 노브 공급 (uGrade=0이면 무비용 스킵). 밤·노을·여명만 — 주간은 항등.
+//   밤 = 한랭 청색 리프트+게인(공기가 식는다) · 노을 18.2h±1.6 = 앰버 게인 · 여명 6.5h±1.2 = 절반 세기.
+//   지하(subway)는 dayness 상시 0이라 밤 그레이드가 상시 깔린다 — 지하 정서와 정합(의도 승인 대상).
+function updateGrade() {
+  if (postMat.uniforms.uGrade.value <= 0) return;
+  const h = gameHour();
+  const sunsetK = Math.max(0, 1 - Math.abs(h - 18.2) / 1.6) + Math.max(0, 1 - Math.abs(h - 6.5) / 1.2) * 0.5;
+  const nightK = 1 - dayness;
+  postMat.uniforms.uGradeLift.value.set(0.004 * nightK, 0.008 * nightK, 0.024 * nightK);
+  postMat.uniforms.uGradeGain.value.set(
+    1 + 0.10 * sunsetK - 0.05 * nightK,
+    1 + 0.02 * sunsetK - 0.02 * nightK,
+    1 - 0.06 * sunsetK + 0.06 * nightK);
+}
+// A2 시안 노브 — QA 전용(기본 0=항등). 디렉터 톤 판정 후 opts·설정창 편입.
+function setGrade(k) { postMat.uniforms.uGrade.value = Math.max(0, +k || 0); updateGrade(); }
 function timeLabel() { // [2]=아트 아이콘 키(#199 이모지 스윕) — 기존 [0][1] 사용처 무영향
   const h = gameHour(); // #213: [0] 이모지 슬롯은 폐기(빈 문자열) — 사용처 0 확인, 아트 아이콘 키([2])가 정본
   if (h < 4.5) return ['', t('time.night'), 'icon_time_night'];
@@ -10354,6 +10371,9 @@ const postMat = new THREE.ShaderMaterial({
     uPalOn: { value: 0.0 },
     uBloom: { value: 0.0 },     // 퀄업 A1 발광 블룸 — applyOpts가 0.4(디렉터 확정 2026-07-23) 또는 0(토글 off) 공급
     uBloomThr: { value: 0.72 }, // 블룸 임계(선형) — 0.5는 정오 관제탑 유리(넓은 밝은 면 ~0.7)까지 백화(24% diff 실측) → 0.72로 발광체(~1.0)만 통과
+    uGrade: { value: 0.0 },     // 퀄업 A2 시간대 그레이딩 강도(시안 — 디렉터 톤 판정 대기): 0=정확히 항등(골든 불변)
+    uGradeLift: { value: new THREE.Vector3(0, 0, 0) },  // 시각별 바닥 리프트(밤=한랭) — applyTimeLighting이 매 프레임 공급
+    uGradeGain: { value: new THREE.Vector3(1, 1, 1) },  // 시각별 게인(노을·여명=앰버, 밤=청색기)
     uBarrel: { value: 0.0 }, // CRT 배럴 실험(디렉터 2026-07-22): 0=항등(기본·골든 불변). 씬만 휘고 DOM UI는 평면.
     uCrt: { value: 0.0 },    // 관측 단말 CRT 위성 룩(디렉터 2026-07-22): 0=off. 지터·리프레시 스윕·RGB 형광체·스캔라인·그레인.
     uCrtT: { value: 0.0 },   // CRT 시간(초) — 골든/캡처 결정론을 위해 renderFrame이 공급(freeze 시 고정)
@@ -10365,7 +10385,8 @@ const postMat = new THREE.ShaderMaterial({
     #define PAL_N ${PAL_N}
     varying vec2 vUv;
     uniform sampler2D tex; uniform vec2 uRes;
-    uniform float uLevels, uQuant, uDither, uDitherAmt, uPalOn, uBarrel, uCrt, uCrtT, uBloom, uBloomThr;
+    uniform float uLevels, uQuant, uDither, uDitherAmt, uPalOn, uBarrel, uCrt, uCrtT, uBloom, uBloomThr, uGrade;
+    uniform vec3 uGradeLift, uGradeGain;
     uniform vec3 uPal[PAL_N];
     float bayer2(vec2 a){ a = floor(a); return fract(a.x / 2.0 + a.y * a.y * 0.75); }
     float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
@@ -10418,6 +10439,9 @@ const postMat = new THREE.ShaderMaterial({
         col += acc * (uBloom / 9.0);
       }
       col = pow(col, vec3(1.0 / 2.2));
+      // 퀄업 A2: 시간대 그레이딩 — 표시 공간에서 게인·리프트 1회 곱(양자화 전이라 팔레트 스냅도 그레이딩된 색 기준).
+      //   uGrade=0이면 분기째 항등(골든 불변). 값 저작은 금문교 24h 키프레임(KEY 표) 노하우 이식.
+      if (uGrade > 0.0) col = clamp(col * mix(vec3(1.0), uGradeGain, uGrade) + uGradeLift * uGrade, 0.0, 1.0);
       if (uPalOn > 0.5) {
         // 그라데이션이 두 스와치 사이에서 매끄럽게 넘어가도록 스냅 전에 약한 오더드 디더만.
         vec2 pc = floor(uv * uRes);
@@ -11890,6 +11914,7 @@ window.__shelter = {
   openObsMap, obsView, activeAerial, // S2 관측 단말 — QA/하네스 진입점 (activeAerial: 골든 씬 전환 시 잔여 디오라마 강제 종료용)
   setBarrel, setPanelBulge, // CRT 실험 노브(씬 배럴·패널 볼록, 기본 off) — 판정 후 정식 편입 여부 결정
   setBloom, // 퀄업 A1 블룸 노브(기본 0=항등) — 시안 캡처·톤 판정용, 채택 시 opts·설정창 편입
+  setGrade, // 퀄업 A2 시간대 그레이딩 노브(기본 0=항등) — 시안 캡처·톤 판정용
   setCrtLook: on => { postMat.uniforms.uCrt.value = on ? 1 : 0; setBarrel(on ? 0.14 : 0); }, // #217 관측 CRT 위성 룩 — QA/캡처 토글
   setAerialHour: h => { aerialHourOverride = (h == null ? null : +h); }, // #218 시간대 컷 캡처용 — 비네트와 동일 채널
   regionReachable, // 2.0-(b) QA: 도시 필터 술어(플래그 off=전역 회귀 검증)
