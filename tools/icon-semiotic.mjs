@@ -76,6 +76,7 @@ const G = {
   icon_sys_rotr: '<g ' + S + '><path d="M18.5,10 A7,7 0 1,1 16,4.5"/></g><path d="M21,3 V9.5 H15 Z"/>', // 우회전
   icon_sys_camhome: '<path d="M12,4 L21,11.5 H17.5 V20 H6.5 V11.5 H3 Z"/>', // 홈(시점)
   icon_sys_uihide: '<path fill-rule="evenodd" d="M2.5,12 C6,7 18,7 21.5,12 C18,17 6,17 2.5,12 Z M12,9 A3,3 0 1,0 12,15 A3,3 0 1,0 12,9 Z"/><circle cx="12" cy="12" r="1.6"/>', // 눈 + 흰자(홀) + 동공
+  icon_sys_camera: '<path fill-rule="evenodd" d="M3,7 H7.5 L9,4.5 H15 L16.5,7 H21 V20 H3 Z M12,9.2 A3.8,3.8 0 1,0 12,16.8 A3.8,3.8 0 1,0 12,9.2 Z"/><circle cx="12" cy="13" r="1.7"/><circle cx="18" cy="9.4" r="0.9"/>', // 카메라(스크린샷 모드) — 몸체+렌즈 홀+중심+플래시
   icon_sys_collect: '<path d="M10.5,3 H13.5 V10.5 H17 L12,15.5 L7,10.5 H10.5 Z"/><path d="M4.5,16 H19.5 V20.5 H4.5 Z"/>', // 아래 화살표 + 받침
   icon_sys_arrowleft: '<path d="M11,4.5 L4,12 L11,19.5 V14 H20 V10 H11 Z"/>', // 좌 화살표
   icon_sys_save: '<path fill-rule="evenodd" d="M3,5 H21 V19 H3 Z M6,8 A2.4,2.4 0 1,0 6,12.8 A2.4,2.4 0 1,0 6,8 Z M18,8 A2.4,2.4 0 1,0 18,12.8 A2.4,2.4 0 1,0 18,8 Z M9.5,9 H14.5 V11 H9.5 Z M7,15.5 L8.5,19 H15.5 L17,15.5 Z" transform="translate(0 0)"/>', // 카세트 테이프(릴 2 홀) — 플로피 폐기, 카세트 퓨처리즘 정합

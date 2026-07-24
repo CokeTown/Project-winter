@@ -15,6 +15,8 @@
     "electron": "electron .",
     "build:electron": "vite build --mode electron",
     "build:exe": "npm run build:electron && electron-builder --win nsis portable",
+    "build:linux": "npm run build:electron && electron-builder --linux",
+    "build:linux:tar": "npm run build:electron && electron-builder --linux tar.gz",
     "test": "electron tests/core.test.cjs",
     "test:build": "vite build --mode electron && electron tests/core.test.cjs",
     "grounding": "electron tests/grounding/qa-systems.cjs && electron tests/grounding/qa-broad.cjs && electron tests/grounding/qa-breadth.cjs",
@@ -68,6 +70,16 @@
         "portable"
       ],
       "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "tar.gz"
+      ],
+      "icon": "build/icon.png",
+      "category": "Game",
+      "synopsis": "Cozy post-apocalyptic idle survival & shelter-building",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,

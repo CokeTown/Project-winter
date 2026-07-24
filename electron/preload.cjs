@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('nineWidget', {
   setClickThrough: (v) => ipcRenderer.send('widget:clickThrough', v),
   // 디스플레이 모드/해상도 (PC 전용 설정 UI에서 호출)
   setDisplay: (cfg) => ipcRenderer.send('display:set', cfg),
+  // 스크린샷 모드 (디렉터 2026-07-24) — 창을 통째 PNG로 저장하고 저장 경로를 반환. 폴더 열기.
+  capture: () => ipcRenderer.invoke('screenshot:capture'),
+  revealShots: () => ipcRenderer.send('screenshot:reveal'),
 });
 
 // ── Steam Cloud 파일 미러 브릿지 (Auto-Cloud, REQ-STEAM-01 A안) ──────────────

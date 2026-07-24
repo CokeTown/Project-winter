@@ -162,6 +162,18 @@
   <button class="cam-btn" id="btn-auto" data-i18n-title="btn.auto.title" title="자동 진행"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_auto.svg');mask-image:url('img/glyphs/icon_sys_auto.svg')"></span></button>
   <button class="cam-btn" id="btn-ui-pin" data-i18n-title="btn.uiPin.title" title="UI 배치 고정"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_pin.svg');mask-image:url('img/glyphs/icon_sys_pin.svg')"></span></button>
   <button class="cam-btn" id="btn-ui-toggle" data-i18n-title="btn.uiToggle.title" title="게임 UI 숨기기"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_uihide.svg');mask-image:url('img/glyphs/icon_sys_uihide.svg')"></span></button>
+  <button class="cam-btn" id="btn-photo" data-i18n-title="btn.photo.title" title="스크린샷 모드 (F2)"><span class="sys-icon glyph" style="-webkit-mask-image:url('img/glyphs/icon_sys_camera.svg');mask-image:url('img/glyphs/icon_sys_camera.svg')"></span></button>
+</div>
+
+<!-- 스크린샷 모드 바 (디렉터 2026-07-24): 전 UI를 걷은 뒤 자유 구도 → 촬영. 촬영 순간엔 이 바도 함께 숨는다(body.photo-capturing). -->
+<div id="photo-bar" aria-hidden="true">
+  <span class="pb-title" data-i18n="photo.title">스크린샷 모드</span>
+  <span class="pb-hint" data-i18n="photo.hint">드래그로 화면 이동 · 휠로 확대/축소 · Q/E 시점 회전 · Space 촬영</span>
+  <div class="pb-actions">
+    <button id="photo-shot" class="pb-btn primary" data-i18n="photo.capture">촬영</button>
+    <button id="photo-open" class="pb-btn" data-i18n="photo.open">폴더 열기</button>
+    <button id="photo-exit" class="pb-btn danger" data-i18n="photo.exit">나가기</button>
+  </div>
 </div>
 <div id="pause-ind" data-i18n="pause.ind">일시정지</div>
 <!-- #14 게임패드 가상 커서 — 패드 입력 시에만 표시(마우스 이동 시 숨김) -->

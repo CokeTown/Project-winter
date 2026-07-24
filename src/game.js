@@ -7419,6 +7419,15 @@ addEventListener('keydown', e => {
   // 리바인딩 캡처 모드: ESC 취소, 그 외 키는 해당 액션에 배정 (대기상태·캡처는 ui/keybind.js 소유)
   if (isAwaitingRebind()) { captureRebind(e); return; }
   if (titleVisible) return;
+  // 스크린샷 모드: F2 토글 · (모드 중) Space/Enter 촬영 · Esc 나가기 · Q/E 시점 회전만 통과(그 외 게임 액션 차단).
+  if (e.code === 'F2') { e.preventDefault(); togglePhotoMode(); return; }
+  if (photoMode) {
+    if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); capturePhoto(); return; }
+    if (e.key === 'Escape') { e.preventDefault(); setPhotoMode(false); return; }
+    const pa = actionForEvent(e);
+    if (pa === 'rotViewL' || pa === 'rotViewR') { e.preventDefault(); runAction(pa); }
+    return;
+  }
   // 관측 단말(S2): ESC = focus→overview→닫기. 모달이 위에 떠 있으면(준비/눈사태 선택) 기존 체인이 먼저 닫는다.
   //   단말이 열려 있는 동안 다른 게임 단축키는 무시(풀스크린 모드 — 오작동 방지).
   if (obsView.isOpen() && !$('modal-back').classList.contains('show')) {
@@ -11096,6 +11105,59 @@ $('cam-zout').addEventListener('click', () => { exitCatCloseup(); camState.zoom 
 $('cam-home').addEventListener('click', () => { exitCatCloseup(); camState.targetYaw = Math.PI / 4; setPanTarget(0, 0); fitZoomForShelter(); }); // #70: 홈 복귀에 팬 0,0 리셋 포함
 // 게임 UI 숨김 토글 (디렉터 UI 재배치): 게임플레이 패널만 숨기고 카메라 조작/편집은 유지. 배경화면 모드와 별개의 인게임 뷰 정리.
 { const uib = $('btn-ui-toggle'); if (uib) uib.addEventListener('click', () => { const hid = document.body.classList.toggle('ui-hidden'); uib.classList.toggle('primary', hid); toast(t(hid ? 'ui.hidden' : 'ui.shown')); }); }
+// ── 스크린샷 모드 (디렉터 2026-07-24): 화면의 모든 UI를 걷고 자유롭게 구도를 잡아 고해상 PNG로 담는다.
+//    F2 토글 · Space/Enter 촬영 · Esc 나가기 · Q/E 시점 회전. 드래그 팬·휠 줌은 캔버스가 계속 받는다.
+//    Electron은 창을 통째 캡처(webContents.capturePage)해 사진 폴더에 저장, 웹은 WebGL 캔버스 PNG를 다운로드.
+let photoMode = false;
+function setPhotoMode(on) {
+  on = !!on;
+  if (on === photoMode) return;
+  if (on) { // 열기 전 떠 있는 것 정리 — 깨끗한 캔버스만 남긴다
+    if (typeof pdaVisible === 'function' && pdaVisible()) pdaClose();
+    if (typeof settingsOpen === 'function' && settingsOpen()) closeSettings();
+    if (catCam && catCam.active) exitCatCloseup();
+    if (placing) cancelPlacing();
+    if (selected) deselect();
+  }
+  photoMode = on;
+  document.body.classList.toggle('photo-mode', on);
+  const pb = $('btn-photo'); if (pb) pb.classList.toggle('primary', on);
+  if (on) toast(t('photo.enter'));
+}
+function togglePhotoMode() { setPhotoMode(!photoMode); }
+async function capturePhoto() {
+  if (!photoMode) return;
+  document.body.classList.add('photo-capturing'); // 바·커서를 프레임에서 제거
+  let res = null;
+  try {
+    if (window.nineWidget && window.nineWidget.available && window.nineWidget.capture) {
+      // Electron: 바가 확실히 사라진 프레임이 합성된 뒤 창을 캡처 (2 프레임 대기)
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      res = await window.nineWidget.capture();
+    } else {
+      // 웹: WebGL 캔버스를 즉시 렌더한 뒤 같은 틱에 PNG 판독(preserveDrawingBuffer 없이도 유효)
+      renderFrame();
+      const canvas = renderer.domElement;
+      const d = new Date(), p = n => String(n).padStart(2, '0');
+      const fn = `nine-winters-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.png`;
+      const a = document.createElement('a'); a.download = fn; a.href = canvas.toDataURL('image/png'); a.click();
+      res = { ok: true, web: true };
+    }
+  } catch (e) { res = { ok: false }; }
+  document.body.classList.remove('photo-capturing');
+  // 캡처 이후에만 셔터 플래시(피드백) — 캡처 프레임엔 안 들어간다
+  const fl = document.createElement('div'); fl.className = 'photo-flash'; document.body.appendChild(fl);
+  setTimeout(() => fl.remove(), 520);
+  if (res && res.ok) toast(res.path ? (t('photo.saved') + ' — ' + res.path) : t('photo.saved'));
+  else toast(t('photo.fail'));
+}
+{ const pb = $('btn-photo'); if (pb) pb.addEventListener('click', () => togglePhotoMode()); }
+{ const ps = $('photo-shot'); if (ps) ps.addEventListener('click', () => capturePhoto()); }
+{ const pe = $('photo-exit'); if (pe) pe.addEventListener('click', () => setPhotoMode(false)); }
+{ const po = $('photo-open'); if (po) {
+  if (window.nineWidget && window.nineWidget.available && window.nineWidget.revealShots) po.addEventListener('click', () => window.nineWidget.revealShots());
+  else po.style.display = 'none'; // 웹: 사진 폴더 개념 없음
+} }
 // UI 배치 고정 토글 (디렉터 2026-07-10): 패널 드래그를 잠가 실수 이동을 원천 차단.
 //   uiState.pinned에 영속(패널 위치와 같은 저장소) — 재시작해도 고정 유지. 접기(–)·숨김()은 별개.
 {
@@ -11900,6 +11962,7 @@ window.__shelter = {
   // ③ 창유리 성에 QA 훅: 현재 성에 강도 + 창별 오버레이 투명도
   frostState: () => ({ frostLevel, netSev: coldSnapNetSeverity(), panes: winFrostMats.map(m => +m.material.opacity.toFixed(3)) }),
   renderFrame: () => renderFrame(),
+  setPhotoMode, togglePhotoMode, capturePhoto, photoModeOn: () => photoMode, // 스크린샷 모드 QA/하네스 훅
   qaScene: () => scene, // 그라운드 프로브용 씬 루트 (부유·긴 메시 전수 감사). 카메라는 씬 밖이라 traverse 불가 — 이 훅으로 접근.
   qaRenderInfo: () => renderer.info, // #73 장주행 메모리 감사: geometries/textures/programs 카운트 (GPU 자원 누수 프로브)
   qaLightState: () => { updateLightingRig(); return { fallback: ceilBaseInt, hasLight: interiorLightActive(), facility: lightingFacilityOn() }; }, // #189 P1 프로브

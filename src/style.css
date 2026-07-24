@@ -1907,6 +1907,64 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   body.reduce-motion .btn-badge { transform: none; }
 
+/* == 스크린샷 모드 (디렉터 2026-07-24) ===========================
+   전 UI 크롬을 걷어 깨끗한 씬만 남긴다. 카메라 조작(드래그 팬·휠 줌·Q/E 회전)은
+   캔버스/키보드로 살아 있으므로 버튼을 숨겨도 구도 잡기엔 지장 없다.
+   촬영 순간(body.photo-capturing)엔 하단 바와 커서까지 숨겨 프레임에 안 들어가게 한다. */
+body.photo-mode #hud,
+body.photo-mode #res-bar,
+body.photo-mode #clock-panel,
+body.photo-mode #exp-panel,
+body.photo-mode #quest-card,
+body.photo-mode #radio-bubble,
+body.photo-mode #dock-pda,
+body.photo-mode #toolbar,
+body.photo-mode #cam-ctrl,
+body.photo-mode #action-bar,
+body.photo-mode #tip-note,
+body.photo-mode #pause-ind,
+body.photo-mode #event-chip,
+body.photo-mode #btn-cancel-place,
+body.photo-mode #pad-cursor { display: none !important; }
+
+#photo-bar { display: none; }
+body.photo-mode #photo-bar {
+  display: flex; align-items: center; gap: 14px;
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  z-index: 120; padding: 9px 16px 8px;
+  background: rgba(9, 12, 10, 0.86); border: 1px solid var(--accent, #58c27a);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 6px 20px rgba(0,0,0,0.5), inset 0 0 18px rgba(88,194,122,0.06);
+  font-family: inherit; white-space: nowrap; max-width: 96vw; overflow: hidden;
+}
+body.photo-mode #photo-bar .pb-title {
+  color: var(--accent, #58c27a); font-size: 12px; letter-spacing: 1px; text-transform: uppercase;
+}
+body.photo-mode #photo-bar .pb-title::before { content: "// "; opacity: 0.7; }
+body.photo-mode #photo-bar .pb-hint {
+  color: var(--text-dim, #8ea18e); font-size: 11px; overflow: hidden; text-overflow: ellipsis;
+}
+body.photo-mode #photo-bar .pb-actions { display: flex; gap: 7px; }
+body.photo-mode #photo-bar .pb-btn {
+  font-family: inherit; font-size: 12px; padding: 6px 12px 5px; cursor: pointer;
+  color: var(--accent, #58c27a); background: rgba(88,194,122,0.08);
+  border: 1px solid var(--accent, #58c27a); transition: background 0.12s;
+}
+body.photo-mode #photo-bar .pb-btn:hover { background: rgba(88,194,122,0.2); }
+body.photo-mode #photo-bar .pb-btn.primary { background: rgba(88,194,122,0.22); font-weight: bold; }
+body.photo-mode #photo-bar .pb-btn.danger { color: #e08a7a; border-color: #e08a7a; background: rgba(224,138,122,0.08); }
+body.photo-mode #photo-bar .pb-btn.danger:hover { background: rgba(224,138,122,0.2); }
+/* 촬영 프레임 정리: 바·토스트·커서 은닉 (진입 토스트나 이벤트 알림이 컷에 안 들어가게) */
+body.photo-capturing #photo-bar,
+body.photo-capturing #toast { display: none !important; }
+body.photo-capturing, body.photo-capturing #c, body.photo-capturing canvas { cursor: none !important; }
+/* 셔터 플래시 (촬영 후 피드백 — 캡처 이후에만 붙인다) */
+.photo-flash {
+  position: fixed; inset: 0; z-index: 130; pointer-events: none;
+  background: #f4fff4; animation: photoFlash 0.5s ease-out forwards;
+}
+@keyframes photoFlash { 0% { opacity: 0.82; } 100% { opacity: 0; } }
+body.reduce-motion .photo-flash { animation: none; opacity: 0; }
+
 /* == #74 Next Fest demo end screen ================================ */
 .demo-end { text-align: center; padding: 6px 4px 2px; word-break: keep-all; }
 .demo-end .de-mark { font-size: 15px; letter-spacing: 2px; margin-bottom: 12px; opacity: 0.9; }

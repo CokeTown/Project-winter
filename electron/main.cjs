@@ -197,6 +197,35 @@ ipcMain.on('display:set', (evt, cfg) => {
   }
 });
 
+// ── 스크린샷 저장 (디렉터 2026-07-24) ──
+// 렌더러가 스크린샷 모드에서 촬영을 요청하면 창을 통째 캡처(컴포지터 — WebGL preserveDrawingBuffer 불필요)해
+// 사진 폴더(Pictures/Nine Winters)에 타임스탬프 PNG로 저장한다. 반환된 경로를 렌더러가 토스트로 안내.
+let lastShotPath = null;
+ipcMain.handle('screenshot:capture', async (evt) => {
+  const win = BrowserWindow.fromWebContents(evt.sender);
+  if (!win) return { ok: false };
+  try {
+    const img = await win.webContents.capturePage();
+    const dir = path.join(app.getPath('pictures'), 'Nine Winters');
+    fs.mkdirSync(dir, { recursive: true });
+    const d = new Date(), p = (n) => String(n).padStart(2, '0');
+    const name = `nine-winters-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.png`;
+    const dest = path.join(dir, name);
+    fs.writeFileSync(dest, img.toPNG());
+    lastShotPath = dest;
+    return { ok: true, path: dest };
+  } catch (e) { return { ok: false, error: String((e && e.message) || e) }; }
+});
+// 방금 저장한 스크린샷을 파일 탐색기에서 보여준다(없으면 폴더만 연다).
+ipcMain.on('screenshot:reveal', () => {
+  try {
+    if (lastShotPath && fs.existsSync(lastShotPath)) { shell.showItemInFolder(lastShotPath); return; }
+    const dir = path.join(app.getPath('pictures'), 'Nine Winters');
+    fs.mkdirSync(dir, { recursive: true });
+    shell.openPath(dir);
+  } catch (e) { /* */ }
+});
+
 // ── 단일 인스턴스 강제 (#48) ──
 // 이미 실행 중이면 두 번째 인스턴스는 즉시 종료하고, 기존 창을 복원·포커스한다.
 const gotLock = app.requestSingleInstanceLock();
