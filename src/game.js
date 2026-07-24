@@ -373,13 +373,19 @@ function interiorLightActive() {
   if (items.some(it => (DEFS[it.defId].light || DEFS[it.defId].selfLit) && it.on !== false)) return true;
   return lightingFacilityOn();
 }
-function lightingFacilityOn() { return hasMod('lighting') && !state.lightingOut; }
+function lightingFacilityOn() { return hasMod('lighting') && !state.lightingOut && !(state.lightOff && state.lightOff[state.current]); } // 수동 off(조명 클릭 토글, 디렉터 2026-07-24) 반영
 // 폴백/설비 광원 동기화 — 렌더 루프·로드 시 호출(전원 토글·연료 소진·설치를 전부 자동 반영).
 // 디렉터 정정(2026-07-17): 폴백 천장광은 광원이 켜져도 끄지 않는다 — "기본 안 밝은 조명 + 광원 밝기 가산".
 //   (구 #189 P1은 광원 존재 시 폴백 0의 이분법 — 촛불을 켜면 방이 되레 어두워지던 역설을 낳았다.)
 function updateLightingRig() {
   ceilBaseInt = (state.current === 'subway' && state.subwayHidden) ? 2 : 10;
-  facilityLight.intensity = lightingFacilityOn() ? 16 : 0;
+  const on = lightingFacilityOn();
+  facilityLight.intensity = on ? 16 : 0;
+  if (lightingFixture) { // 펜던트 전구·바닥 광원 풀도 on/off 반영 (디렉터: 조명 클릭 켜고 끄기)
+    const b = lightingFixture.userData.bulb, p = lightingFixture.userData.pool;
+    if (b && b.material) b.material.emissiveIntensity = on ? 1.1 : 0.0;
+    if (p && p.material) p.material.opacity = on ? 0.12 : 0.0;
+  }
 }
 
 // 절차적 표면 텍스처(makeCanvasTex + 바닥/벽/금속/합판/벽돌/타일/콘크리트 7종) → render/textures.js 이관 (Tier4)
@@ -2845,6 +2851,7 @@ function loadShelter(id) {
     fpool.renderOrder = 1;
     g.add(fpool);
     g.userData.pool = fpool;
+    g.userData.lightToggle = true; // 조명 클릭 = 켜고 끄기 (디렉터 2026-07-24)
     g.position.set(0, sh.ceilY, 0);
     scene.add(g);
     lightingFixture = g;
@@ -7049,6 +7056,25 @@ function pickItem(e) {
   }
   return null;
 }
+// 조명 설비(펜던트) 클릭 판정 — scene 소속이라 pickItem(itemsRoot) 밖. 별도 레이.
+function pickLightFixture(e) {
+  if (!lightingFixture) return false;
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  return raycaster.intersectObject(lightingFixture, true).length > 0;
+}
+// 조명 켜고 끄기 (디렉터 2026-07-24): 태양광/발전기 급전 중일 때만 켜진다. 단전 중엔 못 켬.
+function toggleFacilityLight() {
+  if (!hasMod('lighting')) return;
+  state.lightOff = state.lightOff || {};
+  const nowOff = !!state.lightOff[state.current];
+  if (nowOff && state.lightingOut) { toast(t('light.noPower')); return; } // 꺼진 걸 켜려는데 전원이 없음
+  state.lightOff[state.current] = !nowOff;
+  updateLightingRig();
+  toast(t(state.lightOff[state.current] ? 'light.off' : 'light.on'));
+  try { flushSave(); } catch (err) { /* */ }
+  renderFrame();
+}
 const snap = v => Math.round(v / GRID) * GRID;
 
 function moveGhost(item, e) {
@@ -7213,6 +7239,7 @@ canvas.addEventListener('pointerdown', e => {
   if (!editMode) { const _drop = pickDrop(e); if (_drop) { collectDrop(_drop); return; } } // #182 B0 동물 드랍 반짝임 탭 = 수거+카드
 
   if (!editMode && pickAvatar(e)) { openWardrobeModal(); return; } // #86④ 아바타 탭 = 옷장 (배치 중 제외)
+  if (pickLightFixture(e)) { toggleFacilityLight(); return; } // 조명 설비 클릭 = 켜고 끄기 (배치/비배치 공통)
   const hit = pickItem(e);
   if (hit) {
     // 배치 모드 OFF: 가구 선택/이동은 막고, 기능형(라디오/촛불 토글)만 실행.
