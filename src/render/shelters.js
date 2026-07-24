@@ -209,22 +209,40 @@ export function makeShelterBuilders(ctx) {
         parapet(slabD, -S.backX + 0.13, slabCZ, Math.PI / 2, [[0.4, 0.13]]);
         parapet(slabD, S.frontX - 0.13, slabCZ, Math.PI / 2, []);
         // ── 아래 빌딩 몸체 + 창문 (슬래브 밑) ──
-        const body = B(roomGroup, slabW + 0.4, 17, slabD + 0.4, 0x252932, slabCX, -8.9, slabCZ);
-        body.receiveShadow = false;
-        body.userData.exterior = true; // 차가운 바깥 — 실내광 제외 (디렉터 광원 누출 2026-07-24)
-        const rand = seededRand(88);
-        const winGeos = [];
-        for (let i = 0; i < 26; i++) {
-          const side = Math.floor(rand() * 4);
-          const hw = slabW / 2, hd = slabD / 2;
-          const wx = side < 2 ? slabCX + (rand() - 0.5) * (slabW - 1) : slabCX + (side === 2 ? -hw - 0.22 : hw + 0.22);
-          const wz = side >= 2 ? slabCZ + (rand() - 0.5) * (slabD - 1) : slabCZ + (side === 0 ? -hd - 0.22 : hd + 0.22);
-          const wg = new THREE.BoxGeometry(side < 2 ? 0.7 : 0.1, 0.9, side < 2 ? 0.1 : 0.7);
-          wg.translate(wx, -1.6 - rand() * 13, wz);
-          rand(); // (시퀀스 보존) — 종전 불켜진 창 판정 자리. 디렉터 신고: 폐허에 불켜진 창=비현실 → 전부 어둠
-          winGeos.push(paintGeo(wg, 0x131720));
+        // ── 아래 빌딩 몸체: 폭격 파괴 골조 (디렉터 2026-07-24) ─────────────────
+        //   깨끗한 박스 대신 철골/바닥 슬래브 노출·파사드 일부 소실·잔해로 리얼한 붕괴.
+        //   전부 userData.exterior(실내광 제외) + 재질별 머지(드로우콜 절약). 시드 고정=골든 결정론.
+        {
+          const W = slabW + 0.4, D = slabD + 0.4, hw = W / 2, hd = D / 2;
+          const topY = -0.4, H = 17, botY = topY - H; // -0.4 = 바닥 슬래브 아랫면(-0.35)과 0.05 간격 (동일평면 z-fight 회피)
+          const cx = slabCX, cz = slabCZ, rnd = seededRand(88);
+          const buckets = { conc: [], dark: [], scorch: [], slab: [], rebar: [] };
+          const push = (k, w, h, d, x, y, z) => { const g = new THREE.BoxGeometry(w, h, d); g.translate(x, y, z); buckets[k].push(g); };
+          // 코어(속이 빈 게 아니라 어두운 구조 코어가 비침) + 4 코너 기둥(전체 높이 골격)
+          push('dark', W * 0.7, H, D * 0.7, cx, topY - H / 2, cz);
+          for (const sx of [-1, 1]) for (const sz of [-1, 1]) push('conc', 0.42, H, 0.42, cx + sx * (hw - 0.21), topY - H / 2, cz + sz * (hd - 0.21));
+          const floors = 7, fh = H / floors;
+          for (let f = 0; f < floors; f++) {
+            const fy = topY - f * fh, midY = fy - fh / 2;
+            const dmg = f < 2 ? 0.72 : 0.4; // 위 2개층 = 더 심한 파괴(방 밑이 가장 처참)
+            // 바닥 슬래브(수평 콘크리트 판) — 일부는 깨져 폭 축소+한쪽 치우침
+            const ext = rnd() < dmg ? 0.5 + rnd() * 0.4 : 1.0;
+            push('slab', W * ext, 0.16, D, cx + (ext < 1 ? (rnd() - 0.5) * W * (1 - ext) : 0), fy, cz);
+            // 파사드 패널 4면 — 랜덤 소실(날아간 자리로 코어/슬래브 노출)
+            for (const [ox, oz, ln, ax] of [[0, hd, W, 'z'], [0, -hd, W, 'z'], [hw, 0, D, 'x'], [-hw, 0, D, 'x']]) {
+              if (rnd() < dmg) continue;
+              push(rnd() < 0.25 ? 'scorch' : 'conc', ax === 'z' ? ln : 0.13, fh * 0.9, ax === 'z' ? 0.13 : ln, cx + ox, midY, cz + oz);
+            }
+            // 노출 철근 — 부서진 슬래브 밑으로 늘어짐(바닥 슬래브 위로 안 삐죽나오게 f>=1부터, 전부 -0.4 아래)
+            if (f >= 1 && f < 4) for (let r = 0; r < 2; r++) { const rl = 0.3 + rnd() * 0.5; push('rebar', 0.05, rl, 0.05, cx + (rnd() - 0.5) * W * 0.7, fy - 0.1 - rl / 2, cz + (rnd() - 0.5) * D * 0.7); }
+          }
+          // 최상층 톱니(방 바로 아래 부서진 슬래브 조각들)
+          for (let i = 0; i < 5; i++) push('slab', 0.4 + rnd() * 0.6, 0.16, 0.5 + rnd() * 0.5, cx + (rnd() - 0.5) * W * 0.8, topY - 0.1 - rnd() * 0.3, cz + (rnd() - 0.5) * D * 0.8);
+          // 잔해 스커트(바닥 근처)
+          for (let i = 0; i < 6; i++) { const s = 0.3 + rnd() * 0.5; push(rnd() < 0.3 ? 'scorch' : 'dark', s, s * 0.6, s, cx + (rnd() - 0.5) * W * 1.1, botY + 0.3 + rnd() * 1.6, cz + (rnd() - 0.5) * D * 1.1); }
+          const mats = { conc: wallPhong({ color: 0x2f333b }), dark: wallPhong({ color: 0x20242b }), scorch: wallPhong({ color: 0x16181c }), slab: wallPhong({ color: 0x3a3e45 }), rebar: wallPhong({ color: 0x574433 }) };
+          for (const k in buckets) { if (!buckets[k].length) continue; mats[k].userData.shared = true; const m = new THREE.Mesh(mergeGeometries(buckets[k]), mats[k]); m.receiveShadow = false; m.userData.exterior = true; roomGroup.add(m); }
         }
-        { const winMesh = new THREE.Mesh(mergeGeometries(winGeos), vcLambert); winMesh.userData.exterior = true; roomGroup.add(winMesh); } // 건물 창 = 외부, 실내광 제외
 
         // ── 내려가는 사다리 (디렉터: 불켜진 창 대신 현실적 — 옥탑에서 아래로 접근하는 철제 사다리) ──
         //   건물 앞면(+z, 카메라 방향) 좌측에 세로대 2 + 가로대. 파라펫 아래에서 시작해 아래로 뻗는다.
