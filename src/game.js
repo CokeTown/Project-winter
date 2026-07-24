@@ -11355,23 +11355,27 @@ if (sessionStorage.getItem('ps-intro')) {
    본문 기준 폰트(11px)가 스케일 후 11px 밑으로 내려가지 않도록 하한 보정.
 ============================================================ */
 // (UI_BASE_FONT/UI_MIN_FONT/TEXT_BOOST 상수는 부팅 분기 위에서 선언 — TDZ 방지)
+// UI 크기(zoom) 배율 계산. 디렉터 2026-07-24: 반응형 확대가 큰 화면에서 UI를 과대하게 키웠다
+//   ("PDA를 통하는 모든 것을 900×600 기준 컴팩트 크기로"). → 데스크톱은 그 컴팩트 크기(≈0.80)를
+//   해상도와 무관하게 표준으로 고정한다. 미니창(위젯)만 더 축소. 개별 조절은 설정 > UI 크기.
+//   모바일은 폰 비율 문법을 그대로 유지(지시는 데스크톱 PDA 대상, v0.9.5 세로 리그레션 회피).
+const UI_COMPACT = 0.80; // 900×600 기준 uiz(= min(900/1400,600/860)*1.25 ≈ 0.80)를 데스크톱 표준으로
 function updateUiScale() {
-  let s = Math.min(innerWidth / 1400, innerHeight / 860);
-  // 초소형 창(위젯 미니 480x300 등): 최소 가독 폰트 하한을 고집하면 UI가 화면을 넘어버린다.
-  // 기준(960x600) 미만에선 하한을 창 크기 비례로 풀어 "작아도 다 보이는" 쪽을 택한다.
-  // 단, 모바일은 CSS폭이 원래 좁다(세로 ~412px) — 미니창 취급하면 UI가 쪼그라든다(v0.9.5 리그레션).
-  // 모바일은 항상 기존 하한(1.0) 경로: 폰 비율은 폰 문법대로.
   const tiny = !isMobileEnv && (innerWidth < 960 || innerHeight < 600);
-  s = THREE.MathUtils.clamp(s, tiny ? 0.35 : 0.85, 2.1);
-  if (!tiny) {
-    // 스케일 후 기준 폰트(11px)가 최소 가독 크기(11px) 밑으로 내려가지 않게 보정
-    const minScale = UI_MIN_FONT / UI_BASE_FONT; // = 1.0
-    if (s < minScale) s = minScale;
+  let s;
+  if (isMobileEnv) {
+    // 모바일: 기존 반응형 문법 유지
+    s = THREE.MathUtils.clamp(Math.min(innerWidth / 1400, innerHeight / 860), 0.85, 2.1) * TEXT_BOOST;
+    // #87 스윕: 세로 모바일에서 부스트가 과해 "내 집이 안 보일" 만큼 큼 → 세로+좁은 폭만 16% 축소
+    if (innerHeight > innerWidth && innerWidth < 560) s *= 0.84;
+  } else if (tiny) {
+    // 초소형 창(위젯 미니 480x300 등): 컴팩트보다도 더 작게 — 창 크기 비례로 "작아도 다 보이게"
+    s = Math.min(UI_COMPACT, Math.min(innerWidth / 1400, innerHeight / 860) * 1.25);
+  } else {
+    // 데스크톱 표준: 해상도 불문 컴팩트 고정
+    s = UI_COMPACT;
   }
-  s *= TEXT_BOOST * (opts.fontScale || 1); // 가독성 부스트 + 접근성 폰트 3단(REQ-ACC-01)
-  // #87 스윕(디렉터 실기기): 세로 모바일에서 데스크톱용 부스트가 그대로 먹어 "내 집이 안 보일" 만큼 UI가 큼
-  //   → 세로(폭<높이) + 좁은 폭에서만 16% 축소. 기준 폰트 11px×1.05≈11.5px — 가독 하한은 지킨다.
-  if (isMobileEnv && innerHeight > innerWidth && innerWidth < 560) s *= 0.84;
+  s *= (opts.fontScale || 1); // 설정 > UI 크기 (더 작게 0.72 ~ 최대 1.6)
   document.documentElement.style.setProperty('--uiz', s.toFixed(3));
   return s;
 }
