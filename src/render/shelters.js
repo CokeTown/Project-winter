@@ -169,8 +169,12 @@ export function makeShelterBuilders(ctx) {
         const conc = wallPhong({ map: concreteTex });
         conc.userData.shared = true;
         // ── 콘크리트 슬래브 (넓게 — 마당 공간 확보) ──
-        const slabW = S.backX + S.frontX, slabD = S.backZ + S.frontZ;
-        const slabCX = (S.frontX - S.backX) / 2, slabCZ = (S.frontZ - S.backZ) / 2;
+        // #237: 증축(ROOM.w+2) 시 방 -x 벽이 -(w/2+0.09)까지 나가 고정 슬래브 -x변(-backX)을 뚫던 것 —
+        //   슬래브 -x변을 방 -x벽+여유(0.5)까지 확장해 항상 방을 담는다. 기본(w5.6): 2.89+0.5=3.39<3.4 →
+        //   Math.max로 backX 불변 = 슬래브·파라펫·건물 몸체 전부 기본과 바이트 동일(골든 무영향). 증축분만 넓어진다.
+        const backX = Math.max(S.backX, w / 2 + 0.09 + 0.5);
+        const slabW = backX + S.frontX, slabD = S.backZ + S.frontZ;
+        const slabCX = (S.frontX - backX) / 2, slabCZ = (S.frontZ - S.backZ) / 2;
         const slab = new THREE.Mesh(new THREE.BoxGeometry(slabW, 0.35, slabD), conc.clone());
         slab.position.set(slabCX, -0.175, slabCZ); slab.receiveShadow = true;
         tagDecoFloor(slab); roomGroup.add(slab); // (B-①) 옥탑 바닥재 대상 (벽지는 없음 — 개방형 파라펫)
@@ -206,7 +210,7 @@ export function makeShelterBuilders(ctx) {
         // 앞(+z, 카메라 홈 방향)·뒤(-z)·좌(-x)·우(+x). 파손 1~2곳.
         parapet(slabW, slabCX, S.frontZ - 0.13, 0, [[0.62, 0.16]]);
         parapet(slabW, slabCX, -S.backZ + 0.13, 0, []);
-        parapet(slabD, -S.backX + 0.13, slabCZ, Math.PI / 2, [[0.4, 0.13]]);
+        parapet(slabD, -backX + 0.13, slabCZ, Math.PI / 2, [[0.4, 0.13]]); // #237: 확장 slab -x변 추종
         parapet(slabD, S.frontX - 0.13, slabCZ, Math.PI / 2, []);
         // ── 아래 빌딩 몸체: 옥탑이 얹힌 평범한 콘크리트 건물 (디렉터 2026-07-24: 폭격 연출 폐기 — '아래 회색부의
         //   연장선'으로, 옥탑과 이질감 제거). 데크와 같은 concreteTex로 톤 통일 + 깔끔한 창 격자 + 상단 코니스만.
@@ -2436,7 +2440,8 @@ export function makeShelterBuilders(ctx) {
           c2.position.set(x, y + 1.15, z); c2.rotation.y = rot; envRoot.add(c2);
         };
         cont(-16, GY, -6, 0.06, 0); cont(-16.4, GY, -3.4, -0.04, 1); cont(-15.7, GY + 2.3, -4.8, 0.02, 2);
-        cont(-16.2, GY, 2.5, 0.1, 3); cont(-15.8, GY + 2.3, 2.2, -0.06, 4); cont(-16, GY + 4.6, -1, 0.03, 1);
+        cont(-16.2, GY, 2.5, 0.1, 3); cont(-15.8, GY + 2.3, 2.2, -0.06, 4);
+        cont(-15.7, GY + 4.6, -4.8, 0.03, 1); // #238: 3단째 — z=-1(지지 없음, 4.6m 부유)에서 -4.8 기둥 정수리로(2단 위에 접지)
         cont(15.5, GY, -8, -1.5, 2); cont(16.2, GY, -2, 0.08, 0);
         // 버려진 트럭 2 (하나 기울어짐) — 대기 행렬의 잔재
         const truck = (x, z, rot, tilt) => {
@@ -2467,7 +2472,7 @@ export function makeShelterBuilders(ctx) {
               const bx = sgn * (10 + col * 6.2 + rand() * 1.6), bz = -26 - row * 7.5 - rand() * 2;
               const tiers = 1 + Math.floor(rand() * 3);                                    // 1~3단 스택
               for (let tzr = 0; tzr < tiers; tzr++) {
-                if (rand() < 0.12) continue;                                               // 빠진 자리(하역 흔적)
+                if (rand() < 0.12) break;                                                  // #238: 빠진 자리 = 스택을 그 높이서 끊음(break). continue면 위 단이 빈칸 위로 떠서(부유) 접지 깨짐
                 cont(bx + (rand() - 0.5) * 0.5, GY + tzr * 2.3, bz + (rand() - 0.5) * 0.5, (rand() - 0.5) * 0.14, (col * 3 + row + tzr) % 5);
                 if (tzr === tiers - 1 && rand() < 0.4) leafCluster(envRoot, bx, GY + tiers * 2.3 + 0.15, bz, 0.5 + rand() * 0.2, rand, true); // 정수리 수풀
               }

@@ -310,10 +310,13 @@ export function makeWildlifeSystem(ctx) {
       const sides = p.sides || ['+x', '-x', '+z', '-z'];
       const side = sides[Math.floor(Math.random() * sides.length)];
       const t = Math.random() * 2 - 1;
-      if (side === '+x') return { x: p.hw, z: t * p.hd };
-      if (side === '-x') return { x: -p.hw, z: t * p.hd };
-      if (side === '+z') return { x: t * p.hw, z: p.hd };
-      return { x: t * p.hw, z: -p.hd };
+      // #239: roomClamp면 링을 (증축 반영된) 방 벽 밖으로 밀어 방 안 스폰 방지 — 기본(방5.6)은 room.w/2+0.25=3.05=hw로 불변.
+      const hw = p.roomClamp ? Math.max(p.hw, room.w / 2 + 0.25) : p.hw;
+      const hd = p.roomClamp ? Math.max(p.hd, room.d / 2 + 0.2) : p.hd;
+      if (side === '+x') return { x: hw, z: t * hd };
+      if (side === '-x') return { x: -hw, z: t * hd };
+      if (side === '+z') return { x: t * hw, z: hd };
+      return { x: t * hw, z: -hd };
     }
     // #209: avoidRect 있으면 방 사각 대신 그 사각(기단 등)을 회피 — 오두막 기단 위 매몰 방지.
     const avW = (spec.avoidRect ? spec.avoidRect.w : room.w) / 2 + 0.3;
