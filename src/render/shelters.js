@@ -211,6 +211,7 @@ export function makeShelterBuilders(ctx) {
         // ── 아래 빌딩 몸체 + 창문 (슬래브 밑) ──
         const body = B(roomGroup, slabW + 0.4, 17, slabD + 0.4, 0x252932, slabCX, -8.9, slabCZ);
         body.receiveShadow = false;
+        body.userData.exterior = true; // 차가운 바깥 — 실내광 제외 (디렉터 광원 누출 2026-07-24)
         const rand = seededRand(88);
         const winGeos = [];
         for (let i = 0; i < 26; i++) {
@@ -223,7 +224,7 @@ export function makeShelterBuilders(ctx) {
           rand(); // (시퀀스 보존) — 종전 불켜진 창 판정 자리. 디렉터 신고: 폐허에 불켜진 창=비현실 → 전부 어둠
           winGeos.push(paintGeo(wg, 0x131720));
         }
-        roomGroup.add(new THREE.Mesh(mergeGeometries(winGeos), vcLambert));
+        { const winMesh = new THREE.Mesh(mergeGeometries(winGeos), vcLambert); winMesh.userData.exterior = true; roomGroup.add(winMesh); } // 건물 창 = 외부, 실내광 제외
 
         // ── 내려가는 사다리 (디렉터: 불켜진 창 대신 현실적 — 옥탑에서 아래로 접근하는 철제 사다리) ──
         //   건물 앞면(+z, 카메라 방향) 좌측에 세로대 2 + 가로대. 파라펫 아래에서 시작해 아래로 뻗는다.

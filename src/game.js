@@ -339,6 +339,21 @@ moon.shadow.camera.top = 16; moon.shadow.camera.bottom = -16;
 moon.shadow.camera.far = 60;
 scene.add(moon);
 
+// ── 외부 건물 라이트 레이어 (디렉터 2026-07-24 「빛이 뒤로 새는 찐빠」) ────────────
+//   지지 건물(펜데스탈)·폐허 골조 등 '차가운 바깥'은 실내 따뜻한 광원(ceilLight·가구 PointLight·
+//   설비등)의 영향에서 뺀다. 외부는 태양·달·반구광만 받아야 을씨년스러운 도시로 읽힌다.
+//   메커니즘: 외부 메시를 EXTERIOR_LAYER 하나에만 두면(userData.exterior→loadShelter가 적용),
+//   이 레이어를 함께 켠 카메라·전역광만 그 메시를 렌더/조명하고, 기본 레이어의 실내광은 못 닿는다.
+const EXTERIOR_LAYER = 2;
+camera.layers.enable(EXTERIOR_LAYER);
+cineCam.layers.enable(EXTERIOR_LAYER);
+hemi.layers.enable(EXTERIOR_LAYER);
+moon.layers.enable(EXTERIOR_LAYER);
+// 씬 그룹에서 userData.exterior로 표시된 메시를 외부 레이어로 옮긴다(셸터 빌드 후 호출).
+function applyExteriorLayers(root) {
+  root.traverse(o => { if ((o.isMesh || o.isPoints || o.isLine) && o.userData && o.userData.exterior) o.layers.set(EXTERIOR_LAYER); });
+}
+
 // Lighting Update P1 (#189 §1, 디렉터 2026-07-15 스펙 착지): 기본 상태 = 어둠.
 //   ceilLight는 이제 「무광원 폴백」— 광원(가구 광원·화기·조명 설비)이 하나도 없을 때만 켜지는
 //   죽은 형광등(밝기 10·냉백·점멸). 빛은 거저 주어지지 않고 양초/화기/설비로 쟁취한다.
@@ -2794,6 +2809,7 @@ function loadShelter(id) {
   buildOvergrowth();
   addDistantSmoke(); // F-1a [B]: 창밖 원거리 연기 기둥(먼 생존 흔적) — 없는 셸터에만 1개
   buildModProps(); // 설치된 개조 소품
+  applyExteriorLayers(roomGroup); // 외부 건물(userData.exterior)을 실내광 영향에서 제외 (디렉터 광원 누출)
   bakeWaterReflection(); // #2 물 반사(디렉터): 수변 셸터 수면에 하늘·스카이라인 큐브맵 1회 베이크
   applyDeco();     // 꾸미기(#13): 벽지/바닥재 재질 적용 (셸터 원본 map 위에 오버레이)
   scatterDust();   // 실내 먼지 모트 재배치
