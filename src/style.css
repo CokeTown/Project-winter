@@ -1332,11 +1332,11 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   }
   #title-inner { text-align: left; zoom: var(--uiz); pointer-events: auto; padding-left: clamp(28px, 6vw, 96px); }
   #title-logo { margin-bottom: 26px; }
-  /* 정식 픽셀 워드마크 이미지(픽셀 규격 준수판). image-rendering:pixelated 로 하드 엣지 유지. */
-  #title-logo img {
-    width: min(300px, 60vw); height: auto; display: block;
-    image-rendering: pixelated;
-    filter: drop-shadow(0 0 16px rgba(232,168,108,0.28)) drop-shadow(2px 2px 0 rgba(20,17,8,0.9));
+  /* 타이포 워드마크(로고 이미지 제거 — 커뮤니티: 'AI 티'). 로비 터미널/인광 톤에 맞춘 깔끔한 텍스트. */
+  .title-wordmark {
+    margin: 0; font-weight: 800; font-size: 44px; letter-spacing: 7px;
+    text-transform: uppercase; color: #c6dccb; line-height: 1;
+    text-shadow: 0 0 14px rgba(140,190,150,0.30), 0 2px 0 rgba(10,13,10,0.85);
   }
   #title-sub { font-size: 13px; color: var(--text-dim); letter-spacing: 3px; margin-bottom: 34px; }
   /* 패널 없는 세로 텍스트 메뉴 — 선택/호버 = 좌측 세로 바 + 인광 (레퍼런스 문법) */
@@ -1428,7 +1428,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #intro-next { padding: 10px 26px; font-size: 13px; }
 
   @media (max-width: 760px) {
-    #title-logo img { width: min(300px, 66vw); }
+    .title-wordmark { font-size: 36px; letter-spacing: 5px; }
     #intro-text { font-size: 13px; }
   }
 
@@ -1792,7 +1792,7 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
     #btn-cancel-place { bottom: 110px; } /* #194: 툴바 밴드(52~) 위로 동반 이동 */
     #modal { max-height: calc(88vh / var(--uiz, 1)); } /* #194: ⑧ 문법 — zoom(--uiz) 곱 후 뷰포트 초과 역보정 */
     #journal-paper, #tip-note { max-height: 92vh; overflow-y: auto; }
-    #title-logo img { width: min(240px, 76vw); }
+    .title-wordmark { font-size: 28px; letter-spacing: 4px; }
     #intro-text, #ending-text { font-size: 12px; line-height: 1.7; margin-bottom: 16px; }
   }
 

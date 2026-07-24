@@ -208,65 +208,39 @@ export function makeShelterBuilders(ctx) {
         parapet(slabW, slabCX, -S.backZ + 0.13, 0, []);
         parapet(slabD, -S.backX + 0.13, slabCZ, Math.PI / 2, [[0.4, 0.13]]);
         parapet(slabD, S.frontX - 0.13, slabCZ, Math.PI / 2, []);
-        // ── 아래 빌딩 몸체: 폭격 파괴 (디렉터 2026-07-24, GPT 레퍼런스) ─────────────
-        //   ★ 하나의 솔리드 콘크리트 건물(창 격자) + 상단이 폭격으로 무너진 잔해 크라운.
-        //     "층 나뉘어" 보이면 안 됨 — 본체는 통짜 매스, 파괴는 top에 집중(잔해 덩이·뒤틀린
-        //     철근·뚫린 어두운 내부·벽 그루터기, 테두리로 쏟아짐). 시드 고정=골든 결정론.
+        // ── 아래 빌딩 몸체: 옥탑이 얹힌 평범한 콘크리트 건물 (디렉터 2026-07-24: 폭격 연출 폐기 — '아래 회색부의
+        //   연장선'으로, 옥탑과 이질감 제거). 데크와 같은 concreteTex로 톤 통일 + 깔끔한 창 격자 + 상단 코니스만.
+        //   파괴·잔해·철근 없음. 외부 레이어 태깅 유지(#235 광원 누출 방지 — 실내 따뜻한 광원 제외).
         {
           const W = slabW + 0.4, D = slabD + 0.4, hw = W / 2, hd = D / 2;
           const topY = -0.4, H = 17, botY = topY - H; // 옥탑 바닥 아랫면(-0.35)과 0.05 간격 (z-fight 회피)
-          const cx = slabCX, cz = slabCZ, rnd = seededRand(88);
-          const fh = H / 7, crownBase = topY - fh * 1.25; // 이 위(≈1.25층)는 파괴 크라운
-          const bk = { conc: [], dark: [], scorch: [], rubble: [], win: [], rebar: [] };
-          const push = (k, w, h, d, x, y, z) => { const g = new THREE.BoxGeometry(w, h, d); g.translate(x, y, z); bk[k].push(g); };
-          const pushR = (k, w, h, d, x, y, z, rz, rx) => { const g = new THREE.BoxGeometry(w, h, d); if (rz) g.rotateZ(rz); if (rx) g.rotateX(rx); g.translate(x, y, z); bk[k].push(g); };
-          // 1) 솔리드 건물 본체(하나의 통짜 매스) + 파괴부 어두운 내부 공동(top 관통 방지: 윗면 topY)
-          push('conc', W, crownBase - botY, D, cx, (botY + crownBase) / 2, cz);
-          push('dark', W - 0.4, topY - crownBase + 0.3, D - 0.4, cx, (topY + crownBase - 0.3) / 2, cz);
-          // 2) 창 격자(어두운 recessed) — 본체 파사드
-          const sides = [[0, hd, W, 'z', 1], [0, -hd, W, 'z', -1], [hw, 0, D, 'x', 1], [-hw, 0, D, 'x', -1]];
-          const bodyFloors = Math.floor((crownBase - botY) / fh);
-          for (let f = 0; f < bodyFloors; f++) {
-            const wy = crownBase - fh * 0.6 - f * fh;
-            for (const [ox, oz, ln, ax, sgn] of sides) {
-              const nW = ax === 'z' ? 3 : 2;
+          const cx = slabCX, cz = slabCZ, fh = H / 7;
+          const bodyMat = wallPhong({ map: concreteTex, emissive: 0x202227 }); bodyMat.userData.shared = true; // 데크와 동일 콘크리트 + 밤 회색 하한
+          const winMat = wallPhong({ color: 0x23272e, emissive: 0x0e1014 }); winMat.userData.shared = true; // 어두운 창(리세스)
+          const corniceMat = wallPhong({ color: 0x5b5b58 }); corniceMat.userData.shared = true; // 파라펫과 동색 상단 띠
+          // 통짜 본체
+          const body = new THREE.Mesh(new THREE.BoxGeometry(W, topY - botY, D), bodyMat);
+          body.position.set(cx, (botY + topY) / 2, cz); body.userData.exterior = true; roomGroup.add(body);
+          // 상단 코니스(얇은 띠, 살짝 돌출) — 데크로 자연스러운 전이
+          const corn = new THREE.Mesh(new THREE.BoxGeometry(W + 0.14, 0.42, D + 0.14), corniceMat);
+          corn.position.set(cx, topY - 0.21, cz); corn.userData.exterior = true; roomGroup.add(corn);
+          // 창 격자(층·면별 규칙적) — 어두운 리세스 박스 병합
+          const wins = [], sides = [[hd, 'z', 1], [-hd, 'z', -1], [hw, 'x', 1], [-hw, 'x', -1]];
+          for (let f = 0; f < 6; f++) {
+            const wy = topY - 1.0 - f * fh;
+            for (const [off, ax, sgn] of sides) {
+              const ln = ax === 'z' ? W : D, nW = ax === 'z' ? 4 : 3;
               for (let w = 0; w < nW; w++) {
-                if (rnd() < 0.12) continue;
-                const t = ((w + 0.5) / nW - 0.5) * ln * 0.76;
-                if (ax === 'z') push('win', ln / nW * 0.46, fh * 0.5, 0.06, cx + t, wy, cz + oz + sgn * 0.09);
-                else push('win', 0.06, fh * 0.5, ln / nW * 0.46, cx + ox + sgn * 0.09, wy, cz + t);
+                const t = ((w + 0.5) / nW - 0.5) * ln * 0.8;
+                const g = new THREE.BoxGeometry(ax === 'z' ? ln / nW * 0.5 : 0.08, fh * 0.5, ax === 'z' ? 0.08 : ln / nW * 0.5);
+                if (ax === 'z') g.translate(cx + t, wy, cz + off + sgn * 0.05);
+                else g.translate(cx + off + sgn * 0.05, wy, cz + t);
+                wins.push(g);
               }
             }
           }
-          // 상단 폭격 구멍(파사드 큰 어두운 공동 3) — 크라운 아래
-          for (let i = 0; i < 3; i++) {
-            const [ox, oz, ln, ax, sgn] = sides[Math.floor(rnd() * 4)];
-            const t = (rnd() - 0.5) * ln * 0.5, hh = fh * (0.7 + rnd() * 0.6);
-            if (ax === 'z') push('dark', ln * (0.28 + rnd() * 0.2), hh, 0.16, cx + t, crownBase - 0.2 - rnd() * fh * 0.8, cz + oz + sgn * 0.01);
-            else push('dark', 0.16, hh, ln * (0.28 + rnd() * 0.2), cx + ox + sgn * 0.01, crownBase - 0.2 - rnd() * fh * 0.8, cz + t);
-          }
-          // 3) 파괴 크라운 — 부서진 벽 그루터기(테두리, 짧은 수직 조각·기울어짐)
-          for (let i = 0; i < 9; i++) {
-            const ang = rnd() * Math.PI * 2, ed = 0.8 + rnd() * 0.14;
-            const rx = cx + Math.cos(ang) * hw * ed, rz = cz + Math.sin(ang) * hd * ed;
-            const sh = fh * (0.35 + rnd() * 0.6), horiz = Math.abs(Math.cos(ang)) > Math.abs(Math.sin(ang));
-            pushR(rnd() < 0.35 ? 'scorch' : 'conc', horiz ? 0.16 : 0.35 + rnd() * 0.5, sh, horiz ? 0.35 + rnd() * 0.5 : 0.16, rx, crownBase + sh / 2 - fh * 0.25, rz, (rnd() - 0.5) * 0.15, 0);
-          }
-          // 잔해 덩이(테두리 무더기 + 쏟아짐, 크기·기울기 다양)
-          for (let i = 0; i < 32; i++) {
-            const ang = rnd() * Math.PI * 2, ed = 0.55 + rnd() * 0.5;
-            const rx = cx + Math.cos(ang) * hw * ed, rz = cz + Math.sin(ang) * hd * ed, s = 0.16 + rnd() * 0.42;
-            pushR('rubble', s, s * (0.5 + rnd() * 0.6), s * (0.7 + rnd() * 0.5), rx, crownBase + rnd() * fh * 1.0, rz, (rnd() - 0.5) * 0.9, (rnd() - 0.5) * 0.7);
-          }
-          // 뒤틀린 철근 spike(크라운에서 삐죽·휘어짐)
-          for (let i = 0; i < 13; i++) {
-            const rx = cx + (rnd() - 0.5) * W * 0.92, rz = cz + (rnd() - 0.5) * D * 0.92, rl = 0.4 + rnd() * 0.7;
-            pushR('rebar', 0.04, rl, 0.04, rx, crownBase + rnd() * fh * 0.85, rz, (rnd() - 0.5) * 1.1, (rnd() - 0.5) * 0.8);
-          }
-          // 바닥 잔해 스커트
-          for (let i = 0; i < 8; i++) { const s = 0.3 + rnd() * 0.5; pushR('rubble', s, s * 0.5, s, cx + (rnd() - 0.5) * W * 1.1, botY + 0.3 + rnd() * 1.5, cz + (rnd() - 0.5) * D * 1.1, (rnd() - 0.5) * 0.5, 0); }
-          const mats = { conc: wallPhong({ color: 0x3a3f47 }), dark: wallPhong({ color: 0x14181e }), scorch: wallPhong({ color: 0x121417 }), rubble: wallPhong({ color: 0x33373d }), win: wallPhong({ color: 0x0d1015 }), rebar: wallPhong({ color: 0x54402f }) };
-          for (const k in bk) { if (!bk[k].length) continue; mats[k].userData.shared = true; const m = new THREE.Mesh(mergeGeometries(bk[k]), mats[k]); m.receiveShadow = false; m.userData.exterior = true; roomGroup.add(m); }
+          const winMesh = new THREE.Mesh(mergeGeometries(wins), winMat);
+          winMesh.userData.exterior = true; roomGroup.add(winMesh);
         }
 
         // ── 내려가는 사다리 (디렉터: 불켜진 창 대신 현실적 — 옥탑에서 아래로 접근하는 철제 사다리) ──

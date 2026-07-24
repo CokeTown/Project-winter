@@ -349,6 +349,10 @@ camera.layers.enable(EXTERIOR_LAYER);
 cineCam.layers.enable(EXTERIOR_LAYER);
 hemi.layers.enable(EXTERIOR_LAYER);
 moon.layers.enable(EXTERIOR_LAYER);
+// 폐허 건물이 밤에 새까맣게 죽지 않고 '차가운 회색 콘크리트'로 읽히게 하는 처리는 씬 광원 추가가 아니라
+//   재질 emissive(회색 바닥값)로 한다 — 씬에 반구/방향광을 더하면 전 MeshPhong 셰이더의 광원 수 define이
+//   바뀌어(레이어 격리로 기여는 0이어도) SwiftShader FP 순서가 흔들리고, 픽셀화 양자화가 이를 증폭해
+//   전 골든이 흔들린다(실측: 광원 2개 추가 → 17씬 20~50% diff). emissive는 재질별이라 전역 무영향.
 // 씬 그룹에서 userData.exterior로 표시된 메시를 외부 레이어로 옮긴다(셸터 빌드 후 호출).
 function applyExteriorLayers(root) {
   root.traverse(o => { if ((o.isMesh || o.isPoints || o.isLine) && o.userData && o.userData.exterior) o.layers.set(EXTERIOR_LAYER); });
@@ -12011,6 +12015,8 @@ window.__shelter = {
   renderFrame: () => renderFrame(),
   setPhotoMode, togglePhotoMode, capturePhoto, photoModeOn: () => photoMode, // 스크린샷 모드 QA/하네스 훅
   qaScene: () => scene, // 그라운드 프로브용 씬 루트 (부유·긴 메시 전수 감사). 카메라는 씬 밖이라 traverse 불가 — 이 훅으로 접근.
+  qaCamera: () => camera, qaRenderer: () => renderer, // 커스텀 각도 근접 캡처용(하네스 전용): renderer.render(scene, camera) 직접 구동
+  qaCenter: () => camCenter, // 셸터 중심(카메라 lookAt 기준점)
   qaRenderInfo: () => renderer.info, // #73 장주행 메모리 감사: geometries/textures/programs 카운트 (GPU 자원 누수 프로브)
   qaLightState: () => { updateLightingRig(); return { fallback: ceilBaseInt, hasLight: interiorLightActive(), facility: lightingFacilityOn() }; }, // #189 P1 프로브
   qaItems: () => items, applyGel, // #189 P3 QA: 배치 아이템 직접 접근 + 젤 적용(색 검증)
