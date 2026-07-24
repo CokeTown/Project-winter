@@ -209,47 +209,61 @@ export function makeShelterBuilders(ctx) {
         parapet(slabD, -S.backX + 0.13, slabCZ, Math.PI / 2, [[0.4, 0.13]]);
         parapet(slabD, S.frontX - 0.13, slabCZ, Math.PI / 2, []);
         // ── 아래 빌딩 몸체 + 창문 (슬래브 밑) ──
-        // ── 아래 빌딩 몸체: 폭격 파괴 골조 (디렉터 2026-07-24, 레퍼런스: 우크라 폭격 건물·노출골조) ──
-        //   솔리드 콘크리트 매스 + 창 격자 파사드, 한쪽 상단은 폭발로 파사드 소실 → 두꺼운 바닥 슬래브
-        //   단면·어두운 내부·기둥 노출(코바르타워식). 그을음·늘어진 철근·잔해 더미. 시드 고정=골든 결정론.
+        // ── 아래 빌딩 몸체: 폭격 파괴 골조 (디렉터 2026-07-24, 레퍼런스 우크라 폭격·코바르타워) ──
+        //   솔리드 콘크리트 + 창 격자. 한쪽 상단 코너가 폭발로 붕괴 — 파괴된 내부가 드러난다.
+        //   ★ 깔끔한 전폭 슬래브(주차장 룩) 금지: 블라스트존은 부서진 슬래브 조각·기울어짐·붕괴·
+        //     잔해·벽 그루터기·뒤틀린 철근으로 "파괴"를 보인다. 시드 고정=골든 결정론.
         {
           const W = slabW + 0.4, D = slabD + 0.4, hw = W / 2, hd = D / 2;
-          const topY = -0.4, H = 17, botY = topY - H; // 바닥 슬래브 아랫면(-0.35)과 0.05 간격 (z-fight 회피)
+          const topY = -0.4, H = 17, botY = topY - H; // 옥탑 바닥 아랫면(-0.35)과 0.05 간격 (z-fight 회피)
           const cx = slabCX, cz = slabCZ, rnd = seededRand(88);
           const bk = { conc: [], dark: [], scorch: [], slab: [], win: [], rebar: [] };
           const push = (k, w, h, d, x, y, z) => { const g = new THREE.BoxGeometry(w, h, d); g.translate(x, y, z); bk[k].push(g); };
-          const floors = 8, fh = H / floors;
-          // 어두운 내부 코어(파사드 소실부로 비침, 인셋) + 두꺼운 바닥 슬래브(전폭, 단면 노출) + 4 코너 기둥
-          push('dark', W - 0.6, H, D - 0.6, cx, topY - H / 2, cz);
-          for (let f = 0; f <= floors; f++) push('slab', W, 0.28, D, cx, topY - 0.14 - f * fh, cz); // -0.14: 최상단 슬래브 윗면을 topY에 맞춰 옥탑 바닥 관통 방지
-          for (const sx of [-1, 1]) for (const sz of [-1, 1]) push('conc', 0.44, H, 0.44, cx + sx * (hw - 0.22), topY - H / 2, cz + sz * (hd - 0.22));
-          // 블라스트존: +x면 상단 3개층 · +z면 상단 2개층 = 파사드 소실(단면 노출)
-          const blasted = (s, f) => (s === 'px' && f < 3) || (s === 'pz' && f < 2);
+          const pushR = (k, w, h, d, x, y, z, rz) => { const g = new THREE.BoxGeometry(w, h, d); if (rz) g.rotateZ(rz); g.translate(x, y, z); bk[k].push(g); };
+          const floors = 8, fh = H / floors, BF = 3; // 상단 BF개 층 = 블라스트(파괴) 구간
+          // 어두운 내부 코어(파괴부로 어둠 비침) + 코너 기둥(+x+z 코너는 상단 부러짐)
+          push('dark', W - 0.5, H, D - 0.5, cx, topY - H / 2, cz);
+          for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+            const ph = (sx > 0 && sz > 0) ? H - BF * fh - 0.4 : H; // 블라스트 코너 기둥 = 상단 부러짐
+            push('conc', 0.44, ph, 0.44, cx + sx * (hw - 0.22), botY + ph / 2, cz + sz * (hd - 0.22));
+          }
           const sides = [['pz', 0, hd, W, 'z'], ['nz', 0, -hd, W, 'z'], ['px', hw, 0, D, 'x'], ['nx', -hw, 0, D, 'x']];
           for (let f = 0; f < floors; f++) {
-            const fy = topY - f * fh, midY = fy - fh / 2;
+            const fy = topY - f * fh, midY = fy - fh / 2, blast = f < BF;
             for (const [s, ox, oz, ln, ax] of sides) {
-              if (blasted(s, f)) { // 파사드 날아감 → 가장자리 그을음만
-                if (rnd() < 0.5) push('scorch', ax === 'z' ? ln * 0.35 : 0.15, fh * 0.5, ax === 'z' ? 0.15 : ln * 0.35, cx + ox * 0.92, midY, cz + oz * 0.92);
+              if (blast && (s === 'px' || s === 'pz')) { // 블라스트 면: 파사드 소실 → 부서진 벽 그루터기 조각
+                const n = 1 + Math.floor(rnd() * 2);
+                for (let k = 0; k < n; k++) {
+                  const t = (rnd() - 0.5) * ln * 0.7, sh = fh * (0.2 + rnd() * 0.4);
+                  push(rnd() < 0.55 ? 'scorch' : 'conc', ax === 'z' ? 0.5 + rnd() * 0.6 : 0.16, sh, ax === 'z' ? 0.16 : 0.5 + rnd() * 0.6, cx + (ax === 'z' ? t : ox), fy - sh / 2 - rnd() * fh * 0.35, cz + (ax === 'z' ? oz : t));
+                }
                 continue;
               }
-              // 솔리드 파사드 패널 + 창 격자
+              // 솔리드 파사드 + 창 격자
               push(rnd() < 0.16 ? 'scorch' : 'conc', ax === 'z' ? ln : 0.16, fh * 0.96, ax === 'z' ? 0.16 : ln, cx + ox, midY, cz + oz);
               const nW = ax === 'z' ? 4 : 3, sgn = (ax === 'z' ? oz : ox) > 0 ? 1 : -1;
               for (let w = 0; w < nW; w++) {
-                if (rnd() < 0.14) continue; // 막힌/부서진 창
+                if (rnd() < 0.14) continue;
                 const t = ((w + 0.5) / nW - 0.5) * ln * 0.82;
                 if (ax === 'z') push('win', ln / nW * 0.52, fh * 0.5, 0.06, cx + t, midY, cz + oz + sgn * 0.09);
                 else push('win', 0.06, fh * 0.5, ln / nW * 0.52, cx + ox + sgn * 0.09, midY, cz + t);
               }
             }
-            // 블라스트존 늘어진 철근(+x 가장자리)
-            if (f < 3) for (let r = 0; r < 2; r++) { const rl = 0.4 + rnd() * 0.6; push('rebar', 0.05, rl, 0.05, cx + hw - 0.25, fy - 0.12 - rl / 2, cz + (rnd() - 0.5) * D * 0.6); }
+            if (blast) { // 부서진 바닥 슬래브 조각(전폭 아님·기울어짐) + 파단 부스러기 + 뒤틀린 철근
+              const fw = W * (0.32 + rnd() * 0.3), fd = D * (0.34 + rnd() * 0.32);
+              const fx = cx + (hw - fw / 2) - rnd() * W * 0.25, fz = cz + (hd - fd / 2) - rnd() * D * 0.25;
+              pushR('slab', fw, 0.22, fd, fx, fy - 0.16, fz, (rnd() - 0.5) * 0.22);
+              for (let k = 0; k < 2 + (rnd() < 0.5 ? 1 : 0); k++) { const cs = 0.2 + rnd() * 0.35; pushR('slab', cs, 0.18, cs, fx + (rnd() - 0.5) * fw, fy - 0.25 - rnd() * 0.35, fz + (rnd() - 0.5) * fd, (rnd() - 0.5) * 0.7); }
+              for (let r = 0; r < 2; r++) { const rl = 0.4 + rnd() * 0.6; pushR('rebar', 0.045, rl, 0.045, fx + (rnd() - 0.5) * fw, fy - 0.28 - rl / 2, fz + (rnd() - 0.5) * fd, (rnd() - 0.5) * 0.7); }
+            }
           }
-          // 최상부(방 밑) 부서진 슬래브 조각 + 잔해(블라스트 쪽 편중)
-          for (let i = 0; i < 4; i++) push('slab', 0.5 + rnd() * 0.6, 0.2, 0.5 + rnd() * 0.5, cx + (rnd() - 0.5) * W * 0.8, topY - 0.55 - rnd() * 0.5, cz + (rnd() - 0.5) * D * 0.8);
-          for (let i = 0; i < 8; i++) { const s = 0.3 + rnd() * 0.6; push(rnd() < 0.3 ? 'scorch' : 'dark', s, s * 0.55, s, cx + hw * 0.4 + (rnd() - 0.5) * W * 0.9, botY + 0.3 + rnd() * 1.9, cz + (rnd() - 0.5) * D * 1.1); }
-          const mats = { conc: wallPhong({ color: 0x363b44 }), dark: wallPhong({ color: 0x191d24 }), scorch: wallPhong({ color: 0x131518 }), slab: wallPhong({ color: 0x41464e }), win: wallPhong({ color: 0x0d1015 }), rebar: wallPhong({ color: 0x574433 }) };
+          // 방 밑 처참 — 건물 top 톱니(부서진 콘크리트 덩이, 기울어짐)
+          for (let i = 0; i < 6; i++) { const s = 0.3 + rnd() * 0.5; pushR('conc', s, 0.3 + rnd() * 0.4, s, cx + hw * 0.3 + (rnd() - 0.5) * W * 0.6, topY - 0.2 - rnd() * 0.5, cz + hd * 0.3 + (rnd() - 0.5) * D * 0.6, (rnd() - 0.5) * 0.4); }
+          // 붕괴 슬래브 조각(블라스트 아래로 쏟아짐)
+          for (let i = 0; i < 4; i++) { const fw = 0.6 + rnd() * 0.8; pushR('slab', fw, 0.2, 0.5 + rnd() * 0.6, cx + hw * 0.4 + (rnd() - 0.5) * W * 0.5, topY - BF * fh - rnd() * fh * 1.8, cz + hd * 0.4 + (rnd() - 0.5) * D * 0.5, (rnd() - 0.5) * 0.5); }
+          // 바닥 잔해 스커트(블라스트 쪽 큰 무더기)
+          for (let i = 0; i < 11; i++) { const near = i < 7, s = 0.3 + rnd() * (near ? 0.7 : 0.4); push(rnd() < 0.3 ? 'scorch' : 'dark', s, s * 0.5, s, cx + (near ? hw * 0.5 : 0) + (rnd() - 0.5) * W * (near ? 0.8 : 1.1), botY + 0.3 + rnd() * 1.9, cz + (near ? hd * 0.5 : 0) + (rnd() - 0.5) * D * (near ? 0.8 : 1.1)); }
+          const mats = { conc: wallPhong({ color: 0x363b44 }), dark: wallPhong({ color: 0x171b21 }), scorch: wallPhong({ color: 0x121417 }), slab: wallPhong({ color: 0x40454d }), win: wallPhong({ color: 0x0d1015 }), rebar: wallPhong({ color: 0x574433 }) };
           for (const k in bk) { if (!bk[k].length) continue; mats[k].userData.shared = true; const m = new THREE.Mesh(mergeGeometries(bk[k]), mats[k]); m.receiveShadow = false; m.userData.exterior = true; roomGroup.add(m); }
         }
 
