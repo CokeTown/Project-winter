@@ -4411,16 +4411,21 @@ const DURING_EXP_EVENTS = new Set(['collapsed_entrance', 'crt_terminal']);
 /* CRT 단말(SHELTER-IMMERSION §2-C) — 전기가 남아 있을 법한 실내 지역만. 슬럼/심부(판자·골목)와
    수산시장·리조트는 제외: 백업 전원이 도는 사무 설비의 개연성이 얕다. 문안도 이 4종만 준비돼 있다. */
 const CRT_REGIONS = new Set(['commercial', 'industrial', 'residential', 'harbor']);
-/* CRT 캐시 인출 — '데이터를 뽑는 자리'라 물건이 작다(무너진 입구의 도료·도면과 결을 분리).
-   빈손 18%는 백업 전원 잔량의 값 — 이미 누가 뽑아간 뒤일 수 있다. */
-function crtCacheLoot() {
-  const r = Math.random();
-  if (r < 0.18) return t('ev.crt.r1none');
-  const rid = r < 0.62 ? 'parts' : 'battery';
-  const n = 1 + (Math.random() < 0.35 ? 1 : 0);
-  resAdd(rid, n);
-  riskGainPush({ icon: icon('icon_res_' + rid, ''), label: LN(RESOURCES[rid]), n, tier: '' });
-  return t('ev.crt.r1', { name: LN(RESOURCES[rid]), n });
+/* CRT 분해 수확 (디렉터 2026-07-25: "캐시 인출이 아니라 전원을 끄고 분해한다 · 부품을 여러 개") —
+   기판·배선·브라운관 요크까지 뜯으니 부품이 여러 개 나온다. 빈손 분기 없음(분해는 반드시 뭔가 남긴다).
+   대가는 물자가 아니라 서사다: 뜯으면 마지막 기록은 영영 못 읽는다(①과 배타). 백업 전지는 확률 생존. */
+function crtDismantleLoot() {
+  const [lo, hi] = BAL.events.crtParts || [2, 4];
+  const n = lo + Math.floor(Math.random() * (hi - lo + 1));
+  resAdd('parts', n);
+  riskGainPush({ icon: icon('icon_res_parts', ''), label: LN(RESOURCES.parts), n, tier: '' });
+  let out = t('ev.crt.r1', { n });
+  if (Math.random() < (BAL.events.crtBatteryChance ?? 0)) {
+    resAdd('battery', 1);
+    riskGainPush({ icon: icon('icon_res_battery', ''), label: LN(RESOURCES.battery), n: 1, tier: '' });
+    out += '<br>' + t('ev.crt.r1cap');
+  }
+  return out;
 }
 function duringExpEvent(id) { return DURING_EXP_EVENTS.has(id); }
 // #208: 리스크 인카운터로 번 것을 정산이 "이벤트 발생으로 추가 획득:"으로 따로 세울 수 있게 적어둔다.
@@ -4508,7 +4513,7 @@ const EVENTS = makeEvents({
   encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도)
   PAINT_FAMILIES, buyDye, dyeCost, // dye merchant ctx (REWARD-LOOP)
   collapseEntranceLoot, // #165 탐험 리스크 인카운터 — 보상 롤 위임 (game.js 심볼 전부 여기 있음)
-  crtCacheLoot, // CRT 단말 캐시 인출 — 전자 부스러기 롤(부품·배터리·빈손)
+  crtDismantleLoot, // CRT 단말 분해 수확 — 부품 다수(+백업 전지 확률)
   dlcOwns: (id) => Platform.dlc.owns(id), // #119 서포터팩 DLC 게이트 (러시안블루 보장)
 });
 setEncounterEvents(EVENTS); // core/encounter 술어에 EVENTS 주입 (makeEvents 산물 — 생성 직후 1회)

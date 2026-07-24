@@ -25,7 +25,7 @@ export function makeEvents(ctx) {
     encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도 — 암시장과 캐논 공유)
     PAINT_FAMILIES, buyDye, dyeCost, // 염료 상인 (디렉터 2026-07-08 — 도료 교환 채널)
     collapseEntranceLoot, // #165 탐험 리스크 인카운터 — 보상 롤 (도료·도면·고양이·잡동사니)
-    crtCacheLoot, // CRT 단말 캐시 인출 — 전자 부스러기 롤(부품·배터리·빈손)
+    crtDismantleLoot, // CRT 단말 분해 수확 — 부품 다수(+백업 전지 확률)
     dlcOwns, // #119 서포터팩 DLC 소유 판정 (러시안블루 보장 지급)
   } = ctx;
   const EVENTS = {
@@ -645,8 +645,8 @@ export function makeEvents(ctx) {
           state.dayLog.notes.push(t('ev.crt.noteRead', { log }));
           return `<div class="crt-boot">${t('ev.crt.lastEntry')}</div>${log}`;
         } },
-        // ② 캐시 인출 — 전자 부스러기(부품·배터리). 빈손도 있다(백업 전원 잔량의 값).
-        { labelId: 'ev.crt.c1', run() { return crtCacheLoot(); } },
+        // ② 전원을 끄고 분해 — 부품 다수(+백업 전지 확률). 뜯으면 마지막 기록은 영영 못 읽는다(①과 배타).
+        { labelId: 'ev.crt.c1', run() { return crtDismantleLoot(); } },
         // ③ 전원 내리기 — 무보상. 작은 안식(기분 버프).
         { labelId: 'ev.crt.c2', run() { addMoodBuff(3, 2); return t('ev.crt.r2'); } },
       ],
