@@ -1620,6 +1620,33 @@ button, .pixel-btn, a, label, select, .map-pin, .city-chip, .swatch, .toolbar-it
   #confirm-panel .close-row { display: flex; gap: 8px; }
   #confirm-panel .pixel-btn { flex: 1; }
 
+  /* ── CRT 단말 카드 (SHELTER-IMMERSION §2-C) ──
+     탐험 중 만난 '아직 켜진 콘솔'. 확인창 터미널화(위)와 같은 계열이되 한 단계 더: 화면 자체가 인광이다.
+     스캔라인은 카드 본문에만(제목/버튼 가독 유지) · 커서는 부팅 라인 끝에서 점멸.
+     reduce-motion에선 애니메이션 전부 정지(스캔인·커서) — 접근성 규약 준수. */
+  #modal-back.ev-crt.show #modal { animation: termScanIn 0.26s steps(9); }
+  body.reduce-motion #modal-back.ev-crt.show #modal { animation: none; }
+  #modal-back.ev-crt #modal-body {
+    position: relative; color: #9df5b0; text-shadow: 0 0 6px rgba(120, 255, 150, 0.35);
+    background: #060d08; border: 1px solid #2f5a38; padding: 12px; overflow: hidden;
+  }
+  /* 스캔라인 — 본문 위 정적 오버레이(입력 방해 없음) */
+  #modal-back.ev-crt #modal-body::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px);
+  }
+  #modal-back.ev-crt .crt-boot {
+    color: #8cf5a6; opacity: 0.85; font-size: 11px; letter-spacing: 1px;
+    margin-bottom: 8px; word-break: keep-all;
+  }
+  #modal-back.ev-crt .crt-boot::after {
+    content: '_'; margin-left: 2px; animation: crtCursor 1.1s steps(1) infinite;
+  }
+  body.reduce-motion #modal-back.ev-crt .crt-boot::after { animation: none; }
+  @keyframes crtCursor { 50% { opacity: 0; } }
+  /* 선택 버튼도 단말 키 — 인광 테두리로 카드와 한 몸 */
+  #modal-back.ev-crt #modal-body .pixel-btn { border-color: #3f6a46; color: #cfeed6; }
+
   /* ── 전자시계 (LCD) ── */
   /* 재배치 2차 정정(2026-07-22): 최상단 줄은 뷰 컨트롤이 점유 — 시계는 우측 홈 유지하고 한 줄 아래로.
      디렉터: "시계는 어차피 자유 배치" — 기본값만 비켜 주면 되고, 배치는 플레이어 드래그가 정한다. */

@@ -25,6 +25,7 @@ export function makeEvents(ctx) {
     encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도 — 암시장과 캐논 공유)
     PAINT_FAMILIES, buyDye, dyeCost, // 염료 상인 (디렉터 2026-07-08 — 도료 교환 채널)
     collapseEntranceLoot, // #165 탐험 리스크 인카운터 — 보상 롤 (도료·도면·고양이·잡동사니)
+    crtCacheLoot, // CRT 단말 캐시 인출 — 전자 부스러기 롤(부품·배터리·빈손)
     dlcOwns, // #119 서포터팩 DLC 소유 판정 (러시안블루 보장 지급)
   } = ctx;
   const EVENTS = {
@@ -619,6 +620,35 @@ export function makeEvents(ctx) {
           return out;
         } },
         { labelId: 'ev.collapse.c1', run() { return t('ev.collapse.r1'); } },
+      ],
+    },
+
+    /* ── CRT 단말 「아직 돌아가는 단말」 (SHELTER-IMMERSION §2-C) — 특수: 탐험 진행률 65% 지점 예약 ──
+       카세트 퓨처리즘 축: 전기가 남아 있을 법한 실내 지역에서 *아직 켜진* 콘솔을 만난다.
+       세 선택이 서로 다른 값을 준다 — ①로그=월드빌딩(물자 0, 대신 일지에 남는다) ②캐시=전리품(작다)
+       ③전원 내리기=감정(안식). 톤 규약(디렉터 2026-07-25): **담백**. 역병·사건 묘사 금지, 군사톤 금지 —
+       마지막 사용자가 남긴 업무 흔적과 정전의 암시까지만. 문안은 디렉터 윤문 대상(초안=Fable). */
+    crt_terminal: {
+      special: true,
+      icon: '', titleId: 'ev.crt.title',
+      textFn: () => {
+        const rg = state.riskEventRegion || (state.exp && state.exp.region);
+        const body = t(['commercial', 'industrial', 'residential', 'harbor'].includes(rg) ? `ev.crt.text.${rg}` : 'ev.crt.text');
+        // 부팅 라인은 카드 안의 '화면' — 터미널 스킨(.ev-crt)이 인광·스캔라인·커서를 입힌다.
+        return `<div class="crt-boot">${t('ev.crt.boot')}</div>${body}`;
+      },
+      choices: [
+        // ① 마지막 로그 — 보상 없음. 대신 읽은 줄이 일지에 남아 "내가 본 것"이 기록된다.
+        { labelId: 'ev.crt.c0', run() {
+          const rg = state.riskEventRegion || (state.exp && state.exp.region);
+          const log = t(['commercial', 'industrial', 'residential', 'harbor'].includes(rg) ? `ev.crt.log.${rg}` : 'ev.crt.log');
+          state.dayLog.notes.push(t('ev.crt.noteRead', { log }));
+          return `<div class="crt-boot">${t('ev.crt.lastEntry')}</div>${log}`;
+        } },
+        // ② 캐시 인출 — 전자 부스러기(부품·배터리). 빈손도 있다(백업 전원 잔량의 값).
+        { labelId: 'ev.crt.c1', run() { return crtCacheLoot(); } },
+        // ③ 전원 내리기 — 무보상. 작은 안식(기분 버프).
+        { labelId: 'ev.crt.c2', run() { addMoodBuff(3, 2); return t('ev.crt.r2'); } },
       ],
     },
 

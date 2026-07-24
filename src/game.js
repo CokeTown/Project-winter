@@ -4407,7 +4407,21 @@ function bpName(bpId) {
    탐험 '도중'에 떠야 하는 인카운터 목록. 무너진 입구는 내가 그 자리에 서서 들어갈지 고르는 사건이라
    귀환 후 회상으로 뜨면 개연성이 없다 — 발동 자체가 이미 진행률 35% 지점 롤이었는데(9124행),
    소비 게이트의 `!state.exp` 때문에 귀환까지 대기하던 것. 나머지 인카운터는 집에서 겪는 것이라 기존 게이트 유지. */
-const DURING_EXP_EVENTS = new Set(['collapsed_entrance']);
+const DURING_EXP_EVENTS = new Set(['collapsed_entrance', 'crt_terminal']);
+/* CRT 단말(SHELTER-IMMERSION §2-C) — 전기가 남아 있을 법한 실내 지역만. 슬럼/심부(판자·골목)와
+   수산시장·리조트는 제외: 백업 전원이 도는 사무 설비의 개연성이 얕다. 문안도 이 4종만 준비돼 있다. */
+const CRT_REGIONS = new Set(['commercial', 'industrial', 'residential', 'harbor']);
+/* CRT 캐시 인출 — '데이터를 뽑는 자리'라 물건이 작다(무너진 입구의 도료·도면과 결을 분리).
+   빈손 18%는 백업 전원 잔량의 값 — 이미 누가 뽑아간 뒤일 수 있다. */
+function crtCacheLoot() {
+  const r = Math.random();
+  if (r < 0.18) return t('ev.crt.r1none');
+  const rid = r < 0.62 ? 'parts' : 'battery';
+  const n = 1 + (Math.random() < 0.35 ? 1 : 0);
+  resAdd(rid, n);
+  riskGainPush({ icon: icon('icon_res_' + rid, ''), label: LN(RESOURCES[rid]), n, tier: '' });
+  return t('ev.crt.r1', { name: LN(RESOURCES[rid]), n });
+}
 function duringExpEvent(id) { return DURING_EXP_EVENTS.has(id); }
 // #208: 리스크 인카운터로 번 것을 정산이 "이벤트 발생으로 추가 획득:"으로 따로 세울 수 있게 적어둔다.
 //   탐험 정산의 special[] 문법(희귀도 테두리)을 그대로 쓴다 — 신규 표시 계층 0.
@@ -4494,6 +4508,7 @@ const EVENTS = makeEvents({
   encCostMul, encBarterMul, // 밀수꾼 모드 배수 (교환 야박도)
   PAINT_FAMILIES, buyDye, dyeCost, // dye merchant ctx (REWARD-LOOP)
   collapseEntranceLoot, // #165 탐험 리스크 인카운터 — 보상 롤 위임 (game.js 심볼 전부 여기 있음)
+  crtCacheLoot, // CRT 단말 캐시 인출 — 전자 부스러기 롤(부품·배터리·빈손)
   dlcOwns: (id) => Platform.dlc.owns(id), // #119 서포터팩 DLC 게이트 (러시안블루 보장)
 });
 setEncounterEvents(EVENTS); // core/encounter 술어에 EVENTS 주입 (makeEvents 산물 — 생성 직후 1회)
@@ -4834,6 +4849,8 @@ function showEvent(id) {
   if (!ev) return;
   // #199 무너진 입구(디렉터 2026-07-17): 사진 카드 → 인엔진 문+상자 연출 (러너 점유 시 내부에서 카드 폴백)
   if (id === 'collapsed_entrance') { playCollapseVignette(); return; }
+  // CRT 단말: 라이브 집 스냅샷 금지(내 집이 아니라 '밖에서 만난 기계'다) — 카드 자체를 터미널 스킨으로.
+  if (id === 'crt_terminal') { playEventSting(id); openEventCard(id, { noImg: true, kind: 'crt' }); return; }
   playEventSting(id);
   // 걸어오는 등장인물(arrive foot/door/boat)은 인엔진 연출로 분기. 그 외는 즉시 카드.
   if (ev.arrive && ENCOUNTER_VISITOR[id] && canPresentVisitor()) { presentVisitor(id); return; }
@@ -4931,7 +4948,7 @@ function openEventCard(id, opts = {}) {
     const ok = !cost || eventCostOk(cost);
     return `<button class="pixel-btn" data-ch="${i}" ${ok ? '' : 'disabled'}>${t(c.labelId)}${cost && !ok ? t('ev.noResource') : ''}</button>`;
   }).join('') + `<button class="pixel-btn" id="event-minimize" data-i18n="event.minimize">${t('event.minimize')}</button>`;
-  let body, kind = null;
+  let body, kind = opts.kind || null; // opts.kind: CRT 단말 등 카드 스킨 지정(모달 kind 그대로 전달)
   if (opts.compact) {
     // #181 방문자 콤팩트 카드: 서술 없이 선택지만(대사는 라디오 버블이 담당). 하단 소형 패널.
     body = `<div style="display:flex;flex-direction:column;gap:6px">${choicesHtml}</div>`;
@@ -4958,7 +4975,8 @@ function openEventCard(id, opts = {}) {
       state.minimizedEvent = null; // 선택 완료 → 내려둔 상태도 해제
       hideEventChip();
       dismissVisitor(); // #181 선택 완료 → 방문자 퇴장 + 카메라 복귀
-      openModal(`${icon('icon_ev_' + id, ev.icon)} ${evTitle}`, `<div style="line-height:2">${result}</div>`);
+      // 결과 카드도 같은 스킨을 유지한다(CRT만 — visitor는 결과를 일반 모달로 여는 게 기존 계약).
+      openModal(`${icon('icon_ev_' + id, ev.icon)} ${evTitle}`, `<div style="line-height:2">${result}</div>`, kind === 'crt' ? 'crt' : null);
       scheduleSave();
       renderResBar();
       updateHud();
@@ -9542,6 +9560,17 @@ function tickExpeditionUI() {
         state.exp.midRolled = true;
       }
     }
+    // CRT 단말(SHELTER-IMMERSION §2-C): 진행률 65% 별도 슬롯 — 리스크(35%)·일반(50%) 뒤라 겹치지 않는다.
+    //   실내 지역(CRT_REGIONS) 한정 + pendingEvent 선점 시 양보(팝업 과밀 방지) + 탐험당 1회.
+    //   지역 박제는 무너진 입구 선례를 공유한다(같은 탐험이라 값이 같고, 귀환 후 표시에도 문안이 맞는다).
+    if (!state.exp.crtRolled && (1 - remain / total) >= 0.65) {
+      state.exp.crtRolled = true;
+      if (!state.pendingEvent && !isWallpaper() && CRT_REGIONS.has(state.exp.region)
+          && Math.random() < (BAL.events.crtExpChance || 0) * encFreqMul()) {
+        state.pendingEvent = 'crt_terminal';
+        state.riskEventRegion = state.exp.region;
+      }
+    }
     // 탐험 중간 이벤트: 진행률 50% 통과 시점에 1회, BAL 확률로 일반 인카운터 예약 (현재 시각 컨텍스트).
     //   디렉터 2026-07: 일일 이벤트와 같은 1일 쿨다운을 공유해 "탐험+하루 스택"을 막는다(하루 최대 1회 하드캡).
     if (!state.exp.midRolled && (1 - remain / total) >= 0.5) {
@@ -9765,6 +9794,7 @@ function openModal(title, html, kind = null) {
   $('modal-title').innerHTML = title;
   $('modal-body').innerHTML = html;
   $('modal-back').classList.toggle('ev-visitor', kind === 'visitor'); // #181 방문자 콤팩트 카드(하단·약한 딤)
+  $('modal-back').classList.toggle('ev-crt', kind === 'crt'); // CRT 단말 카드(인광 그린·스캔라인·커서)
   $('modal-back').classList.add('show');
 }
 function closeModal() {
